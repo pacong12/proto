@@ -142,7 +142,7 @@ import { walletAddress, walletModalOpen } from './lib/wallet-store';
 
 const router = useRouter();
 
-const PRIVACY_KEY = 'proto_privacy_policy_accepted_v1';
+const PRIVACY_STORAGE_KEY = 'proto_privacy_policy_accepted_v1';
 
 const searchOpen = ref(false);
 const privacyOpen = ref(false);
@@ -154,7 +154,7 @@ function handleSelectToken(address: string) {
 function handlePrivacyAccepted() {
   if (typeof window !== 'undefined') {
     try {
-      localStorage.setItem(PRIVACY_KEY, 'true');
+      localStorage.setItem(PRIVACY_STORAGE_KEY, 'true');
     } catch {
       // Non-blocking
     }
@@ -164,7 +164,7 @@ function handlePrivacyAccepted() {
 function checkPrivacyOnConnect() {
   if (typeof window === 'undefined') return;
   try {
-    const accepted = localStorage.getItem(PRIVACY_KEY) === 'true';
+    const accepted = localStorage.getItem(PRIVACY_STORAGE_KEY) === 'true';
     if (!accepted && walletAddress.value) {
       privacyOpen.value = true;
     }
