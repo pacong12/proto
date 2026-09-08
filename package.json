@@ -13,6 +13,8 @@
     "typecheck": "bun run --filter '*' typecheck",
     "test": "vitest run --config vitest.config.ts",
     "test:contracts": "cd contracts && forge test",
+    "deploy:local": "cd contracts && forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast",
+    "deploy:robinhood": "cd contracts && forge script script/Deploy.s.sol --rpc-url https://rpc.mainnet.chain.robinhood.com --broadcast",
     "build": "bun run --filter '*' build",
     "ci": "bun run lint && bun run typecheck && bun run test && bun run test:contracts && bun run build",
     "format:check": "prettier --check \"**/*.{ts,js,json,md,vue}\"",
