@@ -6,6 +6,12 @@ export interface TokenSocials {
   farcaster?: string;
 }
 
+export interface TokenTaxConfig {
+  buyTaxBps?: number; // Base points (100 = 1%)
+  sellTaxBps?: number;
+  taxRecipient?: `0x${string}`;
+}
+
 export interface LaunchedTokenEntity {
   address: `0x${string}`;
   name: string;
@@ -15,6 +21,7 @@ export interface LaunchedTokenEntity {
   logo: string;
   description: string;
   socials: TokenSocials;
+  taxConfig?: TokenTaxConfig;
   deployer: `0x${string}`;
   pairedToken: `0x${string}`;
   poolAddress: `0x${string}`;
@@ -79,4 +86,10 @@ export interface CandlestickEntity {
   low: number;
   close: number;
   volume: number;
+}
+
+export interface TokenHolder {
+  address: string;
+  balance: string;
+  percent: number;
 }
