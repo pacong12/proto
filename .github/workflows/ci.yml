@@ -13,8 +13,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -27,8 +25,13 @@ jobs:
         with:
           version: nightly
 
-      - name: Install dependencies
+      - name: Install npm dependencies
         run: npm ci
+
+      - name: Setup Foundry dependencies
+        run: |
+          mkdir -p contracts/lib
+          git clone --depth 1 https://github.com/foundry-rs/forge-std.git contracts/lib/forge-std
 
       - name: Lint Check
         run: npm run lint
