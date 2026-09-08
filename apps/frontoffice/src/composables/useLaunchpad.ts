@@ -3,6 +3,7 @@ import {
   ROBINHOOD_CHAIN,
   launchpadFactoryAbi,
   launchpadTokenAbi,
+  liquidityLockerAbi,
   type LaunchedTokenEntity,
   type TokenMarketData,
   type TokenSocials,
@@ -159,11 +160,76 @@ export function useLaunchpad() {
     }
   }
 
+  async function claimFees(tokenAddress: `0x${string}`): Promise<string | null> {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const walletClient = getWalletClient();
+      if (!walletClient) throw new Error('No Web3 wallet detected');
+
+      const [account] = await walletClient.getAddresses();
+      if (!account) throw new Error('Please connect your wallet');
+
+      const hash = await walletClient.writeContract({
+        address: ROBINHOOD_CHAIN.contracts.locker,
+        abi: liquidityLockerAbi,
+        functionName: 'claimFees',
+        args: [tokenAddress],
+        account,
+        chain: walletClient.chain,
+      });
+
+      await publicClient.waitForTransactionReceipt({ hash });
+      return hash;
+    } catch (err) {
+      error.value = (err as Error).message;
+      return null;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function setFeeRedirect(
+    tokenAddress: `0x${string}`,
+    redirectAddress: `0x${string}`,
+  ): Promise<string | null> {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      const walletClient = getWalletClient();
+      if (!walletClient) throw new Error('No Web3 wallet detected');
+
+      const [account] = await walletClient.getAddresses();
+      if (!account) throw new Error('Please connect your wallet');
+
+      const hash = await walletClient.writeContract({
+        address: ROBINHOOD_CHAIN.contracts.locker,
+        abi: liquidityLockerAbi,
+        functionName: 'setFeeRedirect',
+        args: [tokenAddress, redirectAddress],
+        account,
+        chain: walletClient.chain,
+      });
+
+      await publicClient.waitForTransactionReceipt({ hash });
+      return hash;
+    } catch (err) {
+      error.value = (err as Error).message;
+      return null;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   return {
     loading,
     error,
     tokens,
     launchToken,
     fetchTokenDetails,
+    claimFees,
+    setFeeRedirect,
   };
 }

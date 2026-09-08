@@ -47,6 +47,14 @@
             <Activity class="w-4 h-4" />
             Analytics
           </button>
+          <button
+            @click="$emit('navigate', 'profile')"
+            :class="activeTab === 'profile' ? 'text-white' : 'text-zinc-400 hover:text-white'"
+            class="flex items-center gap-1.5 transition"
+          >
+            <User class="w-4 h-4" />
+            Profile
+          </button>
         </nav>
       </div>
 
@@ -73,7 +81,15 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Rocket, Compass, PlusCircle, ArrowLeftRight, Activity, Wallet } from 'lucide-vue-next';
+import {
+  Rocket,
+  Compass,
+  PlusCircle,
+  ArrowLeftRight,
+  Activity,
+  User,
+  Wallet,
+} from 'lucide-vue-next';
 
 defineProps<{
   activeTab: string;

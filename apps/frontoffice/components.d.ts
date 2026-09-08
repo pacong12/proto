@@ -15,6 +15,7 @@ declare module 'vue' {
     CreateTokenView: typeof import('./src/components/CreateTokenView.vue')['default']
     ExploreView: typeof import('./src/components/ExploreView.vue')['default']
     Navbar: typeof import('./src/components/Navbar.vue')['default']
+    ProfileView: typeof import('./src/components/ProfileView.vue')['default']
     TradeView: typeof import('./src/components/TradeView.vue')['default']
   }
 }
