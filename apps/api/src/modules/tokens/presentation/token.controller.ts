@@ -16,9 +16,16 @@ export class TokenController {
     private readonly tokenRepository: TokenRepositoryPort,
   ) {}
 
-  async listTokens(limit = 50, offset = 0): Promise<ApiEnvelope<TokenWithMarketData[]>> {
+  async listTokens(
+    limit = 50,
+    offset = 0,
+    version?: 'v1' | 'v2',
+  ): Promise<ApiEnvelope<TokenWithMarketData[]>> {
     try {
-      const result = await this.getTokensUseCase.execute(limit, offset);
+      let result = await this.getTokensUseCase.execute(limit, offset);
+      if (version) {
+        result = result.filter((t) => (t.token.version ?? 'v1') === version);
+      }
       return ok(result);
     } catch (error) {
       return err('FETCH_TOKENS_FAILED', (error as Error).message);

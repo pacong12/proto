@@ -89,12 +89,11 @@ async function handleRequest(req: Request): Promise<Response> {
       { headers },
     );
   }
-
-  // GET /api/tokens
   if (url.pathname === '/api/tokens' && req.method === 'GET') {
     const limit = parseInt(url.searchParams.get('limit') ?? '50', 10);
     const offset = parseInt(url.searchParams.get('offset') ?? '0', 10);
-    const res = await tokenController.listTokens(limit, offset);
+    const version = (url.searchParams.get('version') as 'v1' | 'v2' | null) ?? undefined;
+    const res = await tokenController.listTokens(limit, offset, version);
     return new Response(safeStringify(res), { headers });
   }
 
