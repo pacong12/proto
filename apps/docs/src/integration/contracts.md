@@ -6,11 +6,12 @@ Official contract deployments on **Robinhood Chain (Chain ID: 4663)**.
 
 ## Core Protocol Contracts
 
-| Contract              | Address                                      | Start Block |
-| :-------------------- | :------------------------------------------- | :---------- |
-| **Launchpad Factory** | `0x48844223aBDceeb1Ce502F54d559681358E68200` | `57851335`  |
-| **Liquidity Locker**  | `0x070233B6F46ccD61CA2B7bc1E13520c3fE4614E4` | `57851335`  |
-| **Buyback Burner**    | `0x000000000000000000000000000000000000dEaD` | —           |
+| Contract                   | Address                                      | Start Block | Description                          |
+| :------------------------- | :------------------------------------------- | :---------- | :----------------------------------- |
+| **Launchpad Factory (v1)** | `0x48844223aBDceeb1Ce502F54d559681358E68200` | `57851335`  | Direct Uniswap V3 Pool Deployer      |
+| **Launchpad Factory (v2)** | `0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e` | `57851335`  | Bonding Curve Architecture Deployer  |
+| **Liquidity Locker**       | `0x070233B6F46ccD61CA2B7bc1E13520c3fE4614E4` | `57851335`  | Permanently locks Uniswap V3 LP NFTs |
+| **Buyback Burner**         | `0x000000000000000000000000000000000000dEaD` | —           | Protocol Fee Buyback Burn Address    |
 
 ---
 
