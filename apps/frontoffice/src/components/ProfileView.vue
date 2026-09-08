@@ -6,7 +6,7 @@
           <User class="w-6 h-6 text-emerald-400" />
           <h1 class="text-3xl font-bold tracking-tight">Creator &amp; Holder Profile</h1>
         </div>
-        <p class="text-sm mt-1">
+        <p class="text-sm mt-1 text-zinc-400">
           Manage your launches, claim accrued trading fees (70% creator split), and configure
           community takeovers.
         </p>
@@ -38,44 +38,75 @@
       <!-- Stats Grid using Shadcn Card -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card class="p-5">
-          <p class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono">
+          <p
+            class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono text-zinc-400"
+          >
             <Coins class="w-4 h-4 text-emerald-400" />
             Claimable WETH Fees
           </p>
-          <p class="text-2xl font-bold font-mono text-emerald-400 mt-2">0.4250 ETH</p>
-          <p class="text-xs mt-1">70% creator share</p>
+          <p class="text-2xl font-bold font-mono text-emerald-400 mt-2">
+            {{ totalClaimableWeth }} ETH
+          </p>
+          <p class="text-xs text-zinc-500 mt-1">70% creator share</p>
         </Card>
 
         <Card class="p-5">
-          <p class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono">
+          <p
+            class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono text-zinc-400"
+          >
             <Rocket class="w-4 h-4 text-emerald-400" />
             My Token Launches
           </p>
-          <p class="text-2xl font-bold font-mono mt-2">{{ myLaunches.length }}</p>
-          <p class="text-xs mt-1">Active in Uniswap V3</p>
+          <p class="text-2xl font-bold font-mono text-white mt-2">{{ myLaunches.length }}</p>
+          <p class="text-xs text-zinc-500 mt-1">Active on Robinhood Chain</p>
         </Card>
 
         <Card class="p-5">
-          <p class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono">
+          <p
+            class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono text-zinc-400"
+          >
             <ShieldCheck class="w-4 h-4 text-emerald-400" />
             Liquidity Lock Status
           </p>
           <p class="text-2xl font-bold font-mono text-emerald-400 mt-2">100% Locked</p>
-          <p class="text-xs mt-1">Permanent Locker Contract</p>
+          <p class="text-xs text-zinc-500 mt-1">Permanent Nonfungible Locker</p>
         </Card>
       </div>
 
-      <!-- Launches Table & Actions using Shadcn Card & Button -->
-      <Card class="p-6 space-y-6">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-bold flex items-center gap-2">
-            <Flame class="w-5 h-5 text-emerald-400" />
-            My Launched Tokens &amp; Creator Fees
+      <!-- Success Notification -->
+      <div
+        v-if="successTx"
+        class="text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-800 rounded-xl p-4 flex items-start gap-2 break-all"
+      >
+        <Check class="w-4 h-4 shrink-0 mt-0.5 text-emerald-400" />
+        <span>Transaction Successful! Tx Hash: {{ successTx }}</span>
+      </div>
+
+      <!-- Loading State -->
+      <div v-if="loadingLaunches" class="flex items-center justify-center py-12">
+        <Loader2 class="w-6 h-6 text-emerald-400 animate-spin" />
+        <span class="ml-3 text-sm text-zinc-400">Loading your launches from blockchain...</span>
+      </div>
+
+      <!-- User Launches List with Action Buttons -->
+      <Card v-else class="p-6 space-y-6">
+        <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+          <h2 class="text-base font-bold flex items-center gap-2">
+            <Flame class="w-4 h-4 text-emerald-400" />
+            Tokens You Launched
           </h2>
-          <span class="text-xs">Live on Robinhood Chain</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            class="h-7 text-xs text-zinc-400 hover:text-white"
+            @click="fetchMyLaunches"
+          >
+            <RefreshCw class="w-3.5 h-3.5 mr-1" />
+            Refresh
+          </Button>
         </div>
 
-        <div v-if="myLaunches.length === 0" class="py-8 text-center text-xs">
+        <div v-if="myLaunches.length === 0" class="py-8 text-center text-xs text-zinc-500">
           No tokens launched from this address yet.
         </div>
 
@@ -86,7 +117,13 @@
             class="bg-zinc-950 border-zinc-800/80 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
           >
             <div class="flex items-start gap-3.5">
-              <Avatar class="w-12 h-12 rounded-lg border border-zinc-700">
+              <Avatar class="w-12 h-12 rounded-lg border border-zinc-700 overflow-hidden">
+                <img
+                  v-if="token.logo && token.logo.startsWith('http')"
+                  :src="token.logo"
+                  :alt="token.name"
+                  class="w-full h-full object-cover"
+                />
                 <AvatarFallback class="bg-zinc-800 text-emerald-400 font-bold text-base rounded-lg">
                   {{ token.symbol.slice(0, 3) }}
                 </AvatarFallback>
@@ -94,24 +131,30 @@
 
               <div>
                 <div class="flex items-center gap-2">
-                  <h3 class="font-bold text-base">{{ token.name }}</h3>
-                  <span class="text-xs font-mono">${{ token.symbol }}</span>
+                  <h3 class="font-bold text-base text-white">{{ token.name }}</h3>
+                  <span class="text-xs font-mono text-zinc-400">${{ token.symbol }}</span>
+                  <Badge
+                    :variant="token.version === 'v2' ? 'outline' : 'secondary'"
+                    class="text-[9px] px-1.5 py-0 h-4 font-mono uppercase"
+                  >
+                    {{ token.version === 'v2' ? 'v2 Curve' : 'v1 Direct' }}
+                  </Badge>
                 </div>
-                <p class="text-xs font-mono mt-0.5">{{ token.address }}</p>
-                <div class="flex items-center gap-3 mt-2 text-xs">
-                  <span
-                    >Accrued:
+                <p class="text-xs font-mono text-zinc-500 mt-0.5">{{ token.address }}</p>
+                <div class="flex items-center gap-3 mt-2 text-xs text-zinc-400">
+                  <span>
+                    Accrued:
                     <strong class="text-emerald-400 font-mono"
                       >{{ token.unclaimedWeth }} ETH</strong
-                    ></span
-                  >
+                    >
+                  </span>
                   <span>•</span>
-                  <span
-                    >Redirect:
-                    <strong class="font-mono">{{
-                      token.redirect ? `${token.redirect.slice(0, 6)}...` : 'None (Self)'
-                    }}</strong></span
-                  >
+                  <span>
+                    Redirect:
+                    <strong class="font-mono text-zinc-300">
+                      {{ token.redirect ? `${token.redirect.slice(0, 6)}...` : 'None (Self)' }}
+                    </strong>
+                  </span>
                 </div>
               </div>
             </div>
@@ -141,59 +184,59 @@
           <DialogHeader>
             <div class="flex items-center gap-2 text-emerald-400 mb-1">
               <ShieldAlert class="w-5 h-5" />
-              <DialogTitle>Community Takeover (CTO)</DialogTitle>
+              <DialogTitle>Community Takeover (CTO) Redirect</DialogTitle>
             </div>
-            <DialogDescription>
-              Redirect this token's 70% creator fee stream to an active community multisig or
-              treasury wallet. Locked pool liquidity is unaffected.
+            <DialogDescription class="text-xs text-zinc-400">
+              Permanently route all future 70% creator fees for this token to a community treasury
+              wallet.
             </DialogDescription>
           </DialogHeader>
 
           <div class="space-y-4 py-2">
             <div class="space-y-1.5">
-              <Label>Target Token</Label>
-              <Input :value="selectedCtoToken" disabled class="font-mono text-xs" />
+              <Label for="token-addr" class="text-xs font-medium">Target Token Address</Label>
+              <Input
+                id="token-addr"
+                :model-value="selectedCtoToken"
+                readonly
+                disabled
+                class="font-mono text-xs text-zinc-400"
+              />
             </div>
 
             <div class="space-y-1.5">
-              <Label for="cto-recipient">New Fee Recipient Address</Label>
+              <Label for="new-recipient" class="text-xs font-medium">New Community Recipient</Label>
               <Input
-                id="cto-recipient"
+                id="new-recipient"
                 v-model="newRecipientAddress"
-                type="text"
                 placeholder="0x..."
-                class="font-mono text-sm"
+                class="font-mono text-xs"
               />
+              <p class="text-[11px] text-zinc-500">
+                Ensure this address is accurate. This will redirect future creator fees.
+              </p>
             </div>
           </div>
 
-          <DialogFooter class="gap-2">
-            <Button variant="outline" @click="ctoModalOpen = false"> Cancel </Button>
+          <DialogFooter class="gap-2 sm:gap-0">
+            <Button variant="ghost" size="sm" @click="ctoModalOpen = false">Cancel</Button>
             <Button
               variant="default"
-              :disabled="loading || !newRecipientAddress"
+              size="sm"
+              :disabled="loading || !newRecipientAddress.startsWith('0x')"
               @click="handleSetRedirect"
             >
-              {{ loading ? 'Submitting...' : 'Confirm Redirect' }}
+              Confirm CTO Redirect
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <!-- Success Notification using Shadcn Card -->
-      <Card
-        v-if="successTx"
-        class="border-emerald-800 bg-emerald-950/40 p-4 text-xs text-emerald-400 break-all flex items-start gap-2"
-      >
-        <Check class="w-4 h-4 shrink-0 mt-0.5" />
-        <span>Transaction Successful: {{ successTx }}</span>
-      </Card>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import {
   User,
   Coins,
@@ -205,11 +248,14 @@ import {
   ShieldAlert,
   Check,
   AlertCircle,
+  Loader2,
+  RefreshCw,
 } from 'lucide-vue-next';
 import { useLaunchpad } from '../composables/useLaunchpad';
 import { walletAddress } from '../lib/wallet-store';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, Jazzicon } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -229,16 +275,63 @@ const ctoModalOpen = ref(false);
 const selectedCtoToken = ref<string>('');
 const newRecipientAddress = ref<string>('');
 const successTx = ref<string | null>(null);
+const loadingLaunches = ref(false);
 
 interface MyLaunchItem {
   address: string;
   name: string;
   symbol: string;
+  logo?: string;
+  version?: 'v1' | 'v2';
   unclaimedWeth: string;
   redirect: string | null;
 }
 
 const myLaunches = ref<MyLaunchItem[]>([]);
+
+const totalClaimableWeth = computed(() => {
+  const sum = myLaunches.value.reduce(
+    (acc, item) => acc + parseFloat(item.unclaimedWeth || '0'),
+    0,
+  );
+  return sum.toFixed(4);
+});
+
+async function fetchMyLaunches() {
+  if (!userAddress.value) {
+    myLaunches.value = [];
+    return;
+  }
+
+  loadingLaunches.value = true;
+  try {
+    const res = await fetch(`/api/tokens?deployer=${userAddress.value}`);
+    const envelope = await res.json();
+    if (envelope.success && Array.isArray(envelope.data)) {
+      myLaunches.value = envelope.data.map((item: any) => ({
+        address: item.token.address,
+        name: item.token.name,
+        symbol: item.token.symbol,
+        logo: item.token.logo,
+        version: item.token.version ?? 'v1',
+        unclaimedWeth: '0.0000',
+        redirect: null,
+      }));
+    }
+  } catch {
+    // Keep empty
+  } finally {
+    loadingLaunches.value = false;
+  }
+}
+
+watch(userAddress, () => {
+  fetchMyLaunches();
+});
+
+onMounted(() => {
+  fetchMyLaunches();
+});
 
 function openCtoModal(tokenAddress: string) {
   selectedCtoToken.value = tokenAddress;
