@@ -10,7 +10,19 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@headlessui/vue": "^1.7.23",
+    "@primevue/auto-import-resolver": "^5.0.1",
+    "@primevue/themes": "^4.5.4",
     "@proto/shared-types": "*",
+    "@vueuse/core": "^14.4.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-vue-next": "^1.0.0",
+    "primeicons": "^8.0.0",
+    "primevue": "^5.0.1",
+    "radix-vue": "^1.9.17",
+    "tailwind-merge": "^3.6.0",
+    "unplugin-vue-components": "^32.1.0",
     "viem": "^2.23.0",
     "vue": "^3.5.13"
   },
