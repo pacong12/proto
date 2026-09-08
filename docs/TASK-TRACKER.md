@@ -2,12 +2,12 @@
 
 ## 1. Active Milestones
 
-| Milestone                       | Area      | Description                                                   | Lead Agent   | Status          |
-| :------------------------------ | :-------- | :------------------------------------------------------------ | :----------- | :-------------- |
-| **M1: Deployment Scripts**      | Contracts | Foundry deployment script for Robinhood Chain & Local Anvil   | `@contracts` | **COMPLETED**   |
-| **M2: Real-Time Indexer**       | Backend   | Event poller for `TokenLaunched` and `Swap` with caching      | `@vault`     | **COMPLETED**   |
-| **M3: Fee Dashboard & CTO**     | Frontend  | User & Creator profile for fee claims and community takeovers | `@face`      | **COMPLETED**   |
-| **M4: Buyback & Burn Contract** | Contracts | Automated TWAP buyback execution for protocol revenue         | `@contracts` | **IN PROGRESS** |
+| Milestone                       | Area      | Description                                                   | Lead Agent   | Status        |
+| :------------------------------ | :-------- | :------------------------------------------------------------ | :----------- | :------------ |
+| **M1: Deployment Scripts**      | Contracts | Foundry deployment script for Robinhood Chain & Local Anvil   | `@contracts` | **COMPLETED** |
+| **M2: Real-Time Indexer**       | Backend   | Event poller for `TokenLaunched` and `Swap` with caching      | `@vault`     | **COMPLETED** |
+| **M3: Fee Dashboard & CTO**     | Frontend  | User & Creator profile for fee claims and community takeovers | `@face`      | **COMPLETED** |
+| **M4: Buyback & Burn Contract** | Contracts | Automated TWAP buyback execution for protocol revenue         | `@contracts` | **COMPLETED** |
 
 ---
 
