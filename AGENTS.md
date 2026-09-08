@@ -1,26 +1,37 @@
 # Proto Agent & Engineering Guidelines
 
-## Core Principles
+## Mandatory Skills Binding
 
-- Strict Zero Emojis: No emojis in code, commits, comments, responses, or documentation.
-- Clean Architecture: Outer layers depend inward. Domain has zero external dependencies.
-- Fail-Closed Security: Transaction intents evaluated via SecurityPolicy before signing.
-- Quality Gates: All PRs and branches must pass lint, typecheck, test, and build before merge.
+All agents working on this codebase MUST reference and strictly follow the installed specialized agent skills:
 
-## Architecture Boundaries
+1. **Smart Contracts & Security**:
+   - `solidity-security`: Adhere to Checks-Effects-Interactions (CEI), reentrancy prevention, access control, and integer safety.
+   - `solidity-auditor`: Verify all invariant properties, graduation math, and permanent locker state.
+   - Foundry testing: Ensure hermetic unit and fork test execution via `bun run test:contracts`.
 
-- `contracts/`: Solidity smart contracts (Foundry), self-describing metadata, atomic launch, V3 locker.
-- `packages/shared-types/`: Shared domain models, intent schemas, API envelopes, and contract ABIs.
-- `apps/api/`: NestJS backend structured into domain, application, and infrastructure layers.
-- `apps/frontoffice/`: Vue 3 + Tailwind frontend for Explore, Create, and Swap trading.
-- `docs/`: System documentation, architecture decision records (ADRs), invariants, and goals.
+2. **Web3 & DEX Integration**:
+   - `viem-integration`: Official Uniswap & Viem integration patterns for reading onchain pool state, `slot0.sqrtPriceX96` calculation, and non-custodial wallet client execution.
 
-## Quality Commands
+3. **Frontend Development**:
+   - `vue-best-practices` & `vue`: Strict Vue 3 Composition API, type-safe composables (`useLaunchpad`, `useSwap`), and zero direct component-to-RPC coupling.
+
+## Core Rules & Invariants
+
+- **Zero Emojis**: Do not use any emojis in output, comments, documentation, or commit messages.
+- **Clean Architecture**: Outer layers depend inward. Domain has zero external dependencies.
+- **Fail-Closed Security**: All transaction mutations must form a `TransactionIntent` and pass through `SecurityPolicy.evaluate()` before submission.
+- **Strict Quality Gates**: Every PR must pass all CI gates before merging (`lint`, `typecheck`, `test`, `test:contracts`, `build`, `format:check`, `codeql`, `gitleaks`, `slither`).
+- **No Direct Push to Main**: All changes must be developed on a dedicated branch, submitted via Pull Request, validated by GitHub Actions, and squash-merged only after green status.
+
+## Quality Commands (with Bun)
 
 ```bash
-npm run lint          # ESLint with zero-warning threshold
-npm run typecheck     # TypeScript compiler across all projects
-npm run test          # Vitest and unit test suites
-npm run test:contracts # Foundry test suites
-npm run build         # Production builds for all applications
+bun install            # Install dependencies with Bun
+bun run lint           # Strict ESLint zero-warning check
+bun run typecheck      # TypeScript zero-error check across all workspaces
+bun run test           # Vitest unit test suites
+bun run test:contracts # Foundry smart contract test suites
+bun run format:check   # Prettier code format check
+bun run build          # Production bundling for all applications
+bun run ci             # Full CI pipeline execution
 ```
