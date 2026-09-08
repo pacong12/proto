@@ -20,11 +20,16 @@ export class TokenController {
     limit = 50,
     offset = 0,
     version?: 'v1' | 'v2',
+    deployer?: string,
   ): Promise<ApiEnvelope<TokenWithMarketData[]>> {
     try {
       let result = await this.getTokensUseCase.execute(limit, offset);
       if (version) {
         result = result.filter((t) => (t.token.version ?? 'v1') === version);
+      }
+      if (deployer) {
+        const target = deployer.toLowerCase();
+        result = result.filter((t) => t.token.deployer.toLowerCase() === target);
       }
       return ok(result);
     } catch (error) {
