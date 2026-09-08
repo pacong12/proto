@@ -15,7 +15,7 @@ export function useLaunchpad() {
   const error = ref<string | null>(null);
   const tokens = ref<Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }>>([]);
 
-  async function launchToken(params: {
+  async function launchTokenV1(params: {
     name: string;
     symbol: string;
     logo: string;
@@ -80,7 +80,102 @@ export function useLaunchpad() {
       loading.value = false;
     }
   }
+  async function launchTokenV2(params: {
+    name: string;
+    symbol: string;
+    logo: string;
+    description: string;
+    socials: TokenSocials;
+    initialBuyAmountEth?: string;
+  }): Promise<{ tokenAddress: `0x${string}`; curveAddress: `0x${string}` } | null> {
+    loading.value = true;
+    error.value = null;
 
+    try {
+      const walletClient = getWalletClient();
+      if (!walletClient) throw new Error('No Web3 wallet detected');
+
+      const [account] = await walletClient.getAddresses();
+      if (!account) throw new Error('Please connect your wallet');
+
+      const initialBuyWei = params.initialBuyAmountEth
+        ? BigInt(Math.floor(parseFloat(params.initialBuyAmountEth) * 1e18))
+        : 0n;
+      const totalValue = ROBINHOOD_CHAIN.launchConfig.launchFeeWei + initialBuyWei;
+
+      const v2FactoryAbi = [
+        {
+          inputs: [
+            { name: 'name', type: 'string' },
+            { name: 'symbol', type: 'string' },
+            { name: 'logo', type: 'string' },
+            { name: 'description', type: 'string' },
+            { name: 'twitter', type: 'string' },
+            { name: 'telegram', type: 'string' },
+            { name: 'website', type: 'string' },
+          ],
+          name: 'launchTokenV2',
+          outputs: [
+            { name: 'tokenAddress', type: 'address' },
+            { name: 'curveAddress', type: 'address' },
+          ],
+          stateMutability: 'payable',
+          type: 'function',
+        },
+      ] as const;
+
+      const targetFactory =
+        ROBINHOOD_CHAIN.contracts.factoryV2 || ROBINHOOD_CHAIN.contracts.factory;
+      const hash = await walletClient.writeContract({
+        address: targetFactory,
+        abi: v2FactoryAbi,
+        functionName: 'launchTokenV2',
+        args: [
+          params.name,
+          params.symbol,
+          params.logo,
+          params.description,
+          params.socials.twitter || '',
+          params.socials.telegram || '',
+          params.socials.website || '',
+        ],
+        value: totalValue,
+        account,
+        chain: walletClient.chain,
+      });
+
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      const tokenAddress =
+        (receipt.logs[0]?.address as `0x${string}`) || '0x0000000000000000000000000000000000000000';
+      const curveAddress =
+        (receipt.logs[1]?.address as `0x${string}`) || '0x0000000000000000000000000000000000000000';
+
+      return { tokenAddress, curveAddress };
+    } catch (err) {
+      error.value = (err as Error).message;
+      return null;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function launchToken(
+    params: {
+      name: string;
+      symbol: string;
+      logo: string;
+      description: string;
+      socials: TokenSocials;
+      initialBuyAmountEth?: string;
+    },
+    version: 'v1' | 'v2' = 'v1',
+  ) {
+    if (version === 'v2') {
+      const res = await launchTokenV2(params);
+      return res ? { tokenAddress: res.tokenAddress, poolAddress: res.curveAddress } : null;
+    }
+    return launchTokenV1(params);
+  }
   async function fetchTokenDetails(tokenAddress: `0x${string}`) {
     try {
       const [name, symbol, logo, description, pool, graduation] = await Promise.all([

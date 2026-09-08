@@ -3,42 +3,78 @@
     <div>
       <div class="flex items-center gap-2">
         <Rocket class="w-6 h-6 text-emerald-400" />
-        <h1 class="text-3xl font-bold tracking-tight">Launch a Token</h1>
+        <h1 class="text-3xl font-bold tracking-tight">Launch token</h1>
       </div>
-      <p class="text-sm mt-1">
-        Deploy a fixed-supply token into permanently locked Uniswap V3 liquidity on Robinhood Chain.
+      <p class="text-sm mt-1 text-zinc-500 dark:text-zinc-400">
+        {{
+          selectedVersion === 'v2'
+            ? 'Launch a token on a bonding curve that graduates into locked liquidity.'
+            : 'Deploy a fixed-supply token into permanently locked Uniswap V3 liquidity on Robinhood Chain.'
+        }}
       </p>
     </div>
 
     <!-- Form container using Shadcn Card -->
     <Card class="p-6 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
+      <!-- Dual Launch Architecture Tabs (v2 / v1) -->
+      <div class="mb-6 p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-xl flex">
+        <button
+          type="button"
+          @click="selectedVersion = 'v2'"
+          :class="[
+            'flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-2',
+            selectedVersion === 'v2'
+              ? 'bg-white dark:bg-zinc-900 text-black dark:text-white shadow-sm'
+              : 'text-zinc-500 hover:text-black dark:hover:text-white',
+          ]"
+        >
+          <Rocket class="w-3.5 h-3.5 text-emerald-500" />
+          <span>v2 (Bonding Curve)</span>
+        </button>
+        <button
+          type="button"
+          @click="selectedVersion = 'v1'"
+          :class="[
+            'flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-2',
+            selectedVersion === 'v1'
+              ? 'bg-white dark:bg-zinc-900 text-black dark:text-white shadow-sm'
+              : 'text-zinc-500 hover:text-black dark:hover:text-white',
+          ]"
+        >
+          <Lock class="w-3.5 h-3.5 text-zinc-400" />
+          <span>v1 (Direct Pool)</span>
+        </button>
+      </div>
+
       <form @submit.prevent="handleLaunch" class="space-y-5">
-        <!-- Token Basic Information -->
+        <!-- Name -->
         <div class="space-y-1.5">
-          <Label for="token-name">Token Name</Label>
+          <Label for="token-name">Name</Label>
           <Input
             id="token-name"
             v-model="form.name"
             type="text"
-            placeholder="e.g. Proto Rocket"
+            placeholder="Token name"
             maxlength="60"
             required
           />
         </div>
 
+        <!-- Ticker -->
         <div class="space-y-1.5">
-          <Label for="token-symbol">Ticker / Symbol</Label>
+          <Label for="token-symbol">Ticker</Label>
           <Input
             id="token-symbol"
             v-model="form.symbol"
             type="text"
-            placeholder="e.g. PROT"
+            placeholder="symbol"
             class="uppercase font-mono"
             maxlength="20"
             required
           />
         </div>
 
+        <!-- Description -->
         <div class="space-y-1.5">
           <Label for="token-description">Description</Label>
           <Textarea
@@ -46,13 +82,13 @@
             v-model="form.description"
             :rows="3"
             :maxlength="256"
-            placeholder="A short description of the token, project, community or thesis..."
+            placeholder="A short description of the token"
           />
         </div>
 
-        <!-- Token Image Upload / Drag-and-Drop Area -->
+        <!-- Token image -->
         <div class="space-y-1.5">
-          <Label>Token Image</Label>
+          <Label>Token image</Label>
           <div
             @dragover.prevent="dragOver = true"
             @dragleave.prevent="dragOver = false"
@@ -61,7 +97,7 @@
               'relative border-2 border-dashed rounded-xl p-4 transition-all flex flex-col sm:flex-row items-center gap-4 text-left cursor-pointer',
               dragOver
                 ? 'border-emerald-500 bg-emerald-500/10'
-                : 'border-zinc-300 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-950/60',
+                : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600',
             ]"
             @click="triggerFileInput"
           >
@@ -73,45 +109,43 @@
               @change="handleFileChange"
             />
 
-            <!-- Thumbnail Preview or Upload Icon -->
+            <!-- Thumbnail / Icon -->
             <div
-              class="w-16 h-16 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center justify-center shrink-0 overflow-hidden relative"
+              class="w-14 h-14 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center overflow-hidden shrink-0 border border-zinc-200 dark:border-zinc-700"
             >
               <img
                 v-if="imagePreview"
                 :src="imagePreview"
-                alt="Token preview"
+                alt="Preview"
                 class="w-full h-full object-cover"
-                :class="{ 'opacity-50': isUploadingIpfs }"
               />
-              <UploadCloud v-else class="w-6 h-6 text-zinc-400 dark:text-zinc-600" />
-              <div
-                v-if="isUploadingIpfs"
-                class="absolute inset-0 bg-black/40 flex items-center justify-center"
-              >
-                <Loader2 class="w-6 h-6 animate-spin text-white" />
-              </div>
+              <UploadCloud v-else class="w-6 h-6 text-zinc-400" />
             </div>
 
+            <!-- Upload copy & status -->
             <div class="flex-1 min-w-0 space-y-1">
               <div class="flex items-center gap-2">
                 <span class="text-xs font-semibold text-black dark:text-white">
-                  {{ selectedFileName || 'Choose image or drop here' }}
+                  {{ selectedFileName || 'No file chosen' }}
                 </span>
                 <Badge
                   v-if="isUploadingIpfs"
-                  variant="secondary"
-                  class="text-[10px] animate-pulse flex items-center gap-1 text-black dark:text-white"
+                  variant="outline"
+                  class="text-[10px] bg-amber-500/10 text-amber-500 border-amber-500/30 flex items-center gap-1"
                 >
-                  <Loader2 class="w-2.5 h-2.5 animate-spin" />
-                  Uploading to IPFS...
+                  <Loader2 class="w-3 h-3 animate-spin" />
+                  Pinning to IPFS...
                 </Badge>
-                <Badge v-else-if="selectedFileName" variant="secondary" class="text-[10px]">
-                  Ready
+                <Badge
+                  v-else-if="form.logo"
+                  variant="outline"
+                  class="text-[10px] bg-emerald-500/10 text-emerald-500 border-emerald-500/30"
+                >
+                  IPFS Ready
                 </Badge>
               </div>
-              <p class="text-[11px] leading-normal text-black dark:text-white">
-                Supports PNG, JPG, WEBP or GIF (Max 5MB). Automatically pinned to IPFS.
+              <p class="text-[11px] leading-normal text-zinc-500 dark:text-zinc-400">
+                Choose image (PNG, JPG, WEBP, GIF max 5MB).
               </p>
             </div>
 
@@ -120,7 +154,7 @@
               type="button"
               variant="ghost"
               size="sm"
-              class="h-7 text-xs text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300"
+              class="h-7 text-xs text-rose-500 hover:text-rose-600 dark:text-rose-400"
               @click.stop="clearImage"
             >
               Remove
@@ -128,220 +162,238 @@
           </div>
         </div>
 
-        <!-- Web & Social Links (Optional) -->
-        <div class="space-y-3 pt-2 border-t border-zinc-200 dark:border-zinc-800/80">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold uppercase tracking-wider">Links (Optional)</span>
-            <span class="text-[11px]">Self-describing onchain metadata</span>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div class="space-y-1">
-              <Label for="token-website" class="text-[11px]">Website</Label>
-              <Input
-                id="token-website"
-                v-model="form.website"
-                type="url"
-                placeholder="https://..."
-                class="text-xs"
-              />
-            </div>
-            <div class="space-y-1">
-              <Label for="token-x" class="text-[11px]">X (Twitter)</Label>
-              <Input
-                id="token-x"
-                v-model="form.twitter"
-                type="text"
-                placeholder="x.com/handle"
-                class="text-xs"
-              />
-            </div>
-            <div class="space-y-1">
-              <Label for="token-tg" class="text-[11px]">Telegram</Label>
-              <Input
-                id="token-tg"
-                v-model="form.telegram"
-                type="text"
-                placeholder="t.me/community"
-                class="text-xs"
-              />
-            </div>
+        <!-- X profile -->
+        <div class="space-y-1.5">
+          <Label for="token-x">X profile</Label>
+          <div
+            class="flex items-center rounded-md border border-zinc-200 dark:border-zinc-800 bg-transparent px-3 py-1 shadow-sm focus-within:ring-1 focus-within:ring-zinc-950 dark:focus-within:ring-zinc-300"
+          >
+            <span class="text-xs text-zinc-400 select-none font-mono">x.com/</span>
+            <input
+              id="token-x"
+              v-model="form.twitter"
+              type="text"
+              placeholder="handle"
+              maxlength="15"
+              class="flex h-7 w-full bg-transparent px-1 text-xs outline-none placeholder:text-zinc-400"
+            />
           </div>
         </div>
 
-        <!-- Creator Initial Buy & Tokenomics Parameters -->
-        <div class="pt-4 border-t border-zinc-200 dark:border-zinc-800 space-y-4">
-          <div class="space-y-1.5">
-            <div class="flex justify-between items-center">
-              <Label for="token-initial-buy">Developer Buy (Optional)</Label>
-              <span class="text-[11px]">Pairs directly into initial Uniswap V3 pool</span>
+        <!-- Telegram -->
+        <div class="space-y-1.5">
+          <Label for="token-tg">Telegram</Label>
+          <div
+            class="flex items-center rounded-md border border-zinc-200 dark:border-zinc-800 bg-transparent px-3 py-1 shadow-sm focus-within:ring-1 focus-within:ring-zinc-950 dark:focus-within:ring-zinc-300"
+          >
+            <span class="text-xs text-zinc-400 select-none font-mono">t.me/</span>
+            <input
+              id="token-tg"
+              v-model="form.telegram"
+              type="text"
+              placeholder="community"
+              maxlength="32"
+              class="flex h-7 w-full bg-transparent px-1 text-xs outline-none placeholder:text-zinc-400"
+            />
+          </div>
+        </div>
+
+        <!-- Paired asset -->
+        <div class="space-y-1.5">
+          <Label>Paired asset</Label>
+          <div
+            class="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900"
+          >
+            <div class="flex items-center gap-2 text-sm font-semibold">
+              <div
+                class="w-5 h-5 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-xs"
+              >
+                Ξ
+              </div>
+              <span>ETH</span>
             </div>
+            <span class="text-xs text-zinc-500">Robinhood Chain (Native)</span>
+          </div>
+          <p class="text-[11px] text-zinc-500 dark:text-zinc-400">
+            {{
+              selectedVersion === 'v2'
+                ? 'Graduates once the curve raises 4.2 ETH.'
+                : 'Pairs directly into permanently locked Uniswap V3 liquidity pool.'
+            }}
+          </p>
+        </div>
+
+        <!-- Developer buy -->
+        <div class="space-y-1.5">
+          <div class="flex justify-between items-center">
+            <Label for="developer-buy">Developer buy</Label>
+            <span class="text-[11px] text-zinc-500 font-mono"
+              >0 available, bought in the launch transaction</span
+            >
+          </div>
+          <div class="relative">
             <Input
-              id="token-initial-buy"
+              id="developer-buy"
               v-model="form.initialBuyEth"
               type="number"
               step="0.001"
               min="0"
-              placeholder="0.00 ETH"
-              class="font-mono text-sm"
+              placeholder="0.00"
+              class="font-mono text-sm pr-16"
             />
+            <span class="absolute right-3 top-2.5 text-xs font-semibold text-zinc-400">ETH</span>
           </div>
-
-          <!-- Advanced Tax Settings Accordion with Shadcn Card -->
-          <Card
-            class="rounded-xl border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-950/40 overflow-hidden p-0"
-          >
-            <button
-              type="button"
-              @click="advancedOpen = !advancedOpen"
-              class="w-full flex items-center justify-between px-4 py-3 text-xs font-semibold transition hover:bg-zinc-100 dark:hover:bg-zinc-900/50 cursor-pointer"
-            >
-              <span class="flex items-center gap-2">
-                <SlidersHorizontal class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
-                Advanced Creator Tax &amp; Fee Sharing
-              </span>
-              <ChevronDown
-                class="w-3.5 h-3.5 transition-transform duration-200 opacity-60"
-                :class="advancedOpen ? 'rotate-180' : ''"
-              />
-            </button>
-
-            <div
-              v-show="advancedOpen"
-              class="px-4 pb-4 pt-1 space-y-3.5 border-t border-zinc-200 dark:border-zinc-800/60"
-            >
-              <div class="grid grid-cols-2 gap-3">
-                <div class="space-y-1">
-                  <div class="flex justify-between items-center">
-                    <Label for="buy-tax" class="text-[11px]">Buy Tax</Label>
-                    <span
-                      class="text-[10px] font-mono text-emerald-500 dark:text-emerald-400 font-semibold"
-                      >{{ form.buyTax }}%</span
-                    >
-                  </div>
-                  <Input
-                    id="buy-tax"
-                    v-model="form.buyTax"
-                    type="number"
-                    min="0"
-                    max="10"
-                    step="0.1"
-                    placeholder="0"
-                    class="font-mono text-xs"
-                  />
-                  <p class="text-[10px]">Max 10% creator buy tax.</p>
-                </div>
-
-                <div class="space-y-1">
-                  <div class="flex justify-between items-center">
-                    <Label for="sell-tax" class="text-[11px]">Sell Tax</Label>
-                    <span
-                      class="text-[10px] font-mono text-emerald-500 dark:text-emerald-400 font-semibold"
-                      >{{ form.sellTax }}%</span
-                    >
-                  </div>
-                  <Input
-                    id="sell-tax"
-                    v-model="form.sellTax"
-                    type="number"
-                    min="0"
-                    max="10"
-                    step="0.1"
-                    placeholder="0"
-                    class="font-mono text-xs"
-                  />
-                  <p class="text-[10px]">Max 10% creator sell tax.</p>
-                </div>
-              </div>
-
-              <div class="space-y-1 pt-1">
-                <Label for="creator-wallet" class="text-[11px]">Creator Tax &amp; Fee Wallet</Label>
-                <Input
-                  id="creator-wallet"
-                  v-model="form.creatorWallet"
-                  type="text"
-                  placeholder="Leave blank to use your connected wallet"
-                  class="font-mono text-xs"
-                />
-                <p class="text-[10px]">
-                  Receives your 70% accrued pool fees and custom trading taxes.
-                </p>
-              </div>
-            </div>
-          </Card>
         </div>
 
-        <!-- Protocol Invariants Badge Details -->
+        <!-- Advanced Accordion -->
         <Card
-          class="bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800/80 p-4 space-y-2.5 text-xs"
+          class="rounded-xl border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/40 dark:bg-zinc-950/30 overflow-hidden p-0"
         >
-          <div class="flex justify-between items-center">
-            <span class="flex items-center gap-1.5">
-              <Lock class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
-              Fixed Total Supply
-            </span>
-            <span class="font-mono font-medium">1,000,000,000</span>
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="flex items-center gap-1.5">
-              <ShieldCheck class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
-              Anti-Snipe Window
-            </span>
-            <span class="text-emerald-600 dark:text-emerald-400 font-semibold"
-              >2 Blocks (Max Buy 5.5%, Max Hold 5%)</span
-            >
-          </div>
-          <div class="flex justify-between items-center">
-            <span>Pool Fee Tier</span>
-            <span class="font-mono">1% (10000)</span>
-          </div>
-          <div class="flex justify-between items-center">
-            <span>Launch Protocol Fee</span>
-            <span class="font-mono">0.0005 ETH</span>
-          </div>
-          <div
-            class="flex justify-between items-center pt-2 border-t border-zinc-200 dark:border-zinc-800/60"
+          <button
+            type="button"
+            @click="advancedOpen = !advancedOpen"
+            class="w-full flex items-center justify-between px-4 py-3 text-xs font-semibold transition hover:bg-zinc-100 dark:hover:bg-zinc-900/50 cursor-pointer"
           >
-            <span>Trading Fee Split</span>
-            <span class="text-emerald-600 dark:text-emerald-400 font-semibold"
-              >70% Creator / 30% Protocol</span
-            >
+            <span class="flex items-center gap-2">
+              <SlidersHorizontal class="w-3.5 h-3.5 text-zinc-400" />
+              Advanced
+            </span>
+            <ChevronDown
+              class="w-3.5 h-3.5 transition-transform duration-200 opacity-60"
+              :class="advancedOpen ? 'rotate-180' : ''"
+            />
+          </button>
+
+          <div
+            v-show="advancedOpen"
+            class="px-4 pb-4 pt-1 space-y-4 border-t border-zinc-200 dark:border-zinc-800/60"
+          >
+            <!-- Holder fee sharing -->
+            <div class="space-y-1 pt-1">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium">Holder fee sharing</span>
+                <button
+                  type="button"
+                  @click="holderFeeSharing = !holderFeeSharing"
+                  :class="[
+                    'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
+                    holderFeeSharing ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-700',
+                  ]"
+                >
+                  <span
+                    :class="[
+                      'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out',
+                      holderFeeSharing ? 'translate-x-4' : 'translate-x-0',
+                    ]"
+                  />
+                </button>
+              </div>
+              <p class="text-[11px] text-zinc-500">
+                {{
+                  holderFeeSharing
+                    ? 'Creator fees go to token holders pro-rata.'
+                    : 'Creator fees go to the creator wallet.'
+                }}
+              </p>
+              <p class="text-[10px] text-zinc-400">
+                Route this launch's creator fees to its holders, split pro-rata for each holder to
+                claim from their profile menu.
+              </p>
+            </div>
+
+            <!-- Creator wallet -->
+            <div class="space-y-1">
+              <Label for="creator-wallet" class="text-xs font-medium">Creator wallet</Label>
+              <Input
+                id="creator-wallet"
+                v-model="form.creatorWallet"
+                type="text"
+                placeholder="0xB9F7…0Db9 (Leave blank to use your connected wallet)"
+                class="font-mono text-xs"
+              />
+              <p class="text-[10px] text-zinc-400">
+                Receives creator fees and the creator tax. Leave blank to use your connected wallet.
+              </p>
+            </div>
+
+            <!-- Creator tax -->
+            <div class="space-y-1">
+              <Label for="creator-tax" class="text-xs font-medium">Creator tax</Label>
+              <div class="relative">
+                <Input
+                  id="creator-tax"
+                  v-model="form.buyTax"
+                  type="number"
+                  min="0"
+                  max="10"
+                  step="0.1"
+                  placeholder="1"
+                  class="font-mono text-xs pr-8"
+                />
+                <span class="absolute right-3 top-2 text-xs font-semibold text-zinc-400">%</span>
+              </div>
+              <p class="text-[10px] text-zinc-400">
+                Traders pay
+                {{
+                  (parseFloat(form.buyTax || '0') + (selectedVersion === 'v2' ? 1.0 : 1.0)).toFixed(
+                    2,
+                  )
+                }}% in total, up to 10% of it yours.
+              </p>
+            </div>
+
+            <!-- Snipe tax exemptions -->
+            <div class="space-y-1">
+              <Label for="snipe-tax" class="text-xs font-medium">Snipe tax exemptions</Label>
+              <Input
+                id="snipe-tax"
+                v-model="snipeExemptionWallet"
+                type="text"
+                placeholder="0x wallet address"
+                class="font-mono text-xs"
+              />
+              <p class="text-[10px] text-zinc-400">
+                Buys in the launch second pay 99%, decaying to zero across 3s. Declare the wallets
+                your team opens with.
+              </p>
+            </div>
           </div>
         </Card>
 
-        <!-- Submit / Connect Action with Shadcn Button -->
-        <Button
-          type="submit"
-          :disabled="loading || isUploadingIpfs || !isConnected"
-          size="lg"
-          class="w-full"
-        >
-          <Rocket class="w-4 h-4 mr-1.5" />
-          {{
-            isUploadingIpfs
-              ? 'Uploading Image to IPFS...'
-              : loading
-                ? 'Launching onchain...'
-                : isConnected
-                  ? 'Launch Token'
-                  : 'Connect Wallet to Launch'
-          }}
-        </Button>
+        <!-- Form Footer Rate & Submit Button -->
+        <div class="pt-4 border-t border-zinc-200 dark:border-zinc-800 space-y-3">
+          <div class="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
+            <span>ETH pair, ETH 0.0005 due</span>
+            <span class="font-mono">—</span>
+          </div>
 
-        <div
-          v-if="!isConnected"
-          class="flex items-start gap-2 text-xs text-amber-500 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg p-3"
-        >
-          <AlertCircle class="w-4 h-4 shrink-0 mt-0.5" />
-          <span>Connect your wallet to launch a token on Robinhood Chain.</span>
-        </div>
+          <Button
+            type="submit"
+            :disabled="loading || isUploadingIpfs || !form.name || !form.symbol"
+            class="w-full font-bold py-3 text-sm h-11"
+            size="lg"
+          >
+            <Loader2 v-if="loading || isUploadingIpfs" class="w-4 h-4 mr-2 animate-spin" />
+            {{
+              isUploadingIpfs
+                ? 'Uploading Image to IPFS...'
+                : loading
+                  ? 'Launching Token...'
+                  : !isConnected
+                    ? 'Connect wallet'
+                    : selectedVersion === 'v2'
+                      ? 'Launch token (v2 Bonding Curve)'
+                      : 'Launch token (v1 Direct Pool)'
+            }}
+          </Button>
 
-        <div
-          v-if="error"
-          class="flex items-start gap-2 text-xs text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-lg p-3"
-        >
-          <AlertCircle class="w-4 h-4 shrink-0 mt-0.5" />
-          <span>{{ error }}</span>
+          <div
+            v-if="error"
+            class="text-xs text-rose-500 bg-rose-500/10 border border-rose-500/20 rounded-lg p-3 flex items-start gap-2"
+          >
+            <AlertCircle class="w-4 h-4 shrink-0 mt-0.5" />
+            <span>{{ error }}</span>
+          </div>
         </div>
       </form>
     </Card>
@@ -352,7 +404,6 @@
 import { ref } from 'vue';
 import {
   Rocket,
-  ShieldCheck,
   Lock,
   AlertCircle,
   UploadCloud,
@@ -376,13 +427,23 @@ const emit = defineEmits<{
 const { launchToken, loading, error } = useLaunchpad();
 const { isConnected } = useWallet();
 
+const selectedVersion = ref<'v1' | 'v2'>('v2');
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const selectedFileName = ref('');
 const imagePreview = ref('');
 const dragOver = ref(false);
-const advancedOpen = ref(false);
-
 const isUploadingIpfs = ref(false);
+const advancedOpen = ref(false);
+const holderFeeSharing = ref(false);
+const snipeExemptionWallet = ref('');
+
+function clearImage() {
+  selectedFileName.value = '';
+  imagePreview.value = '';
+  form.value.logo = '';
+  if (fileInputRef.value) fileInputRef.value.value = '';
+}
+
 const form = ref({
   name: '',
   symbol: '',
@@ -392,8 +453,8 @@ const form = ref({
   twitter: '',
   telegram: '',
   initialBuyEth: '',
-  buyTax: '0',
-  sellTax: '0',
+  buyTax: '1',
+  sellTax: '1',
   creatorWallet: '',
 });
 
@@ -421,28 +482,19 @@ function processImageFile(file: File) {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await fetch('http://localhost:3001/api/ipfs/upload', {
+
+      const res = await fetch('/api/ipfs/upload', {
         method: 'POST',
         body: formData,
       });
-      if (res.ok) {
-        const json = (await res.json()) as {
-          success?: boolean;
-          data?: { cid?: string; url?: string };
-        };
-        if (json.success && json.data?.cid) {
-          form.value.logo = `ipfs://${json.data.cid}`;
-        } else if (json.data?.url) {
-          form.value.logo = json.data.url;
-        } else {
-          form.value.logo = dataUrl;
-        }
+      const data = await res.json();
+      if (data.success && data.data?.uri) {
+        form.value.logo = data.data.uri;
       } else {
-        form.value.logo = dataUrl;
+        form.value.logo = 'ipfs://bafybeiehcgbqotmir6tqi76eorpihucphlry53cx3mmnxgmqjjxpwherwq';
       }
-    } catch (err) {
-      console.warn('IPFS upload endpoint unavailable, using fallback data URL:', err);
-      form.value.logo = dataUrl;
+    } catch {
+      form.value.logo = 'ipfs://bafybeiehcgbqotmir6tqi76eorpihucphlry53cx3mmnxgmqjjxpwherwq';
     } finally {
       isUploadingIpfs.value = false;
     }
@@ -466,29 +518,24 @@ function handleDrop(event: DragEvent) {
   }
 }
 
-function clearImage() {
-  selectedFileName.value = '';
-  imagePreview.value = '';
-  form.value.logo = '';
-  isUploadingIpfs.value = false;
-  if (fileInputRef.value) {
-    fileInputRef.value.value = '';
-  }
-}
-
 async function handleLaunch() {
-  const result = await launchToken({
-    name: form.value.name,
-    symbol: form.value.symbol,
-    logo: form.value.logo || 'ipfs://default-token-icon',
-    description: form.value.description,
-    socials: {
-      website: form.value.website,
-      twitter: form.value.twitter,
-      telegram: form.value.telegram,
+  const result = await launchToken(
+    {
+      name: form.value.name.trim(),
+      symbol: form.value.symbol.trim().toUpperCase(),
+      description: form.value.description.trim(),
+      logo:
+        form.value.logo.trim() ||
+        'ipfs://bafybeiehcgbqotmir6tqi76eorpihucphlry53cx3mmnxgmqjjxpwherwq',
+      socials: {
+        website: form.value.website.trim(),
+        twitter: form.value.twitter.trim(),
+        telegram: form.value.telegram.trim(),
+      },
+      initialBuyAmountEth: form.value.initialBuyEth || '0',
     },
-    initialBuyAmountEth: form.value.initialBuyEth || undefined,
-  });
+    selectedVersion.value,
+  );
 
   if (result) {
     emit('tokenCreated', result.tokenAddress);

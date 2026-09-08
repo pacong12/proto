@@ -18,14 +18,17 @@
           >
             <div class="flex items-center gap-3">
               <div class="flex items-center gap-2">
-                <Activity class="w-4 h-4 text-emerald-400" />
-                <span class="font-bold text-sm sm:text-base text-black dark:text-white">
-                  Price Chart
-                </span>
+                <h1 class="text-xl font-bold tracking-tight text-black dark:text-white">
+                  {{ currentToken.name }}
+                </h1>
+                <span class="font-mono text-sm text-zinc-500"> ${{ currentToken.symbol }} </span>
+                <Badge
+                  :variant="currentToken.version === 'v2' ? 'outline' : 'default'"
+                  class="text-[10px] font-mono"
+                >
+                  {{ currentToken.version === 'v2' ? 'V2 Bonding Curve' : 'V1 Direct Pool' }}
+                </Badge>
               </div>
-              <Badge variant="outline" class="font-mono text-xs text-black dark:text-white">
-                ${{ currentToken.symbol }}
-              </Badge>
             </div>
 
             <!-- Resolution Switcher (1m, 5m, 15m, 1h, 1d) -->
