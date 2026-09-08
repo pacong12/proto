@@ -13,6 +13,7 @@
       <CreateTokenView v-else-if="activeTab === 'create'" @tokenCreated="handleTokenCreated" />
       <TradeView v-else-if="activeTab === 'trade'" :tokenAddress="selectedTokenAddress" />
       <AnalyticsView v-else-if="activeTab === 'analytics'" />
+      <ProfileView v-else-if="activeTab === 'profile'" />
     </main>
 
     <footer class="border-t border-zinc-900 py-6 text-center text-xs text-zinc-600">
@@ -28,7 +29,7 @@ import ExploreView from './components/ExploreView.vue';
 import CreateTokenView from './components/CreateTokenView.vue';
 import TradeView from './components/TradeView.vue';
 import AnalyticsView from './components/AnalyticsView.vue';
-
+import ProfileView from './components/ProfileView.vue';
 const activeTab = ref('explore');
 const selectedTokenAddress = ref<string | undefined>(undefined);
 
