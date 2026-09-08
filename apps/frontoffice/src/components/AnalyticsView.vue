@@ -116,7 +116,11 @@ const chartData = ref([
 ]);
 
 const contractEntries = [
-  { name: 'Launchpad Factory', address: ROBINHOOD_CHAIN.contracts.factory },
+  { name: 'Launchpad Factory (v1 Direct Pool)', address: ROBINHOOD_CHAIN.contracts.factory },
+  {
+    name: 'Launchpad Factory (v2 Bonding Curve)',
+    address: ROBINHOOD_CHAIN.contracts.factoryV2 || '0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e',
+  },
   { name: 'Liquidity Locker', address: ROBINHOOD_CHAIN.contracts.locker },
   { name: 'Uniswap V3 Factory', address: ROBINHOOD_CHAIN.contracts.uniswapV3Factory },
   { name: 'Position Manager', address: ROBINHOOD_CHAIN.contracts.positionManager },
@@ -125,7 +129,7 @@ const contractEntries = [
 
 onMounted(async () => {
   try {
-    const res = await fetch('http://localhost:3001/api/analytics');
+    const res = await fetch('/api/analytics');
     const envelope = await res.json();
     if (envelope.success && envelope.data) {
       totalVolume.value = envelope.data.totalVolume;
@@ -134,7 +138,7 @@ onMounted(async () => {
       analyticsPlaceholder.value = false;
     }
   } catch {
-    // Keep preview chart
+    // Fallback gracefully
   }
 });
 </script>
