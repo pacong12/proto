@@ -11,8 +11,9 @@
           <span class="text-white">proto</span>
           <span
             class="text-[11px] bg-zinc-900 text-zinc-400 px-2 py-0.5 rounded border border-zinc-800 font-mono"
-            >Robinhood L2</span
           >
+            {{ isConnected ? activeNetwork.name : 'Robinhood L2' }}
+          </span>
         </a>
         <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
           <button
@@ -59,20 +60,46 @@
       </div>
 
       <div class="flex items-center gap-3">
+        <!-- Wrong Network Warning Button -->
         <button
-          v-if="!account"
+          v-if="isConnected && !isCorrectNetwork"
+          @click="switchOrAddNetwork(ROBINHOOD_CHAIN)"
+          class="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs px-3 py-1.5 rounded-lg transition"
+        >
+          <AlertTriangle class="w-3.5 h-3.5" />
+          Switch to Robinhood Chain
+        </button>
+
+        <!-- Connect / Connected State -->
+        <button
+          v-if="!isConnected"
           @click="connectWallet"
-          class="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-sm px-4 py-2 rounded-lg transition shadow-sm"
+          :disabled="isConnecting"
+          class="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-semibold text-sm px-4 py-2 rounded-lg transition shadow-sm"
         >
           <Wallet class="w-4 h-4" />
-          Connect Wallet
+          {{ isConnecting ? 'Connecting...' : 'Connect Wallet' }}
         </button>
-        <div
-          v-else
-          class="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg text-sm"
-        >
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span class="font-mono text-zinc-300">{{ formattedAccount }}</span>
+        <div v-else class="flex items-center gap-3">
+          <div
+            class="hidden sm:flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg text-xs font-mono text-zinc-300"
+          >
+            <Coins class="w-3.5 h-3.5 text-emerald-400" />
+            <span>{{ formattedBalance }}</span>
+          </div>
+          <div
+            class="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg text-sm"
+          >
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="font-mono text-zinc-300">{{ formattedAddress }}</span>
+            <button
+              @click="disconnectWallet"
+              title="Disconnect wallet"
+              class="text-zinc-500 hover:text-rose-400 ml-1 transition"
+            >
+              <LogOut class="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -80,7 +107,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
 import {
   Rocket,
   Compass,
@@ -89,7 +115,12 @@ import {
   Activity,
   User,
   Wallet,
+  Coins,
+  LogOut,
+  AlertTriangle,
 } from 'lucide-vue-next';
+import { ROBINHOOD_CHAIN } from '@proto/shared-types';
+import { useWallet } from '../composables/useWallet';
 
 defineProps<{
   activeTab: string;
@@ -99,25 +130,15 @@ defineEmits<{
   (e: 'navigate', tab: string): void;
 }>();
 
-const account = ref<string | null>(null);
-
-const formattedAccount = computed(() => {
-  if (!account.value) return '';
-  return `${account.value.slice(0, 6)}...${account.value.slice(-4)}`;
-});
-
-async function connectWallet() {
-  if (typeof window !== 'undefined' && 'ethereum' in window && window.ethereum) {
-    try {
-      const accounts = await (
-        window.ethereum as { request: (args: { method: string }) => Promise<string[]> }
-      ).request({
-        method: 'eth_requestAccounts',
-      });
-      account.value = accounts[0] ?? null;
-    } catch {
-      account.value = null;
-    }
-  }
-}
+const {
+  isConnected,
+  isConnecting,
+  isCorrectNetwork,
+  formattedAddress,
+  formattedBalance,
+  activeNetwork,
+  connectWallet,
+  disconnectWallet,
+  switchOrAddNetwork,
+} = useWallet();
 </script>
