@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Proto Documentation - Robinhood Chain Launchpad Protocol</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased selection:bg-emerald-500 selection:text-black">
+    <!-- Header -->
+    <header class="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-6">
+          <a href="#" class="flex items-center gap-2 text-xl font-bold tracking-tight text-white">
+            <span class="text-emerald-400">proto</span>
+            <span class="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded border border-zinc-700">docs</span>
+          </a>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="hidden sm:flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg text-xs text-zinc-400">
+            <span>Robinhood Chain</span>
+            <span class="font-mono text-emerald-400">ID: 4663</span>
+          </div>
+          <a href="https://github.com/pacong12/proto" target="_blank" class="text-xs bg-emerald-500 hover:bg-emerald-400 text-black font-semibold px-4 py-2 rounded-lg transition">
+            GitHub Repo
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-4 gap-8">
+      <!-- Sidebar -->
+      <aside class="space-y-6 md:sticky md:top-24 h-fit">
+        <div class="space-y-2">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Protocol</h3>
+          <ul class="space-y-1 text-sm">
+            <li><a href="#overview" class="block text-zinc-300 hover:text-emerald-400 py-1 transition">Overview</a></li>
+            <li><a href="#launches" class="block text-zinc-300 hover:text-emerald-400 py-1 transition">How Launches Work</a></li>
+            <li><a href="#anti-snipe" class="block text-zinc-300 hover:text-emerald-400 py-1 transition">Anti-Snipe Guard</a></li>
+            <li><a href="#trading" class="block text-zinc-300 hover:text-emerald-400 py-1 transition">Trading & Pricing</a></li>
+            <li><a href="#graduation" class="block text-zinc-300 hover:text-emerald-400 py-1 transition">Graduation (4.2 ETH)</a></li>
+            <li><a href="#fees" class="block text-zinc-300 hover:text-emerald-400 py-1 transition">Fees (70/30 Split)</a></li>
+            <li><a href="#buyback" class="block text-zinc-300 hover:text-emerald-400 py-1 transition">Buyback & Burn (80%)</a></li>
+            <li><a href="#cto" class="block text-zinc-300 hover:text-emerald-400 py-1 transition">Community Takeovers</a></li>
+          </ul>
+        </div>
+
+        <div class="space-y-2 pt-4 border-t border-zinc-800">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-400">Integration</h3>
+          <ul class="space-y-1 text-sm">
+            <li><a href="#network" class="block text-zinc-300 hover:text-emerald-400 py-1 transition">Network & RPC</a></li>
+            <li><a href="#contracts" class="block text-zinc-300 hover:text-emerald-400 py-1 transition">Contract Registry</a></li>
+            <li><a href="#events" class="block text-zinc-300 hover:text-emerald-400 py-1 transition">Onchain Events</a></li>
+            <li><a href="#metadata" class="block text-zinc-300 hover:text-emerald-400 py-1 transition">Self-Describing Metadata</a></li>
+            <li><a href="#formulas" class="block text-zinc-300 hover:text-emerald-400 py-1 transition">Pricing Formulas</a></li>
+          </ul>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="md:col-span-3 space-y-12">
+        <!-- Overview -->
+        <section id="overview" class="space-y-4">
+          <h1 class="text-3xl font-bold tracking-tight text-white">Proto Protocol Overview</h1>
+          <p class="text-zinc-300 leading-relaxed">
+            Proto is an institutional-grade, non-custodial token launchpad and trading protocol deployed on <strong>Robinhood Chain (Chain ID: 4663)</strong>.
+            Unlike traditional bonding curves, Proto uses a direct-pool Uniswap V3 architecture that eliminates migration downtime, MEV vulnerabilities during transition, and fragmented liquidity.
+          </p>
+          <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-2">
+            <h3 class="text-sm font-semibold text-emerald-400">Key Guarantees</h3>
+            <ul class="list-disc list-inside text-sm text-zinc-300 space-y-1">
+              <li><strong>Atomic 1-Tx Launch</strong>: Token minting, pool creation, liquidity provision, and permanent lock execute in one single transaction.</li>
+              <li><strong>Fixed Supply</strong>: Exactly 1,000,000,000 tokens (18 decimals). Minting after launch is permanently impossible.</li>
+              <li><strong>Permanent Liquidity Lock</strong>: The full position NFT is locked into <code class="text-emerald-400 font-mono">LiquidityLocker</code> at creation block.</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- Launches -->
+        <section id="launches" class="space-y-4 pt-6 border-t border-zinc-800">
+          <h2 class="text-2xl font-bold text-white">How Launches Work</h2>
+          <p class="text-zinc-300 leading-relaxed">
+            Every token launched through Proto trades against WETH in its own dedicated Uniswap V3 pool with a 1% fee tier (<code class="text-emerald-400 font-mono">10000</code>).
+            Trading happens on the open DEX pool from the very first block.
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+            <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl">
+              <span class="text-xs font-bold text-emerald-400">01. CREATE</span>
+              <p class="text-zinc-300 mt-2">Token is deployed with 1B supply and 100% of liquidity goes to Uniswap V3.</p>
+            </div>
+            <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl">
+              <span class="text-xs font-bold text-emerald-400">02. TRADE</span>
+              <p class="text-zinc-300 mt-2">Buys and sells execute on Uniswap V3, generating 1% trading fees.</p>
+            </div>
+            <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl">
+              <span class="text-xs font-bold text-emerald-400">03. GRADUATE</span>
+              <p class="text-zinc-300 mt-2">Once 4.2 ETH is paired in the pool, the token graduates. Trading continues in the same pool.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Anti Snipe -->
+        <section id="anti-snipe" class="space-y-4 pt-6 border-t border-zinc-800">
+          <h2 class="text-2xl font-bold text-white">2-Block Anti-Snipe Guard</h2>
+          <p class="text-zinc-300 leading-relaxed">
+            To prevent sniper bots and MEV bundles from exhausting initial pool liquidity, Proto enforces hardcoded contract checks during the first 2 blocks post-launch:
+          </p>
+          <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-3 text-sm text-zinc-300">
+            <div>
+              <strong class="text-white">Block 0 (Launch Block):</strong> Only the creator initial buy is permitted from the pool.
+            </div>
+            <div>
+              <strong class="text-white">Block 1 to 2:</strong> Max buy per transaction is capped at <strong>5.5% of supply</strong> (55M tokens), and max wallet balance is capped at <strong>5.0% of supply</strong> (50M tokens).
+            </div>
+            <div>
+              <strong class="text-white">Unrestricted Operations:</strong> Selling back to the pool and peer-to-peer wallet transfers are never restricted. After block 2, all limits expire permanently.
+            </div>
+          </div>
+        </section>
+
+        <!-- Fees & Splits -->
+        <section id="fees" class="space-y-4 pt-6 border-t border-zinc-800">
+          <h2 class="text-2xl font-bold text-white">Fees and Fee Split (70/30)</h2>
+          <p class="text-zinc-300 leading-relaxed">
+            All trading fees (WETH and Token) generated by the locked Uniswap V3 position accrue in the <code class="text-emerald-400 font-mono">LiquidityLocker</code> contract.
+          </p>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="bg-zinc-900 border border-zinc-800 p-5 rounded-xl">
+              <span class="text-xs font-semibold text-zinc-400">CREATOR SHARE</span>
+              <p class="text-3xl font-bold font-mono text-emerald-400 mt-1">70%</p>
+              <p class="text-xs text-zinc-400 mt-2">Claimable anytime by creator or redirected to token holders.</p>
+            </div>
+            <div class="bg-zinc-900 border border-zinc-800 p-5 rounded-xl">
+              <span class="text-xs font-semibold text-zinc-400">PROTOCOL SHARE</span>
+              <p class="text-3xl font-bold font-mono text-white mt-1">30%</p>
+              <p class="text-xs text-zinc-400 mt-2">80% directed to automated TWAP buyback & burn.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Contracts Registry -->
+        <section id="contracts" class="space-y-4 pt-6 border-t border-zinc-800">
+          <h2 class="text-2xl font-bold text-white">Contract Address Registry (Robinhood Chain ID: 4663)</h2>
+          <div class="space-y-3 font-mono text-xs">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-zinc-900 rounded-lg border border-zinc-800">
+              <span class="text-zinc-400">Launchpad Factory</span>
+              <span class="text-emerald-400 select-all">0xA5aAb3F0c6EeadF30Ef1D3Eb997108E976351feB</span>
+            </div>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-zinc-900 rounded-lg border border-zinc-800">
+              <span class="text-zinc-400">Liquidity Locker</span>
+              <span class="text-emerald-400 select-all">0x736D76699C26D0d966744cAe304C000d471f7F35</span>
+            </div>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-zinc-900 rounded-lg border border-zinc-800">
+              <span class="text-zinc-400">Uniswap V3 Factory</span>
+              <span class="text-emerald-400 select-all">0x1f7d7550B1b028f7571E69A784071F0205FD2EfA</span>
+            </div>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-zinc-900 rounded-lg border border-zinc-800">
+              <span class="text-zinc-400">Position Manager</span>
+              <span class="text-emerald-400 select-all">0x73991a25C818Bf1f1128dEAaB1492D45638DE0D3</span>
+            </div>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-zinc-900 rounded-lg border border-zinc-800">
+              <span class="text-zinc-400">Swap Router</span>
+              <span class="text-emerald-400 select-all">0xCaf681a66D020601342297493863E78C959E5cb2</span>
+            </div>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-zinc-900 rounded-lg border border-zinc-800">
+              <span class="text-zinc-400">WETH (Quote Token)</span>
+              <span class="text-emerald-400 select-all">0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Onchain Events -->
+        <section id="events" class="space-y-4 pt-6 border-t border-zinc-800">
+          <h2 class="text-2xl font-bold text-white">Onchain Event Indexing</h2>
+          <p class="text-zinc-300 text-sm">
+            Integrations can index onchain events directly from the factory and pool contracts:
+          </p>
+          <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 font-mono text-xs text-zinc-300 space-y-3 overflow-x-auto">
+            <div>
+              <span class="text-zinc-500">// TokenLaunched topic0</span><br />
+              <span class="text-emerald-400">0xdb51ea9ad51ab453a65a4cb7e60c3cb378c9501bb002609f8f97778fb6c4235a</span>
+            </div>
+            <div>
+              <span class="text-zinc-500">// Uniswap V3 Swap topic0</span><br />
+              <span class="text-emerald-400">0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Formulas -->
+        <section id="formulas" class="space-y-4 pt-6 border-t border-zinc-800">
+          <h2 class="text-2xl font-bold text-white">Price & Market Cap Formulas</h2>
+          <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 font-mono text-xs text-zinc-300 space-y-4">
+            <div>
+              <p class="text-zinc-500">// 1. Deriving Token Price from slot0 sqrtPriceX96</p>
+              <p class="text-emerald-400">const ratio = Number(sqrtPriceX96) / 2 ** 96;</p>
+              <p class="text-emerald-400">const priceInWeth = isToken0 ? ratio * ratio : 1 / (ratio * ratio);</p>
+            </div>
+            <div>
+              <p class="text-zinc-500">// 2. Market Cap and FDV</p>
+              <p class="text-emerald-400">const priceUsd = priceInWeth * ethUsdPrice;</p>
+              <p class="text-emerald-400">const marketCapUsd = priceUsd * (1_000_000_000);</p>
+            </div>
+            <div>
+              <p class="text-zinc-500">// 3. Graduation Progress</p>
+              <p class="text-emerald-400">const graduationProgress = Number(pairedPrincipal) / Number(4.2 ether);</p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
