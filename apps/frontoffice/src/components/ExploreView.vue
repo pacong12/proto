@@ -12,11 +12,53 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
+        <!-- Architecture Version Tabs: All / v2 Curve / v1 Pool -->
+        <div class="p-1 bg-zinc-900 border border-zinc-800 rounded-lg flex items-center text-xs">
+          <button
+            type="button"
+            @click="selectedVersion = 'all'"
+            :class="[
+              'px-2.5 py-1 rounded font-medium transition',
+              selectedVersion === 'all'
+                ? 'bg-zinc-800 text-white'
+                : 'text-zinc-400 hover:text-white',
+            ]"
+          >
+            All
+          </button>
+          <button
+            type="button"
+            @click="selectedVersion = 'v2'"
+            :class="[
+              'px-2.5 py-1 rounded font-medium transition flex items-center gap-1',
+              selectedVersion === 'v2'
+                ? 'bg-zinc-800 text-emerald-400'
+                : 'text-zinc-400 hover:text-white',
+            ]"
+          >
+            <Rocket class="w-3 h-3" />
+            v2 Curve
+          </button>
+          <button
+            type="button"
+            @click="selectedVersion = 'v1'"
+            :class="[
+              'px-2.5 py-1 rounded font-medium transition flex items-center gap-1',
+              selectedVersion === 'v1'
+                ? 'bg-zinc-800 text-white'
+                : 'text-zinc-400 hover:text-white',
+            ]"
+          >
+            <Lock class="w-3 h-3" />
+            v1 Direct
+          </button>
+        </div>
+
         <!-- Shadcn Combobox for sorting -->
         <Combobox
-          v-model="activeFilter"
+          v-model="activeSort"
           :options="sortOptions"
-          class="w-36"
+          class="w-40"
           placeholder="Sort tokens"
         />
 
@@ -44,13 +86,17 @@
 
     <!-- Shadcn Empty Component -->
     <Empty
-      v-else-if="displayTokens.length === 0"
-      title="No tokens launched yet"
-      description="Be the first creator to deploy a fixed-supply token directly to locked Uniswap V3 liquidity."
+      v-else-if="filteredTokens.length === 0"
+      title="No tokens found"
+      :description="
+        selectedVersion !== 'all'
+          ? `No ${selectedVersion.toUpperCase()} tokens launched yet. Be the first to launch one!`
+          : 'Be the first creator to deploy a fixed-supply token on Robinhood Chain.'
+      "
     >
       <template #action>
         <Button @click="$emit('selectTab', 'create')" size="sm">
-          <Plus class="w-3.5 h-3.5 mr-1" /> Launch First Token
+          <Plus class="w-3.5 h-3.5 mr-1" /> Launch Token
         </Button>
       </template>
     </Empty>
@@ -61,19 +107,24 @@
         <Card
           v-for="item in paginatedTokens"
           :key="item.token.address"
-          class="group hover:border-zinc-700 hover:-translate-y-0.5 transition-all flex flex-col justify-between p-5"
+          class="group hover:border-zinc-700 hover:-translate-y-0.5 transition-all flex flex-col justify-between p-5 cursor-pointer"
+          @click="$emit('selectToken', item.token.address)"
         >
           <div>
             <div class="flex items-start justify-between gap-3">
-              <div
-                @click="$emit('selectToken', item.token.address)"
-                class="flex items-center gap-3 cursor-pointer flex-1 min-w-0"
-              >
-                <!-- Shadcn Avatar -->
+              <div class="flex items-center gap-3 flex-1 min-w-0">
+                <!-- Avatar with Jazzicon or Symbol -->
                 <Avatar
-                  class="w-12 h-12 rounded-xl border border-zinc-700 group-hover:border-emerald-500/50 transition"
+                  class="w-12 h-12 rounded-xl border border-zinc-700 group-hover:border-emerald-500/50 transition overflow-hidden"
                 >
+                  <img
+                    v-if="item.token.logo && item.token.logo.startsWith('http')"
+                    :src="item.token.logo"
+                    :alt="item.token.name"
+                    class="w-full h-full object-cover"
+                  />
                   <AvatarFallback
+                    v-else
                     class="bg-zinc-800 text-emerald-400 font-bold text-base rounded-xl"
                   >
                     {{ item.token.symbol.slice(0, 3) }}
@@ -81,114 +132,86 @@
                 </Avatar>
 
                 <div class="truncate">
-                  <!-- Shadcn HoverCard for Token Inspection -->
-                  <HoverCard>
-                    <HoverCardTrigger as-child>
-                      <h2
-                        class="font-bold text-white text-base truncate hover:text-emerald-400 transition inline-block"
-                      >
-                        {{ item.token.name }}
-                      </h2>
-                    </HoverCardTrigger>
-                    <HoverCardContent class="space-y-2 text-xs">
-                      <div
-                        class="flex items-center justify-between border-b border-zinc-800 pb-1.5"
-                      >
-                        <span class="font-semibold text-white"
-                          >{{ item.token.name }} (${{ item.token.symbol }})</span
-                        >
-                        <Badge variant="outline" class="text-[10px]">ERC-20</Badge>
-                      </div>
-                      <div class="space-y-1 font-mono text-[11px] text-zinc-400">
-                        <div class="flex justify-between">
-                          <span>CA:</span>
-                          <button
-                            @click.stop="copyText(item.token.address)"
-                            class="text-emerald-400 hover:underline inline-flex items-center gap-1"
-                          >
-                            <span
-                              >{{ item.token.address.slice(0, 6) }}...{{
-                                item.token.address.slice(-4)
-                              }}</span
-                            >
-                            <Copy class="w-3 h-3" />
-                          </button>
-                        </div>
-                        <div class="flex justify-between">
-                          <span>Pool:</span>
-                          <span class="text-zinc-300"
-                            >{{ item.token.poolAddress.slice(0, 6) }}...{{
-                              item.token.poolAddress.slice(-4)
-                            }}</span
-                          >
-                        </div>
-                        <div class="flex justify-between">
-                          <span>Supply:</span>
-                          <span class="text-zinc-300">1,000,000,000</span>
-                        </div>
-                      </div>
-                    </HoverCardContent>
-                  </HoverCard>
-
-                  <p class="text-xs font-mono text-zinc-400">${{ item.token.symbol }}</p>
+                  <div class="flex items-center gap-1.5">
+                    <h2
+                      class="font-bold text-white text-base truncate group-hover:text-emerald-400 transition"
+                    >
+                      {{ item.token.name }}
+                    </h2>
+                  </div>
+                  <div class="flex items-center gap-2 mt-0.5">
+                    <span class="text-xs font-mono text-zinc-400">${{ item.token.symbol }}</span>
+                    <Badge
+                      :variant="item.token.version === 'v2' ? 'outline' : 'secondary'"
+                      class="text-[9px] px-1.5 py-0 h-4 font-mono uppercase"
+                    >
+                      {{ item.token.version === 'v2' ? 'v2 Curve' : 'v1 Direct' }}
+                    </Badge>
+                  </div>
                 </div>
               </div>
 
               <Badge
                 v-if="item.marketData.isGraduated"
                 variant="graduated"
-                class="gap-1 text-[11px]"
+                class="gap-1 text-[11px] shrink-0"
               >
                 <CheckCircle class="w-3 h-3" />
                 Graduated
               </Badge>
             </div>
 
-            <p
-              @click="$emit('selectToken', item.token.address)"
-              class="text-xs text-zinc-400 mt-3 line-clamp-2 leading-relaxed cursor-pointer"
-            >
+            <p class="text-xs text-zinc-400 mt-3 line-clamp-2 leading-relaxed">
               {{ item.token.description || 'Fixed-supply token on Robinhood Chain.' }}
             </p>
           </div>
 
-          <div
-            @click="$emit('selectToken', item.token.address)"
-            class="mt-5 space-y-3 pt-4 border-t border-zinc-800/80 cursor-pointer"
-          >
-            <div class="flex justify-between text-xs">
-              <span class="text-zinc-400 flex items-center gap-1">
-                <Coins class="w-3.5 h-3.5 text-zinc-500" />
-                Market Cap
-              </span>
-              <span class="font-mono font-medium text-white">
-                ${{ item.marketData.marketCapUsd.toLocaleString() }}
-              </span>
-            </div>
-            <div class="flex justify-between text-xs">
-              <span class="text-zinc-400 flex items-center gap-1">
-                <Flame class="w-3.5 h-3.5 text-emerald-400" />
-                Graduation (4.2 ETH)
-              </span>
-              <span class="font-mono font-medium text-emerald-400">
-                {{ (item.marketData.graduationProgress * 100).toFixed(1) }}%
-              </span>
+          <!-- Price & Graduation Progress Section -->
+          <div class="mt-4 pt-4 border-t border-zinc-800/80 space-y-3">
+            <div class="flex justify-between items-end">
+              <div>
+                <p class="text-[11px] text-zinc-400 flex items-center gap-1">
+                  <Coins class="w-3 h-3 text-zinc-400" />
+                  Price (USD)
+                </p>
+                <p class="text-sm font-bold font-mono text-white mt-0.5">
+                  ${{ item.marketData.priceUsd.toFixed(8) }}
+                </p>
+              </div>
+              <div class="text-right">
+                <p class="text-[11px] text-zinc-400">Market Cap</p>
+                <p class="text-sm font-bold font-mono text-emerald-400 mt-0.5">
+                  ${{ item.marketData.marketCapUsd.toLocaleString() }}
+                </p>
+              </div>
             </div>
 
-            <!-- Shadcn Progress -->
-            <Progress :model-value="item.marketData.graduationProgress * 100" class="h-1.5" />
+            <!-- Graduation Progress Bar -->
+            <div class="space-y-1.5">
+              <div class="flex justify-between text-[11px]">
+                <span class="text-zinc-400 flex items-center gap-1">
+                  <Flame class="w-3 h-3 text-emerald-400" />
+                  Progress
+                </span>
+                <span class="font-mono text-zinc-300 font-medium">
+                  {{ (item.marketData.graduationProgress * 100).toFixed(1) }}%
+                </span>
+              </div>
+              <Progress :model-value="item.marketData.graduationProgress * 100" class="h-1.5" />
+            </div>
           </div>
         </Card>
       </div>
 
-      <!-- Shadcn Pagination Component -->
-      <Pagination
-        v-if="displayTokens.length > pageSize"
-        :total="displayTokens.length"
-        :items-per-page="pageSize"
-        :page="currentPage"
-        @update:page="currentPage = $event"
-      />
+      <!-- Pagination -->
+      <div v-if="filteredTokens.length > pageSize" class="flex justify-center pt-4">
+        <Pagination
+          :current-page="currentPage"
+          :total-items="filteredTokens.length"
+          :page-size="pageSize"
+          @update:current-page="currentPage = $event"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -203,14 +226,14 @@ import {
   Flame,
   Loader2,
   AlertCircle,
-  Copy,
+  Rocket,
+  Lock,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
 import { Combobox } from '@/components/ui/combobox';
 import { Empty } from '@/components/ui/empty';
 import { Pagination } from '@/components/ui/pagination';
@@ -221,10 +244,11 @@ defineEmits<{
   (e: 'selectTab', tab: string): void;
 }>();
 
-const activeFilter = ref('recent');
+const selectedVersion = ref<'all' | 'v1' | 'v2'>('all');
+const activeSort = ref('recent');
 const loading = ref(true);
 const apiError = ref<string | null>(null);
-const displayTokens = ref<Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }>>([]);
+const allTokens = ref<Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }>>([]);
 
 const currentPage = ref(1);
 const pageSize = 6;
@@ -233,24 +257,47 @@ const sortOptions = [
   { label: 'Recent Buys', value: 'recent' },
   { label: 'Newest', value: 'newest' },
   { label: 'Market Cap', value: 'mcap' },
-  { label: 'Volume', value: 'volume' },
+  { label: 'Volume (24h)', value: 'volume' },
+  { label: 'Graduation', value: 'graduation' },
 ];
+
+const filteredTokens = computed(() => {
+  let list = allTokens.value;
+
+  // Filter by Architecture Version (v1 vs v2)
+  if (selectedVersion.value !== 'all') {
+    list = list.filter((item) => (item.token.version ?? 'v1') === selectedVersion.value);
+  }
+
+  // Sort tokens
+  const sorted = [...list];
+  if (activeSort.value === 'newest') {
+    sorted.sort((a, b) => b.token.createdAt - a.token.createdAt);
+  } else if (activeSort.value === 'mcap') {
+    sorted.sort((a, b) => b.marketData.marketCapUsd - a.marketData.marketCapUsd);
+  } else if (activeSort.value === 'volume') {
+    sorted.sort((a, b) => b.marketData.volume24hUsd - a.marketData.volume24hUsd);
+  } else if (activeSort.value === 'graduation') {
+    sorted.sort((a, b) => b.marketData.graduationProgress - a.marketData.graduationProgress);
+  } else {
+    // Recent buys / default
+    sorted.sort((a, b) => Number(b.token.launchBlock) - Number(a.token.launchBlock));
+  }
+
+  return sorted;
+});
 
 const paginatedTokens = computed(() => {
   const start = (currentPage.value - 1) * pageSize;
-  return displayTokens.value.slice(start, start + pageSize);
+  return filteredTokens.value.slice(start, start + pageSize);
 });
-
-function copyText(txt: string) {
-  navigator.clipboard.writeText(txt);
-}
 
 onMounted(async () => {
   try {
-    const res = await fetch('http://localhost:3001/api/tokens');
+    const res = await fetch('/api/tokens');
     const envelope = await res.json();
     if (envelope.success && Array.isArray(envelope.data)) {
-      displayTokens.value = envelope.data;
+      allTokens.value = envelope.data;
     } else {
       apiError.value = envelope.error?.message || 'Unable to fetch tokens';
     }
