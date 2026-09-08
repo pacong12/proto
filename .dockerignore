@@ -1,0 +1,10 @@
+node_modules
+.nx
+.git
+contracts/lib
+contracts/out
+contracts/cache
+dist
+out
+coverage
+*.log
