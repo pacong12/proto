@@ -1,0 +1,24 @@
+FROM oven/bun:1-alpine AS builder
+WORKDIR /app
+
+COPY package.json bun.lock ./
+COPY packages/shared-types/package.json ./packages/shared-types/
+COPY apps/frontoffice/package.json ./apps/frontoffice/
+COPY apps/api/package.json ./apps/api/
+COPY apps/docs/package.json ./apps/docs/
+
+RUN bun install --frozen-lockfile
+
+COPY tsconfig.base.json ./
+COPY packages/shared-types ./packages/shared-types
+COPY apps/frontoffice ./apps/frontoffice
+
+WORKDIR /app/apps/frontoffice
+RUN bun run build
+
+FROM oven/bun:1-alpine AS runner
+WORKDIR /app
+COPY --from=builder /app/apps/frontoffice/dist ./dist
+
+EXPOSE 3000
+CMD ["bun", "x", "serve", "-s", "dist", "-l", "3000"]
