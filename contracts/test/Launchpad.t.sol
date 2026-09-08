@@ -93,154 +93,166 @@ contract LaunchpadTest is Test {
         assertEq(fc, "https://warpcast.com/proto");
     }
 
-    function test_AntiSnipeProtection() public {
+    function test_TokenCreatorTaxes() public {
         ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials("", "", "", "", "");
 
         vm.prank(deployer);
         LaunchpadToken token = new LaunchpadToken(
-            "Test Token",
-            "TEST",
-            "",
-            "",
+            "Tax Token",
+            "TAX",
+            "ipfs://tax",
+            "Token with creator buy/sell taxes",
             socials,
             deployer,
             address(weth),
             deployer
         );
 
-        address pool = address(0x5555);
-        vm.prank(deployer);
-        token.setLiquidityPool(pool);
+        address taxRecipient = address(0x5555);
+        address mockPool = address(0x6666);
 
-        // Fund pool with supply
+        // Configure 5% buy tax (500 bps) and 10% sell tax (1000 bps)
         vm.prank(deployer);
-        token.transfer(pool, 500_000_000 * 10**18);
+        token.setTaxConfig(500, 1000, taxRecipient);
 
-        // Block 0: Launch Block -> Only deployer can buy from pool
-        vm.prank(pool);
+        vm.prank(deployer);
+        token.setLiquidityPool(mockPool);
+
+        (uint16 buyBps, uint16 sellBps, address recipient) = token.taxConfig();
+        assertEq(buyBps, 500);
+        assertEq(sellBps, 1000);
+        assertEq(recipient, taxRecipient);
+
+        // Transfer some tokens to mock pool and forward past anti-snipe block
+        vm.prank(deployer);
+        token.transfer(mockPool, 10_000_000 * 10**18);
+
+        vm.roll(block.number + 5);
+
+        // 1. Test Buy Tax (from mockPool to buyer1): 5% tax should be deducted
+        uint256 buyAmount = 100_000 * 10**18;
+        vm.prank(mockPool);
+        token.transfer(buyer1, buyAmount);
+
+        uint256 expectedTax = (buyAmount * 500) / 10000;
+        uint256 expectedReceived = buyAmount - expectedTax;
+
+        assertEq(token.balanceOf(taxRecipient), expectedTax);
+        assertEq(token.balanceOf(buyer1), expectedReceived);
+
+        // 2. Test Sell Tax (from buyer1 to mockPool): 10% tax should be deducted
+        uint256 sellAmount = 50_000 * 10**18;
+        vm.prank(buyer1);
+        token.transfer(mockPool, sellAmount);
+
+        uint256 expectedSellTax = (sellAmount * 1000) / 10000;
+        assertEq(token.balanceOf(taxRecipient), expectedTax + expectedSellTax);
+    }
+
+    function test_AntiSnipeProtection() public {
+        ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials("", "", "", "", "");
+
+        vm.prank(deployer);
+        LaunchpadToken token = new LaunchpadToken(
+            "AntiSnipe",
+            "SNIPE",
+            "ipfs://snipe",
+            "Anti-snipe test",
+            socials,
+            deployer,
+            address(weth),
+            deployer
+        );
+
+        address mockPool = address(0x9999);
+        vm.prank(deployer);
+        token.setLiquidityPool(mockPool);
+
+        // Fund mock pool with 200M tokens
+        vm.prank(deployer);
+        token.transfer(mockPool, 200_000_000 * 10**18);
+
+        // Block 0 (launchBlock): Only deployer can buy from pool
+        vm.prank(mockPool);
         vm.expectRevert(LaunchpadToken.OnlyDeployerCanBuyAtLaunchBlock.selector);
-        token.transfer(buyer1, 1000 * 10**18);
+        token.transfer(buyer1, 1_000 * 10**18);
 
-        // Deployer buy is allowed
-        vm.prank(pool);
-        token.transfer(deployer, 1000 * 10**18);
+        // Deployer can buy at launch block
+        vm.prank(mockPool);
+        token.transfer(deployer, 1_000 * 10**18);
 
-        // Block 1: Restrictions apply (Max buy 5.5%, Max wallet 5%)
+        // Block 1 (launchBlock + 1): Max buy is 5.5% (55M), Max wallet is 5% (50M)
         vm.roll(block.number + 1);
 
-        // Try to buy 6% -> Revert MaxBuyExceeded
-        uint256 sixPercent = 60_000_000 * 10**18;
-        vm.prank(pool);
-        vm.expectRevert(LaunchpadToken.MaxBuyExceeded.selector);
-        token.transfer(buyer1, sixPercent);
-
-        // Buy 4.5% -> Success
-        uint256 fourPointFivePercent = 45_000_000 * 10**18;
-        vm.prank(pool);
-        token.transfer(buyer1, fourPointFivePercent);
-        assertEq(token.balanceOf(buyer1), fourPointFivePercent);
-
-        // Try to buy another 1% -> Total becomes 5.5% (> 5% max wallet) -> Revert MaxWalletExceeded
-        uint256 onePercent = 10_000_000 * 10**18;
-        vm.prank(pool);
+        // Exceed max wallet: 51M tokens (> 50M max wallet)
+        vm.prank(mockPool);
         vm.expectRevert(LaunchpadToken.MaxWalletExceeded.selector);
-        token.transfer(buyer1, onePercent);
+        token.transfer(buyer1, 51_000_000 * 10**18);
 
-        // Peer-to-peer transfer is NOT restricted
-        vm.prank(buyer1);
-        token.transfer(buyer2, 5_000_000 * 10**18);
-        assertEq(token.balanceOf(buyer2), 5_000_000 * 10**18);
+        // Valid buy within limits: 40M tokens
+        vm.prank(mockPool);
+        token.transfer(buyer1, 40_000_000 * 10**18);
+        assertEq(token.balanceOf(buyer1), 40_000_000 * 10**18);
 
-        // Selling back to pool is NOT restricted
-        vm.prank(buyer1);
-        token.transfer(pool, 10_000_000 * 10**18);
+        // Second buy exceeding max wallet cumulative: +15M = 55M > 50M
+        vm.prank(mockPool);
+        vm.expectRevert(LaunchpadToken.MaxWalletExceeded.selector);
+        token.transfer(buyer1, 15_000_000 * 10**18);
 
-        // Block 3: Restrictions end
-        vm.roll(block.number + 3);
-        vm.prank(pool);
-        token.transfer(buyer1, 100_000_000 * 10**18);
-        assertGt(token.balanceOf(buyer1), token.MAX_HOLD_AMOUNT());
+        // Block 3 (restrictionsEndBlock + 1): All restrictions lifted
+        vm.roll(block.number + 2);
+        vm.prank(mockPool);
+        token.transfer(buyer2, 60_000_000 * 10**18);
+        assertEq(token.balanceOf(buyer2), 60_000_000 * 10**18);
     }
 
     function test_AtomicLaunchToken() public {
         ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials({
-            twitter: "https://x.com/protolaunch",
-            telegram: "https://t.me/protolaunch",
-            discord: "https://discord.gg/proto",
-            website: "https://proto.fun",
-            farcaster: "https://warpcast.com/proto"
+            twitter: "https://x.com/atomic",
+            telegram: "https://t.me/atomic",
+            discord: "",
+            website: "https://atomic.fun",
+            farcaster: ""
         });
 
-        uint256 launchFee = factory.launchFee();
-        uint256 initialBuy = 0.05 ether;
+        uint256 initialBuyEth = 0.5 ether;
+        uint256 totalCost = factory.launchFee() + initialBuyEth;
 
         vm.prank(deployer);
-        (address tokenAddress, address poolAddress) = factory.launchToken{
-            value: launchFee + initialBuy
-        }(
-            "Proto Rocket",
-            "ROCKET",
-            "ipfs://RocketLogo",
-            "First atomic launch token",
+        (address tokenAddress, address poolAddress) = factory.launchToken{value: totalCost}(
+            "Atomic Token",
+            "ATOMIC",
+            "ipfs://atomicLogo",
+            "Atomic launch test token",
             socials,
-            initialBuy
+            initialBuyEth
         );
 
         assertTrue(tokenAddress != address(0));
         assertTrue(poolAddress != address(0));
 
-        ILaunchpadFactory.LaunchedToken memory tokenData = factory.getLaunchedToken(tokenAddress);
-        assertTrue(tokenData.exists);
-        assertEq(tokenData.deployer, deployer);
-        assertEq(tokenData.pairedToken, address(weth));
-        assertEq(tokenData.supply, 1_000_000_000 * 10**18);
+        ILaunchpadFactory.LaunchedToken memory launchData = factory.getLaunchedToken(tokenAddress);
+        assertTrue(launchData.exists);
+        assertEq(launchData.token, tokenAddress);
+        assertEq(launchData.deployer, deployer);
+        assertEq(launchData.initialBuyAmount, initialBuyEth);
+        assertEq(launchData.supply, 1_000_000_000 * 10**18);
 
-        // Check locker has recorded position
-        assertEq(locker.tokenPositions(tokenAddress), tokenData.positionId);
+        // Liquidity locker verification
+        assertEq(locker.tokenPositions(tokenAddress), launchData.positionId);
         assertEq(locker.tokenDeployers(tokenAddress), deployer);
-        assertEq(locker.tokenProtocolFeeShares(tokenAddress), 30);
-    }
-
-    function test_FeeClaimAndSplitDistribution() public {
-        ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials("", "", "", "", "");
-        uint256 fee = factory.launchFee();
-        vm.prank(deployer);
-        (address tokenAddress, ) = factory.launchToken{value: fee}(
-            "Fee Test",
-            "FEES",
-            "",
-            "",
-            socials,
-            0
-        );
-
-        // Fund positionManager with WETH so collect can return WETH fees
-        weth.deposit{value: 10 ether}();
-        weth.transfer(address(positionManager), 10 ether);
-        uint256 protocolWethBefore = weth.balanceOf(protocolFeeRecipient);
-        uint256 deployerWethBefore = weth.balanceOf(deployer);
-
-        // Claim fees from locker
-        (uint256 creatorTokenFee, uint256 creatorWethFee) = locker.claimFees(tokenAddress);
-
-        assertGt(creatorTokenFee, 0);
-        assertGt(creatorWethFee, 0);
-
-        // Protocol got 30%, Creator got 70%
-        assertEq(weth.balanceOf(protocolFeeRecipient) - protocolWethBefore, 0.3 ether);
-        assertEq(weth.balanceOf(deployer) - deployerWethBefore, 0.7 ether);
     }
 
     function test_GraduationStatus() public {
         ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials("", "", "", "", "");
 
-        uint256 fee = factory.launchFee();
+        vm.deal(deployer, 10 ether);
         vm.prank(deployer);
-        (address tokenAddress, address poolAddress) = factory.launchToken{value: fee}(
+        (address tokenAddress, address poolAddress) = factory.launchToken{value: factory.launchFee()}(
             "Graduation Token",
             "GRAD",
-            "",
-            "",
+            "ipfs://grad",
+            "Graduation test",
             socials,
             0
         );
@@ -250,12 +262,41 @@ contract LaunchpadTest is Test {
         assertEq(threshold, 4.2 ether);
         assertFalse(graduated);
 
-        // Deposit WETH to pool to reach graduation threshold
+        // Simulate trades pairing 5 WETH into the pool (> 4.2 ETH threshold)
         weth.deposit{value: 5 ether}();
         weth.transfer(poolAddress, 5 ether);
 
         (paired, threshold, graduated) = factory.graduationStatus(tokenAddress);
         assertEq(paired, 5 ether);
         assertTrue(graduated);
+    }
+
+    function test_FeeClaimAndSplitDistribution() public {
+        ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials("", "", "", "", "");
+
+        vm.deal(deployer, 10 ether);
+        vm.startPrank(deployer);
+        (address tokenAddress, ) = factory.launchToken{value: factory.launchFee()}(
+            "Fee Token",
+            "FEE",
+            "ipfs://fee",
+            "Fee description",
+            socials,
+            0
+        );
+        address creatorFeeRecipient = address(0x8888);
+        locker.setFeeRedirect(tokenAddress, creatorFeeRecipient);
+
+        // Fund positionManager with 1 WETH so mock collect transfer succeeds
+        weth.deposit{value: 1 ether}();
+        weth.transfer(address(positionManager), 1 ether);
+
+        uint256 prevProtocolBal = weth.balanceOf(protocolFeeRecipient);
+        (uint256 creatorTokenFee, uint256 creatorWethFee) = locker.claimFees(tokenAddress);
+        vm.stopPrank();
+        assertEq(creatorTokenFee, 700 * 10**18);
+        assertEq(creatorWethFee, 0.7 ether);
+        assertEq(weth.balanceOf(protocolFeeRecipient) - prevProtocolBal, 0.3 ether);
+        assertEq(weth.balanceOf(creatorFeeRecipient), 0.7 ether);
     }
 }

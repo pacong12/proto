@@ -191,12 +191,6 @@ contract LaunchpadFactory is ILaunchpadFactory {
             swapRouter.exactInputSingle(swapParams);
         }
 
-        // 7. Route launch fee to protocol
-        if (launchFee > 0) {
-            (bool feeSent, ) = protocolFeeRecipient.call{value: launchFee}("");
-            if (!feeSent) revert InsufficientLaunchFee();
-        }
-
         // 8. Record state
         LaunchedToken memory launched = LaunchedToken({
             token: tokenAddress,
@@ -216,6 +210,12 @@ contract LaunchpadFactory is ILaunchpadFactory {
 
         launchedTokens[tokenAddress] = launched;
         allTokens.push(tokenAddress);
+
+        // 7. Route launch fee to protocol
+        if (launchFee > 0) {
+            (bool feeSent, ) = protocolFeeRecipient.call{value: launchFee}("");
+            if (!feeSent) revert InsufficientLaunchFee();
+        }
 
         emit TokenLaunched(
             tokenAddress,
