@@ -35,3 +35,13 @@ bun run format:check   # Prettier code format check
 bun run build          # Production bundling for all applications
 bun run ci             # Full CI pipeline execution
 ```
+
+## Herdr Workspaces & Multi-Worktree Orchestration
+
+Herdr server is fully configured and ready for parallel agent orchestration:
+
+- **Conductor Workspace**: `~/Downloads/proto`
+- **auditor-contracts**: `~/Downloads/proto-wt/contracts` (`feat/contracts-core`)
+- **auditor-backend**: `~/Downloads/proto-wt/backend` (`feat/backend-clean-architecture`)
+- **auditor-ui**: `~/Downloads/proto-wt/frontoffice` (`feat/frontoffice-ui`)
+- **CI / Atomic Commit Guards**: Enforced via `commitlint.config.mjs` and `.github/workflows/commit-check.yml`.
