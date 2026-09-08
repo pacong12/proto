@@ -1,6 +1,9 @@
 FROM oven/bun:1-alpine AS builder
 WORKDIR /app
 
+ARG VITE_REOWN_PROJECT_ID
+ENV VITE_REOWN_PROJECT_ID=${VITE_REOWN_PROJECT_ID}
+
 COPY package.json bun.lock ./
 COPY packages/shared-types/package.json ./packages/shared-types/
 COPY apps/frontoffice/package.json ./apps/frontoffice/
