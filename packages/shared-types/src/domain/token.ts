@@ -11,6 +11,7 @@ export interface TokenTaxConfig {
   sellTaxBps?: number;
   taxRecipient?: `0x${string}`;
 }
+export type LaunchVersion = 'v1' | 'v2';
 
 export interface LaunchedTokenEntity {
   address: `0x${string}`;
@@ -32,6 +33,9 @@ export interface LaunchedTokenEntity {
   launchBlock: bigint;
   createdAt: number;
   initialBuyAmount?: string;
+  version?: LaunchVersion;
+  curveAddress?: `0x${string}`;
+  isGraduated?: boolean;
 }
 
 export interface TokenMarketData {
