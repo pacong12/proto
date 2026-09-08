@@ -96,4 +96,46 @@ describe('Token Use Cases & Controller', () => {
     expect(envelope.error?.code).toBe('INVALID_ADDRESS');
     expect(envelope.data).toBeNull();
   });
+
+  it('fetches holders via controller with structured envelope', async () => {
+    const envelope = await controller.getHolders(sampleAddress);
+
+    expect(envelope.success).toBe(true);
+    expect(envelope.data).toBeInstanceOf(Array);
+    expect(envelope.data?.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('returns structured error when invalid address is passed to getHolders', async () => {
+    const envelope = await controller.getHolders('0x123');
+
+    expect(envelope.success).toBe(false);
+    expect(envelope.error?.code).toBe('INVALID_ADDRESS');
+  });
+
+  it('fetches trades via controller with pagination parameters', async () => {
+    await repository.saveTrade({
+      id: 'trade-ctrl-1',
+      tokenAddress: sampleAddress,
+      poolAddress: '0x2222222222222222222222222222222222222222',
+      trader: '0x3333333333333333333333333333333333333333',
+      isBuy: true,
+      tokenAmount: '1000',
+      wethAmount: '0.1',
+      priceUsd: 0.5,
+      blockNumber: 100n,
+      transactionHash: '0xhash1',
+      timestamp: Date.now(),
+    });
+
+    const envelope = await controller.getTrades(sampleAddress, 10, 0);
+    expect(envelope.success).toBe(true);
+    expect(envelope.data).toHaveLength(1);
+    expect(envelope.data?.[0].id).toBe('trade-ctrl-1');
+  });
+
+  it('returns structured error when invalid address is passed to getTrades', async () => {
+    const envelope = await controller.getTrades('bad-address');
+    expect(envelope.success).toBe(false);
+    expect(envelope.error?.code).toBe('INVALID_ADDRESS');
+  });
 });

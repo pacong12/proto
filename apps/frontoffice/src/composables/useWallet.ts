@@ -1,28 +1,50 @@
-import { ref, computed, onMounted, getCurrentInstance } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
+import {
+  useAppKit,
+  useAppKitAccount,
+  useAppKitNetwork,
+  useAppKitProvider,
+  useDisconnect,
+} from '@reown/appkit/vue';
+import type { EIP1193Provider } from 'viem';
 import { ROBINHOOD_CHAIN, ROBINHOOD_TESTNET, type NetworkConfig } from '@proto/shared-types';
 import { publicClient } from '../lib/viem-client';
+import { appKitConfigured } from '../lib/appkit';
+import {
+  bindProviderListeners,
+  clearWalletState,
+  isStoredConnectionActive,
+  setConnectedWallet,
+  walletAddress,
+  walletChainId,
+  walletModalOpen,
+  walletProvider,
+  type WalletProviderLike,
+} from '../lib/wallet-store';
 
-interface EthereumProvider {
-  request: (args: {
-    method: string;
-    params?: unknown[] | Record<string, unknown>;
-  }) => Promise<unknown>;
-  on?: (event: string, callback: (...args: unknown[]) => void) => void;
-  removeListener?: (event: string, callback: (...args: unknown[]) => void) => void;
+const balanceWei = ref<bigint>(0n);
+const error = ref<string | null>(null);
+const isConnecting = ref(false);
+
+function parseChainId(raw: unknown): number | null {
+  if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+  if (typeof raw === 'string') {
+    const parsed = raw.startsWith('0x') ? Number.parseInt(raw, 16) : Number.parseInt(raw, 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
 }
 
-const account = ref<`0x${string}` | null>(null);
-const chainId = ref<number | null>(null);
-const balanceWei = ref<bigint>(0n);
-const isConnecting = ref(false);
-const error = ref<string | null>(null);
-
 export function useWallet() {
-  const isConnected = computed(() => account.value !== null);
+  const appKit = appKitConfigured ? useAppKit() : null;
+  const disconnectAction = appKitConfigured ? useDisconnect() : null;
+  const account = useAppKitAccount();
+  const providerState = useAppKitProvider<EIP1193Provider>('eip155');
+  const network = useAppKitNetwork();
 
   const formattedAddress = computed(() => {
-    if (!account.value) return '';
-    return `${account.value.slice(0, 6)}...${account.value.slice(-4)}`;
+    if (!walletAddress.value) return '';
+    return `${walletAddress.value.slice(0, 6)}...${walletAddress.value.slice(-4)}`;
   });
 
   const formattedBalance = computed(() => {
@@ -30,37 +52,113 @@ export function useWallet() {
     return `${eth.toFixed(4)} ETH`;
   });
 
+  const isConnected = computed(() => walletAddress.value !== null);
+
   const isCorrectNetwork = computed(() => {
-    return chainId.value === ROBINHOOD_CHAIN.chainId || chainId.value === ROBINHOOD_TESTNET.chainId;
+    return (
+      walletChainId.value === ROBINHOOD_CHAIN.chainId ||
+      walletChainId.value === ROBINHOOD_TESTNET.chainId
+    );
   });
 
   const activeNetwork = computed((): NetworkConfig => {
-    if (chainId.value === ROBINHOOD_TESTNET.chainId) {
-      return ROBINHOOD_TESTNET;
-    }
+    if (walletChainId.value === ROBINHOOD_TESTNET.chainId) return ROBINHOOD_TESTNET;
     return ROBINHOOD_CHAIN;
   });
 
-  function getProvider(): EthereumProvider | null {
-    if (typeof window !== 'undefined' && 'ethereum' in window && window.ethereum) {
-      return window.ethereum as EthereumProvider;
+  async function syncBalance(addressValue?: `0x${string}`) {
+    const target = addressValue ?? walletAddress.value;
+    if (!target) {
+      balanceWei.value = 0n;
+      return;
     }
-    return null;
-  }
-
-  async function updateBalance(address: `0x${string}`) {
     try {
-      balanceWei.value = await publicClient.getBalance({ address });
+      balanceWei.value = await publicClient.getBalance({ address: target });
     } catch {
       balanceWei.value = 0n;
     }
   }
 
+  function getInjectedProvider(): WalletProviderLike | null {
+    if (typeof window !== 'undefined' && 'ethereum' in window && window.ethereum) {
+      return window.ethereum as unknown as WalletProviderLike;
+    }
+    return null;
+  }
+
+  async function tryAutoReconnectInjected() {
+    if (walletAddress.value || !isStoredConnectionActive()) return;
+
+    const provider = getInjectedProvider();
+    if (!provider) return;
+
+    try {
+      const accounts = (await provider.request({ method: 'eth_accounts' })) as string[];
+      if (accounts && accounts.length > 0) {
+        const address = accounts[0] as `0x${string}`;
+        const rawChain = await provider.request({ method: 'eth_chainId' });
+        const chain = parseChainId(rawChain) ?? ROBINHOOD_CHAIN.chainId;
+
+        setConnectedWallet(provider, address, chain, 'window.ethereum');
+        await syncBalance(address);
+      } else {
+        clearWalletState();
+      }
+    } catch {
+      clearWalletState();
+    }
+  }
+
+  async function openWallet() {
+    error.value = null;
+    if (appKitConfigured && appKit) {
+      try {
+        await appKit.open();
+        return;
+      } catch (openErr) {
+        // If AppKit modal fails, fall back to local modal
+        console.warn('[useWallet] AppKit open failed, falling back to local modal:', openErr);
+      }
+    }
+    walletModalOpen.value = true;
+  }
+
+  async function connectWallet(): Promise<`0x${string}` | null> {
+    isConnecting.value = true;
+    error.value = null;
+    try {
+      await openWallet();
+      return walletAddress.value;
+    } finally {
+      isConnecting.value = false;
+    }
+  }
+
+  async function disconnectWallet() {
+    error.value = null;
+    isConnecting.value = false;
+
+    if (appKitConfigured && disconnectAction) {
+      try {
+        await disconnectAction.disconnect();
+      } catch (err) {
+        console.warn('[useWallet] Disconnect action failed, forcing local cleanup:', err);
+      }
+    }
+
+    clearWalletState();
+    balanceWei.value = 0n;
+  }
+
   async function switchOrAddNetwork(
     targetConfig: NetworkConfig = ROBINHOOD_CHAIN,
   ): Promise<boolean> {
-    const provider = getProvider();
-    if (!provider) return false;
+    error.value = null;
+    const provider = walletProvider.value ?? getInjectedProvider();
+    if (!provider) {
+      await openWallet();
+      return false;
+    }
 
     const hexChainId = `0x${targetConfig.chainId.toString(16)}`;
 
@@ -69,7 +167,8 @@ export function useWallet() {
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: hexChainId }],
       });
-      chainId.value = targetConfig.chainId;
+      walletChainId.value = targetConfig.chainId;
+      await syncBalance();
       return true;
     } catch (switchError: unknown) {
       const err = switchError as { code?: number };
@@ -87,7 +186,8 @@ export function useWallet() {
               },
             ],
           });
-          chainId.value = targetConfig.chainId;
+          walletChainId.value = targetConfig.chainId;
+          await syncBalance();
           return true;
         } catch (addError) {
           error.value = (addError as Error).message;
@@ -99,122 +199,71 @@ export function useWallet() {
     }
   }
 
-  async function connectWallet(): Promise<`0x${string}` | null> {
-    const provider = getProvider();
-    if (!provider) {
-      error.value =
-        'No Ethereum Web3 wallet found. Please install MetaMask, Rabby, or Coinbase Wallet.';
-      return null;
+  onMounted(() => {
+    if (walletAddress.value) {
+      syncBalance(walletAddress.value);
+    } else {
+      tryAutoReconnectInjected();
     }
+  });
 
-    isConnecting.value = true;
-    error.value = null;
-
-    try {
-      const accounts = (await provider.request({
-        method: 'eth_requestAccounts',
-      })) as string[];
-
-      if (!accounts || accounts.length === 0) {
-        throw new Error('No accounts selected');
-      }
-
-      const activeAccount = accounts[0] as `0x${string}`;
-      account.value = activeAccount;
-
-      const rawChainId = (await provider.request({
-        method: 'eth_chainId',
-      })) as string;
-      chainId.value = parseInt(rawChainId, 16);
-
-      if (!isCorrectNetwork.value) {
-        await switchOrAddNetwork(ROBINHOOD_CHAIN);
-      }
-
-      await updateBalance(activeAccount);
-      if (typeof window !== 'undefined' && 'localStorage' in window) {
-        localStorage.setItem('proto_wallet_connected', 'true');
-      }
-
-      setupEventListeners(provider);
-
-      return activeAccount;
-    } catch (err) {
-      error.value = (err as Error).message;
-      return null;
-    } finally {
-      isConnecting.value = false;
+  watch(walletAddress, (next, prev) => {
+    if (next && next !== prev) {
+      syncBalance(next);
+    } else if (!next) {
+      balanceWei.value = 0n;
     }
-  }
+  });
 
-  function disconnectWallet() {
-    account.value = null;
-    chainId.value = null;
-    balanceWei.value = 0n;
-    if (typeof window !== 'undefined' && 'localStorage' in window) {
-      localStorage.removeItem('proto_wallet_connected');
-    }
-  }
+  if (appKitConfigured) {
+    watch(
+      () => account.value.address,
+      (next, prev) => {
+        if (next && next !== prev) {
+          const address = next as `0x${string}`;
+          const currentProvider =
+            (providerState.walletProvider as unknown as WalletProviderLike) ??
+            getInjectedProvider();
+          const currentChain = parseChainId(network.value.chainId) ?? ROBINHOOD_CHAIN.chainId;
 
-  function setupEventListeners(provider: EthereumProvider) {
-    if (provider.on) {
-      provider.on('accountsChanged', (accounts: unknown) => {
-        const accs = accounts as string[];
-        if (accs.length === 0) {
-          disconnectWallet();
-        } else {
-          account.value = accs[0] as `0x${string}`;
-          updateBalance(account.value);
+          if (currentProvider) {
+            setConnectedWallet(currentProvider, address, currentChain, 'appkit');
+          } else {
+            walletAddress.value = address;
+            walletChainId.value = currentChain;
+          }
+          syncBalance(address);
+        } else if (!next) {
+          clearWalletState();
         }
-      });
+      },
+    );
 
-      provider.on('chainChanged', (newChainIdHex: unknown) => {
-        chainId.value = parseInt(newChainIdHex as string, 16);
-        if (account.value) {
-          updateBalance(account.value);
+    watch(
+      () => providerState.walletProvider,
+      (next) => {
+        if (next && walletAddress.value) {
+          const p = next as unknown as WalletProviderLike;
+          walletProvider.value = p;
+          bindProviderListeners(p);
         }
-      });
+      },
+    );
 
-      provider.on('disconnect', () => {
-        disconnectWallet();
-      });
-    }
-  }
-
-  if (getCurrentInstance()) {
-    onMounted(() => {
-      if (
-        typeof window !== 'undefined' &&
-        'localStorage' in window &&
-        localStorage.getItem('proto_wallet_connected') === 'true'
-      ) {
-        const provider = getProvider();
-        if (provider) {
-          provider
-            .request({ method: 'eth_accounts' })
-            .then((accounts) => {
-              const accs = accounts as string[];
-              if (accs && accs.length > 0) {
-                account.value = accs[0] as `0x${string}`;
-                provider
-                  .request({ method: 'eth_chainId' })
-                  .then((rawChain) => {
-                    chainId.value = parseInt(rawChain as string, 16);
-                  })
-                  .catch(() => {});
-                updateBalance(account.value);
-                setupEventListeners(provider);
-              }
-            })
-            .catch(() => {});
+    watch(
+      () => network.value.chainId,
+      (next) => {
+        const parsed = parseChainId(next);
+        if (parsed !== null) {
+          walletChainId.value = parsed;
         }
-      }
-    });
+      },
+    );
   }
 
   return {
-    account,
-    chainId,
+    account: walletAddress,
+    chainId: walletChainId,
     balanceWei,
     isConnecting,
     isConnected,
@@ -226,6 +275,8 @@ export function useWallet() {
     connectWallet,
     disconnectWallet,
     switchOrAddNetwork,
-    updateBalance,
+    openWallet,
+    updateBalance: syncBalance,
+    appKitConfigured: computed(() => appKitConfigured),
   };
 }

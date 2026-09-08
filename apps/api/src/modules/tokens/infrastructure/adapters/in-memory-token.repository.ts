@@ -39,9 +39,13 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
     this.trades.set(key, existing);
   }
 
-  async getTrades(tokenAddress: `0x${string}`, limit = 50): Promise<TradeEventEntity[]> {
+  async getTrades(
+    tokenAddress: `0x${string}`,
+    limit = 50,
+    offset = 0,
+  ): Promise<TradeEventEntity[]> {
     const all = this.trades.get(tokenAddress.toLowerCase()) ?? [];
-    return all.slice(0, limit);
+    return all.slice(offset, offset + limit);
   }
 
   async getCandlesticks(
@@ -77,5 +81,135 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
     }
 
     return candles.sort((a, b) => a.timestamp - b.timestamp);
+  }
+
+  async getHolders(
+    tokenAddress: string,
+    limit = 50,
+  ): Promise<Array<{ address: string; balance: string; percent: number }>> {
+    const token = await this.findByAddress(tokenAddress.toLowerCase() as `0x${string}`);
+    let totalSupply = 1_000_000_000n * 10n ** 18n;
+    if (token?.totalSupply) {
+      try {
+        totalSupply = BigInt(token.totalSupply);
+      } catch {
+        totalSupply = 1_000_000_000n * 10n ** 18n;
+      }
+    }
+
+    const poolAddress = token?.poolAddress || '0x000000000000000000000000000000000000dEaD';
+    const deployerAddress = token?.deployer || '0x70997970C51812dc3A010C7d01b50e0d17dc79C8';
+    const trades = await this.getTrades(tokenAddress.toLowerCase() as `0x${string}`, 1000);
+
+    const traderBalances = new Map<string, bigint>();
+    for (const trade of trades) {
+      const trader = trade.trader.toLowerCase();
+      if (trader === poolAddress.toLowerCase()) continue;
+
+      let amount = 0n;
+      try {
+        amount = BigInt(trade.tokenAmount);
+      } catch {
+        amount = BigInt(Math.floor(Number(trade.tokenAmount) || 0));
+      }
+
+      const cur = traderBalances.get(trader) ?? 0n;
+      if (trade.isBuy) {
+        traderBalances.set(trader, cur + amount);
+      } else {
+        traderBalances.set(trader, cur > amount ? cur - amount : 0n);
+      }
+    }
+
+    let deployerInitial = (totalSupply * 5n) / 100n;
+    if (token?.initialBuyAmount) {
+      try {
+        const parsed = BigInt(token.initialBuyAmount);
+        if (parsed > 0n) deployerInitial = parsed;
+      } catch {
+        // ignore invalid initial buy amount
+      }
+    }
+    const activeTraders = Array.from(traderBalances.entries())
+      .filter(([addr, bal]) => bal > 0n && addr !== deployerAddress.toLowerCase())
+      .sort((a, b) => (b[1] > a[1] ? 1 : b[1] < a[1] ? -1 : 0));
+
+    const totalTraderTokens = activeTraders.reduce((sum, [, bal]) => sum + bal, 0n);
+    const holders: Array<{ address: string; balance: string; percent: number }> = [];
+
+    if (activeTraders.length === 0 || totalTraderTokens === 0n) {
+      const poolBalance = (totalSupply * 90n) / 100n;
+      holders.push({
+        address: poolAddress,
+        balance: poolBalance.toString(),
+        percent: 90.0,
+      });
+
+      let deployerPercent =
+        deployerInitial === (totalSupply * 5n) / 100n
+          ? 5.0
+          : Number((deployerInitial * 10000n) / totalSupply) / 100;
+      if (deployerPercent <= 0) {
+        deployerPercent = 5.0;
+        deployerInitial = (totalSupply * 5n) / 100n;
+      }
+      holders.push({
+        address: deployerAddress,
+        balance: deployerInitial.toString(),
+        percent: deployerPercent,
+      });
+
+      const remainingPercent = Math.max(0, 100 - 90 - deployerPercent);
+      const remainingBalance = (totalSupply * BigInt(Math.round(remainingPercent * 100))) / 10000n;
+      const earlyBuyerWeights = [0.5, 0.3, 0.2];
+      const earlyBuyerAddresses = [
+        '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC',
+        '0x90F79bf6EB2c4f870365E785982E1f101E93b906',
+        '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65',
+      ];
+
+      for (let i = 0; i < earlyBuyerAddresses.length; i++) {
+        const weight = earlyBuyerWeights[i];
+        const buyerPercent = Number((remainingPercent * weight).toFixed(2));
+        const buyerBal = (remainingBalance * BigInt(Math.round(weight * 1000))) / 1000n;
+        holders.push({
+          address: earlyBuyerAddresses[i],
+          balance: buyerBal.toString(),
+          percent: buyerPercent,
+        });
+      }
+    } else {
+      const deployerTradeBal = traderBalances.get(deployerAddress.toLowerCase()) ?? 0n;
+      const totalDeployerBalance = deployerInitial + deployerTradeBal;
+      const deployerPercent = Number((totalDeployerBalance * 10000n) / totalSupply) / 100;
+
+      const nonPoolTotal = totalDeployerBalance + totalTraderTokens;
+      const poolBalance =
+        totalSupply > nonPoolTotal ? totalSupply - nonPoolTotal : (totalSupply * 90n) / 100n;
+      const poolPercent = Number((poolBalance * 10000n) / totalSupply) / 100;
+
+      holders.push({
+        address: poolAddress,
+        balance: poolBalance.toString(),
+        percent: poolPercent > 0 ? poolPercent : 90.0,
+      });
+
+      holders.push({
+        address: deployerAddress,
+        balance: totalDeployerBalance.toString(),
+        percent: deployerPercent > 0 ? deployerPercent : 5.0,
+      });
+
+      for (const [addr, bal] of activeTraders) {
+        const pct = Number((bal * 10000n) / totalSupply) / 100;
+        holders.push({
+          address: addr,
+          balance: bal.toString(),
+          percent: pct,
+        });
+      }
+    }
+
+    return holders.slice(0, limit);
   }
 }

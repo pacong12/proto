@@ -1,13 +1,206 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 html {
   scroll-behavior: smooth;
 }
 
+/* ==========================================================================
+   ATURAN MUTLAK WARNA TEKS (2 WARNA SAJA: HITAM DAN PUTIH)
+   - Dark Mode  : SEMUA TEKS BERWARNA PUTIH (#ffffff)
+   - Light Mode : SEMUA TEKS BERWARNA HITAM (#000000)
+   - TIDAK ADA ABU-ABU / GRAY / ZINC / MUTED PADA TEKS
+   ========================================================================== */
+
+/* Light Mode: Background putih bersih, SEMUA TEKS HITAM PEKAT */
+:root {
+  --background: #ffffff;
+  --foreground: #000000;
+  --card: #ffffff;
+  --card-foreground: #000000;
+  --popover: #ffffff;
+  --popover-foreground: #000000;
+  --border: #e4e4e7;
+  --input: #000000;
+  --primary: #10b981;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #000000;
+}
+
+/* Dark Mode: Background hitam pekat, SEMUA TEKS PUTIH BERSIH */
+.dark {
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #09090b;
+  --card-foreground: #ffffff;
+  --popover: #09090b;
+  --popover-foreground: #ffffff;
+  --border: #27272a;
+  --input: #ffffff;
+  --primary: #10b981;
+  --primary-foreground: #000000;
+  --secondary: #18181b;
+  --secondary-foreground: #ffffff;
+}
+
 body {
-  background-color: #09090b;
-  color: #f4f4f5;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* ==========================================================================
+   OVERRIDE UNIVERSAL TEKS: HANYA HITAM DI LIGHT DAN HANYA PUTIH DI DARK
+   ========================================================================== */
+
+/* Dark Mode: SEMUA elemen teks dipaksa menjadi PUTIH (#ffffff) */
+html.dark,
+html.dark body,
+html.dark h1, html.dark h2, html.dark h3, html.dark h4, html.dark h5, html.dark h6,
+html.dark p, html.dark span, html.dark label, html.dark a, html.dark button,
+html.dark input, html.dark textarea, html.dark select, html.dark div,
+html.dark .text-white, html.dark .text-zinc-100, html.dark .text-zinc-200,
+html.dark .text-zinc-300, html.dark .text-zinc-400, html.dark .text-zinc-500,
+html.dark .text-zinc-600, html.dark .text-zinc-700, html.dark .text-zinc-800,
+html.dark .text-zinc-900, html.dark .text-zinc-950,
+html.dark .text-muted-foreground {
+  color: #ffffff !important;
+}
+
+/* Light Mode: SEMUA elemen teks dipaksa menjadi HITAM (#000000) */
+html:not(.dark),
+html:not(.dark) body,
+html:not(.dark) h1, html:not(.dark) h2, html:not(.dark) h3, html:not(.dark) h4, html:not(.dark) h5, html:not(.dark) h6,
+html:not(.dark) p, html:not(.dark) span, html:not(.dark) label, html:not(.dark) a, html:not(.dark) button,
+html:not(.dark) input, html:not(.dark) textarea, html:not(.dark) select, html:not(.dark) div,
+html:not(.dark) .text-white, html:not(.dark) .text-zinc-100, html:not(.dark) .text-zinc-200,
+html:not(.dark) .text-zinc-300, html:not(.dark) .text-zinc-400, html:not(.dark) .text-zinc-500,
+html:not(.dark) .text-zinc-600, html:not(.dark) .text-zinc-700, html:not(.dark) .text-zinc-800,
+html:not(.dark) .text-zinc-900, html:not(.dark) .text-zinc-950,
+html:not(.dark) .text-muted-foreground {
+  color: #000000 !important;
+}
+
+/* ==========================================================================
+   BUTTON & COMPONENT HOVER & ACTIVE FEEDBACK
+   ========================================================================== */
+
+button,
+[role="button"],
+.cursor-pointer {
+  transition: transform 0.1s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+button:active:not(:disabled),
+[role="button"]:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* Primary Green Buttons */
+.bg-emerald-500,
+.bg-emerald-600 {
+  color: #000000 !important;
+}
+
+.bg-emerald-500:hover:not(:disabled) {
+  background-color: #34d399 !important;
+}
+
+.bg-emerald-500:active:not(:disabled) {
+  background-color: #059669 !important;
+}
+
+/* Destructive Red Buttons */
+.bg-rose-500,
+.bg-rose-600 {
+  color: #ffffff !important;
+}
+
+.bg-rose-500:hover:not(:disabled) {
+  background-color: #e11d48 !important;
+}
+
+.bg-rose-500:active:not(:disabled) {
+  background-color: #be123c !important;
+}
+
+/* Surfaces & Borders */
+html.dark .bg-black,
+html.dark .bg-zinc-950 {
+  background-color: #000000 !important;
+}
+
+html.dark .bg-zinc-900,
+html.dark .bg-zinc-900\/90,
+html.dark .bg-zinc-900\/50,
+html.dark .bg-zinc-900\/40,
+html.dark .bg-zinc-900\/30 {
+  background-color: #09090b !important;
+  border-color: #27272a !important;
+}
+
+html.dark header {
+  background-color: rgba(0, 0, 0, 0.85) !important;
+  border-bottom-color: #27272a !important;
+}
+
+html:not(.dark) .bg-black,
+html:not(.dark) .bg-zinc-950 {
+  background-color: #ffffff !important;
+}
+
+html:not(.dark) .bg-zinc-900,
+html:not(.dark) .bg-zinc-900\/90,
+html:not(.dark) .bg-zinc-900\/50,
+html:not(.dark) .bg-zinc-900\/40,
+html:not(.dark) .bg-zinc-900\/30 {
+  background-color: #ffffff !important;
+  border-color: #e4e4e7 !important;
+}
+
+html:not(.dark) header {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-bottom-color: #e4e4e7 !important;
+}
+
+/* Card hover elevations */
+html.dark .group:hover,
+html.dark .rounded-2xl:hover {
+  border-color: #3f3f46 !important;
+}
+
+html:not(.dark) .group:hover,
+html:not(.dark) .rounded-2xl:hover {
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Input Styles */
+html:not(.dark) input,
+html:not(.dark) textarea,
+html:not(.dark) select {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+}
+
+html:not(.dark) input:focus,
+html:not(.dark) textarea:focus {
+  border-color: #10b981 !important;
+}
+
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background-color: #000000 !important;
+  border-color: #27272a !important;
+}
+
+html.dark input:focus,
+html.dark textarea:focus {
+  border-color: #10b981 !important;
 }

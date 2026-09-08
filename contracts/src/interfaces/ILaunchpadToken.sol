@@ -10,8 +10,15 @@ interface ILaunchpadToken {
         string farcaster;
     }
 
+    struct TaxConfig {
+        uint16 buyTaxBps; // Base points (100 = 1%, max 1000 = 10%)
+        uint16 sellTaxBps; // Base points (100 = 1%, max 1000 = 10%)
+        address taxRecipient; // Wallet receiving creator trading taxes
+    }
+
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
+    event TaxCollected(address indexed from, address indexed to, uint256 taxAmount, bool isBuy);
 
     function name() external view returns (string memory);
     function symbol() external view returns (string memory);
@@ -35,6 +42,11 @@ interface ILaunchpadToken {
         string memory discord,
         string memory website,
         string memory farcaster
+    );
+    function taxConfig() external view returns (
+        uint16 buyTaxBps,
+        uint16 sellTaxBps,
+        address taxRecipient
     );
 
     function setLiquidityPool(address pool) external;

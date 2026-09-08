@@ -1,105 +1,185 @@
 <template>
-  <header class="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur sticky top-0 z-50">
+  <header
+    class="border-b border-zinc-200/80 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur sticky top-0 z-50 transition-colors shadow-sm dark:shadow-none"
+  >
     <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-      <div class="flex items-center gap-8">
-        <a
-          href="#"
-          @click.prevent="$emit('navigate', 'explore')"
-          class="flex items-center gap-2.5 text-xl font-bold tracking-tight text-white"
+      <!-- Left: Brand + Real Router Links -->
+      <div class="flex items-center gap-6">
+        <RouterLink
+          to="/launchpad"
+          class="flex items-center text-xl font-extrabold tracking-tight hover:text-emerald-500 dark:hover:text-emerald-400 transition"
         >
-          <Rocket class="w-6 h-6 text-emerald-400" />
-          <span class="text-white">proto</span>
-          <span
-            class="text-[11px] bg-zinc-900 text-zinc-400 px-2 py-0.5 rounded border border-zinc-800 font-mono"
+          <span>proto</span>
+        </RouterLink>
+
+        <!-- Desktop Navigation Routes using Shadcn Button style -->
+        <nav class="hidden lg:flex items-center gap-1 text-sm font-medium">
+          <Button
+            as-child
+            :variant="isRouteActive('/launchpad') ? 'secondary' : 'ghost'"
+            size="sm"
+            class="h-8 gap-1.5 font-semibold text-xs"
           >
-            {{ isConnected ? activeNetwork.name : 'Robinhood L2' }}
-          </span>
-        </a>
-        <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
-          <button
-            @click="$emit('navigate', 'explore')"
-            :class="activeTab === 'explore' ? 'text-white' : 'text-zinc-400 hover:text-white'"
-            class="flex items-center gap-1.5 transition"
+            <RouterLink to="/launchpad">
+              <Compass class="w-3.5 h-3.5" />
+              Explore
+            </RouterLink>
+          </Button>
+
+          <Button
+            as-child
+            :variant="isRouteActive('/launchpad/create') ? 'secondary' : 'ghost'"
+            size="sm"
+            class="h-8 gap-1.5 font-semibold text-xs"
           >
-            <Compass class="w-4 h-4" />
-            Explore
-          </button>
-          <button
-            @click="$emit('navigate', 'create')"
-            :class="activeTab === 'create' ? 'text-white' : 'text-zinc-400 hover:text-white'"
-            class="flex items-center gap-1.5 transition"
+            <RouterLink to="/launchpad/create">
+              <PlusCircle class="w-3.5 h-3.5" />
+              Create
+            </RouterLink>
+          </Button>
+
+          <Button
+            as-child
+            :variant="isRouteActive('/memestock') ? 'secondary' : 'ghost'"
+            size="sm"
+            class="h-8 gap-1.5 font-semibold text-xs"
           >
-            <PlusCircle class="w-4 h-4" />
-            Create
-          </button>
-          <button
-            @click="$emit('navigate', 'trade')"
-            :class="activeTab === 'trade' ? 'text-white' : 'text-zinc-400 hover:text-white'"
-            class="flex items-center gap-1.5 transition"
+            <RouterLink to="/memestock">
+              <TrendingUp class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
+              Memestock
+            </RouterLink>
+          </Button>
+
+          <Button
+            as-child
+            :variant="isRouteActive('/analytics') ? 'secondary' : 'ghost'"
+            size="sm"
+            class="h-8 gap-1.5 font-semibold text-xs"
           >
-            <ArrowLeftRight class="w-4 h-4" />
-            Trade
-          </button>
-          <button
-            @click="$emit('navigate', 'analytics')"
-            :class="activeTab === 'analytics' ? 'text-white' : 'text-zinc-400 hover:text-white'"
-            class="flex items-center gap-1.5 transition"
-          >
-            <Activity class="w-4 h-4" />
-            Analytics
-          </button>
-          <button
-            @click="$emit('navigate', 'profile')"
-            :class="activeTab === 'profile' ? 'text-white' : 'text-zinc-400 hover:text-white'"
-            class="flex items-center gap-1.5 transition"
-          >
-            <User class="w-4 h-4" />
-            Profile
-          </button>
+            <RouterLink to="/analytics">
+              <Activity class="w-3.5 h-3.5" />
+              Analytics
+            </RouterLink>
+          </Button>
         </nav>
       </div>
 
+      <!-- Right Actions: Search + Dark Mode Toggle + Network Alert + Wallet Dropdown with MetaMask Jazzicon -->
       <div class="flex items-center gap-3">
-        <!-- Wrong Network Warning Button -->
-        <button
+        <!-- Search Trigger Button -->
+        <Button
+          variant="outline"
+          size="sm"
+          @click="$emit('openSearch')"
+          class="h-8 gap-2 text-xs"
+          aria-label="Search tokens"
+        >
+          <Search class="w-3.5 h-3.5" />
+          <span class="hidden sm:inline">Search</span>
+          <Badge variant="secondary" class="h-4 px-1 text-[10px] font-mono"> ⌘K </Badge>
+        </Button>
+
+        <!-- Shadcn Dark Mode Toggle -->
+        <ThemeToggle />
+
+        <!-- Wrong Network Switcher -->
+        <Button
           v-if="isConnected && !isCorrectNetwork"
           @click="switchOrAddNetwork(ROBINHOOD_CHAIN)"
-          class="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-black font-semibold text-xs px-3 py-1.5 rounded-lg transition"
+          variant="destructive"
+          size="sm"
+          class="h-8 gap-1.5 text-xs font-semibold"
         >
           <AlertTriangle class="w-3.5 h-3.5" />
-          Switch to Robinhood Chain
-        </button>
+          Switch Network
+        </Button>
 
-        <!-- Connect / Connected State -->
-        <button
+        <!-- Unconnected Connect Button -->
+        <Button
           v-if="!isConnected"
-          @click="connectWallet"
+          @click="openWallet"
           :disabled="isConnecting"
-          class="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-semibold text-sm px-4 py-2 rounded-lg transition shadow-sm"
+          variant="default"
+          size="sm"
+          class="h-8 gap-1.5 font-semibold text-xs shadow-sm"
         >
           <Wallet class="w-4 h-4" />
-          {{ isConnecting ? 'Connecting...' : 'Connect Wallet' }}
-        </button>
-        <div v-else class="flex items-center gap-3">
-          <div
-            class="hidden sm:flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg text-xs font-mono text-zinc-300"
+          {{ isConnecting ? 'Connecting...' : 'Connect' }}
+        </Button>
+
+        <!-- Connected State: Shadcn Dropdown Menu with MetaMask-Style Jazzicon -->
+        <div v-else class="flex items-center gap-2">
+          <!-- Balance Badge -->
+          <Badge
+            variant="outline"
+            class="hidden sm:flex items-center gap-1.5 h-8 px-2.5 text-xs font-mono font-normal"
           >
-            <Coins class="w-3.5 h-3.5 text-emerald-400" />
+            <Coins class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
             <span>{{ formattedBalance }}</span>
-          </div>
-          <div
-            class="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg text-sm"
-          >
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span class="font-mono text-zinc-300">{{ formattedAddress }}</span>
-            <button
-              @click="disconnectWallet"
-              title="Disconnect wallet"
-              class="text-zinc-500 hover:text-rose-400 ml-1 transition"
-            >
-              <LogOut class="w-3.5 h-3.5" />
-            </button>
-          </div>
+          </Badge>
+
+          <!-- Shadcn Dropdown Menu for Profile -->
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button variant="outline" size="sm" class="h-8 gap-2 px-2 text-xs">
+                <!-- Deterministic MetaMask Jazzicon Avatar -->
+                <Jazzicon
+                  :address="account"
+                  :size="20"
+                  class="border border-zinc-200 dark:border-zinc-700 shadow-sm"
+                />
+                <span class="font-mono text-xs font-medium">{{ formattedAddress }}</span>
+                <ChevronDown class="h-3 w-3 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent align="end" class="w-60">
+              <DropdownMenuLabel class="flex items-center gap-2.5 py-2">
+                <Jazzicon
+                  :address="account"
+                  :size="28"
+                  class="border border-zinc-300 dark:border-zinc-700"
+                />
+                <div class="truncate">
+                  <span class="block text-xs font-bold">Connected Account</span>
+                  <span
+                    class="block text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold truncate"
+                  >
+                    {{ account }}
+                  </span>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem as-child>
+                <RouterLink to="/profile" class="flex items-center gap-2 w-full cursor-pointer">
+                  <User class="w-3.5 h-3.5" />
+                  <span>My Profile &amp; Fees</span>
+                </RouterLink>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem @click="copyAddress" class="cursor-pointer">
+                <Copy v-if="!copied" class="w-3.5 h-3.5" />
+                <Check v-else class="w-3.5 h-3.5 text-emerald-500" />
+                <span>{{ copied ? 'Address Copied!' : 'Copy Address' }}</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem @click="openWallet" class="cursor-pointer">
+                <Wallet class="w-3.5 h-3.5" />
+                <span>Switch / Manage Wallet</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem
+                @click="disconnectWallet"
+                class="text-rose-600 dark:text-rose-400 focus:text-rose-700 dark:focus:text-rose-300 focus:bg-rose-50 dark:focus:bg-rose-950/40 cursor-pointer"
+              >
+                <LogOut class="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
+                <span>Disconnect</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>
@@ -107,38 +187,72 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
+import { useRoute, RouterLink } from 'vue-router';
 import {
-  Rocket,
   Compass,
   PlusCircle,
-  ArrowLeftRight,
+  TrendingUp,
   Activity,
   User,
   Wallet,
   Coins,
   LogOut,
   AlertTriangle,
+  Search,
+  ChevronDown,
+  Copy,
+  Check,
 } from 'lucide-vue-next';
 import { ROBINHOOD_CHAIN } from '@proto/shared-types';
 import { useWallet } from '../composables/useWallet';
-
-defineProps<{
-  activeTab: string;
-}>();
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Jazzicon } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import ThemeToggle from '@/components/ThemeToggle.vue';
 
 defineEmits<{
-  (e: 'navigate', tab: string): void;
+  (e: 'openSearch'): void;
 }>();
 
+const route = useRoute();
+
+function isRouteActive(path: string): boolean {
+  if (path === '/launchpad') {
+    return route.path === '/launchpad' || route.path === '/';
+  }
+  return route.path.startsWith(path);
+}
+
 const {
+  account,
   isConnected,
   isConnecting,
   isCorrectNetwork,
   formattedAddress,
   formattedBalance,
-  activeNetwork,
-  connectWallet,
   disconnectWallet,
   switchOrAddNetwork,
+  openWallet,
 } = useWallet();
+
+const copied = ref(false);
+
+function copyAddress() {
+  if (account.value) {
+    navigator.clipboard.writeText(account.value);
+    copied.value = true;
+    setTimeout(() => {
+      copied.value = false;
+    }, 2000);
+  }
+}
 </script>

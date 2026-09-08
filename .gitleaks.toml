@@ -2,9 +2,12 @@
 useDefault = true
 
 [allowlist]
-description = "Allow test mock addresses and fixtures"
+description = "Allow test mock addresses, localStorage keys and fixtures"
 paths = [
   '''apps/api/test/.*''',
   '''apps/frontoffice/test/.*''',
   '''contracts/test/.*'''
+]
+regexes = [
+  '''proto_privacy_policy_accepted_v1'''
 ]

@@ -41,8 +41,8 @@ export const ROBINHOOD_CHAIN: NetworkConfig = {
   rpcUrl: 'https://rpc.mainnet.chain.robinhood.com',
   blockExplorer: 'https://robinhoodchain.blockscout.com',
   contracts: {
-    factory: '0xA5aAb3F0c6EeadF30Ef1D3Eb997108E976351feB',
-    locker: '0x736D76699C26D0d966744cAe304C000d471f7F35',
+    factory: '0x48844223aBDceeb1Ce502F54d559681358E68200',
+    locker: '0x070233B6F46ccD61CA2B7bc1E13520c3fE4614E4',
     uniswapV3Factory: '0x1f7d7550B1b028f7571E69A784071F0205FD2EfA',
     positionManager: '0x73991a25C818Bf1f1128dEAaB1492D45638DE0D3',
     swapRouter: '0xCaf681a66D020601342297493863E78C959E5cb2',
@@ -73,8 +73,8 @@ export const ROBINHOOD_TESTNET: NetworkConfig = {
   rpcUrl: 'https://rpc.testnet.chain.robinhood.com',
   blockExplorer: 'https://testnet.robinhoodchain.blockscout.com',
   contracts: {
-    factory: '0xA5aAb3F0c6EeadF30Ef1D3Eb997108E976351feB',
-    locker: '0x736D76699C26D0d966744cAe304C000d471f7F35',
+    factory: '0x48844223aBDceeb1Ce502F54d559681358E68200',
+    locker: '0x070233B6F46ccD61CA2B7bc1E13520c3fE4614E4',
     uniswapV3Factory: '0x1f7d7550B1b028f7571E69A784071F0205FD2EfA',
     positionManager: '0x73991a25C818Bf1f1128dEAaB1492D45638DE0D3',
     swapRouter: '0xCaf681a66D020601342297493863E78C959E5cb2',

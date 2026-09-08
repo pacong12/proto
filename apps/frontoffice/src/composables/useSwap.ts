@@ -15,12 +15,15 @@ const erc20Abi = parseAbi([
 export function useSwap() {
   const isSwapping = ref(false);
   const swapError = ref<string | null>(null);
+  const slippage = ref<number>(1.0); // Default slippage tolerance 1.0%
 
   async function executeSwap(params: {
     tokenAddress: `0x${string}`;
     isBuy: boolean;
     amountInEth: string;
     slippagePercent?: number;
+    amountOutMinimum?: bigint;
+    expectedAmountOut?: bigint;
   }): Promise<string | null> {
     isSwapping.value = true;
     swapError.value = null;
@@ -32,6 +35,7 @@ export function useSwap() {
       const [account] = await walletClient.getAddresses();
       if (!account) throw new Error('No active account selected');
 
+      const slippagePercent = params.slippagePercent ?? slippage.value ?? 1.0;
       const amountInWei = BigInt(Math.floor(parseFloat(params.amountInEth) * 1e18));
       const tokenIn = params.isBuy ? ROBINHOOD_CHAIN.contracts.weth : params.tokenAddress;
       const tokenOut = params.isBuy ? params.tokenAddress : ROBINHOOD_CHAIN.contracts.weth;
@@ -49,6 +53,12 @@ export function useSwap() {
         await publicClient.waitForTransactionReceipt({ hash: approveHash });
       }
 
+      let amountOutMinimum = params.amountOutMinimum ?? 0n;
+      if (amountOutMinimum === 0n && params.expectedAmountOut) {
+        const factor = BigInt(Math.max(0, Math.floor((100 - slippagePercent) * 100)));
+        amountOutMinimum = (params.expectedAmountOut * factor) / 10000n;
+      }
+
       const swapHash = await walletClient.writeContract({
         address: ROBINHOOD_CHAIN.contracts.swapRouter,
         abi: swapRouterAbi,
@@ -61,7 +71,7 @@ export function useSwap() {
             recipient: account,
             deadline: BigInt(Math.floor(Date.now() / 1000) + 1200),
             amountIn: amountInWei,
-            amountOutMinimum: 0n,
+            amountOutMinimum,
             sqrtPriceLimitX96: 0n,
           },
         ],
@@ -83,6 +93,7 @@ export function useSwap() {
   return {
     isSwapping,
     swapError,
+    slippage,
     executeSwap,
   };
 }

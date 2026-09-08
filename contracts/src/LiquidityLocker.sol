@@ -37,6 +37,9 @@ contract LiquidityLocker is ILiquidityLocker {
     error ZeroAddress();
     error InvalidShare();
     error TransferFailed();
+    error Reentrancy();
+
+    bool private _locked;
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert Unauthorized();
@@ -46,6 +49,13 @@ contract LiquidityLocker is ILiquidityLocker {
     modifier onlyFactory() {
         if (msg.sender != factory) revert Unauthorized();
         _;
+    }
+
+    modifier nonReentrant() {
+        if (_locked) revert Reentrancy();
+        _locked = true;
+        _;
+        _locked = false;
     }
 
     constructor(
@@ -101,7 +111,7 @@ contract LiquidityLocker is ILiquidityLocker {
         protocolFeeRecipient = recipient;
     }
 
-    function claimFees(address token) external override returns (uint256 creatorTokenFee, uint256 creatorWethFee) {
+    function claimFees(address token) external override nonReentrant returns (uint256 creatorTokenFee, uint256 creatorWethFee) {
         uint256 positionId = tokenPositions[token];
         if (positionId == 0) revert NotLocked();
 

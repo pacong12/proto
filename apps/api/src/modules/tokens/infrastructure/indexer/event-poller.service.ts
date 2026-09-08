@@ -1,10 +1,5 @@
-import { PublicClient } from 'viem';
-import {
-  ROBINHOOD_CHAIN,
-  launchpadFactoryAbi,
-  uniswapV3PoolAbi,
-  TradeEventEntity,
-} from '@proto/shared-types';
+import { PublicClient, parseAbiItem } from 'viem';
+import { ROBINHOOD_CHAIN, TradeEventEntity } from '@proto/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import { ChainIndexerPort } from '../../domain/ports/chain.indexer.port';
 import { CalculatePricingUseCase } from '../../application/use-cases/calculate-pricing.use-case';
@@ -28,9 +23,13 @@ export class EventPollerService {
       if (startBlock > currentBlock) return 0;
 
       // 1. Poll TokenLaunched Events
+      const tokenLaunchedEvent = parseAbiItem(
+        'event TokenLaunched(address indexed token, address indexed deployer, address indexed dexFactory, address pairedToken, address pool, uint256 dexId, uint256 launchConfigId, uint256 positionId, uint256 restrictionsEndBlock, uint256 initialBuyAmount)',
+      );
+
       const launchLogs = await this.client.getLogs({
         address: ROBINHOOD_CHAIN.contracts.factory,
-        event: launchpadFactoryAbi[8], // TokenLaunched event
+        event: tokenLaunchedEvent,
         fromBlock: startBlock,
         toBlock: currentBlock,
       });
@@ -46,18 +45,32 @@ export class EventPollerService {
       }
 
       // 2. Poll Swap Events for all indexed tokens
+      const swapEvent = parseAbiItem(
+        'event Swap(address indexed sender, address indexed recipient, int256 amount0, int256 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick)',
+      );
+
       const allTokens = await this.tokenRepository.findAll(100, 0);
       let tradeCount = 0;
 
-      for (const token of allTokens) {
+      if (allTokens.length > 0) {
+        const poolAddresses = allTokens.map((t) => t.poolAddress);
         const swapLogs = await this.client.getLogs({
-          address: token.poolAddress,
-          event: uniswapV3PoolAbi[4], // Swap event
+          address: poolAddresses.length === 1 ? poolAddresses[0] : poolAddresses,
+          event: swapEvent,
           fromBlock: startBlock,
           toBlock: currentBlock,
         });
 
+        // Build a map from pool address to token for O(1) lookup
+        const tokenByPool = new Map(allTokens.map((t) => [t.poolAddress.toLowerCase(), t]));
+
+        // Cache block timestamps to avoid redundant RPC calls
+        const blockTimestamps = new Map<bigint, number>();
+
         for (const swap of swapLogs) {
+          const token = tokenByPool.get(swap.address.toLowerCase());
+          if (!token) continue;
+
           const { sender, recipient, amount0, amount1, sqrtPriceX96 } = swap.args;
           if (amount0 === undefined || amount1 === undefined) continue;
 
@@ -87,6 +100,14 @@ export class EventPollerService {
             pairedPrincipalWei: 0n,
           });
 
+          const blockNumber = swap.blockNumber ?? currentBlock;
+          let timestamp = blockTimestamps.get(blockNumber);
+          if (timestamp === undefined) {
+            const block = await this.client.getBlock({ blockNumber });
+            timestamp = Number(block.timestamp);
+            blockTimestamps.set(blockNumber, timestamp);
+          }
+
           const trade: TradeEventEntity = {
             id: `${swap.transactionHash}-${swap.logIndex}`,
             tokenAddress: token.address,
@@ -98,9 +119,9 @@ export class EventPollerService {
             tokenAmount: (Number(tokenAmountRaw) / 1e18).toFixed(4),
             wethAmount: (Number(wethAmountRaw) / 1e18).toFixed(6),
             priceUsd: marketData.priceUsd,
-            blockNumber: swap.blockNumber ?? currentBlock,
+            blockNumber,
             transactionHash: swap.transactionHash ?? '0x0',
-            timestamp: Date.now(),
+            timestamp,
           };
 
           await this.tokenRepository.saveTrade(trade);
@@ -110,7 +131,8 @@ export class EventPollerService {
 
       this.lastPolledBlock = currentBlock;
       return launchLogs.length + tradeCount;
-    } catch {
+    } catch (error) {
+      console.error('[EventPoller] pollEvents failed:', error);
       return 0;
     }
   }

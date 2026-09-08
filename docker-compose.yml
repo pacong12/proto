@@ -33,6 +33,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontoffice
+      args:
+        VITE_REOWN_PROJECT_ID: ${VITE_REOWN_PROJECT_ID}
     container_name: proto-frontoffice
     ports:
       - "3000:3000"

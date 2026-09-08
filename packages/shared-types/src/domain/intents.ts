@@ -11,6 +11,9 @@ export interface LaunchTokenIntentPayload {
   website?: string;
   farcaster?: string;
   initialBuyAmountWei?: string;
+  buyTaxPercent?: number;
+  sellTaxPercent?: number;
+  creatorTaxWallet?: `0x${string}`;
 }
 
 export interface SwapIntentPayload {
