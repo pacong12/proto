@@ -93,7 +93,8 @@ async function handleRequest(req: Request): Promise<Response> {
     const limit = parseInt(url.searchParams.get('limit') ?? '50', 10);
     const offset = parseInt(url.searchParams.get('offset') ?? '0', 10);
     const version = (url.searchParams.get('version') as 'v1' | 'v2' | null) ?? undefined;
-    const res = await tokenController.listTokens(limit, offset, version);
+    const deployer = url.searchParams.get('deployer') ?? undefined;
+    const res = await tokenController.listTokens(limit, offset, version, deployer);
     return new Response(safeStringify(res), { headers });
   }
 
