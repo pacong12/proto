@@ -6,9 +6,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const REDIS_URL = process.env.REDIS_URL;
+const _REDIS_URL = process.env.REDIS_URL;
 const LOG_FILE = path.join(process.cwd(), '.agent-irc.log');
-const AGENTS = ['conductor', 'vault', 'contracts', 'face', 'deck', 'ops', 'qa', 'reviewer'];
+const _AGENTS = ['conductor', 'vault', 'contracts', 'face', 'deck', 'ops', 'qa', 'reviewer'];
 
 const [,, cmd, ...args] = process.argv;
 
