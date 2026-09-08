@@ -14,19 +14,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: 22
-          cache: 'npm'
+          bun-version: latest
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
 
-      - name: Install npm dependencies
-        run: npm ci
+      - name: Install dependencies with Bun
+        run: bun install --frozen-lockfile
 
       - name: Setup Foundry dependencies
         run: |
@@ -34,16 +33,16 @@ jobs:
           git clone --depth 1 https://github.com/foundry-rs/forge-std.git contracts/lib/forge-std
 
       - name: Lint Check
-        run: npm run lint
+        run: bun run lint
 
       - name: Typecheck
-        run: npm run typecheck
+        run: bun run typecheck
 
       - name: Unit & Integration Tests (Apps)
-        run: npm run test
+        run: bun run test
 
       - name: Smart Contract Tests (Foundry)
-        run: npm run test:contracts
+        run: bun run test:contracts
 
       - name: Production Builds
-        run: npm run build
+        run: bun run build
