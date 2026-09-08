@@ -1,0 +1,28 @@
+# proto
+> Launch fixed-supply tokens on Robinhood Chain.
+
+proto is the premier Robinhood Chain launchpad for fixed-supply tokens. Explore new launches, create tokens, and trade with permanently locked liquidity or dynamic bonding curves.
+
+## Products & Features
+- Explore newest token launches on Robinhood Chain
+- Dual Launch Architectures:
+  - **v1**: Direct Uniswap V3 locked liquidity pool
+  - **v2**: Constant-Product bonding curve with 4.2 ETH automatic graduation
+- Decentralized trading interface with live charts and real-time order books
+- Built-in metadata storage pinned to IPFS
+
+## Public Surfaces
+- App / Explore: https://proto.family/launchpad
+- Create Token: https://proto.family/launchpad/create
+- Analytics: https://proto.family/analytics
+- Memestock Community Feed: https://proto.family/memestock
+- Documentation: https://docs.proto.family
+- Robots: https://proto.family/robots.txt
+- Sitemap: https://proto.family/sitemap.xml
+
+## Protocol Parameters
+- Network: Robinhood Chain (Chain ID: 4663)
+- Token Supply: Fixed 1,000,000,000 (18 decimals)
+- Graduation Threshold: 4.2 ETH
+- Pool Fee: 1% (10000)
+- Launch Fee: 0.0005 ETH

@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://proto.family/sitemap.xml
+Host: https://proto.family
