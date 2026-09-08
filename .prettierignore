@@ -1,0 +1,11 @@
+dist
+out
+cache
+artifacts
+coverage
+node_modules
+contracts/lib
+contracts/out
+contracts/cache
+.nx
+*.lock

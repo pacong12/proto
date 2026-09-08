@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Builds & Outputs
+dist/
+out/
+build/
+coverage/
+.nx/cache/
+
+# Foundry / Solidity
+contracts/lib/
+contracts/out/
+contracts/cache/
+broadcast/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
