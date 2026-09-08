@@ -12,7 +12,7 @@ export class GetTokenByAddressUseCase {
   constructor(
     private readonly tokenRepository: TokenRepositoryPort,
     private readonly chainIndexer: ChainIndexerPort,
-    private readonly calculatePricing: CalculatePricingUseCase
+    private readonly calculatePricing: CalculatePricingUseCase,
   ) {}
 
   async execute(address: `0x${string}`): Promise<TokenDetailResult | null> {

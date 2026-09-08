@@ -24,7 +24,9 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
     });
   }
 
-  async fetchLaunchedTokenFromChain(tokenAddress: `0x${string}`): Promise<LaunchedTokenEntity | null> {
+  async fetchLaunchedTokenFromChain(
+    tokenAddress: `0x${string}`,
+  ): Promise<LaunchedTokenEntity | null> {
     try {
       const [tokenLaunchedData, name, symbol, decimals, logo, description, poolAddress, socials] =
         await Promise.all([
@@ -126,7 +128,9 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
     }
   }
 
-  async fetchPoolSlot0(poolAddress: `0x${string}`): Promise<{ sqrtPriceX96: bigint; tick: number }> {
+  async fetchPoolSlot0(
+    poolAddress: `0x${string}`,
+  ): Promise<{ sqrtPriceX96: bigint; tick: number }> {
     try {
       const [sqrtPriceX96, tick] = await this.client.readContract({
         address: poolAddress,

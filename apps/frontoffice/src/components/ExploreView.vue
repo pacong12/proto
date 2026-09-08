@@ -3,7 +3,9 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
         <h1 class="text-3xl font-bold tracking-tight text-white">Explore Launches</h1>
-        <p class="text-zinc-400 text-sm mt-1">Fixed-supply tokens climbing toward graduation on Robinhood Chain.</p>
+        <p class="text-zinc-400 text-sm mt-1">
+          Fixed-supply tokens climbing toward graduation on Robinhood Chain.
+        </p>
       </div>
 
       <div class="flex items-center gap-3">
@@ -12,7 +14,9 @@
             v-for="f in ['Recent buys', 'Newest', 'Market cap', 'Volume']"
             :key="f"
             @click="activeFilter = f"
-            :class="activeFilter === f ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-zinc-200'"
+            :class="
+              activeFilter === f ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-zinc-200'
+            "
             class="px-3 py-1.5 rounded-md font-medium transition"
           >
             {{ f }}
@@ -36,7 +40,9 @@
       >
         <div>
           <div class="flex items-start gap-3">
-            <div class="w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center font-bold text-lg text-emerald-400 border border-zinc-700">
+            <div
+              class="w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center font-bold text-lg text-emerald-400 border border-zinc-700"
+            >
               {{ item.token.symbol.slice(0, 3) }}
             </div>
             <div class="flex-1 min-w-0">
@@ -51,17 +57,23 @@
             </span>
           </div>
 
-          <p class="text-xs text-zinc-400 mt-3 line-clamp-2">{{ item.token.description || 'No description provided.' }}</p>
+          <p class="text-xs text-zinc-400 mt-3 line-clamp-2">
+            {{ item.token.description || 'No description provided.' }}
+          </p>
         </div>
 
         <div class="mt-5 space-y-3 pt-4 border-t border-zinc-800/80">
           <div class="flex justify-between text-xs">
             <span class="text-zinc-400">Market Cap</span>
-            <span class="font-mono font-medium text-white">${{ item.marketData.marketCapUsd.toLocaleString() }}</span>
+            <span class="font-mono font-medium text-white"
+              >${{ item.marketData.marketCapUsd.toLocaleString() }}</span
+            >
           </div>
           <div class="flex justify-between text-xs">
             <span class="text-zinc-400">Graduation Progress</span>
-            <span class="font-mono font-medium text-emerald-400">{{ (item.marketData.graduationProgress * 100).toFixed(1) }}%</span>
+            <span class="font-mono font-medium text-emerald-400"
+              >{{ (item.marketData.graduationProgress * 100).toFixed(1) }}%</span
+            >
           </div>
           <div class="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
             <div

@@ -1,5 +1,7 @@
 <template>
-  <div class="min-h-screen bg-black text-white flex flex-col font-sans selection:bg-emerald-500 selection:text-black">
+  <div
+    class="min-h-screen bg-black text-white flex flex-col font-sans selection:bg-emerald-500 selection:text-black"
+  >
     <Navbar :activeTab="activeTab" @navigate="handleNavigate" />
 
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-8">
@@ -8,17 +10,9 @@
         @selectToken="handleSelectToken"
         @selectTab="handleNavigate"
       />
-      <CreateTokenView
-        v-else-if="activeTab === 'create'"
-        @tokenCreated="handleTokenCreated"
-      />
-      <TradeView
-        v-else-if="activeTab === 'trade'"
-        :tokenAddress="selectedTokenAddress"
-      />
-      <AnalyticsView
-        v-else-if="activeTab === 'analytics'"
-      />
+      <CreateTokenView v-else-if="activeTab === 'create'" @tokenCreated="handleTokenCreated" />
+      <TradeView v-else-if="activeTab === 'trade'" :tokenAddress="selectedTokenAddress" />
+      <AnalyticsView v-else-if="activeTab === 'analytics'" />
     </main>
 
     <footer class="border-t border-zinc-900 py-6 text-center text-xs text-zinc-600">

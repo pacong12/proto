@@ -74,7 +74,11 @@ export class SecurityPolicy {
           severity: 'HIGH',
         });
       }
-      if (!payload.tokenAddress || !payload.tokenAddress.startsWith('0x') || payload.tokenAddress.length !== 42) {
+      if (
+        !payload.tokenAddress ||
+        !payload.tokenAddress.startsWith('0x') ||
+        payload.tokenAddress.length !== 42
+      ) {
         checks.push({
           code: 'INVALID_TARGET_TOKEN',
           description: 'Swap target token address is invalid',
@@ -91,7 +95,12 @@ export class SecurityPolicy {
     return {
       intentId: intent.id,
       allowed,
-      reason: allowed ? undefined : checks.filter((c) => !c.passed).map((c) => c.description).join('; '),
+      reason: allowed
+        ? undefined
+        : checks
+            .filter((c) => !c.passed)
+            .map((c) => c.description)
+            .join('; '),
       checks,
       evaluatedAt: Date.now(),
       suggestedAction: allowed ? 'APPROVE' : 'REJECT',

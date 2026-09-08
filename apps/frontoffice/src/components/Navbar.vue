@@ -2,9 +2,15 @@
   <header class="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
       <div class="flex items-center gap-8">
-        <a href="#" @click.prevent="$emit('navigate', 'explore')" class="flex items-center gap-2 text-xl font-bold tracking-tight text-white">
+        <a
+          href="#"
+          @click.prevent="$emit('navigate', 'explore')"
+          class="flex items-center gap-2 text-xl font-bold tracking-tight text-white"
+        >
           <span class="text-emerald-400">proto</span>
-          <span class="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded border border-zinc-700">Robinhood L2</span>
+          <span class="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded border border-zinc-700"
+            >Robinhood L2</span
+          >
         </a>
         <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
           <button
@@ -42,7 +48,10 @@
         >
           Connect Wallet
         </button>
-        <div v-else class="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg text-sm">
+        <div
+          v-else
+          class="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg text-sm"
+        >
           <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
           <span class="font-mono text-zinc-300">{{ formattedAccount }}</span>
         </div>
@@ -72,9 +81,11 @@ const formattedAccount = computed(() => {
 async function connectWallet() {
   if (typeof window !== 'undefined' && 'ethereum' in window && window.ethereum) {
     try {
-      const accounts = (await (window.ethereum as { request: (args: { method: string }) => Promise<string[]> }).request({
+      const accounts = await (
+        window.ethereum as { request: (args: { method: string }) => Promise<string[]> }
+      ).request({
         method: 'eth_requestAccounts',
-      }));
+      });
       account.value = accounts[0] ?? null;
     } catch {
       account.value = null;

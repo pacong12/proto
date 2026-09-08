@@ -1,0 +1,322 @@
+{
+  "nodes": {
+    "@proto/shared-types": {
+      "name": "@proto/shared-types",
+      "type": "lib",
+      "data": {
+        "root": "packages/shared-types",
+        "name": "@proto/shared-types",
+        "tags": [
+          "npm:private"
+        ],
+        "metadata": {
+          "targetGroups": {
+            "NPM Scripts": [
+              "typecheck"
+            ]
+          },
+          "js": {
+            "packageName": "@proto/shared-types",
+            "packageMain": "./src/index.ts",
+            "isInPackageManagerWorkspaces": true
+          }
+        },
+        "targets": {
+          "typecheck": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "typecheck"
+            },
+            "metadata": {
+              "scriptContent": "tsc --noEmit",
+              "runCommand": "npm run typecheck"
+            },
+            "configurations": {},
+            "parallelism": true,
+            "inputs": [
+              "default"
+            ],
+            "cache": true
+          }
+        },
+        "implicitDependencies": []
+      }
+    },
+    "@proto/frontoffice": {
+      "name": "@proto/frontoffice",
+      "type": "lib",
+      "data": {
+        "root": "apps/frontoffice",
+        "name": "@proto/frontoffice",
+        "tags": [
+          "npm:private"
+        ],
+        "metadata": {
+          "targetGroups": {
+            "NPM Scripts": [
+              "dev",
+              "build",
+              "typecheck",
+              "test"
+            ]
+          },
+          "js": {
+            "packageName": "@proto/frontoffice",
+            "isInPackageManagerWorkspaces": true
+          }
+        },
+        "targets": {
+          "dev": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "dev"
+            },
+            "metadata": {
+              "scriptContent": "vite",
+              "runCommand": "npm run dev"
+            },
+            "configurations": {},
+            "parallelism": true
+          },
+          "build": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "build"
+            },
+            "metadata": {
+              "scriptContent": "vue-tsc --noEmit && vite build",
+              "runCommand": "npm run build"
+            },
+            "configurations": {},
+            "parallelism": true,
+            "dependsOn": [
+              "^build"
+            ],
+            "inputs": [
+              "production",
+              "^production"
+            ],
+            "cache": true
+          },
+          "typecheck": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "typecheck"
+            },
+            "metadata": {
+              "scriptContent": "vue-tsc --noEmit",
+              "runCommand": "npm run typecheck"
+            },
+            "configurations": {},
+            "parallelism": true,
+            "inputs": [
+              "default"
+            ],
+            "cache": true
+          },
+          "test": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "test"
+            },
+            "metadata": {
+              "scriptContent": "vitest run",
+              "runCommand": "npm run test"
+            },
+            "configurations": {},
+            "parallelism": true,
+            "inputs": [
+              "default",
+              "^production"
+            ],
+            "cache": true
+          }
+        },
+        "implicitDependencies": []
+      }
+    },
+    "@proto/docs": {
+      "name": "@proto/docs",
+      "type": "lib",
+      "data": {
+        "root": "apps/docs",
+        "name": "@proto/docs",
+        "tags": [
+          "npm:private"
+        ],
+        "metadata": {
+          "targetGroups": {
+            "NPM Scripts": [
+              "dev",
+              "build",
+              "typecheck"
+            ]
+          },
+          "js": {
+            "packageName": "@proto/docs",
+            "isInPackageManagerWorkspaces": true
+          }
+        },
+        "targets": {
+          "dev": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "dev"
+            },
+            "metadata": {
+              "scriptContent": "vite",
+              "runCommand": "npm run dev"
+            },
+            "configurations": {},
+            "parallelism": true
+          },
+          "build": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "build"
+            },
+            "metadata": {
+              "scriptContent": "vite build",
+              "runCommand": "npm run build"
+            },
+            "configurations": {},
+            "parallelism": true,
+            "dependsOn": [
+              "^build"
+            ],
+            "inputs": [
+              "production",
+              "^production"
+            ],
+            "cache": true
+          },
+          "typecheck": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "typecheck"
+            },
+            "metadata": {
+              "scriptContent": "tsc --noEmit",
+              "runCommand": "npm run typecheck"
+            },
+            "configurations": {},
+            "parallelism": true,
+            "inputs": [
+              "default"
+            ],
+            "cache": true
+          }
+        },
+        "implicitDependencies": []
+      }
+    },
+    "@proto/api": {
+      "name": "@proto/api",
+      "type": "lib",
+      "data": {
+        "root": "apps/api",
+        "name": "@proto/api",
+        "tags": [
+          "npm:private"
+        ],
+        "metadata": {
+          "targetGroups": {
+            "NPM Scripts": [
+              "build",
+              "typecheck",
+              "test"
+            ]
+          },
+          "js": {
+            "packageName": "@proto/api",
+            "isInPackageManagerWorkspaces": true
+          }
+        },
+        "targets": {
+          "build": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "build"
+            },
+            "metadata": {
+              "scriptContent": "tsc",
+              "runCommand": "npm run build"
+            },
+            "configurations": {},
+            "parallelism": true,
+            "dependsOn": [
+              "^build"
+            ],
+            "inputs": [
+              "production",
+              "^production"
+            ],
+            "cache": true
+          },
+          "typecheck": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "typecheck"
+            },
+            "metadata": {
+              "scriptContent": "tsc --noEmit",
+              "runCommand": "npm run typecheck"
+            },
+            "configurations": {},
+            "parallelism": true,
+            "inputs": [
+              "default"
+            ],
+            "cache": true
+          },
+          "test": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "test"
+            },
+            "metadata": {
+              "scriptContent": "vitest run",
+              "runCommand": "npm run test"
+            },
+            "configurations": {},
+            "parallelism": true,
+            "inputs": [
+              "default",
+              "^production"
+            ],
+            "cache": true
+          }
+        },
+        "implicitDependencies": []
+      }
+    }
+  },
+  "externalNodes": {},
+  "dependencies": {
+    "@proto/shared-types": [],
+    "@proto/frontoffice": [
+      {
+        "source": "@proto/frontoffice",
+        "target": "@proto/shared-types",
+        "type": "static"
+      }
+    ],
+    "@proto/docs": [
+      {
+        "source": "@proto/docs",
+        "target": "@proto/shared-types",
+        "type": "static"
+      }
+    ],
+    "@proto/api": [
+      {
+        "source": "@proto/api",
+        "target": "@proto/shared-types",
+        "type": "static"
+      }
+    ]
+  },
+  "version": "6.0",
+  "errors": [],
+  "computedAt": 1788833055009
+}

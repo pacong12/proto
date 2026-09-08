@@ -3,6 +3,7 @@
 Proto is an institutional-grade, non-custodial token launchpad and trading protocol built on **Robinhood Chain** (Chain ID: 4663).
 
 ## Features
+
 - **Atomic 1-Tx Launch**: Deploys fixed-supply token (1 Billion supply) and Uniswap V3 liquidity pool in a single transaction.
 - **Permanent Liquidity Lock**: Positions are locked directly into the LiquidityLocker contract on creation.
 - **2-Block Anti-Snipe Window**: Max wallet (5%) and max buy (5.5%) restrictions for the first 2 blocks post-launch.
@@ -10,6 +11,7 @@ Proto is an institutional-grade, non-custodial token launchpad and trading proto
 - **Self-Describing Onchain Metadata**: All token metadata (`name`, `symbol`, `logo`, `description`, `socials`, `liquidityPool`) lives directly onchain.
 
 ## Directory Structure
+
 ```text
 proto/
 ├── contracts/             # Solidity & Foundry smart contract suite
@@ -23,6 +25,7 @@ proto/
 ```
 
 ## Getting Started
+
 ```bash
 npm install
 npm run ci
