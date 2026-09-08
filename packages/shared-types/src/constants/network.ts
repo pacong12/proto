@@ -10,6 +10,7 @@ export interface NetworkConfig {
   blockExplorer: string;
   contracts: {
     factory: `0x${string}`;
+    factoryV2?: `0x${string}`;
     locker: `0x${string}`;
     uniswapV3Factory: `0x${string}`;
     positionManager: `0x${string}`;
@@ -28,6 +29,13 @@ export interface NetworkConfig {
     protocolFeeSharePercent: number;
     creatorFeeSharePercent: number;
   };
+  launchConfigV2?: {
+    supply: bigint;
+    curveTokenAllocation: bigint;
+    graduationTargetWei: bigint;
+    platformFeeBps: number;
+    snipeTaxMaxBps: number;
+  };
 }
 
 export const ROBINHOOD_CHAIN: NetworkConfig = {
@@ -42,12 +50,20 @@ export const ROBINHOOD_CHAIN: NetworkConfig = {
   blockExplorer: 'https://robinhoodchain.blockscout.com',
   contracts: {
     factory: '0x48844223aBDceeb1Ce502F54d559681358E68200',
+    factoryV2: '0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e',
     locker: '0x070233B6F46ccD61CA2B7bc1E13520c3fE4614E4',
     uniswapV3Factory: '0x1f7d7550B1b028f7571E69A784071F0205FD2EfA',
     positionManager: '0x73991a25C818Bf1f1128dEAaB1492D45638DE0D3',
     swapRouter: '0xCaf681a66D020601342297493863E78C959E5cb2',
     quoterV2: '0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7',
     weth: '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73',
+  },
+  launchConfigV2: {
+    supply: 1_000_000_000n * 10n ** 18n,
+    curveTokenAllocation: 800_000_000n * 10n ** 18n, // 80% on curve, 20% reserved for graduation pool
+    graduationTargetWei: 4_200_000_000_000_000_000n, // 4.2 ETH
+    platformFeeBps: 100, // 1%
+    snipeTaxMaxBps: 9900, // 99% decaying in 5s
   },
   launchConfig: {
     supply: 1_000_000_000n * 10n ** 18n,
