@@ -12,9 +12,17 @@ export interface TokenRepositoryPort {
   saveMarketData(marketData: TokenMarketData): Promise<void>;
   getMarketData(address: `0x${string}`): Promise<TokenMarketData | null>;
   saveTrade(trade: TradeEventEntity): Promise<void>;
-  getTrades(tokenAddress: `0x${string}`, limit?: number): Promise<TradeEventEntity[]>;
+  getTrades(
+    tokenAddress: `0x${string}`,
+    limit?: number,
+    offset?: number,
+  ): Promise<TradeEventEntity[]>;
   getCandlesticks(
     tokenAddress: `0x${string}`,
     resolutionSeconds?: number,
   ): Promise<CandlestickEntity[]>;
+  getHolders(
+    tokenAddress: string,
+    limit?: number,
+  ): Promise<Array<{ address: string; balance: string; percent: number }>>;
 }

@@ -41,16 +41,40 @@ export class TokenController {
     }
   }
 
-  async getTrades(address: string, limit = 50): Promise<ApiEnvelope<TradeEventEntity[]>> {
+  async getTrades(
+    address: string,
+    limit = 50,
+    offset = 0,
+  ): Promise<ApiEnvelope<TradeEventEntity[]>> {
     if (!address.startsWith('0x') || address.length !== 42) {
       return err('INVALID_ADDRESS', 'Token address must be a valid 42-character hex string');
     }
 
     try {
-      const trades = await this.tokenRepository.getTrades(address as `0x${string}`, limit);
+      const trades = await this.tokenRepository.getTrades(
+        address as `0x${string}`,
+        limit,
+        offset,
+      );
       return ok(trades);
     } catch (error) {
       return err('FETCH_TRADES_FAILED', (error as Error).message);
+    }
+  }
+
+  async getHolders(
+    address: string,
+    limit = 50,
+  ): Promise<ApiEnvelope<Array<{ address: string; balance: string; percent: number }>>> {
+    if (!address.startsWith('0x') || address.length !== 42) {
+      return err('INVALID_ADDRESS', 'Token address must be a valid 42-character hex string');
+    }
+
+    try {
+      const holders = await this.tokenRepository.getHolders(address, limit);
+      return ok(holders);
+    } catch (error) {
+      return err('FETCH_HOLDERS_FAILED', (error as Error).message);
     }
   }
 

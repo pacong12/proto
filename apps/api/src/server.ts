@@ -1,5 +1,5 @@
 import {
-  InMemoryTokenRepository,
+  SqliteTokenRepository,
   ViemChainIndexerAdapter,
   CalculatePricingUseCase,
   GetTokensUseCase,
@@ -8,13 +8,32 @@ import {
   SecurityGateService,
   SecurityController,
   EventPollerService,
+  IpfsService,
+  IpfsController,
 } from './index';
-import { publicClient } from '../../frontoffice/src/lib/viem-client';
-import { TransactionIntent } from '@proto/shared-types';
+import { createPublicClient, http, defineChain } from 'viem';
+import { ROBINHOOD_CHAIN, TransactionIntent } from '@proto/shared-types';
 
-const PORT = parseInt(process.env.PORT ?? process.env.API_PORT ?? '3001', 10);
+const chain = defineChain({
+  id: ROBINHOOD_CHAIN.chainId,
+  name: ROBINHOOD_CHAIN.name,
+  nativeCurrency: ROBINHOOD_CHAIN.nativeCurrency,
+  rpcUrls: {
+    default: { http: [ROBINHOOD_CHAIN.rpcUrl] },
+  },
+});
 
-const repository = new InMemoryTokenRepository();
+const publicClient = createPublicClient({
+  chain,
+  transport: http(ROBINHOOD_CHAIN.rpcUrl),
+});
+
+const PORT = parseInt(
+  process.env.PORT ?? process.env.API_PORT ?? (process.env.NODE_ENV === 'test' ? '0' : '3001'),
+  10,
+);
+
+const repository = new SqliteTokenRepository();
 const chainIndexer = new ViemChainIndexerAdapter();
 const calculatePricing = new CalculatePricingUseCase();
 const getTokensUseCase = new GetTokensUseCase(repository);
@@ -28,6 +47,8 @@ const tokenController = new TokenController(getTokensUseCase, getTokenByAddressU
 const securityGateService = new SecurityGateService();
 const securityController = new SecurityController(securityGateService);
 
+const ipfsService = new IpfsService();
+const ipfsController = new IpfsController(ipfsService);
 const eventPoller = new EventPollerService(
   publicClient,
   repository,
@@ -44,92 +65,133 @@ setInterval(async () => {
   }
 }, 10000);
 
-export const server = Bun.serve({
-  port: PORT,
-  async fetch(req) {
-    const url = new URL(req.url);
-    const headers = {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    };
+function safeStringify(value: unknown): string {
+  return JSON.stringify(value, (_, v) => (typeof v === 'bigint' ? v.toString() : v));
+}
 
-    if (req.method === 'OPTIONS') {
-      return new Response(null, { headers });
-    }
+async function handleRequest(req: Request): Promise<Response> {
+  const url = new URL(req.url);
+  const headers = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  };
 
-    // Health check
-    if (url.pathname === '/health' || url.pathname === '/') {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers });
+  }
+
+  // Health check
+  if (url.pathname === '/health' || url.pathname === '/') {
+    return new Response(
+      safeStringify({ status: 'ok', service: 'proto-api', timestamp: Date.now() }),
+      { headers },
+    );
+  }
+
+  // GET /api/tokens
+  if (url.pathname === '/api/tokens' && req.method === 'GET') {
+    const limit = parseInt(url.searchParams.get('limit') ?? '50', 10);
+    const offset = parseInt(url.searchParams.get('offset') ?? '0', 10);
+    const res = await tokenController.listTokens(limit, offset);
+    return new Response(safeStringify(res), { headers });
+  }
+
+  // GET /api/tokens/:address/trades
+  const tradesMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/trades$/);
+  if (tradesMatch && req.method === 'GET') {
+    const address = tradesMatch[1];
+    const limit = parseInt(url.searchParams.get('limit') ?? '50', 10);
+    const offset = parseInt(url.searchParams.get('offset') ?? '0', 10);
+    const res = await tokenController.getTrades(address, limit, offset);
+    return new Response(safeStringify(res), { headers });
+  }
+
+  // GET /api/tokens/:address/holders
+  const holdersMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/holders$/);
+  if (holdersMatch && req.method === 'GET') {
+    const address = holdersMatch[1];
+    const limit = parseInt(url.searchParams.get('limit') ?? '50', 10);
+    const res = await tokenController.getHolders(address, limit);
+    return new Response(safeStringify(res), { headers });
+  }
+
+  // GET /api/tokens/:address/ohlcv
+  const ohlcvMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/ohlcv$/);
+  if (ohlcvMatch && req.method === 'GET') {
+    const address = ohlcvMatch[1];
+    const resolution = parseInt(url.searchParams.get('resolution') ?? '60', 10);
+    const res = await tokenController.getCandlesticks(address, resolution);
+    return new Response(safeStringify(res), { headers });
+  }
+
+  // GET /api/tokens/:address
+  const tokenMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})$/);
+  if (tokenMatch && req.method === 'GET') {
+    const address = tokenMatch[1];
+    const res = await tokenController.getToken(address);
+    return new Response(safeStringify(res), { headers });
+  }
+
+  // POST /api/security/evaluate
+  if (url.pathname === '/api/security/evaluate' && req.method === 'POST') {
+    try {
+      const body = (await req.json()) as TransactionIntent;
+      const res = securityController.evaluateIntent(body);
+      return new Response(safeStringify(res), { headers });
+    } catch {
       return new Response(
-        JSON.stringify({ status: 'ok', service: 'proto-api', timestamp: Date.now() }),
-        { headers },
+        JSON.stringify({
+          success: false,
+          data: null,
+          error: { code: 'BAD_REQUEST', message: 'Malformed JSON payload' },
+          timestamp: Date.now(),
+        }),
+        { status: 400, headers },
       );
     }
+  }
 
-    // GET /api/tokens
-    if (url.pathname === '/api/tokens' && req.method === 'GET') {
-      const limit = parseInt(url.searchParams.get('limit') ?? '50', 10);
-      const offset = parseInt(url.searchParams.get('offset') ?? '0', 10);
-      const res = await tokenController.listTokens(limit, offset);
-      return new Response(JSON.stringify(res), { headers });
+  // POST /api/ipfs/upload
+  if (url.pathname === '/api/ipfs/upload' && req.method === 'POST') {
+    try {
+      const res = await ipfsController.handleUpload(req);
+      const status = res.success ? 200 : 400;
+      return new Response(safeStringify(res), { status, headers });
+    } catch (err) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          data: null,
+          error: { code: 'UPLOAD_ERROR', message: (err as Error).message },
+          timestamp: Date.now(),
+        }),
+        { status: 500, headers },
+      );
     }
+  }
 
-    // GET /api/tokens/:address/trades
-    const tradesMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/trades$/);
-    if (tradesMatch && req.method === 'GET') {
-      const address = tradesMatch[1];
-      const limit = parseInt(url.searchParams.get('limit') ?? '50', 10);
-      const res = await tokenController.getTrades(address, limit);
-      return new Response(JSON.stringify(res), { headers });
-    }
+  return new Response(
+    JSON.stringify({
+      success: false,
+      data: null,
+      error: { code: 'NOT_FOUND', message: `Route ${url.pathname} not found` },
+      timestamp: Date.now(),
+    }),
+    { status: 404, headers },
+  );
+}
 
-    // GET /api/tokens/:address/ohlcv
-    const ohlcvMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/ohlcv$/);
-    if (ohlcvMatch && req.method === 'GET') {
-      const address = ohlcvMatch[1];
-      const resolution = parseInt(url.searchParams.get('resolution') ?? '60', 10);
-      const res = await tokenController.getCandlesticks(address, resolution);
-      return new Response(JSON.stringify(res), { headers });
-    }
-
-    // GET /api/tokens/:address
-    const tokenMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})$/);
-    if (tokenMatch && req.method === 'GET') {
-      const address = tokenMatch[1];
-      const res = await tokenController.getToken(address);
-      return new Response(JSON.stringify(res), { headers });
-    }
-
-    // POST /api/security/evaluate
-    if (url.pathname === '/api/security/evaluate' && req.method === 'POST') {
-      try {
-        const body = (await req.json()) as TransactionIntent;
-        const res = securityController.evaluateIntent(body);
-        return new Response(JSON.stringify(res), { headers });
-      } catch {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            data: null,
-            error: { code: 'BAD_REQUEST', message: 'Malformed JSON payload' },
-            timestamp: Date.now(),
-          }),
-          { status: 400, headers },
-        );
-      }
-    }
-
-    return new Response(
-      JSON.stringify({
-        success: false,
-        data: null,
-        error: { code: 'NOT_FOUND', message: `Route ${url.pathname} not found` },
-        timestamp: Date.now(),
-      }),
-      { status: 404, headers },
-    );
-  },
-});
+export const server =
+  typeof Bun !== 'undefined'
+    ? Bun.serve({
+        port: PORT,
+        fetch: handleRequest,
+      })
+    : {
+        port: PORT,
+        fetch: handleRequest,
+      };
 
 console.info(`Proto API Server & Indexer running at http://localhost:${PORT}`);
