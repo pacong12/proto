@@ -2,46 +2,54 @@
   <div class="space-y-6">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
-        <h1 class="text-3xl font-bold tracking-tight text-white">Explore Launches</h1>
+        <div class="flex items-center gap-2">
+          <Sparkles class="w-5 h-5 text-emerald-400" />
+          <h1 class="text-3xl font-bold tracking-tight text-white">Explore Launches</h1>
+        </div>
         <p class="text-zinc-400 text-sm mt-1">
           Fixed-supply tokens climbing toward graduation on Robinhood Chain.
         </p>
       </div>
 
       <div class="flex items-center gap-3">
-        <div class="flex bg-zinc-900 border border-zinc-800 rounded-lg p-1 text-xs">
-          <button
-            v-for="f in ['Recent buys', 'Newest', 'Market cap', 'Volume']"
-            :key="f"
-            @click="activeFilter = f"
-            :class="
-              activeFilter === f ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-zinc-200'
-            "
-            class="px-3 py-1.5 rounded-md font-medium transition"
-          >
-            {{ f }}
-          </button>
-        </div>
+        <TabsRoot
+          v-model="activeFilter"
+          class="flex bg-zinc-900 border border-zinc-800 rounded-lg p-1 text-xs"
+        >
+          <TabsList class="flex gap-1">
+            <TabsTrigger
+              v-for="f in ['Recent buys', 'Newest', 'Market cap', 'Volume']"
+              :key="f"
+              :value="f"
+              class="px-3 py-1.5 rounded-md font-medium transition data-[state=active]:bg-zinc-800 data-[state=active]:text-white text-zinc-400 hover:text-zinc-200"
+            >
+              {{ f }}
+            </TabsTrigger>
+          </TabsList>
+        </TabsRoot>
+
         <button
           @click="$emit('selectTab', 'create')"
-          class="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-sm px-4 py-2 rounded-lg transition"
+          class="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-sm px-4 py-2 rounded-lg transition"
         >
+          <Plus class="w-4 h-4" />
           Create Token
         </button>
       </div>
     </div>
 
+    <!-- Token Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <div
         v-for="item in displayTokens"
         :key="item.token.address"
         @click="$emit('selectToken', item.token.address)"
-        class="bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl p-5 cursor-pointer transition flex flex-col justify-between"
+        class="group bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl p-5 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 flex flex-col justify-between"
       >
         <div>
           <div class="flex items-start gap-3">
             <div
-              class="w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center font-bold text-lg text-emerald-400 border border-zinc-700"
+              class="w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center font-bold text-lg text-emerald-400 border border-zinc-700 group-hover:border-emerald-500/50 transition"
             >
               {{ item.token.symbol.slice(0, 3) }}
             </div>
@@ -51,36 +59,50 @@
             </div>
             <span
               v-if="item.marketData.isGraduated"
-              class="text-xs bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded font-medium"
+              class="flex items-center gap-1 text-[11px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded font-medium"
             >
+              <CheckCircle class="w-3 h-3" />
               Graduated
             </span>
           </div>
 
-          <p class="text-xs text-zinc-400 mt-3 line-clamp-2">
-            {{ item.token.description || 'No description provided.' }}
+          <p class="text-xs text-zinc-400 mt-3 line-clamp-2 leading-relaxed">
+            {{ item.token.description || 'Fixed-supply token on Robinhood Chain.' }}
           </p>
         </div>
 
         <div class="mt-5 space-y-3 pt-4 border-t border-zinc-800/80">
           <div class="flex justify-between text-xs">
-            <span class="text-zinc-400">Market Cap</span>
+            <span class="text-zinc-400 flex items-center gap-1">
+              <Coins class="w-3.5 h-3.5 text-zinc-500" />
+              Market Cap
+            </span>
             <span class="font-mono font-medium text-white"
               >${{ item.marketData.marketCapUsd.toLocaleString() }}</span
             >
           </div>
           <div class="flex justify-between text-xs">
-            <span class="text-zinc-400">Graduation Progress</span>
+            <span class="text-zinc-400 flex items-center gap-1">
+              <Flame class="w-3.5 h-3.5 text-emerald-400" />
+              Graduation (4.2 ETH)
+            </span>
             <span class="font-mono font-medium text-emerald-400"
               >{{ (item.marketData.graduationProgress * 100).toFixed(1) }}%</span
             >
           </div>
-          <div class="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
-            <div
-              class="bg-emerald-500 h-1.5 rounded-full transition-all"
-              :style="{ width: `${item.marketData.graduationProgress * 100}%` }"
-            ></div>
-          </div>
+
+          <!-- Radix Vue Progress -->
+          <ProgressRoot
+            :model-value="item.marketData.graduationProgress * 100"
+            class="relative h-1.5 w-full overflow-hidden rounded-full bg-zinc-800"
+          >
+            <ProgressIndicator
+              class="h-full bg-emerald-500 rounded-full transition-all duration-300"
+              :style="{
+                transform: `translateX(-${100 - item.marketData.graduationProgress * 100}%)`,
+              }"
+            />
+          </ProgressRoot>
         </div>
       </div>
     </div>
@@ -89,6 +111,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { TabsRoot, TabsList, TabsTrigger, ProgressRoot, ProgressIndicator } from 'radix-vue';
+import { Sparkles, Plus, CheckCircle, Coins, Flame } from 'lucide-vue-next';
 import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
 
 defineEmits<{

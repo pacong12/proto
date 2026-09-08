@@ -5,10 +5,12 @@
         <a
           href="#"
           @click.prevent="$emit('navigate', 'explore')"
-          class="flex items-center gap-2 text-xl font-bold tracking-tight text-white"
+          class="flex items-center gap-2.5 text-xl font-bold tracking-tight text-white"
         >
-          <span class="text-emerald-400">proto</span>
-          <span class="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded border border-zinc-700"
+          <Rocket class="w-6 h-6 text-emerald-400" />
+          <span class="text-white">proto</span>
+          <span
+            class="text-[11px] bg-zinc-900 text-zinc-400 px-2 py-0.5 rounded border border-zinc-800 font-mono"
             >Robinhood L2</span
           >
         </a>
@@ -16,25 +18,33 @@
           <button
             @click="$emit('navigate', 'explore')"
             :class="activeTab === 'explore' ? 'text-white' : 'text-zinc-400 hover:text-white'"
+            class="flex items-center gap-1.5 transition"
           >
+            <Compass class="w-4 h-4" />
             Explore
           </button>
           <button
             @click="$emit('navigate', 'create')"
             :class="activeTab === 'create' ? 'text-white' : 'text-zinc-400 hover:text-white'"
+            class="flex items-center gap-1.5 transition"
           >
+            <PlusCircle class="w-4 h-4" />
             Create
           </button>
           <button
             @click="$emit('navigate', 'trade')"
             :class="activeTab === 'trade' ? 'text-white' : 'text-zinc-400 hover:text-white'"
+            class="flex items-center gap-1.5 transition"
           >
+            <ArrowLeftRight class="w-4 h-4" />
             Trade
           </button>
           <button
             @click="$emit('navigate', 'analytics')"
             :class="activeTab === 'analytics' ? 'text-white' : 'text-zinc-400 hover:text-white'"
+            class="flex items-center gap-1.5 transition"
           >
+            <Activity class="w-4 h-4" />
             Analytics
           </button>
         </nav>
@@ -44,15 +54,16 @@
         <button
           v-if="!account"
           @click="connectWallet"
-          class="bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-sm px-4 py-2 rounded-lg transition"
+          class="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-sm px-4 py-2 rounded-lg transition shadow-sm"
         >
+          <Wallet class="w-4 h-4" />
           Connect Wallet
         </button>
         <div
           v-else
           class="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-1.5 rounded-lg text-sm"
         >
-          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
           <span class="font-mono text-zinc-300">{{ formattedAccount }}</span>
         </div>
       </div>
@@ -62,6 +73,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { Rocket, Compass, PlusCircle, ArrowLeftRight, Activity, Wallet } from 'lucide-vue-next';
 
 defineProps<{
   activeTab: string;

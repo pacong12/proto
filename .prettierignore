@@ -9,3 +9,5 @@ contracts/out
 contracts/cache
 .nx
 *.lock
+*.d.ts
+components.d.ts
