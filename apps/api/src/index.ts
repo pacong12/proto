@@ -5,6 +5,7 @@ export * from './modules/tokens/application/use-cases/get-token-by-address.use-c
 export * from './modules/tokens/application/use-cases/calculate-pricing.use-case';
 export * from './modules/tokens/infrastructure/adapters/in-memory-token.repository';
 export * from './modules/tokens/infrastructure/adapters/viem-chain-indexer.adapter';
+export * from './modules/tokens/infrastructure/indexer/event-poller.service';
 export * from './modules/tokens/presentation/token.controller';
 
 export * from './modules/security/domain/security-policy';

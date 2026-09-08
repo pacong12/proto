@@ -73,7 +73,7 @@ describe('Token Use Cases & Controller', () => {
       chainIndexer,
       calculatePricing,
     );
-    controller = new TokenController(getTokensUseCase, getTokenByAddressUseCase);
+    controller = new TokenController(getTokensUseCase, getTokenByAddressUseCase, repository);
   });
 
   it('fetches and indexes token from chain indexer when not in cache', async () => {

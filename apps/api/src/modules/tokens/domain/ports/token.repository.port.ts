@@ -1,4 +1,9 @@
-import { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
+import {
+  LaunchedTokenEntity,
+  TokenMarketData,
+  TradeEventEntity,
+  CandlestickEntity,
+} from '@proto/shared-types';
 
 export interface TokenRepositoryPort {
   save(token: LaunchedTokenEntity): Promise<void>;
@@ -6,4 +11,10 @@ export interface TokenRepositoryPort {
   findAll(limit?: number, offset?: number): Promise<LaunchedTokenEntity[]>;
   saveMarketData(marketData: TokenMarketData): Promise<void>;
   getMarketData(address: `0x${string}`): Promise<TokenMarketData | null>;
+  saveTrade(trade: TradeEventEntity): Promise<void>;
+  getTrades(tokenAddress: `0x${string}`, limit?: number): Promise<TradeEventEntity[]>;
+  getCandlesticks(
+    tokenAddress: `0x${string}`,
+    resolutionSeconds?: number,
+  ): Promise<CandlestickEntity[]>;
 }
