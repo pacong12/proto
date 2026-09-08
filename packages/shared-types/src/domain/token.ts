@@ -57,3 +57,26 @@ export interface FeeDistributionState {
   unclaimedTokenFees: string;
   unclaimedWethFees: string;
 }
+
+export interface TradeEventEntity {
+  id: string;
+  tokenAddress: `0x${string}`;
+  poolAddress: `0x${string}`;
+  trader: `0x${string}`;
+  isBuy: boolean;
+  tokenAmount: string;
+  wethAmount: string;
+  priceUsd: number;
+  blockNumber: bigint;
+  transactionHash: `0x${string}`;
+  timestamp: number;
+}
+
+export interface CandlestickEntity {
+  timestamp: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}

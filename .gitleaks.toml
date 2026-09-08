@@ -1,0 +1,10 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allow test mock addresses and fixtures"
+paths = [
+  '''apps/api/test/.*''',
+  '''apps/frontoffice/test/.*''',
+  '''contracts/test/.*'''
+]
