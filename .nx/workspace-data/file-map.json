@@ -1,0 +1,422 @@
+{
+  "version": "6.0",
+  "nxVersion": "20.8.4",
+  "pathMappings": {
+    "@proto/shared-types": [
+      "packages/shared-types/src/index.ts"
+    ],
+    "@proto/contracts": [
+      "packages/contracts/src/index.ts"
+    ]
+  },
+  "nxJsonPlugins": [],
+  "fileMap": {
+    "projectFileMap": {
+      "@proto/api": [
+        {
+          "file": "apps/api/package.json",
+          "hash": "4490039627958227950",
+          "deps": [
+            "@proto/shared-types"
+          ]
+        },
+        {
+          "file": "apps/api/src/index.ts",
+          "hash": "1221624800872319524"
+        },
+        {
+          "file": "apps/api/src/modules/security/application/security-gate.service.ts",
+          "hash": "11397006491347261495",
+          "deps": [
+            "@proto/shared-types"
+          ]
+        },
+        {
+          "file": "apps/api/src/modules/security/domain/security-policy.ts",
+          "hash": "10848964052428143983",
+          "deps": [
+            "@proto/shared-types"
+          ]
+        },
+        {
+          "file": "apps/api/src/modules/security/presentation/security.controller.ts",
+          "hash": "14062132115550584983",
+          "deps": [
+            "@proto/shared-types"
+          ]
+        },
+        {
+          "file": "apps/api/src/modules/tokens/application/use-cases/calculate-pricing.use-case.ts",
+          "hash": "16225337669221896316",
+          "deps": [
+            "@proto/shared-types"
+          ]
+        },
+        {
+          "file": "apps/api/src/modules/tokens/application/use-cases/get-token-by-address.use-case.ts",
+          "hash": "8588321235648093498",
+          "deps": [
+            "@proto/shared-types"
+          ]
+        },
+        {
+          "file": "apps/api/src/modules/tokens/application/use-cases/get-tokens.use-case.ts",
+          "hash": "5785970271408513746",
+          "deps": [
+            "@proto/shared-types"
+          ]
+        },
+        {
+          "file": "apps/api/src/modules/tokens/domain/ports/chain.indexer.port.ts",
+          "hash": "14978481857107583013",
+          "deps": [
+            "@proto/shared-types"
+          ]
+        },
+        {
+          "file": "apps/api/src/modules/tokens/domain/ports/token.repository.port.ts",
+          "hash": "411141415815820391",
+          "deps": [
+            "@proto/shared-types"
+          ]
+        },
+        {
+          "file": "apps/api/src/modules/tokens/infrastructure/adapters/in-memory-token.repository.ts",
+          "hash": "8258877527963541800",
+          "deps": [
+            "@proto/shared-types"
+          ]
+        },
+        {
+          "file": "apps/api/src/modules/tokens/infrastructure/adapters/viem-chain-indexer.adapter.ts",
+          "hash": "17137072052306083351",
+          "deps": [
+            "@proto/shared-types"
+          ]
+        },
+        {
+          "file": "apps/api/src/modules/tokens/presentation/token.controller.ts",
+          "hash": "6107462825277353191",
+          "deps": [
+            "@proto/shared-types"
+          ]
+        },
+        {
+          "file": "apps/api/test/pricing-use-case.spec.ts",
+          "hash": "13129501315805624686"
+        },
+        {
+          "file": "apps/api/test/security-policy.spec.ts",
+          "hash": "18356336402385517413",
+          "deps": [
+            "@proto/shared-types"
+          ]
+        },
+        {
+          "file": "apps/api/test/token-use-cases.spec.ts",
+          "hash": "2686462973233027981",
+          "deps": [
+            "@proto/shared-types"
+          ]
+        },
+        {
+          "file": "apps/api/tsconfig.json",
+          "hash": "2632389489240081456"
+        }
+      ],
+      "@proto/docs": [
+        {
+          "file": "apps/docs/index.html",
+          "hash": "5237652329263153973"
+        },
+        {
+          "file": "apps/docs/package.json",
+          "hash": "17396420321999353877",
+          "deps": [
+            "@proto/shared-types"
+          ]
+        },
+        {
+          "file": "apps/docs/src/main.ts",
+          "hash": "17223881991764133219"
+        },
+        {
+          "file": "apps/docs/src/style.css",
+          "hash": "1896131438305437988"
+        },
+        {
+          "file": "apps/docs/tsconfig.json",
+          "hash": "8868573795322676394"
+        },
+        {
+          "file": "apps/docs/vite.config.ts",
+          "hash": "14962746463424285868"
+        }
+      ],
+      "@proto/frontoffice": [
+        {
+          "file": "apps/frontoffice/index.html",
+          "hash": "15008252528026056201"
+        },
+        {
+          "file": "apps/frontoffice/package.json",
+          "hash": "15186025119402852243",
+          "deps": [
+            "npm:@vitejs/plugin-vue",
+            "npm:@vue/test-utils",
+            "npm:typescript",
+            "npm:vite",
+            "npm:vitest",
+            "npm:vue-tsc",
+            "@proto/shared-types",
+            "npm:viem",
+            "npm:vue"
+          ]
+        },
+        {
+          "file": "apps/frontoffice/src/App.vue",
+          "hash": "2710875937897623450",
+          "deps": [
+            "npm:vue"
+          ]
+        },
+        {
+          "file": "apps/frontoffice/src/components/AnalyticsView.vue",
+          "hash": "5464481182533580315",
+          "deps": [
+            "@proto/shared-types"
+          ]
+        },
+        {
+          "file": "apps/frontoffice/src/components/CreateTokenView.vue",
+          "hash": "2098427912707884461",
+          "deps": [
+            "npm:vue"
+          ]
+        },
+        {
+          "file": "apps/frontoffice/src/components/ExploreView.vue",
+          "hash": "4758911114445466802",
+          "deps": [
+            "npm:vue",
+            "@proto/shared-types"
+          ]
+        },
+        {
+          "file": "apps/frontoffice/src/components/Navbar.vue",
+          "hash": "13283046201747168931",
+          "deps": [
+            "npm:vue"
+          ]
+        },
+        {
+          "file": "apps/frontoffice/src/components/TradeView.vue",
+          "hash": "11220109944065490306",
+          "deps": [
+            "npm:vue",
+            "@proto/shared-types"
+          ]
+        },
+        {
+          "file": "apps/frontoffice/src/composables/useLaunchpad.ts",
+          "hash": "6356563691046343144",
+          "deps": [
+            "npm:vue",
+            "@proto/shared-types"
+          ]
+        },
+        {
+          "file": "apps/frontoffice/src/composables/useSwap.ts",
+          "hash": "2736794858636914029",
+          "deps": [
+            "npm:vue",
+            "npm:viem",
+            "@proto/shared-types"
+          ]
+        },
+        {
+          "file": "apps/frontoffice/src/lib/viem-client.ts",
+          "hash": "11753913138444189619",
+          "deps": [
+            "npm:viem",
+            "@proto/shared-types"
+          ]
+        },
+        {
+          "file": "apps/frontoffice/src/main.ts",
+          "hash": "7061388890574151967",
+          "deps": [
+            "npm:vue"
+          ]
+        },
+        {
+          "file": "apps/frontoffice/test/useLaunchpad.spec.ts",
+          "hash": "12174548716478127891",
+          "deps": [
+            "npm:vitest"
+          ]
+        },
+        {
+          "file": "apps/frontoffice/tsconfig.json",
+          "hash": "16400651736935352208"
+        },
+        {
+          "file": "apps/frontoffice/vite.config.ts",
+          "hash": "8248859013506085054",
+          "deps": [
+            "npm:vite",
+            "npm:@vitejs/plugin-vue"
+          ]
+        }
+      ],
+      "@proto/shared-types": [
+        {
+          "file": "packages/shared-types/package.json",
+          "hash": "7819011366306026086"
+        },
+        {
+          "file": "packages/shared-types/src/abis/contracts.ts",
+          "hash": "10343865544471140403"
+        },
+        {
+          "file": "packages/shared-types/src/constants/network.ts",
+          "hash": "16365647117078648079"
+        },
+        {
+          "file": "packages/shared-types/src/domain/envelope.ts",
+          "hash": "1801339734971296578"
+        },
+        {
+          "file": "packages/shared-types/src/domain/intents.ts",
+          "hash": "4267733060380495396"
+        },
+        {
+          "file": "packages/shared-types/src/domain/token.ts",
+          "hash": "12691972970996245395"
+        },
+        {
+          "file": "packages/shared-types/src/index.ts",
+          "hash": "6527521022136327965"
+        },
+        {
+          "file": "packages/shared-types/tsconfig.json",
+          "hash": "15238235407106483917"
+        }
+      ]
+    },
+    "nonProjectFiles": [
+      {
+        "file": ".github/workflows/ci.yml",
+        "hash": "15313068549311345062"
+      },
+      {
+        "file": ".gitignore",
+        "hash": "12772455874615801180"
+      },
+      {
+        "file": ".prettierignore",
+        "hash": "11972698581823136320"
+      },
+      {
+        "file": ".prettierrc",
+        "hash": "18337840413125673232"
+      },
+      {
+        "file": "AGENTS.md",
+        "hash": "12004786414262411300"
+      },
+      {
+        "file": "README.md",
+        "hash": "9950533428009408588"
+      },
+      {
+        "file": "contracts/foundry.toml",
+        "hash": "5058309890490831740"
+      },
+      {
+        "file": "contracts/src/LaunchpadFactory.sol",
+        "hash": "3654753354164422170"
+      },
+      {
+        "file": "contracts/src/LaunchpadToken.sol",
+        "hash": "7129979577360437609"
+      },
+      {
+        "file": "contracts/src/LiquidityLocker.sol",
+        "hash": "9616559470039574770"
+      },
+      {
+        "file": "contracts/src/interfaces/ILaunchpadFactory.sol",
+        "hash": "9783203506278498903"
+      },
+      {
+        "file": "contracts/src/interfaces/ILaunchpadToken.sol",
+        "hash": "390350676067531037"
+      },
+      {
+        "file": "contracts/src/interfaces/ILiquidityLocker.sol",
+        "hash": "7902986346751048698"
+      },
+      {
+        "file": "contracts/src/interfaces/IUniswapV3.sol",
+        "hash": "7036469021471068113"
+      },
+      {
+        "file": "contracts/test/Launchpad.t.sol",
+        "hash": "11133090511297444300"
+      },
+      {
+        "file": "contracts/test/Mocks.sol",
+        "hash": "9561467154592702839"
+      },
+      {
+        "file": "docs/ADR/001-uniswap-v3-direct-pool-launchpad.md",
+        "hash": "17280039056755237576"
+      },
+      {
+        "file": "docs/ARCHITECTURE.md",
+        "hash": "615874485021887798"
+      },
+      {
+        "file": "docs/GOALS.md",
+        "hash": "4744553531664845731"
+      },
+      {
+        "file": "docs/INVARIANTS.md",
+        "hash": "17109299652953456773"
+      },
+      {
+        "file": "docs/ROADMAP.md",
+        "hash": "17271867665720323969"
+      },
+      {
+        "file": "eslint.config.mjs",
+        "hash": "643410647740391950"
+      },
+      {
+        "file": "nx.json",
+        "hash": "18001384402966411523"
+      },
+      {
+        "file": "package.json",
+        "hash": "1155060927770245945"
+      },
+      {
+        "file": "scripts/agent-irc.mjs",
+        "hash": "5876510037106056461"
+      },
+      {
+        "file": "scripts/herdr-orchestrator.mjs",
+        "hash": "6262967773483915311"
+      },
+      {
+        "file": "tsconfig.base.json",
+        "hash": "9806240561994591017"
+      },
+      {
+        "file": "vitest.config.ts",
+        "hash": "9053853414077734328"
+      }
+    ]
+  }
+}

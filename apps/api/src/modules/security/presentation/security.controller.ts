@@ -1,4 +1,10 @@
-import { ApiEnvelope, TransactionIntent, SecurityEvaluationResult, ok, err } from '@proto/shared-types';
+import {
+  ApiEnvelope,
+  TransactionIntent,
+  SecurityEvaluationResult,
+  ok,
+  err,
+} from '@proto/shared-types';
 import { SecurityGateService } from '../application/security-gate.service';
 
 export class SecurityController {

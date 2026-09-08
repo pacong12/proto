@@ -27,7 +27,11 @@ export class CalculatePricingUseCase {
 
     const pairedPrincipalWeth = (Number(params.pairedPrincipalWei) / 1e18).toFixed(4);
     const thresholdWethNum = Number(ROBINHOOD_CHAIN.launchConfig.graduationThresholdWei) / 1e18;
-    const progress = Math.min(1.0, Number(params.pairedPrincipalWei) / Number(ROBINHOOD_CHAIN.launchConfig.graduationThresholdWei));
+    const progress = Math.min(
+      1.0,
+      Number(params.pairedPrincipalWei) /
+        Number(ROBINHOOD_CHAIN.launchConfig.graduationThresholdWei),
+    );
 
     return {
       address: params.address,

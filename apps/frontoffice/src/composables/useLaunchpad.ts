@@ -32,7 +32,9 @@ export function useLaunchpad() {
       const [account] = await walletClient.getAddresses();
       if (!account) throw new Error('Please connect your wallet');
 
-      const initialBuyWei = params.initialBuyAmountEth ? BigInt(Math.floor(parseFloat(params.initialBuyAmountEth) * 1e18)) : 0n;
+      const initialBuyWei = params.initialBuyAmountEth
+        ? BigInt(Math.floor(parseFloat(params.initialBuyAmountEth) * 1e18))
+        : 0n;
       const totalValue = ROBINHOOD_CHAIN.launchConfig.launchFeeWei + initialBuyWei;
 
       const hash = await walletClient.writeContract({
@@ -59,11 +61,16 @@ export function useLaunchpad() {
       });
 
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
-      const launchLog = receipt.logs.find((l) => l.address.toLowerCase() === ROBINHOOD_CHAIN.contracts.factory.toLowerCase());
+      const launchLog = receipt.logs.find(
+        (l) => l.address.toLowerCase() === ROBINHOOD_CHAIN.contracts.factory.toLowerCase(),
+      );
 
       return {
-        tokenAddress: (launchLog?.topics[1] as `0x${string}`) ?? '0x0000000000000000000000000000000000000000',
-        poolAddress: (receipt.logs[1]?.address as `0x${string}`) ?? '0x0000000000000000000000000000000000000000',
+        tokenAddress:
+          (launchLog?.topics[1] as `0x${string}`) ?? '0x0000000000000000000000000000000000000000',
+        poolAddress:
+          (receipt.logs[1]?.address as `0x${string}`) ??
+          '0x0000000000000000000000000000000000000000',
       };
     } catch (err) {
       error.value = (err as Error).message;
@@ -76,11 +83,31 @@ export function useLaunchpad() {
   async function fetchTokenDetails(tokenAddress: `0x${string}`) {
     try {
       const [name, symbol, logo, description, pool, graduation] = await Promise.all([
-        publicClient.readContract({ address: tokenAddress, abi: launchpadTokenAbi, functionName: 'name' }),
-        publicClient.readContract({ address: tokenAddress, abi: launchpadTokenAbi, functionName: 'symbol' }),
-        publicClient.readContract({ address: tokenAddress, abi: launchpadTokenAbi, functionName: 'logo' }),
-        publicClient.readContract({ address: tokenAddress, abi: launchpadTokenAbi, functionName: 'description' }),
-        publicClient.readContract({ address: tokenAddress, abi: launchpadTokenAbi, functionName: 'liquidityPool' }),
+        publicClient.readContract({
+          address: tokenAddress,
+          abi: launchpadTokenAbi,
+          functionName: 'name',
+        }),
+        publicClient.readContract({
+          address: tokenAddress,
+          abi: launchpadTokenAbi,
+          functionName: 'symbol',
+        }),
+        publicClient.readContract({
+          address: tokenAddress,
+          abi: launchpadTokenAbi,
+          functionName: 'logo',
+        }),
+        publicClient.readContract({
+          address: tokenAddress,
+          abi: launchpadTokenAbi,
+          functionName: 'description',
+        }),
+        publicClient.readContract({
+          address: tokenAddress,
+          abi: launchpadTokenAbi,
+          functionName: 'liquidityPool',
+        }),
         publicClient.readContract({
           address: ROBINHOOD_CHAIN.contracts.factory,
           abi: launchpadFactoryAbi,
@@ -90,7 +117,8 @@ export function useLaunchpad() {
       ]);
 
       const [pairedPrincipal, threshold, graduated] = graduation;
-      const progress = Number(threshold) > 0 ? Math.min(1.0, Number(pairedPrincipal) / Number(threshold)) : 0;
+      const progress =
+        Number(threshold) > 0 ? Math.min(1.0, Number(pairedPrincipal) / Number(threshold)) : 0;
 
       return {
         token: {

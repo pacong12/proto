@@ -4,7 +4,9 @@
     <div class="lg:col-span-2 space-y-6">
       <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
         <div class="flex items-start gap-4">
-          <div class="w-16 h-16 rounded-xl bg-zinc-800 flex items-center justify-center font-bold text-2xl text-emerald-400 border border-zinc-700">
+          <div
+            class="w-16 h-16 rounded-xl bg-zinc-800 flex items-center justify-center font-bold text-2xl text-emerald-400 border border-zinc-700"
+          >
             {{ currentToken.symbol.slice(0, 3) }}
           </div>
           <div class="flex-1">
@@ -16,28 +18,41 @@
           </div>
         </div>
 
-        <p class="text-sm text-zinc-300 mt-4">{{ currentToken.description || 'Fixed supply launchpad token on Robinhood Chain.' }}</p>
+        <p class="text-sm text-zinc-300 mt-4">
+          {{ currentToken.description || 'Fixed supply launchpad token on Robinhood Chain.' }}
+        </p>
 
         <div class="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-zinc-800">
           <div>
             <p class="text-xs text-zinc-500">Price (USD)</p>
-            <p class="text-base font-bold text-white font-mono mt-0.5">${{ currentMarketData.priceUsd.toFixed(8) }}</p>
+            <p class="text-base font-bold text-white font-mono mt-0.5">
+              ${{ currentMarketData.priceUsd.toFixed(8) }}
+            </p>
           </div>
           <div>
             <p class="text-xs text-zinc-500">Market Cap</p>
-            <p class="text-base font-bold text-white font-mono mt-0.5">${{ currentMarketData.marketCapUsd.toLocaleString() }}</p>
+            <p class="text-base font-bold text-white font-mono mt-0.5">
+              ${{ currentMarketData.marketCapUsd.toLocaleString() }}
+            </p>
           </div>
           <div>
             <p class="text-xs text-zinc-500">24h Volume</p>
-            <p class="text-base font-bold text-white font-mono mt-0.5">${{ currentMarketData.volume24hUsd.toLocaleString() }}</p>
+            <p class="text-base font-bold text-white font-mono mt-0.5">
+              ${{ currentMarketData.volume24hUsd.toLocaleString() }}
+            </p>
           </div>
         </div>
 
         <!-- Graduation Progress Bar -->
         <div class="mt-6 pt-6 border-t border-zinc-800 space-y-2">
           <div class="flex justify-between text-xs">
-            <span class="text-zinc-400">Graduation Progress ({{ currentMarketData.pairedPrincipalWeth }} / {{ currentMarketData.graduationThresholdWeth }} ETH)</span>
-            <span class="font-mono font-medium text-emerald-400">{{ (currentMarketData.graduationProgress * 100).toFixed(1) }}%</span>
+            <span class="text-zinc-400"
+              >Graduation Progress ({{ currentMarketData.pairedPrincipalWeth }} /
+              {{ currentMarketData.graduationThresholdWeth }} ETH)</span
+            >
+            <span class="font-mono font-medium text-emerald-400"
+              >{{ (currentMarketData.graduationProgress * 100).toFixed(1) }}%</span
+            >
           </div>
           <div class="w-full bg-zinc-800 rounded-full h-2 overflow-hidden">
             <div
@@ -95,7 +110,9 @@
             <span>You receive (estimated)</span>
             <span class="font-mono">{{ isBuy ? currentToken.symbol : 'ETH' }}</span>
           </div>
-          <div class="w-full bg-zinc-950/60 border border-zinc-800/80 rounded-lg px-3.5 py-3 text-lg font-mono text-zinc-400">
+          <div
+            class="w-full bg-zinc-950/60 border border-zinc-800/80 rounded-lg px-3.5 py-3 text-lg font-mono text-zinc-400"
+          >
             {{ estimatedOutput }}
           </div>
         </div>
@@ -103,16 +120,32 @@
         <button
           @click="handleSwap"
           :disabled="isSwapping || !amountIn"
-          :class="isBuy ? 'bg-emerald-500 hover:bg-emerald-400 text-black' : 'bg-rose-500 hover:bg-rose-400 text-white'"
+          :class="
+            isBuy
+              ? 'bg-emerald-500 hover:bg-emerald-400 text-black'
+              : 'bg-rose-500 hover:bg-rose-400 text-white'
+          "
           class="w-full disabled:opacity-50 font-bold py-3.5 rounded-lg transition"
         >
-          {{ isSwapping ? 'Executing Swap...' : (isBuy ? `Buy ${currentToken.symbol}` : `Sell ${currentToken.symbol}`) }}
+          {{
+            isSwapping
+              ? 'Executing Swap...'
+              : isBuy
+                ? `Buy ${currentToken.symbol}`
+                : `Sell ${currentToken.symbol}`
+          }}
         </button>
 
-        <div v-if="swapSuccessTx" class="text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-800 rounded-lg p-3 break-all">
+        <div
+          v-if="swapSuccessTx"
+          class="text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-800 rounded-lg p-3 break-all"
+        >
           Swap Confirmed: {{ swapSuccessTx }}
         </div>
-        <div v-if="swapError" class="text-xs text-rose-400 bg-rose-950/40 border border-rose-800 rounded-lg p-3">
+        <div
+          v-if="swapError"
+          class="text-xs text-rose-400 bg-rose-950/40 border border-rose-800 rounded-lg p-3"
+        >
           {{ swapError }}
         </div>
       </div>

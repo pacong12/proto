@@ -39,7 +39,9 @@ class MockChainIndexer implements ChainIndexerPort {
     };
   }
 
-  async fetchPoolSlot0(_poolAddress: `0x${string}`): Promise<{ sqrtPriceX96: bigint; tick: number }> {
+  async fetchPoolSlot0(
+    _poolAddress: `0x${string}`,
+  ): Promise<{ sqrtPriceX96: bigint; tick: number }> {
     return {
       sqrtPriceX96: 2505414483750479299401734n,
       tick: 0,
@@ -66,7 +68,11 @@ describe('Token Use Cases & Controller', () => {
     chainIndexer = new MockChainIndexer();
     calculatePricing = new CalculatePricingUseCase();
     getTokensUseCase = new GetTokensUseCase(repository);
-    getTokenByAddressUseCase = new GetTokenByAddressUseCase(repository, chainIndexer, calculatePricing);
+    getTokenByAddressUseCase = new GetTokenByAddressUseCase(
+      repository,
+      chainIndexer,
+      calculatePricing,
+    );
     controller = new TokenController(getTokensUseCase, getTokenByAddressUseCase);
   });
 

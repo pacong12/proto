@@ -2,12 +2,19 @@
   <div class="max-w-2xl mx-auto space-y-6">
     <div>
       <h1 class="text-3xl font-bold tracking-tight text-white">Launch a Token</h1>
-      <p class="text-zinc-400 text-sm mt-1">Deploy a fixed-supply token into permanently locked Uniswap V3 liquidity on Robinhood Chain.</p>
+      <p class="text-zinc-400 text-sm mt-1">
+        Deploy a fixed-supply token into permanently locked Uniswap V3 liquidity on Robinhood Chain.
+      </p>
     </div>
 
-    <form @submit.prevent="handleLaunch" class="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-5">
+    <form
+      @submit.prevent="handleLaunch"
+      class="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-5"
+    >
       <div class="space-y-1.5">
-        <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400">Token Name</label>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400"
+          >Token Name</label
+        >
         <input
           v-model="form.name"
           type="text"
@@ -18,7 +25,9 @@
       </div>
 
       <div class="space-y-1.5">
-        <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400">Ticker / Symbol</label>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400"
+          >Ticker / Symbol</label
+        >
         <input
           v-model="form.symbol"
           type="text"
@@ -29,7 +38,9 @@
       </div>
 
       <div class="space-y-1.5">
-        <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400">Description</label>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400"
+          >Description</label
+        >
         <textarea
           v-model="form.description"
           rows="3"
@@ -39,7 +50,9 @@
       </div>
 
       <div class="space-y-1.5">
-        <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400">Logo IPFS URI</label>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400"
+          >Logo IPFS URI</label
+        >
         <input
           v-model="form.logo"
           type="text"
@@ -50,7 +63,9 @@
 
       <div class="grid grid-cols-2 gap-4">
         <div class="space-y-1.5">
-          <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400">X (Twitter)</label>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400"
+            >X (Twitter)</label
+          >
           <input
             v-model="form.twitter"
             type="text"
@@ -59,7 +74,9 @@
           />
         </div>
         <div class="space-y-1.5">
-          <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400">Telegram</label>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400"
+            >Telegram</label
+          >
           <input
             v-model="form.telegram"
             type="text"
@@ -71,7 +88,9 @@
 
       <div class="pt-4 border-t border-zinc-800 space-y-1.5">
         <div class="flex justify-between">
-          <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400">Creator Initial Buy (Optional)</label>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-400"
+            >Creator Initial Buy (Optional)</label
+          >
           <span class="text-xs text-zinc-500">Pairs into initial pool</span>
         </div>
         <input
@@ -84,7 +103,9 @@
         />
       </div>
 
-      <div class="bg-zinc-950 border border-zinc-800/80 rounded-lg p-4 space-y-2 text-xs text-zinc-400">
+      <div
+        class="bg-zinc-950 border border-zinc-800/80 rounded-lg p-4 space-y-2 text-xs text-zinc-400"
+      >
         <div class="flex justify-between">
           <span>Fixed Supply</span>
           <span class="text-white font-mono">1,000,000,000</span>
@@ -111,7 +132,10 @@
         {{ loading ? 'Launching onchain...' : 'Launch Token' }}
       </button>
 
-      <div v-if="error" class="text-xs text-rose-400 bg-rose-950/40 border border-rose-800 rounded-lg p-3">
+      <div
+        v-if="error"
+        class="text-xs text-rose-400 bg-rose-950/40 border border-rose-800 rounded-lg p-3"
+      >
         {{ error }}
       </div>
     </form>

@@ -1,4 +1,11 @@
-import { createPublicClient, http, type PublicClient, custom, createWalletClient, type WalletClient } from 'viem';
+import {
+  createPublicClient,
+  http,
+  type PublicClient,
+  custom,
+  createWalletClient,
+  type WalletClient,
+} from 'viem';
 import { ROBINHOOD_CHAIN } from '@proto/shared-types';
 
 export const publicClient: PublicClient = createPublicClient({
