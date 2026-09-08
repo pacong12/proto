@@ -18,7 +18,9 @@
         <Jazzicon :address="userAddress" :size="20" class="border border-zinc-700" />
         <span>
           Connected:
-          {{ userAddress ? `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}` : 'Not connected' }}
+          {{
+            userAddress ? `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}` : 'Not connected'
+          }}
         </span>
       </div>
     </div>
@@ -97,9 +99,19 @@
                 </div>
                 <p class="text-xs font-mono mt-0.5">{{ token.address }}</p>
                 <div class="flex items-center gap-3 mt-2 text-xs">
-                  <span>Accrued: <strong class="text-emerald-400 font-mono">{{ token.unclaimedWeth }} ETH</strong></span>
+                  <span
+                    >Accrued:
+                    <strong class="text-emerald-400 font-mono"
+                      >{{ token.unclaimedWeth }} ETH</strong
+                    ></span
+                  >
                   <span>•</span>
-                  <span>Redirect: <strong class="font-mono">{{ token.redirect ? `${token.redirect.slice(0, 6)}...` : 'None (Self)' }}</strong></span>
+                  <span
+                    >Redirect:
+                    <strong class="font-mono">{{
+                      token.redirect ? `${token.redirect.slice(0, 6)}...` : 'None (Self)'
+                    }}</strong></span
+                  >
                 </div>
               </div>
             </div>
@@ -114,11 +126,7 @@
                 <ArrowDownToLine class="w-3.5 h-3.5 mr-1" />
                 Claim Fees
               </Button>
-              <Button
-                @click="openCtoModal(token.address)"
-                variant="outline"
-                size="sm"
-              >
+              <Button @click="openCtoModal(token.address)" variant="outline" size="sm">
                 <Share2 class="w-3.5 h-3.5 mr-1" />
                 CTO Redirect
               </Button>
@@ -136,7 +144,8 @@
               <DialogTitle>Community Takeover (CTO)</DialogTitle>
             </div>
             <DialogDescription>
-              Redirect this token's 70% creator fee stream to an active community multisig or treasury wallet. Locked pool liquidity is unaffected.
+              Redirect this token's 70% creator fee stream to an active community multisig or
+              treasury wallet. Locked pool liquidity is unaffected.
             </DialogDescription>
           </DialogHeader>
 
@@ -159,9 +168,7 @@
           </div>
 
           <DialogFooter class="gap-2">
-            <Button variant="outline" @click="ctoModalOpen = false">
-              Cancel
-            </Button>
+            <Button variant="outline" @click="ctoModalOpen = false"> Cancel </Button>
             <Button
               variant="default"
               :disabled="loading || !newRecipientAddress"

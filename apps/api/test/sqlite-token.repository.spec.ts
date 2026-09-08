@@ -225,9 +225,7 @@ describe('SqliteTokenRepository', () => {
 
   it('reflects active trader balances in holders distribution after trades occur', async () => {
     await repository.save(sampleToken);
-    const buyerAddress = '0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'; // same case test
     const activeBuyer = '0x7777777777777777777777777777777777777777';
-
     await repository.saveTrade({
       id: 'trade-buy-1',
       tokenAddress: sampleToken.address,

@@ -330,12 +330,12 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     limit = 50,
   ): Promise<Array<{ address: string; balance: string; percent: number }>> {
     const token = await this.findByAddress(tokenAddress as `0x${string}`);
-    let totalSupply = 1_000_000_000n * (10n ** 18n);
+    let totalSupply = 1_000_000_000n * 10n ** 18n;
     if (token?.totalSupply) {
       try {
         totalSupply = BigInt(token.totalSupply);
       } catch {
-        totalSupply = 1_000_000_000n * (10n ** 18n);
+        totalSupply = 1_000_000_000n * 10n ** 18n;
       }
     }
 
@@ -368,9 +368,10 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       try {
         const parsed = BigInt(token.initialBuyAmount);
         if (parsed > 0n) deployerInitial = parsed;
-      } catch {}
+      } catch {
+        // ignore invalid initial buy amount
+      }
     }
-
     const activeTraders = Object.entries(traderBalances)
       .filter(([addr, bal]) => bal > 0n && addr !== deployerAddress.toLowerCase())
       .sort((a, b) => (b[1] > a[1] ? 1 : b[1] < a[1] ? -1 : 0));

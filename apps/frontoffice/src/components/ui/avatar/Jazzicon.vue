@@ -7,11 +7,7 @@
       backgroundColor: iconData.backgroundColor,
     }"
   >
-    <svg
-      viewBox="0 0 100 100"
-      class="w-full h-full"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+    <svg viewBox="0 0 100 100" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
       <rect
         v-for="(shape, idx) in iconData.shapes"
         :key="idx"

@@ -52,12 +52,22 @@
         <!-- Bottom Tabs: [Trades], [Holders], [About] -->
         <Card class="p-4 sm:p-6 space-y-4">
           <Tabs v-model="activeBottomTab" class="w-full">
-            <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3">
-              <TabsList class="grid grid-cols-3 w-full sm:w-80 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg border border-zinc-200 dark:border-zinc-800">
-                <TabsTrigger value="trades" class="text-xs font-semibold text-black dark:text-white">
+            <div
+              class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3"
+            >
+              <TabsList
+                class="grid grid-cols-3 w-full sm:w-80 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg border border-zinc-200 dark:border-zinc-800"
+              >
+                <TabsTrigger
+                  value="trades"
+                  class="text-xs font-semibold text-black dark:text-white"
+                >
                   Trades
                 </TabsTrigger>
-                <TabsTrigger value="holders" class="text-xs font-semibold text-black dark:text-white">
+                <TabsTrigger
+                  value="holders"
+                  class="text-xs font-semibold text-black dark:text-white"
+                >
                   Holders
                 </TabsTrigger>
                 <TabsTrigger value="about" class="text-xs font-semibold text-black dark:text-white">
@@ -72,7 +82,10 @@
                   class="h-7 text-xs font-mono text-black dark:text-white flex items-center gap-1"
                   @click="fetchTrades(currentToken.address)"
                 >
-                  <RefreshCw class="w-3 h-3 text-emerald-400" :class="{ 'animate-spin': tradesLoading }" />
+                  <RefreshCw
+                    class="w-3 h-3 text-emerald-400"
+                    :class="{ 'animate-spin': tradesLoading }"
+                  />
                   <span>Refresh</span>
                 </Button>
               </div>
@@ -80,19 +93,27 @@
 
             <!-- Tab 1: Live Trades History -->
             <TabsContent value="trades" class="mt-4 space-y-2">
-              <div v-if="tradesLoading && trades.length === 0" class="py-12 text-center text-black dark:text-white">
+              <div
+                v-if="tradesLoading && trades.length === 0"
+                class="py-12 text-center text-black dark:text-white"
+              >
                 <Loader2 class="w-5 h-5 text-emerald-400 animate-spin mx-auto mb-2" />
                 <span class="text-xs">Loading live trades...</span>
               </div>
 
-              <div v-else-if="trades.length === 0" class="py-12 text-center text-black dark:text-white">
+              <div
+                v-else-if="trades.length === 0"
+                class="py-12 text-center text-black dark:text-white"
+              >
                 <p class="text-xs font-mono">No trades found for this token yet.</p>
               </div>
 
               <div v-else class="overflow-x-auto">
                 <table class="w-full text-left text-xs font-mono">
                   <thead>
-                    <tr class="border-b border-zinc-200 dark:border-zinc-800 text-black dark:text-white">
+                    <tr
+                      class="border-b border-zinc-200 dark:border-zinc-800 text-black dark:text-white"
+                    >
                       <th class="py-2.5 px-3 font-semibold">Type</th>
                       <th class="py-2.5 px-3 font-semibold">Price (USD)</th>
                       <th class="py-2.5 px-3 font-semibold">ETH</th>
@@ -123,8 +144,14 @@
                       </td>
 
                       <!-- Price USD -->
-                      <td class="py-2.5 px-3 whitespace-nowrap text-black dark:text-white font-medium">
-                        ${{ trade.priceUsd < 0.0001 ? trade.priceUsd.toFixed(8) : trade.priceUsd.toFixed(4) }}
+                      <td
+                        class="py-2.5 px-3 whitespace-nowrap text-black dark:text-white font-medium"
+                      >
+                        ${{
+                          trade.priceUsd < 0.0001
+                            ? trade.priceUsd.toFixed(8)
+                            : trade.priceUsd.toFixed(4)
+                        }}
                       </td>
 
                       <!-- ETH Amount -->
@@ -133,21 +160,30 @@
                       </td>
 
                       <!-- Token Amount -->
-                      <td class="py-2.5 px-3 whitespace-nowrap text-black dark:text-white font-medium">
+                      <td
+                        class="py-2.5 px-3 whitespace-nowrap text-black dark:text-white font-medium"
+                      >
                         {{ formatTokenNumber(trade.tokenAmount) }}
                       </td>
 
                       <!-- Trader Address with Jazzicon & Copy -->
                       <td class="py-2.5 px-3 whitespace-nowrap">
                         <div class="flex items-center gap-2 text-black dark:text-white">
-                          <Jazzicon :address="trade.trader" :size="16" class="border border-zinc-200 dark:border-zinc-700" />
+                          <Jazzicon
+                            :address="trade.trader"
+                            :size="16"
+                            class="border border-zinc-200 dark:border-zinc-700"
+                          />
                           <span>{{ truncateAddress(trade.trader) }}</span>
                           <button
                             class="hover:text-emerald-400 p-0.5 rounded"
                             title="Copy address"
                             @click="copyText(trade.trader, trade.id + '-trader')"
                           >
-                            <Check v-if="copiedId === trade.id + '-trader'" class="w-3 h-3 text-emerald-400" />
+                            <Check
+                              v-if="copiedId === trade.id + '-trader'"
+                              class="w-3 h-3 text-emerald-400"
+                            />
                             <Copy v-else class="w-3 h-3" />
                           </button>
                         </div>
@@ -177,19 +213,27 @@
 
             <!-- Tab 2: Top Holders Distribution List -->
             <TabsContent value="holders" class="mt-4 space-y-2">
-              <div v-if="holdersLoading && holders.length === 0" class="py-12 text-center text-black dark:text-white">
+              <div
+                v-if="holdersLoading && holders.length === 0"
+                class="py-12 text-center text-black dark:text-white"
+              >
                 <Loader2 class="w-5 h-5 text-emerald-400 animate-spin mx-auto mb-2" />
                 <span class="text-xs">Loading token holders...</span>
               </div>
 
-              <div v-else-if="holders.length === 0" class="py-12 text-center text-black dark:text-white">
+              <div
+                v-else-if="holders.length === 0"
+                class="py-12 text-center text-black dark:text-white"
+              >
                 <p class="text-xs font-mono">No holder data available.</p>
               </div>
 
               <div v-else class="overflow-x-auto">
                 <table class="w-full text-left text-xs font-mono">
                   <thead>
-                    <tr class="border-b border-zinc-200 dark:border-zinc-800 text-black dark:text-white">
+                    <tr
+                      class="border-b border-zinc-200 dark:border-zinc-800 text-black dark:text-white"
+                    >
                       <th class="py-2.5 px-3 font-semibold w-14">Rank</th>
                       <th class="py-2.5 px-3 font-semibold">Holder</th>
                       <th class="py-2.5 px-3 font-semibold w-48">Percentage</th>
@@ -204,7 +248,9 @@
                       class="hover:bg-zinc-100/50 dark:hover:bg-zinc-900/50 transition-colors"
                     >
                       <!-- Rank -->
-                      <td class="py-2.5 px-3 whitespace-nowrap text-black dark:text-white font-bold">
+                      <td
+                        class="py-2.5 px-3 whitespace-nowrap text-black dark:text-white font-bold"
+                      >
                         #{{ idx + 1 }}
                       </td>
 
@@ -212,7 +258,11 @@
                       <!-- Address + Jazzicon + Tags -->
                       <td class="py-2.5 px-3 whitespace-nowrap">
                         <div class="flex items-center gap-2">
-                          <Jazzicon :address="holder.address" :size="18" class="border border-zinc-200 dark:border-zinc-700" />
+                          <Jazzicon
+                            :address="holder.address"
+                            :size="18"
+                            class="border border-zinc-200 dark:border-zinc-700"
+                          />
                           <span class="text-black dark:text-white font-medium">
                             {{ truncateAddress(holder.address) }}
                           </span>
@@ -221,7 +271,10 @@
                             title="Copy address"
                             @click="copyText(holder.address, 'holder-' + idx)"
                           >
-                            <Check v-if="copiedId === 'holder-' + idx" class="w-3 h-3 text-emerald-400" />
+                            <Check
+                              v-if="copiedId === 'holder-' + idx"
+                              class="w-3 h-3 text-emerald-400"
+                            />
                             <Copy v-else class="w-3 h-3" />
                           </button>
 
@@ -239,7 +292,9 @@
                       <!-- Percentage & Progress -->
                       <td class="py-2.5 px-3 whitespace-nowrap">
                         <div class="space-y-1">
-                          <div class="flex items-center justify-between text-[11px] text-black dark:text-white font-semibold">
+                          <div
+                            class="flex items-center justify-between text-[11px] text-black dark:text-white font-semibold"
+                          >
                             <span>{{ holder.percent.toFixed(2) }}%</span>
                           </div>
                           <Progress :model-value="holder.percent" class="h-1.5 w-36" />
@@ -247,7 +302,9 @@
                       </td>
 
                       <!-- Balance -->
-                      <td class="py-2.5 px-3 whitespace-nowrap text-right text-black dark:text-white font-medium">
+                      <td
+                        class="py-2.5 px-3 whitespace-nowrap text-right text-black dark:text-white font-medium"
+                      >
                         {{ formatTokenNumber(holder.balance) }} {{ currentToken.symbol }}
                       </td>
 
@@ -272,10 +329,14 @@
             <!-- Tab 3: About Token Details -->
             <TabsContent value="about" class="mt-4 space-y-6">
               <!-- Token Header Details with P4 External Analytics Links -->
-              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div
+                class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+              >
                 <div class="flex items-start gap-4">
                   <Avatar class="w-14 h-14 rounded-xl border border-zinc-200 dark:border-zinc-800">
-                    <AvatarFallback class="bg-zinc-100 dark:bg-zinc-900 text-emerald-400 font-bold text-xl rounded-xl">
+                    <AvatarFallback
+                      class="bg-zinc-100 dark:bg-zinc-900 text-emerald-400 font-bold text-xl rounded-xl"
+                    >
                       {{ currentToken.symbol.slice(0, 3) }}
                     </AvatarFallback>
                   </Avatar>
@@ -376,13 +437,17 @@
               </p>
 
               <!-- Market Stats Grid -->
-              <div class="grid grid-cols-3 gap-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+              <div
+                class="grid grid-cols-3 gap-4 pt-4 border-t border-zinc-200 dark:border-zinc-800"
+              >
                 <div>
                   <p class="text-xs flex items-center gap-1 text-black dark:text-white font-medium">
                     <TrendingUp class="w-3 h-3 text-emerald-400" />
                     Price (USD)
                   </p>
-                  <p class="text-sm sm:text-base font-bold font-mono mt-0.5 text-black dark:text-white">
+                  <p
+                    class="text-sm sm:text-base font-bold font-mono mt-0.5 text-black dark:text-white"
+                  >
                     ${{ currentMarketData.priceUsd.toFixed(8) }}
                   </p>
                 </div>
@@ -391,7 +456,9 @@
                     <Coins class="w-3 h-3" />
                     Market Cap
                   </p>
-                  <p class="text-sm sm:text-base font-bold font-mono mt-0.5 text-black dark:text-white">
+                  <p
+                    class="text-sm sm:text-base font-bold font-mono mt-0.5 text-black dark:text-white"
+                  >
                     ${{ currentMarketData.marketCapUsd.toLocaleString() }}
                   </p>
                 </div>
@@ -400,7 +467,9 @@
                     <Activity class="w-3 h-3" />
                     24h Volume
                   </p>
-                  <p class="text-sm sm:text-base font-bold font-mono mt-0.5 text-black dark:text-white">
+                  <p
+                    class="text-sm sm:text-base font-bold font-mono mt-0.5 text-black dark:text-white"
+                  >
                     ${{ currentMarketData.volume24hUsd.toLocaleString() }}
                   </p>
                 </div>
@@ -428,11 +497,19 @@
       <!-- Swap Column with Quick Percentages & Slippage Popover -->
       <div class="space-y-6">
         <Card class="p-6 space-y-4">
-          <div class="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800">
+          <div
+            class="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800"
+          >
             <Tabs v-model="tradeTab" class="flex-row">
-              <TabsList class="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                <TabsTrigger value="buy" class="text-xs font-semibold text-black dark:text-white">Buy</TabsTrigger>
-                <TabsTrigger value="sell" class="text-xs font-semibold text-black dark:text-white">Sell</TabsTrigger>
+              <TabsList
+                class="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800"
+              >
+                <TabsTrigger value="buy" class="text-xs font-semibold text-black dark:text-white"
+                  >Buy</TabsTrigger
+                >
+                <TabsTrigger value="sell" class="text-xs font-semibold text-black dark:text-white"
+                  >Sell</TabsTrigger
+                >
               </TabsList>
             </Tabs>
 
@@ -452,7 +529,9 @@
                 class="w-64 p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl space-y-3"
               >
                 <div class="flex items-center justify-between">
-                  <span class="text-xs font-bold text-black dark:text-white">Slippage Tolerance</span>
+                  <span class="text-xs font-bold text-black dark:text-white"
+                    >Slippage Tolerance</span
+                  >
                   <span class="text-xs font-mono font-bold text-emerald-400">{{ slippage }}%</span>
                 </div>
 
@@ -490,7 +569,10 @@
                     class="h-8 text-xs font-mono pr-7 text-black dark:text-white bg-transparent border-zinc-200 dark:border-zinc-800"
                     @input="handleCustomSlippageInput"
                   />
-                  <span class="absolute right-2.5 top-2 text-xs font-mono font-bold text-black dark:text-white">%</span>
+                  <span
+                    class="absolute right-2.5 top-2 text-xs font-mono font-bold text-black dark:text-white"
+                    >%</span
+                  >
                 </div>
               </PopoverContent>
             </Popover>
@@ -626,7 +708,11 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { TradingChart } from '@/components/ui/chart';
-import { ROBINHOOD_CHAIN, type LaunchedTokenEntity, type TokenMarketData } from '@proto/shared-types';
+import {
+  ROBINHOOD_CHAIN,
+  type LaunchedTokenEntity,
+  type TokenMarketData,
+} from '@proto/shared-types';
 
 const erc20Abi = parseAbi([
   'function balanceOf(address account) view returns (uint256)',

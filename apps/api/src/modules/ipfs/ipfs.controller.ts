@@ -99,9 +99,7 @@ export class IpfsController {
     }
   }
 
-  async upload(
-    input: Request | IpfsDirectUploadPayload,
-  ): Promise<ApiEnvelope<IpfsUploadResult>> {
+  async upload(input: Request | IpfsDirectUploadPayload): Promise<ApiEnvelope<IpfsUploadResult>> {
     if ('headers' in input && typeof input.headers?.get === 'function') {
       return this.handleUpload(input as Request);
     }

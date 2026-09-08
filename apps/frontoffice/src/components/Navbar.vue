@@ -76,12 +76,7 @@
         >
           <Search class="w-3.5 h-3.5" />
           <span class="hidden sm:inline">Search</span>
-          <Badge
-            variant="secondary"
-            class="h-4 px-1 text-[10px] font-mono"
-          >
-            ⌘K
-          </Badge>
+          <Badge variant="secondary" class="h-4 px-1 text-[10px] font-mono"> ⌘K </Badge>
         </Button>
 
         <!-- Shadcn Dark Mode Toggle -->
@@ -126,13 +121,13 @@
           <!-- Shadcn Dropdown Menu for Profile -->
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
-              <Button
-                variant="outline"
-                size="sm"
-                class="h-8 gap-2 px-2 text-xs"
-              >
+              <Button variant="outline" size="sm" class="h-8 gap-2 px-2 text-xs">
                 <!-- Deterministic MetaMask Jazzicon Avatar -->
-                <Jazzicon :address="account" :size="20" class="border border-zinc-200 dark:border-zinc-700 shadow-sm" />
+                <Jazzicon
+                  :address="account"
+                  :size="20"
+                  class="border border-zinc-200 dark:border-zinc-700 shadow-sm"
+                />
                 <span class="font-mono text-xs font-medium">{{ formattedAddress }}</span>
                 <ChevronDown class="h-3 w-3 opacity-50" />
               </Button>
@@ -140,10 +135,16 @@
 
             <DropdownMenuContent align="end" class="w-60">
               <DropdownMenuLabel class="flex items-center gap-2.5 py-2">
-                <Jazzicon :address="account" :size="28" class="border border-zinc-300 dark:border-zinc-700" />
+                <Jazzicon
+                  :address="account"
+                  :size="28"
+                  class="border border-zinc-300 dark:border-zinc-700"
+                />
                 <div class="truncate">
                   <span class="block text-xs font-bold">Connected Account</span>
-                  <span class="block text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold truncate">
+                  <span
+                    class="block text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold truncate"
+                  >
                     {{ account }}
                   </span>
                 </div>

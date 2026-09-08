@@ -45,7 +45,9 @@ describe('IPFS Service & Controller', () => {
 
       // Mock global fetch to throw network error simulating Pinata offline
       const originalFetch = global.fetch;
-      global.fetch = vi.fn().mockRejectedValue(new Error('Network offline')) as unknown as typeof fetch;
+      global.fetch = vi
+        .fn()
+        .mockRejectedValue(new Error('Network offline')) as unknown as typeof fetch;
 
       const result = await uploadFile(buffer, 'test.png', 'image/png');
 

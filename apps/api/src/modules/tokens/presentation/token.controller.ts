@@ -51,11 +51,7 @@ export class TokenController {
     }
 
     try {
-      const trades = await this.tokenRepository.getTrades(
-        address as `0x${string}`,
-        limit,
-        offset,
-      );
+      const trades = await this.tokenRepository.getTrades(address as `0x${string}`, limit, offset);
       return ok(trades);
     } catch (error) {
       return err('FETCH_TRADES_FAILED', (error as Error).message);
