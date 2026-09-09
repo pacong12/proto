@@ -931,15 +931,15 @@ const candlestickData = ref<
 >([]);
 
 const currentToken = ref<LaunchedTokenEntity>({
-  address: (props.tokenAddress as `0x${string}`) || '0x39dBED3a2bd333467115dE45665cC57F813C4571',
-  name: 'Pons Token',
-  symbol: 'PONS',
+  address: (props.tokenAddress as `0x${string}`) || '0x48844223aBDceeb1Ce502F54d559681358E68200',
+  name: 'Proto Token',
+  symbol: 'PROTO',
   decimals: 18,
   totalSupply: '1000000000000000000000000000',
-  logo: 'ipfs://pons',
-  description: '100% of fees go back to Pons community buyback and burn.',
-  socials: { twitter: 'https://x.com/ponsdotfamily' },
-  deployer: '0x1111111111111111111111111111111111111111',
+  logo: 'ipfs://proto',
+  description: 'Native utility and fee buyback token for the Proto launchpad on Robinhood Chain.',
+  socials: { twitter: 'https://x.com/protodotfamily' },
+  deployer: '0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2',
   pairedToken: '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73',
   poolAddress: '0x10CC6BD38112cAc182db90B6a71d8Bb5939526bA',
   isToken0: true,

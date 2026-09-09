@@ -40,9 +40,9 @@ if (!projectId) {
     projectId,
     metadata: {
       name: 'proto',
-      description: 'Fixed-supply token launchpad on Robinhood Chain',
+      description: 'Proto - Fixed-supply token launchpad on Robinhood Chain',
       url: 'http://localhost:3000',
-      icons: ['https://www.ponsfamily.com/favicon.png'],
+      icons: ['/favicon.svg'],
     },
     features: {
       analytics: false,
