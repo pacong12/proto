@@ -172,22 +172,38 @@
       </div>
 
       <!-- Main Profile Tabs: Created Tokens, Portfolio, Activity -->
-      <Card class="p-6 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/90 space-y-6">
+      <Card
+        class="p-4 sm:p-6 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/90 space-y-6"
+      >
         <Tabs v-model="activeTab" class="w-full">
-          <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-3"
+          >
             <TabsList
-              class="grid grid-cols-4 w-full sm:w-[500px] bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg border border-zinc-200 dark:border-zinc-800"
+              class="flex flex-wrap sm:inline-flex w-full sm:w-auto bg-zinc-100 dark:bg-zinc-900 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800 gap-1 h-auto"
             >
-              <TabsTrigger value="created" class="text-xs font-semibold">
+              <TabsTrigger
+                value="created"
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-black dark:text-white"
+              >
                 {{ t('createdTokens') }} ({{ myLaunches.length }})
               </TabsTrigger>
-              <TabsTrigger value="portfolio" class="text-xs font-semibold">
+              <TabsTrigger
+                value="portfolio"
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-black dark:text-white"
+              >
                 {{ t('portfolio') }} ({{ portfolioPositions.length }})
               </TabsTrigger>
-              <TabsTrigger value="dividends" class="text-xs font-semibold">
+              <TabsTrigger
+                value="dividends"
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-black dark:text-white"
+              >
                 {{ t('dividendsAndVesting') }}
               </TabsTrigger>
-              <TabsTrigger value="activity" class="text-xs font-semibold">
+              <TabsTrigger
+                value="activity"
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-black dark:text-white"
+              >
                 {{ t('activity') }} ({{ userActivities.length }})
               </TabsTrigger>
             </TabsList>
@@ -195,7 +211,7 @@
             <Button
               variant="ghost"
               size="sm"
-              class="h-7 text-xs text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white"
+              class="h-8 text-xs text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white self-end sm:self-auto border border-zinc-200 dark:border-zinc-800"
               @click="refreshAllData"
             >
               <RefreshCw class="w-3.5 h-3.5 mr-1" :class="{ 'animate-spin': loadingLaunches }" />
@@ -423,7 +439,9 @@
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2">
                     <Coins class="w-4 h-4 text-emerald-400" />
-                    <h3 class="text-sm font-bold text-white">Holder Fee Sharing Dividends</h3>
+                    <h3 class="text-sm font-bold text-black dark:text-white">
+                      Holder Fee Sharing Dividends
+                    </h3>
                   </div>
                   <Badge
                     variant="outline"
@@ -436,7 +454,9 @@
                   Pro-rata trading fee rewards accrued from tokens you hold that enabled Holder Fee
                   Sharing.
                 </p>
-                <div class="flex items-end justify-between pt-2 border-t border-zinc-800">
+                <div
+                  class="flex items-end justify-between pt-2 border-t border-zinc-200 dark:border-zinc-800"
+                >
                   <div>
                     <span class="text-[10px] text-zinc-500 uppercase font-mono"
                       >Claimable Reward</span
@@ -456,11 +476,15 @@
               </Card>
 
               <!-- Linear Vesting Schedule Card -->
-              <Card class="p-5 bg-zinc-900/60 border-zinc-800 space-y-3">
+              <Card
+                class="p-5 bg-zinc-50/60 dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 space-y-3"
+              >
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2">
                     <Lock class="w-4 h-4 text-emerald-400" />
-                    <h3 class="text-sm font-bold text-white">Linear Vesting Vault</h3>
+                    <h3 class="text-sm font-bold text-black dark:text-white">
+                      Linear Vesting Vault
+                    </h3>
                   </div>
                   <Badge variant="outline" class="text-[10px] font-mono text-zinc-400">
                     Continuous Release
@@ -470,12 +494,14 @@
                   Tokens locked in linear vesting schedules (buybacks, team allocations, migration
                   claims).
                 </p>
-                <div class="flex items-end justify-between pt-2 border-t border-zinc-800">
+                <div
+                  class="flex items-end justify-between pt-2 border-t border-zinc-200 dark:border-zinc-800"
+                >
                   <div>
                     <span class="text-[10px] text-zinc-500 uppercase font-mono"
                       >Unlocked Tokens</span
                     >
-                    <p class="text-lg font-bold font-mono text-white">0 DIV</p>
+                    <p class="text-lg font-bold font-mono text-black dark:text-white">0 DIV</p>
                   </div>
                   <Button
                     size="sm"
@@ -494,7 +520,9 @@
 
       <!-- Edit Profile Modal -->
       <Dialog v-model:open="editModalOpen">
-        <DialogContent class="max-w-md bg-zinc-950 border-zinc-800 text-white">
+        <DialogContent
+          class="max-w-md bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-black dark:text-white"
+        >
           <DialogHeader>
             <div class="flex items-center gap-2 text-emerald-400 mb-1">
               <Edit3 class="w-5 h-5" />
@@ -582,7 +610,9 @@
 
       <!-- CTO Modal -->
       <Dialog v-model:open="ctoModalOpen">
-        <DialogContent class="max-w-md bg-zinc-950 border-zinc-800 text-white">
+        <DialogContent
+          class="max-w-md bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-black dark:text-white"
+        >
           <DialogHeader>
             <div class="flex items-center gap-2 text-emerald-400 mb-1">
               <ShieldAlert class="w-5 h-5" />

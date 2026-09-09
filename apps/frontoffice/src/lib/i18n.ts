@@ -519,7 +519,10 @@ export function useI18n() {
     locale: currentLocale,
     locales: SUPPORTED_LOCALES,
     setLocale,
-    t,
+    t: (key: string) => {
+      const loc = currentLocale.value;
+      return messages[loc]?.[key] ?? messages.en[key] ?? key;
+    },
     currentLocaleOption: computed(
       () => SUPPORTED_LOCALES.find((l) => l.code === currentLocale.value) || SUPPORTED_LOCALES[0],
     ),
