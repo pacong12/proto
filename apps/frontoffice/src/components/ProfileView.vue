@@ -1,7 +1,9 @@
 <template>
   <div class="max-w-5xl mx-auto space-y-8">
     <!-- Profile Hero & Identity Card -->
-    <Card class="p-6 border-zinc-800 bg-zinc-950/80 backdrop-blur space-y-6">
+    <Card
+      class="p-6 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/80 backdrop-blur space-y-6"
+    >
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div class="flex items-center gap-4">
           <Avatar
@@ -18,7 +20,7 @@
 
           <div class="space-y-1">
             <div class="flex items-center gap-2">
-              <h1 class="text-2xl font-bold tracking-tight text-white">
+              <h1 class="text-2xl font-bold tracking-tight text-black dark:text-white">
                 {{
                   profileData.displayName ||
                   (userAddress
@@ -74,7 +76,7 @@
             @click="editModalOpen = true"
             variant="outline"
             size="sm"
-            class="h-8 text-xs font-semibold gap-1.5 border-zinc-800 hover:bg-zinc-900"
+            class="h-8 text-xs font-semibold gap-1.5 border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-black dark:text-white"
           >
             <Edit3 class="w-3.5 h-3.5" />
             Edit Profile
@@ -107,7 +109,7 @@
     <template v-else>
       <!-- Stats Summary Grid -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card class="p-5 bg-zinc-950 border-zinc-800">
+        <Card class="p-5 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800">
           <p
             class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono text-zinc-400"
           >
@@ -120,31 +122,33 @@
           <p class="text-xs text-zinc-500 mt-1">70% creator share</p>
         </Card>
 
-        <Card class="p-5 bg-zinc-950 border-zinc-800">
+        <Card class="p-5 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800">
           <p
             class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono text-zinc-400"
           >
             <Rocket class="w-4 h-4 text-emerald-400" />
             {{ t('createdTokens') }}
           </p>
-          <p class="text-2xl font-bold font-mono text-white mt-2">{{ myLaunches.length }}</p>
+          <p class="text-2xl font-bold font-mono text-black dark:text-white mt-2">
+            {{ myLaunches.length }}
+          </p>
           <p class="text-xs text-zinc-500 mt-1">Deployed by your wallet</p>
         </Card>
 
-        <Card class="p-5 bg-zinc-950 border-zinc-800">
+        <Card class="p-5 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800">
           <p
             class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono text-zinc-400"
           >
             <PieChart class="w-4 h-4 text-emerald-400" />
             Active Positions
           </p>
-          <p class="text-2xl font-bold font-mono text-white mt-2">
+          <p class="text-2xl font-bold font-mono text-black dark:text-white mt-2">
             {{ portfolioPositions.length }}
           </p>
           <p class="text-xs text-zinc-500 mt-1">Tokens currently held</p>
         </Card>
 
-        <Card class="p-5 bg-zinc-950 border-zinc-800">
+        <Card class="p-5 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800">
           <p
             class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono text-zinc-400"
           >
@@ -168,11 +172,11 @@
       </div>
 
       <!-- Main Profile Tabs: Created Tokens, Portfolio, Activity -->
-      <Card class="p-6 border-zinc-800 bg-zinc-950/90 space-y-6">
+      <Card class="p-6 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/90 space-y-6">
         <Tabs v-model="activeTab" class="w-full">
           <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
             <TabsList
-              class="grid grid-cols-4 w-full sm:w-[500px] bg-zinc-900 p-1 rounded-lg border border-zinc-800"
+              class="grid grid-cols-4 w-full sm:w-[500px] bg-zinc-100 dark:bg-zinc-900 p-1 rounded-lg border border-zinc-200 dark:border-zinc-800"
             >
               <TabsTrigger value="created" class="text-xs font-semibold">
                 {{ t('createdTokens') }} ({{ myLaunches.length }})
@@ -191,7 +195,7 @@
             <Button
               variant="ghost"
               size="sm"
-              class="h-7 text-xs text-zinc-400 hover:text-white"
+              class="h-7 text-xs text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white"
               @click="refreshAllData"
             >
               <RefreshCw class="w-3.5 h-3.5 mr-1" :class="{ 'animate-spin': loadingLaunches }" />
@@ -215,7 +219,7 @@
               <Card
                 v-for="token in myLaunches"
                 :key="token.address"
-                class="bg-zinc-900/60 border-zinc-800/80 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                class="bg-zinc-50/60 dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800/80 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 <div class="flex items-start gap-3.5">
                   <Avatar
@@ -236,7 +240,9 @@
 
                   <div>
                     <div class="flex items-center gap-2">
-                      <h3 class="font-bold text-base text-white">{{ token.name }}</h3>
+                      <h3 class="font-bold text-base text-black dark:text-white">
+                        {{ token.name }}
+                      </h3>
                       <span class="text-xs font-mono text-zinc-400">${{ token.symbol }}</span>
                       <Badge
                         :variant="token.version === 'v2' ? 'outline' : 'secondary'"
@@ -306,7 +312,7 @@
                   <tr
                     v-for="pos in portfolioPositions"
                     :key="pos.tokenAddress"
-                    class="hover:bg-zinc-900/40 transition-colors"
+                    class="hover:bg-zinc-100/40 dark:hover:bg-zinc-900/40 transition-colors"
                   >
                     <td class="py-2.5 px-3">
                       <div class="flex items-center gap-2">
@@ -315,11 +321,11 @@
                             {{ pos.symbol.slice(0, 3) }}
                           </AvatarFallback>
                         </Avatar>
-                        <span class="font-bold text-white">{{ pos.name }}</span>
+                        <span class="font-bold text-black dark:text-white">{{ pos.name }}</span>
                         <span class="text-zinc-500">${{ pos.symbol }}</span>
                       </div>
                     </td>
-                    <td class="py-2.5 px-3 text-right text-white font-medium">
+                    <td class="py-2.5 px-3 text-right text-black dark:text-white font-medium">
                       {{ pos.balanceFormatted }}
                     </td>
                     <td class="py-2.5 px-3 text-right text-zinc-400">
@@ -369,7 +375,7 @@
                   <tr
                     v-for="act in userActivities"
                     :key="act.txHash"
-                    class="hover:bg-zinc-900/40 transition-colors"
+                    class="hover:bg-zinc-100/40 dark:hover:bg-zinc-900/40 transition-colors"
                   >
                     <td class="py-2.5 px-3">
                       <Badge
@@ -379,7 +385,9 @@
                         {{ act.isBuy ? 'Buy' : 'Sell' }}
                       </Badge>
                     </td>
-                    <td class="py-2.5 px-3 text-white font-medium">${{ act.tokenSymbol }}</td>
+                    <td class="py-2.5 px-3 text-black dark:text-white font-medium">
+                      ${{ act.tokenSymbol }}
+                    </td>
                     <td class="py-2.5 px-3 text-right text-emerald-400 font-medium">
                       {{ act.ethAmount }} ETH
                     </td>
@@ -409,7 +417,9 @@
           <TabsContent value="dividends" class="mt-4 space-y-4">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <!-- Holder Fee Dividends Card -->
-              <Card class="p-5 bg-zinc-900/60 border-zinc-800 space-y-3">
+              <Card
+                class="p-5 bg-zinc-50/60 dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 space-y-3"
+              >
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2">
                     <Coins class="w-4 h-4 text-emerald-400" />

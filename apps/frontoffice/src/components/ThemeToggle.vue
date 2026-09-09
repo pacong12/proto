@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { useColorMode } from '@vueuse/core';
 import { Sun, Moon, Monitor } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -9,6 +10,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+
+const { t } = useI18n();
 
 const mode = useColorMode({
   emitAuto: true,
@@ -39,15 +42,15 @@ const isDark = computed(() => mode.value === 'dark');
     <DropdownMenuContent align="end" class="w-32 bg-zinc-950 border border-zinc-800">
       <DropdownMenuItem @click="mode = 'light'" class="cursor-pointer">
         <Sun class="mr-2 h-3.5 w-3.5 text-amber-500" />
-        <span>Light</span>
+        <span>{{ t('light') }}</span>
       </DropdownMenuItem>
       <DropdownMenuItem @click="mode = 'dark'" class="cursor-pointer">
         <Moon class="mr-2 h-3.5 w-3.5 text-emerald-400" />
-        <span>Dark</span>
+        <span>{{ t('dark') }}</span>
       </DropdownMenuItem>
       <DropdownMenuItem @click="mode = 'auto'" class="cursor-pointer">
         <Monitor class="mr-2 h-3.5 w-3.5 text-zinc-400" />
-        <span>System</span>
+        <span>{{ t('system') }}</span>
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>

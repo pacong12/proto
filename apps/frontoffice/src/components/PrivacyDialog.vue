@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useI18n } from '@/lib/i18n';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +12,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { ShieldCheck } from 'lucide-vue-next';
+
+const { t } = useI18n();
 
 const emit = defineEmits<{
   (e: 'accept'): void;
@@ -32,10 +35,10 @@ function handleAccept() {
       <DialogHeader>
         <div class="flex items-center gap-2 text-emerald-400 mb-1">
           <ShieldCheck class="w-5 h-5" />
-          <DialogTitle>Terms & Privacy Agreement</DialogTitle>
+          <DialogTitle>{{ t('privacyAgreementTitle') }}</DialogTitle>
         </div>
         <DialogDescription>
-          Before interacting with the Robinhood Chain launchpad protocol, please review our terms.
+          {{ t('privacyAgreementDesc') }}
         </DialogDescription>
       </DialogHeader>
 
@@ -71,7 +74,6 @@ function handleAccept() {
           for="privacy-terms"
           class="text-xs font-normal text-zinc-300 normal-case cursor-pointer"
         >
-          I have read and accept the
           <a
             href="/terms-of-service"
             target="_blank"
@@ -79,7 +81,7 @@ function handleAccept() {
             class="text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition"
             @click.stop
           >
-            Terms of Service
+            {{ t('termsOfService') }}
           </a>
           &amp;
           <a
@@ -89,14 +91,14 @@ function handleAccept() {
             class="text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition"
             @click.stop
           >
-            Privacy Policy
+            {{ t('privacyPolicy') }}
           </a>
         </Label>
       </div>
 
       <DialogFooter class="pt-2">
         <Button :disabled="!agreed" @click="handleAccept" class="w-full">
-          Accept & Continue
+          {{ t('acceptAndContinue') }}
         </Button>
       </DialogFooter>
     </DialogContent>

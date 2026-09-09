@@ -85,6 +85,31 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     activity: 'Activity',
     connecting: 'Connecting...',
     scanningForWallets: 'Scanning for wallets...',
+    product: 'Product',
+    network: 'Network',
+    legal: 'Legal',
+    termsOfService: 'Terms of Service',
+    privacyPolicy: 'Privacy Policy',
+    cookiePolicy: 'Cookie Policy',
+    light: 'Light',
+    dark: 'Dark',
+    system: 'System',
+    footerSubtitle:
+      'Launch and explore fixed-supply tokens on Robinhood Chain. Your wallet submits every transaction. proto does not custody assets.',
+    footerDisclaimer:
+      'Transactions are submitted through your wallet and may be irreversible. Tokens can be volatile.',
+    copyright: '© 2026 Proto Labs, LLC. Fixed-supply token launch protocol on Robinhood Chain.',
+    explorer: 'Explorer',
+    cookieBannerTitle: 'Cookie & Storage Preferences',
+    cookieBannerDesc:
+      'Proto uses local storage strictly for essential interface settings (theme, wallet state, and privacy agreement). We do not track you or use commercial ad cookies.',
+    decline: 'Decline',
+    accept: 'Accept',
+    privacyAgreementTitle: 'Terms & Privacy Agreement',
+    privacyAgreementDesc:
+      'Before interacting with the Robinhood Chain launchpad protocol, please review our terms.',
+    privacyAgreementCheck: 'I have read and accept the Terms of Service & Privacy Policy',
+    acceptAndContinue: 'Accept & Continue',
   },
   id: {
     explore: 'Jelajahi',
@@ -136,6 +161,33 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     activity: 'Aktivitas',
     connecting: 'Menghubungkan...',
     scanningForWallets: 'Memindai dompet...',
+    product: 'Produk',
+    network: 'Jaringan',
+    legal: 'Legalitas',
+    termsOfService: 'Ketentuan Layanan',
+    privacyPolicy: 'Kebijakan Privasi',
+    cookiePolicy: 'Kebijakan Cookie',
+    light: 'Terang',
+    dark: 'Gelap',
+    system: 'Sistem',
+    footerSubtitle:
+      'Luncurkan dan jelajahi token pasokan tetap di Robinhood Chain. Dompet Anda mengirimkan setiap transaksi. proto tidak menyimpan aset.',
+    footerDisclaimer:
+      'Transaksi dikirimkan melalui dompet Anda dan tidak dapat dibatalkan. Token bisa sangat volatil.',
+    copyright:
+      '© 2026 Proto Labs, LLC. Protokol peluncuran token pasokan tetap di Robinhood Chain.',
+    explorer: 'Penjelajah Blok',
+    cookieBannerTitle: 'Preferensi Cookie & Penyimpanan',
+    cookieBannerDesc:
+      'Proto menggunakan penyimpanan lokal hanya untuk pengaturan antarmuka penting (tema, status dompet, dan persetujuan privasi). Kami tidak melacak Anda atau menggunakan cookie iklan komersial.',
+    decline: 'Tolak',
+    accept: 'Terima',
+    privacyAgreementTitle: 'Persetujuan Ketentuan & Privasi',
+    privacyAgreementDesc:
+      'Sebelum berinteraksi dengan protokol launchpad Robinhood Chain, harap tinjau ketentuan kami.',
+    privacyAgreementCheck:
+      'Saya telah membaca dan menyetujui Ketentuan Layanan & Kebijakan Privasi',
+    acceptAndContinue: 'Terima & Lanjutkan',
   },
   zh: {
     explore: '探索',

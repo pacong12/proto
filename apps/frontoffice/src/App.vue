@@ -18,14 +18,15 @@
             <span class="text-white font-bold tracking-tight text-lg">proto</span>
           </div>
           <p class="text-xs text-zinc-500 leading-relaxed">
-            Launch and explore fixed-supply tokens on Robinhood Chain. Your wallet submits every
-            transaction. proto does not custody assets.
+            {{ t('footerSubtitle') }}
           </p>
         </div>
 
         <!-- Product Links -->
         <div class="space-y-2">
-          <h4 class="text-xs font-semibold uppercase tracking-wider text-zinc-300">Product</h4>
+          <h4 class="text-xs font-semibold uppercase tracking-wider text-zinc-300">
+            {{ t('product') }}
+          </h4>
           <ul class="space-y-1.5 text-xs text-zinc-500">
             <li>
               <RouterLink to="/launchpad" class="hover:text-emerald-400 transition">
@@ -67,7 +68,9 @@
 
         <!-- Resources & Network -->
         <div class="space-y-2">
-          <h4 class="text-xs font-semibold uppercase tracking-wider text-zinc-300">Network</h4>
+          <h4 class="text-xs font-semibold uppercase tracking-wider text-zinc-300">
+            {{ t('network') }}
+          </h4>
           <ul class="space-y-1.5 text-xs text-zinc-500 font-mono">
             <li>Robinhood Chain (4663)</li>
             <li>Uniswap V3 Factory (1% Fee)</li>
@@ -78,7 +81,9 @@
 
         <!-- Legal & Privacy Policy Modal Trigger -->
         <div class="space-y-2">
-          <h4 class="text-xs font-semibold uppercase tracking-wider text-zinc-300">Legal</h4>
+          <h4 class="text-xs font-semibold uppercase tracking-wider text-zinc-300">
+            {{ t('legal') }}
+          </h4>
           <ul class="space-y-1.5 text-xs text-zinc-500">
             <li>
               <a
@@ -87,7 +92,7 @@
                 rel="noopener noreferrer"
                 class="hover:text-emerald-400 transition"
               >
-                Terms of Service
+                {{ t('termsOfService') }}
               </a>
             </li>
             <li>
@@ -97,9 +102,10 @@
                 rel="noopener noreferrer"
                 class="hover:text-emerald-400 transition"
               >
-                Privacy Policy
+                {{ t('privacyPolicy') }}
               </a>
             </li>
+
             <li>
               <a
                 href="/cookie-policy"
@@ -107,13 +113,12 @@
                 rel="noopener noreferrer"
                 class="hover:text-emerald-400 transition"
               >
-                Cookie Policy
+                {{ t('cookiePolicy') }}
               </a>
             </li>
           </ul>
           <p class="text-[11px] leading-relaxed text-zinc-600 pt-2">
-            Transactions are submitted through your wallet and may be irreversible. Tokens can be
-            volatile.
+            {{ t('footerDisclaimer') }}
           </p>
         </div>
       </div>
@@ -121,7 +126,7 @@
       <div
         class="max-w-7xl mx-auto pt-6 border-t border-zinc-900/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-600"
       >
-        <p>© 2026 Proto Labs, LLC. Fixed-supply token launch protocol on Robinhood Chain.</p>
+        <p>{{ t('copyright') }}</p>
         <div class="flex items-center gap-4 text-xs">
           <a
             href="https://x.com/protodotfamily"
@@ -138,7 +143,7 @@
             rel="noopener noreferrer"
             class="hover:text-zinc-400 transition"
           >
-            Explorer
+            {{ t('explorer') }}
           </a>
         </div>
       </div>

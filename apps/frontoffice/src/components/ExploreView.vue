@@ -15,15 +15,17 @@
 
       <div class="flex flex-wrap items-center gap-3">
         <!-- Lifecycle Status Filter: All / On Curve / Near Completion / Graduated -->
-        <div class="p-1 bg-zinc-900 border border-zinc-800 rounded-lg flex items-center text-xs">
+        <div
+          class="p-1 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg flex items-center text-xs"
+        >
           <button
             type="button"
             @click="selectedLifecycle = 'all'"
             :class="[
               'px-2.5 py-1 rounded font-medium transition',
               selectedLifecycle === 'all'
-                ? 'bg-zinc-800 text-white'
-                : 'text-zinc-400 hover:text-white',
+                ? 'bg-white dark:bg-zinc-800 text-black dark:text-white shadow-sm'
+                : 'text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white',
             ]"
           >
             {{ t('all') }}
@@ -77,8 +79,8 @@
           :class="[
             'px-2.5 py-1.5 rounded-lg border text-xs font-medium transition flex items-center gap-1.5',
             filterHasSocials
-              ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400'
-              : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white',
+              ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-500 dark:text-emerald-400'
+              : 'bg-zinc-100 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white',
           ]"
         >
           <Share2 class="w-3.5 h-3.5" />
@@ -86,15 +88,17 @@
         </button>
 
         <!-- Architecture Version Tabs: All / v2 Curve / v1 Pool -->
-        <div class="p-1 bg-zinc-900 border border-zinc-800 rounded-lg flex items-center text-xs">
+        <div
+          class="p-1 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg flex items-center text-xs"
+        >
           <button
             type="button"
             @click="selectedVersion = 'all'"
             :class="[
               'px-2.5 py-1 rounded font-medium transition',
               selectedVersion === 'all'
-                ? 'bg-zinc-800 text-white'
-                : 'text-zinc-400 hover:text-white',
+                ? 'bg-white dark:bg-zinc-800 text-black dark:text-white shadow-sm'
+                : 'text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white',
             ]"
           >
             All Tech
@@ -207,7 +211,7 @@
                 <div class="truncate">
                   <div class="flex items-center gap-1.5">
                     <h2
-                      class="font-bold text-white text-base truncate group-hover:text-emerald-400 transition"
+                      class="font-bold text-black dark:text-white text-base truncate group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition"
                     >
                       {{ item.token.name }}
                     </h2>
@@ -247,7 +251,7 @@
                   <Coins class="w-3 h-3 text-zinc-400" />
                   Price (USD)
                 </p>
-                <p class="text-sm font-bold font-mono text-white mt-0.5">
+                <p class="text-sm font-bold font-mono text-black dark:text-white mt-0.5">
                   ${{ item.marketData.priceUsd.toFixed(8) }}
                 </p>
               </div>
