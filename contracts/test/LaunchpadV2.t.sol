@@ -14,14 +14,14 @@ contract LaunchpadV2Test is Test {
     address public buyer1 = address(0xB0B1);
 
     function setUp() public {
-        factory = new LaunchpadV2Factory(feeRecipient, mockLocker);
+        factory = new LaunchpadV2Factory(feeRecipient, mockLocker, address(0), address(0));
         vm.deal(creator, 100 ether);
         vm.deal(buyer1, 100 ether);
     }
 
-    function test_LaunchTokenV2AndCurveBuy() public {
-        vm.startPrank(creator);
-        (address tokenAddress, address curveAddress) = factory.launchTokenV2{value: 0.0005 ether}(
+    function _launch() internal returns (address tokenAddress, address curveAddress) {
+        vm.prank(creator);
+        (tokenAddress, curveAddress) = factory.launchTokenV2{value: 0.0005 ether}(
             "V2 Curve Token",
             "CURVE",
             "ipfs://logo",
@@ -30,27 +30,30 @@ contract LaunchpadV2Test is Test {
             "t.me/curve",
             "curve.io"
         );
-        vm.stopPrank();
+    }
+
+    function test_LaunchTokenV2AndCurveBuy() public {
+        (address tokenAddress, address curveAddress) = _launch();
 
         assertNotEq(tokenAddress, address(0));
         assertNotEq(curveAddress, address(0));
 
-        LaunchpadToken token = LaunchpadToken(tokenAddress);
         BondingCurve curve = BondingCurve(payable(curveAddress));
+        LaunchpadToken token = LaunchpadToken(payable(tokenAddress));
 
-        // 1 Billion supply on curve
+        // Initial token allocations
         assertEq(token.balanceOf(curveAddress), 1_000_000_000 * 1e18);
-        assertEq(curve.totalEthRaised(), 0);
+        assertEq(curve.virtualEthReserve(), 3.0 ether);
 
-        // Buyer purchases tokens after 6 seconds (anti-snipe decayed)
-        vm.warp(block.timestamp + 6);
-
+        // Buyer1 purchases tokens from the curve after snipe tax window
+        vm.warp(block.timestamp + 10);
         vm.startPrank(buyer1);
-        uint256 tokensOut = curve.buy{value: 1 ether}(0);
+        (uint256 expectedTokens, uint256 expectedFee) = curve.getAmountOutBuy(0.5 ether);
+        uint256 tokensReceived = curve.buy{value: 0.5 ether}(expectedTokens);
         vm.stopPrank();
 
-        assertTrue(tokensOut > 0);
-        assertEq(token.balanceOf(buyer1), tokensOut);
-        assertTrue(curve.totalEthRaised() > 0);
+        assertEq(tokensReceived, expectedTokens);
+        assertEq(token.balanceOf(buyer1), tokensReceived);
+        assertEq(feeRecipient.balance, 0.0005 ether + expectedFee);
     }
 }
