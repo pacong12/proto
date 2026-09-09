@@ -82,12 +82,34 @@
           <h4 class="text-xs font-semibold uppercase tracking-wider text-zinc-300">Legal</h4>
           <ul class="space-y-1.5 text-xs text-zinc-500">
             <li>
-              <button
-                @click="privacyOpen = true"
-                class="hover:text-emerald-400 transition underline underline-offset-2 text-left"
+              <a
+                href="http://localhost:3002/terms-of-service"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="hover:text-emerald-400 transition"
               >
-                Privacy Policy &amp; Terms
-              </button>
+                Terms of Service
+              </a>
+            </li>
+            <li>
+              <a
+                href="http://localhost:3002/privacy-policy"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="hover:text-emerald-400 transition"
+              >
+                Privacy Policy
+              </a>
+            </li>
+            <li>
+              <a
+                href="http://localhost:3002/cookie-policy"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="hover:text-emerald-400 transition"
+              >
+                Cookie Policy
+              </a>
             </li>
           </ul>
           <p class="text-[11px] leading-relaxed text-zinc-600 pt-2">
