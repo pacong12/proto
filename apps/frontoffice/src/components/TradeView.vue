@@ -124,22 +124,22 @@
                   value="trades"
                   class="text-xs font-semibold text-black dark:text-white"
                 >
-                  Trades
+                  {{ t('trades') }}
                 </TabsTrigger>
                 <TabsTrigger
                   value="top-traders"
                   class="text-xs font-semibold text-black dark:text-white"
                 >
-                  Top Traders
+                  {{ t('topTraders') }}
                 </TabsTrigger>
                 <TabsTrigger
                   value="holders"
                   class="text-xs font-semibold text-black dark:text-white"
                 >
-                  Holders
+                  {{ t('holders') }}
                 </TabsTrigger>
                 <TabsTrigger value="about" class="text-xs font-semibold text-black dark:text-white">
-                  About
+                  {{ t('about') }}
                 </TabsTrigger>
               </TabsList>
 
@@ -732,11 +732,13 @@
               <TabsList
                 class="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800"
               >
-                <TabsTrigger value="buy" class="text-xs font-semibold text-black dark:text-white"
-                  >Buy</TabsTrigger
-                >
-                <TabsTrigger value="sell" class="text-xs font-semibold text-black dark:text-white"
-                  >Sell</TabsTrigger
+                <TabsTrigger value="buy" class="text-xs font-semibold text-black dark:text-white">{{
+                  t('buy')
+                }}</TabsTrigger>
+                <TabsTrigger
+                  value="sell"
+                  class="text-xs font-semibold text-black dark:text-white"
+                  >{{ t('sell') }}</TabsTrigger
                 >
               </TabsList>
             </Tabs>
@@ -921,6 +923,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { parseAbi } from 'viem';
+import { useI18n } from '@/lib/i18n';
 import {
   TrendingUp,
   Coins,
@@ -958,10 +961,11 @@ import {
   type LaunchedTokenEntity,
   type TokenMarketData,
 } from '@proto/shared-types';
-
 const props = defineProps<{
   tokenAddress?: string;
 }>();
+
+const { t } = useI18n();
 
 const copiedTradeLink = ref(false);
 function copyTradeLink() {

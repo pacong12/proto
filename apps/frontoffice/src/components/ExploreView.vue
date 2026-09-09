@@ -4,10 +4,12 @@
       <div>
         <div class="flex items-center gap-2">
           <Sparkles class="w-5 h-5 text-emerald-400" />
-          <h1 class="text-3xl font-bold tracking-tight text-white">Explore Launches</h1>
+          <h1 class="text-3xl font-bold tracking-tight text-black dark:text-white">
+            {{ t('exploreLaunches') }}
+          </h1>
         </div>
-        <p class="text-zinc-400 text-sm mt-1">
-          Fixed-supply tokens climbing toward graduation on Robinhood Chain.
+        <p class="text-zinc-500 dark:text-zinc-400 text-sm mt-1">
+          {{ t('exploreSubtitle') }}
         </p>
       </div>
 
@@ -24,7 +26,7 @@
                 : 'text-zinc-400 hover:text-white',
             ]"
           >
-            All
+            {{ t('all') }}
           </button>
           <button
             type="button"
@@ -37,7 +39,7 @@
             ]"
           >
             <Flame class="w-3 h-3" />
-            On Curve
+            {{ t('onCurve') }}
           </button>
           <button
             type="button"
@@ -64,7 +66,7 @@
             ]"
           >
             <CheckCircle class="w-3 h-3" />
-            Graduated
+            {{ t('graduated') }}
           </button>
         </div>
 
@@ -135,7 +137,7 @@
 
         <Button @click="$emit('selectTab', 'create')" variant="default" size="sm">
           <Plus class="w-4 h-4 mr-1.5" />
-          Create Token
+          {{ t('createToken') }}
         </Button>
       </div>
     </div>
@@ -311,6 +313,9 @@ import { Combobox } from '@/components/ui/combobox';
 import { Empty } from '@/components/ui/empty';
 import { Pagination } from '@/components/ui/pagination';
 import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
+import { useI18n } from '@/lib/i18n';
+
+const { t } = useI18n();
 
 defineEmits<{
   (e: 'selectToken', address: string): void;

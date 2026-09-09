@@ -11,8 +11,8 @@
           ref="searchInput"
           v-model="query"
           type="text"
-          placeholder="Search tokens by name, ticker, or address..."
-          class="border-0 shadow-none focus-visible:border-0 bg-transparent h-8 text-sm px-0"
+          :placeholder="t('searchPlaceholder')"
+          class="border-0 shadow-none focus-visible:border-0 bg-transparent h-8 text-sm px-0 text-white"
           @keydown.esc="$emit('close')"
           @keydown.enter="handleEnter"
         />
@@ -29,7 +29,7 @@
       <div class="max-h-80 overflow-y-auto p-2">
         <div v-if="loading" class="flex items-center justify-center py-10 text-xs gap-2">
           <Loader2 class="w-4 h-4 animate-spin text-emerald-400" />
-          <span>Searching tokens...</span>
+          <span>{{ t('searchingTokens') }}</span>
         </div>
 
         <Empty
@@ -104,7 +104,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { Search, Loader2 } from 'lucide-vue-next';
-import { Card } from '@/components/ui/card';
+import { useI18n } from '@/lib/i18n';
+
+const { t } = useI18n();
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';

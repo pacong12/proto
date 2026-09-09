@@ -74,7 +74,7 @@ function dismissBanner() {
 
       <div class="flex items-center justify-between pt-1 text-xs">
         <a
-          href="http://localhost:3002/cookie-policy"
+          href="/cookie-policy"
           target="_blank"
           rel="noopener noreferrer"
           class="text-zinc-500 hover:text-emerald-400 underline underline-offset-2 transition"

@@ -3,7 +3,7 @@
     <div>
       <div class="flex items-center gap-2">
         <Rocket class="w-6 h-6 text-emerald-400" />
-        <h1 class="text-3xl font-bold tracking-tight">Launch token</h1>
+        <h1 class="text-3xl font-bold tracking-tight">{{ t('launchToken') }}</h1>
       </div>
       <p class="text-sm mt-1 text-zinc-500 dark:text-zinc-400">
         {{
@@ -49,12 +49,12 @@
       <form @submit.prevent="handleLaunch" class="space-y-5">
         <!-- Name -->
         <div class="space-y-1.5">
-          <Label for="token-name">Name</Label>
+          <Label for="token-name">{{ t('tokenName') }}</Label>
           <Input
             id="token-name"
             v-model="form.name"
             type="text"
-            placeholder="Token name"
+            :placeholder="t('tokenName')"
             maxlength="60"
             required
           />
@@ -62,27 +62,26 @@
 
         <!-- Ticker -->
         <div class="space-y-1.5">
-          <Label for="token-symbol">Ticker</Label>
+          <Label for="token-symbol">{{ t('ticker') }}</Label>
           <Input
             id="token-symbol"
             v-model="form.symbol"
             type="text"
-            placeholder="symbol"
-            class="uppercase font-mono"
-            maxlength="20"
+            :placeholder="t('ticker')"
+            maxlength="10"
             required
+            class="font-mono uppercase"
           />
         </div>
 
         <!-- Description -->
         <div class="space-y-1.5">
-          <Label for="token-description">Description</Label>
+          <Label for="token-description">{{ t('description') }}</Label>
           <Textarea
             id="token-description"
             v-model="form.description"
+            :placeholder="t('description')"
             :rows="3"
-            :maxlength="256"
-            placeholder="A short description of the token"
           />
         </div>
 
@@ -226,7 +225,7 @@
         <!-- Developer buy -->
         <div class="space-y-1.5">
           <div class="flex justify-between items-center">
-            <Label for="developer-buy">Developer buy</Label>
+            <Label for="developer-buy">{{ t('developerBuy') }}</Label>
             <span class="text-[11px] text-zinc-500 font-mono"
               >0 available, bought in the launch transaction</span
             >
@@ -419,7 +418,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useI18n } from '@/lib/i18n';
 
+const { t } = useI18n();
 const emit = defineEmits<{
   (e: 'tokenCreated', address: string): void;
 }>();

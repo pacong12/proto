@@ -71,8 +71,26 @@ function handleAccept() {
           for="privacy-terms"
           class="text-xs font-normal text-zinc-300 normal-case cursor-pointer"
         >
-          I have read and accept the <span class="text-emerald-400 underline">Terms of Use</span> &
-          <span class="text-emerald-400 underline">Privacy Policy</span>
+          I have read and accept the
+          <a
+            href="/terms-of-service"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition"
+            @click.stop
+          >
+            Terms of Service
+          </a>
+          &amp;
+          <a
+            href="/privacy-policy"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition"
+            @click.stop
+          >
+            Privacy Policy
+          </a>
         </Label>
       </div>
 

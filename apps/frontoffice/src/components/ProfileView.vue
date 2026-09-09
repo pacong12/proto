@@ -112,7 +112,7 @@
             class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono text-zinc-400"
           >
             <Coins class="w-4 h-4 text-emerald-400" />
-            Claimable Fees
+            {{ t('claimableFees') }}
           </p>
           <p class="text-2xl font-bold font-mono text-emerald-400 mt-2">
             {{ totalClaimableWeth }} ETH
@@ -125,7 +125,7 @@
             class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono text-zinc-400"
           >
             <Rocket class="w-4 h-4 text-emerald-400" />
-            Created Tokens
+            {{ t('createdTokens') }}
           </p>
           <p class="text-2xl font-bold font-mono text-white mt-2">{{ myLaunches.length }}</p>
           <p class="text-xs text-zinc-500 mt-1">Deployed by your wallet</p>
@@ -175,16 +175,16 @@
               class="grid grid-cols-4 w-full sm:w-[500px] bg-zinc-900 p-1 rounded-lg border border-zinc-800"
             >
               <TabsTrigger value="created" class="text-xs font-semibold">
-                Created Tokens ({{ myLaunches.length }})
+                {{ t('createdTokens') }} ({{ myLaunches.length }})
               </TabsTrigger>
               <TabsTrigger value="portfolio" class="text-xs font-semibold">
-                Portfolio &amp; Positions ({{ portfolioPositions.length }})
+                {{ t('portfolio') }} ({{ portfolioPositions.length }})
               </TabsTrigger>
               <TabsTrigger value="dividends" class="text-xs font-semibold">
-                Holder Dividends &amp; Vesting
+                {{ t('dividendsAndVesting') }}
               </TabsTrigger>
               <TabsTrigger value="activity" class="text-xs font-semibold">
-                Activity ({{ userActivities.length }})
+                {{ t('activity') }} ({{ userActivities.length }})
               </TabsTrigger>
             </TabsList>
 
@@ -644,9 +644,11 @@ import {
   Activity,
   ExternalLink,
 } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import { useLaunchpad } from '../composables/useLaunchpad';
 import { walletAddress } from '../lib/wallet-store';
-import { Button } from '@/components/ui/button';
+
+const { t } = useI18n();
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
