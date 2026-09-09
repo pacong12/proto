@@ -12,7 +12,7 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
-        <!-- Lifecycle Status Filter: All / On Curve / Graduated -->
+        <!-- Lifecycle Status Filter: All / On Curve / Near Completion / Graduated -->
         <div class="p-1 bg-zinc-900 border border-zinc-800 rounded-lg flex items-center text-xs">
           <button
             type="button"
@@ -41,6 +41,20 @@
           </button>
           <button
             type="button"
+            @click="selectedLifecycle = 'near_completion'"
+            :class="[
+              'px-2.5 py-1 rounded font-medium transition flex items-center gap-1',
+              selectedLifecycle === 'near_completion'
+                ? 'bg-zinc-800 text-amber-400'
+                : 'text-zinc-400 hover:text-white',
+            ]"
+            title="Bonding curve progress >= 80%"
+          >
+            <TrendingUp class="w-3 h-3" />
+            &gt;80% Grad
+          </button>
+          <button
+            type="button"
             @click="selectedLifecycle = 'graduated'"
             :class="[
               'px-2.5 py-1 rounded font-medium transition flex items-center gap-1',
@@ -53,6 +67,21 @@
             Graduated
           </button>
         </div>
+
+        <!-- Socials Only Filter Toggle -->
+        <button
+          type="button"
+          @click="filterHasSocials = !filterHasSocials"
+          :class="[
+            'px-2.5 py-1.5 rounded-lg border text-xs font-medium transition flex items-center gap-1.5',
+            filterHasSocials
+              ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400'
+              : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white',
+          ]"
+        >
+          <Share2 class="w-3.5 h-3.5" />
+          <span>Has Socials</span>
+        </button>
 
         <!-- Architecture Version Tabs: All / v2 Curve / v1 Pool -->
         <div class="p-1 bg-zinc-900 border border-zinc-800 rounded-lg flex items-center text-xs">
@@ -270,6 +299,8 @@ import {
   AlertCircle,
   Rocket,
   Lock,
+  TrendingUp,
+  Share2,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -286,7 +317,8 @@ defineEmits<{
   (e: 'selectTab', tab: string): void;
 }>();
 
-const selectedLifecycle = ref<'all' | 'curve' | 'graduated'>('all');
+const selectedLifecycle = ref<'all' | 'curve' | 'near_completion' | 'graduated'>('all');
+const filterHasSocials = ref(false);
 const selectedVersion = ref<'all' | 'v1' | 'v2'>('all');
 const activeSort = ref('recent');
 const loading = ref(true);
@@ -306,13 +338,24 @@ const sortOptions = [
 const filteredTokens = computed(() => {
   let list = allTokens.value;
 
-  // Filter by Lifecycle Status (On Curve vs Graduated)
+  // Filter by Lifecycle Status (On Curve vs Near Completion vs Graduated)
   if (selectedLifecycle.value === 'curve') {
     list = list.filter((item) => !item.marketData.isGraduated);
+  } else if (selectedLifecycle.value === 'near_completion') {
+    list = list.filter(
+      (item) => !item.marketData.isGraduated && item.marketData.graduationProgress >= 0.8,
+    );
   } else if (selectedLifecycle.value === 'graduated') {
     list = list.filter((item) => item.marketData.isGraduated);
   }
 
+  // Filter by Has Socials
+  if (filterHasSocials.value) {
+    list = list.filter((item) => {
+      const soc = item.token.socials;
+      return !!(soc && (soc.twitter || soc.telegram || soc.website));
+    });
+  }
   // Filter by Architecture Version (v1 vs v2)
   if (selectedVersion.value !== 'all') {
     list = list.filter((item) => (item.token.version ?? 'v1') === selectedVersion.value);
