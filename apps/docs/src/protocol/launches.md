@@ -7,11 +7,23 @@ Proto provides two distinct launch models matching modern launchpad standards:
 
 ---
 
+## Lifecycle Stages: On Curve vs Graduated
+
+Every token on Proto exists in one of two lifecycle stages:
+
+- **On Curve** _(Climbing toward graduation)_:
+  The token trades against the mathematical bonding curve. 800,000,000 tokens are available for public purchase. The price rises as more tokens are bought and falls as tokens are sold. Once the curve accumulates **4.2 ETH**, trading on the curve ends and graduation begins.
+- **Graduated** _(Uniswap DEX Pool)_:
+  The bonding curve is completed. The accumulated 4.2 ETH paired with 200,000,000 reserved tokens is deposited directly into a canonical Uniswap liquidity pool, and the liquidity position NFT is permanently locked in the Locker. Trading continues normally in Uniswap DEX.
+
+---
+
 ## Comparison: v1 vs v2 Architecture
 
 | Feature                   | v1 (Direct Pool)                                        | v2 (Bonding Curve)                                  |
 | :------------------------ | :------------------------------------------------------ | :-------------------------------------------------- |
 | **Initial Market**        | Uniswap V3 Pool                                         | Onchain `BondingCurve` Contract                     |
+| **Lifecycle**             | Directly Graduated (Locked Pool)                        | Starts On Curve -> Graduates at 4.2 ETH             |
 | **DEX Liquidity**         | Seeded immediately at launch                            | Seeded upon graduating (4.2 ETH)                    |
 | **Token Supply Split**    | 100% (1 Billion) minted to Pool                         | 800M on Curve, 200M reserved for Pool               |
 | **Anti-Snipe Protection** | 2-Block Rule (Block 0 dev only, Block 1-2 max 5.5% buy) | Decaying Snipe Tax (99% at 0s decaying to 0% in 5s) |
@@ -52,3 +64,13 @@ Proto provides two distinct launch models matching modern launchpad standards:
        +---> 5. 99% snipe tax decays exponentially to 0% across 5 seconds
        +---> 6. Once 4.2 ETH is raised -> Auto-graduates & locks pool liquidity
 ```
+
+---
+
+## Community Takeover Migration (Dead Coin Rescue)
+
+Proto includes support for **Migration of abandoned or rugged tokens**:
+
+1. **Epoch Deposits**: Communities of rugged or abandoned tokens can deposit their old tokens into structured migration epochs.
+2. **Paced Recovery Sale**: A non-custodial automated contract executes time-paced recovery sales of deposited old tokens into existing liquidity.
+3. **New Replacement Token**: Recovered proceeds fund a clean new token deployment on Proto with locked Uniswap liquidity, allowing the community to reclaim their positions with linear vesting.
