@@ -17,7 +17,9 @@ export default defineConfig({
       { text: 'Protocol', link: '/protocol/overview' },
       { text: 'Integration', link: '/integration/network' },
       { text: 'Contracts', link: '/integration/contracts' },
-      { text: 'Privacy Policy', link: '/privacy-policy' },
+      { text: 'Terms', link: '/terms-of-service' },
+      { text: 'Privacy', link: '/privacy-policy' },
+      { text: 'Cookies', link: '/cookie-policy' },
       { text: 'Launchpad App', link: 'http://localhost:3000' },
     ],
     sidebar: [
@@ -42,7 +44,11 @@ export default defineConfig({
       },
       {
         text: 'Legal & Compliance',
-        items: [{ text: 'Privacy Policy', link: '/privacy-policy' }],
+        items: [
+          { text: 'Terms of Service', link: '/terms-of-service' },
+          { text: 'Privacy Policy', link: '/privacy-policy' },
+          { text: 'Cookie Policy', link: '/cookie-policy' },
+        ],
       },
     ],
     socialLinks: [{ icon: 'github', link: 'https://github.com/pacong12/proto' }],
