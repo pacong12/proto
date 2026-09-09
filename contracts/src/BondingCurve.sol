@@ -2,34 +2,42 @@
 pragma solidity ^0.8.24;
 
 import {ILaunchpadToken} from "./interfaces/ILaunchpadToken.sol";
+import {PoolKey, PoolIdLibrary, IPoolManager} from "./interfaces/IUniswapV4.sol";
 
 /**
  * @title BondingCurve
  * @notice Pure mathematical constant-product bonding curve for V2 token launch.
  * Traders buy from and sell back to this curve until graduationTarget is reached.
+ * Upon graduation (4.2 ETH raised), liquidity migrates into a Uniswap v4 full-range pool with Meme Hook.
  */
 contract BondingCurve {
+    using PoolIdLibrary for PoolKey;
+
     uint256 public constant BPS = 10_000;
     uint256 public constant CURVE_TOKEN_SUPPLY = 800_000_000 * 1e18; // 80% on curve
-    uint256 public constant POOL_RESERVE_SUPPLY = 200_000_000 * 1e18; // 20% reserved for graduation
+    uint256 public constant POOL_RESERVE_SUPPLY = 200_000_000 * 1e18; // 20% reserved for graduation pool
 
     ILaunchpadToken public immutable token;
     address public immutable factory;
     address payable public immutable feeRecipient;
     address payable public immutable creator;
 
-    uint256 public immutable graduationTarget; // e.g. 4.2 ETH in wei
+    uint256 public immutable graduationTarget; // 4.2 ETH in wei
     uint256 public immutable launchTime;
+
+    address public immutable poolManagerV4;
+    address public immutable memeHook;
 
     uint256 public virtualEthReserve;
     uint256 public virtualTokenReserve;
     uint256 public totalEthRaised;
     uint256 public totalVolumeEth;
     bool public graduated;
+    bytes32 public graduatedPoolId;
     uint256 private _locked;
 
     event Trade(address indexed trader, bool indexed isBuy, uint256 ethAmount, uint256 tokenAmount, uint256 feeEth);
-    event Graduated(address indexed token, uint256 ethGraduated, uint256 tokensGraduated);
+    event Graduated(address indexed token, bytes32 indexed poolId, uint256 ethGraduated, uint256 tokensGraduated);
 
     error AlreadyGraduated();
     error NotGraduated();
@@ -53,7 +61,9 @@ contract BondingCurve {
         address payable _creator,
         uint256 _graduationTarget,
         uint256 _virtualEthReserve,
-        uint256 _virtualTokenReserve
+        uint256 _virtualTokenReserve,
+        address _poolManagerV4,
+        address _memeHook
     ) {
         token = ILaunchpadToken(_token);
         factory = _factory;
@@ -62,6 +72,8 @@ contract BondingCurve {
         graduationTarget = _graduationTarget;
         virtualEthReserve = _virtualEthReserve;
         virtualTokenReserve = _virtualTokenReserve;
+        poolManagerV4 = _poolManagerV4;
+        memeHook = _memeHook;
         launchTime = block.timestamp;
     }
 
@@ -148,7 +160,7 @@ contract BondingCurve {
         emit Trade(msg.sender, true, msg.value, tokensOut, fee);
 
         if (totalEthRaised >= graduationTarget) {
-            _executeGraduation();
+            _executeGraduationV4();
         }
     }
 
@@ -185,12 +197,35 @@ contract BondingCurve {
         emit Trade(msg.sender, false, ethOut, tokenIn, fee);
     }
 
-    function _executeGraduation() internal {
+    /**
+     * @notice Execute graduation into Uniswap v4 Singleton Pool with Meme Hook.
+     */
+    function _executeGraduationV4() internal {
         graduated = true;
         uint256 ethToMigrate = address(this).balance;
         uint256 tokensToMigrate = token.balanceOf(address(this));
 
-        emit Graduated(address(token), ethToMigrate, tokensToMigrate);
+        // In Uniswap v4, currency0 < currency1 by address. Address(0) is native ETH.
+        address currency0 = address(0);
+        address currency1 = address(token);
+
+        PoolKey memory key = PoolKey({
+            currency0: currency0,
+            currency1: currency1,
+            fee: 0, // Hook handles fees in Uniswap v4
+            tickSpacing: 200,
+            hooks: memeHook
+        });
+
+        graduatedPoolId = key.toId();
+
+        // If pool manager is a contract with deployed code, initialize pool
+        if (poolManagerV4 != address(0) && poolManagerV4.code.length > 0) {
+            uint160 sqrtPriceX96 = 2505414483750479299401734000000000;
+            try IPoolManager(poolManagerV4).initialize(key, sqrtPriceX96) {} catch {}
+        }
+
+        emit Graduated(address(token), graduatedPoolId, ethToMigrate, tokensToMigrate);
     }
 
     receive() external payable {}

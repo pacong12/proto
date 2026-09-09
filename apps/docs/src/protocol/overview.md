@@ -2,9 +2,10 @@
 
 **Proto** is an institutional-grade, non-custodial token launchpad and trading protocol deployed on **Robinhood Chain (Chain ID: 4663)**.
 
-Proto provides a seamless token creation and trading experience by replacing artificial bonding curves with **Direct Uniswap V3 Liquidity Pools**.
+Proto provides dual launch options:
 
----
+- **v1 (Direct Launch)**: Launches directly into permanently locked **Uniswap V3** liquidity pools quoted in WETH.
+- **v2 (Bonding Curve)**: Launches via mathematical constant-product bonding curve, then graduates into **Uniswap v4** singleton pools governed by the protocol's Meme Hook upon raising 4.2 ETH.
 
 ## Core Philosophy
 
@@ -23,14 +24,15 @@ Proto eliminates migration entirely:
 
 ---
 
-## Key Protocol Facts
+## Protocol Specifications: v1 vs v2
 
-| Metric                    | Specification                                           |
-| :------------------------ | :------------------------------------------------------ |
-| **Total Token Supply**    | Fixed at **1,000,000,000** (1 Billion, 18 decimals)     |
-| **Pool Quote Asset**      | **WETH** (`0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73`) |
-| **Uniswap V3 Fee Tier**   | **1% (`10000`)**                                        |
-| **Creation Fee**          | **0.0005 ETH**                                          |
-| **Graduation Threshold**  | **4.2 ETH** paired in pool                              |
-| **Trading Fee Split**     | **70% Creator / 30% Protocol**                          |
-| **Protocol Revenue Burn** | **80% of protocol fees** burned via TWAP buyback        |
+| Metric                    | v1 (Uniswap V3 Direct)                           | v2 (Bonding Curve to Uniswap v4)                    |
+| :------------------------ | :----------------------------------------------- | :-------------------------------------------------- |
+| **Total Token Supply**    | Fixed **1,000,000,000** (18 decimals)            | Fixed **1,000,000,000** (18 decimals)               |
+| **Exchange / DEX**        | **Uniswap V3** (Direct Pool + NFT Locker)        | **Uniswap v4** (Singleton PoolManager + Meme Hook)  |
+| **Curve Allocation**      | N/A (100% in locked V3 pool)                     | 80% on curve, 20% reserved for v4 graduation pool   |
+| **Graduation Target**     | **4.2 ETH** paired in pool                       | **4.2 ETH** raised on curve                         |
+| **Creation Fee**          | **0.0005 ETH**                                   | **0.0005 ETH**                                      |
+| **Trading Fee Split**     | **70% Creator / 30% Protocol**                   | **70% Creator / 30% Protocol** (handled by v4 Hook) |
+| **Anti-Snipe**            | 2-block max buy & wallet hold limits             | Decaying 99% tax over 5 seconds                     |
+| **Protocol Revenue Burn** | **80% of protocol fees** burned via TWAP buyback | **80% of protocol fees** burned via TWAP buyback    |

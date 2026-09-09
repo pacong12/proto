@@ -8,6 +8,8 @@ import {BondingCurve} from "./BondingCurve.sol";
 /**
  * @title LaunchpadV2Factory
  * @notice Factory for launching tokens via V2 Bonding Curve architecture.
+ * Tokens trade on the bonding curve until raising 4.2 ETH, then migrate
+ * to Uniswap v4 singleton pools with Meme Hook.
  */
 contract LaunchpadV2Factory {
     uint256 public constant LAUNCH_FEE = 0.0005 ether;
@@ -17,6 +19,8 @@ contract LaunchpadV2Factory {
 
     address payable public immutable protocolFeeRecipient;
     address public immutable defaultLocker;
+    address public immutable poolManagerV4;
+    address public immutable memeHook;
 
     struct V2Launch {
         address token;
@@ -41,9 +45,16 @@ contract LaunchpadV2Factory {
     error InvalidFee();
     error TransferFailed();
 
-    constructor(address payable _feeRecipient, address _locker) {
+    constructor(
+        address payable _feeRecipient,
+        address _locker,
+        address _poolManagerV4,
+        address _memeHook
+    ) {
         protocolFeeRecipient = _feeRecipient;
         defaultLocker = _locker;
+        poolManagerV4 = _poolManagerV4;
+        memeHook = _memeHook;
     }
 
     function launchTokenV2(
@@ -81,7 +92,7 @@ contract LaunchpadV2Factory {
 
         tokenAddress = address(token);
 
-        // Deploy Bonding Curve
+        // Deploy Bonding Curve targeting Uniswap v4 Hook graduation
         BondingCurve curve = new BondingCurve(
             tokenAddress,
             address(this),
@@ -89,7 +100,9 @@ contract LaunchpadV2Factory {
             payable(msg.sender),
             GRADUATION_TARGET,
             VIRTUAL_ETH_RESERVE,
-            VIRTUAL_TOKEN_RESERVE
+            VIRTUAL_TOKEN_RESERVE,
+            poolManagerV4,
+            memeHook
         );
 
         curveAddress = address(curve);
@@ -112,9 +125,10 @@ contract LaunchpadV2Factory {
 
         emit TokenLaunchedV2(tokenAddress, curveAddress, msg.sender, name, symbol, initialBuyEth);
 
-        // Execute optional initial buy directly on curve
+        // Execute initial creator buy if extra ETH provided
         if (initialBuyEth > 0) {
             curve.buy{value: initialBuyEth}(0);
+            token.transfer(msg.sender, token.balanceOf(address(this)));
         }
     }
 

@@ -63,7 +63,7 @@ contract ComprehensiveLifecycleTest is Test {
         locker = LiquidityLocker(factoryV1.locker());
 
         // 2. Deploy Factory V2 (Bonding Curve)
-        factoryV2 = new LaunchpadV2Factory(protocolTreasury, address(locker));
+        factoryV2 = new LaunchpadV2Factory(protocolTreasury, address(locker), address(0), address(0));
 
         // 3. Deploy Holder Fee Distributor & Vesting Vault
         feeDistributor = new HolderFeeDistributor(address(weth), address(locker));
