@@ -182,5 +182,9 @@ contract MockPositionManager is INonfungiblePositionManager {
 contract MockSwapRouter is ISwapRouter {
     function exactInputSingle(ExactInputSingleParams calldata params) external payable override returns (uint256 amountOut) {
         amountOut = 1000 * 10**18;
+        // Transfer tokens to recipient if router has sufficient balance
+        if (params.recipient != address(0) && ILaunchpadToken(params.tokenOut).balanceOf(address(this)) >= amountOut) {
+            ILaunchpadToken(params.tokenOut).transfer(params.recipient, amountOut);
+        }
     }
 }
