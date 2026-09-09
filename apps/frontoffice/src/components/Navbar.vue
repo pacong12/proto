@@ -22,7 +22,7 @@
           >
             <RouterLink to="/launchpad">
               <Compass class="w-3.5 h-3.5" />
-              Explore
+              {{ t('explore') }}
             </RouterLink>
           </Button>
 
@@ -34,7 +34,7 @@
           >
             <RouterLink to="/launchpad/create">
               <PlusCircle class="w-3.5 h-3.5" />
-              Create
+              {{ t('create') }}
             </RouterLink>
           </Button>
 
@@ -46,7 +46,7 @@
           >
             <RouterLink to="/memestock">
               <TrendingUp class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
-              Memestock
+              {{ t('memestock') }}
             </RouterLink>
           </Button>
 
@@ -58,7 +58,7 @@
           >
             <RouterLink to="/analytics">
               <Activity class="w-3.5 h-3.5" />
-              Analytics
+              {{ t('analytics') }}
             </RouterLink>
           </Button>
         </nav>
@@ -79,9 +79,11 @@
           <Badge variant="secondary" class="h-4 px-1 text-[10px] font-mono"> ⌘K </Badge>
         </Button>
 
+        <!-- International Language Switcher -->
+        <LanguageSwitcher />
+
         <!-- Shadcn Dark Mode Toggle -->
         <ThemeToggle />
-
         <!-- Wrong Network Switcher -->
         <Button
           v-if="isConnected && !isCorrectNetwork"
@@ -206,8 +208,9 @@ import {
 } from 'lucide-vue-next';
 import { ROBINHOOD_CHAIN } from '@proto/shared-types';
 import { useWallet } from '../composables/useWallet';
+import { useI18n } from '../lib/i18n';
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Jazzicon } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -222,10 +225,10 @@ import ThemeToggle from '@/components/ThemeToggle.vue';
 defineEmits<{
   (e: 'openSearch'): void;
 }>();
-
+const { t } = useI18n();
 const route = useRoute();
 
-function isRouteActive(path: string): boolean {
+function isRouteActive(path: string) {
   if (path === '/launchpad') {
     return route.path === '/launchpad' || route.path === '/';
   }

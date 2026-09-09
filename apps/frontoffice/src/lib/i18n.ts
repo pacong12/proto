@@ -1,0 +1,411 @@
+import { ref, computed } from 'vue';
+
+export type SupportedLocale =
+  | 'en' // English
+  | 'id' // Bahasa Indonesia
+  | 'zh' // Chinese (Simplified)
+  | 'ja' // Japanese
+  | 'ko' // Korean
+  | 'es' // Spanish
+  | 'ru' // Russian
+  | 'ar' // Arabic
+  | 'fr' // French
+  | 'de' // German
+  | 'pt'; // Portuguese
+
+export interface LocaleOption {
+  code: SupportedLocale;
+  name: string;
+  nativeName: string;
+  flag: string;
+}
+
+export const SUPPORTED_LOCALES: LocaleOption[] = [
+  { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸' },
+  { code: 'id', name: 'Indonesian', nativeName: 'Bahasa Indonesia', flag: '🇮🇩' },
+  { code: 'zh', name: 'Chinese', nativeName: '简体中文', flag: '🇨🇳' },
+  { code: 'ja', name: 'Japanese', nativeName: '日本語', flag: '🇯🇵' },
+  { code: 'ko', name: 'Korean', nativeName: '한국어', flag: '🇰🇷' },
+  { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸' },
+  { code: 'ru', name: 'Russian', nativeName: 'Русский', flag: '🇷🇺' },
+  { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇸🇦' },
+  { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷' },
+  { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪' },
+  { code: 'pt', name: 'Portuguese', nativeName: 'Português', flag: '🇧🇷' },
+];
+
+export const messages: Record<SupportedLocale, Record<string, string>> = {
+  en: {
+    explore: 'Explore',
+    create: 'Create',
+    memestock: 'Memestock',
+    analytics: 'Analytics',
+    profile: 'Profile',
+    docs: 'Docs',
+    connectWallet: 'Connect Wallet',
+    connected: 'Connected',
+    buy: 'Buy',
+    sell: 'Sell',
+    trade: 'Trade',
+    trades: 'Trades',
+    holders: 'Holders',
+    topTraders: 'Top Traders',
+    about: 'About',
+    allTech: 'All Tech',
+    onCurve: 'On Curve',
+    graduated: 'Graduated',
+    launchToken: 'Launch Token',
+    tokenName: 'Token Name',
+    ticker: 'Ticker',
+    description: 'Description',
+    developerBuy: 'Developer Buy',
+    creatorTax: 'Creator Tax',
+    claimFees: 'Claim Fees',
+    shareProfile: 'Share Profile',
+    searchPlaceholder: 'Search tokens by name, ticker, or address...',
+  },
+  id: {
+    explore: 'Jelajahi',
+    create: 'Buat Token',
+    memestock: 'Memestock',
+    analytics: 'Analitik',
+    profile: 'Profil',
+    docs: 'Dokumentasi',
+    connectWallet: 'Hubungkan Dompet',
+    connected: 'Terhubung',
+    buy: 'Beli',
+    sell: 'Jual',
+    trade: 'Perdagangan',
+    trades: 'Transaksi',
+    holders: 'Pemegang',
+    topTraders: 'Trader Teratas',
+    about: 'Tentang',
+    allTech: 'Semua Tek',
+    onCurve: 'Di Kurva',
+    graduated: 'Lulus',
+    launchToken: 'Luncurkan Token',
+    tokenName: 'Nama Token',
+    ticker: 'Simbol / Ticker',
+    description: 'Deskripsi',
+    developerBuy: 'Beli Awal Dev',
+    creatorTax: 'Pajak Kreator',
+    claimFees: 'Klaim Biaya',
+    shareProfile: 'Bagikan Profil',
+    searchPlaceholder: 'Cari token berdasarkan nama, simbol, atau alamat...',
+  },
+  zh: {
+    explore: '探索',
+    create: '创建代币',
+    memestock: '热门榜',
+    analytics: '数据分析',
+    profile: '个人中心',
+    docs: '文档',
+    connectWallet: '连接钱包',
+    connected: '已连接',
+    buy: '买入',
+    sell: '卖出',
+    trade: '交易',
+    trades: '交易记录',
+    holders: '持有者',
+    topTraders: '顶级交易员',
+    about: '关于',
+    allTech: '所有架构',
+    onCurve: '曲线上',
+    graduated: '已毕业',
+    launchToken: '发射代币',
+    tokenName: '代币名称',
+    ticker: '代币符号',
+    description: '代币描述',
+    developerBuy: '开发者买入',
+    creatorTax: '创作者税',
+    claimFees: '提取费用',
+    shareProfile: '分享主页',
+    searchPlaceholder: '按代币名称、符号或合约地址搜索...',
+  },
+  ja: {
+    explore: '見つける',
+    create: 'トークン作成',
+    memestock: 'ミーム株',
+    analytics: '分析',
+    profile: 'プロフィール',
+    docs: 'ドキュメント',
+    connectWallet: 'ウォレット接続',
+    connected: '接続中',
+    buy: '購入',
+    sell: '売却',
+    trade: '取引',
+    trades: '取引履歴',
+    holders: '保有者',
+    topTraders: 'トップトレーダー',
+    about: '概要',
+    allTech: '全技術',
+    onCurve: 'カーブ中',
+    graduated: '卒業済',
+    launchToken: 'ローンチ',
+    tokenName: 'トークン名',
+    ticker: 'ティッカー',
+    description: '説明',
+    developerBuy: '開発者買い',
+    creatorTax: 'クリエイター税',
+    claimFees: '手数料請求',
+    shareProfile: '共有する',
+    searchPlaceholder: '名前、シンボル、アドレスで検索...',
+  },
+  ko: {
+    explore: '탐색',
+    create: '토큰 발행',
+    memestock: '밈스톡',
+    analytics: '분석',
+    profile: '프로필',
+    docs: '문서',
+    connectWallet: '지갑 연결',
+    connected: '연결됨',
+    buy: '매수',
+    sell: '매도',
+    trade: '스왑',
+    trades: '거래 내역',
+    holders: '홀더',
+    topTraders: '상위 트레이더',
+    about: '정보',
+    allTech: '모든 모델',
+    onCurve: '커브 진행 중',
+    graduated: '졸업 완료',
+    launchToken: '토큰 런칭',
+    tokenName: '토큰 이름',
+    ticker: '티커',
+    description: '설명',
+    developerBuy: '개발자 초기 매수',
+    creatorTax: '크리에이터 세금',
+    claimFees: '수수료 청구',
+    shareProfile: '프로필 공유',
+    searchPlaceholder: '이름, 티커 또는 주소로 검색...',
+  },
+  es: {
+    explore: 'Explorar',
+    create: 'Crear Token',
+    memestock: 'Memestock',
+    analytics: 'Analítica',
+    profile: 'Perfil',
+    docs: 'Docs',
+    connectWallet: 'Conectar Billetera',
+    connected: 'Conectado',
+    buy: 'Comprar',
+    sell: 'Vender',
+    trade: 'Intercambiar',
+    trades: 'Operaciones',
+    holders: 'Titulares',
+    topTraders: 'Mejores Traders',
+    about: 'Acerca de',
+    allTech: 'Toda Tecnología',
+    onCurve: 'En Curva',
+    graduated: 'Graduado',
+    launchToken: 'Lanzar Token',
+    tokenName: 'Nombre del Token',
+    ticker: 'Símbolo',
+    description: 'Descripción',
+    developerBuy: 'Compra del Desarrollador',
+    creatorTax: 'Impuesto del Creador',
+    claimFees: 'Reclamar Tarifas',
+    shareProfile: 'Compartir Perfil',
+    searchPlaceholder: 'Buscar por nombre, símbolo o dirección...',
+  },
+  ru: {
+    explore: 'Обзор',
+    create: 'Создать токен',
+    memestock: 'Мемсток',
+    analytics: 'Аналитика',
+    profile: 'Профиль',
+    docs: 'Документы',
+    connectWallet: 'Подключить кошелек',
+    connected: 'Подключено',
+    buy: 'Купить',
+    sell: 'Продать',
+    trade: 'Обмен',
+    trades: 'Сделки',
+    holders: 'Холдеры',
+    topTraders: 'Топ трейдеры',
+    about: 'О токене',
+    allTech: 'Все версии',
+    onCurve: 'На кривой',
+    graduated: 'Завершено',
+    launchToken: 'Запустить токен',
+    tokenName: 'Имя токена',
+    ticker: 'Тикер',
+    description: 'Описание',
+    developerBuy: 'Покупка разработчика',
+    creatorTax: 'Комиссия создателя',
+    claimFees: 'Забрать комиссии',
+    shareProfile: 'Поделиться',
+    searchPlaceholder: 'Поиск по имени, символу или адресу...',
+  },
+  ar: {
+    explore: 'استكشاف',
+    create: 'إنشاء عملة',
+    memestock: 'ميم ستوك',
+    analytics: 'التحليلات',
+    profile: 'الملف الشخصي',
+    docs: 'المستندات',
+    connectWallet: 'ربط المحفظة',
+    connected: 'متصل',
+    buy: 'شراء',
+    sell: 'بيع',
+    trade: 'تداول',
+    trades: 'المعاملات',
+    holders: 'حاملو العملة',
+    topTraders: 'أفضل المتداولين',
+    about: 'حول',
+    allTech: 'جميع التقنيات',
+    onCurve: 'على المنحنى',
+    graduated: 'متخرج',
+    launchToken: 'إطلاق العملة',
+    tokenName: 'اسم العملة',
+    ticker: 'الرمز',
+    description: 'الوصف',
+    developerBuy: 'شراء المطور',
+    creatorTax: 'ضريبة المنشئ',
+    claimFees: 'المطالبة بالرسوم',
+    shareProfile: 'مشاركة الملف',
+    searchPlaceholder: 'ابحث بالاسم أو الرمز أو العنوان...',
+  },
+  fr: {
+    explore: 'Explorer',
+    create: 'Créer un Jeton',
+    memestock: 'Memestock',
+    analytics: 'Statistiques',
+    profile: 'Profil',
+    docs: 'Docs',
+    connectWallet: 'Connecter le portefeuille',
+    connected: 'Connecté',
+    buy: 'Acheter',
+    sell: 'Vendre',
+    trade: 'Échanger',
+    trades: 'Transactions',
+    holders: 'Détenteurs',
+    topTraders: 'Meilleurs Traders',
+    about: 'À propos',
+    allTech: 'Toute technologie',
+    onCurve: 'Sur la courbe',
+    graduated: 'Diplômé',
+    launchToken: 'Lancer le Jeton',
+    tokenName: 'Nom du Jeton',
+    ticker: 'Symbole',
+    description: 'Description',
+    developerBuy: 'Achat Développeur',
+    creatorTax: 'Taxe Créateur',
+    claimFees: 'Réclamer les frais',
+    shareProfile: 'Partager le profil',
+    searchPlaceholder: 'Rechercher par nom, symbole ou adresse...',
+  },
+  de: {
+    explore: 'Erkunden',
+    create: 'Token Erstellen',
+    memestock: 'Memestock',
+    analytics: 'Analysen',
+    profile: 'Profil',
+    docs: 'Dokumente',
+    connectWallet: 'Wallet Verbinden',
+    connected: 'Verbunden',
+    buy: 'Kaufen',
+    sell: 'Verkaufen',
+    trade: 'Tauschen',
+    trades: 'Trades',
+    holders: 'Halter',
+    topTraders: 'Top-Händler',
+    about: 'Über',
+    allTech: 'Alle Modelle',
+    onCurve: 'Auf Kurve',
+    graduated: 'Graduiert',
+    launchToken: 'Token Starten',
+    tokenName: 'Token-Name',
+    ticker: 'Kürzel',
+    description: 'Beschreibung',
+    developerBuy: 'Entwickler-Kauf',
+    creatorTax: 'Entwickler-Steuer',
+    claimFees: 'Gebühren Abheben',
+    shareProfile: 'Profil Teilen',
+    searchPlaceholder: 'Nach Name, Symbol oder Adresse suchen...',
+  },
+  pt: {
+    explore: 'Explorar',
+    create: 'Criar Token',
+    memestock: 'Memestock',
+    analytics: 'Análises',
+    profile: 'Perfil',
+    docs: 'Documentos',
+    connectWallet: 'Conectar Carteira',
+    connected: 'Conectado',
+    buy: 'Comprar',
+    sell: 'Vender',
+    trade: 'Negociar',
+    trades: 'Negociações',
+    holders: 'Detentores',
+    topTraders: 'Principais Traders',
+    about: 'Sobre',
+    allTech: 'Toda Tecnologia',
+    onCurve: 'Na Curva',
+    graduated: 'Graduado',
+    launchToken: 'Lançar Token',
+    tokenName: 'Nome do Token',
+    ticker: 'Símbolo',
+    description: 'Descrição',
+    developerBuy: 'Compra do Desenvolvedor',
+    creatorTax: 'Taxa do Criador',
+    claimFees: 'Reivindicar Taxas',
+    shareProfile: 'Compartilhar Perfil',
+    searchPlaceholder: 'Buscar por nome, símbolo ou endereço...',
+  },
+};
+
+const STORAGE_LOCALE_KEY = 'proto_selected_locale_v1';
+
+function getInitialLocale(): SupportedLocale {
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem(STORAGE_LOCALE_KEY) as SupportedLocale | null;
+      if (saved && saved in messages) {
+        return saved;
+      }
+      const navLang = navigator.language?.slice(0, 2).toLowerCase() as SupportedLocale;
+      if (navLang && navLang in messages) {
+        return navLang;
+      }
+    } catch {
+      // Ignore
+    }
+  }
+  return 'en';
+}
+
+export const currentLocale = ref<SupportedLocale>(getInitialLocale());
+
+export function setLocale(locale: SupportedLocale) {
+  if (locale in messages) {
+    currentLocale.value = locale;
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_LOCALE_KEY, locale);
+        document.documentElement.lang = locale;
+        document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr';
+      } catch {
+        // Ignore
+      }
+    }
+  }
+}
+
+export function t(key: string): string {
+  const loc = currentLocale.value;
+  return messages[loc]?.[key] ?? messages.en[key] ?? key;
+}
+
+export function useI18n() {
+  return {
+    locale: currentLocale,
+    locales: SUPPORTED_LOCALES,
+    setLocale,
+    t,
+    currentLocaleOption: computed(
+      () => SUPPORTED_LOCALES.find((l) => l.code === currentLocale.value) || SUPPORTED_LOCALES[0],
+    ),
+  };
+}
