@@ -43,8 +43,8 @@ function handleAccept() {
         class="space-y-3 py-2 text-xs text-zinc-400 max-h-48 overflow-y-auto pr-2 border-y border-zinc-800"
       >
         <p>
-          1. <strong class="text-zinc-200">Non-Custodial:</strong> Proto Labs and pons do not
-          custody user assets, private keys, or control liquidity after deployment.
+          1. <strong class="text-zinc-200">Non-Custodial:</strong> Proto Labs does not custody user
+          assets, private keys, or control liquidity after deployment.
         </p>
         <p>
           2. <strong class="text-zinc-200">Irreversible Transactions:</strong> All swaps and token

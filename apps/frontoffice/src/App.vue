@@ -125,12 +125,12 @@
         <p>© 2026 Proto Labs, LLC. Fixed-supply token launch protocol on Robinhood Chain.</p>
         <div class="flex items-center gap-4 text-xs">
           <a
-            href="https://x.com/ponsdotfamily"
+            href="https://x.com/protodotfamily"
             target="_blank"
             rel="noopener noreferrer"
             class="hover:text-zinc-400 transition"
           >
-            @ponsdotfamily
+            @protodotfamily
           </a>
           <span>•</span>
           <a
