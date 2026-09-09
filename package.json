@@ -18,7 +18,8 @@
     "build": "bun run --filter '*' build",
     "ci": "bun run lint && bun run typecheck && bun run test && bun run test:contracts && bun run build",
     "format:check": "prettier --check \"**/*.{ts,js,json,md,vue}\"",
-    "format:write": "prettier --write \"**/*.{ts,js,json,md,vue}\""
+    "format:write": "prettier --write \"**/*.{ts,js,json,md,vue}\"",
+    "audit:i18n": "bun run scripts/audit-i18n.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",

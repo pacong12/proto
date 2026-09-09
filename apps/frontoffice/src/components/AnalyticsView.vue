@@ -4,14 +4,13 @@
       <div>
         <div class="flex items-center gap-2">
           <Activity class="w-6 h-6 text-emerald-400" />
-          <h1 class="text-3xl font-bold tracking-tight">Protocol Analytics</h1>
+          <h1 class="text-3xl font-bold tracking-tight">{{ t('protocolAnalytics') }}</h1>
           <Badge v-if="analyticsPlaceholder" variant="secondary" class="text-xs">
-            Live Chart Preview
+            {{ t('livePreview') }}
           </Badge>
         </div>
         <p class="text-sm mt-1">
-          Real-time onchain metrics, 24h volume tracking, and contract deployments on Robinhood
-          Chain.
+          {{ t('analyticsSubtitle') }}
         </p>
       </div>
     </div>
@@ -21,7 +20,7 @@
       <Card class="p-5">
         <p class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono">
           <Coins class="w-4 h-4 text-emerald-400" />
-          Total Trading Volume
+          {{ t('totalTradingVolume') }}
         </p>
         <p class="text-2xl font-bold font-mono mt-2">
           {{ analyticsPlaceholder ? '$184,520' : '$' + totalVolume.toLocaleString() }}
@@ -34,7 +33,7 @@
       <Card class="p-5">
         <p class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono">
           <Rocket class="w-4 h-4 text-emerald-400" />
-          Total Tokens Launched
+          {{ t('totalTokensLaunched') }}
         </p>
         <p class="text-2xl font-bold font-mono mt-2">
           {{ analyticsPlaceholder ? '128' : totalTokens }}
@@ -45,7 +44,7 @@
       <Card class="p-5">
         <p class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono">
           <Flame class="w-4 h-4 text-emerald-400" />
-          Protocol Buyback &amp; Burn
+          {{ t('protocolBuybackAndBurn') }}
         </p>
         <p class="text-2xl font-bold font-mono text-emerald-500 dark:text-emerald-400 mt-2">
           {{ analyticsPlaceholder ? '3.45 ETH' : totalBuyback + ' ETH' }}
@@ -95,7 +94,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { Activity, Coins, Rocket, Flame, TrendingUp } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import { ROBINHOOD_CHAIN } from '@proto/shared-types';
+
+const { t } = useI18n();
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { SimpleChart } from '@/components/ui/chart';

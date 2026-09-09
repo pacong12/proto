@@ -44,6 +44,21 @@ export const router = createRouter({
       component: () => import('@/pages/ProfilePage.vue'),
     },
     {
+      path: '/terms-of-service',
+      name: 'terms',
+      component: () => import('@/pages/TermsPage.vue'),
+    },
+    {
+      path: '/privacy-policy',
+      name: 'privacy',
+      component: () => import('@/pages/PrivacyPage.vue'),
+    },
+    {
+      path: '/cookie-policy',
+      name: 'cookie-policy',
+      component: () => import('@/pages/CookiePolicyPage.vue'),
+    },
+    {
       path: '/:pathMatch(.*)*',
       redirect: '/launchpad',
     },

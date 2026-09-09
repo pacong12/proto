@@ -29,33 +29,32 @@
           <ul class="space-y-1.5 text-xs text-zinc-500">
             <li>
               <RouterLink to="/launchpad" class="hover:text-emerald-400 transition">
-                Explore
+                {{ t('explore') }}
               </RouterLink>
             </li>
             <li>
               <RouterLink to="/launchpad/create" class="hover:text-emerald-400 transition">
-                Create
+                {{ t('create') }}
               </RouterLink>
             </li>
             <li>
               <RouterLink to="/memestock" class="hover:text-emerald-400 transition">
-                Memestock
+                {{ t('memestock') }}
               </RouterLink>
             </li>
             <li>
               <RouterLink to="/analytics" class="hover:text-emerald-400 transition">
-                Analytics
+                {{ t('analytics') }}
               </RouterLink>
             </li>
             <li>
               <RouterLink to="/profile" class="hover:text-emerald-400 transition">
-                Profile
+                {{ t('profile') }}
               </RouterLink>
             </li>
             <li>
               <a
                 href="http://localhost:3002"
-                target="_blank"
                 rel="noopener noreferrer"
                 class="hover:text-emerald-400 transition inline-flex items-center gap-1"
               >
@@ -83,7 +82,7 @@
           <ul class="space-y-1.5 text-xs text-zinc-500">
             <li>
               <a
-                href="http://localhost:3002/terms-of-service"
+                href="/terms-of-service"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="hover:text-emerald-400 transition"
@@ -93,7 +92,7 @@
             </li>
             <li>
               <a
-                href="http://localhost:3002/privacy-policy"
+                href="/privacy-policy"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="hover:text-emerald-400 transition"
@@ -103,7 +102,7 @@
             </li>
             <li>
               <a
-                href="http://localhost:3002/cookie-policy"
+                href="/cookie-policy"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="hover:text-emerald-400 transition"
@@ -156,8 +155,9 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter, RouterLink, RouterView } from 'vue-router';
-import { Rocket, ExternalLink } from 'lucide-vue-next';
-import Navbar from './components/Navbar.vue';
+import { useI18n } from '@/lib/i18n';
+
+const { t } = useI18n();
 import WalletModal from './components/WalletModal.vue';
 import SearchDialog from './components/SearchDialog.vue';
 import PrivacyDialog from './components/PrivacyDialog.vue';

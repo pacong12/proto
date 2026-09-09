@@ -5,7 +5,7 @@
   >
     <Card class="w-full max-w-sm shadow-2xl overflow-hidden p-0 border-zinc-800">
       <div class="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
-        <h2 class="text-sm font-semibold">Connect a wallet</h2>
+        <h2 class="text-sm font-semibold">{{ t('connectWallet') }}</h2>
         <Button
           variant="ghost"
           size="icon"
@@ -43,7 +43,7 @@
             </span>
 
             <span v-if="connectingId === wallet.id" class="text-xs text-emerald-400 font-mono">
-              Connecting&hellip;
+              {{ t('connecting') }}
             </span>
           </Button>
         </li>
@@ -56,7 +56,7 @@
           class="px-3 py-6 text-center text-xs flex items-center justify-center gap-2"
         >
           <Loader2 class="w-3.5 h-3.5 animate-spin text-emerald-400" />
-          <span>Scanning for wallets&hellip;</span>
+          <span>{{ t('scanningForWallets') }}</span>
         </li>
       </ul>
 
@@ -77,8 +77,9 @@ import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { Loader2 } from 'lucide-vue-next';
 import { ROBINHOOD_CHAIN, SUPPORTED_CHAINS } from '@proto/shared-types';
 import { appKitConfigured } from '../lib/appkit';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useI18n } from '@/lib/i18n';
+
+const { t } = useI18n();
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   setConnectedWallet,

@@ -36,6 +36,8 @@ services:
       args:
         VITE_REOWN_PROJECT_ID: ${VITE_REOWN_PROJECT_ID}
     container_name: proto-frontoffice
+    environment:
+      - API_HOST=api:3001
     ports:
       - "3000:3000"
     depends_on:

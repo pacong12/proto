@@ -4,12 +4,11 @@
       <div>
         <div class="flex items-center gap-2">
           <TrendingUp class="w-6 h-6 text-emerald-400" />
-          <h1 class="text-3xl font-bold tracking-tight">Memestock</h1>
-          <Badge variant="graduated" class="text-xs"> Trending Feed </Badge>
+          <h1 class="text-3xl font-bold tracking-tight">{{ t('memestock') }}</h1>
+          <Badge variant="graduated" class="text-xs"> {{ t('trendingFeed') }} </Badge>
         </div>
         <p class="text-sm mt-1">
-          Every launch with a community thesis and verified positions, ranked by momentum on
-          Robinhood Chain.
+          {{ t('memestockSubtitle') }}
         </p>
       </div>
 
@@ -29,7 +28,7 @@
 
         <Button @click="$emit('selectTab', 'create')" variant="default" size="sm">
           <Plus class="w-4 h-4 mr-1.5" />
-          Create
+          {{ t('create') }}
         </Button>
       </div>
     </div>
@@ -142,7 +141,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { TrendingUp, Plus, Loader2, AlertCircle } from 'lucide-vue-next';
-import { Button } from '@/components/ui/button';
+import { useI18n } from '@/lib/i18n';
+
+const { t } = useI18n();
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
