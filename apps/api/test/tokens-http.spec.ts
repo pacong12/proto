@@ -32,6 +32,40 @@ describe('Tokens HTTP Endpoints Integration', () => {
     expect(Array.isArray(json.data)).toBe(true);
   });
 
+  it('GET /api/tokens/:address/top-traders returns 200 with ranking fields', async () => {
+    const req = new Request(`http://localhost:3001/api/tokens/${testAddress}/top-traders?limit=10`);
+    const res = await server.fetch(req);
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    expect(Array.isArray(json.data)).toBe(true);
+  });
+
+  it('GET /api/tokens/:address/dev-activity returns 200 with developer metrics', async () => {
+    const req = new Request(`http://localhost:3001/api/tokens/${testAddress}/dev-activity`);
+    const res = await server.fetch(req);
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    expect(json.data).toHaveProperty('creatorAddress');
+    expect(json.data).toHaveProperty('creatorStatus');
+    expect(json.data).toHaveProperty('currentHoldPercent');
+  });
+
+  it('GET /api/tokens supports deployer filter parameter', async () => {
+    const req = new Request(
+      'http://localhost:3001/api/tokens?deployer=0x1111111111111111111111111111111111111111',
+    );
+    const res = await server.fetch(req);
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    expect(Array.isArray(json.data)).toBe(true);
+  });
+
   it('GET /api/tokens/invalid-address/holders returns 404', async () => {
     const req = new Request('http://localhost:3001/api/tokens/not-an-address/holders');
     const res = await server.fetch(req);
