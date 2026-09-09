@@ -602,7 +602,21 @@
               class="text-lg font-mono text-black dark:text-white bg-transparent border-zinc-200 dark:border-zinc-800"
             />
 
-            <!-- P1: Preset Percentage Buttons: [25%], [50%], [75%], [100%] -->
+            <!-- Quick Buy ETH Presets (Only in Buy mode) -->
+            <div v-if="isBuy" class="grid grid-cols-4 gap-1.5 pt-1">
+              <Button
+                v-for="ethVal in ['0.01', '0.05', '0.1', '0.5']"
+                :key="ethVal"
+                size="sm"
+                variant="secondary"
+                class="h-7 text-xs font-mono font-semibold text-emerald-500 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30"
+                @click="applyQuickBuy(ethVal)"
+              >
+                {{ ethVal }} ETH
+              </Button>
+            </div>
+
+            <!-- Percentage Buttons: [25%], [50%], [75%], [100%] -->
             <div class="grid grid-cols-4 gap-1.5 pt-1">
               <Button
                 v-for="percent in [25, 50, 75, 100]"
@@ -612,7 +626,7 @@
                 class="h-7 text-xs font-mono font-semibold text-black dark:text-white border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 @click="applyPercentage(percent)"
               >
-                {{ percent }}%
+                {{ percent === 100 ? 'Max' : `${percent}%` }}
               </Button>
             </div>
           </div>
@@ -828,6 +842,9 @@ const estimatedOutput = computed(() => {
     return `${weth.toFixed(6)} ETH`;
   }
 });
+function applyQuickBuy(val: string) {
+  amountIn.value = val;
+}
 
 // P1: Quick Percentage Buttons Handler
 function applyPercentage(percent: number) {
