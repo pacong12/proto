@@ -149,6 +149,7 @@
     <WalletModal v-if="walletModalOpen" />
     <SearchDialog v-if="searchOpen" @close="searchOpen = false" @select-token="handleSelectToken" />
     <PrivacyDialog v-model:open="privacyOpen" @accept="handlePrivacyAccepted" />
+    <CookieConsentBanner />
   </div>
 </template>
 
@@ -160,8 +161,8 @@ import Navbar from './components/Navbar.vue';
 import WalletModal from './components/WalletModal.vue';
 import SearchDialog from './components/SearchDialog.vue';
 import PrivacyDialog from './components/PrivacyDialog.vue';
+import CookieConsentBanner from './components/CookieConsentBanner.vue';
 import { walletAddress, walletModalOpen } from './lib/wallet-store';
-
 const router = useRouter();
 
 const PRIVACY_STORAGE_KEY = 'proto_privacy_policy_accepted_v1';
