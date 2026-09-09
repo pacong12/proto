@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Cookie, ShieldCheck, X } from 'lucide-vue-next';
+
+const { t } = useI18n();
 
 const COOKIE_CONSENT_KEY = 'proto_cookie_consent_accepted_v1';
 
@@ -10,7 +13,7 @@ const visible = ref(false);
 onMounted(() => {
   if (typeof window === 'undefined') return;
   try {
-    const accepted = localStorage.getItem(COOKIE_CONSENT_KEY) === 'true';
+    const accepted = localStorage.getItem(COOKIE_CONSENT_KEY);
     if (!accepted) {
       visible.value = true;
     }
@@ -37,12 +40,12 @@ function dismissBanner() {
 
 <template>
   <Transition
-    enter-active-class="transition-all duration-300 ease-out"
-    enter-from-class="opacity-0 translate-y-4"
-    enter-to-class="opacity-100 translate-y-0"
-    leave-active-class="transition-all duration-200 ease-in"
-    leave-from-class="opacity-100 translate-y-0"
-    leave-to-class="opacity-0 translate-y-4"
+    enter-active-class="transition duration-300 ease-out"
+    enter-from-class="transform translate-y-4 opacity-0"
+    enter-to-class="transform translate-y-0 opacity-100"
+    leave-active-class="transition duration-200 ease-in"
+    leave-from-class="transform translate-y-0 opacity-100"
+    leave-to-class="transform translate-y-4 opacity-0"
   >
     <div
       v-if="visible"
@@ -54,7 +57,7 @@ function dismissBanner() {
         <div class="flex items-center gap-2 text-emerald-400">
           <Cookie class="w-5 h-5 shrink-0" />
           <h3 class="text-xs font-bold text-white uppercase tracking-wider">
-            Cookie &amp; Storage Preferences
+            {{ t('cookieBannerTitle') }}
           </h3>
         </div>
         <button
@@ -68,8 +71,7 @@ function dismissBanner() {
       </div>
 
       <p class="text-xs text-zinc-400 leading-relaxed">
-        Proto uses local storage strictly for essential interface settings (theme, wallet state, and
-        privacy agreement). We do not track you or use commercial ad cookies.
+        {{ t('cookieBannerDesc') }}
       </p>
 
       <div class="flex items-center justify-between pt-1 text-xs">
@@ -79,7 +81,7 @@ function dismissBanner() {
           rel="noopener noreferrer"
           class="text-zinc-500 hover:text-emerald-400 underline underline-offset-2 transition"
         >
-          Cookie Policy
+          {{ t('cookiePolicy') }}
         </a>
 
         <div class="flex items-center gap-2">
@@ -90,7 +92,7 @@ function dismissBanner() {
             class="h-7 text-xs text-zinc-400 hover:text-white"
             @click="dismissBanner"
           >
-            Decline
+            {{ t('decline') }}
           </Button>
           <Button
             type="button"
@@ -100,7 +102,7 @@ function dismissBanner() {
             @click="acceptCookies"
           >
             <ShieldCheck class="w-3.5 h-3.5 mr-1" />
-            Accept
+            {{ t('accept') }}
           </Button>
         </div>
       </div>
