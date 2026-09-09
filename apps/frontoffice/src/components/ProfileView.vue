@@ -172,13 +172,16 @@
         <Tabs v-model="activeTab" class="w-full">
           <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
             <TabsList
-              class="grid grid-cols-3 w-full sm:w-96 bg-zinc-900 p-1 rounded-lg border border-zinc-800"
+              class="grid grid-cols-4 w-full sm:w-[500px] bg-zinc-900 p-1 rounded-lg border border-zinc-800"
             >
               <TabsTrigger value="created" class="text-xs font-semibold">
                 Created Tokens ({{ myLaunches.length }})
               </TabsTrigger>
               <TabsTrigger value="portfolio" class="text-xs font-semibold">
                 Portfolio &amp; Positions ({{ portfolioPositions.length }})
+              </TabsTrigger>
+              <TabsTrigger value="dividends" class="text-xs font-semibold">
+                Holder Dividends &amp; Vesting
               </TabsTrigger>
               <TabsTrigger value="activity" class="text-xs font-semibold">
                 Activity ({{ userActivities.length }})
@@ -401,6 +404,81 @@
               </table>
             </div>
           </TabsContent>
+
+          <!-- TAB 4: HOLDER DIVIDENDS & VESTING VAULT -->
+          <TabsContent value="dividends" class="mt-4 space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Holder Fee Dividends Card -->
+              <Card class="p-5 bg-zinc-900/60 border-zinc-800 space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <Coins class="w-4 h-4 text-emerald-400" />
+                    <h3 class="text-sm font-bold text-white">Holder Fee Sharing Dividends</h3>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    class="text-[10px] font-mono text-emerald-400 border-emerald-500/30"
+                  >
+                    70% Split
+                  </Badge>
+                </div>
+                <p class="text-xs text-zinc-400">
+                  Pro-rata trading fee rewards accrued from tokens you hold that enabled Holder Fee
+                  Sharing.
+                </p>
+                <div class="flex items-end justify-between pt-2 border-t border-zinc-800">
+                  <div>
+                    <span class="text-[10px] text-zinc-500 uppercase font-mono"
+                      >Claimable Reward</span
+                    >
+                    <p class="text-lg font-bold font-mono text-emerald-400">0.0000 WETH</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="default"
+                    :disabled="true"
+                    class="h-8 text-xs font-semibold"
+                  >
+                    <ArrowDownToLine class="w-3.5 h-3.5 mr-1" />
+                    Claim Dividends
+                  </Button>
+                </div>
+              </Card>
+
+              <!-- Linear Vesting Schedule Card -->
+              <Card class="p-5 bg-zinc-900/60 border-zinc-800 space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <Lock class="w-4 h-4 text-emerald-400" />
+                    <h3 class="text-sm font-bold text-white">Linear Vesting Vault</h3>
+                  </div>
+                  <Badge variant="outline" class="text-[10px] font-mono text-zinc-400">
+                    Continuous Release
+                  </Badge>
+                </div>
+                <p class="text-xs text-zinc-400">
+                  Tokens locked in linear vesting schedules (buybacks, team allocations, migration
+                  claims).
+                </p>
+                <div class="flex items-end justify-between pt-2 border-t border-zinc-800">
+                  <div>
+                    <span class="text-[10px] text-zinc-500 uppercase font-mono"
+                      >Unlocked Tokens</span
+                    >
+                    <p class="text-lg font-bold font-mono text-white">0 DIV</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    :disabled="true"
+                    class="h-8 text-xs font-semibold"
+                  >
+                    Claim Unlocked
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          </TabsContent>
         </Tabs>
       </Card>
 
@@ -552,9 +630,9 @@ import {
   User,
   Coins,
   Rocket,
+  Lock,
   ShieldCheck,
   Flame,
-  ArrowDownToLine,
   Share2,
   ShieldAlert,
   Check,

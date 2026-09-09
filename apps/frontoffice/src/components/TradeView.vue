@@ -32,6 +32,49 @@
                   {{ devBadgeText }}
                 </Badge>
               </div>
+
+              <!-- External Trading Terminal & Bot Shortcuts -->
+              <div class="hidden sm:flex items-center gap-1.5 ml-2">
+                <a
+                  :href="`https://t.me/GMGN_sol01_bot?start=rh_${currentToken.address}`"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="h-6 px-2 text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-md hover:bg-emerald-500/20 transition inline-flex items-center gap-1"
+                  title="Snipe & Copy Trade on GMGN Telegram Bot"
+                >
+                  <Send class="w-2.5 h-2.5" />
+                  GMGN Bot
+                </a>
+                <a
+                  :href="`https://dexscreener.com/robinhood/${currentToken.poolAddress}`"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="h-6 px-2 text-[10px] font-mono font-semibold bg-zinc-800/80 text-zinc-300 border border-zinc-700/80 rounded-md hover:text-white hover:bg-zinc-700 transition inline-flex items-center gap-1"
+                  title="View on DexScreener"
+                >
+                  <BarChart2 class="w-2.5 h-2.5 text-emerald-400" />
+                  DexScreener
+                </a>
+                <a
+                  :href="`https://www.geckoterminal.com/robinhood/pools/${currentToken.poolAddress}`"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="h-6 px-2 text-[10px] font-mono font-semibold bg-zinc-800/80 text-zinc-300 border border-zinc-700/80 rounded-md hover:text-white hover:bg-zinc-700 transition inline-flex items-center gap-1"
+                  title="View on GeckoTerminal"
+                >
+                  <Globe class="w-2.5 h-2.5 text-amber-400" />
+                  GeckoTerminal
+                </a>
+                <button
+                  type="button"
+                  @click="copyTradeLink"
+                  class="h-6 px-2 text-[10px] font-mono font-semibold bg-zinc-800/80 text-zinc-300 border border-zinc-700/80 rounded-md hover:text-white hover:bg-zinc-700 transition inline-flex items-center gap-1"
+                  title="Copy Trade URL"
+                >
+                  <Share2 class="w-2.5 h-2.5" />
+                  {{ copiedTradeLink ? 'Copied!' : 'Copy Trade' }}
+                </button>
+              </div>
             </div>
 
             <!-- Resolution Switcher (1m, 5m, 15m, 1h, 1d) -->
@@ -844,6 +887,8 @@ import {
   Globe,
   Layers,
   RefreshCw,
+  Send,
+  Share2,
 } from 'lucide-vue-next';
 import { useSwap } from '../composables/useSwap';
 import { useWallet } from '../composables/useWallet';
@@ -859,14 +904,24 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { TradingChart } from '@/components/ui/chart';
 import {
   ROBINHOOD_CHAIN,
+  launchpadTokenAbi,
   type LaunchedTokenEntity,
   type TokenMarketData,
 } from '@proto/shared-types';
 
-const erc20Abi = parseAbi([
-  'function balanceOf(address account) view returns (uint256)',
-  'function decimals() view returns (uint8)',
-]);
+const props = defineProps<{
+  tokenAddress?: string;
+}>();
+
+const copiedTradeLink = ref(false);
+function copyTradeLink() {
+  if (typeof window === 'undefined') return;
+  navigator.clipboard.writeText(window.location.href);
+  copiedTradeLink.value = true;
+  setTimeout(() => {
+    copiedTradeLink.value = false;
+  }, 2000);
+}
 
 interface LiveTrade {
   id: string;
@@ -887,10 +942,6 @@ interface TokenHolder {
   balance: string;
   percent: number;
 }
-
-const props = defineProps<{
-  tokenAddress?: string;
-}>();
 
 const { executeSwap, isSwapping, swapError, slippage } = useSwap();
 const { isConnected, account, balanceWei } = useWallet();
@@ -1126,7 +1177,7 @@ async function fetchUserTokenBalance() {
   try {
     const bal = await publicClient.readContract({
       address: currentToken.value.address as `0x${string}`,
-      abi: erc20Abi,
+      abi: launchpadTokenAbi,
       functionName: 'balanceOf',
       args: [account.value as `0x${string}`],
     });
