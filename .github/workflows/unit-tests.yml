@@ -1,0 +1,41 @@
+name: Unit Tests & Code Coverage
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  unit-tests:
+    name: Monorepo Unit Testing & Contracts Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies with Bun
+        run: bun install --frozen-lockfile
+
+      - name: Setup Foundry dependencies
+        run: |
+          mkdir -p contracts/lib
+          git clone --depth 1 https://github.com/foundry-rs/forge-std.git contracts/lib/forge-std
+
+      - name: Run Backend & Frontoffice Unit Tests (Vitest)
+        run: bun run test
+
+      - name: Run Smart Contract Unit Tests (Foundry Forge)
+        run: |
+          cd contracts
+          forge test -vvv
