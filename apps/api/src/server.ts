@@ -125,6 +125,22 @@ async function handleRequest(req: Request): Promise<Response> {
     const res = await tokenController.getCandlesticks(address, resolution);
     return new Response(safeStringify(res), { headers });
   }
+  // GET /api/tokens/:address/top-traders
+  const topTradersMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/top-traders$/);
+  if (topTradersMatch && req.method === 'GET') {
+    const address = topTradersMatch[1];
+    const limit = parseInt(url.searchParams.get('limit') ?? '20', 10);
+    const res = await tokenController.getTopTraders(address, limit);
+    return new Response(safeStringify(res), { headers });
+  }
+
+  // GET /api/tokens/:address/dev-activity
+  const devActivityMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/dev-activity$/);
+  if (devActivityMatch && req.method === 'GET') {
+    const address = devActivityMatch[1];
+    const res = await tokenController.getDevActivity(address);
+    return new Response(safeStringify(res), { headers });
+  }
 
   // GET /api/tokens/:address
   const tokenMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})$/);
