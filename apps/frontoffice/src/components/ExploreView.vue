@@ -12,6 +12,48 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
+        <!-- Lifecycle Status Filter: All / On Curve / Graduated -->
+        <div class="p-1 bg-zinc-900 border border-zinc-800 rounded-lg flex items-center text-xs">
+          <button
+            type="button"
+            @click="selectedLifecycle = 'all'"
+            :class="[
+              'px-2.5 py-1 rounded font-medium transition',
+              selectedLifecycle === 'all'
+                ? 'bg-zinc-800 text-white'
+                : 'text-zinc-400 hover:text-white',
+            ]"
+          >
+            All
+          </button>
+          <button
+            type="button"
+            @click="selectedLifecycle = 'curve'"
+            :class="[
+              'px-2.5 py-1 rounded font-medium transition flex items-center gap-1',
+              selectedLifecycle === 'curve'
+                ? 'bg-zinc-800 text-emerald-400'
+                : 'text-zinc-400 hover:text-white',
+            ]"
+          >
+            <Flame class="w-3 h-3" />
+            On Curve
+          </button>
+          <button
+            type="button"
+            @click="selectedLifecycle = 'graduated'"
+            :class="[
+              'px-2.5 py-1 rounded font-medium transition flex items-center gap-1',
+              selectedLifecycle === 'graduated'
+                ? 'bg-zinc-800 text-indigo-400'
+                : 'text-zinc-400 hover:text-white',
+            ]"
+          >
+            <CheckCircle class="w-3 h-3" />
+            Graduated
+          </button>
+        </div>
+
         <!-- Architecture Version Tabs: All / v2 Curve / v1 Pool -->
         <div class="p-1 bg-zinc-900 border border-zinc-800 rounded-lg flex items-center text-xs">
           <button
@@ -24,7 +66,7 @@
                 : 'text-zinc-400 hover:text-white',
             ]"
           >
-            All
+            All Tech
           </button>
           <button
             type="button"
@@ -37,7 +79,7 @@
             ]"
           >
             <Rocket class="w-3 h-3" />
-            v2 Curve
+            v2
           </button>
           <button
             type="button"
@@ -50,7 +92,7 @@
             ]"
           >
             <Lock class="w-3 h-3" />
-            v1 Direct
+            v1
           </button>
         </div>
 
@@ -244,12 +286,12 @@ defineEmits<{
   (e: 'selectTab', tab: string): void;
 }>();
 
+const selectedLifecycle = ref<'all' | 'curve' | 'graduated'>('all');
 const selectedVersion = ref<'all' | 'v1' | 'v2'>('all');
 const activeSort = ref('recent');
 const loading = ref(true);
 const apiError = ref<string | null>(null);
 const allTokens = ref<Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }>>([]);
-
 const currentPage = ref(1);
 const pageSize = 6;
 
@@ -264,12 +306,17 @@ const sortOptions = [
 const filteredTokens = computed(() => {
   let list = allTokens.value;
 
+  // Filter by Lifecycle Status (On Curve vs Graduated)
+  if (selectedLifecycle.value === 'curve') {
+    list = list.filter((item) => !item.marketData.isGraduated);
+  } else if (selectedLifecycle.value === 'graduated') {
+    list = list.filter((item) => item.marketData.isGraduated);
+  }
+
   // Filter by Architecture Version (v1 vs v2)
   if (selectedVersion.value !== 'all') {
     list = list.filter((item) => (item.token.version ?? 'v1') === selectedVersion.value);
   }
-
-  // Sort tokens
   const sorted = [...list];
   if (activeSort.value === 'newest') {
     sorted.sort((a, b) => b.token.createdAt - a.token.createdAt);
