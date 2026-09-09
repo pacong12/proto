@@ -24,9 +24,22 @@
                 <span class="font-mono text-sm text-zinc-500"> ${{ currentToken.symbol }} </span>
                 <Badge
                   :variant="currentToken.version === 'v2' ? 'outline' : 'default'"
-                  class="text-[10px] font-mono"
+                  class="text-[10px] font-mono flex items-center gap-1"
                 >
-                  {{ currentToken.version === 'v2' ? 'V2 Bonding Curve' : 'V1 Direct Pool' }}
+                  <Layers class="w-3 h-3" />
+                  {{ currentToken.version === 'v2' ? 'V2 Curve' : 'V1 Direct Pool' }}
+                </Badge>
+                <Badge
+                  variant="secondary"
+                  class="text-[10px] font-mono border border-emerald-500/30 text-emerald-500 dark:text-emerald-400 bg-emerald-500/10"
+                >
+                  {{
+                    currentToken.version === 'v2'
+                      ? currentMarketData.isGraduated
+                        ? 'Uniswap v4 Pool'
+                        : 'Curve Active (Target: v4)'
+                      : 'Uniswap V3'
+                  }}
                 </Badge>
                 <Badge :variant="devBadgeVariant" class="text-[10px] font-mono">
                   {{ devBadgeText }}
@@ -674,6 +687,43 @@
 
       <!-- Swap Column with Quick Percentages & Slippage Popover -->
       <div class="space-y-6">
+        <!-- V2 Bonding Curve / V1 DEX Status Card -->
+        <Card
+          class="p-4 space-y-3 bg-zinc-50/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800"
+        >
+          <div class="flex items-center justify-between">
+            <span
+              class="text-xs font-semibold text-black dark:text-white flex items-center gap-1.5"
+            >
+              <Activity class="w-3.5 h-3.5 text-emerald-400" />
+              {{
+                currentToken.version === 'v2' ? 'Bonding Curve Progress' : 'Uniswap V3 Liquidity'
+              }}
+            </span>
+            <span class="text-[11px] font-mono font-bold text-emerald-500 dark:text-emerald-400">
+              {{ (currentMarketData.graduationProgress * 100).toFixed(1) }}%
+            </span>
+          </div>
+          <Progress :model-value="currentMarketData.graduationProgress * 100" class="h-2" />
+          <div
+            class="flex justify-between text-[11px] text-zinc-500 font-mono pt-1 border-t border-zinc-200 dark:border-zinc-800"
+          >
+            <span>
+              {{ currentMarketData.pairedPrincipalWeth }} /
+              {{ currentMarketData.graduationThresholdWeth }} ETH
+            </span>
+            <span>
+              {{
+                currentToken.version === 'v2'
+                  ? currentMarketData.isGraduated
+                    ? 'Graduated to v4'
+                    : 'Migrating to v4 at 100%'
+                  : 'Permanently Locked'
+              }}
+            </span>
+          </div>
+        </Card>
+
         <Card class="p-6 space-y-4">
           <div
             class="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800"
