@@ -246,12 +246,13 @@
                     <tr
                       class="border-b border-zinc-200 dark:border-zinc-800 text-black dark:text-white"
                     >
-                      <th class="py-2.5 px-3 font-semibold w-14">Rank</th>
+                      <th class="py-2.5 px-3 font-semibold w-12">Rank</th>
                       <th class="py-2.5 px-3 font-semibold">Trader</th>
                       <th class="py-2.5 px-3 font-semibold">Tag</th>
-                      <th class="py-2.5 px-3 font-semibold text-right">Buy Vol</th>
-                      <th class="py-2.5 px-3 font-semibold text-right">Sell Vol</th>
-                      <th class="py-2.5 px-3 font-semibold text-right">Trades</th>
+                      <th class="py-2.5 px-3 font-semibold">First Buy</th>
+                      <th class="py-2.5 px-3 font-semibold text-right">Avg Cost</th>
+                      <th class="py-2.5 px-3 font-semibold text-right">Buy / Sell</th>
+                      <th class="py-2.5 px-3 font-semibold text-center">Position</th>
                       <th class="py-2.5 px-3 font-semibold text-right">Est. PnL</th>
                     </tr>
                   </thead>
@@ -295,14 +296,40 @@
                           {{ trader.isDev ? 'Dev' : trader.walletTag }}
                         </Badge>
                       </td>
-                      <td class="py-2.5 px-3 text-right text-emerald-400 font-medium">
-                        ${{ trader.buyVolumeUsd.toLocaleString() }}
+                      <td class="py-2.5 px-3 text-zinc-400 text-[11px]">
+                        {{ formatRelativeTime(trader.firstBuyTimestamp || Date.now()) }}
                       </td>
-                      <td class="py-2.5 px-3 text-right text-rose-400 font-medium">
-                        ${{ trader.sellVolumeUsd.toLocaleString() }}
+                      <td class="py-2.5 px-3 text-right text-zinc-300">
+                        ${{ (trader.avgCostUsd || 0).toFixed(6) }}
                       </td>
-                      <td class="py-2.5 px-3 text-right text-black dark:text-white">
-                        {{ trader.totalTrades }}
+                      <td class="py-2.5 px-3 text-right">
+                        <span class="text-emerald-400 font-medium"
+                          >${{ trader.buyVolumeUsd.toLocaleString() }}</span
+                        >
+                        <span class="text-zinc-500 mx-1">/</span>
+                        <span class="text-rose-400 font-medium"
+                          >${{ trader.sellVolumeUsd.toLocaleString() }}</span
+                        >
+                      </td>
+                      <td class="py-2.5 px-3 text-center">
+                        <Badge
+                          :variant="
+                            trader.positionStatus === 'holding'
+                              ? 'default'
+                              : trader.positionStatus === 'clean_all'
+                                ? 'destructive'
+                                : 'outline'
+                          "
+                          class="text-[9px] px-1.5 py-0 uppercase"
+                        >
+                          {{
+                            trader.positionStatus === 'holding'
+                              ? 'Holding'
+                              : trader.positionStatus === 'clean_all'
+                                ? 'Clean All'
+                                : 'Partial'
+                          }}
+                        </Badge>
                       </td>
                       <td
                         class="py-2.5 px-3 text-right font-bold"
@@ -945,6 +972,11 @@ const topTraders = ref<
     profitUsd: number;
     isDev: boolean;
     walletTag: string;
+    firstBuyTimestamp?: number;
+    firstBuyPriceUsd?: number;
+    avgCostUsd?: number;
+    holdingAmountTokens?: string;
+    positionStatus?: 'holding' | 'partial' | 'clean_all';
   }>
 >([]);
 const topTradersLoading = ref(false);
