@@ -49,6 +49,7 @@ export interface TokenMarketData {
   graduationProgress: number; // 0.0 - 1.0
   isGraduated: boolean;
   volume24hUsd: number;
+  priceChange24h?: number; // Percentage change over last 24h (optional, computed externally)
 }
 
 export interface GraduationStatus {

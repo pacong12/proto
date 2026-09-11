@@ -38,6 +38,8 @@ export interface NetworkConfig {
   };
 }
 
+export const DEFAULT_ETH_PRICE_USD = 2500;
+
 export const ROBINHOOD_CHAIN: NetworkConfig = {
   chainId: 4663,
   name: 'Robinhood Chain',
