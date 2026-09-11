@@ -1,22 +1,24 @@
 import { ref } from 'vue';
-import { parseAbi } from 'viem';
-import { ROBINHOOD_CHAIN } from '@proto/shared-types';
+import { parseAbi, erc20Abi } from 'viem';
+import { ROBINHOOD_CHAIN, swapRouterAbi } from '@proto/shared-types';
 import { publicClient, getWalletClient } from '../lib/viem-client';
 
-const swapRouterAbi = parseAbi([
-  'function exactInputSingle((address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 deadline, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96) params) payable returns (uint256 amountOut)',
-]);
-
-const erc20Abi = parseAbi([
-  'function approve(address spender, uint256 value) returns (bool)',
-  'function balanceOf(address account) view returns (uint256)',
+const bondingCurveAbi = parseAbi([
+  'function buy(uint256 minTokensOut) external payable returns (uint256 tokensOut)',
+  'function sell(uint256 tokenIn, uint256 minEthOut) external returns (uint256 ethOut)',
+  'function graduated() external view returns (bool)',
 ]);
 
 export function useSwap() {
   const isSwapping = ref(false);
   const swapError = ref<string | null>(null);
-  const slippage = ref<number>(1.0); // Default slippage tolerance 1.0%
+  const slippage = ref(1.0); // Default 1.0%
 
+  /**
+   * Executes swap either through V2 BondingCurve directly (if on curve)
+   * or through Uniswap V3 SwapRouter (if V1 direct pool or graduated).
+   * Resolves BUG-04.
+   */
   async function executeSwap(params: {
     tokenAddress: `0x${string}`;
     isBuy: boolean;
@@ -24,6 +26,9 @@ export function useSwap() {
     slippagePercent?: number;
     amountOutMinimum?: bigint;
     expectedAmountOut?: bigint;
+    version?: 'v1' | 'v2';
+    curveAddress?: `0x${string}`;
+    isGraduated?: boolean;
   }): Promise<string | null> {
     isSwapping.value = true;
     swapError.value = null;
@@ -37,6 +42,69 @@ export function useSwap() {
 
       const slippagePercent = params.slippagePercent ?? slippage.value ?? 1.0;
       const amountInWei = BigInt(Math.floor(parseFloat(params.amountInEth) * 1e18));
+
+      // Check if trading on V2 Bonding Curve
+      const isV2Curve =
+        params.version === 'v2' &&
+        !params.isGraduated &&
+        params.curveAddress &&
+        params.curveAddress !== '0x0000000000000000000000000000000000000000';
+
+      if (isV2Curve) {
+        if (params.isBuy) {
+          // V2 Bonding Curve: buy() directly with ETH
+          let minTokensOut = params.amountOutMinimum ?? 0n;
+          if (minTokensOut === 0n && params.expectedAmountOut) {
+            const factor = BigInt(Math.max(0, Math.floor((100 - slippagePercent) * 100)));
+            minTokensOut = (params.expectedAmountOut * factor) / 10000n;
+          }
+
+          const txHash = await walletClient.writeContract({
+            address: params.curveAddress!,
+            abi: bondingCurveAbi,
+            functionName: 'buy',
+            args: [minTokensOut],
+            value: amountInWei,
+            account,
+            chain: walletClient.chain,
+          });
+
+          await publicClient.waitForTransactionReceipt({ hash: txHash });
+          return txHash;
+        } else {
+          // V2 Bonding Curve: sell() tokens back for ETH
+          // 1. Approve tokens to BondingCurve contract
+          const approveHash = await walletClient.writeContract({
+            address: params.tokenAddress,
+            abi: erc20Abi,
+            functionName: 'approve',
+            args: [params.curveAddress!, amountInWei],
+            account,
+            chain: walletClient.chain,
+          });
+          await publicClient.waitForTransactionReceipt({ hash: approveHash });
+
+          let minEthOut = params.amountOutMinimum ?? 0n;
+          if (minEthOut === 0n && params.expectedAmountOut) {
+            const factor = BigInt(Math.max(0, Math.floor((100 - slippagePercent) * 100)));
+            minEthOut = (params.expectedAmountOut * factor) / 10000n;
+          }
+
+          const txHash = await walletClient.writeContract({
+            address: params.curveAddress!,
+            abi: bondingCurveAbi,
+            functionName: 'sell',
+            args: [amountInWei, minEthOut],
+            account,
+            chain: walletClient.chain,
+          });
+
+          await publicClient.waitForTransactionReceipt({ hash: txHash });
+          return txHash;
+        }
+      }
+
+      // Default: Uniswap V3 Pool Swap
       const tokenIn = params.isBuy ? ROBINHOOD_CHAIN.contracts.weth : params.tokenAddress;
       const tokenOut = params.isBuy ? params.tokenAddress : ROBINHOOD_CHAIN.contracts.weth;
 
