@@ -41,7 +41,9 @@ if (!projectId) {
     metadata: {
       name: 'proto',
       description: 'Proto - Fixed-supply token launchpad on Robinhood Chain',
-      url: 'http://localhost:3000',
+      url:
+        (import.meta.env.VITE_APP_URL as string | undefined) ??
+        (typeof window !== 'undefined' ? window.location.origin : 'https://proto.family'),
       icons: ['/favicon.svg'],
     },
     features: {
