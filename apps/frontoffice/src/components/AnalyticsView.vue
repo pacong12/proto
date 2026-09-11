@@ -3,11 +3,7 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
         <div class="flex items-center gap-2">
-          <Activity class="w-6 h-6 text-emerald-400" />
           <h1 class="text-3xl font-bold tracking-tight">{{ t('protocolAnalytics') }}</h1>
-          <Badge v-if="analyticsPlaceholder" variant="secondary" class="text-xs">
-            {{ t('livePreview') }}
-          </Badge>
         </div>
         <p class="text-sm mt-1">
           {{ t('analyticsSubtitle') }}
@@ -18,38 +14,37 @@
     <!-- Stats Grid with Shadcn Card -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <Card class="p-5">
-        <p class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono">
-          <Coins class="w-4 h-4 text-emerald-400" />
+        <p class="text-xs uppercase font-semibold font-mono">
           {{ t('totalTradingVolume') }}
         </p>
-        <p class="text-2xl font-bold font-mono mt-2">
-          {{ analyticsPlaceholder ? '$184,520' : '$' + totalVolume.toLocaleString() }}
-        </p>
+        <p class="text-2xl font-bold font-mono mt-2">${{ totalVolume.toLocaleString() }}</p>
         <p class="text-xs text-emerald-500 dark:text-emerald-400 mt-2 font-medium">
-          +14.2% from yesterday
+          {{ t('fromYesterday') }}
         </p>
       </Card>
 
       <Card class="p-5">
-        <p class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono">
-          <Rocket class="w-4 h-4 text-emerald-400" />
+        <p class="text-xs uppercase font-semibold font-mono">
           {{ t('totalTokensLaunched') }}
         </p>
         <p class="text-2xl font-bold font-mono mt-2">
-          {{ analyticsPlaceholder ? '128' : totalTokens }}
+          {{ totalTokens }}
         </p>
-        <p class="text-xs mt-2 font-medium">100% permanently locked</p>
+        <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-2 font-medium">
+          {{ t('permanentlyLocked') }}
+        </p>
       </Card>
 
       <Card class="p-5">
-        <p class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono">
-          <Flame class="w-4 h-4 text-emerald-400" />
+        <p class="text-xs uppercase font-semibold font-mono">
           {{ t('protocolBuybackAndBurn') }}
         </p>
         <p class="text-2xl font-bold font-mono text-emerald-500 dark:text-emerald-400 mt-2">
-          {{ analyticsPlaceholder ? '3.45 ETH' : totalBuyback + ' ETH' }}
+          {{ totalBuyback }} ETH
         </p>
-        <p class="text-xs mt-2 font-medium">80% of protocol fees burned</p>
+        <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-2 font-medium">
+          {{ t('protocolFeesBurned') }}
+        </p>
       </Card>
     </div>
 
@@ -57,11 +52,10 @@
     <Card class="p-6 space-y-4">
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-base font-bold flex items-center gap-2">
-            <TrendingUp class="w-4 h-4 text-emerald-400" />
-            24h Volume &amp; Liquidity Flow
+          <h2 class="text-base font-bold">
+            {{ t('volumeAndLiquidity') }}
           </h2>
-          <p class="text-xs">Hourly aggregated volume on Robinhood Chain</p>
+          <p class="text-xs text-zinc-500 dark:text-zinc-400">{{ t('hourlyAggregatedVolume') }}</p>
         </div>
         <div class="flex gap-2">
           <Badge variant="secondary">Robinhood L2</Badge>
@@ -74,7 +68,7 @@
 
     <!-- Contracts Table -->
     <Card class="p-6 space-y-4">
-      <h2 class="text-base font-bold">Deployed System Contracts (Robinhood Chain ID: 4663)</h2>
+      <h2 class="text-base font-bold text-black dark:text-white">{{ t('deployedContracts') }}</h2>
       <div class="space-y-3 font-mono text-xs">
         <div
           v-for="c in contractEntries"
@@ -93,28 +87,24 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { Activity, Coins, Rocket, Flame, TrendingUp } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { ROBINHOOD_CHAIN } from '@proto/shared-types';
 
 const { t } = useI18n();
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { SimpleChart } from '@/components/ui/chart';
-
 const totalVolume = ref(0);
 const totalTokens = ref(0);
 const totalBuyback = ref(0);
-const analyticsPlaceholder = ref(true);
 
 const chartData = ref([
-  { label: '00:00', value: 12400 },
-  { label: '04:00', value: 18200 },
-  { label: '08:00', value: 24500 },
-  { label: '12:00', value: 48200 },
-  { label: '16:00', value: 65100 },
-  { label: '20:00', value: 92400 },
-  { label: '24:00', value: 184520 },
+  { label: '00:00', value: 0 },
+  { label: '04:00', value: 0 },
+  { label: '08:00', value: 0 },
+  { label: '12:00', value: 0 },
+  { label: '16:00', value: 0 },
+  { label: '20:00', value: 0 },
+  { label: '24:00', value: 0 },
 ]);
 
 const contractEntries = [
@@ -137,7 +127,6 @@ onMounted(async () => {
       totalVolume.value = envelope.data.totalVolume;
       totalTokens.value = envelope.data.totalTokens;
       totalBuyback.value = envelope.data.totalBuyback;
-      analyticsPlaceholder.value = false;
     }
   } catch {
     // Fallback gracefully

@@ -14,7 +14,6 @@
         <!-- Brand Info -->
         <div class="space-y-3">
           <div class="flex items-center gap-2">
-            <Rocket class="w-5 h-5 text-emerald-400" />
             <span class="text-white font-bold tracking-tight text-lg">proto</span>
           </div>
           <p class="text-xs text-zinc-500 leading-relaxed">
@@ -160,14 +159,16 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter, RouterLink, RouterView } from 'vue-router';
+import { ExternalLink } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
-
-const { t } = useI18n();
+import Navbar from './components/Navbar.vue';
 import WalletModal from './components/WalletModal.vue';
 import SearchDialog from './components/SearchDialog.vue';
 import PrivacyDialog from './components/PrivacyDialog.vue';
 import CookieConsentBanner from './components/CookieConsentBanner.vue';
 import { walletAddress, walletModalOpen } from './lib/wallet-store';
+
+const { t } = useI18n();
 const router = useRouter();
 
 const PRIVACY_STORAGE_KEY = 'proto_privacy_policy_accepted_v1';

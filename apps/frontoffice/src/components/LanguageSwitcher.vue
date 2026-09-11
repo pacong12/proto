@@ -7,9 +7,7 @@
         class="h-8 px-2.5 text-xs font-semibold gap-1.5 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900"
         :title="`Current language: ${currentLocaleOption.name}`"
       >
-        <Globe class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
         <span class="font-mono uppercase">{{ currentLocaleOption.code }}</span>
-        <span class="text-xs">{{ currentLocaleOption.flag }}</span>
       </Button>
     </DropdownMenuTrigger>
 
@@ -34,10 +32,7 @@
         }"
         @click="setLocale(item.code)"
       >
-        <div class="flex items-center gap-2">
-          <span>{{ item.flag }}</span>
-          <span>{{ item.nativeName }}</span>
-        </div>
+        <span>{{ item.nativeName }}</span>
         <span class="text-[10px] font-mono text-zinc-400 uppercase">{{ item.code }}</span>
       </DropdownMenuItem>
     </DropdownMenuContent>
@@ -45,7 +40,6 @@
 </template>
 
 <script setup lang="ts">
-import { Globe } from 'lucide-vue-next';
 import { useI18n } from '../lib/i18n';
 import { Button } from '@/components/ui/button';
 import {
