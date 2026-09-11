@@ -3,7 +3,6 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
         <div class="flex items-center gap-2">
-          <TrendingUp class="w-6 h-6 text-emerald-400" />
           <h1 class="text-3xl font-bold tracking-tight">{{ t('memestock') }}</h1>
           <Badge variant="graduated" class="text-xs"> {{ t('trendingFeed') }} </Badge>
         </div>
@@ -16,18 +15,24 @@
         <!-- Shadcn Tabs for Filtering -->
         <Tabs v-model="selectedSort" class="flex-row">
           <TabsList>
-            <TabsTrigger
-              v-for="sort in ['Trending', 'Top Gainers', 'Highest Volume']"
-              :key="sort"
-              :value="sort"
-            >
-              {{ sort }}
+            <TabsTrigger value="Trending">
+              {{ t('trending') }}
+            </TabsTrigger>
+            <TabsTrigger value="Top Gainers">
+              {{ t('topGainers') }}
+            </TabsTrigger>
+            <TabsTrigger value="Highest Volume">
+              {{ t('highestVolume') }}
             </TabsTrigger>
           </TabsList>
         </Tabs>
-
-        <Button @click="$emit('selectTab', 'create')" variant="default" size="sm">
-          <Plus class="w-4 h-4 mr-1.5" />
+        <Button
+          @click="$emit('selectTab', 'create')"
+          variant="default"
+          size="sm"
+          class="h-8 gap-1.5 font-semibold text-xs bg-emerald-500 hover:bg-emerald-600 text-black shadow-sm"
+        >
+          <Plus class="w-4 h-4" />
           {{ t('create') }}
         </Button>
       </div>
@@ -36,7 +41,7 @@
     <!-- Loading State -->
     <div v-if="loading" class="flex items-center justify-center py-20">
       <Loader2 class="w-6 h-6 text-emerald-400 animate-spin" />
-      <span class="ml-3 text-sm">Loading the tape...</span>
+      <span class="ml-3 text-sm">{{ t('loadingTape') }}</span>
     </div>
 
     <!-- Error Banner -->
@@ -50,12 +55,18 @@
     <!-- Empty State using Shadcn Empty -->
     <Empty
       v-else-if="items.length === 0"
-      title="No community memes moving yet"
-      description="Be the first to launch a fixed-supply token with a dedicated community narrative on Robinhood Chain."
+      :title="t('noMemesTitle')"
+      :description="t('noMemesDesc')"
     >
       <template #action>
-        <Button @click="$emit('selectTab', 'create')" size="sm">
-          <Plus class="w-3.5 h-3.5 mr-1" /> Launch Now
+        <Button
+          @click="$emit('selectTab', 'create')"
+          variant="default"
+          size="default"
+          class="font-bold gap-2 bg-emerald-500 hover:bg-emerald-600 text-black shadow-md"
+        >
+          <Plus class="w-4 h-4" />
+          {{ t('launchNow') }}
         </Button>
       </template>
     </Empty>
@@ -88,7 +99,7 @@
               </div>
 
               <Badge v-if="item.marketData.isGraduated" variant="graduated" class="text-[10px]">
-                Graduated
+                {{ t('graduated') }}
               </Badge>
             </div>
 
@@ -142,10 +153,11 @@
 import { computed, onMounted, ref } from 'vue';
 import { TrendingUp, Plus, Loader2, AlertCircle } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
-
-const { t } = useI18n();
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+
+const { t } = useI18n();
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -173,7 +185,7 @@ const paginatedItems = computed(() => {
 
 onMounted(async () => {
   try {
-    const res = await fetch('http://localhost:3001/api/tokens');
+    const res = await fetch('/api/tokens');
     const envelope = await res.json();
     if (envelope.success && Array.isArray(envelope.data)) {
       items.value = envelope.data;

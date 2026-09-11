@@ -1,30 +1,135 @@
 <template>
-  <div class="space-y-6">
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-      <div>
-        <div class="flex items-center gap-2">
-          <Sparkles class="w-5 h-5 text-emerald-400" />
-          <h1 class="text-3xl font-bold tracking-tight text-black dark:text-white">
-            {{ t('exploreLaunches') }}
-          </h1>
+  <div class="space-y-6 max-w-7xl mx-auto">
+    <!-- 1. OKX-Style Quick Market Highlights Ticker Bar -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <!-- Hot / Trending -->
+      <div
+        class="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800/90 bg-white dark:bg-zinc-950/80 shadow-xs flex items-center justify-between cursor-pointer hover:border-emerald-500/40 transition"
+        @click="selectTabFilter('trending')"
+      >
+        <div class="space-y-0.5">
+          <span class="text-[11px] font-mono text-zinc-400">
+            {{ t('trendingTokens') }}
+          </span>
+          <p class="text-sm font-bold font-mono text-black dark:text-white">
+            {{ topTrendingSymbol }}
+          </p>
         </div>
-        <p class="text-zinc-500 dark:text-zinc-400 text-sm mt-1">
-          {{ t('exploreSubtitle') }}
-        </p>
+        <span class="text-xs font-mono font-bold text-emerald-500">{{ topTrendingChange }}</span>
       </div>
 
-      <div class="flex flex-wrap items-center gap-3">
-        <!-- Lifecycle Status Filter: All / On Curve / Near Completion / Graduated -->
+      <!-- New Launches -->
+      <div
+        class="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800/90 bg-white dark:bg-zinc-950/80 shadow-xs flex items-center justify-between cursor-pointer hover:border-emerald-500/40 transition"
+        @click="selectTabFilter('newest')"
+      >
+        <div class="space-y-0.5">
+          <span class="text-[11px] font-mono text-zinc-400">
+            {{ t('newLaunches') }}
+          </span>
+          <p class="text-sm font-bold font-mono text-black dark:text-white">
+            {{ totalTokensCount }} Tokens
+          </p>
+        </div>
+        <span class="text-xs font-mono text-zinc-400">Robinhood L2</span>
+      </div>
+
+      <!-- Top Gainers -->
+      <div
+        class="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800/90 bg-white dark:bg-zinc-950/80 shadow-xs flex items-center justify-between cursor-pointer hover:border-emerald-500/40 transition"
+        @click="selectTabFilter('gainers')"
+      >
+        <div class="space-y-0.5">
+          <span class="text-[11px] font-mono text-zinc-400">
+            {{ t('topGainers') }}
+          </span>
+          <p class="text-sm font-bold font-mono text-black dark:text-white">
+            {{ topGainerSymbol }}
+          </p>
+        </div>
+        <span class="text-xs font-mono font-bold text-emerald-500">{{ topGainerChange }}</span>
+      </div>
+
+      <!-- 24h Aggregated Volume -->
+      <div
+        class="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800/90 bg-white dark:bg-zinc-950/80 shadow-xs flex items-center justify-between"
+      >
+        <div class="space-y-0.5">
+          <span class="text-[11px] font-mono text-zinc-400">
+            {{ t('volume24hCol') }}
+          </span>
+          <p class="text-sm font-bold font-mono text-black dark:text-white">
+            ${{ totalVolume24hUsd.toLocaleString() }}
+          </p>
+        </div>
+        <span class="text-[10px] font-mono text-zinc-400">Uniswap V3/v4</span>
+      </div>
+    </div>
+
+    <!-- 2. OKX-Style Primary Market Navigation & Actions Header -->
+    <div
+      class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-zinc-200 dark:border-zinc-800"
+    >
+      <!-- Market Tabs Navigation -->
+      <div class="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar">
+        <button
+          type="button"
+          v-for="tab in marketTabs"
+          :key="tab.value"
+          @click="activeMarketTab = tab.value"
+          :class="[
+            'px-3.5 py-2 text-xs font-bold rounded-lg transition whitespace-nowrap cursor-pointer',
+            activeMarketTab === tab.value
+              ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
+              : 'text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white',
+          ]"
+        >
+          {{ tab.label }}
+        </button>
+      </div>
+
+      <!-- Right Action: Launch Token Primary Button -->
+      <div class="flex items-center gap-3 shrink-0">
+        <Button
+          @click="$emit('selectTab', 'create')"
+          variant="default"
+          size="sm"
+          class="h-9 px-4 gap-1.5 font-bold bg-emerald-500 hover:bg-emerald-600 text-black shadow-sm transition active:scale-95 cursor-pointer"
+        >
+          <Plus class="w-4 h-4 stroke-[3]" />
+          {{ t('create') }}
+        </Button>
+      </div>
+    </div>
+
+    <!-- 3. OKX-Style Filter & Search Control Bar -->
+    <div
+      class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-2 bg-zinc-50/90 dark:bg-zinc-950/60 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80"
+    >
+      <!-- Left Controls: Search Bar + Lifecycle Filter Buttons -->
+      <div class="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+        <!-- Live Search Input -->
+        <div class="relative w-full sm:w-64">
+          <Search class="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-2.5" />
+          <Input
+            v-model="searchQuery"
+            type="text"
+            :placeholder="t('searchTokenPlaceholder')"
+            class="h-8 pl-8 pr-3 text-xs bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 rounded-lg font-mono text-black dark:text-white focus-visible:ring-emerald-500"
+          />
+        </div>
+
+        <!-- Lifecycle Status Filter: All / Curve / Graduated -->
         <div
-          class="p-1 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg flex items-center text-xs"
+          class="inline-flex items-center p-0.5 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium"
         >
           <button
             type="button"
             @click="selectedLifecycle = 'all'"
             :class="[
-              'px-2.5 py-1 rounded font-medium transition',
+              'px-2.5 py-1 rounded text-xs transition cursor-pointer',
               selectedLifecycle === 'all'
-                ? 'bg-white dark:bg-zinc-800 text-black dark:text-white shadow-sm'
+                ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white font-bold shadow-xs'
                 : 'text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white',
             ]"
           >
@@ -34,165 +139,270 @@
             type="button"
             @click="selectedLifecycle = 'curve'"
             :class="[
-              'px-2.5 py-1 rounded font-medium transition flex items-center gap-1',
+              'px-2.5 py-1 rounded text-xs transition cursor-pointer',
               selectedLifecycle === 'curve'
-                ? 'bg-zinc-800 text-emerald-400'
-                : 'text-zinc-400 hover:text-white',
+                ? 'bg-zinc-100 dark:bg-zinc-800 text-emerald-500 font-bold shadow-xs'
+                : 'text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white',
             ]"
           >
-            <Flame class="w-3 h-3" />
             {{ t('onCurve') }}
-          </button>
-          <button
-            type="button"
-            @click="selectedLifecycle = 'near_completion'"
-            :class="[
-              'px-2.5 py-1 rounded font-medium transition flex items-center gap-1',
-              selectedLifecycle === 'near_completion'
-                ? 'bg-zinc-800 text-amber-400'
-                : 'text-zinc-400 hover:text-white',
-            ]"
-            title="Bonding curve progress >= 80%"
-          >
-            <TrendingUp class="w-3 h-3" />
-            &gt;80% Grad
           </button>
           <button
             type="button"
             @click="selectedLifecycle = 'graduated'"
             :class="[
-              'px-2.5 py-1 rounded font-medium transition flex items-center gap-1',
+              'px-2.5 py-1 rounded text-xs transition cursor-pointer',
               selectedLifecycle === 'graduated'
-                ? 'bg-zinc-800 text-indigo-400'
-                : 'text-zinc-400 hover:text-white',
+                ? 'bg-zinc-100 dark:bg-zinc-800 text-indigo-400 font-bold shadow-xs'
+                : 'text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white',
             ]"
           >
-            <CheckCircle class="w-3 h-3" />
             {{ t('graduated') }}
           </button>
         </div>
 
         <!-- Socials Only Filter Toggle -->
-        <button
+        <Button
           type="button"
+          size="sm"
+          :variant="filterHasSocials ? 'default' : 'outline'"
+          class="h-8 px-2.5 gap-1.5 text-xs font-medium rounded-lg border-zinc-200 dark:border-zinc-800 cursor-pointer"
           @click="filterHasSocials = !filterHasSocials"
-          :class="[
-            'px-2.5 py-1.5 rounded-lg border text-xs font-medium transition flex items-center gap-1.5',
-            filterHasSocials
-              ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-500 dark:text-emerald-400'
-              : 'bg-zinc-100 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white',
-          ]"
         >
-          <Share2 class="w-3.5 h-3.5" />
-          <span>Has Socials</span>
-        </button>
+          <Share2 class="w-3 h-3" />
+          <span>{{ t('hasSocials') }}</span>
+        </Button>
+      </div>
 
-        <!-- Architecture Version Tabs: All / v2 Curve / v1 Pool -->
+      <!-- Right Controls: View Mode Toggle (Table / Grid) + Sort Combobox -->
+      <div class="flex items-center gap-2 shrink-0">
+        <!-- View Mode Toggle: Table vs Grid -->
         <div
-          class="p-1 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg flex items-center text-xs"
+          class="inline-flex items-center p-0.5 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800"
         >
           <button
             type="button"
-            @click="selectedVersion = 'all'"
+            @click="viewMode = 'table'"
+            :title="t('tableMode')"
             :class="[
-              'px-2.5 py-1 rounded font-medium transition',
-              selectedVersion === 'all'
-                ? 'bg-white dark:bg-zinc-800 text-black dark:text-white shadow-sm'
-                : 'text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white',
+              'p-1.5 rounded transition cursor-pointer',
+              viewMode === 'table'
+                ? 'bg-zinc-100 dark:bg-zinc-800 text-emerald-500 shadow-xs'
+                : 'text-zinc-400 hover:text-black dark:hover:text-white',
             ]"
           >
-            All Tech
+            <List class="w-3.5 h-3.5" />
           </button>
           <button
             type="button"
-            @click="selectedVersion = 'v2'"
+            @click="viewMode = 'grid'"
+            :title="t('gridMode')"
             :class="[
-              'px-2.5 py-1 rounded font-medium transition flex items-center gap-1',
-              selectedVersion === 'v2'
-                ? 'bg-zinc-800 text-emerald-400'
-                : 'text-zinc-400 hover:text-white',
+              'p-1.5 rounded transition cursor-pointer',
+              viewMode === 'grid'
+                ? 'bg-zinc-100 dark:bg-zinc-800 text-emerald-500 shadow-xs'
+                : 'text-zinc-400 hover:text-black dark:hover:text-white',
             ]"
           >
-            <Rocket class="w-3 h-3" />
-            v2
-          </button>
-          <button
-            type="button"
-            @click="selectedVersion = 'v1'"
-            :class="[
-              'px-2.5 py-1 rounded font-medium transition flex items-center gap-1',
-              selectedVersion === 'v1'
-                ? 'bg-zinc-800 text-white'
-                : 'text-zinc-400 hover:text-white',
-            ]"
-          >
-            <Lock class="w-3 h-3" />
-            v1
+            <LayoutGrid class="w-3.5 h-3.5" />
           </button>
         </div>
 
-        <!-- Shadcn Combobox for sorting -->
+        <!-- Sorting Combobox -->
         <Combobox
           v-model="activeSort"
           :options="sortOptions"
-          class="w-40"
-          placeholder="Sort tokens"
+          class="w-36 sm:w-44"
+          :placeholder="t('sortTokens')"
         />
-
-        <Button @click="$emit('selectTab', 'create')" variant="default" size="sm">
-          <Plus class="w-4 h-4 mr-1.5" />
-          {{ t('createToken') }}
-        </Button>
       </div>
     </div>
 
-    <!-- Loading State -->
-    <div v-if="loading" class="flex items-center justify-center py-20">
-      <Loader2 class="w-6 h-6 text-emerald-400 animate-spin" />
-      <span class="ml-3 text-sm text-zinc-400">Loading tokens...</span>
+    <!-- 4. Loading State -->
+    <div v-if="loading" class="flex flex-col items-center justify-center py-20 space-y-3">
+      <Loader2 class="w-7 h-7 text-emerald-500 animate-spin" />
+      <span class="text-xs font-medium text-zinc-500 dark:text-zinc-400 font-mono">{{
+        t('loadingTokens')
+      }}</span>
     </div>
 
-    <!-- API Error State -->
+    <!-- 5. API Error State -->
     <div
       v-else-if="apiError"
-      class="flex items-start gap-3 bg-amber-950/40 border border-amber-800 rounded-xl p-4 text-sm text-amber-300"
+      class="flex items-start gap-3 bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-xs text-amber-600 dark:text-amber-400"
     >
-      <AlertCircle class="w-5 h-5 shrink-0 mt-0.5" />
-      <span>Unable to load tokens from the API. Please check that the backend is running.</span>
+      <AlertCircle class="w-4 h-4 shrink-0 mt-0.5" />
+      <span>{{ apiError }}</span>
     </div>
 
-    <!-- Shadcn Empty Component -->
+    <!-- 6. Empty State -->
     <Empty
       v-else-if="filteredTokens.length === 0"
-      title="No tokens found"
-      :description="
-        selectedVersion !== 'all'
-          ? `No ${selectedVersion.toUpperCase()} tokens launched yet. Be the first to launch one!`
-          : 'Be the first creator to deploy a fixed-supply token on Robinhood Chain.'
-      "
+      :title="t('noTokensFound')"
+      :description="t('noTokensDesc')"
+      class="border border-zinc-200 dark:border-zinc-800 rounded-2xl p-10 bg-white dark:bg-zinc-950"
     >
       <template #action>
-        <Button @click="$emit('selectTab', 'create')" size="sm">
-          <Plus class="w-3.5 h-3.5 mr-1" /> Launch Token
+        <Button
+          @click="$emit('selectTab', 'create')"
+          size="default"
+          class="gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-black font-bold shadow-md rounded-xl cursor-pointer"
+        >
+          <Plus class="w-4 h-4 stroke-[3]" />
+          {{ t('createToken') }}
         </Button>
       </template>
     </Empty>
 
-    <!-- Token Grid -->
+    <!-- 7A. OKX-Style Professional Table View Mode -->
+    <div
+      v-else-if="viewMode === 'table'"
+      class="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 overflow-hidden shadow-xs"
+    >
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs font-mono">
+          <thead>
+            <tr
+              class="border-b border-zinc-200 dark:border-zinc-800/90 text-zinc-400 uppercase tracking-wider text-[11px] bg-zinc-50/70 dark:bg-zinc-900/40"
+            >
+              <th class="py-3 px-4 font-semibold">{{ t('tokenCol') }}</th>
+              <th class="py-3 px-4 font-semibold text-right">{{ t('lastPriceCol') }}</th>
+              <th class="py-3 px-4 font-semibold text-right">{{ t('change24hCol') }}</th>
+              <th class="py-3 px-4 font-semibold text-right">{{ t('volume24hCol') }}</th>
+              <th class="py-3 px-4 font-semibold text-right">{{ t('marketCapCol') }}</th>
+              <th class="py-3 px-4 font-semibold text-center w-48">{{ t('progressCol') }}</th>
+              <th class="py-3 px-4 font-semibold text-right">{{ t('actionCol') }}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-zinc-100 dark:divide-zinc-900">
+            <tr
+              v-for="item in paginatedTokens"
+              :key="item.token.address"
+              class="hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors cursor-pointer group"
+              @click="$emit('selectToken', item.token.address)"
+            >
+              <!-- Token Name, Symbol, & Version Badge -->
+              <td class="py-3 px-4">
+                <div class="flex items-center gap-3">
+                  <Avatar
+                    class="w-8 h-8 rounded-lg border border-zinc-200 dark:border-zinc-800 shrink-0"
+                  >
+                    <img
+                      v-if="item.token.logo && item.token.logo.startsWith('http')"
+                      :src="item.token.logo"
+                      :alt="item.token.name"
+                      class="w-full h-full object-cover"
+                    />
+                    <AvatarFallback
+                      class="bg-zinc-100 dark:bg-zinc-800 text-emerald-500 font-bold text-xs rounded-lg"
+                    >
+                      {{ item.token.symbol.slice(0, 3) }}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div class="truncate">
+                    <div class="flex items-center gap-1.5">
+                      <span
+                        class="font-bold text-black dark:text-white group-hover:text-emerald-500 transition"
+                      >
+                        {{ item.token.name }}
+                      </span>
+                      <Badge
+                        :variant="item.token.version === 'v2' ? 'outline' : 'secondary'"
+                        class="text-[9px] px-1 py-0 h-3.5 uppercase font-mono"
+                      >
+                        {{ item.token.version === 'v2' ? 'v2' : 'v1' }}
+                      </Badge>
+                    </div>
+                    <span class="text-[11px] text-zinc-400 font-mono"
+                      >${{ item.token.symbol }}</span
+                    >
+                  </div>
+                </div>
+              </td>
+
+              <!-- Last Price -->
+              <td class="py-3 px-4 text-right font-bold text-black dark:text-white">
+                ${{ item.marketData.priceUsd.toFixed(8) }}
+              </td>
+
+              <!-- 24h Change -->
+              <td class="py-3 px-4 text-right font-bold text-emerald-500 dark:text-emerald-400">
+                {{ (item.marketData.priceChange24h ?? 0) >= 0 ? '+' : ''
+                }}{{ (item.marketData.priceChange24h ?? 0).toFixed(2) }}%
+              </td>
+
+              <!-- 24h Volume -->
+              <td class="py-3 px-4 text-right text-zinc-600 dark:text-zinc-300">
+                ${{ (item.marketData.volume24hUsd || 0).toLocaleString() }}
+              </td>
+
+              <!-- Market Cap -->
+              <td class="py-3 px-4 text-right text-zinc-600 dark:text-zinc-300 font-semibold">
+                ${{ item.marketData.marketCapUsd.toLocaleString() }}
+              </td>
+
+              <!-- Graduation / Bonding Progress -->
+              <td class="py-3 px-4">
+                <div class="space-y-1 max-w-[160px] mx-auto">
+                  <div class="flex justify-between text-[10px]">
+                    <span class="text-zinc-400">
+                      {{ item.marketData.isGraduated ? 'DEX Pool' : 'Curve' }}
+                    </span>
+                    <span class="font-bold text-emerald-500 dark:text-emerald-400">
+                      {{ (item.marketData.graduationProgress * 100).toFixed(1) }}%
+                    </span>
+                  </div>
+                  <Progress
+                    :model-value="item.marketData.graduationProgress * 100"
+                    class="h-1.5 rounded-full"
+                  />
+                </div>
+              </td>
+
+              <!-- Action Trade Button -->
+              <td class="py-3 px-4 text-right">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  class="h-7 px-3 text-xs font-semibold rounded-lg border-zinc-200 dark:border-zinc-800 group-hover:border-emerald-500 group-hover:text-emerald-500 transition cursor-pointer"
+                  @click.stop="$emit('selectToken', item.token.address)"
+                >
+                  {{ t('tradeNow') }}
+                </Button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination in Table Footer -->
+      <div
+        v-if="filteredTokens.length > pageSize"
+        class="flex justify-center p-3 border-t border-zinc-200 dark:border-zinc-800"
+      >
+        <Pagination
+          :current-page="currentPage"
+          :total-items="filteredTokens.length"
+          :page-size="pageSize"
+          @update:current-page="currentPage = $event"
+        />
+      </div>
+    </div>
+
+    <!-- 7B. OKX-Style Card Grid View Mode -->
     <div v-else class="space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card
           v-for="item in paginatedTokens"
           :key="item.token.address"
-          class="group hover:border-zinc-700 hover:-translate-y-0.5 transition-all flex flex-col justify-between p-5 cursor-pointer"
+          class="group hover:border-emerald-500/50 transition-all p-4 cursor-pointer rounded-xl bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 flex flex-col justify-between"
           @click="$emit('selectToken', item.token.address)"
         >
-          <div>
+          <div class="space-y-3">
             <div class="flex items-start justify-between gap-3">
-              <div class="flex items-center gap-3 flex-1 min-w-0">
-                <!-- Avatar with Jazzicon or Symbol -->
+              <div class="flex items-center gap-2.5 min-w-0">
                 <Avatar
-                  class="w-12 h-12 rounded-xl border border-zinc-700 group-hover:border-emerald-500/50 transition overflow-hidden"
+                  class="w-9 h-9 rounded-lg border border-zinc-200 dark:border-zinc-800 shrink-0"
                 >
                   <img
                     v-if="item.token.logo && item.token.logo.startsWith('http')"
@@ -201,86 +411,70 @@
                     class="w-full h-full object-cover"
                   />
                   <AvatarFallback
-                    v-else
-                    class="bg-zinc-800 text-emerald-400 font-bold text-base rounded-xl"
+                    class="bg-zinc-100 dark:bg-zinc-800 text-emerald-500 font-bold text-xs rounded-lg"
                   >
                     {{ item.token.symbol.slice(0, 3) }}
                   </AvatarFallback>
                 </Avatar>
-
                 <div class="truncate">
-                  <div class="flex items-center gap-1.5">
-                    <h2
-                      class="font-bold text-black dark:text-white text-base truncate group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition"
-                    >
-                      {{ item.token.name }}
-                    </h2>
-                  </div>
-                  <div class="flex items-center gap-2 mt-0.5">
-                    <span class="text-xs font-mono text-zinc-400">${{ item.token.symbol }}</span>
-                    <Badge
-                      :variant="item.token.version === 'v2' ? 'outline' : 'secondary'"
-                      class="text-[9px] px-1.5 py-0 h-4 font-mono uppercase"
-                    >
-                      {{ item.token.version === 'v2' ? 'v2 Curve' : 'v1 Direct' }}
+                  <h3
+                    class="font-bold text-sm text-black dark:text-white group-hover:text-emerald-500 transition truncate"
+                  >
+                    {{ item.token.name }}
+                  </h3>
+                  <div class="flex items-center gap-1.5 font-mono text-[11px] text-zinc-400">
+                    <span>${{ item.token.symbol }}</span>
+                    <Badge variant="outline" class="text-[9px] px-1 py-0 h-3.5 uppercase">
+                      {{ item.token.version === 'v2' ? 'v2' : 'v1' }}
                     </Badge>
                   </div>
                 </div>
               </div>
 
-              <Badge
-                v-if="item.marketData.isGraduated"
-                variant="graduated"
-                class="gap-1 text-[11px] shrink-0"
-              >
-                <CheckCircle class="w-3 h-3" />
-                Graduated
-              </Badge>
+              <span class="text-xs font-mono font-bold text-emerald-500">
+                {{ (item.marketData.priceChange24h ?? 0) >= 0 ? '+' : ''
+                }}{{ (item.marketData.priceChange24h ?? 0).toFixed(2) }}%
+              </span>
             </div>
 
-            <p class="text-xs text-zinc-400 mt-3 line-clamp-2 leading-relaxed">
-              {{ item.token.description || 'Fixed-supply token on Robinhood Chain.' }}
-            </p>
-          </div>
-
-          <!-- Price & Graduation Progress Section -->
-          <div class="mt-4 pt-4 border-t border-zinc-800/80 space-y-3">
-            <div class="flex justify-between items-end">
+            <!-- Price & Cap -->
+            <div
+              class="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-900 font-mono text-xs"
+            >
               <div>
-                <p class="text-[11px] text-zinc-400 flex items-center gap-1">
-                  <Coins class="w-3 h-3 text-zinc-400" />
-                  Price (USD)
-                </p>
-                <p class="text-sm font-bold font-mono text-black dark:text-white mt-0.5">
-                  ${{ item.marketData.priceUsd.toFixed(8) }}
-                </p>
+                <span class="text-[10px] text-zinc-400 block">{{ t('lastPriceCol') }}</span>
+                <span class="font-bold text-black dark:text-white"
+                  >${{ item.marketData.priceUsd.toFixed(8) }}</span
+                >
               </div>
               <div class="text-right">
-                <p class="text-[11px] text-zinc-400">Market Cap</p>
-                <p class="text-sm font-bold font-mono text-emerald-400 mt-0.5">
-                  ${{ item.marketData.marketCapUsd.toLocaleString() }}
-                </p>
+                <span class="text-[10px] text-zinc-400 block">{{ t('marketCapCol') }}</span>
+                <span class="font-semibold text-zinc-600 dark:text-zinc-300"
+                  >${{ item.marketData.marketCapUsd.toLocaleString() }}</span
+                >
               </div>
             </div>
 
-            <!-- Graduation Progress Bar -->
-            <div class="space-y-1.5">
-              <div class="flex justify-between text-[11px]">
-                <span class="text-zinc-400 flex items-center gap-1">
-                  <Flame class="w-3 h-3 text-emerald-400" />
-                  Progress
-                </span>
-                <span class="font-mono text-zinc-300 font-medium">
-                  {{ (item.marketData.graduationProgress * 100).toFixed(1) }}%
-                </span>
+            <!-- Progress -->
+            <div class="space-y-1">
+              <div class="flex justify-between text-[10px] font-mono">
+                <span class="text-zinc-400">{{
+                  item.marketData.isGraduated ? 'Graduated' : 'Curve'
+                }}</span>
+                <span class="font-bold text-emerald-500"
+                  >{{ (item.marketData.graduationProgress * 100).toFixed(1) }}%</span
+                >
               </div>
-              <Progress :model-value="item.marketData.graduationProgress * 100" class="h-1.5" />
+              <Progress
+                :model-value="item.marketData.graduationProgress * 100"
+                class="h-1.5 rounded-full"
+              />
             </div>
           </div>
         </Card>
       </div>
 
-      <!-- Pagination -->
+      <!-- Pagination in Grid View -->
       <div v-if="filteredTokens.length > pageSize" class="flex justify-center pt-4">
         <Pagination
           :current-page="currentPage"
@@ -296,17 +490,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import {
-  Sparkles,
   Plus,
-  CheckCircle,
-  Coins,
-  Flame,
   Loader2,
   AlertCircle,
-  Rocket,
-  Lock,
   TrendingUp,
   Share2,
+  Search,
+  List,
+  LayoutGrid,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -315,6 +506,7 @@ import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Combobox } from '@/components/ui/combobox';
 import { Empty } from '@/components/ui/empty';
+import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
 import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
 import { useI18n } from '@/lib/i18n';
@@ -326,60 +518,131 @@ defineEmits<{
   (e: 'selectTab', tab: string): void;
 }>();
 
-const selectedLifecycle = ref<'all' | 'curve' | 'near_completion' | 'graduated'>('all');
+// View Mode: Professional OKX Table vs Card Grid
+const viewMode = ref<'table' | 'grid'>('table');
+
+// Active Market Category Tab (OKX-Style: All Markets / Trending / New Launches / Top Gainers)
+const activeMarketTab = ref<'all' | 'trending' | 'newest' | 'gainers' | 'graduated'>('all');
+
+const marketTabs = computed(() => [
+  { label: t('allMarkets'), value: 'all' as const },
+  { label: t('trendingTokens'), value: 'trending' as const },
+  { label: t('newLaunches'), value: 'newest' as const },
+  { label: t('topGainers'), value: 'gainers' as const },
+  { label: t('graduatedDEX'), value: 'graduated' as const },
+]);
+
+function selectTabFilter(tab: 'trending' | 'newest' | 'gainers') {
+  activeMarketTab.value = tab;
+}
+
+// Filter States
+const searchQuery = ref('');
+const selectedLifecycle = ref<'all' | 'curve' | 'graduated'>('all');
 const filterHasSocials = ref(false);
-const selectedVersion = ref<'all' | 'v1' | 'v2'>('all');
 const activeSort = ref('recent');
+
 const loading = ref(true);
 const apiError = ref<string | null>(null);
 const allTokens = ref<Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }>>([]);
 const currentPage = ref(1);
-const pageSize = 6;
+const pageSize = 10; // 10 rows per page like standard exchange tables
 
-const sortOptions = [
-  { label: 'Recent Buys', value: 'recent' },
-  { label: 'Newest', value: 'newest' },
-  { label: 'Market Cap', value: 'mcap' },
-  { label: 'Volume (24h)', value: 'volume' },
-  { label: 'Graduation', value: 'graduation' },
-];
+// Sorting options
+const sortOptions = computed(() => [
+  { label: t('recentBuys'), value: 'recent' },
+  { label: t('newest'), value: 'newest' },
+  { label: t('marketCap'), value: 'mcap' },
+  { label: t('volume24h'), value: 'volume' },
+  { label: t('graduation'), value: 'graduation' },
+]);
 
+const totalTokensCount = computed(() => allTokens.value.length);
+const topTrendingSymbol = computed(() => {
+  if (allTokens.value.length === 0) return '—';
+  return allTokens.value[0]?.token.symbol || '—';
+});
+const topTrendingChange = computed(() => {
+  if (allTokens.value.length === 0) return '0.00%';
+  const chg = allTokens.value[0]?.marketData?.priceChange24h ?? 0;
+  return `${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%`;
+});
+const topGainerSymbol = computed(() => {
+  if (allTokens.value.length === 0) return '—';
+  const sorted = [...allTokens.value].sort(
+    (a, b) => (b.marketData.priceChange24h ?? 0) - (a.marketData.priceChange24h ?? 0),
+  );
+  return sorted[0]?.token.symbol || '—';
+});
+const topGainerChange = computed(() => {
+  if (allTokens.value.length === 0) return '0.00%';
+  const sorted = [...allTokens.value].sort(
+    (a, b) => (b.marketData.priceChange24h ?? 0) - (a.marketData.priceChange24h ?? 0),
+  );
+  const chg = sorted[0]?.marketData?.priceChange24h ?? 0;
+  return `${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%`;
+});
+const totalVolume24hUsd = computed(() => {
+  return allTokens.value.reduce((acc, curr) => acc + (curr.marketData.volume24hUsd || 0), 0);
+});
+// Master Filter Pipeline
 const filteredTokens = computed(() => {
   let list = allTokens.value;
 
-  // Filter by Lifecycle Status (On Curve vs Near Completion vs Graduated)
+  // 1. Filter Search Query
+  const q = searchQuery.value.trim().toLowerCase();
+  if (q) {
+    list = list.filter(
+      (item) =>
+        item.token.name.toLowerCase().includes(q) ||
+        item.token.symbol.toLowerCase().includes(q) ||
+        item.token.address.toLowerCase().includes(q),
+    );
+  }
+
+  // 2. Filter Primary Market Category Tab (OKX Tabs)
+  if (activeMarketTab.value === 'trending') {
+    list = list.filter(
+      (item) =>
+        (item.marketData.volume24hUsd || 0) > 5000 || item.marketData.graduationProgress > 0.5,
+    );
+  } else if (activeMarketTab.value === 'newest') {
+    const sortedNew = [...list].sort((a, b) => b.token.createdAt - a.token.createdAt);
+    list = sortedNew;
+  } else if (activeMarketTab.value === 'gainers') {
+    list = [...list].sort(
+      (a, b) => b.marketData.graduationProgress - a.marketData.graduationProgress,
+    );
+  } else if (activeMarketTab.value === 'graduated') {
+    list = list.filter((item) => item.marketData.isGraduated);
+  }
+
+  // 3. Filter Lifecycle Status Toggle
   if (selectedLifecycle.value === 'curve') {
     list = list.filter((item) => !item.marketData.isGraduated);
-  } else if (selectedLifecycle.value === 'near_completion') {
-    list = list.filter(
-      (item) => !item.marketData.isGraduated && item.marketData.graduationProgress >= 0.8,
-    );
   } else if (selectedLifecycle.value === 'graduated') {
     list = list.filter((item) => item.marketData.isGraduated);
   }
 
-  // Filter by Has Socials
+  // 4. Filter Socials Only
   if (filterHasSocials.value) {
     list = list.filter((item) => {
       const soc = item.token.socials;
       return !!(soc && (soc.twitter || soc.telegram || soc.website));
     });
   }
-  // Filter by Architecture Version (v1 vs v2)
-  if (selectedVersion.value !== 'all') {
-    list = list.filter((item) => (item.token.version ?? 'v1') === selectedVersion.value);
-  }
+
+  // 5. Active Sort Dropdown
   const sorted = [...list];
   if (activeSort.value === 'newest') {
     sorted.sort((a, b) => b.token.createdAt - a.token.createdAt);
   } else if (activeSort.value === 'mcap') {
     sorted.sort((a, b) => b.marketData.marketCapUsd - a.marketData.marketCapUsd);
   } else if (activeSort.value === 'volume') {
-    sorted.sort((a, b) => b.marketData.volume24hUsd - a.marketData.volume24hUsd);
+    sorted.sort((a, b) => (b.marketData.volume24hUsd || 0) - (a.marketData.volume24hUsd || 0));
   } else if (activeSort.value === 'graduation') {
     sorted.sort((a, b) => b.marketData.graduationProgress - a.marketData.graduationProgress);
   } else {
-    // Recent buys / default
     sorted.sort((a, b) => Number(b.token.launchBlock) - Number(a.token.launchBlock));
   }
 

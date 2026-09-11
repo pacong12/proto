@@ -1,15 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useColorMode } from '@vueuse/core';
-import { Sun, Moon, Monitor } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 const { t } = useI18n();
 
@@ -23,35 +16,21 @@ const mode = useColorMode({
 });
 
 const isDark = computed(() => mode.value === 'dark');
+
+function toggleTheme() {
+  mode.value = isDark.value ? 'light' : 'dark';
+}
 </script>
 
 <template>
-  <DropdownMenu>
-    <DropdownMenuTrigger as-child>
-      <Button
-        variant="outline"
-        size="sm"
-        class="h-8 w-8 p-0 text-zinc-400 hover:text-zinc-200"
-        title="Toggle color theme (Light / Dark / System)"
-      >
-        <Moon v-if="isDark" class="h-4 w-4 text-emerald-400 transition-all" />
-        <Sun v-else class="h-4 w-4 text-amber-500 transition-all" />
-        <span class="sr-only">Toggle theme</span>
-      </Button>
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="end" class="w-32 bg-zinc-950 border border-zinc-800">
-      <DropdownMenuItem @click="mode = 'light'" class="cursor-pointer">
-        <Sun class="mr-2 h-3.5 w-3.5 text-amber-500" />
-        <span>{{ t('light') }}</span>
-      </DropdownMenuItem>
-      <DropdownMenuItem @click="mode = 'dark'" class="cursor-pointer">
-        <Moon class="mr-2 h-3.5 w-3.5 text-emerald-400" />
-        <span>{{ t('dark') }}</span>
-      </DropdownMenuItem>
-      <DropdownMenuItem @click="mode = 'auto'" class="cursor-pointer">
-        <Monitor class="mr-2 h-3.5 w-3.5 text-zinc-400" />
-        <span>{{ t('system') }}</span>
-      </DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>
+  <Button
+    variant="outline"
+    size="sm"
+    class="h-8 px-2.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:text-black dark:hover:text-white transition-all cursor-pointer"
+    :title="isDark ? t('light') : t('dark')"
+    @click="toggleTheme"
+  >
+    <span class="font-mono">{{ isDark ? 'Light' : 'Dark' }}</span>
+    <span class="sr-only">Toggle theme</span>
+  </Button>
 </template>

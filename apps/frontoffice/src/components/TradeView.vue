@@ -24,9 +24,8 @@
                 <span class="font-mono text-sm text-zinc-500"> ${{ currentToken.symbol }} </span>
                 <Badge
                   :variant="currentToken.version === 'v2' ? 'outline' : 'default'"
-                  class="text-[10px] font-mono flex items-center gap-1"
+                  class="text-[10px] font-mono"
                 >
-                  <Layers class="w-3 h-3" />
                   {{ currentToken.version === 'v2' ? 'V2 Curve' : 'V1 Direct Pool' }}
                 </Badge>
                 <Badge
@@ -55,7 +54,6 @@
                   class="h-6 px-2 text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-md hover:bg-emerald-500/20 transition inline-flex items-center gap-1"
                   title="Snipe & Copy Trade on GMGN Telegram Bot"
                 >
-                  <Send class="w-2.5 h-2.5" />
                   GMGN Bot
                 </a>
                 <a
@@ -65,7 +63,6 @@
                   class="h-6 px-2 text-[10px] font-mono font-semibold bg-zinc-800/80 text-zinc-300 border border-zinc-700/80 rounded-md hover:text-white hover:bg-zinc-700 transition inline-flex items-center gap-1"
                   title="View on DexScreener"
                 >
-                  <BarChart2 class="w-2.5 h-2.5 text-emerald-400" />
                   DexScreener
                 </a>
                 <a
@@ -75,7 +72,6 @@
                   class="h-6 px-2 text-[10px] font-mono font-semibold bg-zinc-800/80 text-zinc-300 border border-zinc-700/80 rounded-md hover:text-white hover:bg-zinc-700 transition inline-flex items-center gap-1"
                   title="View on GeckoTerminal"
                 >
-                  <Globe class="w-2.5 h-2.5 text-amber-400" />
                   GeckoTerminal
                 </a>
                 <button
@@ -84,7 +80,6 @@
                   class="h-6 px-2 text-[10px] font-mono font-semibold bg-zinc-800/80 text-zinc-300 border border-zinc-700/80 rounded-md hover:text-white hover:bg-zinc-700 transition inline-flex items-center gap-1"
                   title="Copy Trade URL"
                 >
-                  <Share2 class="w-2.5 h-2.5" />
                   {{ copiedTradeLink ? 'Copied!' : 'Copy Trade' }}
                 </button>
               </div>
@@ -150,10 +145,6 @@
                   class="h-7 text-xs font-mono text-black dark:text-white flex items-center gap-1"
                   @click="fetchTrades(currentToken.address)"
                 >
-                  <RefreshCw
-                    class="w-3 h-3 text-emerald-400"
-                    :class="{ 'animate-spin': tradesLoading }"
-                  />
                   <span>Refresh</span>
                 </Button>
               </div>
@@ -571,7 +562,6 @@
                       size="sm"
                       class="h-7 px-2 text-[11px] font-mono flex items-center gap-1 text-black dark:text-white border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     >
-                      <BarChart2 class="w-3 h-3 text-emerald-400" />
                       <span>DexScreener</span>
                     </Button>
                   </a>
@@ -586,7 +576,6 @@
                       size="sm"
                       class="h-7 px-2 text-[11px] font-mono flex items-center gap-1 text-black dark:text-white border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     >
-                      <Globe class="w-3 h-3 text-emerald-400" />
                       <span>GeckoTerminal</span>
                     </Button>
                   </a>
@@ -616,7 +605,6 @@
                       size="sm"
                       class="h-7 px-2 text-[11px] font-mono flex items-center gap-1 text-black dark:text-white border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     >
-                      <Layers class="w-3 h-3 text-emerald-400" />
                       <span>Pool</span>
                     </Button>
                   </a>
@@ -632,10 +620,7 @@
                 class="grid grid-cols-3 gap-4 pt-4 border-t border-zinc-200 dark:border-zinc-800"
               >
                 <div>
-                  <p class="text-xs flex items-center gap-1 text-black dark:text-white font-medium">
-                    <TrendingUp class="w-3 h-3 text-emerald-400" />
-                    Price (USD)
-                  </p>
+                  <p class="text-xs text-black dark:text-white font-medium">Price (USD)</p>
                   <p
                     class="text-sm sm:text-base font-bold font-mono mt-0.5 text-black dark:text-white"
                   >
@@ -643,10 +628,7 @@
                   </p>
                 </div>
                 <div>
-                  <p class="text-xs flex items-center gap-1 text-black dark:text-white font-medium">
-                    <Coins class="w-3 h-3" />
-                    Market Cap
-                  </p>
+                  <p class="text-xs text-black dark:text-white font-medium">Market Cap</p>
                   <p
                     class="text-sm sm:text-base font-bold font-mono mt-0.5 text-black dark:text-white"
                   >
@@ -654,10 +636,7 @@
                   </p>
                 </div>
                 <div>
-                  <p class="text-xs flex items-center gap-1 text-black dark:text-white font-medium">
-                    <Activity class="w-3 h-3" />
-                    24h Volume
-                  </p>
+                  <p class="text-xs text-black dark:text-white font-medium">24h Volume</p>
                   <p
                     class="text-sm sm:text-base font-bold font-mono mt-0.5 text-black dark:text-white"
                   >
@@ -669,8 +648,7 @@
               <!-- Graduation Progress Bar with Shadcn Progress -->
               <div class="pt-4 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
                 <div class="flex justify-between text-xs text-black dark:text-white">
-                  <span class="flex items-center gap-1 font-medium">
-                    <Flame class="w-3.5 h-3.5 text-emerald-400" />
+                  <span class="font-medium">
                     Graduation Progress ({{ currentMarketData.pairedPrincipalWeth }} /
                     {{ currentMarketData.graduationThresholdWeth }} ETH)
                   </span>
@@ -925,10 +903,6 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { parseAbi } from 'viem';
 import { useI18n } from '@/lib/i18n';
 import {
-  TrendingUp,
-  Coins,
-  Activity,
-  Flame,
   ArrowUpDown,
   Copy,
   Check,
@@ -936,12 +910,6 @@ import {
   Loader2,
   Settings,
   ExternalLink,
-  BarChart2,
-  Globe,
-  Layers,
-  RefreshCw,
-  Send,
-  Share2,
 } from 'lucide-vue-next';
 import { useSwap } from '../composables/useSwap';
 import { useWallet } from '../composables/useWallet';
@@ -1245,7 +1213,7 @@ async function fetchUserTokenBalance() {
 async function fetchTrades(address: string) {
   tradesLoading.value = true;
   try {
-    const res = await fetch(`http://localhost:3001/api/tokens/${address}/trades?limit=50`);
+    const res = await fetch(`/api/tokens/${address}/trades?limit=50`);
     const envelope = await res.json();
     if (envelope.success && Array.isArray(envelope.data) && envelope.data.length > 0) {
       trades.value = envelope.data;
@@ -1295,7 +1263,7 @@ function generateMockTrades(tokenAddr: string): LiveTrade[] {
 async function fetchHolders(address: string) {
   holdersLoading.value = true;
   try {
-    const res = await fetch(`http://localhost:3001/api/tokens/${address}/holders?limit=50`);
+    const res = await fetch(`/api/tokens/${address}/holders?limit=50`);
     const envelope = await res.json();
     if (envelope.success && Array.isArray(envelope.data) && envelope.data.length > 0) {
       holders.value = envelope.data;
@@ -1464,9 +1432,7 @@ function generateMockCandlesticks(basePrice: number, resolutionSeconds = 60, cou
 
 async function fetchCandlesticks(address: string, resolutionSeconds = 60) {
   try {
-    const res = await fetch(
-      `http://localhost:3001/api/tokens/${address}/candlesticks?resolution=${resolutionSeconds}`,
-    );
+    const res = await fetch(`/api/tokens/${address}/candlesticks?resolution=${resolutionSeconds}`);
     const envelope = await res.json();
     if (envelope.success && Array.isArray(envelope.data) && envelope.data.length > 0) {
       candlestickData.value = envelope.data.map((c: any) => ({
@@ -1501,6 +1467,9 @@ async function handleSwap() {
     isBuy: isBuy.value,
     amountInEth: amountIn.value,
     slippagePercent: slippage.value,
+    version: currentToken.value.version,
+    curveAddress: currentToken.value.curveAddress,
+    isGraduated: currentMarketData.value.isGraduated,
   });
 
   if (hash) {

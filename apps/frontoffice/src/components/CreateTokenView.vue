@@ -6,11 +6,7 @@
         <h1 class="text-3xl font-bold tracking-tight">{{ t('launchToken') }}</h1>
       </div>
       <p class="text-sm mt-1 text-zinc-500 dark:text-zinc-400">
-        {{
-          selectedVersion === 'v2'
-            ? 'Launch a token on a bonding curve that graduates into locked liquidity.'
-            : 'Deploy a fixed-supply token into permanently locked Uniswap V3 liquidity on Robinhood Chain.'
-        }}
+        {{ selectedVersion === 'v2' ? t('v2Subtitle') : t('v1Subtitle') }}
       </p>
     </div>
 
@@ -29,7 +25,7 @@
           ]"
         >
           <Rocket class="w-3.5 h-3.5 text-emerald-500" />
-          <span>v2 (Bonding Curve)</span>
+          <span>{{ t('v2BondingCurveTab') }}</span>
         </button>
         <button
           type="button"
@@ -42,7 +38,7 @@
           ]"
         >
           <Lock class="w-3.5 h-3.5 text-zinc-400" />
-          <span>v1 (Direct Pool)</span>
+          <span>{{ t('v1DirectPoolTab') }}</span>
         </button>
       </div>
 
@@ -54,7 +50,7 @@
             id="token-name"
             v-model="form.name"
             type="text"
-            :placeholder="t('tokenName')"
+            :placeholder="t('namePlaceholder')"
             maxlength="60"
             required
           />
@@ -67,7 +63,7 @@
             id="token-symbol"
             v-model="form.symbol"
             type="text"
-            :placeholder="t('ticker')"
+            :placeholder="t('symbolPlaceholder')"
             maxlength="10"
             required
             class="font-mono uppercase"
@@ -80,14 +76,14 @@
           <Textarea
             id="token-description"
             v-model="form.description"
-            :placeholder="t('description')"
+            :placeholder="t('descriptionPlaceholder')"
             :rows="3"
           />
         </div>
 
         <!-- Token image -->
         <div class="space-y-1.5">
-          <Label>Token image</Label>
+          <Label>{{ t('tokenImage') }}</Label>
           <div
             @dragover.prevent="dragOver = true"
             @dragleave.prevent="dragOver = false"
@@ -125,7 +121,7 @@
             <div class="flex-1 min-w-0 space-y-1">
               <div class="flex items-center gap-2">
                 <span class="text-xs font-semibold text-black dark:text-white">
-                  {{ selectedFileName || 'No file chosen' }}
+                  {{ selectedFileName || t('noFileChosen') }}
                 </span>
                 <Badge
                   v-if="isUploadingIpfs"
@@ -133,18 +129,18 @@
                   class="text-[10px] bg-amber-500/10 text-amber-500 border-amber-500/30 flex items-center gap-1"
                 >
                   <Loader2 class="w-3 h-3 animate-spin" />
-                  Pinning to IPFS...
+                  {{ t('pinningIpfs') }}
                 </Badge>
                 <Badge
                   v-else-if="form.logo"
                   variant="outline"
                   class="text-[10px] bg-emerald-500/10 text-emerald-500 border-emerald-500/30"
                 >
-                  IPFS Ready
+                  {{ t('ipfsReady') }}
                 </Badge>
               </div>
               <p class="text-[11px] leading-normal text-zinc-500 dark:text-zinc-400">
-                Choose image (PNG, JPG, WEBP, GIF max 5MB).
+                {{ t('chooseImage') }}
               </p>
             </div>
 
@@ -156,7 +152,7 @@
               class="h-7 text-xs text-rose-500 hover:text-rose-600 dark:text-rose-400"
               @click.stop="clearImage"
             >
-              Remove
+              {{ t('remove') }}
             </Button>
           </div>
         </div>
@@ -164,17 +160,17 @@
         <!-- X profile -->
         <div class="space-y-1.5">
           <Label for="token-x">X profile</Label>
-          <div
-            class="flex items-center rounded-md border border-zinc-200 dark:border-zinc-800 bg-transparent px-3 py-1 shadow-sm focus-within:ring-1 focus-within:ring-zinc-950 dark:focus-within:ring-zinc-300"
-          >
-            <span class="text-xs text-zinc-400 select-none font-mono">x.com/</span>
-            <input
+          <div class="relative">
+            <span class="absolute left-3 top-2 text-xs text-zinc-400 select-none font-mono"
+              >x.com/</span
+            >
+            <Input
               id="token-x"
               v-model="form.twitter"
               type="text"
-              placeholder="handle"
+              :placeholder="t('handlePlaceholder')"
               maxlength="15"
-              class="flex h-7 w-full bg-transparent px-1 text-xs outline-none placeholder:text-zinc-400"
+              class="pl-16 font-mono text-xs"
             />
           </div>
         </div>
@@ -182,24 +178,24 @@
         <!-- Telegram -->
         <div class="space-y-1.5">
           <Label for="token-tg">Telegram</Label>
-          <div
-            class="flex items-center rounded-md border border-zinc-200 dark:border-zinc-800 bg-transparent px-3 py-1 shadow-sm focus-within:ring-1 focus-within:ring-zinc-950 dark:focus-within:ring-zinc-300"
-          >
-            <span class="text-xs text-zinc-400 select-none font-mono">t.me/</span>
-            <input
+          <div class="relative">
+            <span class="absolute left-3 top-2 text-xs text-zinc-400 select-none font-mono"
+              >t.me/</span
+            >
+            <Input
               id="token-tg"
               v-model="form.telegram"
               type="text"
-              placeholder="community"
+              :placeholder="t('communityPlaceholder')"
               maxlength="32"
-              class="flex h-7 w-full bg-transparent px-1 text-xs outline-none placeholder:text-zinc-400"
+              class="pl-14 font-mono text-xs"
             />
           </div>
         </div>
 
         <!-- Paired asset -->
         <div class="space-y-1.5">
-          <Label>Paired asset</Label>
+          <Label>{{ t('pairedAsset') }}</Label>
           <div
             class="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900"
           >
@@ -214,11 +210,7 @@
             <span class="text-xs text-zinc-500">Robinhood Chain (Native)</span>
           </div>
           <p class="text-[11px] text-zinc-500 dark:text-zinc-400">
-            {{
-              selectedVersion === 'v2'
-                ? 'Graduates once the curve raises 4.2 ETH.'
-                : 'Pairs directly into permanently locked Uniswap V3 liquidity pool.'
-            }}
+            {{ selectedVersion === 'v2' ? t('v2GraduatesHint') : t('v1PairsHint') }}
           </p>
         </div>
 
@@ -226,9 +218,9 @@
         <div class="space-y-1.5">
           <div class="flex justify-between items-center">
             <Label for="developer-buy">{{ t('developerBuy') }}</Label>
-            <span class="text-[11px] text-zinc-500 font-mono"
-              >0 available, bought in the launch transaction</span
-            >
+            <span class="text-[11px] text-zinc-500 font-mono">
+              {{ t('boughtInLaunchNotice') }}
+            </span>
           </div>
           <div class="relative">
             <Input
@@ -255,7 +247,7 @@
           >
             <span class="flex items-center gap-2">
               <SlidersHorizontal class="w-3.5 h-3.5 text-zinc-400" />
-              Advanced
+              {{ t('advanced') }}
             </span>
             <ChevronDown
               class="w-3.5 h-3.5 transition-transform duration-200 opacity-60"
@@ -270,22 +262,8 @@
             <!-- Holder fee sharing -->
             <div class="space-y-1 pt-1">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-medium">Holder fee sharing</span>
-                <button
-                  type="button"
-                  @click="holderFeeSharing = !holderFeeSharing"
-                  :class="[
-                    'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
-                    holderFeeSharing ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-700',
-                  ]"
-                >
-                  <span
-                    :class="[
-                      'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out',
-                      holderFeeSharing ? 'translate-x-4' : 'translate-x-0',
-                    ]"
-                  />
-                </button>
+                <span class="text-xs font-medium">{{ t('holderFeeSharing') }}</span>
+                <Switch v-model:checked="holderFeeSharing" />
               </div>
               <p class="text-[11px] text-zinc-500">
                 {{
@@ -295,29 +273,30 @@
                 }}
               </p>
               <p class="text-[10px] text-zinc-400">
-                Route this launch's creator fees to its holders, split pro-rata for each holder to
-                claim from their profile menu.
+                {{ t('creatorFeeSharingDesc') }}
               </p>
             </div>
 
             <!-- Creator wallet -->
             <div class="space-y-1">
-              <Label for="creator-wallet" class="text-xs font-medium">Creator wallet</Label>
+              <Label for="creator-wallet" class="text-xs font-medium">{{
+                t('creatorWallet')
+              }}</Label>
               <Input
                 id="creator-wallet"
                 v-model="form.creatorWallet"
                 type="text"
-                placeholder="0xB9F7…0Db9 (Leave blank to use your connected wallet)"
+                :placeholder="t('addressPlaceholder')"
                 class="font-mono text-xs"
               />
               <p class="text-[10px] text-zinc-400">
-                Receives creator fees and the creator tax. Leave blank to use your connected wallet.
+                {{ t('creatorWalletDesc') }}
               </p>
             </div>
 
             <!-- Creator tax -->
             <div class="space-y-1">
-              <Label for="creator-tax" class="text-xs font-medium">Creator tax</Label>
+              <Label for="creator-tax" class="text-xs font-medium">{{ t('creatorTax') }}</Label>
               <div class="relative">
                 <Input
                   id="creator-tax"
@@ -343,7 +322,7 @@
 
             <!-- Snipe tax exemptions -->
             <div class="space-y-1">
-              <Label for="snipe-tax" class="text-xs font-medium">Snipe tax exemptions</Label>
+              <Label for="snipe-tax" class="text-xs font-medium">{{ t('snipeExemptions') }}</Label>
               <Input
                 id="snipe-tax"
                 v-model="snipeExemptionWallet"
@@ -362,7 +341,7 @@
         <!-- Form Footer Rate & Submit Button -->
         <div class="pt-4 border-t border-zinc-200 dark:border-zinc-800 space-y-3">
           <div class="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
-            <span>ETH pair, ETH 0.0005 due</span>
+            <span>{{ t('ethPairDue') }}</span>
             <span class="font-mono">—</span>
           </div>
 
@@ -375,14 +354,12 @@
             <Loader2 v-if="loading || isUploadingIpfs" class="w-4 h-4 mr-2 animate-spin" />
             {{
               isUploadingIpfs
-                ? 'Uploading Image to IPFS...'
+                ? t('pinningIpfs')
                 : loading
-                  ? 'Launching Token...'
+                  ? t('launchTokenBtn') + '...'
                   : !isConnected
-                    ? 'Connect wallet'
-                    : selectedVersion === 'v2'
-                      ? 'Launch token (v2 Bonding Curve)'
-                      : 'Launch token (v1 Direct Pool)'
+                    ? t('connectWallet')
+                    : t('launchTokenBtn')
             }}
           </Button>
 
@@ -418,6 +395,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { useI18n } from '@/lib/i18n';
 
 const { t } = useI18n();
