@@ -1,0 +1,9 @@
+{
+  "packages": {
+    ".": {
+      "release-type": "node",
+      "package-name": "@proto/source",
+      "changelog-path": "CHANGELOG.md"
+    }
+  }
+}

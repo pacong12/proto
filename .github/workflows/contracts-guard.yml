@@ -1,0 +1,58 @@
+name: Smart Contracts Guard
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'contracts/**'
+      - '.github/workflows/contracts-guard.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'contracts/**'
+      - '.github/workflows/contracts-guard.yml'
+
+jobs:
+  contract-invariants:
+    name: Bytecode Size, Gas Snapshot & Invariant Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Setup Foundry dependencies
+        run: |
+          mkdir -p contracts/lib
+          git clone --depth 1 https://github.com/foundry-rs/forge-std.git contracts/lib/forge-std
+
+      - name: Verify Contract Bytecode Sizes (EIP-170 24KB Limit)
+        run: |
+          cd contracts
+          forge build --sizes --json | node -e '
+            const fs = require("fs");
+            const data = JSON.parse(fs.readFileSync(0, "utf-8"));
+            let failed = false;
+            for (const [name, stats] of Object.entries(data)) {
+              if (stats.runtime_size > 24576) {
+                console.error("FAIL: " + name + " runtime size " + stats.runtime_size + "B exceeds 24576B limit");
+                failed = true;
+              }
+            }
+            if (failed) process.exit(1);
+            console.log("PASS: All " + Object.keys(data).length + " contracts are within 24KB EIP-170 limit.");
+          '
+
+      - name: Run Foundry Full Unit & Invariant Tests
+        run: |
+          cd contracts
+          forge test -vvv
+
+      - name: Gas Snapshot Regression Check
+        run: |
+          cd contracts
+          forge snapshot --diff
