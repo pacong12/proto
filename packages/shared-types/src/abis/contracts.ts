@@ -53,3 +53,7 @@ export const uniswapV3PoolAbi = parseAbi([
   'function fee() view returns (uint24)',
   'event Swap(address indexed sender, address indexed recipient, int256 amount0, int256 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick)',
 ]);
+
+export const swapRouterAbi = parseAbi([
+  'function exactInputSingle((address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 deadline, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96) params) payable returns (uint256 amountOut)',
+]);
