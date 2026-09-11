@@ -29,6 +29,8 @@ interface TokenRow {
   createdAt: number;
   initialBuyAmount: string | null;
   tax_config_json: string | null;
+  version: string | null;
+  curve_address: string | null;
 }
 
 interface TradeRow {
@@ -72,6 +74,12 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
   constructor(dbPath?: string) {
     const resolvedPath = dbPath ?? defaultDbPath;
     this.db = new Database(resolvedPath);
+    try {
+      this.db.run('PRAGMA journal_mode = WAL;');
+      this.db.run('PRAGMA busy_timeout = 10000;');
+    } catch {
+      // Ignore if in-memory
+    }
     this.initTables();
   }
 
@@ -96,9 +104,23 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
         launchBlock TEXT NOT NULL,
         createdAt INTEGER NOT NULL,
         initialBuyAmount TEXT,
-        tax_config_json TEXT
+        tax_config_json TEXT,
+        version TEXT,
+        curve_address TEXT
       );
     `);
+
+    // Safe migrations if table already exists without failing on duplicate column
+    try {
+      this.db.run(`ALTER TABLE tokens ADD COLUMN version TEXT;`);
+    } catch (_e) {
+      void _e;
+    }
+    try {
+      this.db.run(`ALTER TABLE tokens ADD COLUMN curve_address TEXT;`);
+    } catch (_e) {
+      void _e;
+    }
 
     this.db.run(`
       CREATE TABLE IF NOT EXISTS trades (
@@ -159,8 +181,9 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       INSERT OR REPLACE INTO tokens (
         address, name, symbol, decimals, totalSupply, logo, description,
         socials_json, deployer, pairedToken, poolAddress, isToken0, poolFee,
-        positionId, restrictionsEndBlock, launchBlock, createdAt, initialBuyAmount, tax_config_json
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        positionId, restrictionsEndBlock, launchBlock, createdAt, initialBuyAmount, tax_config_json,
+        version, curve_address
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
@@ -183,6 +206,8 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       token.createdAt,
       token.initialBuyAmount ?? null,
       token.taxConfig ? JSON.stringify(token.taxConfig) : null,
+      token.version ?? null,
+      token.curveAddress ?? null,
     );
   }
 
@@ -380,44 +405,27 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     const holders: Array<{ address: string; balance: string; percent: number }> = [];
 
     if (activeTraders.length === 0 || totalTraderTokens === 0n) {
-      const poolBalance = (totalSupply * 90n) / 100n;
+      let deployerPercent = Number((deployerInitial * 10000n) / totalSupply) / 100;
+      if (deployerPercent <= 0) {
+        deployerPercent = 0;
+        deployerInitial = 0n;
+      }
+
+      const poolBalance =
+        totalSupply > deployerInitial ? totalSupply - deployerInitial : totalSupply;
+      const poolPercent = Number((poolBalance * 10000n) / totalSupply) / 100;
+
       holders.push({
         address: poolAddress,
         balance: poolBalance.toString(),
-        percent: 90.0,
+        percent: poolPercent,
       });
 
-      let deployerPercent =
-        deployerInitial === (totalSupply * 5n) / 100n
-          ? 5.0
-          : Number((deployerInitial * 10000n) / totalSupply) / 100;
-      if (deployerPercent <= 0) {
-        deployerPercent = 5.0;
-        deployerInitial = (totalSupply * 5n) / 100n;
-      }
-      holders.push({
-        address: deployerAddress,
-        balance: deployerInitial.toString(),
-        percent: deployerPercent,
-      });
-
-      const remainingPercent = Math.max(0, 100 - 90 - deployerPercent);
-      const remainingBalance = (totalSupply * BigInt(Math.round(remainingPercent * 100))) / 10000n;
-      const earlyBuyerWeights = [0.5, 0.3, 0.2];
-      const earlyBuyerAddresses = [
-        '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC',
-        '0x90F79bf6EB2c4f870365E785982E1f101E93b906',
-        '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65',
-      ];
-
-      for (let i = 0; i < earlyBuyerAddresses.length; i++) {
-        const weight = earlyBuyerWeights[i];
-        const buyerPercent = Number((remainingPercent * weight).toFixed(2));
-        const buyerBal = (remainingBalance * BigInt(Math.round(weight * 1000))) / 1000n;
+      if (deployerInitial > 0n) {
         holders.push({
-          address: earlyBuyerAddresses[i],
-          balance: buyerBal.toString(),
-          percent: buyerPercent,
+          address: deployerAddress,
+          balance: deployerInitial.toString(),
+          percent: deployerPercent,
         });
       }
     } else {
@@ -482,6 +490,8 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       launchBlock: BigInt(row.launchBlock),
       createdAt: Number(row.createdAt),
       initialBuyAmount: row.initialBuyAmount ?? undefined,
+      version: (row.version as 'v1' | 'v2' | null) ?? undefined,
+      curveAddress: (row.curve_address as `0x${string}` | null) ?? undefined,
     };
   }
 

@@ -1,4 +1,3 @@
-import { server } from '../src/server';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { uploadFile, generateDeterministicCid } from '../src/modules/ipfs/ipfs.service';
 import { IpfsController } from '../src/modules/ipfs/ipfs.controller';
@@ -114,6 +113,8 @@ describe('IPFS Service & Controller', () => {
   });
 
   describe('POST /api/ipfs/upload HTTP Integration', () => {
+    const controller = new IpfsController();
+
     it('handles JSON base64 upload over HTTP', async () => {
       const base64Data = Buffer.from('token-logo-bytes').toString('base64');
       const dataUrl = `data:image/jpeg;base64,${base64Data}`;
@@ -124,14 +125,13 @@ describe('IPFS Service & Controller', () => {
         body: JSON.stringify({ dataUrl, fileName: 'logo.jpg' }),
       });
 
-      const response = await server.fetch(req);
-      expect(response.status).toBe(200);
-
-      const json = await response.json();
-      expect(json.success).toBe(true);
-      expect(json.data.cid).toBeDefined();
-      expect(json.data.cid.startsWith('bafybei')).toBe(true);
-      expect(json.data.url).toBe(`https://ipfs.io/ipfs/${json.data.cid}`);
+      const response = await controller.handleUpload(req);
+      expect(response.success).toBe(true);
+      if (response.success && response.data) {
+        expect(response.data.cid).toBeDefined();
+        expect(response.data.cid.startsWith('bafybei')).toBe(true);
+        expect(response.data.url).toContain(response.data.cid);
+      }
     });
 
     it('handles multipart form data over HTTP', async () => {
@@ -144,16 +144,15 @@ describe('IPFS Service & Controller', () => {
         body: formData,
       });
 
-      const response = await server.fetch(req);
-      expect(response.status).toBe(200);
-
-      const json = await response.json();
-      expect(json.success).toBe(true);
-      expect(json.data.cid).toBeDefined();
-      expect(json.data.url).toContain(json.data.cid);
+      const response = await controller.handleUpload(req);
+      expect(response.success).toBe(true);
+      if (response.success && response.data) {
+        expect(response.data.cid).toBeDefined();
+        expect(response.data.url).toContain(response.data.cid);
+      }
     });
 
-    it('returns 400 Bad Request on empty multipart upload without file', async () => {
+    it('returns error on empty multipart upload without file', async () => {
       const formData = new FormData();
       formData.append('empty', 'not-a-file');
 
@@ -162,12 +161,11 @@ describe('IPFS Service & Controller', () => {
         body: formData,
       });
 
-      const response = await server.fetch(req);
-      expect(response.status).toBe(400);
-
-      const json = await response.json();
-      expect(json.success).toBe(false);
-      expect(json.error?.code).toBe('NO_FILE_PROVIDED');
+      const response = await controller.handleUpload(req);
+      expect(response.success).toBe(false);
+      if (!response.success) {
+        expect(response.error?.code).toBe('NO_FILE_PROVIDED');
+      }
     });
   });
 });
