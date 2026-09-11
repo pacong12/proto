@@ -1,0 +1,11 @@
+name = "proto"
+main = "worker.ts"
+compatibility_date = "2026-09-11"
+
+[build]
+command = "bun run --filter @proto/frontoffice build"
+
+[assets]
+directory = "apps/frontoffice/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
