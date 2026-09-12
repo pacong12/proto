@@ -150,6 +150,11 @@ contract BondingCurve {
         totalEthRaised += netEth;
         totalVolumeEth += msg.value;
 
+        bool shouldGraduate = totalEthRaised >= graduationTarget;
+        if (shouldGraduate) {
+            graduated = true;
+        }
+
         // Send platform fee
         (bool feeOk, ) = feeRecipient.call{value: fee}("");
         if (!feeOk) revert TransferFailed();
@@ -159,7 +164,7 @@ contract BondingCurve {
 
         emit Trade(msg.sender, true, msg.value, tokensOut, fee);
 
-        if (totalEthRaised >= graduationTarget) {
+        if (shouldGraduate) {
             _executeGraduationV4();
         }
     }
