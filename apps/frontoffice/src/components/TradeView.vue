@@ -1025,15 +1025,15 @@ const currentToken = ref<LaunchedTokenEntity>({
 
 const currentMarketData = ref<TokenMarketData>({
   address: currentToken.value.address,
-  priceInWeth: 0.0000000042,
-  priceUsd: 0.0000126,
-  marketCapUsd: 12600,
-  fdvUsd: 12600,
-  pairedPrincipalWeth: '4.2000',
+  priceInWeth: 0,
+  priceUsd: 0,
+  marketCapUsd: 0,
+  fdvUsd: 0,
+  pairedPrincipalWeth: '0.0000',
   graduationThresholdWeth: '4.2',
-  graduationProgress: 1.0,
-  isGraduated: true,
-  volume24hUsd: 48200,
+  graduationProgress: 0,
+  isGraduated: false,
+  volume24hUsd: 0,
 });
 
 const topTraders = ref<
@@ -1215,48 +1215,16 @@ async function fetchTrades(address: string) {
   try {
     const res = await fetch(`/api/tokens/${address}/trades?limit=50`);
     const envelope = await res.json();
-    if (envelope.success && Array.isArray(envelope.data) && envelope.data.length > 0) {
+    if (envelope.success && Array.isArray(envelope.data)) {
       trades.value = envelope.data;
-      return;
+    } else {
+      trades.value = [];
     }
   } catch {
-    // Non-blocking fallback to realistic mock trades
+    trades.value = [];
   } finally {
     tradesLoading.value = false;
   }
-
-  // Fallback realistic mock trades if API endpoint empty or offline
-  if (trades.value.length === 0) {
-    trades.value = generateMockTrades(address);
-  }
-}
-
-function generateMockTrades(tokenAddr: string): LiveTrade[] {
-  const now = Date.now();
-  const mockTrades: LiveTrade[] = [];
-  const basePrice = currentMarketData.value.priceUsd;
-
-  for (let i = 0; i < 15; i++) {
-    const isBuy = Math.random() > 0.4;
-    const ethAmount = (Math.random() * 0.45 + 0.02).toFixed(4);
-    const tokenAmount = (parseFloat(ethAmount) / currentMarketData.value.priceInWeth).toFixed(2);
-    const priceVariance = (Math.random() - 0.5) * 0.05 * basePrice;
-
-    mockTrades.push({
-      id: `mock-trade-${i}`,
-      tokenAddress: tokenAddr,
-      poolAddress: currentToken.value.poolAddress,
-      trader: `0x${Array.from({ length: 40 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`,
-      isBuy,
-      tokenAmount,
-      wethAmount: ethAmount,
-      priceUsd: basePrice + priceVariance,
-      blockNumber: (1000000 - i * 4).toString(),
-      transactionHash: `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`,
-      timestamp: now - i * (60000 + Math.floor(Math.random() * 90000)),
-    });
-  }
-  return mockTrades;
 }
 
 // P3: Fetch Top Token Holders
@@ -1265,60 +1233,15 @@ async function fetchHolders(address: string) {
   try {
     const res = await fetch(`/api/tokens/${address}/holders?limit=50`);
     const envelope = await res.json();
-    if (envelope.success && Array.isArray(envelope.data) && envelope.data.length > 0) {
+    if (envelope.success && Array.isArray(envelope.data)) {
       holders.value = envelope.data;
-      return;
+    } else {
+      holders.value = [];
     }
   } catch {
-    // Fallback mock holders
+    holders.value = [];
   } finally {
     holdersLoading.value = false;
-  }
-
-  // Fallback realistic holders
-  if (holders.value.length === 0) {
-    holders.value = [
-      {
-        address: ROBINHOOD_CHAIN.contracts.locker,
-        balance: '750000000',
-        percent: 75.0,
-      },
-      {
-        address: currentToken.value.deployer,
-        balance: '80000000',
-        percent: 8.0,
-      },
-      {
-        address: currentToken.value.poolAddress,
-        balance: '50000000',
-        percent: 5.0,
-      },
-      {
-        address: '0x32782A4D6208F35C1580Ffa56C71a0C58315Ab50',
-        balance: '35000000',
-        percent: 3.5,
-      },
-      {
-        address: '0x62804b2c8A161E793836B3624f114Af88318Ac56',
-        balance: '25000000',
-        percent: 2.5,
-      },
-      {
-        address: '0x99A8c8310E341a0F88318855F28F1283626C1683',
-        balance: '15000000',
-        percent: 1.5,
-      },
-      {
-        address: '0xaB1088481A40f937B15781a719cE1681944598cA',
-        balance: '12000000',
-        percent: 1.2,
-      },
-      {
-        address: '0xC499F537C9247Ac028B4786737C826F80cbb0299',
-        balance: '8000000',
-        percent: 0.8,
-      },
-    ];
   }
 }
 
@@ -1327,46 +1250,15 @@ async function fetchTopTraders(address: string) {
   try {
     const res = await fetch(`/api/tokens/${address}/top-traders?limit=20`);
     const envelope = await res.json();
-    if (envelope.success && Array.isArray(envelope.data) && envelope.data.length > 0) {
+    if (envelope.success && Array.isArray(envelope.data)) {
       topTraders.value = envelope.data;
-      return;
+    } else {
+      topTraders.value = [];
     }
   } catch {
-    // Fallback
+    topTraders.value = [];
   } finally {
     topTradersLoading.value = false;
-  }
-
-  if (topTraders.value.length === 0) {
-    topTraders.value = [
-      {
-        address: currentToken.value.deployer,
-        buyVolumeUsd: 1250,
-        sellVolumeUsd: 0,
-        totalTrades: 1,
-        profitUsd: 0,
-        isDev: true,
-        walletTag: 'dev',
-      },
-      {
-        address: '0x32782A4D6208F35C1580Ffa56C71a0C58315Ab50',
-        buyVolumeUsd: 3400,
-        sellVolumeUsd: 4600,
-        totalTrades: 6,
-        profitUsd: 1200,
-        isDev: false,
-        walletTag: 'smart_degen',
-      },
-      {
-        address: '0x62804b2c8A161E793836B3624f114Af88318Ac56',
-        buyVolumeUsd: 2100,
-        sellVolumeUsd: 1800,
-        totalTrades: 4,
-        profitUsd: -300,
-        isDev: false,
-        walletTag: 'active',
-      },
-    ];
   }
 }
 
@@ -1382,77 +1274,34 @@ async function fetchDevActivity(address: string) {
   }
 }
 
-function generateMockCandlesticks(basePrice: number, resolutionSeconds = 60, count = 40) {
-  const targetPrice = basePrice > 0 ? basePrice : 0.0000126;
-  const now = Math.floor(Date.now() / 1000);
-  const nowAligned = Math.floor(now / resolutionSeconds) * resolutionSeconds;
-
-  const rawSteps: Array<{
-    open: number;
-    high: number;
-    low: number;
-    close: number;
-    volume: number;
-  }> = [];
-  let current = targetPrice * 0.92;
-
-  for (let i = 0; i < count; i++) {
-    const volatility = current * 0.025;
-    const change = (Math.random() - 0.47) * volatility;
-    const open = current;
-    const close = Math.max(open + change, current * 0.01);
-    const high = Math.max(open, close) + Math.random() * volatility * 0.7;
-    const low = Math.max(Math.min(open, close) - Math.random() * volatility * 0.7, current * 0.005);
-    const volume = Math.floor(Math.random() * 5000 + 500);
-
-    rawSteps.push({ open, high, low, close, volume });
-    current = close;
-  }
-
-  const lastClose = rawSteps[rawSteps.length - 1]?.close || targetPrice;
-  const scale = targetPrice / lastClose;
-
-  return rawSteps.map((step, idx) => {
-    const time = nowAligned - (count - 1 - idx) * resolutionSeconds;
-    const open = step.open * scale;
-    const close = step.close * scale;
-    const high = Math.max(step.high * scale, open, close);
-    const low = Math.min(step.low * scale, open, close);
-
-    return {
-      time,
-      open,
-      high,
-      low,
-      close,
-      volume: step.volume,
-    };
-  });
-}
-
 async function fetchCandlesticks(address: string, resolutionSeconds = 60) {
   try {
-    const res = await fetch(`/api/tokens/${address}/candlesticks?resolution=${resolutionSeconds}`);
+    const res = await fetch(`/api/tokens/${address}/ohlcv?resolution=${resolutionSeconds}`);
     const envelope = await res.json();
     if (envelope.success && Array.isArray(envelope.data) && envelope.data.length > 0) {
-      candlestickData.value = envelope.data.map((c: any) => ({
-        time: Math.floor(c.timestamp / 1000),
-        open: c.open,
-        high: c.high,
-        low: c.low,
-        close: c.close,
-        volume: c.volume ?? 0,
-      }));
+      candlestickData.value = envelope.data.map(
+        (c: {
+          timestamp: number;
+          open: number;
+          high: number;
+          low: number;
+          close: number;
+          volume?: number;
+        }) => ({
+          time: Math.floor(c.timestamp / 1000),
+          open: c.open,
+          high: c.high,
+          low: c.low,
+          close: c.close,
+          volume: c.volume ?? 0,
+        }),
+      );
       return;
     }
+    candlestickData.value = [];
   } catch {
-    // Non-blocking fallback
+    candlestickData.value = [];
   }
-
-  candlestickData.value = generateMockCandlesticks(
-    currentMarketData.value.priceUsd,
-    resolutionSeconds,
-  );
 }
 
 async function changeResolution(seconds: number) {

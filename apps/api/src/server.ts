@@ -10,6 +10,7 @@ import {
   EventPollerService,
   IpfsService,
   IpfsController,
+  CoinGeckoPriceFeedAdapter,
   logger,
   HttpRequestTracker,
   DevopsController,
@@ -38,6 +39,7 @@ const PORT = parseInt(
 
 const repository = new SqliteTokenRepository();
 const chainIndexer = new ViemChainIndexerAdapter();
+const priceFeed = new CoinGeckoPriceFeedAdapter();
 const calculatePricing = new CalculatePricingUseCase();
 const getTokensUseCase = new GetTokensUseCase(repository);
 const getTokenByAddressUseCase = new GetTokenByAddressUseCase(
@@ -308,7 +310,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         totalVolumeEth += parseFloat(tr.wethAmount || '0');
       }
     }
-    const ethPriceUsd = 2500; // Reference price for Robinhood Chain L2 ETH
+    const ethPriceUsd = await priceFeed.getEthPriceUsd();
     const totalVolumeUsd = Math.round(totalVolumeEth * ethPriceUsd);
     const totalBuybackEth = (totalVolumeEth * 0.01 * 0.3 * 0.8).toFixed(3); // 80% of 30% protocol fee
 
@@ -316,10 +318,11 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       safeStringify({
         success: true,
         data: {
-          totalVolume: totalVolumeUsd > 0 ? totalVolumeUsd : 184520,
-          totalTokens: totalTokens > 0 ? totalTokens : 12,
-          totalBuyback: parseFloat(totalBuybackEth) > 0 ? totalBuybackEth : '3.45',
+          totalVolume: totalVolumeUsd,
+          totalTokens: totalTokens,
+          totalBuyback: totalBuybackEth,
           totalVolumeEth: totalVolumeEth.toFixed(4),
+          ethPriceUsd,
         },
         timestamp: Date.now(),
       }),
