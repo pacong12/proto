@@ -7,6 +7,7 @@
         class="h-8 px-2.5 text-xs font-semibold gap-1.5 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900"
         :title="`Current language: ${currentLocaleOption.name}`"
       >
+        <span class="text-sm leading-none">{{ currentLocaleOption.flag }}</span>
         <span class="font-mono uppercase">{{ currentLocaleOption.code }}</span>
       </Button>
     </DropdownMenuTrigger>
@@ -32,7 +33,10 @@
         }"
         @click="setLocale(item.code)"
       >
-        <span>{{ item.nativeName }}</span>
+        <div class="flex items-center gap-2">
+          <span class="text-sm leading-none">{{ item.flag }}</span>
+          <span>{{ item.nativeName }}</span>
+        </div>
         <span class="text-[10px] font-mono text-zinc-400 uppercase">{{ item.code }}</span>
       </DropdownMenuItem>
     </DropdownMenuContent>
