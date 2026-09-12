@@ -58,6 +58,11 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
       - name: Install Slither
         run: pip install slither-analyzer solc-select && solc-select install 0.8.24 && solc-select use 0.8.24
 
@@ -69,4 +74,10 @@ jobs:
       - name: Run Slither Analysis
         run: |
           cd contracts
-          slither . --solc-remaps "forge-std/=lib/forge-std/src/" --filter-paths "lib/|test/|Mocks.sol" || true
+          slither . --solc-remaps "forge-std/=lib/forge-std/src/" --filter-paths "lib/|test/|Mocks.sol" --exclude-informational --exclude-low --sarif slither.sarif || true
+
+      - name: Upload Slither SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: contracts/slither.sarif
