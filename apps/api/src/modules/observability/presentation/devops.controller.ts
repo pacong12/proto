@@ -246,7 +246,18 @@ export class DevopsController {
 
     async function pollTelemetry() {
       try {
-        const res = await fetch('/api/devops/telemetry');
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('token') || '';
+        const targetUrl = token ? '/api/devops/telemetry?token=' + encodeURIComponent(token) : '/api/devops/telemetry';
+        const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+        const res = await fetch(targetUrl, { headers });
+        if (res.status === 401) {
+          document.getElementById('live-indicator').textContent = 'UNAUTHORIZED';
+          document.getElementById('live-indicator').style.color = 'var(--red)';
+          document.getElementById('live-indicator').style.borderColor = 'rgba(239, 68, 68, 0.4)';
+          document.getElementById('last-updated').textContent = 'Access Denied: Missing or invalid token';
+          return;
+        }
         const json = await res.json();
         if (!json.success || !json.data) return;
         const d = json.data;

@@ -120,7 +120,70 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     );
   }
 
-  // DevOps Observability Dashboard & Telemetry Endpoints
+  // DevOps Observability Dashboard & Telemetry Endpoints (Gated by DEVOPS_AUTH_TOKEN)
+  const devopsToken = process.env.DEVOPS_AUTH_TOKEN;
+  const isDevopsPath =
+    url.pathname === '/devops' ||
+    url.pathname === '/api/devops/telemetry' ||
+    url.pathname === '/api/devops/metrics';
+
+  if (isDevopsPath && devopsToken) {
+    const authHeader = req.headers.get('authorization') || '';
+    const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+    const queryToken = url.searchParams.get('token') || '';
+
+    if (bearerToken !== devopsToken && queryToken !== devopsToken) {
+      if (url.pathname === '/devops') {
+        return new Response(
+          `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>401 Unauthorized · DevOps Gateway</title>
+  <style>
+    body { background: #121212; color: #ececec; font-family: ui-monospace, Menlo, monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    .card { background: #1a1a1a; border: 1px solid #292929; border-radius: 12px; padding: 24px; max-width: 420px; text-align: center; }
+    h1 { font-size: 18px; color: #ef4444; margin-bottom: 8px; }
+    p { font-size: 13px; color: #888; line-height: 1.5; margin-bottom: 16px; }
+    input { width: 100%; box-sizing: border-box; background: #121212; border: 1px solid #333; color: #fff; padding: 8px 12px; border-radius: 6px; font-family: inherit; font-size: 13px; margin-bottom: 12px; }
+    button { width: 100%; background: #10b981; color: #000; font-weight: 700; border: none; padding: 10px; border-radius: 6px; cursor: pointer; }
+    button:hover { background: #34d399; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>DevOps Authentication Required</h1>
+    <p>This telemetry dashboard is restricted to authorized DevOps engineers. Please enter your secret token.</p>
+    <form onsubmit="event.preventDefault(); window.location.href = '/devops?token=' + encodeURIComponent(document.getElementById('token-input').value);">
+      <input type="password" id="token-input" placeholder="Enter DEVOPS_AUTH_TOKEN..." required autofocus />
+      <button type="submit">Authenticate Dashboard</button>
+    </form>
+  </div>
+</body>
+</html>`,
+          {
+            status: 401,
+            headers: {
+              'Content-Type': 'text/html; charset=utf-8',
+              'WWW-Authenticate': 'Bearer realm="Proto DevOps"',
+            },
+          },
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Access denied. Valid DevOps token required.',
+          },
+        }),
+        { status: 401, headers: { ...headers, 'WWW-Authenticate': 'Bearer realm="Proto DevOps"' } },
+      );
+    }
+  }
+
   if (url.pathname === '/devops') {
     return new Response(devopsController.getDashboardHtml(), {
       headers: {
