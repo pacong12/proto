@@ -1,202 +1,284 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Space+Grotesk:wght@600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-heading: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-serif: "Charter", "Georgia", serif;
+  --font-sans: "Charter", "Georgia", serif;
+  --font-heading: "Charter", "Georgia", serif;
+  --font-mono: "Charter", "Georgia", serif;
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ==========================================================================
-   OFFICIAL TYPOGRAPHY SPECIFICATION:
-   - Headings (600 - 700)     : Space Grotesk
-   - Body (400 - 500)         : IBM Plex Sans
-   - Numbers / Address / Code : IBM Plex Mono
+   RETINA DESIGN METHOD & EDITORIAL SERIF TYPOGRAPHY (MEDIUM.COM AESTHETIC):
+   - Typography Stack : "Charter", "Georgia", serif (Pure 3 fonts only)
+   - Numbers & Code   : "Charter", "Georgia", serif with tabular-nums
+   - Retina Rendering : Subpixel antialiasing, kerning pairs, and optical density
    ========================================================================== */
 
-/* 1. Headings (600 - 700) */
-h1, h2, h3, h4, h5, h6,
+html {
+  font-size: 16.5px;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+}
+
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  html {
+    text-rendering: geometricPrecision;
+  }
+}
+
+/* Universal Typography: Pure "Charter", "Georgia", serif across ALL elements */
+html,
+body,
+.font-sans,
+.font-heading,
+.font-mono,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+span,
+div,
+a,
+button,
+input,
+textarea,
+select,
+label,
+code,
+kbd,
+samp,
+pre,
+th,
+td,
+[class*="font-"] {
+  font-family: "Charter", "Georgia", serif !important;
+}
+
+/* Headings: Space & weight hierarchy */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
 .font-heading,
 .font-extrabold,
-th {
-  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-  letter-spacing: -0.02em;
-}
-
-h1, h2, .font-extrabold, .font-bold {
+.font-bold {
+  font-family: "Charter", "Georgia", serif !important;
   font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
 }
 
-h3, h4, h5, h6, .font-semibold {
+h3,
+h4,
+h5,
+h6,
+.font-semibold {
   font-weight: 600;
 }
 
-/* 2. Body & General Text (400 - 500) */
-html, body, .font-sans,
-p, span, div, a, button, input, textarea, select, label {
-  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
-body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-  font-weight: 400;
-  transition: background-color 0.15s ease, color 0.15s ease;
-}
-
-/* 3. Numbers / Address / Code */
-code, kbd, samp, pre,
+/* Numbers, Addresses, Code, Tables: Tabular alignment for financial tickers */
+code,
+kbd,
+samp,
+pre,
 .font-mono,
-[class*="font-mono"] {
-  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+[class*="font-mono"],
+table,
+th,
+td {
+  font-family: "Charter", "Georgia", serif !important;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }
 
 /* ==========================================================================
-   ATURAN MUTLAK WARNA TEKS (2 WARNA SAJA: HITAM DAN PUTIH)
-   - Dark Mode  : SEMUA TEKS BERWARNA PUTIH (#ffffff)
-   - Light Mode : SEMUA TEKS BERWARNA HITAM (#000000)
-   - TIDAK ADA ABU-ABU / GRAY / ZINC / MUTED PADA TEKS
+   BODY TEXT SCALE & LEGIBILITY ENHANCEMENT:
+   - Scales text-xs (12px) to minimum 14px - 15px (text-sm / text-base)
+   - Relaxed line-height 1.6 for comfortable editorial reading experience
    ========================================================================== */
 
-/* Light Mode: Background putih bersih, SEMUA TEKS HITAM PEKAT */
+.text-xs {
+  font-size: 0.875rem !important; /* 14px */
+  line-height: 1.6 !important;
+}
+
+.text-sm {
+  font-size: 0.9375rem !important; /* 15px */
+  line-height: 1.6 !important;
+}
+
+.text-base {
+  font-size: 1rem !important; /* 16px */
+  line-height: 1.6 !important;
+}
+
+.text-\[9px\],
+[class*="text-[9px]"] {
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+}
+
+.text-\[10px\],
+[class*="text-[10px]"] {
+  font-size: 12.5px !important;
+  line-height: 1.5 !important;
+}
+
+.text-\[11px\],
+[class*="text-[11px]"] {
+  font-size: 13.5px !important;
+  line-height: 1.55 !important;
+}
+
+/* ==========================================================================
+   MEDIUM.COM DESIGN PALETTE:
+   - Light Mode : Clean #ffffff paper with soft charcoal #242424 typography
+   - Dark Mode  : Deep warm charcoal #121212 with comfortable #ececec typography
+   ========================================================================== */
+
 :root {
   --background: #ffffff;
-  --foreground: #000000;
+  --foreground: #242424;
   --card: #ffffff;
-  --card-foreground: #000000;
+  --card-foreground: #242424;
   --popover: #ffffff;
-  --popover-foreground: #000000;
-  --border: #e4e4e7;
-  --input: #000000;
+  --popover-foreground: #242424;
+  --border: #ececec;
+  --input: #242424;
   --primary: #10b981;
   --primary-foreground: #ffffff;
-  --secondary: #f4f4f5;
-  --secondary-foreground: #000000;
+  --secondary: #f7f7f7;
+  --secondary-foreground: #242424;
 }
 
-/* Dark Mode: Background hitam pekat, SEMUA TEKS PUTIH BERSIH */
 .dark {
-  --background: #000000;
-  --foreground: #ffffff;
-  --card: #09090b;
-  --card-foreground: #ffffff;
-  --popover: #09090b;
-  --popover-foreground: #ffffff;
-  --border: #27272a;
-  --input: #ffffff;
+  --background: #121212;
+  --foreground: #ececec;
+  --card: #1a1a1a;
+  --card-foreground: #ececec;
+  --popover: #1a1a1a;
+  --popover-foreground: #ececec;
+  --border: #292929;
+  --input: #ececec;
   --primary: #10b981;
-  --primary-foreground: #000000;
-  --secondary: #18181b;
-  --secondary-foreground: #ffffff;
+  --primary-foreground: #121212;
+  --secondary: #222222;
+  --secondary-foreground: #ececec;
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family:
-    'IBM Plex Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-    sans-serif;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  font-family: "Charter", "Georgia", serif !important;
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: -0.005em;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 /* ==========================================================================
-   OVERRIDE UNIVERSAL TEKS: HANYA HITAM DI LIGHT DAN HANYA PUTIH DI DARK
+   MEDIUM.COM TEXT CONTRAST & HIERARCHY OVERRIDES
    ========================================================================== */
 
-/* Dark Mode: SEMUA elemen teks dipaksa menjadi PUTIH (#ffffff) */
+/* Dark Mode Palette */
 html.dark,
-html.dark body,
-html.dark h1, html.dark h2, html.dark h3, html.dark h4, html.dark h5, html.dark h6,
-html.dark p, html.dark span, html.dark label, html.dark a, html.dark button,
-html.dark input, html.dark textarea, html.dark select, html.dark div,
-html.dark .text-white, html.dark .text-zinc-100, html.dark .text-zinc-200,
-html.dark .text-zinc-300, html.dark .text-zinc-400, html.dark .text-zinc-500,
-html.dark .text-zinc-600, html.dark .text-zinc-700, html.dark .text-zinc-800,
-html.dark .text-zinc-900, html.dark .text-zinc-950,
-html.dark .text-muted-foreground {
+html.dark body {
+  background-color: #121212 !important;
+  color: #ececec !important;
+}
+
+html.dark h1,
+html.dark h2,
+html.dark h3,
+html.dark h4,
+html.dark h5,
+html.dark h6 {
   color: #ffffff !important;
 }
 
-/* Light Mode: SEMUA elemen teks dipaksa menjadi HITAM (#000000) */
+html.dark p,
+html.dark span,
+html.dark label,
+html.dark a,
+html.dark button,
+html.dark input,
+html.dark textarea,
+html.dark select,
+html.dark div,
+html.dark td,
+html.dark th {
+  color: #ececec;
+}
+
+/* Light Mode Palette */
 html:not(.dark),
-html:not(.dark) body,
-html:not(.dark) h1, html:not(.dark) h2, html:not(.dark) h3, html:not(.dark) h4, html:not(.dark) h5, html:not(.dark) h6,
-html:not(.dark) p, html:not(.dark) span, html:not(.dark) label, html:not(.dark) a, html:not(.dark) button,
-html:not(.dark) input, html:not(.dark) textarea, html:not(.dark) select, html:not(.dark) div,
-html:not(.dark) .text-white, html:not(.dark) .text-zinc-100, html:not(.dark) .text-zinc-200,
-html:not(.dark) .text-zinc-300, html:not(.dark) .text-zinc-400, html:not(.dark) .text-zinc-500,
-html:not(.dark) .text-zinc-600, html:not(.dark) .text-zinc-700, html:not(.dark) .text-zinc-800,
-html:not(.dark) .text-zinc-900, html:not(.dark) .text-zinc-950,
-html:not(.dark) .text-muted-foreground {
-  color: #000000 !important;
+html:not(.dark) body {
+  background-color: #ffffff !important;
+  color: #242424 !important;
+}
+
+html:not(.dark) h1,
+html:not(.dark) h2,
+html:not(.dark) h3,
+html:not(.dark) h4,
+html:not(.dark) h5,
+html:not(.dark) h6 {
+  color: #1a1a1a !important;
+}
+
+html:not(.dark) p,
+html:not(.dark) span,
+html:not(.dark) label,
+html:not(.dark) a,
+html:not(.dark) button,
+html:not(.dark) input,
+html:not(.dark) textarea,
+html:not(.dark) select,
+html:not(.dark) div,
+html:not(.dark) td,
+html:not(.dark) th {
+  color: #242424;
 }
 
 /* ==========================================================================
-   BUTTON & COMPONENT HOVER & ACTIVE FEEDBACK
+   MEDIUM.COM SURFACES, CARDS & ELEVATIONS
    ========================================================================== */
 
-button,
-[role="button"],
-.cursor-pointer {
-  transition: transform 0.1s ease, background-color 0.15s ease, border-color 0.15s ease;
-}
-
-button:active:not(:disabled),
-[role="button"]:active:not(:disabled) {
-  transform: scale(0.98);
-}
-
-/* Primary Green Buttons */
-.bg-emerald-500,
-.bg-emerald-600 {
-  color: #000000 !important;
-}
-
-.bg-emerald-500:hover:not(:disabled) {
-  background-color: #34d399 !important;
-}
-
-.bg-emerald-500:active:not(:disabled) {
-  background-color: #059669 !important;
-}
-
-/* Destructive Red Buttons */
-.bg-rose-500,
-.bg-rose-600 {
-  color: #ffffff !important;
-}
-
-.bg-rose-500:hover:not(:disabled) {
-  background-color: #e11d48 !important;
-}
-
-.bg-rose-500:active:not(:disabled) {
-  background-color: #be123c !important;
-}
-
-/* Surfaces & Borders */
+/* Dark Mode Surfaces */
 html.dark .bg-black,
 html.dark .bg-zinc-950 {
-  background-color: #000000 !important;
+  background-color: #121212 !important;
 }
 
 html.dark .bg-zinc-900,
 html.dark .bg-zinc-900\/90,
+html.dark .bg-zinc-900\/60,
 html.dark .bg-zinc-900\/50,
 html.dark .bg-zinc-900\/40,
-html.dark .bg-zinc-900\/30 {
-  background-color: #09090b !important;
-  border-color: #27272a !important;
+html.dark .bg-zinc-900\/30,
+html.dark .bg-zinc-800 {
+  background-color: #1a1a1a !important;
+  border-color: #292929 !important;
 }
 
 html.dark header {
-  background-color: rgba(0, 0, 0, 0.85) !important;
-  border-bottom-color: #27272a !important;
+  background-color: rgba(18, 18, 18, 0.92) !important;
+  border-bottom-color: #292929 !important;
 }
 
+/* Light Mode Surfaces */
 html:not(.dark) .bg-black,
 html:not(.dark) .bg-zinc-950 {
   background-color: #ffffff !important;
@@ -207,48 +289,55 @@ html:not(.dark) .bg-zinc-900\/90,
 html:not(.dark) .bg-zinc-900\/50,
 html:not(.dark) .bg-zinc-900\/40,
 html:not(.dark) .bg-zinc-900\/30 {
-  background-color: #ffffff !important;
-  border-color: #e4e4e7 !important;
+  background-color: #fbfbfb !important;
+  border-color: #ececec !important;
 }
 
 html:not(.dark) header {
   background-color: rgba(255, 255, 255, 0.95) !important;
-  border-bottom-color: #e4e4e7 !important;
+  border-bottom-color: #ececec !important;
 }
 
-/* Card hover elevations */
-html.dark .group:hover,
-html.dark .rounded-2xl:hover {
-  border-color: #3f3f46 !important;
+/* Buttons & Feedback */
+button,
+[role="button"],
+.cursor-pointer {
+  transition:
+    transform 0.1s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 
-html:not(.dark) .group:hover,
-html:not(.dark) .rounded-2xl:hover {
-  border-color: #cbd5e1 !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+button:active:not(:disabled),
+[role="button"]:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
-/* Input Styles */
+.bg-emerald-500,
+.bg-emerald-600 {
+  color: #000000 !important;
+}
+
+.bg-emerald-500:hover:not(:disabled) {
+  background-color: #34d399 !important;
+}
+
+.bg-rose-500,
+.bg-rose-600 {
+  color: #ffffff !important;
+}
+
+/* Inputs */
 html:not(.dark) input,
 html:not(.dark) textarea,
 html:not(.dark) select {
   background-color: #ffffff !important;
-  border-color: #cbd5e1 !important;
-}
-
-html:not(.dark) input:focus,
-html:not(.dark) textarea:focus {
-  border-color: #10b981 !important;
+  border-color: #e2e2e2 !important;
 }
 
 html.dark input,
 html.dark textarea,
 html.dark select {
-  background-color: #000000 !important;
-  border-color: #27272a !important;
-}
-
-html.dark input:focus,
-html.dark textarea:focus {
-  border-color: #10b981 !important;
+  background-color: #1a1a1a !important;
+  border-color: #292929 !important;
 }
