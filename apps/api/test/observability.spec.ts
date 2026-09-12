@@ -1,9 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { StructuredLoggerService } from '../src/modules/observability/infrastructure/structured-logger.service';
 import { HttpRequestTracker } from '../src/modules/observability/presentation/http-request-tracker';
+import { DevopsController } from '../src/modules/observability/presentation/devops.controller';
 import { LoggerPort } from '../src/modules/observability/domain/ports/logger.port';
+import { server } from '../src/server';
 
-describe('Observability & Structured Logging', () => {
+describe('Observability & DevOps Tracking', () => {
   it('formats structured log entries as valid JSON', () => {
     const logger = new StructuredLoggerService('test-service', false);
     const stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
@@ -48,5 +50,57 @@ describe('Observability & Structured Logging', () => {
         status: 200,
       }),
     );
+  });
+
+  it('returns structured telemetry and Prometheus metrics from DevopsController', () => {
+    const mockLogger: LoggerPort = {
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    };
+
+    const tracker = new HttpRequestTracker(mockLogger);
+    const req = new Request('http://localhost:3001/api/tokens');
+    const res = new Response(JSON.stringify({ ok: true }), { status: 200 });
+    tracker.track(req, res, performance.now() - 10, 'req-999', '127.0.0.1');
+
+    const controller = new DevopsController(tracker);
+    const telemetry = controller.getTelemetry();
+
+    expect(telemetry.success).toBe(true);
+    expect(telemetry.data.traffic.totalRequests).toBe(1);
+    expect(telemetry.data.traffic.statusCounts['2xx']).toBe(1);
+    expect(telemetry.data.recentRequests.length).toBe(1);
+
+    const prom = controller.getPrometheusMetrics();
+    expect(prom).toContain('http_requests_total{status="2xx"} 1');
+    expect(prom).toContain('process_resident_memory_bytes');
+
+    const html = controller.getDashboardHtml();
+    expect(html).toContain('Proto Protocol · DevOps Observability');
+    expect(html).toContain('Live Request Stream');
+  });
+
+  it('serves /devops dashboard and /api/devops/telemetry over HTTP', async () => {
+    const dashboardReq = new Request('http://localhost:3001/devops');
+    const dashboardRes = await server.fetch(dashboardReq);
+    expect(dashboardRes.status).toBe(200);
+    expect(dashboardRes.headers.get('content-type')).toContain('text/html');
+    const html = await dashboardRes.text();
+    expect(html).toContain('Proto Protocol · DevOps Observability');
+
+    const telemetryReq = new Request('http://localhost:3001/api/devops/telemetry');
+    const telemetryRes = await server.fetch(telemetryReq);
+    expect(telemetryRes.status).toBe(200);
+    const json = await telemetryRes.json();
+    expect(json.success).toBe(true);
+    expect(json.data).toHaveProperty('traffic');
+
+    const metricsReq = new Request('http://localhost:3001/api/devops/metrics');
+    const metricsRes = await server.fetch(metricsReq);
+    expect(metricsRes.status).toBe(200);
+    const promText = await metricsRes.text();
+    expect(promText).toContain('http_requests_total');
   });
 });
