@@ -12,6 +12,7 @@ import {
   IpfsController,
   logger,
   HttpRequestTracker,
+  DevopsController,
 } from './index';
 import { createPublicClient, http, defineChain } from 'viem';
 import { ROBINHOOD_CHAIN, TransactionIntent } from '@proto/shared-types';
@@ -59,6 +60,7 @@ const eventPoller = new EventPollerService(
 );
 
 const requestTracker = new HttpRequestTracker(logger);
+const devopsController = new DevopsController(requestTracker);
 
 const ipRateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
@@ -118,7 +120,32 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     );
   }
 
-  // Health check & DevOps telemetry
+  // DevOps Observability Dashboard & Telemetry Endpoints
+  if (url.pathname === '/devops') {
+    return new Response(devopsController.getDashboardHtml(), {
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'X-Frame-Options': 'DENY',
+        'X-Content-Type-Options': 'nosniff',
+      },
+    });
+  }
+
+  if (url.pathname === '/api/devops/telemetry' && req.method === 'GET') {
+    return new Response(safeStringify(devopsController.getTelemetry()), { headers });
+  }
+
+  if (url.pathname === '/api/devops/metrics' && req.method === 'GET') {
+    return new Response(devopsController.getPrometheusMetrics(), {
+      headers: {
+        'Content-Type': 'text/plain; version=0.0.4; charset=utf-8',
+        'Cache-Control': 'no-cache',
+      },
+    });
+  }
+
+  // Health check & DevOps telemetry summary
   if (url.pathname === '/health' || url.pathname === '/') {
     const mem = process.memoryUsage();
     return new Response(
