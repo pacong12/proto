@@ -76,6 +76,11 @@ async function handleRequest(req: Request): Promise<Response> {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Content-Security-Policy': "default-src 'self'",
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
   };
 
   if (req.method === 'OPTIONS') {
