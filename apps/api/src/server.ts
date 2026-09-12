@@ -10,6 +10,8 @@ import {
   EventPollerService,
   IpfsService,
   IpfsController,
+  logger,
+  HttpRequestTracker,
 } from './index';
 import { createPublicClient, http, defineChain } from 'viem';
 import { ROBINHOOD_CHAIN, TransactionIntent } from '@proto/shared-types';
@@ -56,6 +58,24 @@ const eventPoller = new EventPollerService(
   calculatePricing,
 );
 
+const requestTracker = new HttpRequestTracker(logger);
+
+const ipRateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+function checkRateLimit(ip: string, limit = 120, windowMs = 60_000): boolean {
+  const now = Date.now();
+  const entry = ipRateLimitMap.get(ip);
+  if (!entry || now > entry.resetTime) {
+    ipRateLimitMap.set(ip, { count: 1, resetTime: now + windowMs });
+    return true;
+  }
+  if (entry.count >= limit) {
+    return false;
+  }
+  entry.count++;
+  return true;
+}
+
 // Start background event poller worker loop
 setInterval(async () => {
   try {
@@ -69,7 +89,7 @@ function safeStringify(value: unknown): string {
   return JSON.stringify(value, (_, v) => (typeof v === 'bigint' ? v.toString() : v));
 }
 
-async function handleRequest(req: Request): Promise<Response> {
+async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   const url = new URL(req.url);
   const headers = {
     'Content-Type': 'application/json',
@@ -87,16 +107,49 @@ async function handleRequest(req: Request): Promise<Response> {
     return new Response(null, { headers });
   }
 
-  // Health check
-  if (url.pathname === '/health' || url.pathname === '/') {
+  // IP-based Rate Limiting (120 req / minute per IP)
+  if (!checkRateLimit(clientIp, 120, 60_000)) {
     return new Response(
-      safeStringify({ status: 'ok', service: 'proto-api', timestamp: Date.now() }),
+      JSON.stringify({
+        success: false,
+        error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many requests, please slow down.' },
+      }),
+      { status: 429, headers },
+    );
+  }
+
+  // Health check & DevOps telemetry
+  if (url.pathname === '/health' || url.pathname === '/') {
+    const mem = process.memoryUsage();
+    return new Response(
+      safeStringify({
+        status: 'ok',
+        service: 'proto-api',
+        uptime: Math.floor(process.uptime()),
+        timestamp: Date.now(),
+        memory: {
+          rssMb: Math.round(mem.rss / 1024 / 1024),
+          heapUsedMb: Math.round(mem.heapUsed / 1024 / 1024),
+          heapTotalMb: Math.round(mem.heapTotal / 1024 / 1024),
+        },
+      }),
       { headers },
     );
   }
-  if (url.pathname === '/api/tokens' && req.method === 'GET') {
-    const limit = parseInt(url.searchParams.get('limit') ?? '50', 10);
-    const offset = parseInt(url.searchParams.get('offset') ?? '0', 10);
+  if (url.pathname === '/api/tokens') {
+    if (req.method !== 'GET') {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: { code: 'METHOD_NOT_ALLOWED', message: 'Method not allowed for /api/tokens' },
+        }),
+        { status: 405, headers: { ...headers, Allow: 'GET' } },
+      );
+    }
+    const rawLimit = parseInt(url.searchParams.get('limit') ?? '50', 10);
+    const rawOffset = parseInt(url.searchParams.get('offset') ?? '0', 10);
+    const limit = Math.min(Math.max(1, isNaN(rawLimit) ? 50 : rawLimit), 100);
+    const offset = Math.max(0, isNaN(rawOffset) ? 0 : rawOffset);
     const version = (url.searchParams.get('version') as 'v1' | 'v2' | null) ?? undefined;
     const deployer = url.searchParams.get('deployer') ?? undefined;
     const res = await tokenController.listTokens(limit, offset, version, deployer);
@@ -230,6 +283,41 @@ async function handleRequest(req: Request): Promise<Response> {
     }),
     { status: 404, headers },
   );
+}
+
+async function handleRequest(req: Request): Promise<Response> {
+  const startTime = performance.now();
+  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1';
+  const requestId = requestTracker.extractRequestId(req);
+
+  try {
+    const response = await routeRequest(req, clientIp);
+    return requestTracker.track(req, response, startTime, requestId, clientIp);
+  } catch (err) {
+    const error = err as Error;
+    logger.error(`Unhandled error on ${req.method} ${new URL(req.url).pathname}`, {
+      requestId,
+      ip: clientIp,
+      error: {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+      },
+    });
+    const errorResponse = new Response(
+      JSON.stringify({
+        success: false,
+        data: null,
+        error: {
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'An internal error occurred',
+        },
+        timestamp: Date.now(),
+      }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } },
+    );
+    return requestTracker.track(req, errorResponse, startTime, requestId, clientIp);
+  }
 }
 
 export const server =

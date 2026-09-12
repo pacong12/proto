@@ -15,3 +15,7 @@ export * from './modules/security/presentation/security.controller';
 
 export * from './modules/ipfs/ipfs.service';
 export * from './modules/ipfs/ipfs.controller';
+
+export * from './modules/observability/domain/ports/logger.port';
+export * from './modules/observability/infrastructure/structured-logger.service';
+export * from './modules/observability/presentation/http-request-tracker';
