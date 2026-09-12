@@ -25,6 +25,7 @@ const STORAGE_PROVIDER_ID_KEY = 'proto_wallet_provider_id';
 export const walletProvider = shallowRef<WalletProviderLike | null>(null);
 export const walletAddress = shallowRef<`0x${string}` | null>(null);
 export const walletChainId = shallowRef<number | null>(null);
+export const walletProviderId = shallowRef<string | null>(null);
 export const walletModalOpen = shallowRef(false);
 
 let activeProviderCleanup: (() => void) | null = null;
@@ -96,6 +97,7 @@ export function setConnectedWallet(
   walletProvider.value = provider;
   walletAddress.value = address;
   walletChainId.value = chainId;
+  walletProviderId.value = providerId ?? null;
 
   if (typeof window !== 'undefined' && 'localStorage' in window) {
     try {
@@ -120,6 +122,7 @@ export function clearWalletState() {
   walletProvider.value = null;
   walletAddress.value = null;
   walletChainId.value = null;
+  walletProviderId.value = null;
 
   if (typeof window !== 'undefined' && 'localStorage' in window) {
     try {
