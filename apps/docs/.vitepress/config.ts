@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitepress';
 import tailwindcss from '@tailwindcss/vite';
+import path from 'node:path';
 
 export default defineConfig({
   title: 'Proto Docs',
@@ -8,6 +9,11 @@ export default defineConfig({
   outDir: './dist',
   cleanUrls: true,
   vite: {
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, '../src'),
+      },
+    },
     // @ts-expect-error Tailwind v4 Vite 6 plugin interface divergence with VitePress bundled Vite 5
     plugins: [tailwindcss()],
   },
