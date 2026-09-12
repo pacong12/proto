@@ -1,0 +1,203 @@
+openapi: 3.0.3
+info:
+  title: Proto Protocol API
+  description: Public on-chain indexer, analytics, and non-custodial security gate for Proto Launchpad on Robinhood Chain (Chain ID 4663).
+  version: 0.1.0
+
+servers:
+  - url: http://localhost:3001
+    description: Local development server
+  - url: https://api.proto.family
+    description: Production API server
+
+paths:
+  /health:
+    get:
+      summary: Health check probe
+      description: Returns server operational status and current timestamp.
+      responses:
+        '200':
+          description: Server is healthy and running.
+
+  /api/tokens:
+    get:
+      summary: Public launchpad token explorer
+      description: Publicly lists all launched fixed-supply tokens and trading curves on Robinhood Chain. No authentication required (public decentralized explorer).
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 100
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: version
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [v1, v2]
+        - name: deployer
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: '^0x[a-fA-F0-9]{40}$'
+      responses:
+        '200':
+          description: List of launched tokens and market data.
+        '405':
+          description: Method Not Allowed.
+
+  /api/tokens/{address}:
+    get:
+      summary: Token detail by address
+      description: Returns token metadata, pool state, and bonding curve graduation status.
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^0x[a-fA-F0-9]{40}$'
+      responses:
+        '200':
+          description: Token details.
+        '400':
+          description: Invalid Ethereum address.
+
+  /api/tokens/{address}/trades:
+    get:
+      summary: Token trade history
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Recent trade events.
+
+  /api/tokens/{address}/holders:
+    get:
+      summary: Token holder distribution
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+      responses:
+        '200':
+          description: Ranked list of token holders.
+
+  /api/tokens/{address}/ohlcv:
+    get:
+      summary: Candlestick chart data
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: resolution
+          in: query
+          schema:
+            type: integer
+            enum: [60, 300, 900, 3600, 86400]
+            default: 60
+      responses:
+        '200':
+          description: OHLCV bars.
+
+  /api/tokens/{address}/top-traders:
+    get:
+      summary: Top traders ranking
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 50
+      responses:
+        '200':
+          description: Top volume traders.
+
+  /api/tokens/{address}/dev-activity:
+    get:
+      summary: Creator wallet activity tracking
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Creator holdings and sale status.
+
+  /api/analytics:
+    get:
+      summary: Protocol-wide analytics
+      description: Returns aggregated volume, token counts, and buyback burns.
+      responses:
+        '200':
+          description: Protocol analytics.
+
+  /api/security/evaluate:
+    post:
+      summary: Transaction Intent Security Policy Evaluator
+      description: Fail-closed evaluation of Web3 transaction intents before wallet submission.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Intent evaluation result.
+        '400':
+          description: Malformed JSON payload.
+
+  /api/ipfs/upload:
+    post:
+      summary: IPFS Metadata and Logo Upload
+      description: Uploads token logos and metadata to IPFS with rate-limiting.
+      responses:
+        '200':
+          description: IPFS CID and gateway URL.
+        '400':
+          description: Bad request.
