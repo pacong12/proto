@@ -103,4 +103,34 @@ describe('Observability & DevOps Tracking', () => {
     const promText = await metricsRes.text();
     expect(promText).toContain('http_requests_total');
   });
+
+  it('restricts /devops and /api/devops/* when DEVOPS_AUTH_TOKEN is configured', async () => {
+    const originalToken = process.env.DEVOPS_AUTH_TOKEN;
+    process.env.DEVOPS_AUTH_TOKEN = 'secret-test-token-123';
+
+    try {
+      // 1. Unauthorized request should return 401
+      const unauthReq = new Request('http://localhost:3001/api/devops/telemetry');
+      const unauthRes = await server.fetch(unauthReq);
+      expect(unauthRes.status).toBe(401);
+      const errJson = await unauthRes.json();
+      expect(errJson.error.code).toBe('UNAUTHORIZED');
+
+      // 2. Authorized request via query token should succeed
+      const queryAuthReq = new Request(
+        'http://localhost:3001/api/devops/telemetry?token=secret-test-token-123',
+      );
+      const queryAuthRes = await server.fetch(queryAuthReq);
+      expect(queryAuthRes.status).toBe(200);
+
+      // 3. Authorized request via Bearer header should succeed
+      const bearerAuthReq = new Request('http://localhost:3001/api/devops/metrics', {
+        headers: { Authorization: 'Bearer secret-test-token-123' },
+      });
+      const bearerAuthRes = await server.fetch(bearerAuthReq);
+      expect(bearerAuthRes.status).toBe(200);
+    } finally {
+      process.env.DEVOPS_AUTH_TOKEN = originalToken;
+    }
+  });
 });
