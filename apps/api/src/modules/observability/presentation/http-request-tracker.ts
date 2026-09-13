@@ -1,4 +1,5 @@
 import { LoggerPort } from '../domain/ports/logger.port';
+import { CachePort } from '../domain/ports/cache.port';
 import {
   ErrorMetricEntry,
   RequestMetricEntry,
@@ -14,7 +15,10 @@ export class HttpRequestTracker {
   private statusCounts = { '2xx': 0, '3xx': 0, '4xx': 0, '5xx': 0 };
   private minuteRequestTimestamps: number[] = [];
 
-  constructor(private readonly logger: LoggerPort) {}
+  constructor(
+    private readonly logger: LoggerPort,
+    private readonly cache?: CachePort,
+  ) {}
 
   extractRequestId(req: Request): string {
     return req.headers.get('x-request-id') || req.headers.get('cf-ray') || crypto.randomUUID();
@@ -131,6 +135,10 @@ export class HttpRequestTracker {
       service: 'proto-api',
       uptimeSeconds: Math.floor(process.uptime()),
       timestamp: now,
+      cache: {
+        type: this.cache ? (this.cache.isAvailable() ? 'redis' : 'fallback') : 'none',
+        available: this.cache ? this.cache.isAvailable() : false,
+      },
       memory: {
         rssMb: Math.round(mem.rss / 1024 / 1024),
         heapUsedMb: Math.round(mem.heapUsed / 1024 / 1024),

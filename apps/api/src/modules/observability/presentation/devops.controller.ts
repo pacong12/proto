@@ -190,6 +190,10 @@ export class DevopsController {
       <div class="label mono">Memory RSS / Heap</div>
       <div class="value mono" id="m-memory">--</div>
     </div>
+    <div class="card">
+      <div class="label mono">Redis Cache</div>
+      <div class="value mono" id="m-cache" style="color: var(--green);">--</div>
+    </div>
   </div>
 
   <div class="grid" style="grid-template-columns: repeat(4, 1fr);">
@@ -266,6 +270,13 @@ export class DevopsController {
         document.getElementById('m-rpm').textContent = d.traffic.activeRequestsPerMinute + ' req/m';
         document.getElementById('m-latency').textContent = d.traffic.avgLatencyMs + ' ms';
         document.getElementById('m-memory').textContent = d.memory.rssMb + 'M / ' + d.memory.heapUsedMb + 'M';
+        if (d.cache) {
+          const cacheEl = document.getElementById('m-cache');
+          if (cacheEl) {
+            cacheEl.textContent = d.cache.available ? 'CONNECTED' : (d.cache.type === 'fallback' ? 'OFFLINE' : 'DISABLED');
+            cacheEl.style.color = d.cache.available ? 'var(--green)' : 'var(--yellow)';
+          }
+        }
 
         document.getElementById('m-2xx').textContent = d.traffic.statusCounts['2xx'];
         document.getElementById('m-3xx').textContent = d.traffic.statusCounts['3xx'];
