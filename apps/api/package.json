@@ -10,10 +10,12 @@
   },
   "dependencies": {
     "@proto/shared-types": "*",
+    "ioredis": "^6.0.0",
     "viem": "^2.23.0"
   },
   "devDependencies": {
     "@types/bun": "^1.4.2",
+    "@types/ioredis": "^5.0.0",
     "@types/node": "^22.13.0",
     "typescript": "^5.7.3",
     "vitest": "^3.0.5"

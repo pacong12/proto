@@ -25,6 +25,10 @@ export interface SystemTelemetry {
   service: string;
   uptimeSeconds: number;
   timestamp: number;
+  cache?: {
+    type: string;
+    available: boolean;
+  };
   memory: {
     rssMb: number;
     heapUsedMb: number;

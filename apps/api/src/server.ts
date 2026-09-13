@@ -14,6 +14,7 @@ import {
   logger,
   HttpRequestTracker,
   DevopsController,
+  RedisCacheAdapter,
 } from './index';
 import { createPublicClient, http, defineChain } from 'viem';
 import { ROBINHOOD_CHAIN, TransactionIntent } from '@proto/shared-types';
@@ -36,6 +37,11 @@ const PORT = parseInt(
   process.env.PORT ?? process.env.API_PORT ?? (process.env.NODE_ENV === 'test' ? '0' : '3001'),
   10,
 );
+
+const redisUrl =
+  process.env.REDIS_URL ||
+  (process.env.NODE_ENV === 'production' ? 'redis://redis:6379' : undefined);
+const cache = new RedisCacheAdapter(redisUrl, logger);
 
 const repository = new SqliteTokenRepository();
 const chainIndexer = new ViemChainIndexerAdapter();
@@ -61,7 +67,7 @@ const eventPoller = new EventPollerService(
   calculatePricing,
 );
 
-const requestTracker = new HttpRequestTracker(logger);
+const requestTracker = new HttpRequestTracker(logger, cache);
 const devopsController = new DevopsController(requestTracker);
 
 const ipRateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -244,8 +250,22 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const offset = Math.max(0, isNaN(rawOffset) ? 0 : rawOffset);
     const version = (url.searchParams.get('version') as 'v1' | 'v2' | null) ?? undefined;
     const deployer = url.searchParams.get('deployer') ?? undefined;
+
+    const cacheKey = `tokens:list:${limit}:${offset}:${version || 'all'}:${deployer || 'all'}`;
+    const cached = await cache.get<unknown>(cacheKey);
+    if (cached) {
+      return new Response(safeStringify(cached), {
+        headers: { ...headers, 'x-cache': 'HIT' },
+      });
+    }
+
     const res = await tokenController.listTokens(limit, offset, version, deployer);
-    return new Response(safeStringify(res), { headers });
+    if (res.success) {
+      await cache.set(cacheKey, res, 10); // Cache for 10s
+    }
+    return new Response(safeStringify(res), {
+      headers: { ...headers, 'x-cache': 'MISS' },
+    });
   }
 
   // GET /api/tokens/:address/trades
@@ -296,11 +316,32 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   const tokenMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})$/);
   if (tokenMatch && req.method === 'GET') {
     const address = tokenMatch[1];
+    const cacheKey = `token:detail:${address.toLowerCase()}`;
+    const cached = await cache.get<unknown>(cacheKey);
+    if (cached) {
+      return new Response(safeStringify(cached), {
+        headers: { ...headers, 'x-cache': 'HIT' },
+      });
+    }
+
     const res = await tokenController.getToken(address);
-    return new Response(safeStringify(res), { headers });
+    if (res.success) {
+      await cache.set(cacheKey, res, 15); // Cache for 15s
+    }
+    return new Response(safeStringify(res), {
+      headers: { ...headers, 'x-cache': 'MISS' },
+    });
   }
   // GET /api/analytics
   if (url.pathname === '/api/analytics' && req.method === 'GET') {
+    const cacheKey = 'protocol:analytics';
+    const cached = await cache.get<unknown>(cacheKey);
+    if (cached) {
+      return new Response(safeStringify(cached), {
+        headers: { ...headers, 'x-cache': 'HIT' },
+      });
+    }
+
     const tokens = await repository.findAll();
     const totalTokens = tokens.length;
     let totalVolumeEth = 0;
@@ -314,20 +355,22 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const totalVolumeUsd = Math.round(totalVolumeEth * ethPriceUsd);
     const totalBuybackEth = (totalVolumeEth * 0.01 * 0.3 * 0.8).toFixed(3); // 80% of 30% protocol fee
 
-    return new Response(
-      safeStringify({
-        success: true,
-        data: {
-          totalVolume: totalVolumeUsd,
-          totalTokens: totalTokens,
-          totalBuyback: totalBuybackEth,
-          totalVolumeEth: totalVolumeEth.toFixed(4),
-          ethPriceUsd,
-        },
-        timestamp: Date.now(),
-      }),
-      { headers },
-    );
+    const payload = {
+      success: true,
+      data: {
+        totalVolume: totalVolumeUsd,
+        totalTokens: totalTokens,
+        totalBuyback: totalBuybackEth,
+        totalVolumeEth: totalVolumeEth.toFixed(4),
+        ethPriceUsd,
+      },
+      timestamp: Date.now(),
+    };
+
+    await cache.set(cacheKey, payload, 30); // Cache for 30s
+    return new Response(safeStringify(payload), {
+      headers: { ...headers, 'x-cache': 'MISS' },
+    });
   }
 
   if (url.pathname === '/api/security/evaluate' && req.method === 'POST') {

@@ -20,6 +20,9 @@ export * from './modules/ipfs/ipfs.controller';
 
 export * from './modules/observability/domain/ports/logger.port';
 export * from './modules/observability/domain/ports/telemetry.port';
+export * from './modules/observability/domain/ports/cache.port';
 export * from './modules/observability/infrastructure/structured-logger.service';
+export * from './modules/observability/infrastructure/redis-cache.adapter';
+export * from './modules/observability/infrastructure/in-memory-cache.adapter';
 export * from './modules/observability/presentation/http-request-tracker';
 export * from './modules/observability/presentation/devops.controller';
