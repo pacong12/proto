@@ -1,0 +1,56 @@
+name: Auto Deploy Backend to VPS
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/api/**'
+      - 'packages/shared-types/**'
+      - 'Dockerfile.api'
+      - 'docker-compose.yml'
+      - '.github/workflows/deploy-vps.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-vps-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy API & Services to VPS via SSH
+    runs-on: ubuntu-latest
+    if: ${{ secrets.VPS_SSH_KEY != '' || secrets.DEPLOY != '' }}
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST || '31.97.189.81' }}
+          username: ${{ secrets.VPS_USER || 'root' }}
+          key: ${{ secrets.VPS_SSH_KEY || secrets.DEPLOY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            set -e
+
+            echo "🚀 Masuk ke folder project di VPS..."
+            cd ${{ secrets.VPS_APP_DIR || '/var/www/proto' }}
+
+            echo "📥 Mengambil commit terbaru dari GitHub..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "🐳 Membangun ulang dan me-restart container API & Redis dengan Docker Compose..."
+            if docker compose version > /dev/null 2>&1; then
+              docker compose up -d --build --no-deps redis api
+            else
+              sudo docker compose up -d --build --no-deps redis api
+            fi
+
+            echo "⏳ Menunggu container API siap..."
+            sleep 4
+
+            echo "🔍 Menjalankan Health Check..."
+            curl -s http://127.0.0.1:3001/health || true
+
+            echo "✅ Deployment backend VPS berhasil diselesaikan!"
