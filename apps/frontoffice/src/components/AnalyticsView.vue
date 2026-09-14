@@ -49,22 +49,47 @@
     </div>
 
     <!-- Analytics Chart Section -->
-    <Card class="p-6 space-y-4">
-      <div class="flex items-center justify-between">
-        <div>
-          <h2 class="text-base font-bold">
-            {{ t('volumeAndLiquidity') }}
-          </h2>
-          <p class="text-xs text-zinc-500 dark:text-zinc-400">{{ t('hourlyAggregatedVolume') }}</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <Card class="p-6 space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-base font-bold">
+              {{ t('volumeAndLiquidity') }}
+            </h2>
+            <p class="text-xs text-zinc-500 dark:text-zinc-400">
+              {{ t('hourlyAggregatedVolume') }}
+            </p>
+          </div>
+          <Badge variant="secondary">24h History</Badge>
         </div>
-        <div class="flex gap-2">
-          <Badge variant="secondary">Robinhood L2</Badge>
-          <Badge variant="graduated">1% Uniswap V3</Badge>
-        </div>
-      </div>
 
-      <SimpleChart :data="chartData" :height="220" />
-    </Card>
+        <ReactiveBarChart
+          :data="volumeChartData"
+          :height="180"
+          :is-currency="true"
+        />
+      </Card>
+
+      <Card class="p-6 space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-base font-bold">
+              {{ t('totalTokensLaunched') }}
+            </h2>
+            <p class="text-xs text-zinc-500 dark:text-zinc-400">
+              Token deployments over 24h
+            </p>
+          </div>
+          <Badge variant="graduated">Robinhood L2</Badge>
+        </div>
+
+        <ReactiveBarChart
+          :data="tokenChartData"
+          :height="180"
+          unit="tokens"
+        />
+      </Card>
+    </div>
 
     <!-- Contracts Table -->
     <Card class="p-6 space-y-4">
@@ -93,11 +118,23 @@ import { ROBINHOOD_CHAIN } from '@proto/shared-types';
 const { t } = useI18n();
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import ReactiveBarChart, { type ChartDataPoint } from '@/components/ui/chart/ReactiveBarChart.vue';
+
 const totalVolume = ref(0);
 const totalTokens = ref(0);
 const totalBuyback = ref(0);
 
-const chartData = ref([
+const volumeChartData = ref<ChartDataPoint[]>([
+  { label: '00:00', value: 0 },
+  { label: '04:00', value: 0 },
+  { label: '08:00', value: 0 },
+  { label: '12:00', value: 0 },
+  { label: '16:00', value: 0 },
+  { label: '20:00', value: 0 },
+  { label: '24:00', value: 0 },
+]);
+
+const tokenChartData = ref<ChartDataPoint[]>([
   { label: '00:00', value: 0 },
   { label: '04:00', value: 0 },
   { label: '08:00', value: 0 },
@@ -127,6 +164,12 @@ onMounted(async () => {
       totalVolume.value = envelope.data.totalVolume;
       totalTokens.value = envelope.data.totalTokens;
       totalBuyback.value = envelope.data.totalBuyback;
+      if (Array.isArray(envelope.data.volumeHistory) && envelope.data.volumeHistory.length > 0) {
+        volumeChartData.value = envelope.data.volumeHistory;
+      }
+      if (Array.isArray(envelope.data.tokenHistory) && envelope.data.tokenHistory.length > 0) {
+        tokenChartData.value = envelope.data.tokenHistory;
+      }
     }
   } catch {
     // Fallback gracefully

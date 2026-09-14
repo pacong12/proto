@@ -347,13 +347,60 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const tokens = await repository.findAll();
     const totalTokens = tokens.length;
     let totalVolumeEth = 0;
+
+    // Collect 24h bucketed data for reactive SVG chart (6 x 4-hour slots)
+    const now = Date.now();
+    const fourHoursMs = 4 * 60 * 60 * 1000;
+    const timeSlots = [
+      { label: '00:00', value: 0 },
+      { label: '04:00', value: 0 },
+      { label: '08:00', value: 0 },
+      { label: '12:00', value: 0 },
+      { label: '16:00', value: 0 },
+      { label: '20:00', value: 0 },
+      { label: '24:00', value: 0 },
+    ];
+
+    const tokenLaunchSlots = [
+      { label: '00:00', value: 0 },
+      { label: '04:00', value: 0 },
+      { label: '08:00', value: 0 },
+      { label: '12:00', value: 0 },
+      { label: '16:00', value: 0 },
+      { label: '20:00', value: 0 },
+      { label: '24:00', value: 0 },
+    ];
+
+    // Compute token creation timestamps
+    for (const t of tokens) {
+      if (t.createdAt) {
+        const age = now - t.createdAt;
+        if (age >= 0 && age < 24 * 60 * 60 * 1000) {
+          const slotIdx = Math.min(6, Math.floor(age / fourHoursMs));
+          tokenLaunchSlots[6 - slotIdx].value += 1;
+        }
+      }
+    }
+
+    const ethPriceUsd = await priceFeed.getEthPriceUsd();
+
     for (const t of tokens) {
       const trades = await repository.getTrades(t.address, 500, 0);
       for (const tr of trades) {
-        totalVolumeEth += parseFloat(tr.wethAmount || '0');
+        const weth = parseFloat(tr.wethAmount || '0');
+        totalVolumeEth += weth;
+
+        if (tr.timestamp) {
+          const age = now - tr.timestamp;
+          if (age >= 0 && age < 24 * 60 * 60 * 1000) {
+            const slotIdx = Math.min(6, Math.floor(age / fourHoursMs));
+            const volumeUsd = Math.round(weth * ethPriceUsd);
+            timeSlots[6 - slotIdx].value += volumeUsd;
+          }
+        }
       }
     }
-    const ethPriceUsd = await priceFeed.getEthPriceUsd();
+
     const totalVolumeUsd = Math.round(totalVolumeEth * ethPriceUsd);
     const totalBuybackEth = (totalVolumeEth * 0.01 * 0.3 * 0.8).toFixed(3); // 80% of 30% protocol fee
 
@@ -365,6 +412,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         totalBuyback: totalBuybackEth,
         totalVolumeEth: totalVolumeEth.toFixed(4),
         ethPriceUsd,
+        volumeHistory: timeSlots,
+        tokenHistory: tokenLaunchSlots,
       },
       timestamp: Date.now(),
     };
