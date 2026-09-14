@@ -397,6 +397,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { useI18n } from '@/lib/i18n';
+import { compressAndConvertToWebp } from '@/lib/image-optimizer';
 
 const { t } = useI18n();
 const emit = defineEmits<{
@@ -441,7 +442,7 @@ function triggerFileInput() {
   fileInputRef.value?.click();
 }
 
-function processImageFile(file: File) {
+async function processImageFile(file: File) {
   if (!file.type.startsWith('image/')) {
     alert('Please select a valid image file (PNG, JPG, WEBP, GIF).');
     return;
@@ -452,33 +453,30 @@ function processImageFile(file: File) {
   }
 
   selectedFileName.value = file.name;
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    const dataUrl = e.target?.result as string;
-    imagePreview.value = dataUrl;
-
+  try {
     isUploadingIpfs.value = true;
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
+    // Compress and convert photo to modern WebP (max 512x512) before IPFS pinning
+    const processed = await compressAndConvertToWebp(file, 512, 0.85);
+    imagePreview.value = processed.dataUrl;
 
-      const res = await fetch('/api/ipfs/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.success && data.data?.uri) {
-        form.value.logo = data.data.uri;
-      } else {
-        form.value.logo = 'ipfs://bafybeiehcgbqotmir6tqi76eorpihucphlry53cx3mmnxgmqjjxpwherwq';
-      }
-    } catch {
+    const formData = new FormData();
+    formData.append('file', processed.file);
+
+    const res = await fetch('/api/ipfs/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+    if (data.success && data.data?.uri) {
+      form.value.logo = data.data.uri;
+    } else {
       form.value.logo = 'ipfs://bafybeiehcgbqotmir6tqi76eorpihucphlry53cx3mmnxgmqjjxpwherwq';
-    } finally {
-      isUploadingIpfs.value = false;
     }
-  };
-  reader.readAsDataURL(file);
+  } catch {
+    form.value.logo = 'ipfs://bafybeiehcgbqotmir6tqi76eorpihucphlry53cx3mmnxgmqjjxpwherwq';
+  } finally {
+    isUploadingIpfs.value = false;
+  }
 }
 
 function handleFileChange(event: Event) {

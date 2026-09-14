@@ -83,7 +83,8 @@ contract BuybackBurner is IBuybackBurner {
         uint256 wethBalance = IWETH(weth).balanceOf(address(this));
         if (wethBalance == 0) revert InsufficientWethBalance();
 
-        // Approve WETH to SwapRouter
+        // Reset and approve WETH to SwapRouter
+        IWETH(weth).approve(address(swapRouter), 0);
         IWETH(weth).approve(address(swapRouter), wethBalance);
 
         // Execute Swap WETH -> targetToken routed directly to BURN_ADDRESS

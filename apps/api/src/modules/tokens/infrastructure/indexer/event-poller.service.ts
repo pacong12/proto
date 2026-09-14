@@ -22,7 +22,7 @@ export class EventPollerService {
 
       if (startBlock > currentBlock) return 0;
 
-      // 1. Poll TokenLaunched Events
+      // 1. Poll TokenLaunched Events (v1 Direct Pool)
       const tokenLaunchedEvent = parseAbiItem(
         'event TokenLaunched(address indexed token, address indexed deployer, address indexed dexFactory, address pairedToken, address pool, uint256 dexId, uint256 launchConfigId, uint256 positionId, uint256 restrictionsEndBlock, uint256 initialBuyAmount)',
       );
@@ -40,6 +40,34 @@ export class EventPollerService {
           const tokenEntity = await this.chainIndexer.fetchLaunchedTokenFromChain(tokenAddress);
           if (tokenEntity) {
             await this.tokenRepository.save(tokenEntity);
+          }
+        }
+      }
+
+      // 1b. Poll TokenLaunchedV2 Events (v2 Bonding Curve Factory)
+      if (ROBINHOOD_CHAIN.contracts.factoryV2) {
+        const tokenLaunchedV2Event = parseAbiItem(
+          'event TokenLaunchedV2(address indexed token, address indexed curve, address indexed creator, string name, string symbol, uint256 initialBuy)',
+        );
+
+        const v2LaunchLogs = await this.client.getLogs({
+          address: ROBINHOOD_CHAIN.contracts.factoryV2,
+          event: tokenLaunchedV2Event,
+          fromBlock: startBlock,
+          toBlock: currentBlock,
+        });
+
+        for (const log of v2LaunchLogs) {
+          const tokenAddress = log.args.token as `0x${string}`;
+          if (tokenAddress) {
+            const tokenEntity = await this.chainIndexer.fetchLaunchedTokenFromChain(tokenAddress);
+            if (tokenEntity) {
+              await this.tokenRepository.save({
+                ...tokenEntity,
+                version: 'v2',
+                curveAddress: (log.args.curve as `0x${string}`) || tokenEntity.curveAddress,
+              });
+            }
           }
         }
       }

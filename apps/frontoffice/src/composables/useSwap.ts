@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { parseAbi, erc20Abi } from 'viem';
+import { parseAbi, erc20Abi, parseEther } from 'viem';
 import { ROBINHOOD_CHAIN, swapRouterAbi } from '@proto/shared-types';
 import { publicClient, getWalletClient } from '../lib/viem-client';
 
@@ -41,7 +41,12 @@ export function useSwap() {
       if (!account) throw new Error('No active account selected');
 
       const slippagePercent = params.slippagePercent ?? slippage.value ?? 1.0;
-      const amountInWei = BigInt(Math.floor(parseFloat(params.amountInEth) * 1e18));
+      let amountInWei: bigint;
+      try {
+        amountInWei = parseEther(params.amountInEth);
+      } catch {
+        amountInWei = BigInt(Math.floor(parseFloat(params.amountInEth || '0') * 1e18));
+      }
 
       // Check if trading on V2 Bonding Curve
       const isV2Curve =
