@@ -63,11 +63,7 @@
           <Badge variant="secondary">24h History</Badge>
         </div>
 
-        <ReactiveBarChart
-          :data="volumeChartData"
-          :height="180"
-          :is-currency="true"
-        />
+        <ReactiveBarChart :data="volumeChartData" :height="180" :is-currency="true" />
       </Card>
 
       <Card class="p-6 space-y-4">
@@ -76,18 +72,12 @@
             <h2 class="text-base font-bold">
               {{ t('totalTokensLaunched') }}
             </h2>
-            <p class="text-xs text-zinc-500 dark:text-zinc-400">
-              Token deployments over 24h
-            </p>
+            <p class="text-xs text-zinc-500 dark:text-zinc-400">Token deployments over 24h</p>
           </div>
           <Badge variant="graduated">Robinhood L2</Badge>
         </div>
 
-        <ReactiveBarChart
-          :data="tokenChartData"
-          :height="180"
-          unit="tokens"
-        />
+        <ReactiveBarChart :data="tokenChartData" :height="180" unit="tokens" />
       </Card>
     </div>
 
