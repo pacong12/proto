@@ -284,21 +284,14 @@
               <!-- Token Name, Symbol, & Version Badge -->
               <td class="py-3 px-4">
                 <div class="flex items-center gap-3">
-                  <Avatar
-                    class="w-8 h-8 rounded-lg border border-zinc-200 dark:border-zinc-800 shrink-0"
-                  >
-                    <img
-                      v-if="item.token.logo && item.token.logo.startsWith('http')"
-                      :src="item.token.logo"
-                      :alt="item.token.name"
-                      class="w-full h-full object-cover"
-                    />
-                    <AvatarFallback
-                      class="bg-zinc-100 dark:bg-zinc-800 text-emerald-500 font-bold text-xs rounded-lg"
-                    >
-                      {{ item.token.symbol.slice(0, 3) }}
-                    </AvatarFallback>
-                  </Avatar>
+                  <OptimizedImage
+                    :src="item.token.logo"
+                    :alt="item.token.name"
+                    :fallback-text="item.token.symbol"
+                    :width="32"
+                    :height="32"
+                    class="rounded-lg border border-zinc-200 dark:border-zinc-800"
+                  />
                   <div class="truncate">
                     <div class="flex items-center gap-1.5">
                       <span
@@ -401,21 +394,14 @@
           <div class="space-y-3">
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-2.5 min-w-0">
-                <Avatar
-                  class="w-9 h-9 rounded-lg border border-zinc-200 dark:border-zinc-800 shrink-0"
-                >
-                  <img
-                    v-if="item.token.logo && item.token.logo.startsWith('http')"
-                    :src="item.token.logo"
-                    :alt="item.token.name"
-                    class="w-full h-full object-cover"
-                  />
-                  <AvatarFallback
-                    class="bg-zinc-100 dark:bg-zinc-800 text-emerald-500 font-bold text-xs rounded-lg"
-                  >
-                    {{ item.token.symbol.slice(0, 3) }}
-                  </AvatarFallback>
-                </Avatar>
+                <OptimizedImage
+                  :src="item.token.logo"
+                  :alt="item.token.name"
+                  :fallback-text="item.token.symbol"
+                  :width="36"
+                  :height="36"
+                  class="rounded-lg border border-zinc-200 dark:border-zinc-800"
+                />
                 <div class="truncate">
                   <h3
                     class="font-bold text-sm text-black dark:text-white group-hover:text-emerald-500 transition truncate"
@@ -504,6 +490,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { Combobox } from '@/components/ui/combobox';
 import { Empty } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';

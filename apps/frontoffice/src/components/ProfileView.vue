@@ -238,21 +238,14 @@
                 class="bg-zinc-50/60 dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800/80 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 <div class="flex items-start gap-3.5">
-                  <Avatar
-                    class="w-12 h-12 rounded-lg border border-zinc-700 overflow-hidden shrink-0"
-                  >
-                    <img
-                      v-if="token.logo && token.logo.startsWith('http')"
-                      :src="token.logo"
-                      :alt="token.name"
-                      class="w-full h-full object-cover"
-                    />
-                    <AvatarFallback
-                      class="bg-zinc-800 text-emerald-400 font-bold text-base rounded-lg"
-                    >
-                      {{ token.symbol.slice(0, 3) }}
-                    </AvatarFallback>
-                  </Avatar>
+                  <OptimizedImage
+                    :src="token.logo"
+                    :alt="token.name"
+                    :fallback-text="token.symbol"
+                    :width="48"
+                    :height="48"
+                    class="rounded-lg border border-zinc-700"
+                  />
 
                   <div>
                     <div class="flex items-center gap-2">
@@ -693,6 +686,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, Jazzicon } from '@/components/ui/avatar';
+import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
