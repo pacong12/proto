@@ -1311,11 +1311,26 @@ async function changeResolution(seconds: number) {
 
 async function handleSwap() {
   swapSuccessTx.value = null;
+
+  // Calculate expectedAmountOut in wei to enforce on-chain slippage bounds
+  let expectedAmountOut: bigint | undefined;
+  const input = parseFloat(amountIn.value) || 0;
+  if (input > 0 && currentMarketData.value.priceInWeth > 0) {
+    if (isBuy.value) {
+      const estimatedTokens = input / currentMarketData.value.priceInWeth;
+      expectedAmountOut = BigInt(Math.floor(estimatedTokens * 1e18));
+    } else {
+      const estimatedEth = input * currentMarketData.value.priceInWeth;
+      expectedAmountOut = BigInt(Math.floor(estimatedEth * 1e18));
+    }
+  }
+
   const hash = await executeSwap({
     tokenAddress: currentToken.value.address,
     isBuy: isBuy.value,
     amountInEth: amountIn.value,
     slippagePercent: slippage.value,
+    expectedAmountOut,
     version: currentToken.value.version,
     curveAddress: currentToken.value.curveAddress,
     isGraduated: currentMarketData.value.isGraduated,

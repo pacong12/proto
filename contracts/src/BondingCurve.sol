@@ -78,16 +78,15 @@ contract BondingCurve {
     }
 
     /**
-     * @notice Decaying snipe tax: 99% at t=0 decaying exponentially to 0% over 5 seconds.
+     * @notice Decaying snipe tax: 99% at t=0 decaying smoothly to 0% after 3 seconds.
      */
     function currentSnipeTaxBps(address recipient) public view returns (uint256) {
         if (recipient == creator || recipient == feeRecipient) return 0;
         uint256 elapsed = block.timestamp - launchTime;
-        if (elapsed >= 5) return 0;
+        if (elapsed >= 3) return 0;
         if (elapsed == 0) return 9900;
         if (elapsed == 1) return 2500;
-        if (elapsed == 2) return 300;
-        return 50;
+        return 300;
     }
 
     /**
