@@ -117,8 +117,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     return new Response(null, { headers });
   }
 
-  // IP-based Rate Limiting (120 req / minute per IP)
-  if (!checkRateLimit(clientIp, 120, 60_000)) {
+  // Rate Limiting on public/expensive API routes (120 req / minute per IP)
+  // Healthcheck & root probe are exempt from rate limiting for monitoring availability
+  const isHealthProbe = url.pathname === '/health' || url.pathname === '/';
+  if (!isHealthProbe && !checkRateLimit(clientIp, 120, 60_000)) {
     return new Response(
       JSON.stringify({
         success: false,
