@@ -20,35 +20,58 @@ export default defineConfig({
   },
   themeConfig: {
     siteTitle: 'Proto Guide',
+    search: {
+      provider: 'local',
+    },
+    outline: {
+      level: [2, 3],
+      label: 'On this page',
+    },
     nav: [
       { text: 'Getting Started', link: '/protocol/overview' },
       { text: 'How to Launch', link: '/protocol/launches' },
-      { text: 'Trading & Swaps', link: '/protocol/trading-guide' },
-      { text: 'Safety & Protection', link: '/protocol/anti-snipe' },
-      { text: 'Terms & Privacy', link: '/terms-of-service' },
+      { text: 'Trading Guide', link: '/protocol/trading-guide' },
+      { text: 'FAQ', link: '/protocol/faq' },
+      { text: 'Safety', link: '/protocol/anti-snipe' },
       { text: 'Launchpad App', link: 'https://proto.family' },
     ],
     sidebar: [
       {
-        text: 'User Handbook',
+        text: 'Getting Started',
+        collapsed: false,
         items: [
           { text: 'What is Proto?', link: '/protocol/overview' },
-          { text: 'Launching a Token', link: '/protocol/launches' },
+          { text: 'Frequently Asked Questions', link: '/protocol/faq' },
+        ],
+      },
+      {
+        text: 'Token Launches & Trading',
+        collapsed: false,
+        items: [
+          { text: 'How to Launch a Token', link: '/protocol/launches' },
           { text: 'Trading & Swaps Guide', link: '/protocol/trading-guide' },
           { text: 'Anti-Snipe & Fair Launch', link: '/protocol/anti-snipe' },
+        ],
+      },
+      {
+        text: 'Economics & Community',
+        collapsed: false,
+        items: [
           { text: 'Creator Fees & Rewards', link: '/protocol/fees-and-burns' },
           { text: 'Community Takeovers (CTO)', link: '/protocol/community-takeovers' },
         ],
       },
       {
-        text: 'Network & Network Setup',
+        text: 'Network & Contracts',
+        collapsed: false,
         items: [
           { text: 'Robinhood Chain Setup', link: '/integration/network' },
           { text: 'Verified Smart Contracts', link: '/integration/contracts' },
         ],
       },
       {
-        text: 'Legal & Privacy',
+        text: 'Legal & Policies',
+        collapsed: true,
         items: [
           { text: 'Terms of Service', link: '/terms-of-service' },
           { text: 'Privacy Policy', link: '/privacy-policy' },
