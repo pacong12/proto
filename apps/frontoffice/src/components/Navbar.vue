@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useRoute, RouterLink } from 'vue-router';
 import {
   Search,
@@ -37,6 +37,13 @@ defineEmits<{
 const { t } = useI18n();
 const route = useRoute();
 const mobileMenuOpen = ref(false);
+
+watch(
+  () => route.path,
+  () => {
+    mobileMenuOpen.value = false;
+  },
+);
 
 function isRouteActive(path: string) {
   if (path === '/launchpad') {

@@ -70,15 +70,28 @@ contract LaunchpadV2Test is Test {
         uint256 tokensReceived = curve.buy{value: 0.1 ether}(0);
         vm.stopPrank();
 
-        // 99% snipe tax applies to buyer1
+        // 99% snipe tax applies to buyer1 — use same rounding as contract (gross * snipeBps / BPS)
+        uint256 snipeFee = (grossTokensExpected * 9900) / 10000;
+        uint256 expectedUserTokens = grossTokensExpected - snipeFee;
+        assertEq(tokensReceived, expectedUserTokens, "user receives gross minus snipe fee");
         assertLt(tokensReceived, grossTokensExpected);
-        assertEq(tokensReceived + token.balanceOf(feeRecipient), grossTokensExpected, "sum of tokens must equal gross");
 
-        // C-01 Verification: virtualTokenReserve must be decremented by grossTokensExpected
-        assertEq(curve.virtualTokenReserve(), initialVirtualTokens - grossTokensExpected);
+        // Token conservation: user + feeRecipient == gross (no tokens created or destroyed)
+        assertEq(
+            tokensReceived + token.balanceOf(feeRecipient),
+            grossTokensExpected,
+            "token conservation: user + fee == gross"
+        );
 
-        // Snipe fee tokens must be forwarded to feeRecipient, preserving curve token balance
-        assertGt(token.balanceOf(feeRecipient), 0);
+        // C-01: virtualTokenReserve decremented by GROSS, not net user amount
+        assertEq(
+            curve.virtualTokenReserve(),
+            initialVirtualTokens - grossTokensExpected,
+            "reserve must decrease by gross tokens"
+        );
+
+        // feeRecipient received the snipe fee tokens
+        assertEq(token.balanceOf(feeRecipient), snipeFee, "feeRecipient must hold snipe fee tokens");
     }
 
     function test_LaunchTokenV2WithInitialBuy_DirectRecipient_C02() public {

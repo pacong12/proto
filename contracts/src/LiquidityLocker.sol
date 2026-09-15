@@ -20,16 +20,26 @@ contract LiquidityLocker is ILiquidityLocker {
         address creatorRecipient;
     }
 
+    /// @notice Pending fee redirect: (token => (pendingAddress, validAfter timestamp))
+    struct PendingRedirect {
+        address pendingAddress;
+        uint256 validAfter;
+    }
+
+    uint256 public constant REDIRECT_TIMELOCK = 48 hours;
+
     INonfungiblePositionManager public immutable positionManager;
     address public immutable factory;
     address public immutable weth;
     address public protocolFeeRecipient;
     address public owner;
+    address public pendingOwner;
 
     mapping(address => uint256) public override tokenPositions;
     mapping(address => address) public override tokenDeployers;
     mapping(address => uint256) public override tokenProtocolFeeShares;
     mapping(address => address) public override feeRedirects;
+    mapping(address => PendingRedirect) public pendingFeeRedirects;
 
     error Unauthorized();
     error AlreadyLocked();
@@ -38,8 +48,13 @@ contract LiquidityLocker is ILiquidityLocker {
     error InvalidShare();
     error TransferFailed();
     error Reentrancy();
+    error TimelockNotExpired();
+    error NoPendingRedirect();
 
     bool private _locked;
+
+    event PendingFeeRedirectProposed(address indexed token, address indexed redirect, uint256 validAfter);
+    event PendingOwnershipProposed(address indexed proposedOwner);
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert Unauthorized();
@@ -100,15 +115,53 @@ contract LiquidityLocker is ILiquidityLocker {
     }
 
     function setFeeRedirect(address token, address redirect) external override {
+        // H-01 Fix: setFeeRedirect is kept for interface compatibility but now delegates
+        // to the two-step timelock flow. Direct instant redirect is removed.
+        // Use proposeFeeRedirect() + acceptFeeRedirect() instead.
         address deployer = tokenDeployers[token];
         if (msg.sender != deployer && msg.sender != owner) revert Unauthorized();
-        feeRedirects[token] = redirect;
-        emit FeeRedirectUpdated(token, redirect);
+        if (redirect == address(0)) revert ZeroAddress();
+        uint256 validAfter = block.timestamp + REDIRECT_TIMELOCK;
+        pendingFeeRedirects[token] = PendingRedirect({pendingAddress: redirect, validAfter: validAfter});
+        emit PendingFeeRedirectProposed(token, redirect, validAfter);
+    }
+
+    /// @notice Finalize fee redirect after the 48-hour timelock has passed.
+    function acceptFeeRedirect(address token) external {
+        address deployer = tokenDeployers[token];
+        if (msg.sender != deployer && msg.sender != owner) revert Unauthorized();
+        PendingRedirect memory pending = pendingFeeRedirects[token];
+        if (pending.pendingAddress == address(0)) revert NoPendingRedirect();
+        if (block.timestamp < pending.validAfter) revert TimelockNotExpired();
+        feeRedirects[token] = pending.pendingAddress;
+        delete pendingFeeRedirects[token];
+        emit FeeRedirectUpdated(token, pending.pendingAddress);
+    }
+
+    /// @notice Cancel a pending fee redirect before it takes effect.
+    function cancelFeeRedirect(address token) external {
+        address deployer = tokenDeployers[token];
+        if (msg.sender != deployer && msg.sender != owner) revert Unauthorized();
+        delete pendingFeeRedirects[token];
     }
 
     function setProtocolFeeRecipient(address recipient) external onlyOwner {
         if (recipient == address(0)) revert ZeroAddress();
         protocolFeeRecipient = recipient;
+    }
+
+    /// @notice Two-step ownership transfer: Step 1 — propose new owner.
+    function transferOwnership(address newOwner) external onlyOwner {
+        if (newOwner == address(0)) revert ZeroAddress();
+        pendingOwner = newOwner;
+        emit PendingOwnershipProposed(newOwner);
+    }
+
+    /// @notice Two-step ownership transfer: Step 2 — new owner accepts.
+    function acceptOwnership() external {
+        if (msg.sender != pendingOwner) revert Unauthorized();
+        owner = pendingOwner;
+        pendingOwner = address(0);
     }
 
     function claimFees(address token) external override nonReentrant returns (uint256 creatorTokenFee, uint256 creatorWethFee) {

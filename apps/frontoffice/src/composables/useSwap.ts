@@ -78,16 +78,25 @@ export function useSwap() {
           return txHash;
         } else {
           // V2 Bonding Curve: sell() tokens back for ETH
-          // 1. Approve tokens to BondingCurve contract
-          const approveHash = await walletClient.writeContract({
+          // 1. Check existing allowance before approving (fixes C-03)
+          const currentAllowance = await publicClient.readContract({
             address: params.tokenAddress,
             abi: erc20Abi,
-            functionName: 'approve',
-            args: [params.curveAddress!, amountInWei],
-            account,
-            chain: walletClient.chain,
+            functionName: 'allowance',
+            args: [account, params.curveAddress!],
           });
-          await publicClient.waitForTransactionReceipt({ hash: approveHash });
+
+          if (currentAllowance < amountInWei) {
+            const approveHash = await walletClient.writeContract({
+              address: params.tokenAddress,
+              abi: erc20Abi,
+              functionName: 'approve',
+              args: [params.curveAddress!, amountInWei],
+              account,
+              chain: walletClient.chain,
+            });
+            await publicClient.waitForTransactionReceipt({ hash: approveHash });
+          }
 
           let minEthOut = params.amountOutMinimum ?? 0n;
           if (minEthOut === 0n && params.expectedAmountOut) {
@@ -114,16 +123,25 @@ export function useSwap() {
       const tokenOut = params.isBuy ? params.tokenAddress : ROBINHOOD_CHAIN.contracts.weth;
 
       if (!params.isBuy) {
-        // Approve token to swap router
-        const approveHash = await walletClient.writeContract({
+        // Check existing allowance before approving (fixes C-03)
+        const currentAllowance = await publicClient.readContract({
           address: params.tokenAddress,
           abi: erc20Abi,
-          functionName: 'approve',
-          args: [ROBINHOOD_CHAIN.contracts.swapRouter, amountInWei],
-          account,
-          chain: walletClient.chain,
+          functionName: 'allowance',
+          args: [account, ROBINHOOD_CHAIN.contracts.swapRouter],
         });
-        await publicClient.waitForTransactionReceipt({ hash: approveHash });
+
+        if (currentAllowance < amountInWei) {
+          const approveHash = await walletClient.writeContract({
+            address: params.tokenAddress,
+            abi: erc20Abi,
+            functionName: 'approve',
+            args: [ROBINHOOD_CHAIN.contracts.swapRouter, amountInWei],
+            account,
+            chain: walletClient.chain,
+          });
+          await publicClient.waitForTransactionReceipt({ hash: approveHash });
+        }
       }
 
       let amountOutMinimum = params.amountOutMinimum ?? 0n;

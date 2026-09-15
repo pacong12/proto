@@ -16,7 +16,7 @@
           :placeholder="t('searchPlaceholder')"
           class="border-0 shadow-none focus-visible:ring-0 focus-visible:border-0 bg-transparent h-8 text-sm px-0 text-black dark:text-white placeholder:text-zinc-400"
           @keydown.esc="$emit('close')"
-          @keydown.enter="handleEnter"
+          @keydown="handleKeydown"
         />
         <Badge
           variant="outline"
@@ -45,10 +45,15 @@
         />
 
         <ul v-else class="space-y-1">
-          <li v-for="item in filteredTokens" :key="item.token.address">
+          <li v-for="(item, idx) in filteredTokens" :key="item.token.address">
             <button
               @click="selectToken(item.token.address)"
-              class="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 transition text-left group cursor-pointer"
+              :class="[
+                'w-full flex items-center justify-between p-2.5 rounded-xl transition text-left group cursor-pointer',
+                idx === selectedIndex
+                  ? 'bg-zinc-100 dark:bg-zinc-800 ring-1 ring-emerald-500/40'
+                  : 'hover:bg-zinc-100 dark:hover:bg-zinc-900',
+              ]"
             >
               <div class="flex items-center gap-3 min-w-0">
                 <Avatar
@@ -130,7 +135,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { Search, Loader2 } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { Card } from '@/components/ui/card';
@@ -151,6 +156,31 @@ const query = ref('');
 const searchInput = ref<HTMLInputElement | null>(null);
 const loading = ref(false);
 const tokens = ref<Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }>>([]);
+const selectedIndex = ref(0);
+
+watch(query, () => {
+  selectedIndex.value = 0;
+});
+
+function handleKeydown(e: KeyboardEvent) {
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (filteredTokens.value.length > 0) {
+      selectedIndex.value = (selectedIndex.value + 1) % filteredTokens.value.length;
+    }
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (filteredTokens.value.length > 0) {
+      selectedIndex.value =
+        (selectedIndex.value - 1 + filteredTokens.value.length) % filteredTokens.value.length;
+    }
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (filteredTokens.value[selectedIndex.value]) {
+      selectToken(filteredTokens.value[selectedIndex.value].token.address);
+    }
+  }
+}
 
 onMounted(async () => {
   searchInput.value?.focus();
@@ -183,11 +213,5 @@ const filteredTokens = computed(() => {
 function selectToken(address: string) {
   emit('selectToken', address);
   emit('close');
-}
-
-function handleEnter() {
-  if (filteredTokens.value.length > 0) {
-    selectToken(filteredTokens.value[0].token.address);
-  }
 }
 </script>

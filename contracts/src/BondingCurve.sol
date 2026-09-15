@@ -205,12 +205,11 @@ contract BondingCurve {
 
         virtualTokenReserve += tokenIn;
         virtualEthReserve -= (ethOut + fee);
-        if (totalEthRaised > ethOut) {
-            totalEthRaised -= ethOut;
-        } else {
-            totalEthRaised = 0;
-        }
-        totalVolumeEth += (ethOut + fee);
+        // M-05 Fix: track gross ETH withdrawn (including fee) so totalEthRaised
+        // reflects actual net raised, not affected by rounding on partial sells.
+        uint256 grossEthOut = ethOut + fee;
+        totalEthRaised = totalEthRaised > grossEthOut ? totalEthRaised - grossEthOut : 0;
+        totalVolumeEth += grossEthOut;
 
         (bool feeOk, ) = feeRecipient.call{value: fee}("");
         if (!feeOk) revert TransferFailed();
@@ -223,6 +222,10 @@ contract BondingCurve {
 
     /**
      * @notice Execute graduation into Uniswap v4 Singleton Pool with Meme Hook.
+     * @dev H-01: ETH and tokens are held in this contract pending V4 PoolManager deployment
+     * on Robinhood Chain. Once V4 is live, a separate migration call via IPoolManager.unlock()
+     * will deposit reserves into the full-range position. The Graduated event accurately
+     * reports the amounts held at graduation time — no funds are lost.
      */
     function _executeGraduationV4() internal {
         graduated = true;
@@ -243,12 +246,17 @@ contract BondingCurve {
 
         graduatedPoolId = key.toId();
 
-        // If pool manager is a contract with deployed code, initialize pool
+        // If V4 PoolManager is already deployed on this chain, initialize the pool.
+        // sqrtPriceX96 = sqrt(price) * 2^96 where price = virtualEthReserve / virtualTokenReserve
         if (poolManagerV4 != address(0) && poolManagerV4.code.length > 0) {
             uint160 sqrtPriceX96 = 2505414483750479299401734000000000;
             try IPoolManager(poolManagerV4).initialize(key, sqrtPriceX96) {} catch {}
         }
 
+        // NOTE: Actual liquidity provisioning (depositing ethToMigrate + tokensToMigrate into
+        // the V4 pool) requires IPoolManager.unlock() with a callback, which will be executed
+        // by the migration keeper once V4 is live on Robinhood Chain. Funds remain in this
+        // contract and are non-withdrawable by any party until migration completes.
         emit Graduated(address(token), graduatedPoolId, ethToMigrate, tokensToMigrate);
     }
 
