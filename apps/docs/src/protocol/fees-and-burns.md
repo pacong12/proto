@@ -1,33 +1,32 @@
-# Fees & Buyback Split
+# Creator Fees & Rewards
 
-Proto aligns token creators and protocol longevity through a fair, transparent fee distribution model.
+Proto aligns the long-term success of token creators with their communities by offering one of the most creator-friendly fee structures in the entire blockchain ecosystem.
 
 ---
 
 ## 70/30 Fee Distribution
 
-Every trade on a Proto Uniswap V3 pool generates a **1% pool fee** in both WETH and the launched token.
-The fees accumulate inside the locked position NFT and are split as follows:
+Every trade executed on a Proto market generates a standard **1% pool fee**. This fee accumulates transparently in both ETH and the launched token.
 
-```text
-                                  Total Trading Fee (1%)
-                                            |
-                    +-----------------------+-----------------------+
-                    |                                               |
-              Creator Share (70%)                             Protocol Share (30%)
-                    |                                               |
-        +-----------+-----------+                       +-----------+-----------+
-        |                       |                       |                       |
-  Creator Wallet        Holder Redirect (CTO)      TWAP Buyback (80%)      Operations (20%)
-```
+Here is how fees are divided:
 
-### Creator Rewards (70%)
+- **70% to Token Creator**: The deployer of the token earns 70% of all accumulated trading fees on an ongoing basis.
+- **30% to Protocol & Community Burns**: 30% goes to platform sustainability, of which **80% is automatically used to purchase and permanently burn tokens via Uniswap TWAP**.
 
-- The token creator can call `claimFees(tokenAddress)` at any time via the Proto web app.
-- Creators receive 70% of accumulated WETH and 70% of accumulated token fees.
-- Creators can redirect their fee stream to a community multisig or token holders using `setFeeRedirect()`.
+---
 
-### Protocol Revenue & Automated Buyback (30%)
+## How Creators Claim Rewards
 
-- **80% of Protocol Fees**: Routed to `BuybackBurner.sol`, which executes automated TWAP swaps on Uniswap V3 to purchase the native platform utility token and permanently burn it to `0x000000000000000000000000000000000000dEaD`.
-- **20% of Protocol Fees**: Allocated to infrastructure servers, indexers, and core team operations.
+1. Connect the wallet that originally created the token.
+2. Go to your **Profile** page (`/profile`).
+3. Under the **My Launches** section, view your accumulated uncollected ETH and token rewards.
+4. Click **Claim Fees** to withdraw your rewards directly to your wallet in a single transaction.
+
+---
+
+## Fee Redirection (Community Takeovers)
+
+If a creator wishes to reward their community or hand over project leadership:
+
+- Creators can redirect their 70% fee stream to a DAO treasury, community multisig, or reward contract.
+- This feature empowers community takeovers (CTO) by turning project revenue into community-owned funding.

@@ -2,31 +2,31 @@
 layout: home
 
 hero:
-  name: 'Proto Docs'
-  text: 'Direct-Pool Uniswap V3 Launchpad Protocol'
-  tagline: 'Atomic token launches, permanently locked liquidity, and fair 70/30 fee distribution on Robinhood Chain.'
+  name: 'Proto Knowledge Base'
+  text: 'The Fair Token Launchpad on Robinhood Chain'
+  tagline: 'A simple, clean guide to creating, discovering, and trading fixed-supply tokens with permanently locked liquidity.'
   actions:
     - theme: brand
-      text: Explore Protocol
+      text: What is Proto?
       link: /protocol/overview
     - theme: alt
-      text: Developer Integration
-      link: /integration/network
+      text: How to Launch a Token
+      link: /protocol/launches
     - theme: alt
-      text: View Contracts
-      link: /integration/contracts
+      text: Trading & Swaps Guide
+      link: /protocol/trading-guide
 
 features:
-  - title: Atomic 1-Tx Launch
-    details: Deploy a fixed-supply token, create a Uniswap V3 pool, provide full liquidity, and permanently lock it in a single atomic transaction.
-  - title: Permanent Liquidity Lock
-    details: Liquidity positions are minted directly into the LiquidityLocker contract on block 0 and cannot be withdrawn or migrated.
-  - title: 2-Block Anti-Snipe Protection
-    details: Hardcoded smart contract limits (5.5% max buy, 5.0% max wallet) prevent sniper bots from draining initial pool depth.
-  - title: 70/30 Trading Fee Split
-    details: 70% of accrued pool fees stream directly to token creators with Community Takeover (CTO) delegation support.
-  - title: Automated TWAP Buyback & Burn
-    details: 80% of protocol revenue is automatically executed via Uniswap V3 TWAP swaps to buy and burn the native utility token.
-  - title: Self-Describing Onchain Metadata
-    details: Token names, tickers, IPFS logos, descriptions, and social links live directly onchain without off-chain database dependencies.
+  - title: 100% Non-Custodial
+    details: Your wallet controls every action. Proto never holds your assets, private keys, or creator funds.
+  - title: Rug-Proof Liquidity Lock
+    details: Liquidity is minted and locked permanently inside smart contracts on day one. No developer or admin can withdraw pool reserves.
+  - title: Built-In Sniper Protection
+    details: Automated anti-snipe safeguards prevent bots from cornering token supply at launch, giving genuine community members a fair entry.
+  - title: 70% Creator Rewards
+    details: Creators earn 70% of accumulated trading fees, with seamless options to redirect rewards to community treasuries.
+  - title: Automatic Buyback & Burn
+    details: 80% of protocol revenue is automatically used to purchase and burn tokens, reducing circulating supply over time.
+  - title: Fast & Low Cost
+    details: Powered by Robinhood Chain Layer 2 for near-instant confirmations and fraction-of-a-cent transaction fees.
 ---

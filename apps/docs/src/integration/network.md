@@ -1,51 +1,25 @@
-# Network & RPC Configuration
+# Robinhood Chain Network Setup
 
-Proto is deployed natively on **Robinhood Chain**.
+Proto operates natively on **Robinhood Chain Layer 2**, providing fast transaction speeds, low latency, and fraction-of-a-cent execution costs.
 
----
-
-## Mainnet Parameters
-
-| Parameter          | Value                                                                          |
-| :----------------- | :----------------------------------------------------------------------------- |
-| **Network Name**   | Robinhood Chain                                                                |
-| **Chain ID**       | `4663`                                                                         |
-| **Native Asset**   | `ETH`                                                                          |
-| **Public RPC URL** | `https://rpc.mainnet.chain.robinhood.com`                                      |
-| **Block Explorer** | [https://robinhoodchain.blockscout.com](https://robinhoodchain.blockscout.com) |
-| **WETH Address**   | `0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73`                                   |
+To interact with Proto, add the Robinhood Chain network to your Web3 wallet.
 
 ---
 
-## Testnet Parameters
+## Network Parameters
 
-| Parameter          | Value                                                                                          |
-| :----------------- | :--------------------------------------------------------------------------------------------- |
-| **Network Name**   | Robinhood Chain Testnet                                                                        |
-| **Chain ID**       | `46630`                                                                                        |
-| **Native Asset**   | `ETH`                                                                                          |
-| **Public RPC URL** | `https://rpc.testnet.chain.robinhood.com`                                                      |
-| **Block Explorer** | [https://testnet.robinhoodchain.blockscout.com](https://testnet.robinhoodchain.blockscout.com) |
+Enter these details into your wallet's "Add Network" settings:
+
+| Parameter              | Value                                     |
+| :--------------------- | :---------------------------------------- |
+| **Network Name**       | Robinhood Chain                           |
+| **RPC URL**            | `https://rpc.mainnet.chain.robinhood.com` |
+| **Chain ID**           | `4663`                                    |
+| **Currency Symbol**    | `ETH`                                     |
+| **Block Explorer URL** | `https://robinhoodchain.blockscout.com`   |
 
 ---
 
-## Viem Client Setup
+## One-Click Connection
 
-```typescript
-import { createPublicClient, http } from 'viem';
-
-export const robinhoodClient = createPublicClient({
-  chain: {
-    id: 4663,
-    name: 'Robinhood Chain',
-    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-    rpcUrls: {
-      default: { http: ['https://rpc.mainnet.chain.robinhood.com'] },
-    },
-    blockExplorers: {
-      default: { name: 'Blockscout', url: 'https://robinhoodchain.blockscout.com' },
-    },
-  },
-  transport: http(),
-});
-```
+When visiting [proto.family](https://proto.family), the platform will automatically detect if your wallet is connected to an alternate chain and prompt a single-click button to switch to **Robinhood Chain (Chain ID: 4663)**.
