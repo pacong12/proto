@@ -66,7 +66,7 @@ jobs:
       - name: Extract metadata for Docker
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository }}-api
           tags: |
