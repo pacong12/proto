@@ -5,17 +5,26 @@ import {ILaunchpadToken} from "./interfaces/ILaunchpadToken.sol";
 
 /**
  * @title LaunchpadToken
- * @notice Fixed-supply ERC-20 token with self-describing onchain metadata, 2-block anti-snipe protection,
- *         and optional creator buy/sell taxes routed to creator wallet.
+ * @notice Fixed-supply ERC-20 with onchain metadata, block-based anti-snipe
+ *         protection, and optional creator buy/sell taxes.
+ *
+ * Security notes:
+ *   - M-02 fix: anti-snipe exemptions for the deployer (allowing unrestricted
+ *     purchase at launchBlock) are decoupled from tax exemptions. Deployer buys
+ *     during the restriction window are still subject to buy tax if one is
+ *     configured. Only the quantity limits (MAX_BUY_AMOUNT, MAX_HOLD_AMOUNT)
+ *     are bypassed for the deployer, not the tax logic.
+ *   - L-02 fix: setTaxConfig validates that taxRecipient has no code (must be
+ *     an EOA) to prevent failed silent tax transfers to broken contracts.
+ *   - Supply is permanently fixed at construction; no mint function exists.
  */
 contract LaunchpadToken is ILaunchpadToken {
     uint8 public constant override decimals = 18;
-    uint256 public constant override totalSupply = 1_000_000_000 * 10 ** 18; // 1 Billion fixed
+    uint256 public constant override totalSupply = 1_000_000_000 * 10 ** 18;
 
-    // Anti-snipe limits for blocks [launchBlock + 1, launchBlock + 2]
-    uint256 public constant MAX_HOLD_AMOUNT = 50_000_000 * 10 ** 18; // 5% max wallet
-    uint256 public constant MAX_BUY_AMOUNT = 55_000_000 * 10 ** 18; // 5.5% max buy
-    uint16 public constant MAX_TAX_BPS = 1000; // 10% maximum tax
+    uint256 public constant MAX_HOLD_AMOUNT = 50_000_000 * 10 ** 18;
+    uint256 public constant MAX_BUY_AMOUNT = 55_000_000 * 10 ** 18;
+    uint16 public constant MAX_TAX_BPS = 1000;
 
     string private _name;
     string private _symbol;
@@ -44,6 +53,7 @@ contract LaunchpadToken is ILaunchpadToken {
     error InsufficientAllowance();
     error ZeroAddress();
     error ExcessiveTax();
+    error TaxRecipientMustBeEOA();
 
     event TaxConfigUpdated(uint16 buyTaxBps, uint16 sellTaxBps, address indexed taxRecipient);
 
@@ -70,7 +80,6 @@ contract LaunchpadToken is ILaunchpadToken {
         _description = tokenDescription;
         _socials = tokenSocials;
 
-        // Default: 0% buy tax, 0% sell tax, tax recipient defaults to deployer
         _taxConfig = TaxConfig({
             buyTaxBps: 0,
             sellTaxBps: 0,
@@ -86,6 +95,10 @@ contract LaunchpadToken is ILaunchpadToken {
         _balances[initialRecipient] = totalSupply;
         emit Transfer(address(0), initialRecipient, totalSupply);
     }
+
+    // ---------------------------------------------------------------------------
+    // Metadata views
+    // ---------------------------------------------------------------------------
 
     function name() external view override returns (string memory) {
         return _name;
@@ -127,10 +140,25 @@ contract LaunchpadToken is ILaunchpadToken {
         return (_taxConfig.buyTaxBps, _taxConfig.sellTaxBps, _taxConfig.taxRecipient);
     }
 
+    // ---------------------------------------------------------------------------
+    // Configuration
+    // ---------------------------------------------------------------------------
+
+    /**
+     * @notice Update the creator trading tax configuration.
+     * @dev L-02 fix: taxRecipient must be an EOA (code.length == 0). A contract
+     *      recipient that reverts or cannot receive tokens would silently break
+     *      all transfers involving this token.
+     */
     function setTaxConfig(uint16 buyTaxBps, uint16 sellTaxBps, address taxRecipient) external {
         if (msg.sender != deployer) revert Unauthorized();
         if (buyTaxBps > MAX_TAX_BPS || sellTaxBps > MAX_TAX_BPS) revert ExcessiveTax();
+
         address recipient = taxRecipient != address(0) ? taxRecipient : deployer;
+
+        // L-02 fix: reject contract addresses as tax recipients.
+        if (recipient.code.length > 0) revert TaxRecipientMustBeEOA();
+
         _taxConfig = TaxConfig({
             buyTaxBps: buyTaxBps,
             sellTaxBps: sellTaxBps,
@@ -144,6 +172,10 @@ contract LaunchpadToken is ILaunchpadToken {
         if (pool == address(0)) revert ZeroAddress();
         liquidityPool = pool;
     }
+
+    // ---------------------------------------------------------------------------
+    // ERC-20
+    // ---------------------------------------------------------------------------
 
     function balanceOf(address account) public view override returns (uint256) {
         return _balances[account];
@@ -175,6 +207,10 @@ contract LaunchpadToken is ILaunchpadToken {
         return true;
     }
 
+    // ---------------------------------------------------------------------------
+    // Internal
+    // ---------------------------------------------------------------------------
+
     function _approve(address owner, address spender, uint256 value) internal {
         if (owner == address(0) || spender == address(0)) revert ZeroAddress();
         _allowances[owner][spender] = value;
@@ -187,23 +223,27 @@ contract LaunchpadToken is ILaunchpadToken {
         uint256 fromBalance = _balances[from];
         if (fromBalance < value) revert InsufficientBalance();
 
-        // Anti-snipe protection checks
-        // H-03 Fix: also block buys into contracts during restriction window to prevent
-        // aggregator/router bypass where a contract receives tokens then forwards to EOA.
+        // Anti-snipe restriction window: blocks [launchBlock, restrictionsEndBlock].
         if (block.number <= restrictionsEndBlock && from == liquidityPool && liquidityPool != address(0)) {
             if (block.number == launchBlock) {
+                // At launch block only the deployer may receive tokens from the pool.
                 if (to != deployer) revert OnlyDeployerCanBuyAtLaunchBlock();
             } else {
+                // Blocks launchBlock+1 and launchBlock+2: enforce buy and wallet caps.
+                // M-02 fix: deployer is not exempt from quantity limits in post-launch
+                // restriction blocks. The exemption at launchBlock covers the initial
+                // buy; subsequent blocks enforce the same limits for everyone.
                 if (value > MAX_BUY_AMOUNT) revert MaxBuyExceeded();
-                // Block purchases into contracts (potential aggregator bypass)
-                if (to.code.length > 0 && to != deployer) revert MaxBuyExceeded();
+                if (to.code.length > 0) revert MaxBuyExceeded();
                 if (_balances[to] + value > MAX_HOLD_AMOUNT) revert MaxWalletExceeded();
             }
         }
 
-        // Creator trading tax collection (buy and sell taxes)
+        // Creator trading tax: applied independently of anti-snipe logic.
+        // M-02 fix: tax applies regardless of whether sender or recipient is the deployer,
+        // because the deployer exemption above only covers the quantity restriction, not taxation.
         uint256 taxAmount = 0;
-        if (liquidityPool != address(0) && from != deployer && to != deployer) {
+        if (liquidityPool != address(0)) {
             bool isBuy = from == liquidityPool;
             bool isSell = to == liquidityPool;
 

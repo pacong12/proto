@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { DatabaseSync } from 'node:sqlite';
+import { Database } from 'bun:sqlite';
 
 /**
  * Migration & Schema Evolution Test Suite.
@@ -7,11 +7,11 @@ import { DatabaseSync } from 'node:sqlite';
  * execute idempotently without data loss or table locks.
  */
 describe('Data Testing: Database Migration & Schema Evolution Integrity', () => {
-  let db: DatabaseSync;
+  let db: Database;
 
   beforeEach(() => {
     // In-memory isolated DB instance for schema evolution testing
-    db = new DatabaseSync(':memory:');
+    db = new Database(':memory:');
   });
 
   it('MIG-01: executes base schema creation without syntax errors', () => {

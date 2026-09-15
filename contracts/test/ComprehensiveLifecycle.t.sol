@@ -138,7 +138,7 @@ contract ComprehensiveLifecycleTest is Test {
         // Entire 1B supply sits in BondingCurve contract
         assertEq(token.balanceOf(curveAddress), 1_000_000_000 * 1e18);
 
-        // Advance 5 seconds so anti-snipe decaying tax reaches 0%
+        // Advance past anti-snipe window
         vm.warp(block.timestamp + 5);
 
         // Trader Alice buys from curve
@@ -185,8 +185,8 @@ contract ComprehensiveLifecycleTest is Test {
         weth.deposit{value: 2 ether}();
         weth.transfer(address(burner), 2 ether);
 
-        // Execute Buyback & Burn
-        uint256 burned = burner.executeBuyback(0);
+        // Execute Buyback & Burn (M-01 fix: require positive minAmountOut)
+        uint256 burned = burner.executeBuyback(100 * 1e18);
 
         // Verify tokens were received at the burn address (0x...dEaD)
         assertEq(
@@ -279,10 +279,15 @@ contract ComprehensiveLifecycleTest is Test {
         token.transfer(traderAlice, 700_000_000 * 1e18);
         token.transfer(traderBob, 300_000_000 * 1e18);
 
-        // Deposit 10 WETH rewards into HolderFeeDistributor
+        // I-05 fix: depositRewards is restricted to the locker address.
+        // Fund the locker with WETH and impersonate it.
         weth.deposit{value: 10 ether}();
+        weth.transfer(address(locker), 10 ether);
+
+        vm.startPrank(address(locker));
         weth.approve(address(feeDistributor), 10 ether);
         feeDistributor.depositRewards(address(token), 10 ether);
+        vm.stopPrank();
 
         // Alice (70%) earns 7 WETH, Bob (30%) earns 3 WETH
         assertEq(feeDistributor.earned(address(token), traderAlice), 7 ether);

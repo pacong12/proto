@@ -38,7 +38,9 @@ export interface NetworkConfig {
   };
 }
 
-export const DEFAULT_ETH_PRICE_USD = 2500;
+// ---------------------------------------------------------------------------
+// Mainnet: Robinhood Chain (Chain ID 4663)
+// ---------------------------------------------------------------------------
 
 export const ROBINHOOD_CHAIN: NetworkConfig = {
   chainId: 4663,
@@ -65,7 +67,7 @@ export const ROBINHOOD_CHAIN: NetworkConfig = {
     curveTokenAllocation: 800_000_000n * 10n ** 18n, // 80% on curve, 20% reserved for graduation pool
     graduationTargetWei: 4_200_000_000_000_000_000n, // 4.2 ETH
     platformFeeBps: 100, // 1%
-    snipeTaxMaxBps: 9900, // 99% decaying in 5s
+    snipeTaxMaxBps: 9900, // 99% decaying over 5 blocks
   },
   launchConfig: {
     supply: 1_000_000_000n * 10n ** 18n,
@@ -80,6 +82,18 @@ export const ROBINHOOD_CHAIN: NetworkConfig = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Testnet: Robinhood Chain Testnet (Chain ID 46630)
+//
+// All addresses below must be independent testnet deployments.
+// Contracts not yet deployed on testnet use the zero address as a sentinel
+// so they are never accidentally treated as live contracts.
+// Replace each zero address after completing the testnet deployment.
+// ---------------------------------------------------------------------------
+
+/** Sentinel value for contracts not yet deployed on testnet. */
+const UNDEPLOYED = '0x0000000000000000000000000000000000000000' as const;
+
 export const ROBINHOOD_TESTNET: NetworkConfig = {
   chainId: 46630,
   name: 'Robinhood Chain Testnet',
@@ -91,14 +105,18 @@ export const ROBINHOOD_TESTNET: NetworkConfig = {
   rpcUrl: 'https://rpc.testnet.chain.robinhood.com',
   blockExplorer: 'https://testnet.robinhoodchain.blockscout.com',
   contracts: {
+    // Factory V1 and V2 deployed together in run-1788953322631.
     factory: '0x3de11A992Ed6F9d6FA289f9A779a22eFFc1E27e8',
     factoryV2: '0x3de11A992Ed6F9d6FA289f9A779a22eFFc1E27e8',
-    locker: '0x070233B6F46ccD61CA2B7bc1E13520c3fE4614E4',
-    uniswapV3Factory: '0x1f7d7550B1b028f7571E69A784071F0205FD2EfA',
-    positionManager: '0x73991a25C818Bf1f1128dEAaB1492D45638DE0D3',
-    swapRouter: '0xCaf681a66D020601342297493863E78C959E5cb2',
-    quoterV2: '0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7',
-    weth: '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73',
+    // TODO: deploy LiquidityLocker to testnet and replace this address.
+    locker: UNDEPLOYED,
+    // TODO: deploy or configure Uniswap V3 infrastructure on testnet.
+    uniswapV3Factory: UNDEPLOYED,
+    positionManager: UNDEPLOYED,
+    swapRouter: UNDEPLOYED,
+    quoterV2: UNDEPLOYED,
+    // TODO: replace with the wrapped-ETH address on the testnet network.
+    weth: UNDEPLOYED,
   },
   launchConfigV2: {
     supply: 1_000_000_000n * 10n ** 18n,

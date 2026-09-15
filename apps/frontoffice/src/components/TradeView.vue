@@ -781,21 +781,30 @@
                 </div>
 
                 <!-- Custom Slippage Input -->
-                <div v-if="isCustomSlippage" class="relative">
-                  <Input
-                    v-model="customSlippageInput"
-                    type="number"
-                    step="0.1"
-                    min="0.1"
-                    max="50"
-                    placeholder="1.0"
-                    class="h-8 text-xs font-mono pr-7 text-black dark:text-white bg-transparent border-zinc-200 dark:border-zinc-800"
-                    @input="handleCustomSlippageInput"
-                  />
-                  <span
-                    class="absolute right-2.5 top-2 text-xs font-mono font-bold text-black dark:text-white"
-                    >%</span
+                <div v-if="isCustomSlippage" class="space-y-1.5">
+                  <div class="relative">
+                    <Input
+                      v-model="customSlippageInput"
+                      type="number"
+                      step="0.1"
+                      min="0.1"
+                      max="49"
+                      placeholder="1.0"
+                      class="h-8 text-xs font-mono pr-7 text-black dark:text-white bg-transparent border-zinc-200 dark:border-zinc-800"
+                      @input="handleCustomSlippageInput"
+                    />
+                    <span
+                      class="absolute right-2.5 top-2 text-xs font-mono font-bold text-black dark:text-white"
+                      >%</span
+                    >
+                  </div>
+                  <!-- High slippage warning (fix LOW-02) -->
+                  <div
+                    v-if="slippage > 5"
+                    class="text-[11px] font-mono text-amber-500 flex items-center gap-1"
                   >
+                    <span>Warning: high slippage increases sandwich attack risk.</span>
+                  </div>
                 </div>
               </PopoverContent>
             </Popover>
@@ -937,9 +946,9 @@ import {
   Settings,
   ExternalLink,
 } from 'lucide-vue-next';
-import { useSwap } from '../composables/useSwap';
+import { useSwap, SLIPPAGE_WARN_THRESHOLD } from '../composables/useSwap';
 import { useWallet } from '../composables/useWallet';
-import { publicClient } from '../lib/viem-client';
+import { getPublicClient } from '../lib/viem-client';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -1183,8 +1192,12 @@ function selectSlippagePreset(val: number) {
 
 function handleCustomSlippageInput() {
   const val = parseFloat(customSlippageInput.value);
-  if (!isNaN(val) && val > 0 && val <= 50) {
+  // Batas max 49% untuk mencegah sandwich attack ekstrem (fix LOW-02)
+  if (!isNaN(val) && val > 0 && val <= 49) {
     slippage.value = val;
+  } else if (!isNaN(val) && val > 49) {
+    slippage.value = 49;
+    customSlippageInput.value = '49';
   }
 }
 
@@ -1254,7 +1267,7 @@ async function fetchUserTokenBalance() {
     return;
   }
   try {
-    const bal = await publicClient.readContract({
+    const bal = await getPublicClient().readContract({
       address: currentToken.value.address as `0x${string}`,
       abi: launchpadTokenAbi,
       functionName: 'balanceOf',
@@ -1372,12 +1385,18 @@ async function handleSwap() {
   // Calculate expectedAmountOut in wei to enforce on-chain slippage bounds
   let expectedAmountOut: bigint | undefined;
   const input = parseFloat(amountIn.value) || 0;
+  const isV2OnCurve = currentToken.value.version === 'v2' && !currentMarketData.value.isGraduated;
+
   if (input > 0 && currentMarketData.value.priceInWeth > 0) {
     if (isBuy.value) {
-      const estimatedTokens = input / currentMarketData.value.priceInWeth;
+      const estimatedTokens = isV2OnCurve
+        ? computeCurveBuyOutput(input)
+        : input / (currentMarketData.value.priceInWeth || 0.000001);
       expectedAmountOut = BigInt(Math.floor(estimatedTokens * 1e18));
     } else {
-      const estimatedEth = input * currentMarketData.value.priceInWeth;
+      const estimatedEth = isV2OnCurve
+        ? computeCurveSellOutput(input)
+        : input * (currentMarketData.value.priceInWeth || 0);
       expectedAmountOut = BigInt(Math.floor(estimatedEth * 1e18));
     }
   }
@@ -1401,30 +1420,8 @@ async function handleSwap() {
   }
 }
 
-watch(
-  () => props.tokenAddress,
-  async (newAddress) => {
-    if (newAddress && newAddress !== currentToken.value.address) {
-      currentToken.value.address = newAddress as `0x${string}`;
-      await fetchCandlesticks(newAddress, selectedResolution.value);
-      await fetchTrades(newAddress);
-      await fetchTopTraders(newAddress);
-      await fetchDevActivity(newAddress);
-      await fetchHolders(newAddress);
-      await fetchUserTokenBalance();
-    }
-  },
-);
-
-watch(
-  () => account.value,
-  async () => {
-    await fetchUserTokenBalance();
-  },
-);
-
-onMounted(async () => {
-  const address = currentToken.value.address;
+async function loadTokenData(address: `0x${string}`) {
+  tokenLoading.value = true;
   try {
     const res = await fetch(`/api/tokens/${address}`);
     const envelope = await res.json();
@@ -1443,5 +1440,26 @@ onMounted(async () => {
     await fetchHolders(address);
     await fetchUserTokenBalance();
   }
+}
+
+watch(
+  () => props.tokenAddress,
+  async (newAddress) => {
+    if (newAddress && newAddress !== currentToken.value.address) {
+      currentToken.value.address = newAddress as `0x${string}`;
+      await loadTokenData(newAddress as `0x${string}`);
+    }
+  },
+);
+
+watch(
+  () => account.value,
+  async () => {
+    await fetchUserTokenBalance();
+  },
+);
+
+onMounted(async () => {
+  await loadTokenData(currentToken.value.address);
 });
 </script>

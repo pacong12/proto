@@ -33,24 +33,24 @@ jobs:
           script: |
             set -e
 
-            echo "🚀 Masuk ke folder project di VPS..."
+            echo "[Deploy] Navigating to project directory on VPS..."
             cd ${{ secrets.VPS_APP_DIR || '/var/www/proto' }}
 
-            echo "📥 Mengambil commit terbaru dari GitHub..."
+            echo "[Deploy] Pulling latest commits from GitHub..."
             git fetch origin main
             git reset --hard origin/main
 
-            echo "🐳 Membangun ulang dan me-restart container API & Redis dengan Docker Compose..."
+            echo "[Deploy] Rebuilding and restarting API and Redis containers via Docker Compose..."
             if docker compose version > /dev/null 2>&1; then
               docker compose up -d --build --no-deps redis api
             else
               sudo docker compose up -d --build --no-deps redis api
             fi
 
-            echo "⏳ Menunggu container API siap..."
+            echo "[Deploy] Waiting for API service readiness..."
             sleep 4
 
-            echo "🔍 Menjalankan Health Check..."
+            echo "[Deploy] Running health check..."
             curl -s http://127.0.0.1:3001/health || true
 
-            echo "✅ Deployment backend VPS berhasil diselesaikan!"
+            echo "[Deploy] VPS backend deployment completed successfully."

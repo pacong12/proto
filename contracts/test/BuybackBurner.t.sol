@@ -14,7 +14,6 @@ contract BuybackBurnerTest is Test {
     BuybackBurner public burner;
 
     address public deployer = address(0x1111);
-    address public burnerAddress = address(0x000000000000000000000000000000000000dEaD);
 
     function setUp() public {
         weth = new MockWETH();
@@ -42,7 +41,6 @@ contract BuybackBurnerTest is Test {
     }
 
     function test_BuybackExecution() public {
-        // Fund burner contract with WETH
         vm.prank(deployer);
         weth.deposit{value: 5 ether}();
         vm.prank(deployer);
@@ -50,26 +48,37 @@ contract BuybackBurnerTest is Test {
 
         assertEq(weth.balanceOf(address(burner)), 5 ether);
 
-        // Execute Buyback
+        // M-01 fix: executeBuyback requires a positive minAmountOut.
         uint256 burned = burner.executeBuyback(500 * 10**18);
         assertGt(burned, 0);
         assertEq(burner.totalBurned(), burned);
         assertEq(burner.lastBuybackTimestamp(), block.timestamp);
 
-        // Subsequent call before cooldown must revert
+        // Cooldown: next call within window must revert.
         vm.expectRevert(BuybackBurner.CooldownActive.selector);
-        burner.executeBuyback(0);
+        burner.executeBuyback(500 * 10**18);
 
-        // After cooldown period (1 hour), subsequent buyback is allowed
+        // After cooldown, a new buyback succeeds.
         vm.warp(block.timestamp + 3601);
         vm.prank(deployer);
         weth.deposit{value: 2 ether}();
         vm.prank(deployer);
         weth.transfer(address(burner), 2 ether);
 
-        uint256 burnedSecond = burner.executeBuyback(0);
+        uint256 burnedSecond = burner.executeBuyback(100 * 10**18);
         assertGt(burnedSecond, 0);
         assertEq(burner.totalBurned(), burned + burnedSecond);
+    }
+
+    function test_ZeroMinAmountOutReverts_M01() public {
+        vm.prank(deployer);
+        weth.deposit{value: 1 ether}();
+        vm.prank(deployer);
+        weth.transfer(address(burner), 1 ether);
+
+        // M-01 fix: zero minimum must be rejected.
+        vm.expectRevert(BuybackBurner.ZeroMinAmountOut.selector);
+        burner.executeBuyback(0);
     }
 
     function test_SlippageProtection() public {
@@ -78,9 +87,22 @@ contract BuybackBurnerTest is Test {
         vm.prank(deployer);
         weth.transfer(address(burner), 1 ether);
 
-        // Request impossible minimum output (> mock router output 1000)
+        // Request a minimum far above the mock router output of 1000 tokens.
         vm.expectRevert(BuybackBurner.SlippageExceeded.selector);
         burner.executeBuyback(50_000 * 10**18);
+    }
+
+    function test_EmergencyWithdrawWeth() public {
+        vm.prank(deployer);
+        weth.deposit{value: 3 ether}();
+        vm.prank(deployer);
+        weth.transfer(address(burner), 3 ether);
+
+        address recipient = address(0x5555);
+        burner.emergencyWithdrawWeth(recipient);
+
+        assertEq(weth.balanceOf(recipient), 3 ether);
+        assertEq(weth.balanceOf(address(burner)), 0);
     }
 
     function test_OwnerConfiguration() public {
@@ -93,5 +115,21 @@ contract BuybackBurnerTest is Test {
         vm.prank(address(0x9999));
         vm.expectRevert(BuybackBurner.Unauthorized.selector);
         burner.setCooldown(3600);
+    }
+
+    function test_TwoStepOwnershipTransfer() public {
+        address newOwner = address(0xBEEF);
+
+        burner.transferOwnership(newOwner);
+        assertEq(burner.owner(), address(this));
+        assertEq(burner.pendingOwner(), newOwner);
+
+        vm.prank(address(0xDEAD));
+        vm.expectRevert(BuybackBurner.NoPendingOwner.selector);
+        burner.acceptOwnership();
+
+        vm.prank(newOwner);
+        burner.acceptOwnership();
+        assertEq(burner.owner(), newOwner);
     }
 }

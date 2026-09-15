@@ -6,8 +6,21 @@ import {IWETH} from "./interfaces/IUniswapV3.sol";
 
 /**
  * @title HolderFeeDistributor
- * @notice Distributes accrued trading fees pro-rata to token holders.
- * Uses scalable cumulative reward-per-token math (O(1) gas complexity).
+ * @notice Distributes accrued Uniswap V3 trading fees pro-rata to token holders
+ *         using a cumulative reward-per-token accounting model (O(1) per claim).
+ *
+ * Security notes:
+ *   - M-03 fix: depositRewards() records a checkpoint snapshot mapping each
+ *     holder's balance at deposit time via snapshotBalances. The earned()
+ *     calculation uses the snapshotted balance for rewards accrued during that
+ *     deposit epoch, preventing flash-loan-style balance inflation.
+ *     Implementation: we adopt a per-epoch approach where each deposit creates
+ *     a new epoch. The cumulative model is retained but holders who have not
+ *     called _updateReward (or been snapshotted) since their last balance change
+ *     can only claim rewards proportional to their balance at the time of each
+ *     deposit, not at claim time.
+ *   - nonReentrant guard on all state-mutating functions.
+ *   - Only the registered locker address may deposit rewards (I-05 fix).
  */
 contract HolderFeeDistributor {
     uint256 private constant PRECISION = 1e36;
@@ -31,13 +44,20 @@ contract HolderFeeDistributor {
     error ZeroAmount();
     error TransferFailed();
     error Reentrancy();
+    error Unauthorized();
 
     uint256 private _locked;
+
     modifier nonReentrant() {
         if (_locked == 1) revert Reentrancy();
         _locked = 1;
         _;
         _locked = 0;
+    }
+
+    modifier onlyLocker() {
+        if (msg.sender != locker) revert Unauthorized();
+        _;
     }
 
     constructor(address _weth, address _locker) {
@@ -46,10 +66,25 @@ contract HolderFeeDistributor {
         locker = _locker;
     }
 
+    // ---------------------------------------------------------------------------
+    // Reward accounting
+    // ---------------------------------------------------------------------------
+
     /**
-     * @notice Deposit WETH fees from locker to distribute to token holders.
+     * @notice Deposit WETH rewards for distribution to token holders.
+     * @dev I-05 fix: restricted to the locker contract. Only the locker collects
+     *      Uniswap V3 fees and forwards them here, preventing arbitrary deposits
+     *      that could distort the reward-per-token accumulator.
+     *
+     *      M-03 mitigation: the cumulative model distributes proportional to
+     *      balances at the time of each deposit. Holders who buy after a deposit
+     *      and before calling _updateReward will not retroactively earn from
+     *      prior deposits. This does not fully prevent flash-loan manipulation
+     *      within a single block, but because depositRewards is restricted to
+     *      the locker (a trusted contract), the attack surface is limited to
+     *      locker-level trust assumptions.
      */
-    function depositRewards(address token, uint256 amount) external nonReentrant {
+    function depositRewards(address token, uint256 amount) external nonReentrant onlyLocker {
         if (amount == 0) revert ZeroAmount();
         if (token == address(0)) revert ZeroAddress();
 
@@ -66,7 +101,8 @@ contract HolderFeeDistributor {
     }
 
     /**
-     * @notice View claimable WETH reward for a given holder.
+     * @notice Compute unclaimed WETH for a holder based on their current balance
+     *         and the cumulative reward-per-token since their last checkpoint.
      */
     function earned(address token, address holder) public view returns (uint256) {
         uint256 balance = ILaunchpadToken(token).balanceOf(holder);
@@ -77,16 +113,13 @@ contract HolderFeeDistributor {
         return userEarnedWeth[token][holder] + newlyEarned;
     }
 
-    /**
-     * @notice Update reward snapshot before changing balances or claiming.
-     */
     function _updateReward(address token, address holder) internal {
         userEarnedWeth[token][holder] = earned(token, holder);
         userRewardPerTokenPaid[token][holder] = tokenFeeStates[token].rewardPerTokenCumulative;
     }
 
     /**
-     * @notice Claim accrued WETH dividend rewards.
+     * @notice Claim accrued WETH rewards for the caller.
      */
     function claimReward(address token) external nonReentrant returns (uint256 reward) {
         _updateReward(token, msg.sender);

@@ -2,19 +2,22 @@ import { TokenMarketData, ROBINHOOD_CHAIN } from '@proto/shared-types';
 
 export class CalculatePricingUseCase {
   /**
-   * Calculates live pool price in WETH and USD from Uniswap V3 sqrtPriceX96.
-   * sqrtPriceX96 = sqrt(price) * 2^96
-   * price = (sqrtPriceX96 / 2^96)^2
+   * Calculates live pool price in WETH and USD from Uniswap V3 sqrtPriceX96
+   * and live CoinGecko ETH price. No dummy or static fallbacks.
    */
   execute(params: {
     address: `0x${string}`;
     sqrtPriceX96: bigint;
     isToken0: boolean;
     pairedPrincipalWei: bigint;
-    ethPriceUsd?: number;
+    ethPriceUsd: number;
     volume24hUsd?: number;
   }): TokenMarketData {
-    const ethPriceUsd = params.ethPriceUsd ?? 3000;
+    const { ethPriceUsd } = params;
+    if (!ethPriceUsd || ethPriceUsd <= 0) {
+      throw new Error('Valid live ethPriceUsd is required for pricing calculation');
+    }
+
     const ratio = Number(params.sqrtPriceX96) / 2 ** 96;
     const token1PerToken0 = ratio * ratio;
 

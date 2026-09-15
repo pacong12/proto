@@ -17,6 +17,11 @@ import {LiquidityLocker} from "./LiquidityLocker.sol";
 /**
  * @title LaunchpadFactory
  * @notice Atomic deployment factory for fixed-supply tokens with Uniswap V3 locked liquidity.
+ *
+ * Security model:
+ *   - Ownership follows a two-step transfer pattern: propose then accept.
+ *   - All ETH transfers use CEI ordering with explicit success checks.
+ *   - The launch fee is forwarded to treasury before any token or pool is created.
  */
 contract LaunchpadFactory is ILaunchpadFactory {
     IUniswapV3Factory public immutable uniswapV3Factory;
@@ -27,13 +32,16 @@ contract LaunchpadFactory is ILaunchpadFactory {
     address public protocolFeeRecipient;
     address public owner;
 
-    uint24 public constant POOL_FEE = 10000; // 1%
+    // C-01 fix: pending owner for two-step ownership transfer.
+    address public pendingOwner;
+
+    uint24 public constant POOL_FEE = 10000;
     int24 public constant TICK_LOWER = -887200;
     int24 public constant TICK_UPPER = 887200;
 
     uint256 public override launchFee = 0.0005 ether;
     uint256 public override graduationThreshold = 4.2 ether;
-    uint256 public defaultProtocolFeeShare = 30; // 30%
+    uint256 public defaultProtocolFeeShare = 30;
 
     mapping(address => LaunchedToken) public launchedTokens;
     address[] public allTokens;
@@ -43,7 +51,10 @@ contract LaunchpadFactory is ILaunchpadFactory {
     error ZeroAddress();
     error InvalidFee();
     error PoolCreationFailed();
-    error InitialBuyFailed();
+    error NoPendingOwner();
+
+    event OwnershipTransferProposed(address indexed proposed);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert Unauthorized();
@@ -74,7 +85,6 @@ contract LaunchpadFactory is ILaunchpadFactory {
         protocolFeeRecipient = _protocolFeeRecipient;
         owner = msg.sender;
 
-        // Deploy default locker
         LiquidityLocker newLocker = new LiquidityLocker(
             _positionManager,
             _weth,
@@ -84,6 +94,10 @@ contract LaunchpadFactory is ILaunchpadFactory {
     }
 
     receive() external payable {}
+
+    // ---------------------------------------------------------------------------
+    // Owner administration
+    // ---------------------------------------------------------------------------
 
     function setLocker(address _locker) external onlyOwner {
         if (_locker == address(0)) revert ZeroAddress();
@@ -103,15 +117,38 @@ contract LaunchpadFactory is ILaunchpadFactory {
         protocolFeeRecipient = _recipient;
     }
 
-    function transferOwnership(address newOwner) external onlyOwner {
-        if (newOwner == address(0)) revert ZeroAddress();
-        owner = newOwner;
-    }
-
     function setDefaultProtocolFeeShare(uint256 newShare) external onlyOwner {
         if (newShare > 100) revert InvalidFee();
         defaultProtocolFeeShare = newShare;
     }
+
+    /**
+     * @notice Step 1 of two-step ownership transfer. Proposes a new owner.
+     * @dev C-01 fix: ownership is not transferred immediately. The candidate
+     *      must call acceptOwnership() to complete the transfer, preventing
+     *      accidental permanent loss of control to an invalid address.
+     */
+    function transferOwnership(address newOwner) external onlyOwner {
+        if (newOwner == address(0)) revert ZeroAddress();
+        pendingOwner = newOwner;
+        emit OwnershipTransferProposed(newOwner);
+    }
+
+    /**
+     * @notice Step 2 of two-step ownership transfer. Must be called by the
+     *         proposed owner to finalise the transfer.
+     */
+    function acceptOwnership() external {
+        if (msg.sender != pendingOwner) revert NoPendingOwner();
+        address previous = owner;
+        owner = pendingOwner;
+        pendingOwner = address(0);
+        emit OwnershipTransferred(previous, owner);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Core launch
+    // ---------------------------------------------------------------------------
 
     function launchToken(
         string memory name,
@@ -123,13 +160,13 @@ contract LaunchpadFactory is ILaunchpadFactory {
     ) external payable override returns (address tokenAddress, address poolAddress) {
         if (msg.value < launchFee + initialBuyAmount) revert InsufficientLaunchFee();
 
-        // 1. Route launch fee to protocol treasury immediately (CEI pattern, addressing C-03 & M-06)
+        // 1. Route launch fee to protocol treasury before any other action (CEI).
         if (launchFee > 0) {
             (bool feeSent, ) = protocolFeeRecipient.call{value: launchFee}("");
             if (!feeSent) revert InsufficientLaunchFee();
         }
 
-        // 2. Deploy LaunchpadToken
+        // 2. Deploy token; factory is initial recipient so it can seed the pool.
         LaunchpadToken token = new LaunchpadToken(
             name,
             symbol,
@@ -142,7 +179,7 @@ contract LaunchpadFactory is ILaunchpadFactory {
         );
         tokenAddress = address(token);
 
-        // 3. Create and Initialize Uniswap V3 Pool
+        // 3. Determine token ordering and create the Uniswap V3 pool.
         bool isToken0 = tokenAddress < weth;
         address token0 = isToken0 ? tokenAddress : weth;
         address token1 = isToken0 ? weth : tokenAddress;
@@ -150,16 +187,15 @@ contract LaunchpadFactory is ILaunchpadFactory {
         poolAddress = uniswapV3Factory.createPool(token0, token1, POOL_FEE);
         if (poolAddress == address(0)) revert PoolCreationFailed();
 
-        // Target initial price: 1 token = ~1e-9 WETH ($0.000003 at $3000 ETH)
-        // sqrtPriceX96 = sqrt(price) * 2^96 = sqrt(1e-9) * 2^96 ~ 2505414483750479299401734
-        // If token is token1: 2^96 / sqrt(price) ~ 2505414483750479299401734000000000
+        // Target initial price: 1 token ~= 1e-9 WETH.
+        // sqrtPriceX96 = sqrt(price) * 2^96
         uint160 sqrtPriceX96 = isToken0
-            ? 2505414483750479299401734 // token1 (WETH) per token0 (Token) ~ 1e-9
+            ? 2505414483750479299401734
             : 2505414483750479299401734000000000;
 
         IUniswapV3Pool(poolAddress).initialize(sqrtPriceX96);
 
-        // 4. Provide Full Liquidity to Position Manager
+        // 4. Provide full token supply as single-sided liquidity.
         uint256 tokenSupply = token.balanceOf(address(this));
         token.approve(address(positionManager), tokenSupply);
 
@@ -179,7 +215,7 @@ contract LaunchpadFactory is ILaunchpadFactory {
 
         (uint256 positionId, , , ) = positionManager.mint(mintParams);
 
-        // 4. Lock Position in Locker
+        // 5. Permanently lock the LP position.
         ILiquidityLocker(locker).lockPosition(
             tokenAddress,
             positionId,
@@ -187,10 +223,10 @@ contract LaunchpadFactory is ILaunchpadFactory {
             defaultProtocolFeeShare
         );
 
-        // 5. Connect pool to token for anti-snipe logic
+        // 6. Register the pool on the token for anti-snipe enforcement.
         token.setLiquidityPool(poolAddress);
 
-        // 6. Execute Initial Buy if requested
+        // 7. Execute optional creator initial buy.
         if (initialBuyAmount > 0) {
             IWETH(weth).deposit{value: initialBuyAmount}();
             IWETH(weth).approve(address(swapRouter), initialBuyAmount);
@@ -209,7 +245,7 @@ contract LaunchpadFactory is ILaunchpadFactory {
             swapRouter.exactInputSingle(swapParams);
         }
 
-        // 8. Record state
+        // 8. Record state.
         LaunchedToken memory launched = LaunchedToken({
             token: tokenAddress,
             deployer: msg.sender,
@@ -242,6 +278,10 @@ contract LaunchpadFactory is ILaunchpadFactory {
             initialBuyAmount
         );
     }
+
+    // ---------------------------------------------------------------------------
+    // Views
+    // ---------------------------------------------------------------------------
 
     function graduationStatus(address token) external view override returns (
         uint256 pairedPrincipal,

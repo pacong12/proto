@@ -1,5 +1,9 @@
 import { parseAbi } from 'viem';
 
+// ---------------------------------------------------------------------------
+// V1: LaunchpadFactory (Uniswap V3 direct pool)
+// ---------------------------------------------------------------------------
+
 export const launchpadFactoryAbi = parseAbi([
   'function launchToken(string name, string symbol, string logo, string description, (string twitter, string telegram, string discord, string website, string farcaster) socials, uint256 initialBuyAmount) payable returns (address token, address pool)',
   'function graduationStatus(address token) view returns (uint256 pairedPrincipal, uint256 threshold, bool graduated)',
@@ -11,6 +15,22 @@ export const launchpadFactoryAbi = parseAbi([
   'function totalTokensCount() view returns (uint256)',
   'event TokenLaunched(address indexed token, address indexed deployer, address indexed dexFactory, address pairedToken, address pool, uint256 dexId, uint256 launchConfigId, uint256 positionId, uint256 restrictionsEndBlock, uint256 initialBuyAmount)',
 ]);
+
+// ---------------------------------------------------------------------------
+// V2: LaunchpadV2Factory (Bonding Curve graduating to Uniswap V4)
+// Single source of truth for the V2 ABI. Do not redefine inline in components.
+// ---------------------------------------------------------------------------
+
+export const launchpadV2FactoryAbi = parseAbi([
+  'function launchTokenV2(string name, string symbol, string logo, string description, string twitter, string telegram, string website) payable returns (address tokenAddress, address curveAddress)',
+  'function getCurveAddress(address token) view returns (address curve)',
+  'function isV2Token(address token) view returns (bool)',
+  'event TokenLaunchedV2(address indexed token, address indexed curve, address indexed creator, string name, string symbol, uint256 initialBuy)',
+]);
+
+// ---------------------------------------------------------------------------
+// Token
+// ---------------------------------------------------------------------------
 
 export const launchpadTokenAbi = parseAbi([
   'function name() view returns (string)',
@@ -33,6 +53,10 @@ export const launchpadTokenAbi = parseAbi([
   'event Approval(address indexed owner, address indexed spender, uint256 value)',
 ]);
 
+// ---------------------------------------------------------------------------
+// Liquidity Locker
+// ---------------------------------------------------------------------------
+
 export const liquidityLockerAbi = parseAbi([
   'function lockPosition(address token, uint256 positionId, address deployer, uint256 protocolFeeShare)',
   'function claimFees(address token) returns (uint256 creatorTokenFee, uint256 creatorWethFee)',
@@ -45,6 +69,10 @@ export const liquidityLockerAbi = parseAbi([
   'event FeesClaimed(address indexed token, uint256 tokenAmount, uint256 wethAmount, address indexed recipient)',
   'event FeeRedirectUpdated(address indexed token, address indexed redirect)',
 ]);
+
+// ---------------------------------------------------------------------------
+// Uniswap V3
+// ---------------------------------------------------------------------------
 
 export const uniswapV3PoolAbi = parseAbi([
   'function slot0() view returns (uint160 sqrtPriceX96, int24 tick, uint16 observationIndex, uint16 observationCardinality, uint16 observationCardinalityNext, uint8 feeProtocol, bool unlocked)',

@@ -201,9 +201,9 @@
           >
             <div class="flex items-center gap-2 text-sm font-semibold">
               <div
-                class="w-5 h-5 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-xs"
+                class="w-5 h-5 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-[10px] font-mono font-bold"
               >
-                Ξ
+                E
               </div>
               <span>ETH</span>
             </div>
