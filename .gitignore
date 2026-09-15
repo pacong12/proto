@@ -43,3 +43,4 @@ apps/docs/src/integration/listing-submission.md
 .vitepress/dist/
 .vitepress/cache/
 apps/docs/src/.vitepress/
+apps/docs/.vitepress/cache/
