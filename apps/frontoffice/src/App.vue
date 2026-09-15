@@ -54,7 +54,8 @@
             </li>
             <li>
               <a
-                href="http://localhost:3002"
+                :href="docsUrl"
+                target="_blank"
                 rel="noopener noreferrer"
                 class="hover:text-emerald-400 transition inline-flex items-center gap-1"
               >
@@ -85,35 +86,19 @@
           </h4>
           <ul class="space-y-1.5 text-xs text-zinc-500">
             <li>
-              <a
-                href="/terms-of-service"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="hover:text-emerald-400 transition"
-              >
+              <RouterLink to="/terms-of-service" class="hover:text-emerald-400 transition">
                 {{ t('termsOfService') }}
-              </a>
+              </RouterLink>
             </li>
             <li>
-              <a
-                href="/privacy-policy"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="hover:text-emerald-400 transition"
-              >
+              <RouterLink to="/privacy-policy" class="hover:text-emerald-400 transition">
                 {{ t('privacyPolicy') }}
-              </a>
+              </RouterLink>
             </li>
-
             <li>
-              <a
-                href="/cookie-policy"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="hover:text-emerald-400 transition"
-              >
+              <RouterLink to="/cookie-policy" class="hover:text-emerald-400 transition">
                 {{ t('cookiePolicy') }}
-              </a>
+              </RouterLink>
             </li>
           </ul>
           <p class="text-[11px] leading-relaxed text-zinc-600 pt-2">
@@ -170,6 +155,7 @@ import { walletAddress, walletModalOpen } from './lib/wallet-store';
 
 const { t } = useI18n();
 const router = useRouter();
+const docsUrl = import.meta.env.VITE_DOCS_URL || 'https://docs.proto.family';
 
 const PRIVACY_STORAGE_KEY = 'proto_privacy_policy_accepted_v1';
 

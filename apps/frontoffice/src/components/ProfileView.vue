@@ -526,6 +526,12 @@
             </DialogDescription>
           </DialogHeader>
 
+          <div
+            class="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-[11px] text-zinc-500"
+          >
+            Profile metadata is stored in your local browser session for this wallet address.
+          </div>
+
           <form @submit.prevent="saveProfile" class="space-y-4 py-2">
             <div class="space-y-1.5">
               <Label for="display-name" class="text-xs font-medium">Display Name</Label>

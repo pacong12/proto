@@ -474,7 +474,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import {
   Plus,
   Loader2,
@@ -598,7 +598,7 @@ const filteredTokens = computed(() => {
     list = sortedNew;
   } else if (activeMarketTab.value === 'gainers') {
     list = [...list].sort(
-      (a, b) => b.marketData.graduationProgress - a.marketData.graduationProgress,
+      (a, b) => (b.marketData.priceChange24h ?? 0) - (a.marketData.priceChange24h ?? 0),
     );
   } else if (activeMarketTab.value === 'graduated') {
     list = list.filter((item) => item.marketData.isGraduated);
@@ -634,6 +634,10 @@ const filteredTokens = computed(() => {
   }
 
   return sorted;
+});
+
+watch([searchQuery, activeMarketTab, selectedLifecycle, activeSort, filterHasSocials], () => {
+  currentPage.value = 1;
 });
 
 const paginatedTokens = computed(() => {

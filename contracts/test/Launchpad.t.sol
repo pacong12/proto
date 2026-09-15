@@ -286,6 +286,8 @@ contract LaunchpadTest is Test {
         );
         address creatorFeeRecipient = address(0x8888);
         locker.setFeeRedirect(tokenAddress, creatorFeeRecipient);
+        vm.warp(block.timestamp + 48 hours + 1);
+        locker.acceptFeeRedirect(tokenAddress);
 
         // Fund positionManager with 1 WETH so mock collect transfer succeeds
         weth.deposit{value: 1 ether}();

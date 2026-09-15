@@ -277,18 +277,17 @@
               </p>
             </div>
 
-            <!-- Creator wallet -->
+            <!-- Connected Creator Wallet -->
             <div class="space-y-1">
-              <Label for="creator-wallet" class="text-xs font-medium">{{
-                t('creatorWallet')
-              }}</Label>
-              <Input
-                id="creator-wallet"
-                v-model="form.creatorWallet"
-                type="text"
-                :placeholder="t('addressPlaceholder')"
-                class="font-mono text-xs"
-              />
+              <Label class="text-xs font-medium">{{ t('creatorWallet') }}</Label>
+              <div
+                class="flex items-center justify-between p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-100/60 dark:bg-zinc-900 font-mono text-xs"
+              >
+                <span class="truncate">{{ account || t('connectWallet') }}</span>
+                <Badge variant="secondary" class="text-[10px] shrink-0"
+                  >Deployer (msg.sender)</Badge
+                >
+              </div>
               <p class="text-[10px] text-zinc-400">
                 {{ t('creatorWalletDesc') }}
               </p>
@@ -320,19 +319,19 @@
               </p>
             </div>
 
-            <!-- Snipe tax exemptions -->
-            <div class="space-y-1">
-              <Label for="snipe-tax" class="text-xs font-medium">{{ t('snipeExemptions') }}</Label>
-              <Input
-                id="snipe-tax"
-                v-model="snipeExemptionWallet"
-                type="text"
-                placeholder="0x wallet address"
-                class="font-mono text-xs"
-              />
-              <p class="text-[10px] text-zinc-400">
-                Buys in the launch second pay 99%, decaying to zero across 3s. Declare the wallets
-                your team opens with.
+            <!-- Anti-Snipe Notice -->
+            <div
+              class="p-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 text-[11px] text-zinc-400 space-y-0.5"
+            >
+              <div
+                class="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1"
+              >
+                <Lock class="w-3 h-3" />
+                <span>Fair Launch Anti-Snipe Safeguard</span>
+              </div>
+              <p>
+                Connected creator wallet is automatically exempt from the initial 99% snipe tax.
+                External purchases decay smoothly to 0% in 3 seconds.
               </p>
             </div>
           </div>
@@ -342,7 +341,9 @@
         <div class="pt-4 border-t border-zinc-200 dark:border-zinc-800 space-y-3">
           <div class="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
             <span>{{ t('ethPairDue') }}</span>
-            <span class="font-mono">—</span>
+            <span class="font-mono font-bold text-black dark:text-white">
+              {{ (0.0005 + (parseFloat(form.initialBuyEth) || 0)).toFixed(4) }} ETH
+            </span>
           </div>
 
           <Button
@@ -405,7 +406,7 @@ const emit = defineEmits<{
 }>();
 
 const { launchToken, loading, error } = useLaunchpad();
-const { isConnected } = useWallet();
+const { isConnected, account } = useWallet();
 
 const selectedVersion = ref<'v1' | 'v2'>('v2');
 const fileInputRef = ref<HTMLInputElement | null>(null);
@@ -415,7 +416,6 @@ const dragOver = ref(false);
 const isUploadingIpfs = ref(false);
 const advancedOpen = ref(false);
 const holderFeeSharing = ref(false);
-const snipeExemptionWallet = ref('');
 
 function clearImage() {
   selectedFileName.value = '';

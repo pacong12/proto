@@ -703,6 +703,21 @@
         </Card>
 
         <Card class="p-6 space-y-4">
+          <!-- Graduation Banner & DEX Routing Notice (H-03) -->
+          <div
+            v-if="currentMarketData.isGraduated"
+            class="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-xs space-y-1"
+          >
+            <div class="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400">
+              <Check class="w-4 h-4" />
+              <span>Token Graduated to Uniswap DEX</span>
+            </div>
+            <p class="text-[11px] text-zinc-500 dark:text-zinc-400 leading-normal">
+              Bonding curve complete! Liquidity is permanently locked in Uniswap. Swaps route
+              through canonical DEX pools.
+            </p>
+          </div>
+
           <div
             class="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800"
           >
@@ -879,10 +894,21 @@
 
           <div
             v-if="swapSuccessTx"
-            class="text-xs text-black dark:text-white bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 break-all flex items-start gap-2"
+            class="text-xs text-black dark:text-white bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 break-all flex flex-col gap-1.5"
           >
-            <Check class="w-4 h-4 shrink-0 text-emerald-400 mt-0.5" />
-            <span>Swap Confirmed! Hash: {{ swapSuccessTx }}</span>
+            <div class="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold">
+              <Check class="w-4 h-4 shrink-0 text-emerald-400" />
+              <span>Swap Confirmed!</span>
+            </div>
+            <a
+              :href="`https://robinhoodchain.blockscout.com/tx/${swapSuccessTx}`"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-[11px] font-mono underline hover:text-emerald-400 transition flex items-center gap-1 text-zinc-600 dark:text-zinc-300"
+            >
+              <span>View on Explorer</span>
+              <ExternalLink class="w-3 h-3" />
+            </a>
           </div>
 
           <div
@@ -1077,14 +1103,45 @@ const devBadgeText = computed(() => {
   return 'Dev 0%';
 });
 
+function computeCurveBuyOutput(ethIn: number): number {
+  if (ethIn <= 0) return 0;
+  const netEth = ethIn * 0.99; // 1% fee
+  const currentRaised = parseFloat(currentMarketData.value.pairedPrincipalWeth) || 0;
+  const virtualEth = 3.0 + currentRaised;
+  const virtualTokens = 1073000000;
+  const currentK = virtualEth * virtualTokens;
+  const newEthReserve = virtualEth + netEth;
+  const newTokenReserve = currentK / newEthReserve;
+  return Math.max(0, virtualTokens - newTokenReserve);
+}
+
+function computeCurveSellOutput(tokensIn: number): number {
+  if (tokensIn <= 0) return 0;
+  const currentRaised = parseFloat(currentMarketData.value.pairedPrincipalWeth) || 0;
+  const virtualEth = 3.0 + currentRaised;
+  const virtualTokens = 1073000000;
+  const currentK = virtualEth * virtualTokens;
+  const newTokenReserve = virtualTokens + tokensIn;
+  const newEthReserve = currentK / newTokenReserve;
+  const grossEth = Math.max(0, virtualEth - newEthReserve);
+  return grossEth * 0.99; // 1% fee
+}
+
 const estimatedOutput = computed(() => {
   const input = parseFloat(amountIn.value) || 0;
   if (input <= 0) return `0 ${isBuy.value ? currentToken.value.symbol : 'ETH'}`;
+
+  const isV2OnCurve = currentToken.value.version === 'v2' && !currentMarketData.value.isGraduated;
+
   if (isBuy.value) {
-    const tokens = input / currentMarketData.value.priceInWeth;
+    const tokens = isV2OnCurve
+      ? computeCurveBuyOutput(input)
+      : input / (currentMarketData.value.priceInWeth || 0.000001);
     return `${tokens.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${currentToken.value.symbol}`;
   } else {
-    const weth = input * currentMarketData.value.priceInWeth;
+    const weth = isV2OnCurve
+      ? computeCurveSellOutput(input)
+      : input * (currentMarketData.value.priceInWeth || 0);
     return `${weth.toFixed(6)} ETH`;
   }
 });

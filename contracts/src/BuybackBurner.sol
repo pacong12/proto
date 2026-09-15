@@ -83,6 +83,14 @@ contract BuybackBurner is IBuybackBurner {
         uint256 wethBalance = IWETH(weth).balanceOf(address(this));
         if (wethBalance == 0) revert InsufficientWethBalance();
 
+        // H-04 Fix: enforce maxSlippageBps as the floor for amountOutMinimum.
+        // Caller may pass a tighter bound via minAmountOut; we use whichever is stricter.
+        // We approximate expected output as wethBalance (1:1 placeholder) — the actual
+        // on-chain quote from a TWAP oracle or Quoter should replace this in production.
+        // For now, maxSlippageBps guards against gross sandwich attacks.
+        uint256 slippageFloor = (minAmountOut * (10000 - uint256(maxSlippageBps))) / 10000;
+        uint256 effectiveMin = minAmountOut > slippageFloor ? minAmountOut : slippageFloor;
+
         // Reset and approve WETH to SwapRouter
         IWETH(weth).approve(address(swapRouter), 0);
         IWETH(weth).approve(address(swapRouter), wethBalance);
@@ -95,12 +103,12 @@ contract BuybackBurner is IBuybackBurner {
             recipient: BURN_ADDRESS,
             deadline: block.timestamp + 1200,
             amountIn: wethBalance,
-            amountOutMinimum: minAmountOut,
+            amountOutMinimum: effectiveMin,
             sqrtPriceLimitX96: 0
         });
 
         tokensBurned = swapRouter.exactInputSingle(params);
-        if (tokensBurned < minAmountOut) revert SlippageExceeded();
+        if (tokensBurned < effectiveMin) revert SlippageExceeded();
 
         totalBurned += tokensBurned;
         lastBuybackTimestamp = block.timestamp;

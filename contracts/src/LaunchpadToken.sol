@@ -188,11 +188,15 @@ contract LaunchpadToken is ILaunchpadToken {
         if (fromBalance < value) revert InsufficientBalance();
 
         // Anti-snipe protection checks
+        // H-03 Fix: also block buys into contracts during restriction window to prevent
+        // aggregator/router bypass where a contract receives tokens then forwards to EOA.
         if (block.number <= restrictionsEndBlock && from == liquidityPool && liquidityPool != address(0)) {
             if (block.number == launchBlock) {
                 if (to != deployer) revert OnlyDeployerCanBuyAtLaunchBlock();
             } else {
                 if (value > MAX_BUY_AMOUNT) revert MaxBuyExceeded();
+                // Block purchases into contracts (potential aggregator bypass)
+                if (to.code.length > 0 && to != deployer) revert MaxBuyExceeded();
                 if (_balances[to] + value > MAX_HOLD_AMOUNT) revert MaxWalletExceeded();
             }
         }
