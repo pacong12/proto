@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+
+# Search Engine & Social Crawlers
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+Sitemap: https://docs.proto.family/sitemap.xml
+Host: https://docs.proto.family
