@@ -38,3 +38,8 @@ Thumbs.db
 listing-submission*.md
 apps/docs/src/integration/listing-submission.md
 *submission*.txt
+
+# VitePress Cache & Local Temp
+.vitepress/dist/
+.vitepress/cache/
+apps/docs/src/.vitepress/
