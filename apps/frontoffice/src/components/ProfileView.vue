@@ -697,6 +697,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
 
 const { claimFees, setFeeRedirect, loading } = useLaunchpad();
 
@@ -832,9 +833,12 @@ async function fetchMyLaunches() {
   loadingLaunches.value = true;
   try {
     const res = await fetch(`/api/tokens?deployer=${userAddress.value}`);
-    const envelope = await res.json();
+    const envelope = (await res.json()) as {
+      success: boolean;
+      data: Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }>;
+    };
     if (envelope.success && Array.isArray(envelope.data)) {
-      myLaunches.value = envelope.data.map((item: any) => ({
+      myLaunches.value = envelope.data.map((item) => ({
         address: item.token.address,
         name: item.token.name,
         symbol: item.token.symbol,

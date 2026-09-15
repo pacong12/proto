@@ -1,21 +1,24 @@
 # Community Takeovers (CTO)
 
-When a token creator abandons a project or steps away, Proto empowers active token holders to take over the project's fee stream and social presence.
+What happens if a token developer steps away or abandons a project?
+
+Unlike typical launchpads where abandoned projects immediately wither away, Proto features a native **Community Takeover (CTO)** framework that allows active holders to revive the project and claim creator fee revenues.
 
 ---
 
-## How CTO Works
+## What is a Community Takeover?
 
-1. **Creator-Initiated Delegation**:
-   The deployer can call `setFeeRedirect(tokenAddress, newRecipientAddress)` in `LiquidityLocker.sol` to permanently or temporarily redirect their 70% trading fee stream to a community multisig or DAO treasury.
+A Community Takeover occurs when enthusiastic community members organize to adopt an abandoned token, take over marketing, update social links, and maintain community growth.
 
-2. **Community Application**:
-   If the creator is inactive, community leaders can submit a CTO request with verifiable onchain proof. The team verifies community consensus and reconfigures the recipient on `LiquidityLocker`.
+Proto supports this through smart contract fee redirection:
+
+1. **Creator Delegation**: The original creator can voluntarily transfer their 70% trading fee stream to a trusted community wallet, multisig, or DAO address via the **Profile** interface.
+2. **Community Application**: If a creator has disappeared or sold their entire position, community members can submit verifiable proof of adoption. Upon verification, the creator fee stream is redirected to benefit the community.
 
 ---
 
-## Security Guarantees
+## Security & Protection Guarantees
 
-- **Liquidity is Untouchable**: The Uniswap V3 liquidity position remains permanently locked in `LiquidityLocker`. A CTO only alters the **fee recipient address**, not the liquidity pool or token contracts.
-- **Non-Custodial**: Neither Proto nor any community administrator can withdraw or drain liquidity from the pool.
-- **Immutable Token**: Token rules, total supply (1 Billion), and pool parameters remain immutable forever.
+- **Liquidity is Untouchable**: Liquidity remains permanently locked inside `LiquidityLocker.sol`. A Community Takeover cannot withdraw, migrate, or drain the pool's liquidity.
+- **Token Contract is Immutable**: Token rules, total supply (1 Billion), and transfer parameters cannot be modified or reconfigured by anyone.
+- **Non-Custodial Transparency**: All fee claims and redirects are recorded transparently on Robinhood Chain for public verification.

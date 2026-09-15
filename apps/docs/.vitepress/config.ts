@@ -3,8 +3,9 @@ import tailwindcss from '@tailwindcss/vite';
 import path from 'node:path';
 
 export default defineConfig({
-  title: 'Proto Docs',
-  description: 'Official Protocol & Integration Reference for Proto Launchpad on Robinhood Chain',
+  title: 'Proto User Guide',
+  description:
+    'Clean, step-by-step user guide and knowledge base for trading, launching, and exploring tokens on Robinhood Chain.',
   srcDir: './src',
   outDir: './dist',
   cleanUrls: true,
@@ -18,42 +19,63 @@ export default defineConfig({
     plugins: [tailwindcss()],
   },
   themeConfig: {
-    siteTitle: 'Proto Docs',
+    siteTitle: 'Proto Guide',
+    search: {
+      provider: 'local',
+    },
+    outline: {
+      level: [2, 3],
+      label: 'On this page',
+    },
     nav: [
-      { text: 'Protocol', link: '/protocol/overview' },
-      { text: 'Integration', link: '/integration/network' },
-      { text: 'Contracts', link: '/integration/contracts' },
-      { text: 'Terms', link: '/terms-of-service' },
-      { text: 'Privacy', link: '/privacy-policy' },
-      { text: 'Cookies', link: '/cookie-policy' },
-      { text: 'Launchpad App', link: 'http://localhost:3000' },
+      { text: 'Getting Started', link: '/protocol/overview' },
+      { text: 'How to Launch', link: '/protocol/launches' },
+      { text: 'Trading Guide', link: '/protocol/trading-guide' },
+      { text: 'FAQ', link: '/protocol/faq' },
+      { text: 'Safety', link: '/protocol/anti-snipe' },
+      { text: 'Launchpad App', link: 'https://proto.family' },
     ],
     sidebar: [
       {
-        text: 'Protocol Architecture',
+        text: 'Getting Started',
+        collapsed: false,
         items: [
-          { text: 'Overview', link: '/protocol/overview' },
-          { text: 'Atomic Launches', link: '/protocol/launches' },
-          { text: 'Anti-Snipe Guard', link: '/protocol/anti-snipe' },
-          { text: 'Fee Splits & Burns', link: '/protocol/fees-and-burns' },
+          { text: 'What is Proto?', link: '/protocol/overview' },
+          { text: 'Frequently Asked Questions', link: '/protocol/faq' },
+        ],
+      },
+      {
+        text: 'Token Launches & Trading',
+        collapsed: false,
+        items: [
+          { text: 'How to Launch a Token', link: '/protocol/launches' },
+          { text: 'Trading & Swaps Guide', link: '/protocol/trading-guide' },
+          { text: 'Anti-Snipe & Fair Launch', link: '/protocol/anti-snipe' },
+        ],
+      },
+      {
+        text: 'Economics & Community',
+        collapsed: false,
+        items: [
+          { text: 'Creator Fees & Rewards', link: '/protocol/fees-and-burns' },
           { text: 'Community Takeovers (CTO)', link: '/protocol/community-takeovers' },
         ],
       },
       {
-        text: 'Developer Integration',
+        text: 'Network & Contracts',
+        collapsed: false,
         items: [
-          { text: 'Network & RPC', link: '/integration/network' },
-          { text: 'Contract Registry', link: '/integration/contracts' },
-          { text: 'Event Indexing', link: '/integration/events' },
-          { text: 'Pricing & Graduation Math', link: '/integration/pricing-math' },
+          { text: 'Robinhood Chain Setup', link: '/integration/network' },
+          { text: 'Verified Smart Contracts', link: '/integration/contracts' },
         ],
       },
       {
-        text: 'Legal & Compliance',
+        text: 'Legal & Policies',
+        collapsed: true,
         items: [
           { text: 'Terms of Service', link: '/terms-of-service' },
           { text: 'Privacy Policy', link: '/privacy-policy' },
-          { text: 'Cookie Policy', link: '/cookie-policy' },
+          { text: 'Cookie & Storage Policy', link: '/cookie-policy' },
         ],
       },
     ],
