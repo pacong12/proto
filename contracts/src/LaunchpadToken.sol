@@ -45,6 +45,8 @@ contract LaunchpadToken is ILaunchpadToken {
     error ZeroAddress();
     error ExcessiveTax();
 
+    event TaxConfigUpdated(uint16 buyTaxBps, uint16 sellTaxBps, address indexed taxRecipient);
+
     modifier onlyFactoryOrDeployer() {
         if (msg.sender != deployer && msg.sender != factory) revert Unauthorized();
         _;
@@ -125,13 +127,16 @@ contract LaunchpadToken is ILaunchpadToken {
         return (_taxConfig.buyTaxBps, _taxConfig.sellTaxBps, _taxConfig.taxRecipient);
     }
 
-    function setTaxConfig(uint16 buyTaxBps, uint16 sellTaxBps, address taxRecipient) external onlyFactoryOrDeployer {
+    function setTaxConfig(uint16 buyTaxBps, uint16 sellTaxBps, address taxRecipient) external {
+        if (msg.sender != deployer) revert Unauthorized();
         if (buyTaxBps > MAX_TAX_BPS || sellTaxBps > MAX_TAX_BPS) revert ExcessiveTax();
+        address recipient = taxRecipient != address(0) ? taxRecipient : deployer;
         _taxConfig = TaxConfig({
             buyTaxBps: buyTaxBps,
             sellTaxBps: sellTaxBps,
-            taxRecipient: taxRecipient != address(0) ? taxRecipient : deployer
+            taxRecipient: recipient
         });
+        emit TaxConfigUpdated(buyTaxBps, sellTaxBps, recipient);
     }
 
     function setLiquidityPool(address pool) external override onlyFactoryOrDeployer {

@@ -299,4 +299,54 @@ contract LaunchpadTest is Test {
         assertEq(weth.balanceOf(protocolFeeRecipient) - prevProtocolBal, 0.3 ether);
         assertEq(weth.balanceOf(creatorFeeRecipient), 0.7 ether);
     }
+
+    function test_SetTaxConfigRestrictedToDeployer_M01() public {
+        ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials("", "", "", "", "");
+        vm.deal(deployer, 10 ether);
+        vm.startPrank(deployer);
+        (address tokenAddress, ) = factory.launchToken{value: factory.launchFee()}(
+            "Tax Token",
+            "TAX",
+            "ipfs://tax",
+            "Testing tax config permissions",
+            socials,
+            0
+        );
+        vm.stopPrank();
+
+        LaunchpadToken token = LaunchpadToken(payable(tokenAddress));
+
+        // Factory cannot call setTaxConfig
+        vm.prank(address(factory));
+        vm.expectRevert(LaunchpadToken.Unauthorized.selector);
+        token.setTaxConfig(100, 100, address(0));
+
+        // Random address cannot call setTaxConfig
+        vm.prank(address(0xDEADBEEF));
+        vm.expectRevert(LaunchpadToken.Unauthorized.selector);
+        token.setTaxConfig(100, 100, address(0));
+
+        // Deployer can call setTaxConfig
+        vm.prank(deployer);
+        token.setTaxConfig(100, 200, deployer);
+        (uint16 buyTax, uint16 sellTax, address taxRecipient) = token.taxConfig();
+        assertEq(buyTax, 100);
+        assertEq(sellTax, 200);
+        assertEq(taxRecipient, deployer);
+    }
+
+    function test_FactoryOwnershipTransfer_M03() public {
+        address newOwner = address(0xABCD);
+        factory.transferOwnership(newOwner);
+        assertEq(factory.owner(), newOwner);
+
+        // Old owner cannot modify settings
+        vm.expectRevert(LaunchpadFactory.Unauthorized.selector);
+        factory.setLaunchFee(0.001 ether);
+
+        // New owner can modify settings
+        vm.prank(newOwner);
+        factory.setLaunchFee(0.001 ether);
+        assertEq(factory.launchFee(), 0.001 ether);
+    }
 }

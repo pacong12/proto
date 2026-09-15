@@ -107,8 +107,8 @@ contract LaunchpadV2Factory {
 
         curveAddress = address(curve);
 
-        // Transfer all token supply from factory to the curve
-        token.transfer(curveAddress, 1_000_000_000 * 1e18);
+        // Transfer all token supply from factory to the curve (L-05 fix)
+        token.transfer(curveAddress, token.totalSupply());
 
         // Forward launch fee to protocol treasury
         (bool feeOk, ) = protocolFeeRecipient.call{value: LAUNCH_FEE}("");
@@ -125,10 +125,9 @@ contract LaunchpadV2Factory {
 
         emit TokenLaunchedV2(tokenAddress, curveAddress, msg.sender, name, symbol, initialBuyEth);
 
-        // Execute initial creator buy if extra ETH provided
+        // Execute initial creator buy directly to creator (C-02 fix)
         if (initialBuyEth > 0) {
-            curve.buy{value: initialBuyEth}(0);
-            token.transfer(msg.sender, token.balanceOf(address(this)));
+            curve.buyFor{value: initialBuyEth}(msg.sender, 0);
         }
     }
 

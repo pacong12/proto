@@ -41,6 +41,7 @@ contract LaunchpadFactory is ILaunchpadFactory {
     error Unauthorized();
     error InsufficientLaunchFee();
     error ZeroAddress();
+    error InvalidFee();
     error PoolCreationFailed();
     error InitialBuyFailed();
 
@@ -102,6 +103,16 @@ contract LaunchpadFactory is ILaunchpadFactory {
         protocolFeeRecipient = _recipient;
     }
 
+    function transferOwnership(address newOwner) external onlyOwner {
+        if (newOwner == address(0)) revert ZeroAddress();
+        owner = newOwner;
+    }
+
+    function setDefaultProtocolFeeShare(uint256 newShare) external onlyOwner {
+        if (newShare > 100) revert InvalidFee();
+        defaultProtocolFeeShare = newShare;
+    }
+
     function launchToken(
         string memory name,
         string memory symbol,
@@ -112,7 +123,13 @@ contract LaunchpadFactory is ILaunchpadFactory {
     ) external payable override returns (address tokenAddress, address poolAddress) {
         if (msg.value < launchFee + initialBuyAmount) revert InsufficientLaunchFee();
 
-        // 1. Deploy LaunchpadToken
+        // 1. Route launch fee to protocol treasury immediately (CEI pattern, addressing C-03 & M-06)
+        if (launchFee > 0) {
+            (bool feeSent, ) = protocolFeeRecipient.call{value: launchFee}("");
+            if (!feeSent) revert InsufficientLaunchFee();
+        }
+
+        // 2. Deploy LaunchpadToken
         LaunchpadToken token = new LaunchpadToken(
             name,
             symbol,
@@ -125,7 +142,7 @@ contract LaunchpadFactory is ILaunchpadFactory {
         );
         tokenAddress = address(token);
 
-        // 2. Create and Initialize Uniswap V3 Pool
+        // 3. Create and Initialize Uniswap V3 Pool
         bool isToken0 = tokenAddress < weth;
         address token0 = isToken0 ? tokenAddress : weth;
         address token1 = isToken0 ? weth : tokenAddress;
@@ -133,15 +150,16 @@ contract LaunchpadFactory is ILaunchpadFactory {
         poolAddress = uniswapV3Factory.createPool(token0, token1, POOL_FEE);
         if (poolAddress == address(0)) revert PoolCreationFailed();
 
-        // Target initial sqrtPriceX96: price = 1 token = ~1e-9 WETH
-        // sqrtPriceX96 for ratio token1/token0
+        // Target initial price: 1 token = ~1e-9 WETH ($0.000003 at $3000 ETH)
+        // sqrtPriceX96 = sqrt(price) * 2^96 = sqrt(1e-9) * 2^96 ~ 2505414483750479299401734
+        // If token is token1: 2^96 / sqrt(price) ~ 2505414483750479299401734000000000
         uint160 sqrtPriceX96 = isToken0
             ? 2505414483750479299401734 // token1 (WETH) per token0 (Token) ~ 1e-9
             : 2505414483750479299401734000000000;
 
         IUniswapV3Pool(poolAddress).initialize(sqrtPriceX96);
 
-        // 3. Provide Full Liquidity to Position Manager
+        // 4. Provide Full Liquidity to Position Manager
         uint256 tokenSupply = token.balanceOf(address(this));
         token.approve(address(positionManager), tokenSupply);
 
@@ -210,12 +228,6 @@ contract LaunchpadFactory is ILaunchpadFactory {
 
         launchedTokens[tokenAddress] = launched;
         allTokens.push(tokenAddress);
-
-        // 7. Route launch fee to protocol
-        if (launchFee > 0) {
-            (bool feeSent, ) = protocolFeeRecipient.call{value: launchFee}("");
-            if (!feeSent) revert InsufficientLaunchFee();
-        }
 
         emit TokenLaunched(
             tokenAddress,
