@@ -46,6 +46,7 @@ contract BondingCurve {
     error CurveCompleted();
     error TransferFailed();
     error Reentrancy();
+    error ZeroAddress();
 
     modifier nonReentrant() {
         if (_locked == 1) revert Reentrancy();
@@ -126,26 +127,38 @@ contract BondingCurve {
     }
 
     /**
-     * @notice Buy tokens directly from the bonding curve using ETH.
+     * @notice Buy tokens directly from the bonding curve using ETH for msg.sender.
      */
-    function buy(uint256 minTokensOut) external payable nonReentrant returns (uint256 tokensOut) {
+    function buy(uint256 minTokensOut) external payable returns (uint256 tokensOut) {
+        return buyFor(msg.sender, minTokensOut);
+    }
+
+    /**
+     * @notice Buy tokens directly from the bonding curve using ETH for a specified recipient.
+     * Addresses C-01: Maintains constant product reserve invariant by deducting grossTokensOut from reserve.
+     */
+    function buyFor(address recipient, uint256 minTokensOut) public payable nonReentrant returns (uint256 tokensOut) {
         if (graduated) revert AlreadyGraduated();
         if (msg.value == 0) revert InvalidAmount();
+        if (recipient == address(0)) revert ZeroAddress();
 
         (tokensOut, ) = getAmountOutBuy(msg.value);
         if (tokensOut < minTokensOut) revert InsufficientOutput();
 
-        uint256 snipeBps = currentSnipeTaxBps(msg.sender);
+        uint256 grossTokensOut = tokensOut;
+        uint256 snipeFeeTokens = 0;
+        uint256 snipeBps = currentSnipeTaxBps(recipient);
         if (snipeBps > 0) {
-            uint256 snipeFeeTokens = (tokensOut * snipeBps) / BPS;
-            tokensOut -= snipeFeeTokens;
+            snipeFeeTokens = (grossTokensOut * snipeBps) / BPS;
+            tokensOut = grossTokensOut - snipeFeeTokens;
         }
 
         uint256 fee = (msg.value * 100) / BPS;
         uint256 netEth = msg.value - fee;
 
         virtualEthReserve += netEth;
-        virtualTokenReserve -= tokensOut;
+        // C-01 Fix: Deduct gross tokens corresponding to K curve, not net user tokens
+        virtualTokenReserve -= grossTokensOut;
         totalEthRaised += netEth;
         totalVolumeEth += msg.value;
 
@@ -154,14 +167,21 @@ contract BondingCurve {
             graduated = true;
         }
 
-        // Send platform fee
+        // Send platform ETH fee
         (bool feeOk, ) = feeRecipient.call{value: fee}("");
         if (!feeOk) revert TransferFailed();
 
-        bool sent = token.transfer(msg.sender, tokensOut);
+        // Send user tokens
+        bool sent = token.transfer(recipient, tokensOut);
         if (!sent) revert TransferFailed();
 
-        emit Trade(msg.sender, true, msg.value, tokensOut, fee);
+        // Transfer anti-snipe fee tokens to feeRecipient to keep contract balance aligned
+        if (snipeFeeTokens > 0) {
+            bool feeTokensSent = token.transfer(feeRecipient, snipeFeeTokens);
+            if (!feeTokensSent) revert TransferFailed();
+        }
+
+        emit Trade(recipient, true, msg.value, tokensOut, fee);
 
         if (shouldGraduate) {
             _executeGraduationV4();

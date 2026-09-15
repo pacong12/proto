@@ -56,4 +56,47 @@ contract LaunchpadV2Test is Test {
         assertEq(token.balanceOf(buyer1), tokensReceived);
         assertEq(feeRecipient.balance, 0.0005 ether + expectedFee);
     }
+
+    function test_SnipeTaxReserveInvariant_C01() public {
+        (address tokenAddress, address curveAddress) = _launch();
+        BondingCurve curve = BondingCurve(payable(curveAddress));
+        LaunchpadToken token = LaunchpadToken(payable(tokenAddress));
+
+        uint256 initialVirtualTokens = curve.virtualTokenReserve();
+        (uint256 grossTokensExpected, ) = curve.getAmountOutBuy(0.1 ether);
+
+        // Buy at t=0 (snipe tax 99%)
+        vm.startPrank(buyer1);
+        uint256 tokensReceived = curve.buy{value: 0.1 ether}(0);
+        vm.stopPrank();
+
+        // 99% snipe tax applies to buyer1
+        assertLt(tokensReceived, grossTokensExpected);
+        assertEq(tokensReceived + token.balanceOf(feeRecipient), grossTokensExpected, "sum of tokens must equal gross");
+
+        // C-01 Verification: virtualTokenReserve must be decremented by grossTokensExpected
+        assertEq(curve.virtualTokenReserve(), initialVirtualTokens - grossTokensExpected);
+
+        // Snipe fee tokens must be forwarded to feeRecipient, preserving curve token balance
+        assertGt(token.balanceOf(feeRecipient), 0);
+    }
+
+    function test_LaunchTokenV2WithInitialBuy_DirectRecipient_C02() public {
+        vm.prank(creator);
+        (address tokenAddress, address curveAddress) = factory.launchTokenV2{value: 0.0005 ether + 0.1 ether}(
+            "Initial Buy Token",
+            "INIT",
+            "ipfs://logo",
+            "Testing direct initial buy",
+            "",
+            "",
+            ""
+        );
+
+        LaunchpadToken token = LaunchpadToken(payable(tokenAddress));
+
+        // C-02 Verification: Creator must receive initial buy tokens directly, factory holds 0
+        assertGt(token.balanceOf(creator), 0, "creator must receive initial buy tokens");
+        assertEq(token.balanceOf(address(factory)), 0, "factory must hold 0 tokens");
+    }
 }
