@@ -1,0 +1,26 @@
+# Proto Documentation & Knowledge Base
+> Official user guide and reference for Proto Protocol on Robinhood Chain.
+
+Proto is a decentralized, non-custodial crypto launchpad on Robinhood Chain (L2). It allows anyone to launch fixed-supply tokens, trade on interactive bonding curves or Uniswap V3 pools, and participate in fair launches with permanently locked liquidity.
+
+## Documentation Sections
+- Getting Started: https://docs.proto.family/protocol/overview
+- How to Launch a Token: https://docs.proto.family/protocol/launches
+- Trading & Swaps Guide: https://docs.proto.family/protocol/trading-guide
+- Frequently Asked Questions: https://docs.proto.family/protocol/faq
+- Anti-Snipe Safeguards: https://docs.proto.family/protocol/anti-snipe
+- Creator Rewards & Fees: https://docs.proto.family/protocol/fees-and-burns
+- Community Takeovers: https://docs.proto.family/protocol/community-takeovers
+- Network Setup: https://docs.proto.family/integration/network
+- Verified Contracts: https://docs.proto.family/integration/contracts
+- Terms of Service: https://docs.proto.family/terms-of-service
+- Privacy Policy: https://docs.proto.family/privacy-policy
+- Cookie Policy: https://docs.proto.family/cookie-policy
+
+## Protocol Key Parameters
+- Network: Robinhood Chain (Chain ID: 4663)
+- Token Supply: Fixed 1,000,000,000 (18 decimals)
+- Launch Fee: 0.0005 ETH
+- Graduation Target (v2): 4.2 ETH
+- Fee Split: 70% Creator / 30% Protocol
+- Automated Buyback & Burn: 80% of protocol fees burned
