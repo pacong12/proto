@@ -470,10 +470,10 @@ async function processImageFile(file: File) {
     if (data.success && data.data?.uri) {
       form.value.logo = data.data.uri;
     } else {
-      form.value.logo = 'ipfs://bafybeiehcgbqotmir6tqi76eorpihucphlry53cx3mmnxgmqjjxpwherwq';
+      form.value.logo = '';
     }
   } catch {
-    form.value.logo = 'ipfs://bafybeiehcgbqotmir6tqi76eorpihucphlry53cx3mmnxgmqjjxpwherwq';
+    form.value.logo = '';
   } finally {
     isUploadingIpfs.value = false;
   }
@@ -501,9 +501,7 @@ async function handleLaunch() {
       name: form.value.name.trim(),
       symbol: form.value.symbol.trim().toUpperCase(),
       description: form.value.description.trim(),
-      logo:
-        form.value.logo.trim() ||
-        'ipfs://bafybeiehcgbqotmir6tqi76eorpihucphlry53cx3mmnxgmqjjxpwherwq',
+      logo: form.value.logo.trim(),
       socials: {
         website: form.value.website.trim(),
         twitter: form.value.twitter.trim(),

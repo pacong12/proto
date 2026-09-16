@@ -1039,23 +1039,23 @@ const candlestickData = ref<
 >([]);
 
 const currentToken = ref<LaunchedTokenEntity>({
-  address: (props.tokenAddress as `0x${string}`) || '0x48844223aBDceeb1Ce502F54d559681358E68200',
-  name: 'Proto Token',
-  symbol: 'PROTO',
+  address: (props.tokenAddress as `0x${string}`) || '0x0000000000000000000000000000000000000000',
+  name: '',
+  symbol: '',
   decimals: 18,
-  totalSupply: '1000000000000000000000000000',
-  logo: 'ipfs://proto',
-  description: 'Native utility and fee buyback token for the Proto launchpad on Robinhood Chain.',
-  socials: { twitter: 'https://x.com/protodotfamily' },
-  deployer: '0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2',
-  pairedToken: '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73',
-  poolAddress: '0x10CC6BD38112cAc182db90B6a71d8Bb5939526bA',
+  totalSupply: '0',
+  logo: '',
+  description: '',
+  socials: {},
+  deployer: '0x0000000000000000000000000000000000000000',
+  pairedToken: '0x0000000000000000000000000000000000000000',
+  poolAddress: '0x0000000000000000000000000000000000000000',
   isToken0: true,
   poolFee: 10000,
-  positionId: 1n,
-  restrictionsEndBlock: 100n,
-  launchBlock: 98n,
-  createdAt: Date.now(),
+  positionId: 0n,
+  restrictionsEndBlock: 0n,
+  launchBlock: 0n,
+  createdAt: 0,
 });
 
 const currentMarketData = ref<TokenMarketData>({

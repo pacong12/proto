@@ -82,15 +82,16 @@
         >
           <div class="space-y-3">
             <div class="flex items-start justify-between gap-3">
-              <div class="flex items-center gap-3">
-                <Avatar
-                  class="w-12 h-12 rounded-xl border border-zinc-700 group-hover:border-emerald-500/50 transition"
-                >
-                  <AvatarFallback class="bg-zinc-800 text-emerald-400 font-bold text-lg rounded-xl">
-                    {{ item.token.symbol.slice(0, 3) }}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
+              <div class="flex items-center gap-3 min-w-0">
+                <OptimizedImage
+                  :src="item.token.logo"
+                  :alt="item.token.name"
+                  :fallback-text="item.token.symbol"
+                  :width="48"
+                  :height="48"
+                  class="rounded-xl border border-zinc-700 group-hover:border-emerald-500/50 transition shrink-0"
+                />
+                <div class="min-w-0 truncate">
                   <h3 class="font-bold text-base group-hover:text-emerald-400 transition truncate">
                     {{ item.token.name }}
                   </h3>
@@ -150,7 +151,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { TrendingUp, Plus, Loader2, AlertCircle } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
@@ -158,7 +159,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 
 const { t } = useI18n();
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Empty } from '@/components/ui/empty';
@@ -178,9 +179,32 @@ const items = ref<Array<{ token: LaunchedTokenEntity; marketData: TokenMarketDat
 const currentPage = ref(1);
 const pageSize = 6;
 
+watch(selectedSort, () => {
+  currentPage.value = 1;
+});
+
+const sortedItems = computed(() => {
+  const list = [...items.value];
+  if (selectedSort.value === 'Top Gainers') {
+    return list.sort(
+      (a, b) => (b.marketData.priceChange24h ?? 0) - (a.marketData.priceChange24h ?? 0),
+    );
+  }
+  if (selectedSort.value === 'Highest Volume') {
+    return list.sort((a, b) => (b.marketData.volume24hUsd || 0) - (a.marketData.volume24hUsd || 0));
+  }
+  // Default 'Trending'
+  return list.sort(
+    (a, b) =>
+      (b.marketData.volume24hUsd || 0) +
+      b.marketData.graduationProgress * 1000 -
+      ((a.marketData.volume24hUsd || 0) + a.marketData.graduationProgress * 1000),
+  );
+});
+
 const paginatedItems = computed(() => {
   const start = (currentPage.value - 1) * pageSize;
-  return items.value.slice(start, start + pageSize);
+  return sortedItems.value.slice(start, start + pageSize);
 });
 
 onMounted(async () => {
