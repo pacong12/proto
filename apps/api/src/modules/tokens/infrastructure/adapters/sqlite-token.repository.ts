@@ -388,7 +388,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       }
     }
 
-    let deployerInitial = (totalSupply * 5n) / 100n;
+    let deployerInitial = 0n;
     if (token?.initialBuyAmount) {
       try {
         const parsed = BigInt(token.initialBuyAmount);
@@ -421,33 +421,30 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
         percent: poolPercent,
       });
 
-      if (deployerInitial > 0n) {
-        holders.push({
-          address: deployerAddress,
-          balance: deployerInitial.toString(),
-          percent: deployerPercent,
-        });
-      }
+      holders.push({
+        address: deployerAddress,
+        balance: deployerInitial.toString(),
+        percent: deployerPercent,
+      });
     } else {
       const deployerTradeBal = traderBalances[deployerAddress.toLowerCase()] ?? 0n;
       const totalDeployerBalance = deployerInitial + deployerTradeBal;
       const deployerPercent = Number((totalDeployerBalance * 10000n) / totalSupply) / 100;
 
       const nonPoolTotal = totalDeployerBalance + totalTraderTokens;
-      const poolBalance =
-        totalSupply > nonPoolTotal ? totalSupply - nonPoolTotal : (totalSupply * 90n) / 100n;
+      const poolBalance = totalSupply > nonPoolTotal ? totalSupply - nonPoolTotal : 0n;
       const poolPercent = Number((poolBalance * 10000n) / totalSupply) / 100;
 
       holders.push({
         address: poolAddress,
         balance: poolBalance.toString(),
-        percent: poolPercent > 0 ? poolPercent : 90.0,
+        percent: poolPercent,
       });
 
       holders.push({
         address: deployerAddress,
         balance: totalDeployerBalance.toString(),
-        percent: deployerPercent > 0 ? deployerPercent : 5.0,
+        percent: deployerPercent,
       });
 
       for (const [addr, bal] of activeTraders) {
