@@ -8,6 +8,10 @@ import {
   CandlestickEntity,
 } from '@proto/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
+import {
+  aggregateCandlesticks,
+  computeHoldersDistribution,
+} from '../../domain/services/token-aggregation.service';
 
 interface TokenRow {
   address: string;
@@ -319,35 +323,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       ORDER BY timestamp ASC, rowid ASC
     `);
     const rows = stmt.all(tokenAddress) as TradeRow[];
-    if (rows.length === 0) return [];
-
-    const bucketDurationMs = resolutionSeconds * 1000;
-    const buckets = new Map<number, TradeRow[]>();
-
-    for (const row of rows) {
-      const bucketTime = Math.floor(row.timestamp / bucketDurationMs) * bucketDurationMs;
-      const list = buckets.get(bucketTime) ?? [];
-      list.push(row);
-      buckets.set(bucketTime, list);
-    }
-
-    const candles: CandlestickEntity[] = [];
-    for (const [timestamp, bucketTrades] of buckets.entries()) {
-      const sorted = [...bucketTrades].sort((a, b) => a.timestamp - b.timestamp);
-      const prices = sorted.map((t) => Number(t.priceUsd));
-      const volume = sorted.reduce((sum, t) => sum + parseFloat(t.wethAmount), 0);
-
-      candles.push({
-        timestamp,
-        open: prices[0] ?? 0,
-        high: Math.max(...prices),
-        low: Math.min(...prices),
-        close: prices[prices.length - 1] ?? 0,
-        volume,
-      });
-    }
-
-    return candles.sort((a, b) => a.timestamp - b.timestamp);
+    return aggregateCandlesticks(rows, resolutionSeconds);
   }
 
   async getHolders(
@@ -355,109 +331,8 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     limit = 50,
   ): Promise<Array<{ address: string; balance: string; percent: number }>> {
     const token = await this.findByAddress(tokenAddress as `0x${string}`);
-    let totalSupply = 1_000_000_000n * 10n ** 18n;
-    if (token?.totalSupply) {
-      try {
-        totalSupply = BigInt(token.totalSupply);
-      } catch {
-        totalSupply = 1_000_000_000n * 10n ** 18n;
-      }
-    }
-
-    const poolAddress = token?.poolAddress || '0x000000000000000000000000000000000000dEaD';
-    const deployerAddress = token?.deployer || '0x70997970C51812dc3A010C7d01b50e0d17dc79C8';
     const trades = await this.getTrades(tokenAddress as `0x${string}`, 1000, 0);
-
-    const traderBalances: Record<string, bigint> = {};
-    for (const trade of trades) {
-      const trader = trade.trader.toLowerCase();
-      if (trader === poolAddress.toLowerCase()) continue;
-
-      let amount = 0n;
-      try {
-        amount = BigInt(trade.tokenAmount);
-      } catch {
-        amount = BigInt(Math.floor(Number(trade.tokenAmount) || 0));
-      }
-
-      const cur = traderBalances[trader] ?? 0n;
-      if (trade.isBuy) {
-        traderBalances[trader] = cur + amount;
-      } else {
-        traderBalances[trader] = cur > amount ? cur - amount : 0n;
-      }
-    }
-
-    let deployerInitial = 0n;
-    if (token?.initialBuyAmount) {
-      try {
-        const parsed = BigInt(token.initialBuyAmount);
-        if (parsed > 0n) deployerInitial = parsed;
-      } catch {
-        // ignore invalid initial buy amount
-      }
-    }
-    const activeTraders = Object.entries(traderBalances)
-      .filter(([addr, bal]) => bal > 0n && addr !== deployerAddress.toLowerCase())
-      .sort((a, b) => (b[1] > a[1] ? 1 : b[1] < a[1] ? -1 : 0));
-
-    const totalTraderTokens = activeTraders.reduce((sum, [, bal]) => sum + bal, 0n);
-    const holders: Array<{ address: string; balance: string; percent: number }> = [];
-
-    if (activeTraders.length === 0 || totalTraderTokens === 0n) {
-      let deployerPercent = Number((deployerInitial * 10000n) / totalSupply) / 100;
-      if (deployerPercent <= 0) {
-        deployerPercent = 0;
-        deployerInitial = 0n;
-      }
-
-      const poolBalance =
-        totalSupply > deployerInitial ? totalSupply - deployerInitial : totalSupply;
-      const poolPercent = Number((poolBalance * 10000n) / totalSupply) / 100;
-
-      holders.push({
-        address: poolAddress,
-        balance: poolBalance.toString(),
-        percent: poolPercent,
-      });
-
-      holders.push({
-        address: deployerAddress,
-        balance: deployerInitial.toString(),
-        percent: deployerPercent,
-      });
-    } else {
-      const deployerTradeBal = traderBalances[deployerAddress.toLowerCase()] ?? 0n;
-      const totalDeployerBalance = deployerInitial + deployerTradeBal;
-      const deployerPercent = Number((totalDeployerBalance * 10000n) / totalSupply) / 100;
-
-      const nonPoolTotal = totalDeployerBalance + totalTraderTokens;
-      const poolBalance = totalSupply > nonPoolTotal ? totalSupply - nonPoolTotal : 0n;
-      const poolPercent = Number((poolBalance * 10000n) / totalSupply) / 100;
-
-      holders.push({
-        address: poolAddress,
-        balance: poolBalance.toString(),
-        percent: poolPercent,
-      });
-
-      holders.push({
-        address: deployerAddress,
-        balance: totalDeployerBalance.toString(),
-        percent: deployerPercent,
-      });
-
-      for (const [addr, bal] of activeTraders) {
-        const pct = Number((bal * 10000n) / totalSupply) / 100;
-        holders.push({
-          address: addr,
-          balance: bal.toString(),
-          percent: pct,
-        });
-      }
-    }
-
-    return holders.slice(0, limit);
+    return computeHoldersDistribution(token, trades, limit);
   }
 
   close(): void {

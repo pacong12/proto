@@ -135,17 +135,33 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     return new Response(null, { headers });
   }
 
+  const replyJson = (data: unknown, status = 200, extraHeaders: Record<string, string> = {}) =>
+    new Response(safeStringify(data), {
+      status,
+      headers: { ...headers, ...extraHeaders },
+    });
+
+  const replyError = (
+    code: string,
+    message: string,
+    status = 400,
+    extraHeaders: Record<string, string> = {},
+  ) =>
+    new Response(
+      safeStringify({
+        success: false,
+        data: null,
+        error: { code, message },
+        timestamp: Date.now(),
+      }),
+      { status, headers: { ...headers, ...extraHeaders } },
+    );
+
   // Rate Limiting on public/expensive API routes (120 req / minute per IP)
   // Healthcheck & root probe are exempt from rate limiting for monitoring availability
   const isHealthProbe = url.pathname === '/health' || url.pathname === '/';
   if (!isHealthProbe && !(await checkRateLimit(clientIp, 120, 60_000))) {
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many requests, please slow down.' },
-      }),
-      { status: 429, headers },
-    );
+    return replyError('RATE_LIMIT_EXCEEDED', 'Too many requests, please slow down.', 429);
   }
 
   // DevOps Observability Dashboard & Telemetry Endpoints (Gated by DEVOPS_AUTH_TOKEN)
@@ -266,13 +282,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   }
   if (url.pathname === '/api/tokens') {
     if (req.method !== 'GET') {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: { code: 'METHOD_NOT_ALLOWED', message: 'Method not allowed for /api/tokens' },
-        }),
-        { status: 405, headers: { ...headers, Allow: 'GET' } },
-      );
+      return replyError('METHOD_NOT_ALLOWED', 'Method not allowed for /api/tokens', 405, {
+        Allow: 'GET',
+      });
     }
     const rawLimit = parseInt(url.searchParams.get('limit') ?? '50', 10);
     const rawOffset = parseInt(url.searchParams.get('offset') ?? '0', 10);
@@ -284,18 +296,14 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const cacheKey = `tokens:list:${limit}:${offset}:${version || 'all'}:${deployer || 'all'}`;
     const cached = await cache.get<unknown>(cacheKey);
     if (cached) {
-      return new Response(safeStringify(cached), {
-        headers: { ...headers, 'x-cache': 'HIT' },
-      });
+      return replyJson(cached, 200, { 'x-cache': 'HIT' });
     }
 
     const res = await tokenController.listTokens(limit, offset, version, deployer);
     if (res.success) {
       await cache.set(cacheKey, res, 10); // Cache for 10s
     }
-    return new Response(safeStringify(res), {
-      headers: { ...headers, 'x-cache': 'MISS' },
-    });
+    return replyJson(res, 200, { 'x-cache': 'MISS' });
   }
 
   // GET /api/tokens/:address/trades
@@ -376,13 +384,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         { headers },
       );
     } catch (priceErr) {
-      return new Response(
-        safeStringify({
-          success: false,
-          error: { code: 'PRICE_FEED_ERROR', message: (priceErr as Error).message },
-        }),
-        { status: 502, headers },
-      );
+      return replyError('PRICE_FEED_ERROR', (priceErr as Error).message, 502);
     }
   }
 
@@ -480,17 +482,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     try {
       const body = (await req.json()) as TransactionIntent;
       const res = securityController.evaluateIntent(body);
-      return new Response(safeStringify(res), { headers });
+      return replyJson(res);
     } catch {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          data: null,
-          error: { code: 'BAD_REQUEST', message: 'Malformed JSON payload' },
-          timestamp: Date.now(),
-        }),
-        { status: 400, headers },
-      );
+      return replyError('BAD_REQUEST', 'Malformed JSON payload', 400);
     }
   }
 
@@ -499,34 +493,21 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     try {
       const res = await ipfsController.handleUpload(req);
       const status = res.success ? 200 : 400;
-      return new Response(safeStringify(res), { status, headers });
+      return replyJson(res, status);
     } catch (err) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          data: null,
-          error: { code: 'UPLOAD_ERROR', message: (err as Error).message },
-          timestamp: Date.now(),
-        }),
-        { status: 500, headers },
-      );
+      return replyError('UPLOAD_ERROR', (err as Error).message, 500);
     }
   }
 
-  return new Response(
-    JSON.stringify({
-      success: false,
-      data: null,
-      error: { code: 'NOT_FOUND', message: `Route ${url.pathname} not found` },
-      timestamp: Date.now(),
-    }),
-    { status: 404, headers },
-  );
+  return replyError('NOT_FOUND', `Route ${url.pathname} not found`, 404);
 }
 
 async function handleRequest(req: Request): Promise<Response> {
   const startTime = performance.now();
-  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1';
+  const clientIp =
+    req.headers.get('cf-connecting-ip') ||
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    '127.0.0.1';
   const requestId = requestTracker.extractRequestId(req);
 
   try {
