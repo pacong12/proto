@@ -97,7 +97,7 @@ contract LaunchpadV2Test is Test {
 
     function test_LaunchTokenV2WithInitialBuy_DirectRecipient_C02() public {
         vm.prank(creator);
-        (address tokenAddress, address curveAddress) = factory.launchTokenV2{value: 0.0005 ether + 0.1 ether}(
+        (address tokenAddress, ) = factory.launchTokenV2{value: 0.0005 ether + 0.1 ether}(
             "Initial Buy Token",
             "INIT",
             "ipfs://logo",

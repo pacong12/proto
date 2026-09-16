@@ -174,7 +174,7 @@ contract MockPositionManager is INonfungiblePositionManager {
         return (0, address(0), p.token0, p.token1, p.fee, -887200, 887200, p.liquidity, 0, 0, 0, 0);
     }
 
-    function safeTransferFrom(address from, address to, uint256 tokenId) external override {
+    function safeTransferFrom(address /* from */, address to, uint256 tokenId) external override {
         owners[tokenId] = to;
     }
 }
