@@ -47,3 +47,7 @@ apps/docs/src/integration/listing-submission.md
 .vitepress/cache/
 apps/docs/src/.vitepress/
 apps/docs/.vitepress/cache/
+
+# Local experiment scratchpads
+/index.html
+/server.py

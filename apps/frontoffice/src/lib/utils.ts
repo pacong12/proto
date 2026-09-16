@@ -31,3 +31,28 @@ export function formatUsd(value: number): string {
   if (value < 0.01) return `$${value.toFixed(6)}`;
   return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
+
+/**
+ * Format token quantities compactly (e.g. 1.25M, 450.00K).
+ */
+export function formatTokenNumber(raw: string | number): string {
+  const num = typeof raw === 'string' ? parseFloat(raw) : raw;
+  if (isNaN(num)) return '0';
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M`;
+  if (num >= 1_000) return `${(num / 1_000).toFixed(2)}K`;
+  return num.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+/**
+ * Format a past timestamp into a relative time description (e.g. 10s ago, 5m ago).
+ */
+export function formatRelativeTime(timestamp: number): string {
+  const diffSec = Math.floor((Date.now() - timestamp) / 1000);
+  if (diffSec < 60) return `${Math.max(1, diffSec)}s ago`;
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+}

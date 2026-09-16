@@ -25,4 +25,6 @@ export interface TokenRepositoryPort {
     tokenAddress: string,
     limit?: number,
   ): Promise<Array<{ address: string; balance: string; percent: number }>>;
+  getRecentTrades?(limit?: number): Promise<TradeEventEntity[]>;
+  findTradeByHash?(txHash: string): Promise<TradeEventEntity | null>;
 }

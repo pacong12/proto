@@ -254,4 +254,35 @@ describe('SqliteTokenRepository', () => {
     const holders = await repository.getHolders(sampleToken.address, 1);
     expect(holders).toHaveLength(1);
   });
+
+  it('retrieves recent trades and finds trade by transaction hash', async () => {
+    await repository.save(sampleToken);
+    const txHash = '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef';
+    await repository.saveTrade({
+      id: 'trade-test-hash',
+      tokenAddress: sampleToken.address,
+      poolAddress: sampleToken.poolAddress,
+      trader: '0x8888888888888888888888888888888888888888',
+      isBuy: true,
+      tokenAmount: '1000',
+      wethAmount: '0.05',
+      priceUsd: 0.05,
+      blockNumber: 1000n,
+      transactionHash: txHash,
+      timestamp: 1700000050000,
+    });
+
+    const recent = await repository.getRecentTrades(10);
+    expect(recent.length).toBeGreaterThanOrEqual(1);
+
+    const found = await repository.findTradeByHash(txHash);
+    expect(found).not.toBeNull();
+    expect(found?.transactionHash.toLowerCase()).toBe(txHash.toLowerCase());
+    expect(found?.wethAmount).toBe('0.05');
+
+    const notFound = await repository.findTradeByHash(
+      '0x9999999999999999999999999999999999999999999999999999999999999999',
+    );
+    expect(notFound).toBeNull();
+  });
 });

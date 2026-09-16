@@ -30,15 +30,70 @@
       <!-- Search Results List -->
       <div class="max-h-80 overflow-y-auto p-2">
         <div
-          v-if="loading"
+          v-if="loading || searchingTx"
           class="flex items-center justify-center py-10 text-xs gap-2 text-zinc-500 dark:text-zinc-400"
         >
           <Loader2 class="w-4 h-4 animate-spin text-emerald-500 dark:text-emerald-400" />
-          <span>{{ t('searchingTokens') }}</span>
+          <span>{{ searchingTx ? 'Searching transaction...' : t('searchingTokens') }}</span>
+        </div>
+
+        <!-- Matched Transaction Result Card -->
+        <div
+          v-if="matchedTrade && !searchingTx"
+          class="mb-2 p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-950/20 text-xs space-y-2"
+        >
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-mono uppercase font-bold text-zinc-400">
+              Transaction Match
+            </span>
+            <Badge
+              :variant="matchedTrade.isBuy ? 'default' : 'destructive'"
+              class="text-[9px] uppercase px-1.5 py-0 font-mono"
+            >
+              {{ matchedTrade.isBuy ? 'BUY' : 'SELL' }}
+            </Badge>
+          </div>
+
+          <div
+            @click="selectToken(matchedTrade.tokenAddress)"
+            class="flex items-center justify-between cursor-pointer group"
+          >
+            <div class="min-w-0 truncate">
+              <span
+                class="font-mono text-xs font-bold text-black dark:text-white group-hover:text-emerald-500 transition truncate block"
+              >
+                {{ shortenAddress(matchedTrade.transactionHash, 10, 8) }}
+              </span>
+              <p class="text-[11px] font-mono text-zinc-400 dark:text-zinc-500 truncate mt-0.5">
+                Token: {{ shortenAddress(matchedTrade.tokenAddress) }} •
+                {{ matchedTrade.tokenAmount }} tokens • {{ matchedTrade.wethAmount }}
+                {{ activeNetwork.nativeCurrency.symbol }}
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0 ml-3">
+              <a
+                v-if="activeNetwork.blockExplorer"
+                :href="`${activeNetwork.blockExplorer}/tx/${matchedTrade.transactionHash}`"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:text-emerald-400 text-zinc-500 transition"
+                title="View on Explorer"
+                @click.stop
+              >
+                <ExternalLink class="w-3.5 h-3.5" />
+              </a>
+              <span
+                class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 group-hover:underline"
+              >
+                View Token &rarr;
+              </span>
+            </div>
+          </div>
         </div>
 
         <Empty
-          v-else-if="filteredTokens.length === 0"
+          v-else-if="filteredTokens.length === 0 && !matchedTrade && !searchingTx"
           :title="t('noTokensFound')"
           :description="query ? `${t('noMatchingTokens')} '${query}'` : t('typeSearchHint')"
           class="border-0 bg-transparent py-6"
@@ -136,16 +191,19 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import { Search, Loader2 } from 'lucide-vue-next';
+import { Search, Loader2, ExternalLink } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
+import { useWallet } from '@/composables/useWallet';
+import { shortenAddress } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Empty } from '@/components/ui/empty';
-import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
+import type { LaunchedTokenEntity, TokenMarketData, TradeEventEntity } from '@proto/shared-types';
 
 const { t } = useI18n();
+const { activeNetwork } = useWallet();
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -155,11 +213,37 @@ const emit = defineEmits<{
 const query = ref('');
 const searchInput = ref<HTMLInputElement | null>(null);
 const loading = ref(false);
+const searchingTx = ref(false);
+const matchedTrade = ref<TradeEventEntity | null>(null);
 const tokens = ref<Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }>>([]);
 const selectedIndex = ref(0);
 
-watch(query, () => {
+let txLookupDebounce: ReturnType<typeof setTimeout> | null = null;
+
+watch(query, (val) => {
   selectedIndex.value = 0;
+  matchedTrade.value = null;
+  const q = val.trim();
+
+  if (txLookupDebounce) clearTimeout(txLookupDebounce);
+
+  // If query is a full 66-char transaction hash (0x + 64 hex chars)
+  if (/^0x[a-fA-F0-9]{64}$/i.test(q)) {
+    searchingTx.value = true;
+    txLookupDebounce = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/trades/${q}`);
+        const env = await res.json();
+        if (env.success && env.data) {
+          matchedTrade.value = env.data;
+        }
+      } catch {
+        // Non-blocking
+      } finally {
+        searchingTx.value = false;
+      }
+    }, 200);
+  }
 });
 
 function handleKeydown(e: KeyboardEvent) {
@@ -176,7 +260,9 @@ function handleKeydown(e: KeyboardEvent) {
     }
   } else if (e.key === 'Enter') {
     e.preventDefault();
-    if (filteredTokens.value[selectedIndex.value]) {
+    if (matchedTrade.value && filteredTokens.value.length === 0) {
+      selectToken(matchedTrade.value.tokenAddress);
+    } else if (filteredTokens.value[selectedIndex.value]) {
       selectToken(filteredTokens.value[selectedIndex.value].token.address);
     }
   }

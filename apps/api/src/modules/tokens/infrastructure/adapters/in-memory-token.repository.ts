@@ -68,4 +68,19 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
     const trades = await this.getTrades(tokenAddress.toLowerCase() as `0x${string}`, 1000);
     return computeHoldersDistribution(token, trades, limit);
   }
+
+  async getRecentTrades(limit = 50): Promise<TradeEventEntity[]> {
+    const all = Array.from(this.trades.values()).flat();
+    all.sort((a, b) => b.timestamp - a.timestamp);
+    return all.slice(0, limit);
+  }
+
+  async findTradeByHash(txHash: string): Promise<TradeEventEntity | null> {
+    const hash = txHash.toLowerCase();
+    for (const list of this.trades.values()) {
+      const match = list.find((t) => t.transactionHash.toLowerCase() === hash);
+      if (match) return match;
+    }
+    return null;
+  }
 }

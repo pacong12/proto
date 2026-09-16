@@ -72,4 +72,25 @@ describe('Tokens HTTP Endpoints Integration', () => {
 
     expect(res.status).toBe(404);
   });
+
+  it('GET /api/trades returns 200 with global recent trades list', async () => {
+    const req = new Request('http://localhost:3001/api/trades?limit=10');
+    const res = await server.fetch(req);
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    expect(Array.isArray(json.data)).toBe(true);
+  });
+
+  it('GET /api/trades/:txHash returns 404 for non-existent transaction hash', async () => {
+    const nonExistentHash = '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef';
+    const req = new Request(`http://localhost:3001/api/trades/${nonExistentHash}`);
+    const res = await server.fetch(req);
+
+    expect(res.status).toBe(404);
+    const json = await res.json();
+    expect(json.success).toBe(false);
+    expect(json.error.code).toBe('NOT_FOUND');
+  });
 });
