@@ -23,9 +23,7 @@
               <h1 class="text-2xl font-bold tracking-tight text-black dark:text-white">
                 {{
                   profileData.displayName ||
-                  (userAddress
-                    ? `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`
-                    : 'Anonymous Creator')
+                  (userAddress ? shortenAddress(userAddress) : 'Anonymous Creator')
                 }}
               </h1>
               <Badge
@@ -60,11 +58,7 @@
                 <span>t.me/{{ profileData.telegram }}</span>
               </a>
               <span class="font-mono text-zinc-500">
-                {{
-                  userAddress
-                    ? `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`
-                    : 'Not Connected'
-                }}
+                {{ userAddress ? shortenAddress(userAddress) : 'Not Connected' }}
               </span>
             </div>
           </div>
@@ -686,6 +680,7 @@ import {
 import { useI18n } from '@/lib/i18n';
 import { useLaunchpad } from '../composables/useLaunchpad';
 import { walletAddress } from '../lib/wallet-store';
+import { shortenAddress } from '@/lib/utils';
 
 const { t } = useI18n();
 import { Card } from '@/components/ui/card';

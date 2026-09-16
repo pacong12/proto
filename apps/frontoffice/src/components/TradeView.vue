@@ -958,6 +958,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { TradingChart } from '@/components/ui/chart';
+import { shortenAddress } from '@/lib/utils';
 import {
   ROBINHOOD_CHAIN,
   launchpadTokenAbi,
@@ -1222,8 +1223,7 @@ function formatTokenNumber(raw: string | number): string {
 }
 
 function truncateAddress(addr: string): string {
-  if (!addr || addr.length < 10) return addr;
-  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  return shortenAddress(addr);
 }
 
 function formatRelativeTime(timestamp: number): string {

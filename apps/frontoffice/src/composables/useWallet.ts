@@ -21,6 +21,7 @@ import {
   walletProvider,
   type WalletProviderLike,
 } from '../lib/wallet-store';
+import { shortenAddress } from '../lib/utils';
 
 const balanceWei = ref<bigint>(0n);
 const error = ref<string | null>(null);
@@ -43,8 +44,7 @@ export function useWallet() {
   const network = useAppKitNetwork();
 
   const formattedAddress = computed(() => {
-    if (!walletAddress.value) return '';
-    return `${walletAddress.value.slice(0, 6)}...${walletAddress.value.slice(-4)}`;
+    return shortenAddress(walletAddress.value);
   });
 
   const formattedBalance = computed(() => {
