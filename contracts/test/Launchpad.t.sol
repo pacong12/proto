@@ -302,6 +302,31 @@ contract LaunchpadTest is Test {
         assertEq(weth.balanceOf(creatorFeeRecipient), 0.7 ether);
     }
 
+    function test_FeeRedirectRestrictedToDeployer_BUG06() public {
+        ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials("", "", "", "", "");
+        vm.deal(deployer, 10 ether);
+        vm.startPrank(deployer);
+        (address tokenAddress, ) = factory.launchToken{value: factory.launchFee()}(
+            "Fee Test Token",
+            "FTT",
+            "ipfs://ftt",
+            "Fee description",
+            socials,
+            0
+        );
+        vm.stopPrank();
+
+        // Contract owner or third party cannot redirect fees
+        vm.prank(address(0x9999));
+        vm.expectRevert(LiquidityLocker.Unauthorized.selector);
+        locker.setFeeRedirect(tokenAddress, address(0x9999));
+
+        address lockerOwner = locker.owner();
+        vm.prank(lockerOwner);
+        vm.expectRevert(LiquidityLocker.Unauthorized.selector);
+        locker.setFeeRedirect(tokenAddress, lockerOwner);
+    }
+
     function test_SetTaxConfigRestrictedToDeployer_M01() public {
         ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials("", "", "", "", "");
         vm.deal(deployer, 10 ether);
@@ -362,5 +387,29 @@ contract LaunchpadTest is Test {
         vm.prank(newOwner);
         factory.setLaunchFee(0.001 ether);
         assertEq(factory.launchFee(), 0.001 ether);
+    }
+
+    function test_ExcessEthRefundedOnLaunch_BUG10() public {
+        ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials("", "", "", "", "");
+        uint256 excessAmount = 1 ether;
+        uint256 fee = factory.launchFee();
+
+        address testDeployer = address(0x7777);
+        vm.deal(testDeployer, 10 ether);
+
+        uint256 balanceBefore = testDeployer.balance;
+        vm.prank(testDeployer);
+        factory.launchToken{value: fee + excessAmount}(
+            "Refund Token",
+            "REF",
+            "ipfs://ref",
+            "Refund excess ETH test",
+            socials,
+            0
+        );
+
+        uint256 balanceAfter = testDeployer.balance;
+        // Deployer should only have spent the launch fee, excess 1 ether is refunded
+        assertEq(balanceBefore - balanceAfter, fee, "Only launchFee spent; excess was refunded");
     }
 }

@@ -136,7 +136,7 @@ contract BuybackBurner is IBuybackBurner {
      *   caused the effective minimum to always be zero, making the slippage guard
      *   non-functional and the swap fully exploitable by front-runners.
      */
-    function executeBuyback(uint256 minAmountOut) external override nonReentrant returns (uint256 tokensBurned) {
+    function executeBuyback(uint256 minAmountOut) external override nonReentrant onlyOwner returns (uint256 tokensBurned) {
         if (lastBuybackTimestamp > 0 && block.timestamp < lastBuybackTimestamp + cooldown) {
             revert CooldownActive();
         }

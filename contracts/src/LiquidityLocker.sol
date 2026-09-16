@@ -115,11 +115,10 @@ contract LiquidityLocker is ILiquidityLocker {
     }
 
     function setFeeRedirect(address token, address redirect) external override {
-        // H-01 Fix: setFeeRedirect is kept for interface compatibility but now delegates
-        // to the two-step timelock flow. Direct instant redirect is removed.
-        // Use proposeFeeRedirect() + acceptFeeRedirect() instead.
+        // H-01 & BUG-06 Fix: only the token deployer may redirect creator fees.
+        // Direct instant redirect is removed; uses two-step timelock flow.
         address deployer = tokenDeployers[token];
-        if (msg.sender != deployer && msg.sender != owner) revert Unauthorized();
+        if (msg.sender != deployer) revert Unauthorized();
         if (redirect == address(0)) revert ZeroAddress();
         uint256 validAfter = block.timestamp + REDIRECT_TIMELOCK;
         pendingFeeRedirects[token] = PendingRedirect({pendingAddress: redirect, validAfter: validAfter});
@@ -129,7 +128,7 @@ contract LiquidityLocker is ILiquidityLocker {
     /// @notice Finalize fee redirect after the 48-hour timelock has passed.
     function acceptFeeRedirect(address token) external {
         address deployer = tokenDeployers[token];
-        if (msg.sender != deployer && msg.sender != owner) revert Unauthorized();
+        if (msg.sender != deployer) revert Unauthorized();
         PendingRedirect memory pending = pendingFeeRedirects[token];
         if (pending.pendingAddress == address(0)) revert NoPendingRedirect();
         if (block.timestamp < pending.validAfter) revert TimelockNotExpired();
@@ -141,7 +140,7 @@ contract LiquidityLocker is ILiquidityLocker {
     /// @notice Cancel a pending fee redirect before it takes effect.
     function cancelFeeRedirect(address token) external {
         address deployer = tokenDeployers[token];
-        if (msg.sender != deployer && msg.sender != owner) revert Unauthorized();
+        if (msg.sender != deployer) revert Unauthorized();
         delete pendingFeeRedirects[token];
     }
 

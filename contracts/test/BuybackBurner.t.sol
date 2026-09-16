@@ -70,6 +70,17 @@ contract BuybackBurnerTest is Test {
         assertEq(burner.totalBurned(), burned + burnedSecond);
     }
 
+    function test_NonOwnerCannotExecuteBuyback_BUG05() public {
+        vm.prank(deployer);
+        weth.deposit{value: 1 ether}();
+        vm.prank(deployer);
+        weth.transfer(address(burner), 1 ether);
+
+        vm.prank(address(0x9999));
+        vm.expectRevert(BuybackBurner.Unauthorized.selector);
+        burner.executeBuyback(100 * 10**18);
+    }
+
     function test_ZeroMinAmountOutReverts_M01() public {
         vm.prank(deployer);
         weth.deposit{value: 1 ether}();

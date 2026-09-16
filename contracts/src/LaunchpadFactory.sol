@@ -52,6 +52,7 @@ contract LaunchpadFactory is ILaunchpadFactory {
     error InvalidFee();
     error PoolCreationFailed();
     error NoPendingOwner();
+    error TransferFailed();
 
     event OwnershipTransferProposed(address indexed proposed);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
@@ -277,6 +278,13 @@ contract LaunchpadFactory is ILaunchpadFactory {
             launched.restrictionsEndBlock,
             initialBuyAmount
         );
+
+        // 9. Refund excess ETH to caller (BUG-10 fix).
+        uint256 excess = msg.value - (launchFee + initialBuyAmount);
+        if (excess > 0) {
+            (bool refundOk, ) = msg.sender.call{value: excess}("");
+            if (!refundOk) revert TransferFailed();
+        }
     }
 
     // ---------------------------------------------------------------------------
