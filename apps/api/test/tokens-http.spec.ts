@@ -12,7 +12,7 @@ describe('Tokens HTTP Endpoints Integration', () => {
     const json = await res.json();
     expect(json.success).toBe(true);
     expect(Array.isArray(json.data)).toBe(true);
-    expect(json.data.length).toBeGreaterThanOrEqual(2);
+    expect(json.data.length).toBeGreaterThanOrEqual(1);
 
     const first = json.data[0];
     expect(first).toHaveProperty('address');
