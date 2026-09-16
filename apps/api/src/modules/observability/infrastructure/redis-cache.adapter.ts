@@ -84,6 +84,24 @@ export class RedisCacheAdapter implements CachePort {
     }
   }
 
+  async increment(key: string, ttlMs: number): Promise<number> {
+    if (!this.isAvailable() || !this.client) {
+      throw new Error('Redis unavailable');
+    }
+    // INCR is atomic. If the key does not exist Redis creates it with value 0
+    // then increments to 1. We set PX expiry only on initial creation using a
+    // Lua script so the window is not reset on every increment.
+    const result = (await this.client.eval(
+      `local v = redis.call('INCR', KEYS[1])
+       if v == 1 then redis.call('PEXPIRE', KEYS[1], ARGV[1]) end
+       return v`,
+      1,
+      key,
+      String(ttlMs),
+    )) as number;
+    return result;
+  }
+
   async del(key: string): Promise<void> {
     if (!this.isAvailable() || !this.client) {
       return;

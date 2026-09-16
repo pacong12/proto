@@ -8,7 +8,7 @@ import {
 } from '@reown/appkit/vue';
 import type { EIP1193Provider } from 'viem';
 import { ROBINHOOD_CHAIN, ROBINHOOD_TESTNET, type NetworkConfig } from '@proto/shared-types';
-import { publicClient } from '../lib/viem-client';
+import { getPublicClient } from '../lib/viem-client';
 import { appKitConfigured } from '../lib/appkit';
 import {
   bindProviderListeners,
@@ -73,7 +73,9 @@ export function useWallet() {
       return;
     }
     try {
-      balanceWei.value = await publicClient.getBalance({ address: target });
+      // Use getPublicClient() so balance is fetched from the wallet's active chain,
+      // not always from mainnet (fix MED-01 and MED-03).
+      balanceWei.value = await getPublicClient().getBalance({ address: target });
     } catch {
       balanceWei.value = 0n;
     }
@@ -100,7 +102,22 @@ export function useWallet() {
         const chain = parseChainId(rawChain) ?? ROBINHOOD_CHAIN.chainId;
 
         setConnectedWallet(provider, address, chain, 'window.ethereum');
-        await syncBalance(address);
+
+        // Validate the chain before syncing balance (fix MED-01).
+        // getPublicClient() follows the active chain, but we must not query an
+        // unsupported chain at all; set balance to 0 and warn instead.
+        const isSupportedChain =
+          chain === ROBINHOOD_CHAIN.chainId || chain === ROBINHOOD_TESTNET.chainId;
+
+        if (!isSupportedChain) {
+          console.warn(
+            `[useWallet] Auto-reconnect on unsupported chain ${chain}. ` +
+              'Balance will show 0 until the user switches to Robinhood Chain.',
+          );
+          balanceWei.value = 0n;
+        } else {
+          await syncBalance(address);
+        }
       } else {
         clearWalletState();
       }
@@ -116,7 +133,7 @@ export function useWallet() {
         await appKit.open();
         return;
       } catch (openErr) {
-        // If AppKit modal fails, fall back to local modal
+        // AppKit modal failed; fall back to the local modal.
         console.warn('[useWallet] AppKit open failed, falling back to local modal:', openErr);
       }
     }

@@ -6,23 +6,40 @@ import {PoolKey, PoolIdLibrary, IPoolManager} from "./interfaces/IUniswapV4.sol"
 
 /**
  * @title BondingCurve
- * @notice Pure mathematical constant-product bonding curve for V2 token launch.
- * Traders buy from and sell back to this curve until graduationTarget is reached.
- * Upon graduation (4.2 ETH raised), liquidity migrates into a Uniswap v4 full-range pool with Meme Hook.
+ * @notice Constant-product bonding curve for V2 token launches.
+ *
+ * Lifecycle:
+ *   1. Traders buy and sell through this contract until totalEthRaised >= graduationTarget.
+ *   2. Upon graduation, the contract records the pool key and marks itself as graduated.
+ *   3. A privileged migration keeper calls migrateToV4() once the Uniswap V4 PoolManager
+ *      is live on Robinhood Chain, depositing locked ETH and tokens into the pool.
+ *   4. If migration has not occurred within MIGRATION_DEADLINE seconds, the factory owner
+ *      may call emergencyWithdraw() to recover funds to a specified recipient.
+ *
+ * Security notes:
+ *   - nonReentrant guard on all state-mutating external functions.
+ *   - CEI pattern: all state changes precede external calls.
+ *   - C-02 fix: funds are no longer permanently locked. Two recovery paths exist:
+ *       migrateToV4()    — normal path, executed by factory after V4 is live.
+ *       emergencyWithdraw() — safety valve, callable by factory after MIGRATION_DEADLINE.
  */
 contract BondingCurve {
     using PoolIdLibrary for PoolKey;
 
     uint256 public constant BPS = 10_000;
-    uint256 public constant CURVE_TOKEN_SUPPLY = 800_000_000 * 1e18; // 80% on curve
-    uint256 public constant POOL_RESERVE_SUPPLY = 200_000_000 * 1e18; // 20% reserved for graduation pool
+    uint256 public constant CURVE_TOKEN_SUPPLY = 800_000_000 * 1e18;
+    uint256 public constant POOL_RESERVE_SUPPLY = 200_000_000 * 1e18;
+
+    // C-02 fix: maximum time (seconds) the factory may wait before calling
+    // emergencyWithdraw if V4 migration cannot be completed.
+    uint256 public constant MIGRATION_DEADLINE = 180 days;
 
     ILaunchpadToken public immutable token;
     address public immutable factory;
     address payable public immutable feeRecipient;
     address payable public immutable creator;
 
-    uint256 public immutable graduationTarget; // 4.2 ETH in wei
+    uint256 public immutable graduationTarget;
     uint256 public immutable launchTime;
 
     address public immutable poolManagerV4;
@@ -33,26 +50,49 @@ contract BondingCurve {
     uint256 public totalEthRaised;
     uint256 public totalVolumeEth;
     bool public graduated;
+    uint256 public graduatedAt;
     bytes32 public graduatedPoolId;
+    bool public migrationExecuted;
+
     uint256 private _locked;
 
-    event Trade(address indexed trader, bool indexed isBuy, uint256 ethAmount, uint256 tokenAmount, uint256 feeEth);
-    event Graduated(address indexed token, bytes32 indexed poolId, uint256 ethGraduated, uint256 tokensGraduated);
+    event Trade(
+        address indexed trader,
+        bool indexed isBuy,
+        uint256 ethAmount,
+        uint256 tokenAmount,
+        uint256 feeEth
+    );
+    event Graduated(
+        address indexed token,
+        bytes32 indexed poolId,
+        uint256 ethGraduated,
+        uint256 tokensGraduated
+    );
+    event MigrationExecuted(address indexed recipient, uint256 ethAmount, uint256 tokenAmount);
+    event EmergencyWithdraw(address indexed recipient, uint256 ethAmount, uint256 tokenAmount);
 
     error AlreadyGraduated();
     error NotGraduated();
+    error MigrationAlreadyExecuted();
+    error MigrationDeadlineNotReached();
     error InsufficientOutput();
     error InvalidAmount();
-    error CurveCompleted();
     error TransferFailed();
     error Reentrancy();
     error ZeroAddress();
+    error Unauthorized();
 
     modifier nonReentrant() {
         if (_locked == 1) revert Reentrancy();
         _locked = 1;
         _;
         _locked = 0;
+    }
+
+    modifier onlyFactory() {
+        if (msg.sender != factory) revert Unauthorized();
+        _;
     }
 
     constructor(
@@ -66,6 +106,9 @@ contract BondingCurve {
         address _poolManagerV4,
         address _memeHook
     ) {
+        if (_token == address(0) || _factory == address(0) || _feeRecipient == address(0) || _creator == address(0)) {
+            revert ZeroAddress();
+        }
         token = ILaunchpadToken(_token);
         factory = _factory;
         feeRecipient = _feeRecipient;
@@ -78,8 +121,12 @@ contract BondingCurve {
         launchTime = block.timestamp;
     }
 
+    // ---------------------------------------------------------------------------
+    // Price discovery
+    // ---------------------------------------------------------------------------
+
     /**
-     * @notice Decaying snipe tax: 99% at t=0 decaying smoothly to 0% after 3 seconds.
+     * @notice Decaying anti-snipe tax. 99% at t=0, steps down to 0% after 3 seconds.
      */
     function currentSnipeTaxBps(address recipient) public view returns (uint256) {
         if (recipient == creator || recipient == feeRecipient) return 0;
@@ -91,11 +138,11 @@ contract BondingCurve {
     }
 
     /**
-     * @notice Calculate tokens received for a given ETH buy amount.
+     * @notice Tokens out and platform fee for a given ETH input.
      */
     function getAmountOutBuy(uint256 ethIn) public view returns (uint256 tokenOut, uint256 feeEth) {
         if (ethIn == 0) return (0, 0);
-        feeEth = (ethIn * 100) / BPS; // 1% platform fee
+        feeEth = (ethIn * 100) / BPS;
         uint256 netEth = ethIn - feeEth;
 
         uint256 currentK = virtualEthReserve * virtualTokenReserve;
@@ -113,7 +160,7 @@ contract BondingCurve {
     }
 
     /**
-     * @notice Calculate ETH received for selling a given amount of tokens.
+     * @notice ETH out and platform fee for a given token input.
      */
     function getAmountOutSell(uint256 tokenIn) public view returns (uint256 ethOut, uint256 feeEth) {
         if (tokenIn == 0) return (0, 0);
@@ -122,20 +169,23 @@ contract BondingCurve {
         uint256 newEthReserve = currentK / newTokenReserve;
 
         uint256 grossEth = virtualEthReserve - newEthReserve;
-        feeEth = (grossEth * 100) / BPS; // 1% platform fee
+        feeEth = (grossEth * 100) / BPS;
         ethOut = grossEth > feeEth ? grossEth - feeEth : 0;
     }
 
+    // ---------------------------------------------------------------------------
+    // Trading
+    // ---------------------------------------------------------------------------
+
     /**
-     * @notice Buy tokens directly from the bonding curve using ETH for msg.sender.
+     * @notice Buy tokens from the bonding curve for msg.sender.
      */
     function buy(uint256 minTokensOut) external payable returns (uint256 tokensOut) {
         return buyFor(msg.sender, minTokensOut);
     }
 
     /**
-     * @notice Buy tokens directly from the bonding curve using ETH for a specified recipient.
-     * Addresses C-01: Maintains constant product reserve invariant by deducting grossTokensOut from reserve.
+     * @notice Buy tokens from the bonding curve for a specified recipient.
      */
     function buyFor(address recipient, uint256 minTokensOut) public payable nonReentrant returns (uint256 tokensOut) {
         if (graduated) revert AlreadyGraduated();
@@ -156,8 +206,8 @@ contract BondingCurve {
         uint256 fee = (msg.value * 100) / BPS;
         uint256 netEth = msg.value - fee;
 
+        // State changes before external calls (CEI).
         virtualEthReserve += netEth;
-        // C-01 Fix: Deduct gross tokens corresponding to K curve, not net user tokens
         virtualTokenReserve -= grossTokensOut;
         totalEthRaised += netEth;
         totalVolumeEth += msg.value;
@@ -165,17 +215,15 @@ contract BondingCurve {
         bool shouldGraduate = totalEthRaised >= graduationTarget;
         if (shouldGraduate) {
             graduated = true;
+            graduatedAt = block.timestamp;
         }
 
-        // Send platform ETH fee
         (bool feeOk, ) = feeRecipient.call{value: fee}("");
         if (!feeOk) revert TransferFailed();
 
-        // Send user tokens
         bool sent = token.transfer(recipient, tokensOut);
         if (!sent) revert TransferFailed();
 
-        // Transfer anti-snipe fee tokens to feeRecipient to keep contract balance aligned
         if (snipeFeeTokens > 0) {
             bool feeTokensSent = token.transfer(feeRecipient, snipeFeeTokens);
             if (!feeTokensSent) revert TransferFailed();
@@ -184,7 +232,7 @@ contract BondingCurve {
         emit Trade(recipient, true, msg.value, tokensOut, fee);
 
         if (shouldGraduate) {
-            _executeGraduationV4();
+            _prepareGraduationV4();
         }
     }
 
@@ -205,8 +253,7 @@ contract BondingCurve {
 
         virtualTokenReserve += tokenIn;
         virtualEthReserve -= (ethOut + fee);
-        // M-05 Fix: track gross ETH withdrawn (including fee) so totalEthRaised
-        // reflects actual net raised, not affected by rounding on partial sells.
+
         uint256 grossEthOut = ethOut + fee;
         totalEthRaised = totalEthRaised > grossEthOut ? totalEthRaised - grossEthOut : 0;
         totalVolumeEth += grossEthOut;
@@ -220,44 +267,94 @@ contract BondingCurve {
         emit Trade(msg.sender, false, ethOut, tokenIn, fee);
     }
 
-    /**
-     * @notice Execute graduation into Uniswap v4 Singleton Pool with Meme Hook.
-     * @dev H-01: ETH and tokens are held in this contract pending V4 PoolManager deployment
-     * on Robinhood Chain. Once V4 is live, a separate migration call via IPoolManager.unlock()
-     * will deposit reserves into the full-range position. The Graduated event accurately
-     * reports the amounts held at graduation time — no funds are lost.
-     */
-    function _executeGraduationV4() internal {
-        graduated = true;
-        uint256 ethToMigrate = address(this).balance;
-        uint256 tokensToMigrate = token.balanceOf(address(this));
+    // ---------------------------------------------------------------------------
+    // Graduation and migration
+    // ---------------------------------------------------------------------------
 
-        // In Uniswap v4, currency0 < currency1 by address. Address(0) is native ETH.
-        address currency0 = address(0);
-        address currency1 = address(token);
+    /**
+     * @notice Records the canonical Uniswap V4 pool key and emits the Graduated event.
+     *         Funds remain in this contract until migrateToV4() is called by the factory.
+     */
+    function _prepareGraduationV4() internal {
+        uint256 ethHeld = address(this).balance;
+        uint256 tokensHeld = token.balanceOf(address(this));
 
         PoolKey memory key = PoolKey({
-            currency0: currency0,
-            currency1: currency1,
-            fee: 0, // Hook handles fees in Uniswap v4
+            currency0: address(0),
+            currency1: address(token),
+            fee: 0,
             tickSpacing: 200,
             hooks: memeHook
         });
 
         graduatedPoolId = key.toId();
 
-        // If V4 PoolManager is already deployed on this chain, initialize the pool.
-        // sqrtPriceX96 = sqrt(price) * 2^96 where price = virtualEthReserve / virtualTokenReserve
         if (poolManagerV4 != address(0) && poolManagerV4.code.length > 0) {
             uint160 sqrtPriceX96 = 2505414483750479299401734000000000;
             try IPoolManager(poolManagerV4).initialize(key, sqrtPriceX96) {} catch {}
         }
 
-        // NOTE: Actual liquidity provisioning (depositing ethToMigrate + tokensToMigrate into
-        // the V4 pool) requires IPoolManager.unlock() with a callback, which will be executed
-        // by the migration keeper once V4 is live on Robinhood Chain. Funds remain in this
-        // contract and are non-withdrawable by any party until migration completes.
-        emit Graduated(address(token), graduatedPoolId, ethToMigrate, tokensToMigrate);
+        emit Graduated(address(token), graduatedPoolId, ethHeld, tokensHeld);
+    }
+
+    /**
+     * @notice Execute liquidity migration into the Uniswap V4 pool.
+     * @dev C-02 fix: callable only by the factory once V4 is live.
+     *      Transfers all ETH and tokens to the designated pool manager or recipient.
+     *      Only callable once.
+     * @param recipient Address that receives the migrated funds (e.g. V4 PoolManager unlock callback proxy).
+     */
+    function migrateToV4(address payable recipient) external nonReentrant onlyFactory {
+        if (!graduated) revert NotGraduated();
+        if (migrationExecuted) revert MigrationAlreadyExecuted();
+        if (recipient == address(0)) revert ZeroAddress();
+
+        migrationExecuted = true;
+
+        uint256 ethAmount = address(this).balance;
+        uint256 tokenAmount = token.balanceOf(address(this));
+
+        if (tokenAmount > 0) {
+            bool sent = token.transfer(recipient, tokenAmount);
+            if (!sent) revert TransferFailed();
+        }
+
+        if (ethAmount > 0) {
+            (bool ok, ) = recipient.call{value: ethAmount}("");
+            if (!ok) revert TransferFailed();
+        }
+
+        emit MigrationExecuted(recipient, ethAmount, tokenAmount);
+    }
+
+    /**
+     * @notice Safety valve allowing the factory owner to recover funds if V4 migration
+     *         cannot be completed within MIGRATION_DEADLINE seconds after graduation.
+     * @dev C-02 fix: prevents permanent fund lockup if V4 is never deployed.
+     * @param recipient Address to receive recovered ETH and tokens.
+     */
+    function emergencyWithdraw(address payable recipient) external nonReentrant onlyFactory {
+        if (!graduated) revert NotGraduated();
+        if (migrationExecuted) revert MigrationAlreadyExecuted();
+        if (block.timestamp < graduatedAt + MIGRATION_DEADLINE) revert MigrationDeadlineNotReached();
+        if (recipient == address(0)) revert ZeroAddress();
+
+        migrationExecuted = true;
+
+        uint256 ethAmount = address(this).balance;
+        uint256 tokenAmount = token.balanceOf(address(this));
+
+        if (tokenAmount > 0) {
+            bool sent = token.transfer(recipient, tokenAmount);
+            if (!sent) revert TransferFailed();
+        }
+
+        if (ethAmount > 0) {
+            (bool ok, ) = recipient.call{value: ethAmount}("");
+            if (!ok) revert TransferFailed();
+        }
+
+        emit EmergencyWithdraw(recipient, ethAmount, tokenAmount);
     }
 
     receive() external payable {}

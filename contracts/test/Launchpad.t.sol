@@ -111,21 +111,21 @@ contract LaunchpadTest is Test {
         address taxRecipient = address(0x5555);
         address mockPool = address(0x6666);
 
+        vm.prank(deployer);
+        token.setLiquidityPool(mockPool);
+
+        // Seed mock pool with tokens before configuring taxes
+        vm.prank(deployer);
+        token.transfer(mockPool, 10_000_000 * 10**18);
+
         // Configure 5% buy tax (500 bps) and 10% sell tax (1000 bps)
         vm.prank(deployer);
         token.setTaxConfig(500, 1000, taxRecipient);
-
-        vm.prank(deployer);
-        token.setLiquidityPool(mockPool);
 
         (uint16 buyBps, uint16 sellBps, address recipient) = token.taxConfig();
         assertEq(buyBps, 500);
         assertEq(sellBps, 1000);
         assertEq(recipient, taxRecipient);
-
-        // Transfer some tokens to mock pool and forward past anti-snipe block
-        vm.prank(deployer);
-        token.transfer(mockPool, 10_000_000 * 10**18);
 
         vm.roll(block.number + 5);
 
@@ -339,14 +339,26 @@ contract LaunchpadTest is Test {
 
     function test_FactoryOwnershipTransfer_M03() public {
         address newOwner = address(0xABCD);
+        // Step 1: propose
         factory.transferOwnership(newOwner);
+        assertEq(factory.owner(), address(this));
+        assertEq(factory.pendingOwner(), newOwner);
+
+        // Random address cannot accept
+        vm.prank(address(0xDEAD));
+        vm.expectRevert(LaunchpadFactory.NoPendingOwner.selector);
+        factory.acceptOwnership();
+
+        // Step 2: candidate accepts
+        vm.prank(newOwner);
+        factory.acceptOwnership();
         assertEq(factory.owner(), newOwner);
 
-        // Old owner cannot modify settings
+        // Previous owner is locked out
         vm.expectRevert(LaunchpadFactory.Unauthorized.selector);
         factory.setLaunchFee(0.001 ether);
 
-        // New owner can modify settings
+        // New owner can configure
         vm.prank(newOwner);
         factory.setLaunchFee(0.001 ether);
         assertEq(factory.launchFee(), 0.001 ether);

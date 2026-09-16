@@ -4,6 +4,7 @@ import { InMemoryTokenRepository } from '../src/modules/tokens/infrastructure/ad
 import { GetTokensUseCase } from '../src/modules/tokens/application/use-cases/get-tokens.use-case';
 import { GetTokenByAddressUseCase } from '../src/modules/tokens/application/use-cases/get-token-by-address.use-case';
 import { CalculatePricingUseCase } from '../src/modules/tokens/application/use-cases/calculate-pricing.use-case';
+import { CoinGeckoPriceFeedAdapter } from '../src/modules/tokens/infrastructure/adapters/coingecko-price-feed.adapter';
 import type { ChainIndexerPort } from '../src/modules/tokens/domain/ports/chain.indexer.port';
 import type { LaunchedTokenEntity } from '@proto/shared-types';
 
@@ -50,13 +51,20 @@ describe('TokenController Unit Tests', () => {
     repository = new InMemoryTokenRepository();
     const chainIndexer = new FakeChainIndexer();
     const calculatePricing = new CalculatePricingUseCase();
+    const priceFeed = new CoinGeckoPriceFeedAdapter();
     const getTokensUseCase = new GetTokensUseCase(repository);
     const getTokenByAddressUseCase = new GetTokenByAddressUseCase(
       repository,
       chainIndexer,
       calculatePricing,
+      priceFeed,
     );
-    controller = new TokenController(getTokensUseCase, getTokenByAddressUseCase, repository);
+    controller = new TokenController(
+      getTokensUseCase,
+      getTokenByAddressUseCase,
+      repository,
+      priceFeed,
+    );
   });
 
   it('rejects invalid address format for token detail, holders, and trades', async () => {

@@ -7,9 +7,13 @@ import {BondingCurve} from "./BondingCurve.sol";
 
 /**
  * @title LaunchpadV2Factory
- * @notice Factory for launching tokens via V2 Bonding Curve architecture.
- * Tokens trade on the bonding curve until raising 4.2 ETH, then migrate
- * to Uniswap v4 singleton pools with Meme Hook.
+ * @notice Factory for launching tokens on the V2 bonding curve architecture.
+ *
+ * Security notes:
+ *   - C-03 fix: constructor validates that feeRecipient and locker are non-zero.
+ *   - C-02 fix: exposes migrateToV4() and emergencyWithdraw() pass-throughs so the
+ *               factory owner can act as the authorised caller on deployed curves.
+ *   - Launch fee is forwarded to treasury before any state mutation.
  */
 contract LaunchpadV2Factory {
     uint256 public constant LAUNCH_FEE = 0.0005 ether;
@@ -21,6 +25,9 @@ contract LaunchpadV2Factory {
     address public immutable defaultLocker;
     address public immutable poolManagerV4;
     address public immutable memeHook;
+
+    address public owner;
+    address public pendingOwner;
 
     struct V2Launch {
         address token;
@@ -41,9 +48,20 @@ contract LaunchpadV2Factory {
         string symbol,
         uint256 initialBuy
     );
+    event OwnershipTransferProposed(address indexed proposed);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     error InvalidFee();
     error TransferFailed();
+    error ZeroAddress();
+    error Unauthorized();
+    error NoPendingOwner();
+    error NotFactory();
+
+    modifier onlyOwner() {
+        if (msg.sender != owner) revert Unauthorized();
+        _;
+    }
 
     constructor(
         address payable _feeRecipient,
@@ -51,11 +69,37 @@ contract LaunchpadV2Factory {
         address _poolManagerV4,
         address _memeHook
     ) {
+        // C-03 fix: validate all addresses that receive value or tokens.
+        if (_feeRecipient == address(0) || _locker == address(0)) revert ZeroAddress();
+
         protocolFeeRecipient = _feeRecipient;
         defaultLocker = _locker;
         poolManagerV4 = _poolManagerV4;
         memeHook = _memeHook;
+        owner = msg.sender;
     }
+
+    // ---------------------------------------------------------------------------
+    // Owner administration
+    // ---------------------------------------------------------------------------
+
+    function transferOwnership(address newOwner) external onlyOwner {
+        if (newOwner == address(0)) revert ZeroAddress();
+        pendingOwner = newOwner;
+        emit OwnershipTransferProposed(newOwner);
+    }
+
+    function acceptOwnership() external {
+        if (msg.sender != pendingOwner) revert NoPendingOwner();
+        address previous = owner;
+        owner = pendingOwner;
+        pendingOwner = address(0);
+        emit OwnershipTransferred(previous, owner);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Core launch
+    // ---------------------------------------------------------------------------
 
     function launchTokenV2(
         string memory name,
@@ -70,7 +114,6 @@ contract LaunchpadV2Factory {
 
         uint256 initialBuyEth = msg.value - LAUNCH_FEE;
 
-        // Deploy Token
         ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials({
             twitter: twitter,
             telegram: telegram,
@@ -86,13 +129,12 @@ contract LaunchpadV2Factory {
             description,
             socials,
             msg.sender,
-            address(0), // Paired token is native ETH on curve
-            address(this) // initial recipient is factory for immediate transfer to curve
+            address(0),
+            address(this)
         );
 
         tokenAddress = address(token);
 
-        // Deploy Bonding Curve targeting Uniswap v4 Hook graduation
         BondingCurve curve = new BondingCurve(
             tokenAddress,
             address(this),
@@ -107,10 +149,8 @@ contract LaunchpadV2Factory {
 
         curveAddress = address(curve);
 
-        // Transfer all token supply from factory to the curve (L-05 fix)
         token.transfer(curveAddress, token.totalSupply());
 
-        // Forward launch fee to protocol treasury
         (bool feeOk, ) = protocolFeeRecipient.call{value: LAUNCH_FEE}("");
         if (!feeOk) revert TransferFailed();
 
@@ -125,11 +165,34 @@ contract LaunchpadV2Factory {
 
         emit TokenLaunchedV2(tokenAddress, curveAddress, msg.sender, name, symbol, initialBuyEth);
 
-        // Execute initial creator buy directly to creator (C-02 fix)
         if (initialBuyEth > 0) {
             curve.buyFor{value: initialBuyEth}(msg.sender, 0);
         }
     }
+
+    // ---------------------------------------------------------------------------
+    // Migration management (C-02 fix)
+    // ---------------------------------------------------------------------------
+
+    /**
+     * @notice Trigger liquidity migration for a graduated bonding curve.
+     *         Delegates to BondingCurve.migrateToV4(). Only callable by owner.
+     */
+    function migrateCurveToV4(address curve, address payable recipient) external onlyOwner {
+        BondingCurve(payable(curve)).migrateToV4(recipient);
+    }
+
+    /**
+     * @notice Emergency withdrawal from a graduated bonding curve after the
+     *         migration deadline has passed. Only callable by owner.
+     */
+    function emergencyWithdrawFromCurve(address curve, address payable recipient) external onlyOwner {
+        BondingCurve(payable(curve)).emergencyWithdraw(recipient);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Views
+    // ---------------------------------------------------------------------------
 
     function getLaunchCount() external view returns (uint256) {
         return allLaunches.length;

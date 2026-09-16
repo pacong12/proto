@@ -14,6 +14,7 @@ contract LaunchpadV2Test is Test {
     address public buyer1 = address(0xB0B1);
 
     function setUp() public {
+        // C-03 fix: feeRecipient and locker must be non-zero.
         factory = new LaunchpadV2Factory(feeRecipient, mockLocker, address(0), address(0));
         vm.deal(creator, 100 ether);
         vm.deal(buyer1, 100 ether);

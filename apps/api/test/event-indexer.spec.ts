@@ -4,6 +4,7 @@ import { CalculatePricingUseCase } from '../src/modules/tokens/application/use-c
 import { GetTokensUseCase } from '../src/modules/tokens/application/use-cases/get-tokens.use-case';
 import { GetTokenByAddressUseCase } from '../src/modules/tokens/application/use-cases/get-token-by-address.use-case';
 import { TokenController } from '../src/modules/tokens/presentation/token.controller';
+import { CoinGeckoPriceFeedAdapter } from '../src/modules/tokens/infrastructure/adapters/coingecko-price-feed.adapter';
 import { TradeEventEntity } from '@proto/shared-types';
 
 describe('Event Indexer, Trades & Candlestick Aggregation', () => {
@@ -12,6 +13,7 @@ describe('Event Indexer, Trades & Candlestick Aggregation', () => {
   let getTokensUseCase: GetTokensUseCase;
   let getTokenByAddressUseCase: GetTokenByAddressUseCase;
   let controller: TokenController;
+  let priceFeed: CoinGeckoPriceFeedAdapter;
 
   const sampleToken = '0x1111111111111111111111111111111111111111' as `0x${string}`;
   const samplePool = '0x2222222222222222222222222222222222222222' as `0x${string}`;
@@ -19,6 +21,7 @@ describe('Event Indexer, Trades & Candlestick Aggregation', () => {
   beforeEach(() => {
     repository = new InMemoryTokenRepository();
     calculatePricing = new CalculatePricingUseCase();
+    priceFeed = new CoinGeckoPriceFeedAdapter();
     getTokensUseCase = new GetTokensUseCase(repository);
     getTokenByAddressUseCase = new GetTokenByAddressUseCase(
       repository,
@@ -34,8 +37,14 @@ describe('Event Indexer, Trades & Candlestick Aggregation', () => {
         fetchWethBalance: async () => 0n,
       },
       calculatePricing,
+      priceFeed,
     );
-    controller = new TokenController(getTokensUseCase, getTokenByAddressUseCase, repository);
+    controller = new TokenController(
+      getTokensUseCase,
+      getTokenByAddressUseCase,
+      repository,
+      priceFeed,
+    );
   });
 
   it('records and retrieves trade events in reverse chronological order', async () => {

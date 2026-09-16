@@ -22,6 +22,18 @@ export class InMemoryCacheAdapter implements CachePort {
     this.store.set(key, { value: JSON.stringify(value), expiresAt });
   }
 
+  async increment(key: string, ttlMs: number): Promise<number> {
+    const entry = this.store.get(key);
+    const now = Date.now();
+    if (!entry || now > entry.expiresAt) {
+      this.store.set(key, { value: JSON.stringify(1), expiresAt: now + ttlMs });
+      return 1;
+    }
+    const current = (JSON.parse(entry.value) as number) + 1;
+    this.store.set(key, { value: JSON.stringify(current), expiresAt: entry.expiresAt });
+    return current;
+  }
+
   async del(key: string): Promise<void> {
     this.store.delete(key);
   }

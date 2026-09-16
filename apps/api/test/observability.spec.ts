@@ -116,12 +116,12 @@ describe('Observability & DevOps Tracking', () => {
       const errJson = await unauthRes.json();
       expect(errJson.error.code).toBe('UNAUTHORIZED');
 
-      // 2. Authorized request via query token should succeed
+      // 2. Request via query token should be rejected (I-03 fix: query token forbidden)
       const queryAuthReq = new Request(
         'http://localhost:3001/api/devops/telemetry?token=secret-test-token-123',
       );
       const queryAuthRes = await server.fetch(queryAuthReq);
-      expect(queryAuthRes.status).toBe(200);
+      expect(queryAuthRes.status).toBe(401);
 
       // 3. Authorized request via Bearer header should succeed
       const bearerAuthReq = new Request('http://localhost:3001/api/devops/metrics', {

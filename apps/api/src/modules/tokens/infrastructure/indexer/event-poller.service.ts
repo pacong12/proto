@@ -2,6 +2,7 @@ import { PublicClient, parseAbiItem } from 'viem';
 import { ROBINHOOD_CHAIN, TradeEventEntity } from '@proto/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import { ChainIndexerPort } from '../../domain/ports/chain.indexer.port';
+import { PriceFeedPort } from '../../domain/ports/price-feed.port';
 import { CalculatePricingUseCase } from '../../application/use-cases/calculate-pricing.use-case';
 
 export class EventPollerService {
@@ -12,6 +13,7 @@ export class EventPollerService {
     private readonly tokenRepository: TokenRepositoryPort,
     private readonly chainIndexer: ChainIndexerPort,
     private readonly calculatePricing: CalculatePricingUseCase,
+    private readonly priceFeed: PriceFeedPort,
   ) {}
 
   async pollEvents(fromBlock?: bigint, toBlock?: bigint): Promise<number> {
@@ -95,6 +97,9 @@ export class EventPollerService {
         // Cache block timestamps to avoid redundant RPC calls
         const blockTimestamps = new Map<bigint, number>();
 
+        // Fetch live CoinGecko ETH price for trade pricing
+        const ethPriceUsd = await this.priceFeed.getEthPriceUsd();
+
         for (const swap of swapLogs) {
           const token = tokenByPool.get(swap.address.toLowerCase());
           if (!token) continue;
@@ -126,6 +131,7 @@ export class EventPollerService {
             sqrtPriceX96: sqrtPriceX96 ?? 2505414483750479299401734n,
             isToken0: token.isToken0,
             pairedPrincipalWei: 0n,
+            ethPriceUsd,
           });
 
           const blockNumber = swap.blockNumber ?? currentBlock;

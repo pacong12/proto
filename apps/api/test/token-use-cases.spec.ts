@@ -4,6 +4,7 @@ import { CalculatePricingUseCase } from '../src/modules/tokens/application/use-c
 import { GetTokensUseCase } from '../src/modules/tokens/application/use-cases/get-tokens.use-case';
 import { GetTokenByAddressUseCase } from '../src/modules/tokens/application/use-cases/get-token-by-address.use-case';
 import { TokenController } from '../src/modules/tokens/presentation/token.controller';
+import { CoinGeckoPriceFeedAdapter } from '../src/modules/tokens/infrastructure/adapters/coingecko-price-feed.adapter';
 import { ChainIndexerPort } from '../src/modules/tokens/domain/ports/chain.indexer.port';
 import { LaunchedTokenEntity, GraduationStatus } from '@proto/shared-types';
 
@@ -60,6 +61,7 @@ describe('Token Use Cases & Controller', () => {
   let getTokensUseCase: GetTokensUseCase;
   let getTokenByAddressUseCase: GetTokenByAddressUseCase;
   let controller: TokenController;
+  let priceFeed: CoinGeckoPriceFeedAdapter;
 
   const sampleAddress = '0x39dBED3a2bd333467115dE45665cC57F813C4571' as `0x${string}`;
 
@@ -67,13 +69,20 @@ describe('Token Use Cases & Controller', () => {
     repository = new InMemoryTokenRepository();
     chainIndexer = new MockChainIndexer();
     calculatePricing = new CalculatePricingUseCase();
+    priceFeed = new CoinGeckoPriceFeedAdapter();
     getTokensUseCase = new GetTokensUseCase(repository);
     getTokenByAddressUseCase = new GetTokenByAddressUseCase(
       repository,
       chainIndexer,
       calculatePricing,
+      priceFeed,
     );
-    controller = new TokenController(getTokensUseCase, getTokenByAddressUseCase, repository);
+    controller = new TokenController(
+      getTokensUseCase,
+      getTokenByAddressUseCase,
+      repository,
+      priceFeed,
+    );
   });
 
   it('fetches and indexes token from chain indexer when not in cache', async () => {

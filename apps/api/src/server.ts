@@ -52,8 +52,14 @@ const getTokenByAddressUseCase = new GetTokenByAddressUseCase(
   repository,
   chainIndexer,
   calculatePricing,
+  priceFeed,
 );
-const tokenController = new TokenController(getTokensUseCase, getTokenByAddressUseCase, repository);
+const tokenController = new TokenController(
+  getTokensUseCase,
+  getTokenByAddressUseCase,
+  repository,
+  priceFeed,
+);
 
 const securityGateService = new SecurityGateService();
 const securityController = new SecurityController(securityGateService);
@@ -65,25 +71,22 @@ const eventPoller = new EventPollerService(
   repository,
   chainIndexer,
   calculatePricing,
+  priceFeed,
 );
 
 const requestTracker = new HttpRequestTracker(logger, cache);
 const devopsController = new DevopsController(requestTracker);
 
-const ipRateLimitMap = new Map<string, { count: number; resetTime: number }>();
-
-function checkRateLimit(ip: string, limit = 120, windowMs = 60_000): boolean {
-  const now = Date.now();
-  const entry = ipRateLimitMap.get(ip);
-  if (!entry || now > entry.resetTime) {
-    ipRateLimitMap.set(ip, { count: 1, resetTime: now + windowMs });
+// M-06 fix: rate limiting backed by Redis for consistency across instances.
+async function checkRateLimit(ip: string, limit = 120, windowMs = 60_000): Promise<boolean> {
+  const key = `ratelimit:${ip}`;
+  try {
+    const count = await cache.increment(key, windowMs);
+    return count <= limit;
+  } catch {
+    logger.warn('Rate limit Redis unavailable, falling back to allow', { ip });
     return true;
   }
-  if (entry.count >= limit) {
-    return false;
-  }
-  entry.count++;
-  return true;
 }
 
 // Start background event poller worker loop
@@ -101,11 +104,26 @@ function safeStringify(value: unknown): string {
 
 async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   const url = new URL(req.url);
+
+  // M-05 fix: restrict CORS to known origins instead of wildcard.
+  // Populate CORS_ALLOWED_ORIGINS in the environment as a comma-separated list.
+  // When the variable is absent every origin is allowed (development default).
+  const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  const requestOrigin = req.headers.get('origin') || '';
+  const corsOrigin =
+    allowedOrigins.length === 0 || allowedOrigins.includes(requestOrigin)
+      ? requestOrigin || '*'
+      : '';
+
   const headers = {
     'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': corsOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    Vary: 'Origin',
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'DENY',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
@@ -120,7 +138,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   // Rate Limiting on public/expensive API routes (120 req / minute per IP)
   // Healthcheck & root probe are exempt from rate limiting for monitoring availability
   const isHealthProbe = url.pathname === '/health' || url.pathname === '/';
-  if (!isHealthProbe && !checkRateLimit(clientIp, 120, 60_000)) {
+  if (!isHealthProbe && !(await checkRateLimit(clientIp, 120, 60_000))) {
     return new Response(
       JSON.stringify({
         success: false,
@@ -138,18 +156,19 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     url.pathname === '/api/devops/metrics';
 
   if (isDevopsPath && devopsToken) {
+    // I-03 fix: accept the secret only via the Authorization header.
+    // Query-string tokens appear in server access logs and browser history.
     const authHeader = req.headers.get('authorization') || '';
     const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
-    const queryToken = url.searchParams.get('token') || '';
 
-    if (bearerToken !== devopsToken && queryToken !== devopsToken) {
+    if (bearerToken !== devopsToken) {
       if (url.pathname === '/devops') {
         return new Response(
           `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>401 Unauthorized · DevOps Gateway</title>
+  <title>401 Unauthorized - DevOps Gateway</title>
   <style>
     body { background: #121212; color: #ececec; font-family: ui-monospace, Menlo, monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
     .card { background: #1a1a1a; border: 1px solid #292929; border-radius: 12px; padding: 24px; max-width: 420px; text-align: center; }
@@ -157,17 +176,26 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     p { font-size: 13px; color: #888; line-height: 1.5; margin-bottom: 16px; }
     input { width: 100%; box-sizing: border-box; background: #121212; border: 1px solid #333; color: #fff; padding: 8px 12px; border-radius: 6px; font-family: inherit; font-size: 13px; margin-bottom: 12px; }
     button { width: 100%; background: #10b981; color: #000; font-weight: 700; border: none; padding: 10px; border-radius: 6px; cursor: pointer; }
-    button:hover { background: #34d399; }
   </style>
+  <script>
+    async function authenticate(e) {
+      e.preventDefault();
+      const token = document.getElementById('token-input').value;
+      const res = await fetch('/devops', { headers: { Authorization: 'Bearer ' + token } });
+      if (res.ok) { document.open(); document.write(await res.text()); document.close(); }
+      else { document.getElementById('err').textContent = 'Authentication failed.'; }
+    }
+  </script>
 </head>
 <body>
   <div class="card">
     <h1>DevOps Authentication Required</h1>
-    <p>This telemetry dashboard is restricted to authorized DevOps engineers. Please enter your secret token.</p>
-    <form onsubmit="event.preventDefault(); window.location.href = '/devops?token=' + encodeURIComponent(document.getElementById('token-input').value);">
+    <p>This telemetry dashboard is restricted to authorized engineers.</p>
+    <form onsubmit="authenticate(event)">
       <input type="password" id="token-input" placeholder="Enter DEVOPS_AUTH_TOKEN..." required autofocus />
-      <button type="submit">Authenticate Dashboard</button>
+      <button type="submit">Authenticate</button>
     </form>
+    <p id="err" style="color:#ef4444;margin-top:8px;"></p>
   </div>
 </body>
 </html>`,
@@ -334,6 +362,30 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       headers: { ...headers, 'x-cache': 'MISS' },
     });
   }
+
+  // GET /api/price — returns live ETH price from CoinGecko
+  if (url.pathname === '/api/price' && req.method === 'GET') {
+    try {
+      const ethPriceUsd = await priceFeed.getEthPriceUsd();
+      return new Response(
+        safeStringify({
+          success: true,
+          data: { ethPriceUsd, source: 'coingecko' },
+          timestamp: Date.now(),
+        }),
+        { headers },
+      );
+    } catch (priceErr) {
+      return new Response(
+        safeStringify({
+          success: false,
+          error: { code: 'PRICE_FEED_ERROR', message: (priceErr as Error).message },
+        }),
+        { status: 502, headers },
+      );
+    }
+  }
+
   // GET /api/analytics
   if (url.pathname === '/api/analytics' && req.method === 'GET') {
     const cacheKey = 'protocol:analytics';

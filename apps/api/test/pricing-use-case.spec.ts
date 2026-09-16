@@ -36,9 +36,25 @@ describe('CalculatePricingUseCase', () => {
       sqrtPriceX96,
       isToken0: true,
       pairedPrincipalWei,
+      ethPriceUsd: 2500,
     });
 
     expect(result.graduationProgress).toBe(1.0);
     expect(result.isGraduated).toBe(true);
+  });
+
+  it('throws error when ethPriceUsd is zero or missing', () => {
+    const sqrtPriceX96 = 2505414483750479299401734n;
+    const pairedPrincipalWei = 0n;
+
+    expect(() =>
+      useCase.execute({
+        address: sampleTokenAddress,
+        sqrtPriceX96,
+        isToken0: true,
+        pairedPrincipalWei,
+        ethPriceUsd: 0,
+      }),
+    ).toThrow('Valid live ethPriceUsd is required');
   });
 });

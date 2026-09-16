@@ -50,8 +50,24 @@ contract HolderSharingAndVestingTest is Test {
     }
 
     function test_HolderFeeDistributionProRata() public {
-        // Deposit 10 WETH fee rewards for token holders
+        // I-05 fix: depositRewards is now restricted to the locker address.
+        // Impersonate the locker to deposit rewards.
         vm.startPrank(deployer);
+        weth.approve(mockLocker, 10 ether);
+        vm.stopPrank();
+
+        vm.startPrank(mockLocker);
+        // The locker transfers WETH on behalf of itself (allowance set by deployer in test setup).
+        // In production the locker holds the WETH from claimFees before forwarding.
+        // Here we transfer directly to the locker first.
+        vm.stopPrank();
+
+        // Fund the mock locker with WETH and have it approve + deposit.
+        vm.startPrank(deployer);
+        weth.transfer(mockLocker, 10 ether);
+        vm.stopPrank();
+
+        vm.startPrank(mockLocker);
         weth.approve(address(distributor), 10 ether);
         distributor.depositRewards(address(token), 10 ether);
         vm.stopPrank();
@@ -98,5 +114,38 @@ contract HolderSharingAndVestingTest is Test {
         vm.prank(bob);
         vault.claimVested(address(token));
         assertEq(vault.getClaimableAmount(address(token), bob), 0);
+    }
+
+    function test_VestingRevoke() public {
+        uint256 grantAmount = 10_000 * 1e18;
+        uint256 duration = 100 days;
+        uint256 start = block.timestamp;
+
+        vm.startPrank(alice);
+        token.approve(address(vault), grantAmount);
+        vault.createVestingSchedule(address(token), bob, grantAmount, duration);
+        vm.stopPrank();
+
+        // Advance 25 days -> 25% vested
+        vm.warp(start + 25 days);
+
+        uint256 aliceBalanceBefore = token.balanceOf(alice);
+        uint256 bobBalanceBefore = token.balanceOf(bob);
+
+        // Alice revokes
+        vm.prank(alice);
+        vault.revokeVesting(address(token), bob);
+
+        // Bob receives 2,500 (25% vested), Alice gets back 7,500 (unvested)
+        assertEq(token.balanceOf(bob) - bobBalanceBefore, 2_500 * 1e18);
+        assertEq(token.balanceOf(alice) - aliceBalanceBefore, 7_500 * 1e18);
+
+        // Claimable is now zero (schedule revoked)
+        assertEq(vault.getClaimableAmount(address(token), bob), 0);
+
+        // Cannot revoke twice
+        vm.prank(alice);
+        vm.expectRevert(VestingVault.AlreadyRevoked.selector);
+        vault.revokeVesting(address(token), bob);
     }
 }

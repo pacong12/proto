@@ -8,12 +8,14 @@ import {
   TokenDetailResult,
 } from '../application/use-cases/get-token-by-address.use-case';
 import { TokenRepositoryPort } from '../domain/ports/token.repository.port';
+import { PriceFeedPort } from '../domain/ports/price-feed.port';
 
 export class TokenController {
   constructor(
     private readonly getTokensUseCase: GetTokensUseCase,
     private readonly getTokenByAddressUseCase: GetTokenByAddressUseCase,
     private readonly tokenRepository: TokenRepositoryPort,
+    private readonly priceFeed: PriceFeedPort,
   ) {}
 
   async listTokens(
@@ -128,7 +130,7 @@ export class TokenController {
         }
       >();
 
-      const ethPrice = 2500;
+      const ethPrice = await this.priceFeed.getEthPriceUsd();
       // Trades are sorted newest first, sort chronological to determine first buy
       const chronologicalTrades = [...trades].sort((a, b) => a.timestamp - b.timestamp);
 

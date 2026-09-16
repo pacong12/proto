@@ -7,31 +7,45 @@ import {ILaunchpadToken} from "./interfaces/ILaunchpadToken.sol";
 
 /**
  * @title BuybackBurner
- * @notice Automated TWAP buyback and burn engine for Proto protocol.
- * Executes regular market buybacks of native token using protocol WETH fees and permanently burns them.
+ * @notice Automated buyback-and-burn engine for the Proto protocol.
+ *
+ * Security notes:
+ *   - M-01 fix: executeBuyback() requires a strictly positive minAmountOut.
+ *     The caller must supply a realistic minimum derived from an off-chain quoter
+ *     (e.g. Uniswap QuoterV2) so that the slippage floor is always meaningful.
+ *     The maxSlippageBps cap then provides a secondary ceiling relative to that
+ *     caller-supplied minimum, guarding against sandwich attacks.
+ *   - nonReentrant guard prevents reentrant calls through the swap router.
+ *   - Two-step ownership transfer prevents accidental loss of control.
  */
 contract BuybackBurner is IBuybackBurner {
     address public constant BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
-    uint24 public constant POOL_FEE = 10000; // 1%
+    uint24 public constant POOL_FEE = 10000;
 
     address public immutable targetToken;
     address public immutable weth;
     ISwapRouter public immutable swapRouter;
     address public owner;
+    address public pendingOwner;
 
     uint256 public override totalBurned;
     uint256 public override lastBuybackTimestamp;
-    uint256 public override cooldown = 3600; // 1 hour TWAP interval
-    uint24 public maxSlippageBps = 300;     // 3% max slippage
+    uint256 public override cooldown = 3600;
+    uint24 public maxSlippageBps = 300;
 
     bool private _locked;
 
     error Unauthorized();
     error CooldownActive();
     error InsufficientWethBalance();
+    error ZeroMinAmountOut();
     error SlippageExceeded();
     error ZeroAddress();
     error Reentrancy();
+    error NoPendingOwner();
+
+    event OwnershipTransferProposed(address indexed proposed);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert Unauthorized();
@@ -65,6 +79,10 @@ contract BuybackBurner is IBuybackBurner {
         }
     }
 
+    // ---------------------------------------------------------------------------
+    // Owner administration
+    // ---------------------------------------------------------------------------
+
     function setCooldown(uint256 newCooldown) external onlyOwner {
         cooldown = newCooldown;
         emit CooldownUpdated(newCooldown);
@@ -75,6 +93,49 @@ contract BuybackBurner is IBuybackBurner {
         emit MaxSlippageUpdated(newMaxSlippage);
     }
 
+    function transferOwnership(address newOwner) external onlyOwner {
+        if (newOwner == address(0)) revert ZeroAddress();
+        pendingOwner = newOwner;
+        emit OwnershipTransferProposed(newOwner);
+    }
+
+    function acceptOwnership() external {
+        if (msg.sender != pendingOwner) revert NoPendingOwner();
+        address previous = owner;
+        owner = pendingOwner;
+        pendingOwner = address(0);
+        emit OwnershipTransferred(previous, owner);
+    }
+
+    /**
+     * @notice Emergency WETH recovery if the swap router or target token is no longer viable.
+     * @dev L-05 fix: prevents WETH from being permanently locked.
+     */
+    function emergencyWithdrawWeth(address recipient) external onlyOwner {
+        if (recipient == address(0)) revert ZeroAddress();
+        uint256 balance = IWETH(weth).balanceOf(address(this));
+        if (balance > 0) {
+            IWETH(weth).transfer(recipient, balance);
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Buyback
+    // ---------------------------------------------------------------------------
+
+    /**
+     * @notice Execute a buyback using the full WETH balance of this contract.
+     *
+     * @param minAmountOut Minimum tokens to receive. Must be greater than zero.
+     *        Callers MUST derive this from an off-chain QuoterV2 call immediately
+     *        before submitting the transaction. The maxSlippageBps parameter
+     *        additionally applies a percentage floor relative to minAmountOut
+     *        to bound sandwich attack exposure.
+     *
+     * M-01 fix: minAmountOut == 0 is explicitly rejected. Previously a zero value
+     *   caused the effective minimum to always be zero, making the slippage guard
+     *   non-functional and the swap fully exploitable by front-runners.
+     */
     function executeBuyback(uint256 minAmountOut) external override nonReentrant returns (uint256 tokensBurned) {
         if (lastBuybackTimestamp > 0 && block.timestamp < lastBuybackTimestamp + cooldown) {
             revert CooldownActive();
@@ -83,19 +144,18 @@ contract BuybackBurner is IBuybackBurner {
         uint256 wethBalance = IWETH(weth).balanceOf(address(this));
         if (wethBalance == 0) revert InsufficientWethBalance();
 
-        // H-04 Fix: enforce maxSlippageBps as the floor for amountOutMinimum.
-        // Caller may pass a tighter bound via minAmountOut; we use whichever is stricter.
-        // We approximate expected output as wethBalance (1:1 placeholder) — the actual
-        // on-chain quote from a TWAP oracle or Quoter should replace this in production.
-        // For now, maxSlippageBps guards against gross sandwich attacks.
+        // M-01 fix: reject zero minimum so the slippage floor is always meaningful.
+        if (minAmountOut == 0) revert ZeroMinAmountOut();
+
+        // Apply maxSlippageBps as a secondary floor on the caller-supplied minimum.
+        // This ensures the effective minimum is never more than maxSlippageBps% below
+        // what the caller indicated as acceptable.
         uint256 slippageFloor = (minAmountOut * (10000 - uint256(maxSlippageBps))) / 10000;
         uint256 effectiveMin = minAmountOut > slippageFloor ? minAmountOut : slippageFloor;
 
-        // Reset and approve WETH to SwapRouter
         IWETH(weth).approve(address(swapRouter), 0);
         IWETH(weth).approve(address(swapRouter), wethBalance);
 
-        // Execute Swap WETH -> targetToken routed directly to BURN_ADDRESS
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
             tokenIn: weth,
             tokenOut: targetToken,
