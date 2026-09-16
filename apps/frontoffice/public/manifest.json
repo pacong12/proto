@@ -1,7 +1,7 @@
 {
   "name": "proto",
   "short_name": "proto",
-  "description": "Robinhood Chain L2 launchpad for fixed-supply tokens",
+  "description": "Multi-chain launchpad for fixed-supply tokens on Robinhood & Arc Chain",
   "start_url": "/launchpad",
   "display": "standalone",
   "background_color": "#0a0a0a",

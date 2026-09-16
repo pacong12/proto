@@ -101,7 +101,7 @@
               class="h-7 text-xs font-semibold flex-1 cursor-pointer"
               @click="switchOrAddNetwork()"
             >
-              {{ t('switchToRobinhood') }}
+              Switch Network
             </Button>
 
             <Button
@@ -113,6 +113,26 @@
               <LogOut class="w-3.5 h-3.5" />
               <span>{{ t('disconnect') }}</span>
             </Button>
+          </div>
+
+          <!-- Multi-Chain Network Selector (Robinhood & Arc) -->
+          <div class="space-y-1.5 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+            <span class="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">
+              Supported Networks
+            </span>
+            <div class="grid grid-cols-2 gap-1.5">
+              <Button
+                v-for="net in Object.values(SUPPORTED_CHAINS)"
+                :key="net.chainId"
+                size="sm"
+                :variant="activeNetwork.chainId === net.chainId ? 'default' : 'outline'"
+                class="h-7 text-[11px] font-mono justify-between px-2 cursor-pointer"
+                @click="switchOrAddNetwork(net)"
+              >
+                <span class="truncate">{{ net.name }}</span>
+                <span class="text-[9px] opacity-70 font-bold">{{ net.nativeCurrency.symbol }}</span>
+              </Button>
+            </div>
           </div>
         </div>
 

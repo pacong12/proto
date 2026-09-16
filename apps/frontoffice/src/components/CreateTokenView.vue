@@ -203,11 +203,11 @@
               <div
                 class="w-5 h-5 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-[10px] font-mono font-bold"
               >
-                E
+                {{ currencySymbol.slice(0, 1) }}
               </div>
-              <span>ETH</span>
+              <span>{{ currencySymbol }}</span>
             </div>
-            <span class="text-xs text-zinc-500">Robinhood Chain (Native)</span>
+            <span class="text-xs text-zinc-500">{{ activeNetwork.name }} (Native)</span>
           </div>
           <p class="text-[11px] text-zinc-500 dark:text-zinc-400">
             {{ selectedVersion === 'v2' ? t('v2GraduatesHint') : t('v1PairsHint') }}
@@ -232,7 +232,9 @@
               placeholder="0.00"
               class="font-mono text-sm pr-16"
             />
-            <span class="absolute right-3 top-2.5 text-xs font-semibold text-zinc-400">ETH</span>
+            <span class="absolute right-3 top-2.5 text-xs font-semibold text-zinc-400">
+              {{ currencySymbol }}
+            </span>
           </div>
         </div>
 
@@ -342,7 +344,7 @@
           <div class="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
             <span>{{ t('ethPairDue') }}</span>
             <span class="font-mono font-bold text-black dark:text-white">
-              {{ (0.0005 + (parseFloat(form.initialBuyEth) || 0)).toFixed(4) }} ETH
+              {{ totalPairDue }}
             </span>
           </div>
 
@@ -378,7 +380,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import {
   Rocket,
   Lock,
@@ -406,7 +408,19 @@ const emit = defineEmits<{
 }>();
 
 const { launchToken, loading, error } = useLaunchpad();
-const { isConnected, account } = useWallet();
+const { isConnected, account, activeNetwork } = useWallet();
+const currencySymbol = computed(() => activeNetwork.value.nativeCurrency.symbol);
+const launchFeeFormatted = computed(() => {
+  const feeWei = activeNetwork.value.launchConfig.launchFeeWei;
+  const decimals = activeNetwork.value.nativeCurrency.decimals;
+  return Number(feeWei) / 10 ** decimals;
+});
+const totalPairDue = computed(() => {
+  const buyAmount = parseFloat(form.value.initialBuyEth) || 0;
+  const decimals = activeNetwork.value.nativeCurrency.decimals;
+  const total = launchFeeFormatted.value + buyAmount;
+  return `${total.toFixed(decimals === 6 ? 2 : 4)} ${currencySymbol.value}`;
+});
 
 const selectedVersion = ref<'v1' | 'v2'>('v2');
 const fileInputRef = ref<HTMLInputElement | null>(null);

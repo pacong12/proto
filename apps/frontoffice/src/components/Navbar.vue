@@ -17,6 +17,7 @@ import {
 } from 'lucide-vue-next';
 import { useWallet } from '../composables/useWallet';
 import { useI18n } from '../lib/i18n';
+import { SUPPORTED_CHAINS } from '@proto/shared-types';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import ThemeToggle from '@/components/ThemeToggle.vue';
 import { Button } from '@/components/ui/button';
@@ -57,6 +58,7 @@ const {
   isConnected,
   isConnecting,
   isCorrectNetwork,
+  activeNetwork,
   formattedAddress,
   formattedBalance,
   disconnectWallet,
@@ -171,16 +173,57 @@ function copyAddress() {
         <!-- Dark/Light Theme Mode Toggle -->
         <ThemeToggle />
 
+        <!-- Network Switcher Dropdown (Multi-Chain: Robinhood & Arc) -->
+        <DropdownMenu v-if="isConnected">
+          <DropdownMenuTrigger as-child>
+            <Button
+              variant="outline"
+              size="sm"
+              class="h-8 px-2.5 gap-1.5 text-xs font-mono border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+            >
+              <span
+                class="w-2 h-2 rounded-full"
+                :class="isCorrectNetwork ? 'bg-emerald-500' : 'bg-amber-500'"
+              />
+              <span class="font-semibold text-black dark:text-white">{{ activeNetwork.name }}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            class="w-48 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800"
+          >
+            <DropdownMenuLabel class="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+              Select Network
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator class="border-zinc-200 dark:border-zinc-800" />
+            <DropdownMenuItem
+              v-for="net in Object.values(SUPPORTED_CHAINS)"
+              :key="net.chainId"
+              class="cursor-pointer text-xs font-mono flex items-center justify-between"
+              @click="switchOrAddNetwork(net)"
+            >
+              <div class="flex items-center gap-2">
+                <span
+                  class="w-1.5 h-1.5 rounded-full"
+                  :class="activeNetwork.chainId === net.chainId ? 'bg-emerald-500' : 'bg-zinc-500'"
+                />
+                <span>{{ net.name }}</span>
+              </div>
+              <span class="text-[10px] text-zinc-400">{{ net.nativeCurrency.symbol }}</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <!-- Wrong Network Warning Button -->
         <Button
           v-if="isConnected && !isCorrectNetwork"
           variant="destructive"
           size="sm"
           class="h-8 gap-1 text-xs font-semibold animate-pulse"
-          @click="switchOrAddNetwork"
+          @click="switchOrAddNetwork()"
         >
           <AlertTriangle class="w-3.5 h-3.5" />
-          <span class="hidden sm:inline">{{ t('switchToRobinhood') }}</span>
+          <span class="hidden sm:inline">Switch Network</span>
           <span class="sm:hidden">Network</span>
         </Button>
 

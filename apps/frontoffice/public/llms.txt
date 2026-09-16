@@ -1,13 +1,13 @@
 # proto
-> Launch fixed-supply tokens on Robinhood Chain.
+> Multi-chain launchpad for fixed-supply tokens on Robinhood Chain and Arc Network.
 
-proto is the premier Robinhood Chain launchpad for fixed-supply tokens. Explore new launches, create tokens, and trade with permanently locked liquidity or dynamic bonding curves.
+proto is the premier multi-chain launchpad for fixed-supply tokens. Explore new launches, create tokens, and trade with permanently locked liquidity or dynamic bonding curves across Robinhood Chain and Arc Network.
 
 ## Products & Features
-- Explore newest token launches on Robinhood Chain
+- Explore newest token launches on Robinhood Chain and Arc Network
 - Dual Launch Architectures:
   - **v1**: Direct Uniswap V3 locked liquidity pool
-  - **v2**: Constant-Product bonding curve with 4.2 ETH automatic graduation
+  - **v2**: Constant-Product bonding curve with automatic graduation (4.2 ETH / 8,400 USDC)
 - Decentralized trading interface with live charts and real-time order books
 - Built-in metadata storage pinned to IPFS
 
@@ -20,9 +20,9 @@ proto is the premier Robinhood Chain launchpad for fixed-supply tokens. Explore 
 - Robots: https://proto.family/robots.txt
 - Sitemap: https://proto.family/sitemap.xml
 
-## Protocol Parameters
-- Network: Robinhood Chain (Chain ID: 4663)
+## Supported Networks
+- **Robinhood Chain** (Chain ID: 4663): Native gas ETH (18 decimals)
+- **Arc Testnet** (Chain ID: 5042002): Native gas USDC (6 decimals)
 - Token Supply: Fixed 1,000,000,000 (18 decimals)
-- Graduation Threshold: 4.2 ETH
 - Pool Fee: 1% (10000)
-- Launch Fee: 0.0005 ETH
+- Launch Fee: 0.0005 ETH (Robinhood) / 1 USDC (Arc)

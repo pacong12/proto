@@ -2,6 +2,7 @@ import { ref } from 'vue';
 import { decodeEventLog, parseEther } from 'viem';
 import {
   ROBINHOOD_CHAIN,
+  getNetworkConfig,
   launchpadFactoryAbi,
   launchpadV2FactoryAbi,
   launchpadTokenAbi,
@@ -11,6 +12,7 @@ import {
   type TokenSocials,
 } from '@proto/shared-types';
 import { getPublicClient, getWalletClient } from '../lib/viem-client';
+import { walletChainId } from '../lib/wallet-store';
 import { getLiveEthPriceUsd } from '../lib/price-feed';
 
 export function useLaunchpad() {
@@ -40,15 +42,16 @@ export function useLaunchpad() {
       const [account] = await walletClient.getAddresses();
       if (!account) throw new Error('Please connect your wallet');
 
+      const network = getNetworkConfig(walletChainId.value ?? undefined);
       // Use parseEther for full-precision ETH-to-wei conversion (fix MED-02).
       const initialBuyWei =
         params.initialBuyAmountEth && params.initialBuyAmountEth !== '0'
           ? parseEther(params.initialBuyAmountEth)
           : 0n;
-      const totalValue = ROBINHOOD_CHAIN.launchConfig.launchFeeWei + initialBuyWei;
+      const totalValue = network.launchConfig.launchFeeWei + initialBuyWei;
 
       const hash = await walletClient.writeContract({
-        address: ROBINHOOD_CHAIN.contracts.factory,
+        address: network.contracts.factory,
         abi: launchpadFactoryAbi,
         functionName: 'launchToken',
         args: [
@@ -75,7 +78,7 @@ export function useLaunchpad() {
       // Decode the event log via ABI to extract properly typed addresses (fix HIGH-02).
       // Raw topics[1] is a 32-byte padded value and must not be cast directly to an address.
       const launchLog = receipt.logs.find(
-        (l) => l.address.toLowerCase() === ROBINHOOD_CHAIN.contracts.factory.toLowerCase(),
+        (l) => l.address.toLowerCase() === network.contracts.factory.toLowerCase(),
       );
 
       if (!launchLog) {
@@ -124,15 +127,15 @@ export function useLaunchpad() {
       const [account] = await walletClient.getAddresses();
       if (!account) throw new Error('Please connect your wallet');
 
+      const network = getNetworkConfig(walletChainId.value ?? undefined);
       // Use parseEther for full-precision ETH-to-wei conversion (fix MED-02).
       const initialBuyWei =
         params.initialBuyAmountEth && params.initialBuyAmountEth !== '0'
           ? parseEther(params.initialBuyAmountEth)
           : 0n;
-      const totalValue = ROBINHOOD_CHAIN.launchConfig.launchFeeWei + initialBuyWei;
+      const totalValue = network.launchConfig.launchFeeWei + initialBuyWei;
 
-      const targetFactory =
-        ROBINHOOD_CHAIN.contracts.factoryV2 ?? ROBINHOOD_CHAIN.contracts.factory;
+      const targetFactory = network.contracts.factoryV2 ?? network.contracts.factory;
 
       const hash = await walletClient.writeContract({
         address: targetFactory,
@@ -337,8 +340,9 @@ export function useLaunchpad() {
       const [account] = await walletClient.getAddresses();
       if (!account) throw new Error('Please connect your wallet');
 
+      const network = getNetworkConfig(walletChainId.value ?? undefined);
       const hash = await walletClient.writeContract({
-        address: ROBINHOOD_CHAIN.contracts.locker,
+        address: network.contracts.locker,
         abi: liquidityLockerAbi,
         functionName: 'claimFees',
         args: [tokenAddress],
@@ -374,8 +378,9 @@ export function useLaunchpad() {
       const [account] = await walletClient.getAddresses();
       if (!account) throw new Error('Please connect your wallet');
 
+      const network = getNetworkConfig(walletChainId.value ?? undefined);
       const hash = await walletClient.writeContract({
-        address: ROBINHOOD_CHAIN.contracts.locker,
+        address: network.contracts.locker,
         abi: liquidityLockerAbi,
         functionName: 'setFeeRedirect',
         args: [tokenAddress, redirectAddress],
