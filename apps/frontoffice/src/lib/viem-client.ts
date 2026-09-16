@@ -10,6 +10,7 @@ import {
 import {
   ROBINHOOD_CHAIN,
   ROBINHOOD_TESTNET,
+  ARC_CHAIN,
   ARC_TESTNET,
   SUPPORTED_CHAINS,
   type NetworkConfig,
@@ -39,7 +40,8 @@ function toViemChain(cfg: NetworkConfig) {
 
 const mainnetChain = toViemChain(ROBINHOOD_CHAIN);
 const testnetChain = toViemChain(ROBINHOOD_TESTNET);
-const arcChain = toViemChain(ARC_TESTNET);
+const arcMainnetChain = toViemChain(ARC_CHAIN);
+const arcTestnetChain = toViemChain(ARC_TESTNET);
 
 // ---------------------------------------------------------------------------
 // Public clients - one instance per supported chain (fix MED-03)
@@ -55,8 +57,13 @@ const publicClientTestnet: PublicClient = createPublicClient({
   transport: http(ROBINHOOD_TESTNET.rpcUrl),
 });
 
-const publicClientArc: PublicClient = createPublicClient({
-  chain: arcChain,
+const publicClientArcMainnet: PublicClient = createPublicClient({
+  chain: arcMainnetChain,
+  transport: http(ARC_CHAIN.rpcUrl),
+});
+
+const publicClientArcTestnet: PublicClient = createPublicClient({
+  chain: arcTestnetChain,
   transport: http(ARC_TESTNET.rpcUrl),
 });
 
@@ -68,7 +75,8 @@ const publicClientArc: PublicClient = createPublicClient({
  */
 export function getPublicClient(): PublicClient {
   const chainId = walletChainId.value;
-  if (chainId === ARC_TESTNET.chainId) return publicClientArc;
+  if (chainId === ARC_CHAIN.chainId) return publicClientArcMainnet;
+  if (chainId === ARC_TESTNET.chainId) return publicClientArcTestnet;
   if (chainId === ROBINHOOD_TESTNET.chainId) return publicClientTestnet;
   return publicClientMainnet;
 }

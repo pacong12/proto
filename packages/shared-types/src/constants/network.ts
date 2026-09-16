@@ -139,9 +139,49 @@ export const ROBINHOOD_TESTNET: NetworkConfig = {
 };
 
 // ---------------------------------------------------------------------------
-// Testnet: Arc Testnet (Chain ID 5042002) - Circle Stablecoin L1
-// Verified infrastructure deployments from ayoo.club / Arc Ecosystem
+// Mainnet: Arc Network (Chain ID 5042) - Circle Stablecoin L1
+// Verified production infrastructure deployments from ayoo.club / Arc Ecosystem
 // ---------------------------------------------------------------------------
+
+export const ARC_CHAIN: NetworkConfig = {
+  chainId: 5042,
+  name: 'Arc Network',
+  nativeCurrency: {
+    name: 'USD Coin',
+    symbol: 'USDC',
+    decimals: 6,
+  },
+  rpcUrl: 'https://arc.drpc.org',
+  blockExplorer: 'https://arcscan.app',
+  contracts: {
+    factory: '0xED31e7ec603651803784196003903aCa05550552',
+    factoryV2: '0x2ae8BE8C8F19665396b362859d51bdec09e59AEa',
+    locker: '0x9909ac8759dB233f546b644EF2CBDE1b3Af1dCE0',
+    uniswapV3Factory: '0xf0db7b58379503491d857dB50AC9ece64c653918',
+    positionManager: '0x39654A85A4C05127f5Fd6ED22CAeC077A0fB1377',
+    swapRouter: '0x53BF6B0684Ec7eF91e1387Da3D1a1769bC5A6F77',
+    quoterV2: '0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7',
+    weth: '0x3600000000000000000000000000000000000000', // Native USDC on Arc
+  },
+  launchConfigV2: {
+    supply: 1_000_000_000n * 10n ** 18n,
+    curveTokenAllocation: 800_000_000n * 10n ** 18n,
+    graduationTargetWei: 8_400_000_000n, // 8,400 USDC (6 decimals)
+    platformFeeBps: 100,
+    snipeTaxMaxBps: 9900,
+  },
+  launchConfig: {
+    supply: 1_000_000_000n * 10n ** 18n,
+    poolFee: 10000,
+    launchFeeWei: 1_000_000n, // 1 USDC (6 decimals)
+    graduationThresholdWei: 8_400_000_000n, // 8,400 USDC
+    antiSnipeBlocks: 2,
+    maxHoldPercent: 5.0,
+    maxBuyPercent: 5.5,
+    protocolFeeSharePercent: 30,
+    creatorFeeSharePercent: 70,
+  },
+};
 
 export const ARC_TESTNET: NetworkConfig = {
   chainId: 5042002,
@@ -185,6 +225,7 @@ export const ARC_TESTNET: NetworkConfig = {
 
 export const SUPPORTED_CHAINS: Record<number, NetworkConfig> = {
   [ROBINHOOD_CHAIN.chainId]: ROBINHOOD_CHAIN,
+  [ARC_CHAIN.chainId]: ARC_CHAIN,
   [ARC_TESTNET.chainId]: ARC_TESTNET,
   [ROBINHOOD_TESTNET.chainId]: ROBINHOOD_TESTNET,
 };
