@@ -151,6 +151,10 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     `);
 
     this.db.run(`
+      CREATE INDEX IF NOT EXISTS idx_trades_txHash ON trades(transactionHash);
+    `);
+
+    this.db.run(`
       CREATE TABLE IF NOT EXISTS market_data (
         address TEXT PRIMARY KEY,
         priceInWeth REAL NOT NULL,
@@ -333,6 +337,26 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     const token = await this.findByAddress(tokenAddress as `0x${string}`);
     const trades = await this.getTrades(tokenAddress as `0x${string}`, 1000, 0);
     return computeHoldersDistribution(token, trades, limit);
+  }
+
+  async getRecentTrades(limit = 50): Promise<TradeEventEntity[]> {
+    const stmt = this.db.prepare(`
+      SELECT * FROM trades
+      ORDER BY timestamp DESC, rowid DESC
+      LIMIT ?
+    `);
+    const rows = stmt.all(limit) as TradeRow[];
+    return rows.map((row) => this.mapRowToTrade(row));
+  }
+
+  async findTradeByHash(txHash: string): Promise<TradeEventEntity | null> {
+    const stmt = this.db.prepare(`
+      SELECT * FROM trades
+      WHERE LOWER(transactionHash) = LOWER(?)
+      LIMIT 1
+    `);
+    const row = stmt.get(txHash) as TradeRow | null;
+    return row ? this.mapRowToTrade(row) : null;
   }
 
   close(): void {

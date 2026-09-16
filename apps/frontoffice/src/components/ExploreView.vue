@@ -121,6 +121,7 @@
 
         <!-- Lifecycle Status Filter: All / Curve / Graduated -->
         <div
+          v-if="activeMarketTab !== 'trades'"
           class="inline-flex items-center p-0.5 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium"
         >
           <button
@@ -163,6 +164,7 @@
 
         <!-- Socials Only Filter Toggle -->
         <Button
+          v-if="activeMarketTab !== 'trades'"
           type="button"
           size="sm"
           :variant="filterHasSocials ? 'default' : 'outline'"
@@ -175,7 +177,7 @@
       </div>
 
       <!-- Right Controls: View Mode Toggle (Table / Grid) + Sort Combobox -->
-      <div class="flex items-center gap-2 shrink-0">
+      <div v-if="activeMarketTab !== 'trades'" class="flex items-center gap-2 shrink-0">
         <!-- View Mode Toggle: Table vs Grid -->
         <div
           class="inline-flex items-center p-0.5 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800"
@@ -216,6 +218,11 @@
           :placeholder="t('sortTokens')"
         />
       </div>
+
+      <div v-else class="flex items-center gap-2 px-2 text-xs font-mono text-zinc-500 shrink-0">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+        <span>Live Stream ({{ filteredTrades.length }} trades)</span>
+      </div>
     </div>
 
     <!-- 4. Loading State -->
@@ -233,6 +240,169 @@
     >
       <AlertCircle class="w-4 h-4 shrink-0 mt-0.5" />
       <span>{{ apiError }}</span>
+    </div>
+
+    <!-- Direct Tx Hash Search Match Banner -->
+    <div
+      v-if="matchedSearchTx"
+      class="p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+    >
+      <div class="flex items-center gap-3 min-w-0">
+        <Badge
+          :variant="matchedSearchTx.isBuy ? 'default' : 'destructive'"
+          class="text-[10px] uppercase font-mono px-2 py-0.5 shrink-0"
+        >
+          {{ matchedSearchTx.isBuy ? 'BUY' : 'SELL' }}
+        </Badge>
+        <div class="truncate">
+          <span class="font-mono font-bold text-black dark:text-white truncate block">
+            Tx: {{ shortenAddress(matchedSearchTx.transactionHash, 10, 8) }}
+          </span>
+          <p class="text-[11px] font-mono text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
+            Token: {{ shortenAddress(matchedSearchTx.tokenAddress) }} • Volume:
+            {{ matchedSearchTx.wethAmount }} {{ activeNetwork.nativeCurrency.symbol }} • Trader:
+            {{ shortenAddress(matchedSearchTx.trader) }}
+          </p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <Button
+          size="sm"
+          variant="default"
+          class="h-7 text-xs font-bold gap-1 cursor-pointer"
+          @click="$emit('selectToken', matchedSearchTx.tokenAddress)"
+        >
+          Open Market &rarr;
+        </Button>
+        <a
+          v-if="activeNetwork.blockExplorer"
+          :href="`${activeNetwork.blockExplorer}/tx/${matchedSearchTx.transactionHash}`"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:text-emerald-400 text-zinc-500 transition"
+          title="View on Explorer"
+        >
+          <ExternalLink class="w-3.5 h-3.5" />
+        </a>
+      </div>
+    </div>
+
+    <!-- 6. Live Protocol Trades Tab Feed -->
+    <div
+      v-if="activeMarketTab === 'trades'"
+      class="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 overflow-hidden shadow-xs"
+    >
+      <div
+        v-if="tradesLoading && recentTrades.length === 0"
+        class="flex flex-col items-center justify-center py-20 space-y-3"
+      >
+        <Loader2 class="w-7 h-7 text-emerald-500 animate-spin" />
+        <span class="text-xs font-medium text-zinc-500 font-mono"
+          >Loading live protocol trades...</span
+        >
+      </div>
+      <div
+        v-else-if="filteredTrades.length === 0"
+        class="py-12 text-center text-xs text-zinc-500 font-mono"
+      >
+        No recent trades recorded yet on {{ activeNetwork.name }}.
+      </div>
+      <div v-else class="overflow-x-auto">
+        <table class="w-full text-left text-xs font-mono">
+          <thead>
+            <tr
+              class="border-b border-zinc-200 dark:border-zinc-800/90 text-zinc-400 uppercase tracking-wider text-[11px] bg-zinc-50/70 dark:bg-zinc-900/40"
+            >
+              <th class="py-3 px-4 font-semibold">Token</th>
+              <th class="py-3 px-4 font-semibold">Type</th>
+              <th class="py-3 px-4 font-semibold text-right">Price (USD)</th>
+              <th class="py-3 px-4 font-semibold text-right">Tokens</th>
+              <th class="py-3 px-4 font-semibold text-right">Volume</th>
+              <th class="py-3 px-4 font-semibold">Trader</th>
+              <th class="py-3 px-4 font-semibold text-right">Time</th>
+              <th class="py-3 px-4 font-semibold text-right">Tx</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-zinc-100 dark:divide-zinc-900">
+            <tr
+              v-for="trade in filteredTrades"
+              :key="trade.id"
+              class="hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors cursor-pointer group"
+              @click="$emit('selectToken', trade.tokenAddress)"
+            >
+              <td class="py-3 px-4">
+                <div class="flex items-center gap-2.5">
+                  <OptimizedImage
+                    :src="getTokenInfo(trade.tokenAddress)?.logo"
+                    :alt="getTokenInfo(trade.tokenAddress)?.name || 'Token'"
+                    :fallback-text="getTokenInfo(trade.tokenAddress)?.symbol || 'TOK'"
+                    :width="28"
+                    :height="28"
+                    class="rounded-lg border border-zinc-200 dark:border-zinc-800 shrink-0"
+                  />
+                  <div class="truncate">
+                    <span
+                      class="font-bold text-black dark:text-white group-hover:text-emerald-500 transition truncate block"
+                    >
+                      {{
+                        getTokenInfo(trade.tokenAddress)?.name || shortenAddress(trade.tokenAddress)
+                      }}
+                    </span>
+                    <span class="text-[11px] text-zinc-400">
+                      ${{ getTokenInfo(trade.tokenAddress)?.symbol || 'TOK' }}
+                    </span>
+                  </div>
+                </div>
+              </td>
+              <td class="py-3 px-4 whitespace-nowrap">
+                <Badge
+                  :variant="trade.isBuy ? 'default' : 'destructive'"
+                  class="text-[10px] uppercase px-1.5 py-0"
+                >
+                  {{ trade.isBuy ? 'BUY' : 'SELL' }}
+                </Badge>
+              </td>
+              <td
+                class="py-3 px-4 whitespace-nowrap text-right font-semibold text-black dark:text-white"
+              >
+                ${{
+                  trade.priceUsd < 0.0001 ? trade.priceUsd.toFixed(8) : trade.priceUsd.toFixed(4)
+                }}
+              </td>
+              <td class="py-3 px-4 whitespace-nowrap text-right text-zinc-700 dark:text-zinc-300">
+                {{ formatTokenNumber(trade.tokenAmount) }}
+              </td>
+              <td
+                class="py-3 px-4 whitespace-nowrap text-right text-emerald-600 dark:text-emerald-400 font-semibold"
+              >
+                {{ parseFloat(trade.wethAmount).toFixed(4) }}
+                {{ activeNetwork.nativeCurrency.symbol }}
+              </td>
+              <td class="py-3 px-4 whitespace-nowrap">
+                <div class="flex items-center gap-1.5 text-zinc-500">
+                  <Jazzicon :address="trade.trader" :size="16" class="rounded-full shrink-0" />
+                  <span>{{ shortenAddress(trade.trader) }}</span>
+                </div>
+              </td>
+              <td class="py-3 px-4 whitespace-nowrap text-right text-zinc-400 text-[11px]">
+                {{ formatRelativeTime(trade.timestamp) }}
+              </td>
+              <td class="py-3 px-4 whitespace-nowrap text-right" @click.stop>
+                <a
+                  v-if="activeNetwork.blockExplorer"
+                  :href="`${activeNetwork.blockExplorer}/tx/${trade.transactionHash}`"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="p-1 rounded hover:text-emerald-400 text-zinc-400 transition inline-flex items-center"
+                  title="View on Explorer"
+                >
+                  <ExternalLink class="w-3.5 h-3.5" />
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- 6. Empty State -->
@@ -474,7 +644,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import {
   Plus,
   Loader2,
@@ -484,20 +654,23 @@ import {
   Search,
   List,
   LayoutGrid,
+  ExternalLink,
+  Activity,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, Jazzicon } from '@/components/ui/avatar';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { Combobox } from '@/components/ui/combobox';
 import { Empty } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
-import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
+import type { LaunchedTokenEntity, TokenMarketData, TradeEventEntity } from '@proto/shared-types';
 import { useI18n } from '@/lib/i18n';
 import { useWallet } from '@/composables/useWallet';
+import { shortenAddress, formatTokenNumber, formatRelativeTime } from '@/lib/utils';
 
 const { t } = useI18n();
 const { activeNetwork } = useWallet();
@@ -510,8 +683,10 @@ defineEmits<{
 // View Mode: Professional OKX Table vs Card Grid
 const viewMode = ref<'table' | 'grid'>('table');
 
-// Active Market Category Tab (OKX-Style: All Markets / Trending / New Launches / Top Gainers)
-const activeMarketTab = ref<'all' | 'trending' | 'newest' | 'gainers' | 'graduated'>('all');
+// Active Market Category Tab (OKX-Style: All Markets / Trending / New Launches / Top Gainers / Live Trades)
+const activeMarketTab = ref<'all' | 'trending' | 'newest' | 'gainers' | 'graduated' | 'trades'>(
+  'all',
+);
 
 const marketTabs = computed(() => [
   { label: t('allMarkets'), value: 'all' as const },
@@ -519,6 +694,7 @@ const marketTabs = computed(() => [
   { label: t('newLaunches'), value: 'newest' as const },
   { label: t('topGainers'), value: 'gainers' as const },
   { label: t('graduatedDEX'), value: 'graduated' as const },
+  { label: 'Live Trades', value: 'trades' as const },
 ]);
 
 function selectTabFilter(tab: 'trending' | 'newest' | 'gainers') {
@@ -536,6 +712,14 @@ const apiError = ref<string | null>(null);
 const allTokens = ref<Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }>>([]);
 const currentPage = ref(1);
 const pageSize = 10; // 10 rows per page like standard exchange tables
+
+// Live Trades & Tx Hash Search States
+const recentTrades = ref<TradeEventEntity[]>([]);
+const tradesLoading = ref(false);
+const matchedSearchTx = ref<TradeEventEntity | null>(null);
+const searchingTx = ref(false);
+let txDebounce: ReturnType<typeof setTimeout> | null = null;
+let tradesPollTimer: ReturnType<typeof setInterval> | null = null;
 
 // Sorting options
 const sortOptions = computed(() => [
@@ -573,6 +757,77 @@ const topGainerChange = computed(() => {
 });
 const totalVolume24hUsd = computed(() => {
   return allTokens.value.reduce((acc, curr) => acc + (curr.marketData.volume24hUsd || 0), 0);
+});
+
+const tokenByAddress = computed(() => {
+  const map = new Map<string, LaunchedTokenEntity>();
+  for (const item of allTokens.value) {
+    map.set(item.token.address.toLowerCase(), item.token);
+  }
+  return map;
+});
+
+function getTokenInfo(address: string): LaunchedTokenEntity | undefined {
+  return tokenByAddress.value.get(address.toLowerCase());
+}
+
+const filteredTrades = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase();
+  if (!q) return recentTrades.value;
+  return recentTrades.value.filter((tr) => {
+    const token = getTokenInfo(tr.tokenAddress);
+    return (
+      tr.transactionHash.toLowerCase().includes(q) ||
+      tr.tokenAddress.toLowerCase().includes(q) ||
+      tr.trader.toLowerCase().includes(q) ||
+      (token && (token.name.toLowerCase().includes(q) || token.symbol.toLowerCase().includes(q)))
+    );
+  });
+});
+
+async function fetchRecentTrades() {
+  tradesLoading.value = true;
+  try {
+    const res = await fetch('/api/trades?limit=50');
+    const env = await res.json();
+    if (env.success && Array.isArray(env.data)) {
+      recentTrades.value = env.data;
+    }
+  } catch {
+    // Non-blocking fallback
+  } finally {
+    tradesLoading.value = false;
+  }
+}
+
+watch(searchQuery, (val) => {
+  matchedSearchTx.value = null;
+  const q = val.trim();
+  if (txDebounce) clearTimeout(txDebounce);
+
+  // If query is a full 66-character tx hash
+  if (/^0x[a-fA-F0-9]{64}$/i.test(q)) {
+    searchingTx.value = true;
+    txDebounce = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/trades/${q}`);
+        const env = await res.json();
+        if (env.success && env.data) {
+          matchedSearchTx.value = env.data;
+        }
+      } catch {
+        // Non-blocking
+      } finally {
+        searchingTx.value = false;
+      }
+    }, 250);
+  }
+});
+
+watch(activeMarketTab, (newTab) => {
+  if (newTab === 'trades' && recentTrades.value.length === 0) {
+    fetchRecentTrades();
+  }
 });
 // Master Filter Pipeline
 const filteredTokens = computed(() => {
@@ -661,5 +916,17 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
+
+  // Periodic poll for live protocol trades every 8s when window is visible
+  tradesPollTimer = setInterval(() => {
+    if (activeMarketTab.value === 'trades' && typeof document !== 'undefined' && !document.hidden) {
+      fetchRecentTrades();
+    }
+  }, 8000);
+});
+
+onUnmounted(() => {
+  if (tradesPollTimer) clearInterval(tradesPollTimer);
+  if (txDebounce) clearTimeout(txDebounce);
 });
 </script>

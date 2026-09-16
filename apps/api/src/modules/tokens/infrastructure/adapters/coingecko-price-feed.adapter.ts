@@ -3,6 +3,7 @@ import { PriceFeedPort } from '../../domain/ports/price-feed.port';
 export interface CoinGeckoConfig {
   apiKey?: string;
   cacheTtlMs?: number;
+  initialPrice?: number;
 }
 
 export class CoinGeckoPriceFeedAdapter implements PriceFeedPort {
@@ -15,6 +16,10 @@ export class CoinGeckoPriceFeedAdapter implements PriceFeedPort {
   constructor(config?: Partial<CoinGeckoConfig>) {
     this.apiKey = config?.apiKey ?? process.env.COINGECKO_API_KEY;
     this.cacheTtlMs = config?.cacheTtlMs ?? 60_000; // 60s cache TTL to respect rate limits
+    if (config?.initialPrice) {
+      this.cachedPrice = config.initialPrice;
+      this.lastFetchTime = Date.now();
+    }
   }
 
   async getEthPriceUsd(): Promise<number> {
@@ -38,7 +43,7 @@ export class CoinGeckoPriceFeedAdapter implements PriceFeedPort {
 
       const res = await fetch(
         'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd',
-        { headers },
+        { headers, signal: AbortSignal.timeout(3000) },
       );
 
       if (!res.ok) {
@@ -68,6 +73,7 @@ export class CoinGeckoPriceFeedAdapter implements PriceFeedPort {
       try {
         const cbRes = await fetch('https://api.coinbase.com/v2/prices/ETH-USD/spot', {
           headers: { Accept: 'application/json' },
+          signal: AbortSignal.timeout(3000),
         });
         if (cbRes.ok) {
           const cbData = (await cbRes.json()) as { data?: { amount?: string } };

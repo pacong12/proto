@@ -961,7 +961,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { TradingChart } from '@/components/ui/chart';
-import { shortenAddress } from '@/lib/utils';
+import { shortenAddress, formatTokenNumber, formatRelativeTime } from '@/lib/utils';
 import {
   ROBINHOOD_CHAIN,
   launchpadTokenAbi,
@@ -1227,27 +1227,8 @@ function formatTokenBalance(wei: bigint): string {
   return val.toFixed(2);
 }
 
-function formatTokenNumber(raw: string | number): string {
-  const num = typeof raw === 'string' ? parseFloat(raw) : raw;
-  if (isNaN(num)) return '0';
-  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M`;
-  if (num >= 1_000) return `${(num / 1_000).toFixed(2)}K`;
-  return num.toLocaleString(undefined, { maximumFractionDigits: 2 });
-}
-
 function truncateAddress(addr: string): string {
   return shortenAddress(addr);
-}
-
-function formatRelativeTime(timestamp: number): string {
-  const diffSec = Math.floor((Date.now() - timestamp) / 1000);
-  if (diffSec < 60) return `${Math.max(1, diffSec)}s ago`;
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHours = Math.floor(diffMin / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-  const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}d ago`;
 }
 
 function getHolderBadge(addr: string): string | null {

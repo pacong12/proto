@@ -17,7 +17,7 @@ import {
   RedisCacheAdapter,
 } from './index';
 import { createPublicClient, http, defineChain } from 'viem';
-import { ROBINHOOD_CHAIN, TransactionIntent } from '@proto/shared-types';
+import { ROBINHOOD_CHAIN, TransactionIntent, ok, err } from '@proto/shared-types';
 
 const chain = defineChain({
   id: ROBINHOOD_CHAIN.chainId,
@@ -45,7 +45,9 @@ const cache = new RedisCacheAdapter(redisUrl, logger);
 
 const repository = new SqliteTokenRepository();
 const chainIndexer = new ViemChainIndexerAdapter();
-const priceFeed = new CoinGeckoPriceFeedAdapter();
+const priceFeed = new CoinGeckoPriceFeedAdapter({
+  initialPrice: process.env.NODE_ENV === 'test' ? 2500 : undefined,
+});
 const calculatePricing = new CalculatePricingUseCase();
 const getTokensUseCase = new GetTokensUseCase(repository);
 const getTokenByAddressUseCase = new GetTokenByAddressUseCase(
@@ -304,6 +306,32 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       await cache.set(cacheKey, res, 10); // Cache for 10s
     }
     return replyJson(res, 200, { 'x-cache': 'MISS' });
+  }
+
+  // GET /api/trades (global recent protocol trades)
+  if (url.pathname === '/api/trades' && req.method === 'GET') {
+    const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') ?? '30', 10)));
+    const cacheKey = `protocol:trades:recent:${limit}`;
+    const cached = await cache.get<unknown>(cacheKey);
+    if (cached) {
+      return replyJson(cached, 200, { 'x-cache': 'HIT' });
+    }
+
+    const recentTrades = repository.getRecentTrades ? await repository.getRecentTrades(limit) : [];
+    const payload = ok(recentTrades);
+    await cache.set(cacheKey, payload, 5); // 5s cache
+    return replyJson(payload, 200, { 'x-cache': 'MISS' });
+  }
+
+  // GET /api/trades/:txHash (lookup trade by transaction hash)
+  const singleTxMatch = url.pathname.match(/^\/api\/trades\/(0x[a-fA-F0-9]{64})$/);
+  if (singleTxMatch && req.method === 'GET') {
+    const txHash = singleTxMatch[1];
+    const trade = repository.findTradeByHash ? await repository.findTradeByHash(txHash) : null;
+    if (!trade) {
+      return replyJson(err('NOT_FOUND', 'Transaction not found in protocol activity'), 404);
+    }
+    return replyJson(ok(trade));
   }
 
   // GET /api/tokens/:address/trades

@@ -51,7 +51,7 @@ describe('TokenController Unit Tests', () => {
     repository = new InMemoryTokenRepository();
     const chainIndexer = new FakeChainIndexer();
     const calculatePricing = new CalculatePricingUseCase();
-    const priceFeed = new CoinGeckoPriceFeedAdapter();
+    const priceFeed = new CoinGeckoPriceFeedAdapter({ initialPrice: 2500 });
     const getTokensUseCase = new GetTokensUseCase(repository);
     const getTokenByAddressUseCase = new GetTokenByAddressUseCase(
       repository,

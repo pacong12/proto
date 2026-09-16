@@ -69,7 +69,7 @@ describe('Token Use Cases & Controller', () => {
     repository = new InMemoryTokenRepository();
     chainIndexer = new MockChainIndexer();
     calculatePricing = new CalculatePricingUseCase();
-    priceFeed = new CoinGeckoPriceFeedAdapter();
+    priceFeed = new CoinGeckoPriceFeedAdapter({ initialPrice: 2500 });
     getTokensUseCase = new GetTokensUseCase(repository);
     getTokenByAddressUseCase = new GetTokenByAddressUseCase(
       repository,
