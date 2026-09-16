@@ -30,12 +30,12 @@
                 variant="outline"
                 class="text-[10px] font-mono text-emerald-400 border-emerald-500/30"
               >
-                Robinhood L2
+                {{ activeNetwork.name }}
               </Badge>
             </div>
 
             <p class="text-xs text-zinc-400 max-w-md">
-              {{ profileData.bio || 'Non-custodial creator and trader on Robinhood Chain.' }}
+              {{ profileData.bio || `Non-custodial creator and trader on ${activeNetwork.name}.` }}
             </p>
 
             <div class="flex items-center gap-4 pt-1 text-xs text-zinc-400">
@@ -259,7 +259,8 @@
                       <span>
                         Accrued:
                         <strong class="text-emerald-400 font-mono"
-                          >{{ token.unclaimedWeth }} ETH</strong
+                          >{{ token.unclaimedWeth }}
+                          {{ activeNetwork.nativeCurrency.symbol }}</strong
                         >
                       </span>
                       <span>•</span>
@@ -392,7 +393,7 @@
                       ${{ act.tokenSymbol }}
                     </td>
                     <td class="py-2.5 px-3 text-right text-emerald-400 font-medium">
-                      {{ act.ethAmount }} ETH
+                      {{ act.ethAmount }} {{ activeNetwork.nativeCurrency.symbol }}
                     </td>
                     <td class="py-2.5 px-3 text-right text-zinc-300">
                       {{ act.tokenAmount }}
@@ -402,7 +403,7 @@
                     </td>
                     <td class="py-2.5 px-3 text-right">
                       <a
-                        :href="`https://robinhoodchain.blockscout.com/tx/${act.txHash}`"
+                        :href="`${activeNetwork.blockExplorer}/tx/${act.txHash}`"
                         target="_blank"
                         rel="noopener noreferrer"
                         class="text-zinc-500 hover:text-emerald-400 inline-flex items-center"
@@ -679,10 +680,12 @@ import {
 } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { useLaunchpad } from '../composables/useLaunchpad';
+import { useWallet } from '../composables/useWallet';
 import { walletAddress } from '../lib/wallet-store';
 import { shortenAddress } from '@/lib/utils';
 
 const { t } = useI18n();
+const { activeNetwork } = useWallet();
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';

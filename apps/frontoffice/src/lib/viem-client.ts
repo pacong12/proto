@@ -10,6 +10,7 @@ import {
 import {
   ROBINHOOD_CHAIN,
   ROBINHOOD_TESTNET,
+  ARC_TESTNET,
   SUPPORTED_CHAINS,
   type NetworkConfig,
 } from '@proto/shared-types';
@@ -38,6 +39,7 @@ function toViemChain(cfg: NetworkConfig) {
 
 const mainnetChain = toViemChain(ROBINHOOD_CHAIN);
 const testnetChain = toViemChain(ROBINHOOD_TESTNET);
+const arcChain = toViemChain(ARC_TESTNET);
 
 // ---------------------------------------------------------------------------
 // Public clients - one instance per supported chain (fix MED-03)
@@ -53,6 +55,11 @@ const publicClientTestnet: PublicClient = createPublicClient({
   transport: http(ROBINHOOD_TESTNET.rpcUrl),
 });
 
+const publicClientArc: PublicClient = createPublicClient({
+  chain: arcChain,
+  transport: http(ARC_TESTNET.rpcUrl),
+});
+
 /**
  * Return the PublicClient matching the wallet's active chain.
  * Falls back to mainnet when the chain is unknown or the wallet is disconnected.
@@ -61,6 +68,7 @@ const publicClientTestnet: PublicClient = createPublicClient({
  */
 export function getPublicClient(): PublicClient {
   const chainId = walletChainId.value;
+  if (chainId === ARC_TESTNET.chainId) return publicClientArc;
   if (chainId === ROBINHOOD_TESTNET.chainId) return publicClientTestnet;
   return publicClientMainnet;
 }

@@ -1,7 +1,7 @@
 import { defineChain, type AppKitNetwork } from '@reown/appkit/networks';
 import { createAppKit } from '@reown/appkit/vue';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
-import { ROBINHOOD_CHAIN } from '@proto/shared-types';
+import { ROBINHOOD_CHAIN, ARC_TESTNET } from '@proto/shared-types';
 
 const projectId = import.meta.env.VITE_REOWN_PROJECT_ID;
 
@@ -24,7 +24,24 @@ export const robinhoodAppKitChain = defineChain({
   },
 }) as AppKitNetwork;
 
-const networks = [robinhoodAppKitChain] as [AppKitNetwork, ...AppKitNetwork[]];
+export const arcAppKitChain = defineChain({
+  id: ARC_TESTNET.chainId,
+  caipNetworkId: `eip155:${ARC_TESTNET.chainId}`,
+  chainNamespace: 'eip155',
+  name: ARC_TESTNET.name,
+  nativeCurrency: ARC_TESTNET.nativeCurrency,
+  rpcUrls: {
+    default: { http: [ARC_TESTNET.rpcUrl] },
+  },
+  blockExplorers: {
+    default: {
+      name: 'ArcScan',
+      url: ARC_TESTNET.blockExplorer,
+    },
+  },
+}) as AppKitNetwork;
+
+const networks = [robinhoodAppKitChain, arcAppKitChain] as [AppKitNetwork, ...AppKitNetwork[]];
 
 if (!projectId) {
   console.warn('VITE_REOWN_PROJECT_ID is missing; AppKit wallet modal is disabled.');
@@ -40,7 +57,7 @@ if (!projectId) {
     projectId,
     metadata: {
       name: 'proto',
-      description: 'Proto - Fixed-supply token launchpad on Robinhood Chain',
+      description: 'Proto - Multi-chain token launchpad on Robinhood & Arc Chain',
       url:
         (import.meta.env.VITE_APP_URL as string | undefined) ??
         (typeof window !== 'undefined' ? window.location.origin : 'https://proto.family'),

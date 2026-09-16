@@ -138,7 +138,62 @@ export const ROBINHOOD_TESTNET: NetworkConfig = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Testnet: Arc Testnet (Chain ID 5042002) - Circle Stablecoin L1
+// Verified infrastructure deployments from ayoo.club / Arc Ecosystem
+// ---------------------------------------------------------------------------
+
+export const ARC_TESTNET: NetworkConfig = {
+  chainId: 5042002,
+  name: 'Arc Testnet',
+  nativeCurrency: {
+    name: 'USD Coin',
+    symbol: 'USDC',
+    decimals: 6,
+  },
+  rpcUrl: 'https://rpc.testnet.arc.network',
+  blockExplorer: 'https://testnet.arcscan.app',
+  contracts: {
+    factory: '0x92cB206557907e4955faEeBd387D9602872d52cA',
+    factoryV2: '0x9C7Ff544aAc9f4A4ECAE3ca8c110740888fF70E3',
+    locker: '0x561723e55C27929f8C5317532c331c2a26060782',
+    uniswapV3Factory: '0x867E249D61cb0951433FAfd72b15Acc63646D266',
+    positionManager: '0x7bD82CA0E7fd5F4EfFFd69cb413CBf8E954c3660',
+    swapRouter: '0x5b8953eFc63F70377fa8C23FBEE0EAD632B277Cd',
+    quoterV2: '0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7',
+    weth: '0x3600000000000000000000000000000000000000', // Native USDC precompile
+  },
+  launchConfigV2: {
+    supply: 1_000_000_000n * 10n ** 18n,
+    curveTokenAllocation: 800_000_000n * 10n ** 18n,
+    graduationTargetWei: 8_400_000_000n, // 8,400 USDC (6 decimals)
+    platformFeeBps: 100,
+    snipeTaxMaxBps: 9900,
+  },
+  launchConfig: {
+    supply: 1_000_000_000n * 10n ** 18n,
+    poolFee: 10000,
+    launchFeeWei: 1_000_000n, // 1 USDC (6 decimals)
+    graduationThresholdWei: 8_400_000_000n, // 8,400 USDC
+    antiSnipeBlocks: 2,
+    maxHoldPercent: 5.0,
+    maxBuyPercent: 5.5,
+    protocolFeeSharePercent: 30,
+    creatorFeeSharePercent: 70,
+  },
+};
+
 export const SUPPORTED_CHAINS: Record<number, NetworkConfig> = {
   [ROBINHOOD_CHAIN.chainId]: ROBINHOOD_CHAIN,
+  [ARC_TESTNET.chainId]: ARC_TESTNET,
   [ROBINHOOD_TESTNET.chainId]: ROBINHOOD_TESTNET,
 };
+
+export const DEFAULT_NETWORK: NetworkConfig = ROBINHOOD_CHAIN;
+
+export function getNetworkConfig(chainId?: number): NetworkConfig {
+  if (chainId && SUPPORTED_CHAINS[chainId]) {
+    return SUPPORTED_CHAINS[chainId];
+  }
+  return DEFAULT_NETWORK;
+}

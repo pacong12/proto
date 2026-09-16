@@ -5,7 +5,7 @@ import path from 'node:path';
 export default defineConfig({
   title: 'Proto User Guide',
   description:
-    'Clean, step-by-step user guide and knowledge base for trading, launching, and exploring tokens on Robinhood Chain.',
+    'Clean, step-by-step user guide and knowledge base for trading, launching, and exploring tokens on Robinhood Chain and Arc Network.',
   srcDir: './src',
   outDir: './dist',
   cleanUrls: true,
@@ -185,7 +185,7 @@ export default defineConfig({
         text: 'Network & Contracts',
         collapsed: false,
         items: [
-          { text: 'Robinhood Chain Setup', link: '/integration/network' },
+          { text: 'Network Setup (Robinhood & Arc)', link: '/integration/network' },
           { text: 'Verified Smart Contracts', link: '/integration/contracts' },
         ],
       },
@@ -203,7 +203,7 @@ export default defineConfig({
     footer: {
       message: 'Released under the MIT License.',
       copyright:
-        'Copyright © 2026 Proto Labs. Non-custodial launchpad protocol on Robinhood Chain.',
+        'Copyright © 2026 Proto Labs. Multi-chain launchpad protocol on Robinhood Chain and Arc Network.',
     },
   },
 });

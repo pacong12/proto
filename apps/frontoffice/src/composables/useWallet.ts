@@ -7,7 +7,12 @@ import {
   useDisconnect,
 } from '@reown/appkit/vue';
 import type { EIP1193Provider } from 'viem';
-import { ROBINHOOD_CHAIN, ROBINHOOD_TESTNET, type NetworkConfig } from '@proto/shared-types';
+import {
+  ROBINHOOD_CHAIN,
+  SUPPORTED_CHAINS,
+  getNetworkConfig,
+  type NetworkConfig,
+} from '@proto/shared-types';
 import { getPublicClient } from '../lib/viem-client';
 import { appKitConfigured } from '../lib/appkit';
 import {
@@ -48,22 +53,20 @@ export function useWallet() {
   });
 
   const formattedBalance = computed(() => {
-    const eth = Number(balanceWei.value) / 1e18;
-    return `${eth.toFixed(4)} ETH`;
+    const decimals = activeNetwork.value.nativeCurrency.decimals;
+    const divisor = 10 ** decimals;
+    const val = Number(balanceWei.value) / divisor;
+    return `${val.toFixed(4)} ${activeNetwork.value.nativeCurrency.symbol}`;
   });
 
   const isConnected = computed(() => walletAddress.value !== null);
 
   const isCorrectNetwork = computed(() => {
-    return (
-      walletChainId.value === ROBINHOOD_CHAIN.chainId ||
-      walletChainId.value === ROBINHOOD_TESTNET.chainId
-    );
+    return Boolean(walletChainId.value && SUPPORTED_CHAINS[walletChainId.value]);
   });
 
   const activeNetwork = computed((): NetworkConfig => {
-    if (walletChainId.value === ROBINHOOD_TESTNET.chainId) return ROBINHOOD_TESTNET;
-    return ROBINHOOD_CHAIN;
+    return getNetworkConfig(walletChainId.value ?? undefined);
   });
 
   async function syncBalance(addressValue?: `0x${string}`) {
@@ -106,13 +109,12 @@ export function useWallet() {
         // Validate the chain before syncing balance (fix MED-01).
         // getPublicClient() follows the active chain, but we must not query an
         // unsupported chain at all; set balance to 0 and warn instead.
-        const isSupportedChain =
-          chain === ROBINHOOD_CHAIN.chainId || chain === ROBINHOOD_TESTNET.chainId;
+        const isSupportedChain = Boolean(chain && SUPPORTED_CHAINS[chain]);
 
         if (!isSupportedChain) {
           console.warn(
             `[useWallet] Auto-reconnect on unsupported chain ${chain}. ` +
-              'Balance will show 0 until the user switches to Robinhood Chain.',
+              'Balance will show 0 until the user switches to a supported network.',
           );
           balanceWei.value = 0n;
         } else {

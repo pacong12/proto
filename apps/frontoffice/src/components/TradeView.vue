@@ -175,7 +175,7 @@
                     >
                       <th class="py-2.5 px-3 font-semibold">Type</th>
                       <th class="py-2.5 px-3 font-semibold">Price (USD)</th>
-                      <th class="py-2.5 px-3 font-semibold">ETH</th>
+                      <th class="py-2.5 px-3 font-semibold">{{ currencySymbol }}</th>
                       <th class="py-2.5 px-3 font-semibold">{{ currentToken.symbol }}</th>
                       <th class="py-2.5 px-3 font-semibold">Trader</th>
                       <th class="py-2.5 px-3 font-semibold">Time</th>
@@ -213,9 +213,9 @@
                         }}
                       </td>
 
-                      <!-- ETH Amount -->
+                      <!-- Asset Amount -->
                       <td class="py-2.5 px-3 whitespace-nowrap text-black dark:text-white">
-                        {{ parseFloat(trade.wethAmount).toFixed(4) }} ETH
+                        {{ parseFloat(trade.wethAmount).toFixed(4) }} {{ currencySymbol }}
                       </td>
 
                       <!-- Token Amount -->
@@ -255,11 +255,11 @@
                       <!-- Explorer Icon -->
                       <td class="py-2.5 px-3 whitespace-nowrap text-right">
                         <a
-                          :href="`https://robinhoodchain.blockscout.com/tx/${trade.transactionHash}`"
+                          :href="`${explorerUrl}/tx/${trade.transactionHash}`"
                           target="_blank"
                           rel="noopener noreferrer"
                           class="inline-flex items-center text-black dark:text-white hover:text-emerald-400 transition-colors"
-                          title="View on Blockscout"
+                          title="View on Explorer"
                         >
                           <ExternalLink class="w-3.5 h-3.5" />
                         </a>
@@ -493,7 +493,7 @@
                       <!-- Explorer Link -->
                       <td class="py-2.5 px-3 whitespace-nowrap text-right">
                         <a
-                          :href="`https://robinhoodchain.blockscout.com/address/${holder.address}`"
+                          :href="`${explorerUrl}/address/${holder.address}`"
                           target="_blank"
                           rel="noopener noreferrer"
                           class="inline-flex items-center text-black dark:text-white hover:text-emerald-400 transition-colors"
@@ -581,7 +581,7 @@
                   </a>
 
                   <a
-                    :href="`https://robinhoodchain.blockscout.com/address/${currentToken.address}`"
+                    :href="`${explorerUrl}/address/${currentToken.address}`"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -591,12 +591,12 @@
                       class="h-7 px-2 text-[11px] font-mono flex items-center gap-1 text-black dark:text-white border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     >
                       <ExternalLink class="w-3 h-3" />
-                      <span>Blockscout</span>
+                      <span>Explorer</span>
                     </Button>
                   </a>
 
                   <a
-                    :href="`https://robinhoodchain.blockscout.com/address/${currentToken.poolAddress}`"
+                    :href="`${explorerUrl}/address/${currentToken.poolAddress}`"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -612,7 +612,10 @@
               </div>
 
               <p class="text-xs leading-relaxed text-black dark:text-white">
-                {{ currentToken.description || 'Fixed-supply launchpad token on Robinhood Chain.' }}
+                {{
+                  currentToken.description ||
+                  `Fixed-supply launchpad token on ${activeNetwork.name}.`
+                }}
               </p>
 
               <!-- Market Stats Grid -->
@@ -650,7 +653,7 @@
                 <div class="flex justify-between text-xs text-black dark:text-white">
                   <span class="font-medium">
                     Graduation Progress ({{ currentMarketData.pairedPrincipalWeth }} /
-                    {{ currentMarketData.graduationThresholdWeth }} ETH)
+                    {{ currentMarketData.graduationThresholdWeth }} {{ currencySymbol }})
                   </span>
                   <span class="font-mono font-bold text-emerald-400">
                     {{ (currentMarketData.graduationProgress * 100).toFixed(1) }}%
@@ -688,7 +691,7 @@
           >
             <span>
               {{ currentMarketData.pairedPrincipalWeth }} /
-              {{ currentMarketData.graduationThresholdWeth }} ETH
+              {{ currentMarketData.graduationThresholdWeth }} {{ currencySymbol }}
             </span>
             <span>
               {{
@@ -819,7 +822,7 @@
                 <span class="font-bold">
                   {{ isBuy ? formatEthBalance(balanceWei) : formatTokenBalance(userTokenBalance) }}
                 </span>
-                <span>{{ isBuy ? 'ETH' : currentToken.symbol }}</span>
+                <span>{{ isBuy ? currencySymbol : currentToken.symbol }}</span>
               </div>
             </div>
 
@@ -831,17 +834,17 @@
               class="text-lg font-mono text-black dark:text-white bg-transparent border-zinc-200 dark:border-zinc-800"
             />
 
-            <!-- Quick Buy ETH Presets (Only in Buy mode) -->
+            <!-- Quick Buy Presets (Only in Buy mode) -->
             <div v-if="isBuy" class="grid grid-cols-4 gap-1.5 pt-1">
               <Button
-                v-for="ethVal in ['0.01', '0.05', '0.1', '0.5']"
+                v-for="ethVal in buyPresets"
                 :key="ethVal"
                 size="sm"
                 variant="secondary"
                 class="h-7 text-xs font-mono font-semibold text-emerald-500 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30"
                 @click="applyQuickBuy(ethVal)"
               >
-                {{ ethVal }} ETH
+                {{ ethVal }} {{ currencySymbol }}
               </Button>
             </div>
 
@@ -863,7 +866,7 @@
           <div class="space-y-1.5">
             <div class="flex justify-between text-xs text-black dark:text-white">
               <span>You receive (estimated)</span>
-              <span class="font-mono">{{ isBuy ? currentToken.symbol : 'ETH' }}</span>
+              <span class="font-mono">{{ isBuy ? currentToken.symbol : currencySymbol }}</span>
             </div>
             <div
               class="w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/60 px-3.5 py-3 text-lg font-mono text-black dark:text-white"
@@ -898,7 +901,7 @@
             class="text-xs text-black dark:text-white bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 flex items-start gap-2"
           >
             <AlertCircle class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-            <span>Connect your wallet to trade on Robinhood Chain.</span>
+            <span>Connect your wallet to trade on {{ activeNetwork.name }}.</span>
           </div>
 
           <div
@@ -910,7 +913,7 @@
               <span>Swap Confirmed!</span>
             </div>
             <a
-              :href="`https://robinhoodchain.blockscout.com/tx/${swapSuccessTx}`"
+              :href="`${explorerUrl}/tx/${swapSuccessTx}`"
               target="_blank"
               rel="noopener noreferrer"
               class="text-[11px] font-mono underline hover:text-emerald-400 transition flex items-center gap-1 text-zinc-600 dark:text-zinc-300"
@@ -1002,7 +1005,14 @@ interface TokenHolder {
 }
 
 const { executeSwap, isSwapping, swapError, slippage } = useSwap();
-const { isConnected, account, balanceWei } = useWallet();
+const { isConnected, account, balanceWei, activeNetwork } = useWallet();
+const currencySymbol = computed(() => activeNetwork.value.nativeCurrency.symbol);
+const explorerUrl = computed(() => activeNetwork.value.blockExplorer);
+const buyPresets = computed(() => {
+  return currencySymbol.value === 'USDC'
+    ? ['10', '50', '100', '500']
+    : ['0.01', '0.05', '0.1', '0.5'];
+});
 
 const tradeTab = ref<'buy' | 'sell'>('buy');
 const isBuy = computed(() => tradeTab.value === 'buy');
@@ -1117,7 +1127,8 @@ function computeCurveBuyOutput(ethIn: number): number {
   if (ethIn <= 0) return 0;
   const netEth = ethIn * 0.99; // 1% fee
   const currentRaised = parseFloat(currentMarketData.value.pairedPrincipalWeth) || 0;
-  const virtualEth = 3.0 + currentRaised;
+  const isArc = currencySymbol.value === 'USDC';
+  const virtualEth = (isArc ? 400.0 : 3.0) + currentRaised;
   const virtualTokens = 1073000000;
   const currentK = virtualEth * virtualTokens;
   const newEthReserve = virtualEth + netEth;
@@ -1128,7 +1139,8 @@ function computeCurveBuyOutput(ethIn: number): number {
 function computeCurveSellOutput(tokensIn: number): number {
   if (tokensIn <= 0) return 0;
   const currentRaised = parseFloat(currentMarketData.value.pairedPrincipalWeth) || 0;
-  const virtualEth = 3.0 + currentRaised;
+  const isArc = currencySymbol.value === 'USDC';
+  const virtualEth = (isArc ? 400.0 : 3.0) + currentRaised;
   const virtualTokens = 1073000000;
   const currentK = virtualEth * virtualTokens;
   const newTokenReserve = virtualTokens + tokensIn;
@@ -1139,7 +1151,7 @@ function computeCurveSellOutput(tokensIn: number): number {
 
 const estimatedOutput = computed(() => {
   const input = parseFloat(amountIn.value) || 0;
-  if (input <= 0) return `0 ${isBuy.value ? currentToken.value.symbol : 'ETH'}`;
+  if (input <= 0) return `0 ${isBuy.value ? currentToken.value.symbol : currencySymbol.value}`;
 
   const isV2OnCurve = currentToken.value.version === 'v2' && !currentMarketData.value.isGraduated;
 
@@ -1152,7 +1164,8 @@ const estimatedOutput = computed(() => {
     const weth = isV2OnCurve
       ? computeCurveSellOutput(input)
       : input * (currentMarketData.value.priceInWeth || 0);
-    return `${weth.toFixed(6)} ETH`;
+    const decimals = currencySymbol.value === 'USDC' ? 2 : 6;
+    return `${weth.toFixed(decimals)} ${currencySymbol.value}`;
   }
 });
 function applyQuickBuy(val: string) {

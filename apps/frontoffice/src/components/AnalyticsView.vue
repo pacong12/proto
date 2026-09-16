@@ -74,7 +74,7 @@
             </h2>
             <p class="text-xs text-zinc-500 dark:text-zinc-400">Token deployments over 24h</p>
           </div>
-          <Badge variant="graduated">Robinhood L2</Badge>
+          <Badge variant="graduated">{{ activeNetwork.name }}</Badge>
         </div>
 
         <ReactiveBarChart :data="tokenChartData" :height="180" unit="tokens" />
@@ -101,11 +101,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useI18n } from '@/lib/i18n';
+import { useWallet } from '@/composables/useWallet';
 import { ROBINHOOD_CHAIN } from '@proto/shared-types';
 
 const { t } = useI18n();
+const { activeNetwork } = useWallet();
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import ReactiveBarChart, { type ChartDataPoint } from '@/components/ui/chart/ReactiveBarChart.vue';
@@ -134,17 +136,17 @@ const tokenChartData = ref<ChartDataPoint[]>([
   { label: '24:00', value: 0 },
 ]);
 
-const contractEntries = [
-  { name: 'Launchpad Factory (v1 Direct Pool)', address: ROBINHOOD_CHAIN.contracts.factory },
+const contractEntries = computed(() => [
+  { name: 'Launchpad Factory (v1 Direct Pool)', address: activeNetwork.value.contracts.factory },
   {
     name: 'Launchpad Factory (v2 Bonding Curve)',
-    address: ROBINHOOD_CHAIN.contracts.factoryV2 || '0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e',
+    address: activeNetwork.value.contracts.factoryV2 || activeNetwork.value.contracts.factory,
   },
-  { name: 'Liquidity Locker', address: ROBINHOOD_CHAIN.contracts.locker },
-  { name: 'Uniswap V3 Factory', address: ROBINHOOD_CHAIN.contracts.uniswapV3Factory },
-  { name: 'Position Manager', address: ROBINHOOD_CHAIN.contracts.positionManager },
-  { name: 'Swap Router', address: ROBINHOOD_CHAIN.contracts.swapRouter },
-];
+  { name: 'Liquidity Locker', address: activeNetwork.value.contracts.locker },
+  { name: 'Uniswap V3 Factory', address: activeNetwork.value.contracts.uniswapV3Factory },
+  { name: 'Position Manager', address: activeNetwork.value.contracts.positionManager },
+  { name: 'Swap Router', address: activeNetwork.value.contracts.swapRouter },
+]);
 
 onMounted(async () => {
   try {

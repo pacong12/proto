@@ -72,7 +72,7 @@
             {{ t('network') }}
           </h4>
           <ul class="space-y-1.5 text-xs text-zinc-500 font-mono">
-            <li>Robinhood Chain (4663)</li>
+            <li>{{ activeNetwork.name }} ({{ activeNetwork.chainId }})</li>
             <li>Uniswap V3 Factory (1% Fee)</li>
             <li>Direct Permanent Lock</li>
             <li>70% Creator / 30% Protocol</li>
@@ -152,8 +152,10 @@ import SearchDialog from './components/SearchDialog.vue';
 import PrivacyDialog from './components/PrivacyDialog.vue';
 import CookieConsentBanner from './components/CookieConsentBanner.vue';
 import { walletAddress, walletModalOpen } from './lib/wallet-store';
+import { useWallet } from './composables/useWallet';
 
 const { t } = useI18n();
+const { activeNetwork } = useWallet();
 const router = useRouter();
 const docsUrl = import.meta.env.VITE_DOCS_URL || 'https://docs.proto.family';
 

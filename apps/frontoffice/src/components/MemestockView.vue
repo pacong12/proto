@@ -107,7 +107,7 @@
             <p class="text-xs leading-relaxed line-clamp-2">
               {{
                 item.token.description ||
-                'Community-backed fixed-supply memestock on Robinhood Chain.'
+                `Community-backed fixed-supply memestock on ${activeNetwork.name}.`
               }}
             </p>
 
@@ -126,7 +126,11 @@
               >
             </div>
             <div class="flex justify-between text-xs font-mono">
-              <span>Graduation (4.2 ETH)</span>
+              <span
+                >Graduation ({{
+                  activeNetwork.nativeCurrency.symbol === 'USDC' ? '8.4K USDC' : '4.2 ETH'
+                }})</span
+              >
               <span class="text-emerald-400 font-semibold">
                 {{ (item.marketData.graduationProgress * 100).toFixed(1) }}%
               </span>
@@ -165,11 +169,14 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Empty } from '@/components/ui/empty';
 import { Pagination } from '@/components/ui/pagination';
 import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
+import { useWallet } from '@/composables/useWallet';
 
 defineEmits<{
   (e: 'selectToken', address: string): void;
   (e: 'selectTab', tab: string): void;
 }>();
+
+const { activeNetwork } = useWallet();
 
 const selectedSort = ref('Trending');
 const loading = ref(true);

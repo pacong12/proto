@@ -1,7 +1,8 @@
 import { ref } from 'vue';
 import { parseAbi, erc20Abi, parseEther } from 'viem';
-import { ROBINHOOD_CHAIN, swapRouterAbi } from '@proto/shared-types';
+import { getNetworkConfig, swapRouterAbi } from '@proto/shared-types';
 import { getPublicClient, getWalletClient } from '../lib/viem-client';
+import { walletChainId } from '../lib/wallet-store';
 
 const bondingCurveAbi = parseAbi([
   'function buy(uint256 minTokensOut) external payable returns (uint256 tokensOut)',
@@ -167,9 +168,11 @@ export function useSwap() {
         }
       }
 
+      const network = getNetworkConfig(walletChainId.value ?? undefined);
+
       // Default path: Uniswap V3 SwapRouter.
-      const tokenIn = params.isBuy ? ROBINHOOD_CHAIN.contracts.weth : params.tokenAddress;
-      const tokenOut = params.isBuy ? params.tokenAddress : ROBINHOOD_CHAIN.contracts.weth;
+      const tokenIn = params.isBuy ? network.contracts.weth : params.tokenAddress;
+      const tokenOut = params.isBuy ? params.tokenAddress : network.contracts.weth;
 
       if (!params.isBuy) {
         // Check existing allowance before approving (fix C-03).
@@ -177,7 +180,7 @@ export function useSwap() {
           address: params.tokenAddress,
           abi: erc20Abi,
           functionName: 'allowance',
-          args: [account, ROBINHOOD_CHAIN.contracts.swapRouter],
+          args: [account, network.contracts.swapRouter],
         });
 
         if (currentAllowance < amountInWei) {
@@ -185,7 +188,7 @@ export function useSwap() {
             address: params.tokenAddress,
             abi: erc20Abi,
             functionName: 'approve',
-            args: [ROBINHOOD_CHAIN.contracts.swapRouter, amountInWei],
+            args: [network.contracts.swapRouter, amountInWei],
             account,
             chain: walletClient.chain,
           });
@@ -200,14 +203,14 @@ export function useSwap() {
       );
 
       const swapHash = await walletClient.writeContract({
-        address: ROBINHOOD_CHAIN.contracts.swapRouter,
+        address: network.contracts.swapRouter,
         abi: swapRouterAbi,
         functionName: 'exactInputSingle',
         args: [
           {
             tokenIn,
             tokenOut,
-            fee: ROBINHOOD_CHAIN.launchConfig.poolFee,
+            fee: network.launchConfig.poolFee,
             recipient: account,
             deadline: BigInt(Math.floor(Date.now() / 1000) + 1200),
             amountIn: amountInWei,

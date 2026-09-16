@@ -31,7 +31,7 @@
             {{ totalTokensCount }} Tokens
           </p>
         </div>
-        <span class="text-xs font-mono text-zinc-400">Robinhood L2</span>
+        <span class="text-xs font-mono text-zinc-400">{{ activeNetwork.name }}</span>
       </div>
 
       <!-- Top Gainers -->
@@ -497,8 +497,10 @@ import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
 import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
 import { useI18n } from '@/lib/i18n';
+import { useWallet } from '@/composables/useWallet';
 
 const { t } = useI18n();
+const { activeNetwork } = useWallet();
 
 defineEmits<{
   (e: 'selectToken', address: string): void;
