@@ -111,6 +111,50 @@ describe('Token Use Cases & Controller', () => {
 
     expect(envelope.success).toBe(true);
     expect(envelope.data).toBeInstanceOf(Array);
+    expect(envelope.data?.length).toBeGreaterThanOrEqual(1);
+    expect(envelope.data?.[0]).toHaveProperty('address');
+    expect(envelope.data?.[0]).toHaveProperty('balance');
+    expect(envelope.data?.[0]).toHaveProperty('percent');
+  });
+
+  it('fetches multiple holders when initial buy and trades exist', async () => {
+    await repository.save({
+      address: sampleAddress,
+      name: 'Mock Chain Token',
+      symbol: 'MOCK',
+      decimals: 18,
+      totalSupply: '1000000000000000000000000000',
+      logo: 'ipfs://mock',
+      description: 'Fetched from chain indexer',
+      socials: { twitter: 'https://x.com/mock' },
+      deployer: '0x1111111111111111111111111111111111111111',
+      pairedToken: '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73',
+      poolAddress: '0x2222222222222222222222222222222222222222',
+      isToken0: true,
+      poolFee: 10000,
+      positionId: 1n,
+      restrictionsEndBlock: 102n,
+      launchBlock: 100n,
+      createdAt: Date.now(),
+      initialBuyAmount: '50000000000000000000000000',
+    });
+
+    await repository.saveTrade({
+      id: 'trade-holder-1',
+      tokenAddress: sampleAddress,
+      poolAddress: '0x2222222222222222222222222222222222222222',
+      trader: '0x4444444444444444444444444444444444444444',
+      isBuy: true,
+      tokenAmount: '10000000000000000000000000',
+      wethAmount: '0.05',
+      priceUsd: 0.5,
+      blockNumber: 101n,
+      transactionHash: '0xhash-holder-1',
+      timestamp: Date.now(),
+    });
+
+    const envelope = await controller.getHolders(sampleAddress);
+    expect(envelope.success).toBe(true);
     expect(envelope.data?.length).toBeGreaterThanOrEqual(2);
   });
 
