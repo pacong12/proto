@@ -326,7 +326,7 @@ function copyAddress() {
 
               <DropdownMenuSeparator class="my-1 border-zinc-200 dark:border-zinc-800" />
 
-              <!-- Language Submenu using DropdownMenuPortal -->
+              <!-- Language Submenu using DropdownMenuPortal (Scroll-Free 2-Column Grid) -->
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger
                   class="flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
@@ -341,25 +341,25 @@ function copyAddress() {
                 </DropdownMenuSubTrigger>
                 <DropdownMenuPortal>
                   <DropdownMenuSubContent
-                    class="w-48 max-h-64 overflow-y-auto p-1 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-xl z-50"
+                    class="w-80 p-1.5 grid grid-cols-2 gap-1 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-xl z-50 overflow-visible"
                   >
                     <DropdownMenuItem
                       v-for="item in locales"
                       :key="item.code"
-                      class="flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                      class="flex items-center justify-between px-2 py-1.5 text-xs rounded-lg cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
                       :class="{
                         'font-bold text-emerald-500 dark:text-emerald-400 bg-emerald-500/10':
                           item.code === locale,
                       }"
                       @click="setLocale(item.code)"
                     >
-                      <div class="flex items-center gap-2">
+                      <div class="flex items-center gap-1.5 truncate">
                         <span class="text-sm leading-none">{{ item.flag }}</span>
-                        <span>{{ item.nativeName }}</span>
+                        <span class="truncate">{{ item.nativeName }}</span>
                       </div>
                       <Check
                         v-if="item.code === locale"
-                        class="w-3.5 h-3.5 text-emerald-500 shrink-0"
+                        class="w-3.5 h-3.5 text-emerald-500 shrink-0 ml-1"
                       />
                     </DropdownMenuItem>
                   </DropdownMenuSubContent>
@@ -450,7 +450,7 @@ function copyAddress() {
                 <span class="text-[10px] font-mono text-zinc-400 capitalize">{{ mode }}</span>
               </DropdownMenuItem>
 
-              <!-- Language Submenu using DropdownMenuPortal -->
+              <!-- Language Submenu using DropdownMenuPortal (Scroll-Free 2-Column Grid) -->
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger
                   class="flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
@@ -465,25 +465,25 @@ function copyAddress() {
                 </DropdownMenuSubTrigger>
                 <DropdownMenuPortal>
                   <DropdownMenuSubContent
-                    class="w-48 max-h-64 overflow-y-auto p-1 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-xl z-50"
+                    class="w-80 p-1.5 grid grid-cols-2 gap-1 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-xl z-50 overflow-visible"
                   >
                     <DropdownMenuItem
                       v-for="item in locales"
                       :key="item.code"
-                      class="flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                      class="flex items-center justify-between px-2 py-1.5 text-xs rounded-lg cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
                       :class="{
                         'font-bold text-emerald-500 dark:text-emerald-400 bg-emerald-500/10':
                           item.code === locale,
                       }"
                       @click="setLocale(item.code)"
                     >
-                      <div class="flex items-center gap-2">
+                      <div class="flex items-center gap-1.5 truncate">
                         <span class="text-sm leading-none">{{ item.flag }}</span>
-                        <span>{{ item.nativeName }}</span>
+                        <span class="truncate">{{ item.nativeName }}</span>
                       </div>
                       <Check
                         v-if="item.code === locale"
-                        class="w-3.5 h-3.5 text-emerald-500 shrink-0"
+                        class="w-3.5 h-3.5 text-emerald-500 shrink-0 ml-1"
                       />
                     </DropdownMenuItem>
                   </DropdownMenuSubContent>
