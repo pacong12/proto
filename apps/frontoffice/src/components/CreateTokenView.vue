@@ -244,7 +244,13 @@
             </SelectContent>
           </Select>
           <p class="text-[11px] text-zinc-500 dark:text-zinc-400">
-            {{ selectedVersion === 'v2' ? t('v2GraduatesHint') : t('v1PairsHint') }}
+            {{
+              selectedVersion === 'v2'
+                ? activeNetwork.chainId === 5042 || activeNetwork.chainId === 5042002
+                  ? 'Graduates once the curve raises 8,000 USDC into Uniswap liquidity.'
+                  : t('v2GraduatesHint')
+                : t('v1PairsHint')
+            }}
           </p>
         </div>
 
@@ -376,11 +382,41 @@
 
         <!-- Form Footer Rate & Submit Button -->
         <div class="pt-4 border-t border-zinc-200 dark:border-zinc-800 space-y-3">
-          <div class="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
-            <span>{{ t('ethPairDue') }}</span>
-            <span class="font-mono font-bold text-black dark:text-white">
-              {{ totalPairDue }}
-            </span>
+          <!-- Launch Cost Summary Breakdown -->
+          <div
+            class="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/50 p-3 space-y-2 text-xs font-mono"
+          >
+            <div class="flex items-center justify-between text-zinc-500 dark:text-zinc-400">
+              <span>{{ t('platformCreationFee') }}</span>
+              <span class="font-bold text-black dark:text-white">
+                {{ launchFeeFormatted }} {{ currencySymbol }}
+              </span>
+            </div>
+
+            <div class="flex items-center justify-between text-zinc-500 dark:text-zinc-400">
+              <span>{{ t('developerBuy') }}</span>
+              <span class="font-semibold text-black dark:text-white">
+                {{
+                  form.initialBuyEth
+                    ? Number(form.initialBuyEth).toFixed(currencySymbol === 'USDC' ? 2 : 4)
+                    : (0).toFixed(currencySymbol === 'USDC' ? 2 : 4)
+                }}
+                {{ currencySymbol }}
+              </span>
+            </div>
+
+            <div
+              class="pt-1.5 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between"
+            >
+              <span
+                class="font-bold text-black dark:text-white uppercase tracking-wider text-[11px]"
+              >
+                {{ t('totalDue') }}
+              </span>
+              <span class="text-sm font-bold text-emerald-500 dark:text-emerald-400">
+                {{ totalPairDue }}
+              </span>
+            </div>
           </div>
 
           <Button
@@ -397,7 +433,7 @@
                   ? t('launchTokenBtn') + '...'
                   : !isConnected
                     ? t('connectWallet')
-                    : t('launchTokenBtn')
+                    : `${t('launchTokenBtn')} (${totalPairDue})`
             }}
           </Button>
 
@@ -465,14 +501,15 @@ function handleChainSelect(val: unknown) {
 const currencySymbol = computed(() => activeNetwork.value.nativeCurrency.symbol);
 const launchFeeFormatted = computed(() => {
   const feeWei = activeNetwork.value.launchConfig.launchFeeWei;
-  const decimals = activeNetwork.value.nativeCurrency.decimals;
-  return Number(feeWei) / 10 ** decimals;
+  // All EVM native msg.value (including Arc USDC gas) use 18 decimals per Circle Arc specs
+  const val = Number(feeWei) / 10 ** 18;
+  return val < 0.001 ? val.toFixed(4) : val.toFixed(2);
 });
 const totalPairDue = computed(() => {
   const buyAmount = parseFloat(form.value.initialBuyEth) || 0;
-  const decimals = activeNetwork.value.nativeCurrency.decimals;
-  const total = launchFeeFormatted.value + buyAmount;
-  return `${total.toFixed(decimals === 6 ? 2 : 4)} ${currencySymbol.value}`;
+  const fee = parseFloat(launchFeeFormatted.value) || 0;
+  const total = fee + buyAmount;
+  return `${total.toFixed(currencySymbol.value === 'USDC' ? 2 : 4)} ${currencySymbol.value}`;
 });
 
 const selectedVersion = ref<'v1' | 'v2'>('v2');

@@ -18,15 +18,22 @@ Proto 作为原生多链发射协议，同时支持 **Robinhood Chain Layer 2** 
 
 ---
 
-## 2. Arc Testnet (Circle 稳定币 L1)
+## 2. Arc Network (Circle 稳定币 L1)
 
-| 参数项                      | 参数值                            |
-| :-------------------------- | :-------------------------------- |
-| **网络名称 (Network Name)** | Arc Testnet                       |
-| **RPC 节点地址**            | `https://rpc.testnet.arc.network` |
-| **链 ID (Chain ID)**        | `5042002` (`0x4cef52`)            |
-| **原生货币符号**            | `USDC` (6 位精度 - 原生 Gas 资产) |
-| **区块浏览器**              | `https://testnet.arcscan.app`     |
+| 参数项                      | 参数值                                                |
+| :-------------------------- | :---------------------------------------------------- |
+| **网络名称 (Network Name)** | Arc Network (Mainnet)                                 |
+| **RPC 节点地址**            | `https://rpc.mainnet.arc.io`                          |
+| **链 ID (Chain ID)**        | `5042` (`0x13b2`)                                     |
+| **原生货币符号**            | `USDC` (原生 Gas: 18 位 msg.value / 6 位 ERC-20 视图) |
+| **区块浏览器**              | `https://explorer.arc.io`                             |
+
+---
+
+## 3. 测试网 (Testnets)
+
+- **Robinhood Chain Testnet**: 链 ID `46630`, RPC `https://rpc.testnet.chain.robinhood.com`
+- **Arc Testnet**: 链 ID `5042002`, RPC `https://rpc.testnet.arc.io`, 区块浏览器 `https://explorer.testnet.arc.io`
 
 ---
 

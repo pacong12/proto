@@ -20,13 +20,13 @@ To interact with Proto, add either network to your Web3 wallet.
 
 ## 2. Arc Network (Mainnet)
 
-| Parameter              | Value                            |
-| :--------------------- | :------------------------------- |
-| **Network Name**       | Arc Network                      |
-| **RPC URL**            | `https://arc.drpc.org`           |
-| **Chain ID**           | `5042` (`0x13b2`)                |
-| **Currency Symbol**    | `USDC` (6 decimals - Native Gas) |
-| **Block Explorer URL** | `https://arcscan.app`            |
+| Parameter              | Value                                                |
+| :--------------------- | :--------------------------------------------------- |
+| **Network Name**       | Arc Network                                          |
+| **RPC URL**            | `https://rpc.mainnet.arc.io`                         |
+| **Chain ID**           | `5042` (`0x13b2`)                                    |
+| **Currency Symbol**    | `USDC` (Native Gas: 18 dec msg.value / 6 dec ERC-20) |
+| **Block Explorer URL** | `https://explorer.arc.io`                            |
 
 ---
 
@@ -35,7 +35,7 @@ To interact with Proto, add either network to your Web3 wallet.
 For developers and test simulations:
 
 - **Robinhood Chain Testnet**: Chain ID `46630`, RPC `https://rpc.testnet.chain.robinhood.com`
-- **Arc Testnet**: Chain ID `5042002`, RPC `https://rpc.testnet.arc.network`, Explorer `https://testnet.arcscan.app`
+- **Arc Testnet**: Chain ID `5042002`, RPC `https://rpc.testnet.arc.io`, Explorer `https://explorer.testnet.arc.io`
 
 ---
 
