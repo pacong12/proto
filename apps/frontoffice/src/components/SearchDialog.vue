@@ -7,13 +7,18 @@
       class="w-full max-w-2xl sm:max-w-3xl shadow-2xl overflow-hidden p-0 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 rounded-2xl"
     >
       <!-- Search Input Header -->
-      <div class="flex items-center gap-3 px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800">
+      <div
+        class="flex items-center gap-3 px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800"
+      >
         <Search class="w-5 h-5 text-emerald-500 dark:text-emerald-400 shrink-0" />
         <Input
           ref="searchInput"
           v-model="query"
           type="text"
-          :placeholder="t('searchPlaceholder') || 'Search tokens by name, ticker, contract address, or 0x tx hash...'"
+          :placeholder="
+            t('searchPlaceholder') ||
+            'Search tokens by name, ticker, contract address, or 0x tx hash...'
+          "
           class="border-0 shadow-none focus-visible:ring-0 focus-visible:border-0 bg-transparent h-10 text-sm sm:text-base px-0 text-black dark:text-white placeholder:text-zinc-400"
           @keydown.esc="$emit('close')"
           @keydown="handleKeydown"

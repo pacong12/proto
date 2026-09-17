@@ -137,7 +137,9 @@
                   />
                   <span class="truncate">{{ net.name }}</span>
                 </div>
-                <span class="text-[9px] opacity-70 font-bold ml-1">{{ net.nativeCurrency.symbol }}</span>
+                <span class="text-[9px] opacity-70 font-bold ml-1">{{
+                  net.nativeCurrency.symbol
+                }}</span>
               </Button>
             </div>
           </div>
