@@ -15,7 +15,7 @@ import {
   SUPPORTED_CHAINS,
   type NetworkConfig,
 } from '@proto/shared-types';
-import { walletProvider, walletChainId } from './wallet-store';
+import { walletProvider, walletChainId, STORAGE_PROVIDER_ID_KEY } from './wallet-store';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -101,7 +101,36 @@ export function createWalletClientFromProvider(provider: unknown, chainId?: numb
 }
 
 export function getWalletClient(): WalletClient | null {
-  const provider = walletProvider.value;
+  let provider = walletProvider.value;
+
+  if (typeof window !== 'undefined') {
+    const win = window as unknown as Record<string, unknown>;
+    const bitget =
+      (win.bitget as { ethereum?: unknown } | undefined)?.ethereum ||
+      (win.bitkeep as { ethereum?: unknown } | undefined)?.ethereum ||
+      (
+        win.ethereum as
+          { providers?: Array<{ isBitKeep?: boolean; isBitget?: boolean }> } | undefined
+      )?.providers?.find((p) => p.isBitKeep || p.isBitget);
+
+    const storedId =
+      (typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_PROVIDER_ID_KEY) : '') ||
+      '';
+
+    // If Bitget is installed in the browser:
+    // Resolve Bitget directly when user preferred Bitget, or when OKX hijacked window.ethereum
+    if (bitget) {
+      const isExplicitOkx = storedId.toLowerCase().includes('okx');
+      const isBitgetPreferred =
+        storedId.toLowerCase().includes('bitget') || storedId.toLowerCase().includes('bitkeep');
+      const isProviderOkx = Boolean((provider as { isOkxWallet?: boolean } | null)?.isOkxWallet);
+
+      if (isBitgetPreferred || (isProviderOkx && !isExplicitOkx)) {
+        provider = bitget as typeof walletProvider.value;
+      }
+    }
+  }
+
   if (!provider) return null;
   return createWalletClientFromProvider(provider, walletChainId.value ?? undefined);
 }

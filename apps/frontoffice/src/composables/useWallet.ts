@@ -23,11 +23,13 @@ import {
   setConnectedWallet,
   walletAddress,
   walletChainId,
+  walletProviderId,
   walletModalOpen,
   walletProvider,
   STORAGE_CONNECTED_KEY,
   STORAGE_ADDRESS_KEY,
   STORAGE_CHAIN_ID_KEY,
+  STORAGE_PROVIDER_ID_KEY,
   type WalletProviderLike,
   type WalletSyncMessage,
 } from '../lib/wallet-store';
@@ -89,10 +91,66 @@ export function useWallet() {
     }
   }
 
-  function getInjectedProvider(): WalletProviderLike | null {
-    if (typeof window !== 'undefined' && 'ethereum' in window && window.ethereum) {
-      return window.ethereum as unknown as WalletProviderLike;
+  function getInjectedProvider(preferredId?: string | null): WalletProviderLike | null {
+    if (typeof window === 'undefined') return null;
+
+    const id = (
+      preferredId ||
+      walletProviderId.value ||
+      (typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_PROVIDER_ID_KEY) : '') ||
+      ''
+    ).toLowerCase();
+
+    const win = window as unknown as Record<string, unknown>;
+
+    // 1. Bitget / BitKeep dedicated injected provider
+    if (id.includes('bitget') || id.includes('bitkeep')) {
+      const bitkeep = win.bitkeep as { ethereum?: WalletProviderLike } | undefined;
+      const bitget = win.bitget as { ethereum?: WalletProviderLike } | undefined;
+      if (bitget?.ethereum) return bitget.ethereum;
+      if (bitkeep?.ethereum) return bitkeep.ethereum;
     }
+
+    // 2. OKX dedicated injected provider
+    if (id.includes('okx') || id.includes('okex')) {
+      const okx = win.okxwallet as WalletProviderLike | undefined;
+      if (okx) return okx;
+    }
+
+    // 3. Multi-provider array (EIP-5749 / window.ethereum.providers)
+    const eth = win.ethereum as
+      | (WalletProviderLike & {
+          providers?: Array<
+            WalletProviderLike & {
+              isBitKeep?: boolean;
+              isBitget?: boolean;
+              isOkxWallet?: boolean;
+              isMetaMask?: boolean;
+            }
+          >;
+        })
+      | undefined;
+
+    if (eth?.providers && Array.isArray(eth.providers)) {
+      if (id.includes('bitget') || id.includes('bitkeep')) {
+        const bitgetMatch = eth.providers.find((p) => p.isBitKeep || p.isBitget);
+        if (bitgetMatch) return bitgetMatch;
+      }
+      if (id.includes('okx') || id.includes('okex')) {
+        const okxMatch = eth.providers.find((p) => p.isOkxWallet);
+        if (okxMatch) return okxMatch;
+      }
+      if (id.includes('metamask')) {
+        const mmMatch = eth.providers.find((p) => p.isMetaMask && !p.isOkxWallet && !p.isBitget);
+        if (mmMatch) return mmMatch;
+      }
+    }
+
+    // 4. Fallback to window.ethereum
+    if (eth) {
+      return eth;
+    }
+
     return null;
   }
 

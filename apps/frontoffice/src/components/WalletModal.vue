@@ -352,12 +352,76 @@ function addWallet(candidate: WalletCandidate) {
 }
 
 function collectInjectedWallet() {
-  if (typeof window !== 'undefined' && 'ethereum' in window && window.ethereum) {
-    const provider = window.ethereum as unknown as WalletProviderLike;
+  if (typeof window === 'undefined') return;
+
+  const win = window as unknown as Record<string, unknown>;
+
+  // 1. Bitget / BitKeep specific injection
+  const bitget =
+    (win.bitget as { ethereum?: WalletProviderLike } | undefined)?.ethereum ||
+    (win.bitkeep as { ethereum?: WalletProviderLike } | undefined)?.ethereum;
+  if (bitget) {
     addWallet({
-      id: 'window.ethereum',
-      name: 'MetaMask / Injected Wallet',
-      provider,
+      id: 'com.bitget.web3',
+      name: 'Bitget Wallet',
+      provider: bitget,
+    });
+  }
+
+  // 2. OKX specific injection
+  const okx = win.okxwallet as WalletProviderLike | undefined;
+  if (okx) {
+    addWallet({
+      id: 'com.okex.wallet',
+      name: 'OKX Wallet',
+      provider: okx,
+    });
+  }
+
+  // 3. Multi-provider array in window.ethereum
+  const eth = win.ethereum as
+    | (WalletProviderLike & {
+        providers?: Array<
+          WalletProviderLike & {
+            isBitKeep?: boolean;
+            isBitget?: boolean;
+            isOkxWallet?: boolean;
+            isMetaMask?: boolean;
+          }
+        >;
+      })
+    | undefined;
+
+  if (eth?.providers && Array.isArray(eth.providers)) {
+    for (const p of eth.providers) {
+      if (p.isBitKeep || p.isBitget) {
+        addWallet({ id: 'com.bitget.web3', name: 'Bitget Wallet', provider: p });
+      } else if (p.isOkxWallet) {
+        addWallet({ id: 'com.okex.wallet', name: 'OKX Wallet', provider: p });
+      } else if (p.isMetaMask) {
+        addWallet({ id: 'io.metamask', name: 'MetaMask', provider: p });
+      }
+    }
+  } else if (eth) {
+    const rawEth = eth as unknown as {
+      isOkxWallet?: boolean;
+      isBitKeep?: boolean;
+      isBitget?: boolean;
+    };
+    const name = rawEth.isOkxWallet
+      ? 'OKX Wallet'
+      : rawEth.isBitKeep || rawEth.isBitget
+        ? 'Bitget Wallet'
+        : 'MetaMask / Injected Wallet';
+    const id = rawEth.isOkxWallet
+      ? 'com.okex.wallet'
+      : rawEth.isBitKeep || rawEth.isBitget
+        ? 'com.bitget.web3'
+        : 'window.ethereum';
+    addWallet({
+      id,
+      name,
+      provider: eth,
     });
   }
 }

@@ -69,6 +69,11 @@ if (!projectId) {
       socials: ['google', 'x', 'discord', 'github', 'apple', 'farcaster'],
       emailShowWallets: true,
     },
+    featuredWalletIds: [
+      '38f5d18bd8522c244bdd70cb4a68e0e7188651522e1e7c704d3252b861635166', // Bitget Wallet
+      'c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96', // MetaMask
+      '971e689d0a5be527bac79629b4ee9b925e82208e5168b73349669cccd711e5f', // OKX Wallet
+    ],
     enableWalletGuide: true,
     enableNetworkSwitch: true,
     enableReconnect: true,
