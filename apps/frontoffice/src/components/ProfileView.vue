@@ -344,13 +344,17 @@
                       }}
                     </td>
                     <td class="py-2.5 px-3 text-right">
-                      <RouterLink
-                        :to="`/launchpad/${pos.tokenAddress}`"
-                        class="text-emerald-400 hover:underline inline-flex items-center gap-1"
+                      <Button
+                        as-child
+                        variant="outline"
+                        size="sm"
+                        class="h-7 px-2.5 text-xs font-semibold gap-1 border-zinc-200 dark:border-zinc-800"
                       >
-                        Trade
-                        <ExternalLink class="w-3 h-3" />
-                      </RouterLink>
+                        <RouterLink :to="`/launchpad/${pos.tokenAddress}`">
+                          Trade
+                          <ExternalLink class="w-3 h-3" />
+                        </RouterLink>
+                      </Button>
                     </td>
                   </tr>
                 </tbody>
@@ -541,12 +545,12 @@
 
             <div class="space-y-1.5">
               <Label for="bio" class="text-xs font-medium">Bio / Description</Label>
-              <Input
+              <Textarea
                 id="bio"
                 v-model="editForm.bio"
                 placeholder="Short bio about yourself or your projects..."
-                maxlength="120"
-                class="text-xs"
+                :maxlength="120"
+                class="text-xs resize-none h-16"
               />
             </div>
 
@@ -563,39 +567,39 @@
             <div class="grid grid-cols-2 gap-3">
               <div class="space-y-1.5">
                 <Label for="edit-x" class="text-xs font-medium">X (Twitter)</Label>
-                <div
-                  class="flex items-center rounded-md border border-zinc-800 bg-transparent px-2.5 py-1 text-xs"
-                >
-                  <span class="text-zinc-500 font-mono">@</span>
-                  <input
+                <div class="relative">
+                  <span class="absolute left-2.5 top-2 text-xs font-mono text-zinc-400 select-none"
+                    >@</span
+                  >
+                  <Input
                     id="edit-x"
                     v-model="editForm.twitter"
                     placeholder="handle"
-                    class="w-full bg-transparent px-1 outline-none text-xs"
+                    class="text-xs pl-7"
                   />
                 </div>
               </div>
 
               <div class="space-y-1.5">
                 <Label for="edit-tg" class="text-xs font-medium">Telegram</Label>
-                <div
-                  class="flex items-center rounded-md border border-zinc-800 bg-transparent px-2.5 py-1 text-xs"
-                >
-                  <span class="text-zinc-500 font-mono">t.me/</span>
-                  <input
+                <div class="relative">
+                  <span class="absolute left-2.5 top-2 text-xs font-mono text-zinc-400 select-none"
+                    >t.me/</span
+                  >
+                  <Input
                     id="edit-tg"
                     v-model="editForm.telegram"
                     placeholder="handle"
-                    class="w-full bg-transparent px-1 outline-none text-xs"
+                    class="text-xs pl-11"
                   />
                 </div>
               </div>
             </div>
 
             <DialogFooter class="pt-3 gap-2">
-              <Button type="button" variant="ghost" size="sm" @click="editModalOpen = false"
-                >Cancel</Button
-              >
+              <Button type="button" variant="outline" size="sm" @click="editModalOpen = false">
+                Cancel
+              </Button>
               <Button type="submit" variant="default" size="sm">Save Profile</Button>
             </DialogFooter>
           </form>
@@ -642,7 +646,7 @@
           </div>
 
           <DialogFooter class="gap-2">
-            <Button variant="ghost" size="sm" @click="ctoModalOpen = false">Cancel</Button>
+            <Button variant="outline" size="sm" @click="ctoModalOpen = false">Cancel</Button>
             <Button
               variant="default"
               size="sm"
@@ -688,10 +692,12 @@ const { t } = useI18n();
 const { activeNetwork } = useWallet();
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, Jazzicon } from '@/components/ui/avatar';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
   Dialog,

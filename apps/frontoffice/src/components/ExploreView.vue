@@ -72,20 +72,17 @@
     >
       <!-- Market Tabs Navigation -->
       <div class="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar">
-        <button
+        <Button
           type="button"
           v-for="tab in marketTabs"
           :key="tab.value"
           @click="activeMarketTab = tab.value"
-          :class="[
-            'px-3.5 py-2 text-xs font-bold rounded-lg transition whitespace-nowrap cursor-pointer',
-            activeMarketTab === tab.value
-              ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
-              : 'text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white',
-          ]"
+          :variant="activeMarketTab === tab.value ? 'secondary' : 'ghost'"
+          size="sm"
+          class="h-8 px-3.5 text-xs font-bold rounded-lg transition whitespace-nowrap cursor-pointer"
         >
           {{ tab.label }}
-        </button>
+        </Button>
       </div>
 
       <!-- Right Action: Launch Token Primary Button -->
@@ -122,44 +119,35 @@
         <!-- Lifecycle Status Filter: All / Curve / Graduated -->
         <div
           v-if="activeMarketTab !== 'trades'"
-          class="inline-flex items-center p-0.5 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium"
+          class="inline-flex items-center p-0.5 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium gap-0.5"
         >
-          <button
+          <Button
             type="button"
+            size="sm"
+            :variant="selectedLifecycle === 'all' ? 'secondary' : 'ghost'"
             @click="selectedLifecycle = 'all'"
-            :class="[
-              'px-2.5 py-1 rounded text-xs transition cursor-pointer',
-              selectedLifecycle === 'all'
-                ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white font-bold shadow-xs'
-                : 'text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white',
-            ]"
+            class="h-7 px-2.5 text-xs font-semibold rounded-md cursor-pointer"
           >
             {{ t('all') }}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            size="sm"
+            :variant="selectedLifecycle === 'curve' ? 'secondary' : 'ghost'"
             @click="selectedLifecycle = 'curve'"
-            :class="[
-              'px-2.5 py-1 rounded text-xs transition cursor-pointer',
-              selectedLifecycle === 'curve'
-                ? 'bg-zinc-100 dark:bg-zinc-800 text-emerald-500 font-bold shadow-xs'
-                : 'text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white',
-            ]"
+            class="h-7 px-2.5 text-xs font-semibold rounded-md cursor-pointer text-emerald-500"
           >
             {{ t('onCurve') }}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            size="sm"
+            :variant="selectedLifecycle === 'graduated' ? 'secondary' : 'ghost'"
             @click="selectedLifecycle = 'graduated'"
-            :class="[
-              'px-2.5 py-1 rounded text-xs transition cursor-pointer',
-              selectedLifecycle === 'graduated'
-                ? 'bg-zinc-100 dark:bg-zinc-800 text-indigo-400 font-bold shadow-xs'
-                : 'text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white',
-            ]"
+            class="h-7 px-2.5 text-xs font-semibold rounded-md cursor-pointer text-indigo-400"
           >
             {{ t('graduated') }}
-          </button>
+          </Button>
         </div>
 
         <!-- Socials Only Filter Toggle -->
@@ -178,49 +166,46 @@
 
       <!-- Right Controls: View Mode Toggle (Table / Grid) + Sort Combobox -->
       <div v-if="activeMarketTab !== 'trades'" class="flex items-center gap-2 shrink-0">
-        <!-- View Mode Toggle: Table vs Grid -->
+        <!-- View Mode Toggle: Table vs Grid vs Trenches -->
         <div
-          class="inline-flex items-center p-0.5 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800"
+          class="inline-flex items-center p-0.5 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 gap-0.5"
         >
-          <button
+          <Button
             type="button"
+            size="sm"
+            :variant="viewMode === 'table' ? 'secondary' : 'ghost'"
             @click="viewMode = 'table'"
             :title="t('tableMode')"
-            :class="[
-              'p-1.5 rounded transition cursor-pointer',
-              viewMode === 'table'
-                ? 'bg-zinc-100 dark:bg-zinc-800 text-emerald-500 shadow-xs'
-                : 'text-zinc-400 hover:text-black dark:hover:text-white',
-            ]"
+            class="h-7 w-7 p-0 rounded cursor-pointer"
           >
-            <List class="w-3.5 h-3.5" />
-          </button>
-          <button
+            <List class="w-3.5 h-3.5" :class="viewMode === 'table' ? 'text-emerald-500' : ''" />
+          </Button>
+          <Button
             type="button"
+            size="sm"
+            :variant="viewMode === 'grid' ? 'secondary' : 'ghost'"
             @click="viewMode = 'grid'"
             :title="t('gridMode')"
-            :class="[
-              'p-1.5 rounded transition cursor-pointer',
-              viewMode === 'grid'
-                ? 'bg-zinc-100 dark:bg-zinc-800 text-emerald-500 shadow-xs'
-                : 'text-zinc-400 hover:text-black dark:hover:text-white',
-            ]"
+            class="h-7 w-7 p-0 rounded cursor-pointer"
           >
-            <LayoutGrid class="w-3.5 h-3.5" />
-          </button>
-          <button
+            <LayoutGrid
+              class="w-3.5 h-3.5"
+              :class="viewMode === 'grid' ? 'text-emerald-500' : ''"
+            />
+          </Button>
+          <Button
             type="button"
+            size="sm"
+            :variant="viewMode === 'trenches' ? 'secondary' : 'ghost'"
             @click="viewMode = 'trenches'"
             :title="t('trenchesMode')"
-            :class="[
-              'p-1.5 rounded transition cursor-pointer',
-              viewMode === 'trenches'
-                ? 'bg-zinc-100 dark:bg-zinc-800 text-emerald-500 shadow-xs'
-                : 'text-zinc-400 hover:text-black dark:hover:text-white',
-            ]"
+            class="h-7 w-7 p-0 rounded cursor-pointer"
           >
-            <Columns3 class="w-3.5 h-3.5" />
-          </button>
+            <Columns3
+              class="w-3.5 h-3.5"
+              :class="viewMode === 'trenches' ? 'text-emerald-500' : ''"
+            />
+          </Button>
         </div>
 
         <!-- Sorting Combobox -->

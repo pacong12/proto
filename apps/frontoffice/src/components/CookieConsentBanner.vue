@@ -57,14 +57,16 @@ function dismissBanner() {
         <h3 class="text-xs font-bold text-black dark:text-white uppercase tracking-wider">
           {{ t('cookieBannerTitle') }}
         </h3>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           @click="dismissBanner"
-          class="text-zinc-400 hover:text-black dark:hover:text-white p-1 rounded-lg transition cursor-pointer"
+          class="h-6 w-6 p-0 text-zinc-400 hover:text-black dark:hover:text-white rounded-lg transition cursor-pointer"
           aria-label="Dismiss cookie notice"
         >
           <X class="w-3.5 h-3.5" />
-        </button>
+        </Button>
       </div>
 
       <p class="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
