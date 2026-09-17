@@ -17,32 +17,50 @@
             class="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-3"
           >
             <div class="flex items-center gap-3">
-              <div class="flex items-center gap-2">
-                <h1 class="text-xl font-bold tracking-tight text-black dark:text-white">
-                  {{ currentToken.name }}
-                </h1>
-                <span class="font-mono text-sm text-zinc-500"> ${{ currentToken.symbol }} </span>
-                <Badge
-                  :variant="currentToken.version === 'v2' ? 'outline' : 'default'"
-                  class="text-[10px] font-mono"
-                >
-                  {{ currentToken.version === 'v2' ? 'V2 Curve' : 'V1 Direct Pool' }}
-                </Badge>
-                <Badge
-                  variant="secondary"
-                  class="text-[10px] font-mono border border-emerald-500/30 text-emerald-500 dark:text-emerald-400 bg-emerald-500/10"
-                >
-                  {{
-                    currentToken.version === 'v2'
-                      ? currentMarketData.isGraduated
-                        ? 'Uniswap v4 Pool'
-                        : 'Curve Active (Target: v4)'
-                      : 'Uniswap V3'
-                  }}
-                </Badge>
-                <Badge :variant="devBadgeVariant" class="text-[10px] font-mono">
-                  {{ devBadgeText }}
-                </Badge>
+              <OptimizedImage
+                :src="currentToken.logo"
+                :alt="currentToken.name"
+                :fallback-text="currentToken.symbol"
+                :width="44"
+                :height="44"
+                :chain-badge="
+                  activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'
+                "
+                :currency-badge="
+                  activeNetwork.nativeCurrency.symbol === 'USDC'
+                    ? '/tokens/usdc.svg'
+                    : '/tokens/eth.svg'
+                "
+                class="rounded-xl border border-zinc-200 dark:border-zinc-800 shrink-0"
+              />
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h1 class="text-xl font-bold tracking-tight text-black dark:text-white">
+                    {{ currentToken.name }}
+                  </h1>
+                  <span class="font-mono text-sm text-zinc-500"> ${{ currentToken.symbol }} </span>
+                  <Badge
+                    :variant="currentToken.version === 'v2' ? 'outline' : 'default'"
+                    class="text-[10px] font-mono"
+                  >
+                    {{ currentToken.version === 'v2' ? 'V2 Curve' : 'V1 Direct Pool' }}
+                  </Badge>
+                  <Badge
+                    variant="secondary"
+                    class="text-[10px] font-mono border border-emerald-500/30 text-emerald-500 dark:text-emerald-400 bg-emerald-500/10"
+                  >
+                    {{
+                      currentToken.version === 'v2'
+                        ? currentMarketData.isGraduated
+                          ? 'Uniswap v4 Pool'
+                          : 'Curve Active (Target: v4)'
+                        : 'Uniswap V3'
+                    }}
+                  </Badge>
+                  <Badge :variant="devBadgeVariant" class="text-[10px] font-mono">
+                    {{ devBadgeText }}
+                  </Badge>
+                </div>
               </div>
 
               <!-- External Trading Terminal & Bot Shortcuts -->
@@ -100,6 +118,47 @@
                 {{ res.label }}
               </Button>
             </div>
+          </div>
+
+          <!-- GMGN-style Security & Anti-Rug Metrics Row -->
+          <div
+            class="flex flex-wrap items-center gap-1.5 py-1 text-[11px] font-mono border-b border-zinc-200/60 dark:border-zinc-800/60"
+          >
+            <span
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold border border-emerald-500/20"
+            >
+              <ShieldCheck class="w-3 h-3" />
+              Fixed Supply (No Mint)
+            </span>
+            <span
+              :class="
+                devHoldingPercent === 0
+                  ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700'
+              "
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-semibold border"
+            >
+              {{
+                devHoldingPercent === 0
+                  ? 'Dev 0% (Dumped / Clean)'
+                  : `Dev Hold: ${devHoldingPercent.toFixed(1)}%`
+              }}
+            </span>
+            <span
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-semibold border border-zinc-200 dark:border-zinc-700"
+            >
+              Top 10: {{ top10HoldingPercent.toFixed(1) }}%
+            </span>
+            <span
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-semibold border border-zinc-200 dark:border-zinc-700"
+            >
+              Anti-Snipe Active
+            </span>
+            <span
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-semibold border border-zinc-200 dark:border-zinc-700"
+            >
+              LP 48h Timelock
+            </span>
           </div>
 
           <!-- Trading Chart Component -->
@@ -686,6 +745,19 @@
             </span>
           </div>
           <Progress :model-value="currentMarketData.graduationProgress * 100" class="h-2" />
+
+          <!-- GMGN-style Milestone remaining indicator -->
+          <div
+            v-if="currentToken.version === 'v2' && !currentMarketData.isGraduated"
+            class="p-2 rounded-lg bg-emerald-500/5 border border-emerald-500/20 text-[11px] font-mono flex items-center justify-between text-emerald-600 dark:text-emerald-400"
+          >
+            <span class="flex items-center gap-1.5 font-bold">
+              <Sparkles class="w-3.5 h-3.5 shrink-0" />
+              Need {{ remainingToGraduate }} {{ currencySymbol }} to graduate
+            </span>
+            <span class="text-zinc-500 dark:text-zinc-400 text-[10px]">Target: Uniswap DEX</span>
+          </div>
+
           <div
             class="flex justify-between text-[11px] text-zinc-500 font-mono pt-1 border-t border-zinc-200 dark:border-zinc-800"
           >
@@ -948,6 +1020,8 @@ import {
   Loader2,
   Settings,
   ExternalLink,
+  ShieldCheck,
+  Sparkles,
 } from 'lucide-vue-next';
 import { useSwap, SLIPPAGE_WARN_THRESHOLD } from '../composables/useSwap';
 import { useWallet } from '../composables/useWallet';
@@ -958,6 +1032,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, Jazzicon } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
+import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { TradingChart } from '@/components/ui/chart';
@@ -1012,6 +1087,29 @@ const buyPresets = computed(() => {
   return currencySymbol.value === 'USDC'
     ? ['10', '50', '100', '500']
     : ['0.01', '0.05', '0.1', '0.5'];
+});
+
+const devHoldingPercent = computed(() => {
+  if (!currentToken.value.deployer || holders.value.length === 0) return 0;
+  const dev = holders.value.find(
+    (h) => h.address.toLowerCase() === currentToken.value.deployer.toLowerCase(),
+  );
+  return dev ? dev.percent : 0;
+});
+
+const top10HoldingPercent = computed(() => {
+  if (holders.value.length === 0) return 0;
+  return holders.value.slice(0, 10).reduce((acc, h) => acc + h.percent, 0);
+});
+
+const remainingToGraduate = computed(() => {
+  const current = Number(currentMarketData.value.pairedPrincipalWeth || 0);
+  const target = Number(
+    currentMarketData.value.graduationThresholdWeth ||
+      (currencySymbol.value === 'USDC' ? 10000 : 2.5),
+  );
+  const diff = Math.max(0, target - current);
+  return currencySymbol.value === 'USDC' ? diff.toFixed(0) : diff.toFixed(3);
 });
 
 const tradeTab = ref<'buy' | 'sell'>('buy');

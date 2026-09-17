@@ -120,26 +120,41 @@
             <span class="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">
               Supported Networks
             </span>
-            <div class="grid grid-cols-2 gap-1.5">
+            <div class="grid grid-cols-2 gap-2">
               <Button
                 v-for="net in Object.values(SUPPORTED_CHAINS)"
                 :key="net.chainId"
                 size="sm"
                 :variant="activeNetwork.chainId === net.chainId ? 'default' : 'outline'"
-                class="h-8 text-[11px] font-mono justify-between px-2.5 cursor-pointer"
+                class="h-auto py-2 text-[11px] font-mono justify-between px-2.5 cursor-pointer"
                 @click="switchOrAddNetwork(net)"
               >
-                <div class="flex items-center gap-1.5 truncate">
+                <div class="flex items-center gap-2 truncate">
                   <img
                     :src="net.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
                     :alt="net.name"
-                    class="w-3.5 h-3.5 rounded-xs object-contain"
+                    class="w-4 h-4 rounded-xs object-contain shrink-0"
                   />
-                  <span class="truncate">{{ net.name }}</span>
+                  <div class="flex flex-col text-left truncate">
+                    <span class="truncate font-semibold leading-tight">{{ net.name }}</span>
+                    <div class="flex items-center gap-1 text-[9px] text-zinc-400 mt-0.5">
+                      <img
+                        :src="
+                          net.nativeCurrency.symbol === 'USDC'
+                            ? '/tokens/usdc.svg'
+                            : '/tokens/eth.svg'
+                        "
+                        :alt="net.nativeCurrency.symbol"
+                        class="w-2.5 h-2.5 rounded-full object-contain"
+                      />
+                      <span>{{ net.nativeCurrency.symbol }}</span>
+                    </div>
+                  </div>
                 </div>
-                <span class="text-[9px] opacity-70 font-bold ml-1">{{
-                  net.nativeCurrency.symbol
-                }}</span>
+                <span
+                  v-if="activeNetwork.chainId === net.chainId"
+                  class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 ml-1"
+                />
               </Button>
             </div>
           </div>

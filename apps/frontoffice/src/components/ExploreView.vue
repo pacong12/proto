@@ -208,6 +208,19 @@
           >
             <LayoutGrid class="w-3.5 h-3.5" />
           </button>
+          <button
+            type="button"
+            @click="viewMode = 'trenches'"
+            :title="t('trenchesMode')"
+            :class="[
+              'p-1.5 rounded transition cursor-pointer',
+              viewMode === 'trenches'
+                ? 'bg-zinc-100 dark:bg-zinc-800 text-emerald-500 shadow-xs'
+                : 'text-zinc-400 hover:text-black dark:hover:text-white',
+            ]"
+          >
+            <Columns3 class="w-3.5 h-3.5" />
+          </button>
         </div>
 
         <!-- Sorting Combobox -->
@@ -460,6 +473,14 @@
                     :fallback-text="item.token.symbol"
                     :width="32"
                     :height="32"
+                    :chain-badge="
+                      activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'
+                    "
+                    :currency-badge="
+                      activeNetwork.nativeCurrency.symbol === 'USDC'
+                        ? '/tokens/usdc.svg'
+                        : '/tokens/eth.svg'
+                    "
                     class="rounded-lg border border-zinc-200 dark:border-zinc-800"
                   />
                   <div class="truncate">
@@ -553,7 +574,7 @@
     </div>
 
     <!-- 7B. OKX-Style Card Grid View Mode -->
-    <div v-else class="space-y-6">
+    <div v-else-if="viewMode === 'grid'" class="space-y-6">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card
           v-for="item in paginatedTokens"
@@ -570,6 +591,14 @@
                   :fallback-text="item.token.symbol"
                   :width="36"
                   :height="36"
+                  :chain-badge="
+                    activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'
+                  "
+                  :currency-badge="
+                    activeNetwork.nativeCurrency.symbol === 'USDC'
+                      ? '/tokens/usdc.svg'
+                      : '/tokens/eth.svg'
+                  "
                   class="rounded-lg border border-zinc-200 dark:border-zinc-800"
                 />
                 <div class="truncate">
@@ -640,6 +669,294 @@
         />
       </div>
     </div>
+
+    <!-- 7C. GMGN-Style 3-Column Trenches Mode -->
+    <div v-else-if="viewMode === 'trenches'" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <!-- Col 1: New Creations (< 20% progress) -->
+      <div
+        class="space-y-3 bg-zinc-50/50 dark:bg-zinc-900/30 p-3.5 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 flex flex-col"
+      >
+        <div class="flex items-center justify-between px-1">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-blue-500" />
+            <h3
+              class="text-xs font-bold font-mono uppercase tracking-wider text-black dark:text-white"
+            >
+              {{ t('newCreations') }}
+            </h3>
+          </div>
+          <Badge variant="secondary" class="font-mono text-[10px] px-1.5 py-0">
+            {{ trenchesNewCreations.length }}
+          </Badge>
+        </div>
+
+        <div
+          v-if="trenchesNewCreations.length === 0"
+          class="py-12 text-center text-zinc-400 text-xs font-mono"
+        >
+          No new creations
+        </div>
+
+        <div v-else class="space-y-2 max-h-[44rem] overflow-y-auto pr-1">
+          <Card
+            v-for="item in trenchesNewCreations"
+            :key="item.token.address"
+            class="p-3 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/50 transition cursor-pointer group"
+            @click="$emit('selectToken', item.token.address)"
+          >
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <OptimizedImage
+                  :src="item.token.logo"
+                  :alt="item.token.name"
+                  :fallback-text="item.token.symbol"
+                  :width="32"
+                  :height="32"
+                  :chain-badge="
+                    activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'
+                  "
+                  :currency-badge="
+                    activeNetwork.nativeCurrency.symbol === 'USDC'
+                      ? '/tokens/usdc.svg'
+                      : '/tokens/eth.svg'
+                  "
+                  class="rounded-lg border border-zinc-200 dark:border-zinc-800 shrink-0"
+                />
+                <div class="truncate">
+                  <span
+                    class="font-bold text-xs text-black dark:text-white group-hover:text-emerald-500 transition block truncate"
+                  >
+                    {{ item.token.name }}
+                  </span>
+                  <span class="text-[10px] font-mono text-zinc-400 block truncate">
+                    ${{ item.token.symbol }}
+                  </span>
+                </div>
+              </div>
+              <Badge
+                variant="outline"
+                class="text-[9px] px-1 py-0 h-3.5 uppercase font-mono shrink-0"
+              >
+                {{ item.token.version === 'v2' ? 'v2' : 'v1' }}
+              </Badge>
+            </div>
+
+            <div
+              class="mt-2.5 flex items-center justify-between font-mono text-[11px] pt-2 border-t border-zinc-100 dark:border-zinc-900"
+            >
+              <span class="text-zinc-400"
+                >MCap: ${{ item.marketData.marketCapUsd.toLocaleString() }}</span
+              >
+              <span class="font-bold text-black dark:text-white"
+                >${{ item.marketData.priceUsd.toFixed(6) }}</span
+              >
+            </div>
+
+            <div class="mt-2 space-y-1">
+              <div class="flex justify-between text-[10px] font-mono">
+                <span class="text-zinc-400">Curve Progress</span>
+                <span class="font-bold text-emerald-500"
+                  >{{ (item.marketData.graduationProgress * 100).toFixed(1) }}%</span
+                >
+              </div>
+              <Progress
+                :model-value="item.marketData.graduationProgress * 100"
+                class="h-1 rounded-full"
+              />
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      <!-- Col 2: Completing (20% - 99%) -->
+      <div
+        class="space-y-3 bg-zinc-50/50 dark:bg-zinc-900/30 p-3.5 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 flex flex-col"
+      >
+        <div class="flex items-center justify-between px-1">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            <h3
+              class="text-xs font-bold font-mono uppercase tracking-wider text-black dark:text-white"
+            >
+              {{ t('completing') }}
+            </h3>
+          </div>
+          <Badge variant="secondary" class="font-mono text-[10px] px-1.5 py-0 text-amber-500">
+            {{ trenchesCompleting.length }}
+          </Badge>
+        </div>
+
+        <div
+          v-if="trenchesCompleting.length === 0"
+          class="py-12 text-center text-zinc-400 text-xs font-mono"
+        >
+          No tokens nearing graduation
+        </div>
+
+        <div v-else class="space-y-2 max-h-[44rem] overflow-y-auto pr-1">
+          <Card
+            v-for="item in trenchesCompleting"
+            :key="item.token.address"
+            class="p-3 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition cursor-pointer group"
+            @click="$emit('selectToken', item.token.address)"
+          >
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <OptimizedImage
+                  :src="item.token.logo"
+                  :alt="item.token.name"
+                  :fallback-text="item.token.symbol"
+                  :width="32"
+                  :height="32"
+                  :chain-badge="
+                    activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'
+                  "
+                  :currency-badge="
+                    activeNetwork.nativeCurrency.symbol === 'USDC'
+                      ? '/tokens/usdc.svg'
+                      : '/tokens/eth.svg'
+                  "
+                  class="rounded-lg border border-zinc-200 dark:border-zinc-800 shrink-0"
+                />
+                <div class="truncate">
+                  <span
+                    class="font-bold text-xs text-black dark:text-white group-hover:text-amber-500 transition block truncate"
+                  >
+                    {{ item.token.name }}
+                  </span>
+                  <span class="text-[10px] font-mono text-zinc-400 block truncate">
+                    ${{ item.token.symbol }}
+                  </span>
+                </div>
+              </div>
+              <Badge
+                variant="default"
+                class="text-[9px] px-1.5 py-0 h-4 uppercase font-mono bg-amber-500 hover:bg-amber-600 text-white shrink-0"
+              >
+                HOT
+              </Badge>
+            </div>
+
+            <div
+              class="mt-2.5 flex items-center justify-between font-mono text-[11px] pt-2 border-t border-zinc-100 dark:border-zinc-900"
+            >
+              <span class="text-zinc-400"
+                >MCap: ${{ item.marketData.marketCapUsd.toLocaleString() }}</span
+              >
+              <span class="font-bold text-black dark:text-white"
+                >${{ item.marketData.priceUsd.toFixed(6) }}</span
+              >
+            </div>
+
+            <div class="mt-2 space-y-1">
+              <div class="flex justify-between text-[10px] font-mono">
+                <span class="text-zinc-400">Nearing DEX</span>
+                <span class="font-bold text-amber-500"
+                  >{{ (item.marketData.graduationProgress * 100).toFixed(1) }}%</span
+                >
+              </div>
+              <Progress
+                :model-value="item.marketData.graduationProgress * 100"
+                class="h-1 rounded-full"
+              />
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      <!-- Col 3: Graduated (100% / Uniswap DEX Pool) -->
+      <div
+        class="space-y-3 bg-zinc-50/50 dark:bg-zinc-900/30 p-3.5 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 flex flex-col"
+      >
+        <div class="flex items-center justify-between px-1">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-500" />
+            <h3
+              class="text-xs font-bold font-mono uppercase tracking-wider text-black dark:text-white"
+            >
+              {{ t('graduated') }}
+            </h3>
+          </div>
+          <Badge variant="secondary" class="font-mono text-[10px] px-1.5 py-0 text-emerald-500">
+            {{ trenchesGraduated.length }}
+          </Badge>
+        </div>
+
+        <div
+          v-if="trenchesGraduated.length === 0"
+          class="py-12 text-center text-zinc-400 text-xs font-mono"
+        >
+          No graduated tokens yet
+        </div>
+
+        <div v-else class="space-y-2 max-h-[44rem] overflow-y-auto pr-1">
+          <Card
+            v-for="item in trenchesGraduated"
+            :key="item.token.address"
+            class="p-3 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/50 transition cursor-pointer group"
+            @click="$emit('selectToken', item.token.address)"
+          >
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <OptimizedImage
+                  :src="item.token.logo"
+                  :alt="item.token.name"
+                  :fallback-text="item.token.symbol"
+                  :width="32"
+                  :height="32"
+                  :chain-badge="
+                    activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'
+                  "
+                  :currency-badge="
+                    activeNetwork.nativeCurrency.symbol === 'USDC'
+                      ? '/tokens/usdc.svg'
+                      : '/tokens/eth.svg'
+                  "
+                  class="rounded-lg border border-zinc-200 dark:border-zinc-800 shrink-0"
+                />
+                <div class="truncate">
+                  <span
+                    class="font-bold text-xs text-black dark:text-white group-hover:text-emerald-500 transition block truncate"
+                  >
+                    {{ item.token.name }}
+                  </span>
+                  <span class="text-[10px] font-mono text-zinc-400 block truncate">
+                    ${{ item.token.symbol }}
+                  </span>
+                </div>
+              </div>
+              <Badge
+                variant="secondary"
+                class="text-[9px] px-1.5 py-0 h-4 uppercase font-mono border border-emerald-500/30 text-emerald-500 dark:text-emerald-400 shrink-0"
+              >
+                DEX
+              </Badge>
+            </div>
+
+            <div
+              class="mt-2.5 flex items-center justify-between font-mono text-[11px] pt-2 border-t border-zinc-100 dark:border-zinc-900"
+            >
+              <span class="text-zinc-400"
+                >MCap: ${{ item.marketData.marketCapUsd.toLocaleString() }}</span
+              >
+              <span class="font-bold text-black dark:text-white"
+                >${{ item.marketData.priceUsd.toFixed(6) }}</span
+              >
+            </div>
+
+            <div
+              class="mt-2 flex items-center justify-between text-[10px] font-mono text-emerald-500"
+            >
+              <span class="flex items-center gap-1">
+                <Check class="w-3 h-3" />
+                Uniswap Locked
+              </span>
+              <span class="text-zinc-400">100%</span>
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -656,6 +973,8 @@ import {
   LayoutGrid,
   ExternalLink,
   Activity,
+  Columns3,
+  Check,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -680,8 +999,24 @@ defineEmits<{
   (e: 'selectTab', tab: string): void;
 }>();
 
-// View Mode: Professional OKX Table vs Card Grid
-const viewMode = ref<'table' | 'grid'>('table');
+// View Mode: Professional OKX Table vs Card Grid vs Trenches (3-Col GMGN)
+const viewMode = ref<'table' | 'grid' | 'trenches'>('table');
+
+const trenchesNewCreations = computed(() => {
+  return filteredTokens.value.filter(
+    (item) => !item.marketData.isGraduated && item.marketData.graduationProgress < 0.2,
+  );
+});
+
+const trenchesCompleting = computed(() => {
+  return filteredTokens.value.filter(
+    (item) => !item.marketData.isGraduated && item.marketData.graduationProgress >= 0.2,
+  );
+});
+
+const trenchesGraduated = computed(() => {
+  return filteredTokens.value.filter((item) => item.marketData.isGraduated);
+});
 
 // Active Market Category Tab (OKX-Style: All Markets / Trending / New Launches / Top Gainers / Live Trades)
 const activeMarketTab = ref<'all' | 'trending' | 'newest' | 'gainers' | 'graduated' | 'trades'>(
