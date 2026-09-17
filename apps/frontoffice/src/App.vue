@@ -116,9 +116,24 @@
             href="https://x.com/protodotfun"
             target="_blank"
             rel="noopener noreferrer"
-            class="hover:text-zinc-400 transition font-mono"
+            class="hover:text-zinc-400 transition font-mono flex items-center gap-1"
           >
-            @protodotfun
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+              <path
+                d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+              />
+            </svg>
+            <span>@protodotfun</span>
+          </a>
+          <span>•</span>
+          <a
+            :href="docsUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="hover:text-zinc-400 transition flex items-center gap-1"
+          >
+            <BookOpen class="w-3.5 h-3.5" />
+            <span>{{ t('docs') || 'Docs' }}</span>
           </a>
           <span>•</span>
           <a
@@ -144,7 +159,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter, RouterLink, RouterView } from 'vue-router';
-import { ExternalLink } from 'lucide-vue-next';
+import { ExternalLink, BookOpen } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import Navbar from './components/Navbar.vue';
 import WalletModal from './components/WalletModal.vue';

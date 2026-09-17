@@ -1,21 +1,26 @@
 <script setup lang="ts">
+import type { DropdownMenuItemProps } from 'reka-ui';
 import type { HTMLAttributes } from 'vue';
-import { DropdownMenuItem, type DropdownMenuItemProps, useForwardProps } from 'radix-vue';
+import { reactiveOmit } from '@vueuse/core';
+import { DropdownMenuItem, useForwardProps } from 'reka-ui';
 import { cn } from '@/lib/utils';
 
 const props = defineProps<
   DropdownMenuItemProps & { class?: HTMLAttributes['class']; inset?: boolean }
 >();
-const forwarded = useForwardProps(props);
+
+const delegatedProps = reactiveOmit(props, 'class');
+
+const forwardedProps = useForwardProps(delegatedProps);
 </script>
 
 <template>
   <DropdownMenuItem
-    v-bind="forwarded"
+    v-bind="forwardedProps"
     :class="
       cn(
-        'relative flex cursor-pointer select-none items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium outline-none transition-colors duration-150 hover:bg-zinc-100 dark:hover:bg-zinc-800 active:bg-zinc-200 dark:active:bg-zinc-700 focus:bg-zinc-100 dark:focus:bg-zinc-800 data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-        props.inset && 'pl-8',
+        'relative flex cursor-default select-none items-center rounded-sm gap-2 px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0',
+        inset && 'pl-8',
         props.class,
       )
     "
