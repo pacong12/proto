@@ -447,6 +447,237 @@
         </div>
       </form>
     </Card>
+
+    <!-- Step-by-Step Launch Progress Modal -->
+    <Dialog
+      :open="isModalOpen"
+      @update:open="
+        (val: boolean) => {
+          if (!loading) closeModal();
+        }
+      "
+    >
+      <DialogContent
+        class="w-[calc(100vw-2rem)] sm:max-w-lg p-6 bg-white dark:bg-[#181818] border border-stone-200 dark:border-stone-800 rounded-2xl shadow-2xl"
+      >
+        <DialogHeader class="mb-4">
+          <DialogTitle
+            class="text-lg font-bold text-stone-900 dark:text-white flex items-center gap-2"
+          >
+            <Rocket class="w-5 h-5 text-emerald-500" />
+            <span>{{ t('launchingModalTitle') }}</span>
+          </DialogTitle>
+          <DialogDescription class="text-xs text-stone-500 dark:text-stone-400">
+            {{ form.name || 'Token' }} ({{ form.symbol || 'SYMBOL' }}) &middot;
+            {{ activeNetwork.name }}
+          </DialogDescription>
+        </DialogHeader>
+
+        <!-- Stepper Progress -->
+        <div class="space-y-3 my-2">
+          <!-- Step 1: Wallet Signature -->
+          <div
+            class="flex items-start gap-3 p-3 rounded-xl transition-colors"
+            :class="
+              launchStep === 'awaiting_signature'
+                ? 'bg-emerald-500/10 border border-emerald-500/30'
+                : 'bg-stone-50 dark:bg-stone-900/50 border border-transparent'
+            "
+          >
+            <div class="mt-0.5 shrink-0">
+              <Loader2
+                v-if="launchStep === 'awaiting_signature'"
+                class="w-5 h-5 text-emerald-500 animate-spin"
+              />
+              <CheckCircle
+                v-else-if="
+                  ['broadcasting', 'confirming', 'indexing', 'success'].includes(launchStep)
+                "
+                class="w-5 h-5 text-emerald-500"
+              />
+              <Clock v-else class="w-5 h-5 text-stone-400" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <div
+                class="text-sm font-semibold text-stone-900 dark:text-white flex items-center justify-between"
+              >
+                <span>{{ t('launchStepSign') }}</span>
+                <Badge
+                  v-if="launchStep === 'awaiting_signature'"
+                  variant="secondary"
+                  class="text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 animate-pulse"
+                >
+                  Action Required
+                </Badge>
+              </div>
+              <p class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                {{ t('launchStepSignDesc') }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Step 2: Transaction Broadcasted & Block Confirmation -->
+          <div
+            class="flex items-start gap-3 p-3 rounded-xl transition-colors"
+            :class="
+              ['broadcasting', 'confirming'].includes(launchStep)
+                ? 'bg-emerald-500/10 border border-emerald-500/30'
+                : 'bg-stone-50 dark:bg-stone-900/50 border border-transparent'
+            "
+          >
+            <div class="mt-0.5 shrink-0">
+              <Loader2
+                v-if="['broadcasting', 'confirming'].includes(launchStep)"
+                class="w-5 h-5 text-emerald-500 animate-spin"
+              />
+              <CheckCircle
+                v-else-if="['indexing', 'success'].includes(launchStep)"
+                class="w-5 h-5 text-emerald-500"
+              />
+              <AlertCircle
+                v-else-if="launchStep === 'error' && launchTxHash"
+                class="w-5 h-5 text-rose-500"
+              />
+              <Clock v-else class="w-5 h-5 text-stone-400" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <div
+                class="text-sm font-semibold text-stone-900 dark:text-white flex items-center justify-between"
+              >
+                <span>{{ t('launchStepConfirm') }}</span>
+                <span
+                  v-if="['broadcasting', 'confirming'].includes(launchStep)"
+                  class="text-[10px] text-emerald-500 animate-pulse font-mono"
+                >
+                  Confirming...
+                </span>
+              </div>
+              <p class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                {{ t('launchStepConfirmDesc') }}
+              </p>
+              <!-- Tx Hash link -->
+              <div v-if="launchTxHash" class="mt-2 flex items-center gap-2">
+                <a
+                  :href="txExplorerUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:text-emerald-500 text-xs font-mono transition-colors"
+                >
+                  <span>Tx: {{ formatHash(launchTxHash) }}</span>
+                  <ExternalLink class="w-3 h-3" />
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Protocol Finalization -->
+          <div
+            class="flex items-start gap-3 p-3 rounded-xl transition-colors"
+            :class="
+              launchStep === 'indexing'
+                ? 'bg-emerald-500/10 border border-emerald-500/30'
+                : 'bg-stone-50 dark:bg-stone-900/50 border border-transparent'
+            "
+          >
+            <div class="mt-0.5 shrink-0">
+              <Loader2
+                v-if="launchStep === 'indexing'"
+                class="w-5 h-5 text-emerald-500 animate-spin"
+              />
+              <CheckCircle v-else-if="launchStep === 'success'" class="w-5 h-5 text-emerald-500" />
+              <Clock v-else class="w-5 h-5 text-stone-400" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-semibold text-stone-900 dark:text-white">
+                {{ t('launchStepIndexing') }}
+              </div>
+              <p class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                {{ t('launchStepIndexingDesc') }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Success State Details -->
+        <div
+          v-if="launchStep === 'success'"
+          class="mt-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center"
+        >
+          <CheckCircle class="w-10 h-10 text-emerald-500 mx-auto mb-2" />
+          <h4 class="text-sm font-bold text-stone-900 dark:text-white">
+            {{ t('launchSuccessTitle') }}
+          </h4>
+          <p class="text-xs text-stone-500 dark:text-stone-400 mt-1">
+            {{ t('launchSuccessDesc') }}
+          </p>
+          <div v-if="launchTokenAddress" class="mt-3 flex items-center justify-center gap-2">
+            <span
+              class="text-xs font-mono text-stone-600 dark:text-stone-300 bg-white/50 dark:bg-stone-800/50 px-2 py-1 rounded"
+            >
+              {{ formatHash(launchTokenAddress) }}
+            </span>
+            <a
+              :href="tokenExplorerUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
+            >
+              <span>{{ t('viewOnExplorer') }}</span>
+              <ExternalLink class="w-3 h-3" />
+            </a>
+          </div>
+        </div>
+
+        <!-- Error State Details -->
+        <div
+          v-if="launchStep === 'error'"
+          class="mt-4 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20"
+        >
+          <div class="flex items-start gap-2.5">
+            <AlertCircle class="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+            <div class="flex-1 min-w-0 text-xs">
+              <h5 class="font-bold text-rose-500">{{ t('launchFailedTitle') }}</h5>
+              <p class="text-stone-600 dark:text-stone-300 mt-1 break-words leading-relaxed">
+                {{ error || t('launchFailedDesc') }}
+              </p>
+              <div v-if="launchTxHash" class="mt-2.5">
+                <a
+                  :href="txExplorerUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-600 dark:text-rose-400 font-medium transition-colors"
+                >
+                  <span>{{ t('viewOnExplorer') }}</span>
+                  <ExternalLink class="w-3 h-3" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Footer -->
+        <div class="mt-6 flex items-center justify-end gap-3">
+          <Button
+            v-if="launchStep === 'error'"
+            variant="outline"
+            size="sm"
+            @click="closeModal"
+            class="h-9 px-4 text-xs font-medium"
+          >
+            {{ t('closeModal') }}
+          </Button>
+          <Button
+            v-if="launchStep === 'success'"
+            size="sm"
+            @click="goToTrade"
+            class="h-9 px-4 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5"
+          >
+            <span>{{ t('tradeToken') }}</span>
+            <ArrowRight class="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -461,6 +692,10 @@ import {
   SlidersHorizontal,
   Loader2,
   Check,
+  CheckCircle,
+  ExternalLink,
+  Clock,
+  ArrowRight,
 } from 'lucide-vue-next';
 import { SUPPORTED_CHAINS } from '@proto/shared-types';
 import { useLaunchpad } from '../composables/useLaunchpad';
@@ -480,6 +715,13 @@ import {
   SelectLabel,
   SelectSeparator,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { useI18n } from '@/lib/i18n';
 import { compressAndConvertToWebp } from '@/lib/image-optimizer';
 
@@ -488,8 +730,47 @@ const emit = defineEmits<{
   (e: 'tokenCreated', address: string): void;
 }>();
 
-const { launchToken, loading, error } = useLaunchpad();
+const {
+  launchToken,
+  loading,
+  error,
+  launchStep,
+  launchTxHash,
+  launchTokenAddress,
+  resetLaunchState,
+} = useLaunchpad();
 const { isConnected, account, activeNetwork, switchOrAddNetwork } = useWallet();
+
+const isModalOpen = ref(false);
+
+const txExplorerUrl = computed(() => {
+  if (!launchTxHash.value) return '';
+  const base = activeNetwork.value.blockExplorer.replace(/\/$/, '');
+  return `${base}/tx/${launchTxHash.value}`;
+});
+
+const tokenExplorerUrl = computed(() => {
+  if (!launchTokenAddress.value) return '';
+  const base = activeNetwork.value.blockExplorer.replace(/\/$/, '');
+  return `${base}/token/${launchTokenAddress.value}`;
+});
+
+function formatHash(hash: string | null) {
+  if (!hash) return '';
+  return `${hash.slice(0, 8)}...${hash.slice(-6)}`;
+}
+
+function closeModal() {
+  isModalOpen.value = false;
+  resetLaunchState();
+}
+
+function goToTrade() {
+  if (launchTokenAddress.value) {
+    emit('tokenCreated', launchTokenAddress.value);
+    isModalOpen.value = false;
+  }
+}
 
 function handleChainSelect(val: unknown) {
   const chainId = Number(val);
@@ -600,6 +881,7 @@ function handleDrop(event: DragEvent) {
 }
 
 async function handleLaunch() {
+  isModalOpen.value = true;
   const result = await launchToken(
     {
       name: form.value.name.trim(),

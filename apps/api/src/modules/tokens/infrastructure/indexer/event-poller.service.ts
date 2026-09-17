@@ -19,10 +19,15 @@ export class EventPollerService {
   async pollEvents(fromBlock?: bigint, toBlock?: bigint): Promise<number> {
     try {
       const currentBlock = toBlock ?? (await this.client.getBlockNumber());
-      const startBlock =
+      let startBlock =
         fromBlock ?? (this.lastPolledBlock > 0n ? this.lastPolledBlock + 1n : currentBlock - 50n);
 
       if (startBlock > currentBlock) return 0;
+
+      // Cap the query window to at most 50 blocks to prevent RPC rate-limiting (429)
+      if (currentBlock - startBlock > 50n) {
+        startBlock = currentBlock - 50n;
+      }
 
       // 1. Poll TokenLaunched Events (v1 Direct Pool)
       const tokenLaunchedEvent = parseAbiItem(
@@ -167,6 +172,9 @@ export class EventPollerService {
       return launchLogs.length + tradeCount;
     } catch (error) {
       console.error('[EventPoller] pollEvents failed:', error);
+      if (toBlock) {
+        this.lastPolledBlock = toBlock;
+      }
       return 0;
     }
   }

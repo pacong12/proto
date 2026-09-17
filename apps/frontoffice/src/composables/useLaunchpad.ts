@@ -15,10 +15,31 @@ import { getPublicClient, getWalletClient } from '../lib/viem-client';
 import { walletChainId } from '../lib/wallet-store';
 import { getLiveEthPriceUsd } from '../lib/price-feed';
 
+export type LaunchStep =
+  | 'idle'
+  | 'validating'
+  | 'awaiting_signature'
+  | 'broadcasting'
+  | 'confirming'
+  | 'indexing'
+  | 'success'
+  | 'error';
+
 export function useLaunchpad() {
   const loading = ref(false);
   const error = ref<string | null>(null);
+  const launchStep = ref<LaunchStep>('idle');
+  const launchTxHash = ref<`0x${string}` | null>(null);
+  const launchTokenAddress = ref<`0x${string}` | null>(null);
   const tokens = ref<Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }>>([]);
+
+  function resetLaunchState() {
+    launchStep.value = 'idle';
+    launchTxHash.value = null;
+    launchTokenAddress.value = null;
+    error.value = null;
+    loading.value = false;
+  }
 
   // ---------------------------------------------------------------------------
   // V1: Launch via Uniswap V3 direct pool
@@ -34,6 +55,9 @@ export function useLaunchpad() {
   }): Promise<{ tokenAddress: `0x${string}`; poolAddress: `0x${string}` } | null> {
     loading.value = true;
     error.value = null;
+    launchStep.value = 'validating';
+    launchTxHash.value = null;
+    launchTokenAddress.value = null;
 
     try {
       const walletClient = getWalletClient();
@@ -54,6 +78,13 @@ export function useLaunchpad() {
       }
 
       const network = getNetworkConfig(activeChainId);
+      if (
+        !network.contracts.factory ||
+        network.contracts.factory === '0x0000000000000000000000000000000000000000'
+      ) {
+        throw new Error(`Factory contract not deployed on ${network.name}`);
+      }
+
       // On all EVM chains (including Arc Network), native msg.value uses 18 decimals
       // (1e18 native wei = 1.0 token / 1.0 USDC) per Circle Arc EVM differences specification.
       const initialBuyWei =
@@ -61,6 +92,8 @@ export function useLaunchpad() {
           ? parseEther(params.initialBuyAmountEth)
           : 0n;
       const totalValue = network.launchConfig.launchFeeWei + initialBuyWei;
+
+      launchStep.value = 'awaiting_signature';
 
       const hash = await walletClient.writeContract({
         address: network.contracts.factory,
@@ -85,14 +118,38 @@ export function useLaunchpad() {
         chain: walletClient.chain,
       });
 
+      launchTxHash.value = hash;
+      launchStep.value = 'confirming';
+
       const publicClient = getPublicClient();
-      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      let receipt;
+      try {
+        receipt = await publicClient.waitForTransactionReceipt({
+          hash,
+          timeout: 120_000,
+          retryCount: 10,
+          retryDelay: 2000,
+        });
+      } catch {
+        try {
+          receipt = await publicClient.getTransactionReceipt({ hash });
+        } catch {
+          // Still waiting
+        }
+        if (!receipt) {
+          throw new Error(
+            `Transaction broadcasted with hash ${hash}. Waiting for block confirmation is taking longer than expected. Check block explorer.`,
+          );
+        }
+      }
 
       if (receipt.status === 'reverted') {
         throw new Error(
-          `Transaction reverted on-chain (status: reverted). Hash: ${hash}. Check launch fee and gas.`,
+          `Transaction reverted on-chain (status: reverted). Hash: ${hash}. Block: ${receipt.blockNumber}. Check launch fee and gas.`,
         );
       }
+
+      launchStep.value = 'indexing';
 
       // 1. Primary: parse via viem parseEventLogs
       const v1Events = parseEventLogs({
@@ -102,6 +159,8 @@ export function useLaunchpad() {
       });
 
       if (v1Events.length > 0) {
+        launchStep.value = 'success';
+        launchTokenAddress.value = v1Events[0].args.token;
         return {
           tokenAddress: v1Events[0].args.token,
           poolAddress: v1Events[0].args.pool,
@@ -118,6 +177,8 @@ export function useLaunchpad() {
             data: log.data,
           });
           if (decoded?.args?.token) {
+            launchStep.value = 'success';
+            launchTokenAddress.value = decoded.args.token;
             return {
               tokenAddress: decoded.args.token,
               poolAddress: decoded.args.pool,
@@ -131,6 +192,7 @@ export function useLaunchpad() {
       console.error('[LaunchpadV1] TokenLaunched not found. Receipt logs:', receipt.logs);
       throw new Error(`TokenLaunched event not found in transaction receipt. Hash: ${hash}`);
     } catch (err) {
+      launchStep.value = 'error';
       error.value = (err as Error).message;
       return null;
     } finally {
@@ -153,6 +215,9 @@ export function useLaunchpad() {
   }): Promise<{ tokenAddress: `0x${string}`; curveAddress: `0x${string}` } | null> {
     loading.value = true;
     error.value = null;
+    launchStep.value = 'validating';
+    launchTxHash.value = null;
+    launchTokenAddress.value = null;
 
     try {
       const walletClient = getWalletClient();
@@ -173,6 +238,11 @@ export function useLaunchpad() {
       }
 
       const network = getNetworkConfig(activeChainId);
+      const targetFactory = network.contracts.factoryV2 ?? network.contracts.factory;
+      if (!targetFactory || targetFactory === '0x0000000000000000000000000000000000000000') {
+        throw new Error(`Factory contract not deployed on ${network.name}`);
+      }
+
       // On all EVM chains (including Arc Network), native msg.value uses 18 decimals
       // (1e18 native wei = 1.0 token / 1.0 USDC) per Circle Arc EVM differences specification.
       const initialBuyWei =
@@ -181,7 +251,7 @@ export function useLaunchpad() {
           : 0n;
       const totalValue = network.launchConfig.launchFeeWei + initialBuyWei;
 
-      const targetFactory = network.contracts.factoryV2 ?? network.contracts.factory;
+      launchStep.value = 'awaiting_signature';
 
       const hash = await walletClient.writeContract({
         address: targetFactory,
@@ -201,14 +271,38 @@ export function useLaunchpad() {
         chain: walletClient.chain,
       });
 
+      launchTxHash.value = hash;
+      launchStep.value = 'confirming';
+
       const publicClient = getPublicClient();
-      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      let receipt;
+      try {
+        receipt = await publicClient.waitForTransactionReceipt({
+          hash,
+          timeout: 120_000,
+          retryCount: 10,
+          retryDelay: 2000,
+        });
+      } catch {
+        try {
+          receipt = await publicClient.getTransactionReceipt({ hash });
+        } catch {
+          // Still waiting
+        }
+        if (!receipt) {
+          throw new Error(
+            `Transaction broadcasted with hash ${hash}. Waiting for block confirmation is taking longer than expected. Check block explorer.`,
+          );
+        }
+      }
 
       if (receipt.status === 'reverted') {
         throw new Error(
-          `Transaction reverted on-chain (status: reverted). Hash: ${hash}. Check launch fee and gas.`,
+          `Transaction reverted on-chain (status: reverted). Hash: ${hash}. Block: ${receipt.blockNumber}. Check launch fee and gas.`,
         );
       }
+
+      launchStep.value = 'indexing';
 
       // 1. Primary: decode via viem parseEventLogs
       const v2Events = parseEventLogs({
@@ -218,6 +312,8 @@ export function useLaunchpad() {
       });
 
       if (v2Events.length > 0) {
+        launchStep.value = 'success';
+        launchTokenAddress.value = v2Events[0].args.token;
         return {
           tokenAddress: v2Events[0].args.token,
           curveAddress: v2Events[0].args.curve,
@@ -234,6 +330,8 @@ export function useLaunchpad() {
             data: log.data,
           });
           if (decoded?.args?.token) {
+            launchStep.value = 'success';
+            launchTokenAddress.value = decoded.args.token;
             return {
               tokenAddress: decoded.args.token,
               curveAddress: decoded.args.curve,
@@ -252,6 +350,8 @@ export function useLaunchpad() {
       });
 
       if (v1Events.length > 0) {
+        launchStep.value = 'success';
+        launchTokenAddress.value = v1Events[0].args.token;
         return {
           tokenAddress: v1Events[0].args.token,
           curveAddress: v1Events[0].args.pool as `0x${string}`,
@@ -261,6 +361,7 @@ export function useLaunchpad() {
       console.error('[LaunchpadV2] TokenLaunchedV2 not found. Receipt logs:', receipt.logs);
       throw new Error(`TokenLaunchedV2 event not found in transaction receipt. Hash: ${hash}`);
     } catch (err) {
+      launchStep.value = 'error';
       error.value = (err as Error).message;
       return null;
     } finally {
@@ -484,6 +585,10 @@ export function useLaunchpad() {
   return {
     loading,
     error,
+    launchStep,
+    launchTxHash,
+    launchTokenAddress,
+    resetLaunchState,
     tokens,
     launchToken,
     fetchTokenDetails,
