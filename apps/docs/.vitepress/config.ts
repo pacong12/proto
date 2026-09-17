@@ -357,6 +357,126 @@ export default defineConfig({
         ],
       },
     },
+
+    ko: {
+      label: '한국어',
+      lang: 'ko',
+      link: '/ko/',
+      themeConfig: {
+        nav: [
+          { text: '시작하기', link: '/ko/protocol/overview' },
+          { text: '토큰 런칭', link: '/ko/protocol/overview' },
+          { text: '런치패드 앱', link: 'https://proto.family' },
+        ],
+        sidebar: [
+          {
+            text: '사용자 가이드',
+            collapsed: false,
+            items: [{ text: 'Proto란 무엇인가요?', link: '/ko/protocol/overview' }],
+          },
+        ],
+      },
+    },
+
+    ru: {
+      label: 'Русский',
+      lang: 'ru',
+      link: '/ru/',
+      themeConfig: {
+        nav: [
+          { text: 'Введение', link: '/ru/protocol/overview' },
+          { text: 'Создание токена', link: '/ru/protocol/overview' },
+          { text: 'Приложение Launchpad', link: 'https://proto.family' },
+        ],
+        sidebar: [
+          {
+            text: 'Руководство пользователя',
+            collapsed: false,
+            items: [{ text: 'Что такое Proto?', link: '/ru/protocol/overview' }],
+          },
+        ],
+      },
+    },
+
+    ar: {
+      label: 'العربية',
+      lang: 'ar',
+      link: '/ar/',
+      themeConfig: {
+        nav: [
+          { text: 'البداية', link: '/ar/protocol/overview' },
+          { text: 'إنشاء عملة', link: '/ar/protocol/overview' },
+          { text: 'تطبيق المنصة', link: 'https://proto.family' },
+        ],
+        sidebar: [
+          {
+            text: 'دليل المستخدم',
+            collapsed: false,
+            items: [{ text: 'ما هو Proto؟', link: '/ar/protocol/overview' }],
+          },
+        ],
+      },
+    },
+
+    fr: {
+      label: 'Français',
+      lang: 'fr',
+      link: '/fr/',
+      themeConfig: {
+        nav: [
+          { text: 'Premiers Pas', link: '/fr/protocol/overview' },
+          { text: 'Lancer un Token', link: '/fr/protocol/overview' },
+          { text: 'Application Launchpad', link: 'https://proto.family' },
+        ],
+        sidebar: [
+          {
+            text: 'Guide Utilisateur',
+            collapsed: false,
+            items: [{ text: 'Qu’est-ce que Proto ?', link: '/fr/protocol/overview' }],
+          },
+        ],
+      },
+    },
+
+    de: {
+      label: 'Deutsch',
+      lang: 'de',
+      link: '/de/',
+      themeConfig: {
+        nav: [
+          { text: 'Erste Schritte', link: '/de/protocol/overview' },
+          { text: 'Token erstellen', link: '/de/protocol/overview' },
+          { text: 'Launchpad App', link: 'https://proto.family' },
+        ],
+        sidebar: [
+          {
+            text: 'Benutzerhandbuch',
+            collapsed: false,
+            items: [{ text: 'Was ist Proto?', link: '/de/protocol/overview' }],
+          },
+        ],
+      },
+    },
+
+    pt: {
+      label: 'Português',
+      lang: 'pt',
+      link: '/pt/',
+      themeConfig: {
+        nav: [
+          { text: 'Primeiros Passos', link: '/pt/protocol/overview' },
+          { text: 'Criar Token', link: '/pt/protocol/overview' },
+          { text: 'App Launchpad', link: 'https://proto.family' },
+        ],
+        sidebar: [
+          {
+            text: 'Manual do Usuário',
+            collapsed: false,
+            items: [{ text: 'O que é o Proto?', link: '/pt/protocol/overview' }],
+          },
+        ],
+      },
+    },
   },
 
   themeConfig: {
