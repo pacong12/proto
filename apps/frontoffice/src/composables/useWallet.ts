@@ -1,4 +1,4 @@
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, getCurrentInstance, onMounted, onUnmounted, ref, watch } from 'vue';
 import {
   useAppKit,
   useAppKitAccount,
@@ -18,13 +18,18 @@ import { appKitConfigured } from '../lib/appkit';
 import {
   bindProviderListeners,
   clearWalletState,
+  getWalletSyncChannel,
   isStoredConnectionActive,
   setConnectedWallet,
   walletAddress,
   walletChainId,
   walletModalOpen,
   walletProvider,
+  STORAGE_CONNECTED_KEY,
+  STORAGE_ADDRESS_KEY,
+  STORAGE_CHAIN_ID_KEY,
   type WalletProviderLike,
+  type WalletSyncMessage,
 } from '../lib/wallet-store';
 import { shortenAddress } from '../lib/utils';
 
@@ -91,11 +96,21 @@ export function useWallet() {
     return null;
   }
 
-  async function tryAutoReconnectInjected() {
-    if (walletAddress.value || !isStoredConnectionActive()) return;
+  async function tryAutoReconnectInjected(force = false) {
+    if ((walletAddress.value && !force) || !isStoredConnectionActive()) return;
 
     const provider = getInjectedProvider();
-    if (!provider) return;
+    if (!provider) {
+      if (typeof window !== 'undefined' && 'localStorage' in window) {
+        const storedAddr = localStorage.getItem(STORAGE_ADDRESS_KEY) as `0x${string}` | null;
+        const storedChain = parseChainId(localStorage.getItem(STORAGE_CHAIN_ID_KEY));
+        if (storedAddr) {
+          walletAddress.value = storedAddr;
+          walletChainId.value = storedChain ?? ROBINHOOD_CHAIN.chainId;
+        }
+      }
+      return;
+    }
 
     try {
       const accounts = (await provider.request({ method: 'eth_accounts' })) as string[];
@@ -104,7 +119,7 @@ export function useWallet() {
         const rawChain = await provider.request({ method: 'eth_chainId' });
         const chain = parseChainId(rawChain) ?? ROBINHOOD_CHAIN.chainId;
 
-        setConnectedWallet(provider, address, chain, 'window.ethereum');
+        setConnectedWallet(provider, address, chain, 'window.ethereum', { broadcast: false });
 
         // Validate the chain before syncing balance (fix MED-01).
         // getPublicClient() follows the active chain, but we must not query an
@@ -121,10 +136,10 @@ export function useWallet() {
           await syncBalance(address);
         }
       } else {
-        clearWalletState();
+        clearWalletState({ broadcast: false });
       }
     } catch {
-      clearWalletState();
+      clearWalletState({ broadcast: false });
     }
   }
 
@@ -218,13 +233,109 @@ export function useWallet() {
     }
   }
 
-  onMounted(() => {
-    if (walletAddress.value) {
-      syncBalance(walletAddress.value);
-    } else {
-      tryAutoReconnectInjected();
+  let crossTabSyncCleanup: (() => void) | null = null;
+
+  function setupCrossTabSync() {
+    if (typeof window === 'undefined') return;
+
+    // 1. BroadcastChannel for instant messaging across open tabs
+    const channel = getWalletSyncChannel();
+    const handleBroadcast = async (event: MessageEvent<WalletSyncMessage>) => {
+      const data = event.data;
+      if (!data) return;
+
+      if (data.type === 'WALLET_CONNECTED' || data.type === 'WALLET_ACCOUNTS_CHANGED') {
+        if (data.address && walletAddress.value !== data.address) {
+          await tryAutoReconnectInjected(true);
+        }
+      } else if (data.type === 'WALLET_CHAIN_CHANGED') {
+        if (data.chainId && walletChainId.value !== data.chainId) {
+          walletChainId.value = data.chainId;
+          await syncBalance();
+        }
+      } else if (data.type === 'WALLET_DISCONNECTED') {
+        if (walletAddress.value) {
+          clearWalletState({ broadcast: false });
+          balanceWei.value = 0n;
+        }
+      }
+    };
+
+    if (channel) {
+      channel.addEventListener('message', handleBroadcast);
     }
-  });
+
+    // 2. Storage event listener (standard across tabs in same origin)
+    const handleStorage = async (event: StorageEvent) => {
+      if (event.key === STORAGE_CONNECTED_KEY) {
+        if (event.newValue === 'true') {
+          await tryAutoReconnectInjected(true);
+        } else if (event.newValue === null || event.newValue === 'false') {
+          clearWalletState({ broadcast: false });
+          balanceWei.value = 0n;
+        }
+      } else if (event.key === STORAGE_ADDRESS_KEY && event.newValue) {
+        if (walletAddress.value !== event.newValue) {
+          await tryAutoReconnectInjected(true);
+        }
+      } else if (event.key === STORAGE_CHAIN_ID_KEY && event.newValue) {
+        const parsed = Number(event.newValue);
+        if (Number.isFinite(parsed) && walletChainId.value !== parsed) {
+          walletChainId.value = parsed;
+          await syncBalance();
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+
+    // 3. Tab Visibility & Focus re-validation (when user switches to Tab 2)
+    const handleFocusOrVisibility = async () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      if (!walletAddress.value && isStoredConnectionActive()) {
+        await tryAutoReconnectInjected(true);
+      } else if (walletAddress.value && !isStoredConnectionActive()) {
+        clearWalletState({ broadcast: false });
+        balanceWei.value = 0n;
+      } else if (walletAddress.value) {
+        await syncBalance();
+      }
+    };
+    window.addEventListener('focus', handleFocusOrVisibility);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleFocusOrVisibility);
+    }
+
+    crossTabSyncCleanup = () => {
+      if (channel) {
+        channel.removeEventListener('message', handleBroadcast);
+      }
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('focus', handleFocusOrVisibility);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleFocusOrVisibility);
+      }
+    };
+  }
+
+  if (getCurrentInstance()) {
+    onMounted(() => {
+      if (walletAddress.value) {
+        syncBalance(walletAddress.value);
+      } else {
+        tryAutoReconnectInjected();
+      }
+      setupCrossTabSync();
+    });
+
+    onUnmounted(() => {
+      if (crossTabSyncCleanup) {
+        crossTabSyncCleanup();
+        crossTabSyncCleanup = null;
+      }
+    });
+  } else {
+    setupCrossTabSync();
+  }
 
   watch(walletAddress, (next, prev) => {
     if (next && next !== prev) {
