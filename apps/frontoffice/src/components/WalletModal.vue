@@ -126,11 +126,18 @@
                 :key="net.chainId"
                 size="sm"
                 :variant="activeNetwork.chainId === net.chainId ? 'default' : 'outline'"
-                class="h-7 text-[11px] font-mono justify-between px-2 cursor-pointer"
+                class="h-8 text-[11px] font-mono justify-between px-2.5 cursor-pointer"
                 @click="switchOrAddNetwork(net)"
               >
-                <span class="truncate">{{ net.name }}</span>
-                <span class="text-[9px] opacity-70 font-bold">{{ net.nativeCurrency.symbol }}</span>
+                <div class="flex items-center gap-1.5 truncate">
+                  <img
+                    :src="net.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+                    :alt="net.name"
+                    class="w-3.5 h-3.5 rounded-xs object-contain"
+                  />
+                  <span class="truncate">{{ net.name }}</span>
+                </div>
+                <span class="text-[9px] opacity-70 font-bold ml-1">{{ net.nativeCurrency.symbol }}</span>
               </Button>
             </div>
           </div>

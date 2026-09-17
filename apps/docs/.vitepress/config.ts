@@ -68,7 +68,7 @@ export default defineConfig({
       },
     ],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
-    ['meta', { name: 'twitter:site', content: '@protodotfamily' }],
+    ['meta', { name: 'twitter:site', content: '@protodotfun' }],
     [
       'meta',
       {
@@ -488,7 +488,10 @@ export default defineConfig({
       level: [2, 3],
       label: 'On this page',
     },
-    socialLinks: [{ icon: 'github', link: 'https://github.com/pacong12/proto' }],
+    socialLinks: [
+      { icon: 'x', link: 'https://x.com/protodotfun' },
+      { icon: 'github', link: 'https://github.com/pacong12/proto' },
+    ],
     footer: {
       message: 'Released under the MIT License.',
       copyright:

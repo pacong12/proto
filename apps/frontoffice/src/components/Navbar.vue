@@ -173,6 +173,22 @@ function copyAddress() {
         <!-- Dark/Light Theme Mode Toggle -->
         <ThemeToggle />
 
+        <!-- Official X (Twitter) Community Link -->
+        <a
+          href="https://x.com/protodotfun"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hidden sm:inline-flex items-center justify-center h-8 w-8 rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 transition cursor-pointer"
+          title="Official X: @protodotfun"
+          aria-label="Official X profile"
+        >
+          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+            <path
+              d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+            />
+          </svg>
+        </a>
+
         <!-- Network Switcher Dropdown (Multi-Chain: Robinhood & Arc) -->
         <DropdownMenu v-if="isConnected">
           <DropdownMenuTrigger as-child>
@@ -181,9 +197,10 @@ function copyAddress() {
               size="sm"
               class="h-8 px-2.5 gap-1.5 text-xs font-mono border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900"
             >
-              <span
-                class="w-2 h-2 rounded-full"
-                :class="isCorrectNetwork ? 'bg-emerald-500' : 'bg-amber-500'"
+              <img
+                :src="activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+                :alt="activeNetwork.name"
+                class="w-3.5 h-3.5 rounded-xs object-contain"
               />
               <span class="font-semibold text-black dark:text-white">{{ activeNetwork.name }}</span>
             </Button>
@@ -203,9 +220,10 @@ function copyAddress() {
               @click="switchOrAddNetwork(net)"
             >
               <div class="flex items-center gap-2">
-                <span
-                  class="w-1.5 h-1.5 rounded-full"
-                  :class="activeNetwork.chainId === net.chainId ? 'bg-emerald-500' : 'bg-zinc-500'"
+                <img
+                  :src="net.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+                  :alt="net.name"
+                  class="w-3.5 h-3.5 rounded-xs object-contain"
                 />
                 <span>{{ net.name }}</span>
               </div>

@@ -1,20 +1,20 @@
 <template>
   <div
-    class="fixed inset-0 z-[100] flex items-start justify-center pt-24 bg-black/60 dark:bg-black/80 backdrop-blur-xs p-4"
+    class="fixed inset-0 z-[100] flex items-start justify-center pt-16 sm:pt-20 bg-black/60 dark:bg-black/80 backdrop-blur-xs p-4"
     @click.self="$emit('close')"
   >
     <Card
-      class="w-full max-w-lg shadow-2xl overflow-hidden p-0 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 rounded-2xl"
+      class="w-full max-w-2xl sm:max-w-3xl shadow-2xl overflow-hidden p-0 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 rounded-2xl"
     >
       <!-- Search Input Header -->
-      <div class="flex items-center gap-3 px-4 py-3 border-b border-zinc-200 dark:border-zinc-800">
-        <Search class="w-4 h-4 text-emerald-500 dark:text-emerald-400 shrink-0" />
+      <div class="flex items-center gap-3 px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800">
+        <Search class="w-5 h-5 text-emerald-500 dark:text-emerald-400 shrink-0" />
         <Input
           ref="searchInput"
           v-model="query"
           type="text"
-          :placeholder="t('searchPlaceholder')"
-          class="border-0 shadow-none focus-visible:ring-0 focus-visible:border-0 bg-transparent h-8 text-sm px-0 text-black dark:text-white placeholder:text-zinc-400"
+          :placeholder="t('searchPlaceholder') || 'Search tokens by name, ticker, contract address, or 0x tx hash...'"
+          class="border-0 shadow-none focus-visible:ring-0 focus-visible:border-0 bg-transparent h-10 text-sm sm:text-base px-0 text-black dark:text-white placeholder:text-zinc-400"
           @keydown.esc="$emit('close')"
           @keydown="handleKeydown"
         />
@@ -28,7 +28,7 @@
       </div>
 
       <!-- Search Results List -->
-      <div class="max-h-80 overflow-y-auto p-2">
+      <div class="max-h-[30rem] overflow-y-auto p-3">
         <div
           v-if="loading || searchingTx"
           class="flex items-center justify-center py-10 text-xs gap-2 text-zinc-500 dark:text-zinc-400"
@@ -99,63 +99,73 @@
           class="border-0 bg-transparent py-6"
         />
 
-        <ul v-else class="space-y-1">
+        <ul v-else class="space-y-1.5">
           <li v-for="(item, idx) in filteredTokens" :key="item.token.address">
             <button
               @click="selectToken(item.token.address)"
               :class="[
-                'w-full flex items-center justify-between p-2.5 rounded-xl transition text-left group cursor-pointer',
+                'w-full flex items-center justify-between p-3 rounded-xl transition text-left group cursor-pointer border',
                 idx === selectedIndex
-                  ? 'bg-zinc-100 dark:bg-zinc-800 ring-1 ring-emerald-500/40'
-                  : 'hover:bg-zinc-100 dark:hover:bg-zinc-900',
+                  ? 'bg-zinc-100 dark:bg-zinc-800/90 border-emerald-500/40 ring-1 ring-emerald-500/30'
+                  : 'bg-zinc-50/50 dark:bg-zinc-900/30 border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-900',
               ]"
             >
-              <div class="flex items-center gap-3 min-w-0">
-                <Avatar
-                  class="w-8 h-8 rounded-lg border border-zinc-200 dark:border-zinc-800 shrink-0"
-                >
-                  <AvatarFallback
-                    class="bg-zinc-100 dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 font-bold text-xs rounded-lg"
-                  >
-                    {{ item.token.symbol.slice(0, 3) }}
-                  </AvatarFallback>
-                </Avatar>
+              <div class="flex items-center gap-3.5 min-w-0">
+                <OptimizedImage
+                  :src="item.token.logo"
+                  :alt="item.token.name"
+                  :fallback-text="item.token.symbol"
+                  :width="38"
+                  :height="38"
+                  class="rounded-xl border border-zinc-200 dark:border-zinc-800 shrink-0"
+                />
 
                 <div class="truncate">
                   <div class="flex items-center gap-2">
                     <span
-                      class="text-sm font-semibold text-black dark:text-white group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition truncate"
+                      class="text-sm font-bold text-black dark:text-white group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition truncate"
                     >
                       {{ item.token.name }}
                     </span>
                     <span class="text-xs font-mono text-zinc-500 dark:text-zinc-400">
                       ${{ item.token.symbol }}
                     </span>
+                    <Badge
+                      :variant="item.token.version === 'v2' ? 'outline' : 'secondary'"
+                      class="text-[9px] px-1 py-0 h-3.5 font-mono uppercase"
+                    >
+                      {{ item.token.version === 'v2' ? 'v2' : 'v1' }}
+                    </Badge>
                   </div>
-                  <p class="text-[11px] font-mono text-zinc-400 dark:text-zinc-500 truncate">
+                  <p class="text-[11px] font-mono text-zinc-400 dark:text-zinc-500 truncate mt-0.5">
                     {{ item.token.address }}
                   </p>
                 </div>
               </div>
 
-              <div class="text-right shrink-0 font-mono text-xs ml-4">
-                <span class="font-semibold block text-black dark:text-white">
+              <div class="text-right shrink-0 font-mono text-xs ml-4 space-y-0.5">
+                <span class="font-bold block text-black dark:text-white">
                   ${{ item.marketData.priceUsd.toFixed(8) }}
                 </span>
-                <span
-                  :class="
-                    item.marketData.isGraduated
-                      ? 'text-emerald-500 dark:text-emerald-400 font-bold'
-                      : 'text-zinc-500 dark:text-zinc-400'
-                  "
-                  class="text-[10px]"
-                >
-                  {{
-                    item.marketData.isGraduated
-                      ? t('graduated')
-                      : `${(item.marketData.graduationProgress * 100).toFixed(0)}%`
-                  }}
-                </span>
+                <div class="flex items-center justify-end gap-2 text-[11px]">
+                  <span class="text-zinc-500 dark:text-zinc-400">
+                    MCap: ${{ item.marketData.marketCapUsd.toLocaleString() }}
+                  </span>
+                  <span>•</span>
+                  <span
+                    :class="
+                      item.marketData.isGraduated
+                        ? 'text-emerald-500 dark:text-emerald-400 font-bold'
+                        : 'text-zinc-500 dark:text-zinc-400'
+                    "
+                  >
+                    {{
+                      item.marketData.isGraduated
+                        ? t('graduated')
+                        : `${(item.marketData.graduationProgress * 100).toFixed(0)}%`
+                    }}
+                  </span>
+                </div>
               </div>
             </button>
           </li>
@@ -198,7 +208,7 @@ import { shortenAddress } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { Empty } from '@/components/ui/empty';
 import type { LaunchedTokenEntity, TokenMarketData, TradeEventEntity } from '@proto/shared-types';
 
