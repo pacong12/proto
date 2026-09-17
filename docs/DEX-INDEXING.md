@@ -19,7 +19,8 @@ Chain ID 4663 dan Arc Network ID 5042), diperlukan:
 ## Apa yang Sudah Diimplementasikan
 
 Semua endpoint berada di `apps/api/src/server.ts` dan aktif di port 3001.
-Semua response di-cache via Redis.
+Semua response di-cache via Redis. Telah mendukung multi-chain penuh untuk
+**Robinhood Chain (4663)** dan **Arc Network (5042)**.
 
 ### DEX Screener Partner API
 
@@ -27,10 +28,10 @@ Referensi: https://docs.dexscreener.com/api/partner
 
 | Method | Path                                        | Fungsi                                                                |
 | ------ | ------------------------------------------- | --------------------------------------------------------------------- |
-| GET    | `/dex/latest-block`                         | Nomor blok terakhir yang diindex. Cache 5 detik.                      |
+| GET    | `/dex/latest-block?chain=robinhood\|arc`    | Nomor blok terakhir yang diindex per chain. Cache 5 detik.            |
 | GET    | `/dex/asset?id=<addr>`                      | Metadata token: nama, simbol, decimals, logo, sosial. Cache 60 detik. |
 | GET    | `/dex/pair?id=<pool_addr>`                  | Metadata pool: base/quote token, fee, tick spacing. Cache 30 detik.   |
-| GET    | `/dex/events?fromBlock=&toBlock=&id=<pool>` | Swap events untuk live price feed. Cache 5 detik.                     |
+| GET    | `/dex/events?fromBlock=&toBlock=&id=<pool>` | Swap events untuk live price feed (ETH/USDC aware). Cache 5 detik.    |
 
 Contoh response `/dex/asset?id=0xABC...`:
 
@@ -101,15 +102,16 @@ Contoh response `/dex/events`:
 ### GeckoTerminal / GMGN API
 
 Referensi: https://api.geckoterminal.com/docs
+Dukungan dinamis untuk slug network `:network` (`robinhood`, `arc`, `4663`, `5042`).
 
-| Method | Path                                                  | Fungsi                                               |
-| ------ | ----------------------------------------------------- | ---------------------------------------------------- |
-| GET    | `/api/v1/networks/robinhood/pools/:pool`              | Detail pool + volume 24h + tx count. Cache 15 detik. |
-| GET    | `/api/v1/networks/robinhood/tokens/:addr`             | Detail token. Cache 30 detik.                        |
-| GET    | `/api/v1/networks/robinhood/pools/:pool/ohlcv/minute` | OHLCV candlestick resolusi 1 menit.                  |
-| GET    | `/api/v1/networks/robinhood/pools/:pool/ohlcv/hour`   | OHLCV candlestick resolusi 1 jam.                    |
-| GET    | `/api/v1/networks/robinhood/pools/:pool/ohlcv/day`    | OHLCV candlestick resolusi 1 hari.                   |
-| GET    | `/api/v1/networks/robinhood/pools/:pool/trades`       | 100 trade terakhir di pool tersebut.                 |
+| Method | Path                                                 | Fungsi                                               |
+| ------ | ---------------------------------------------------- | ---------------------------------------------------- |
+| GET    | `/api/v1/networks/:network/pools/:pool`              | Detail pool + volume 24h + tx count. Cache 15 detik. |
+| GET    | `/api/v1/networks/:network/tokens/:addr`             | Detail token. Cache 30 detik.                        |
+| GET    | `/api/v1/networks/:network/pools/:pool/ohlcv/minute` | OHLCV candlestick resolusi 1 menit.                  |
+| GET    | `/api/v1/networks/:network/pools/:pool/ohlcv/hour`   | OHLCV candlestick resolusi 1 jam.                    |
+| GET    | `/api/v1/networks/:network/pools/:pool/ohlcv/day`    | OHLCV candlestick resolusi 1 hari.                   |
+| GET    | `/api/v1/networks/:network/pools/:pool/trades`       | 100 trade terakhir di pool tersebut.                 |
 
 GMGN membaca data dari GeckoTerminal, jadi cukup daftar ke GeckoTerminal.
 
@@ -187,18 +189,17 @@ secara otomatis setelah chain terdaftar di sana. Tidak perlu submit terpisah.
 
 ## Pra-syarat Teknis Sebelum Submit
 
-- [ ] API harus bisa diakses dari internet (bukan localhost).
-      Deploy ke VPS dengan domain `api.proto.fun` menggunakan workflow
+- [ ] **Deploy API ke Publik**: API harus bisa diakses dari internet publik (bukan localhost).
+      Deploy ke VPS dengan domain publik (contoh: `https://api.proto.fun`) menggunakan workflow
       `.github/workflows/deploy-vps.yml`.
-- [ ] CORS header `Access-Control-Allow-Origin: *` harus aktif pada endpoint
-      `/dex/*` dan `/api/v1/*` agar crawler agregator bisa mengaksesnya.
-      (Sudah diimplementasikan via variabel `CORS_ALLOWED_ORIGINS` — kosongkan
-      untuk dev, isi domain spesifik untuk production.)
-- [ ] Pastikan rate limit tidak memblokir crawler. IP agregator bisa mengirim
-      puluhan request per menit. Naikkan limit di `checkRateLimit` dari 120
-      menjadi 500 req/menit untuk path `/dex/*` jika diperlukan.
-- [ ] `ROBINHOOD_CHAIN.contracts.weth` harus berisi alamat WETH yang benar
-      di `packages/shared-types/src/constants/network.ts`.
+- [x] **CORS Wildcard**: Header `Access-Control-Allow-Origin: *` aktif pada semua endpoint
+      `/dex/*` dan `/api/v1/*` sehingga crawler agregator tidak terblokir. (SUDAH IMPLEMENTED)
+- [x] **Rate Limiting Ramah Crawler**: Batas rate limit untuk rute crawler dinaikkan menjadi
+      600 req/menit per IP. (SUDAH IMPLEMENTED)
+- [x] **Multi-Chain Support**: Polling dan endpoint `/dex/*` serta `/api/v1/networks/*` mendukung
+      kedua chain secara dinamis (Robinhood Chain 4663 & Arc Network 5042). (SUDAH IMPLEMENTED)
+- [ ] **WETH & Native Gas Setup**: Pastikan `ROBINHOOD_CHAIN.contracts.weth` dan
+      `ARC_CHAIN.contracts.weth` sudah terkonfigurasi dengan token quote resmi di chain masing-masing.
 
 ---
 
