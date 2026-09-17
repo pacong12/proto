@@ -25,14 +25,15 @@ Semua response di-cache via Redis.
 
 Referensi: https://docs.dexscreener.com/api/partner
 
-| Method | Path | Fungsi |
-|--------|------|--------|
-| GET | `/dex/latest-block` | Nomor blok terakhir yang diindex. Cache 5 detik. |
-| GET | `/dex/asset?id=<addr>` | Metadata token: nama, simbol, decimals, logo, sosial. Cache 60 detik. |
-| GET | `/dex/pair?id=<pool_addr>` | Metadata pool: base/quote token, fee, tick spacing. Cache 30 detik. |
-| GET | `/dex/events?fromBlock=&toBlock=&id=<pool>` | Swap events untuk live price feed. Cache 5 detik. |
+| Method | Path                                        | Fungsi                                                                |
+| ------ | ------------------------------------------- | --------------------------------------------------------------------- |
+| GET    | `/dex/latest-block`                         | Nomor blok terakhir yang diindex. Cache 5 detik.                      |
+| GET    | `/dex/asset?id=<addr>`                      | Metadata token: nama, simbol, decimals, logo, sosial. Cache 60 detik. |
+| GET    | `/dex/pair?id=<pool_addr>`                  | Metadata pool: base/quote token, fee, tick spacing. Cache 30 detik.   |
+| GET    | `/dex/events?fromBlock=&toBlock=&id=<pool>` | Swap events untuk live price feed. Cache 5 detik.                     |
 
 Contoh response `/dex/asset?id=0xABC...`:
+
 ```json
 {
   "id": "4663_0xABC...",
@@ -56,6 +57,7 @@ Contoh response `/dex/asset?id=0xABC...`:
 ```
 
 Contoh response `/dex/pair?id=0xPOOL...`:
+
 ```json
 {
   "id": "4663_0xPOOL...",
@@ -73,6 +75,7 @@ Contoh response `/dex/pair?id=0xPOOL...`:
 ```
 
 Contoh response `/dex/events`:
+
 ```json
 {
   "events": [
@@ -99,14 +102,14 @@ Contoh response `/dex/events`:
 
 Referensi: https://api.geckoterminal.com/docs
 
-| Method | Path | Fungsi |
-|--------|------|--------|
-| GET | `/api/v1/networks/robinhood/pools/:pool` | Detail pool + volume 24h + tx count. Cache 15 detik. |
-| GET | `/api/v1/networks/robinhood/tokens/:addr` | Detail token. Cache 30 detik. |
-| GET | `/api/v1/networks/robinhood/pools/:pool/ohlcv/minute` | OHLCV candlestick resolusi 1 menit. |
-| GET | `/api/v1/networks/robinhood/pools/:pool/ohlcv/hour` | OHLCV candlestick resolusi 1 jam. |
-| GET | `/api/v1/networks/robinhood/pools/:pool/ohlcv/day` | OHLCV candlestick resolusi 1 hari. |
-| GET | `/api/v1/networks/robinhood/pools/:pool/trades` | 100 trade terakhir di pool tersebut. |
+| Method | Path                                                  | Fungsi                                               |
+| ------ | ----------------------------------------------------- | ---------------------------------------------------- |
+| GET    | `/api/v1/networks/robinhood/pools/:pool`              | Detail pool + volume 24h + tx count. Cache 15 detik. |
+| GET    | `/api/v1/networks/robinhood/tokens/:addr`             | Detail token. Cache 30 detik.                        |
+| GET    | `/api/v1/networks/robinhood/pools/:pool/ohlcv/minute` | OHLCV candlestick resolusi 1 menit.                  |
+| GET    | `/api/v1/networks/robinhood/pools/:pool/ohlcv/hour`   | OHLCV candlestick resolusi 1 jam.                    |
+| GET    | `/api/v1/networks/robinhood/pools/:pool/ohlcv/day`    | OHLCV candlestick resolusi 1 hari.                   |
+| GET    | `/api/v1/networks/robinhood/pools/:pool/trades`       | 100 trade terakhir di pool tersebut.                 |
 
 GMGN membaca data dari GeckoTerminal, jadi cukup daftar ke GeckoTerminal.
 
@@ -123,6 +126,7 @@ Semua langkah ini harus dikerjakan oleh owner setelah API di-deploy ke domain pu
    `Partner API Integration Request — Proto (Robinhood Chain)`
 
    Isi email:
+
    ```
    Chain Name       : Robinhood Chain
    Chain ID         : 4663
@@ -135,6 +139,7 @@ Semua langkah ini harus dikerjakan oleh owner setelah API di-deploy ke domain pu
    ```
 
 2. Untuk Arc Network, kirim email terpisah:
+
    ```
    Chain Name       : Arc Network
    Chain ID         : 5042
@@ -213,9 +218,9 @@ secara otomatis setelah chain terdaftar di sana. Tidak perlu submit terpisah.
 
 ## File Terkait
 
-| File | Keterangan |
-|------|-----------|
-| `apps/api/src/server.ts` | Semua endpoint DEX Screener + GeckoTerminal ada di sini |
-| `apps/api/src/modules/tokens/infrastructure/indexer/event-poller.service.ts` | Event poller yang mengisi tabel trades |
-| `packages/shared-types/src/constants/network.ts` | Alamat kontrak per chain |
-| `.github/workflows/deploy-vps.yml` | Deploy API ke VPS publik |
+| File                                                                         | Keterangan                                              |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `apps/api/src/server.ts`                                                     | Semua endpoint DEX Screener + GeckoTerminal ada di sini |
+| `apps/api/src/modules/tokens/infrastructure/indexer/event-poller.service.ts` | Event poller yang mengisi tabel trades                  |
+| `packages/shared-types/src/constants/network.ts`                             | Alamat kontrak per chain                                |
+| `.github/workflows/deploy-vps.yml`                                           | Deploy API ke VPS publik                                |

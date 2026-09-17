@@ -201,3 +201,95 @@ paths:
           description: IPFS CID and gateway URL.
         '400':
           description: Bad request.
+
+  /dex/latest-block:
+    get:
+      summary: DEX Screener Latest Indexed Block
+      description: Returns the latest block number indexed across Robinhood Chain and Arc Network.
+      parameters:
+        - in: query
+          name: chain
+          schema:
+            type: string
+          description: Target chain (robinhood, arc, 4663, 5042)
+      responses:
+        '200':
+          description: Latest indexed block number.
+
+  /dex/asset:
+    get:
+      summary: DEX Screener Token Metadata
+      description: Returns token details and social links for DEX Screener partner indexing.
+      parameters:
+        - in: query
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Token contract address
+      responses:
+        '200':
+          description: Standardized token asset metadata.
+        '404':
+          description: Asset not found.
+
+  /dex/pair:
+    get:
+      summary: DEX Screener Pair Metadata
+      description: Returns liquidity pair details, base/quote tokens, and fee configurations.
+      parameters:
+        - in: query
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Pool or token address
+      responses:
+        '200':
+          description: Standardized pool metadata.
+        '404':
+          description: Pair not found.
+
+  /dex/events:
+    get:
+      summary: DEX Screener Historical Swap Events
+      description: Returns block-filtered trade events for live price chart streaming.
+      parameters:
+        - in: query
+          name: fromBlock
+          schema:
+            type: integer
+        - in: query
+          name: toBlock
+          schema:
+            type: integer
+        - in: query
+          name: id
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of swap events.
+
+  /api/v1/networks/{network}/pools/{pool}:
+    get:
+      summary: GeckoTerminal / GMGN Pool Detail
+      description: Returns JSON:API standardized pool analytics and 24h rolling volume.
+      parameters:
+        - in: path
+          name: network
+          required: true
+          schema:
+            type: string
+          description: Network slug (robinhood, arc, 4663, 5042)
+        - in: path
+          name: pool
+          required: true
+          schema:
+            type: string
+          description: Pool contract address
+      responses:
+        '200':
+          description: Pool entity.
+        '404':
+          description: Pool not found.

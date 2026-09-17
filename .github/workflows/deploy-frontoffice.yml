@@ -1,0 +1,48 @@
+name: Deploy Frontoffice to Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/frontoffice/**'
+      - 'packages/shared-types/**'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-frontoffice-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy Frontoffice
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build Frontoffice
+        run: bun run --filter @proto/frontoffice build
+
+      - name: Deploy to Cloudflare Pages
+        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy apps/frontoffice/dist --project-name=proto-frontoffice
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Skip Cloudflare Pages deployment (secrets not configured)
+        if: ${{ secrets.CLOUDFLARE_API_TOKEN == '' || secrets.CLOUDFLARE_ACCOUNT_ID == '' }}
+        run: echo "CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID is not configured. Skipping deployment."

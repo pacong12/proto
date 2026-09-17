@@ -1,5 +1,5 @@
 import { PublicClient, parseAbiItem } from 'viem';
-import { ROBINHOOD_CHAIN, TradeEventEntity } from '@proto/shared-types';
+import { ROBINHOOD_CHAIN, NetworkConfig, TradeEventEntity } from '@proto/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import { ChainIndexerPort } from '../../domain/ports/chain.indexer.port';
 import { PriceFeedPort } from '../../domain/ports/price-feed.port';
@@ -14,6 +14,7 @@ export class EventPollerService {
     private readonly chainIndexer: ChainIndexerPort,
     private readonly calculatePricing: CalculatePricingUseCase,
     private readonly priceFeed: PriceFeedPort,
+    private readonly network: NetworkConfig = ROBINHOOD_CHAIN,
   ) {}
 
   async pollEvents(fromBlock?: bigint, toBlock?: bigint): Promise<number> {
@@ -29,36 +30,46 @@ export class EventPollerService {
         startBlock = currentBlock - 50n;
       }
 
-      // 1. Poll TokenLaunched Events (v1 Direct Pool)
-      const tokenLaunchedEvent = parseAbiItem(
-        'event TokenLaunched(address indexed token, address indexed deployer, address indexed dexFactory, address pairedToken, address pool, uint256 dexId, uint256 launchConfigId, uint256 positionId, uint256 restrictionsEndBlock, uint256 initialBuyAmount)',
-      );
+      let v1Count = 0;
+      if (
+        this.network.contracts.factory &&
+        this.network.contracts.factory !== '0x0000000000000000000000000000000000000000' &&
+        this.network.contracts.factory !== this.network.contracts.factoryV2
+      ) {
+        // 1. Poll TokenLaunched Events (v1 Direct Pool)
+        const tokenLaunchedEvent = parseAbiItem(
+          'event TokenLaunched(address indexed token, address indexed deployer, address indexed dexFactory, address pairedToken, address pool, uint256 dexId, uint256 launchConfigId, uint256 positionId, uint256 restrictionsEndBlock, uint256 initialBuyAmount)',
+        );
 
-      const launchLogs = await this.client.getLogs({
-        address: ROBINHOOD_CHAIN.contracts.factory,
-        event: tokenLaunchedEvent,
-        fromBlock: startBlock,
-        toBlock: currentBlock,
-      });
+        const launchLogs = await this.client.getLogs({
+          address: this.network.contracts.factory,
+          event: tokenLaunchedEvent,
+          fromBlock: startBlock,
+          toBlock: currentBlock,
+        });
 
-      for (const log of launchLogs) {
-        const tokenAddress = log.args.token as `0x${string}`;
-        if (tokenAddress) {
-          const tokenEntity = await this.chainIndexer.fetchLaunchedTokenFromChain(tokenAddress);
-          if (tokenEntity) {
-            await this.tokenRepository.save(tokenEntity);
+        for (const log of launchLogs) {
+          const tokenAddress = log.args.token as `0x${string}`;
+          if (tokenAddress) {
+            const tokenEntity = await this.chainIndexer.fetchLaunchedTokenFromChain(tokenAddress);
+            if (tokenEntity) {
+              await this.tokenRepository.save(tokenEntity);
+            }
           }
         }
+        v1Count = launchLogs.length;
       }
 
       // 1b. Poll TokenLaunchedV2 Events (v2 Bonding Curve Factory)
-      if (ROBINHOOD_CHAIN.contracts.factoryV2) {
+      let v2Count = 0;
+      const factoryV2 = this.network.contracts.factoryV2 ?? this.network.contracts.factory;
+      if (factoryV2 && factoryV2 !== '0x0000000000000000000000000000000000000000') {
         const tokenLaunchedV2Event = parseAbiItem(
           'event TokenLaunchedV2(address indexed token, address indexed curve, address indexed creator, string name, string symbol, uint256 initialBuy)',
         );
 
         const v2LaunchLogs = await this.client.getLogs({
-          address: ROBINHOOD_CHAIN.contracts.factoryV2,
+          address: factoryV2,
           event: tokenLaunchedV2Event,
           fromBlock: startBlock,
           toBlock: currentBlock,
@@ -77,6 +88,7 @@ export class EventPollerService {
             }
           }
         }
+        v2Count = v2LaunchLogs.length;
       }
 
       // 2. Poll Swap Events for all indexed tokens
@@ -102,8 +114,11 @@ export class EventPollerService {
         // Cache block timestamps to avoid redundant RPC calls
         const blockTimestamps = new Map<bigint, number>();
 
-        // Fetch live CoinGecko ETH price for trade pricing
-        const ethPriceUsd = await this.priceFeed.getEthPriceUsd();
+        // Fetch live quote asset price (USDC = $1.00 on Arc, CoinGecko ETH on Robinhood)
+        const quotePriceUsd =
+          this.network.nativeCurrency.symbol === 'USDC'
+            ? 1.0
+            : await this.priceFeed.getEthPriceUsd();
 
         for (const swap of swapLogs) {
           const token = tokenByPool.get(swap.address.toLowerCase());
@@ -136,7 +151,7 @@ export class EventPollerService {
             sqrtPriceX96: sqrtPriceX96 ?? 2505414483750479299401734n,
             isToken0: token.isToken0,
             pairedPrincipalWei: 0n,
-            ethPriceUsd,
+            ethPriceUsd: quotePriceUsd,
           });
 
           const blockNumber = swap.blockNumber ?? currentBlock;
@@ -169,7 +184,7 @@ export class EventPollerService {
       }
 
       this.lastPolledBlock = currentBlock;
-      return launchLogs.length + tradeCount;
+      return v1Count + v2Count + tradeCount;
     } catch (error) {
       console.error('[EventPoller] pollEvents failed:', error);
       if (toBlock) {

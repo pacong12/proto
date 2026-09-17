@@ -154,6 +154,8 @@ export const ARC_CHAIN: NetworkConfig = {
   rpcUrl: 'https://rpc.mainnet.arc.io',
   blockExplorer: 'https://explorer.arc.io',
   contracts: {
+    // Arc Network currently operates purely on V2 bonding curve infrastructure.
+    // factory and factoryV2 both point to the deployed LaunchpadV2Factory.
     factory: '0x48844223aBDceeb1Ce502F54d559681358E68200',
     factoryV2: '0x48844223aBDceeb1Ce502F54d559681358E68200',
     locker: '0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2',
@@ -173,7 +175,9 @@ export const ARC_CHAIN: NetworkConfig = {
   launchConfig: {
     supply: 1_000_000_000n * 10n ** 18n,
     poolFee: 10000,
-    launchFeeWei: 1_000_000_000_000_000_000n, // 1 USDC (18 decimals native msg.value)
+    // Aligned with on-chain LAUNCH_FEE = 0.0005 ether (5e14 wei) on deployed Arc contract
+    // 0x48844223aBDceeb1Ce502F54d559681358E68200 to prevent involuntary initial buys (fix CRITICAL-2).
+    launchFeeWei: 500_000_000_000_000n,
     graduationThresholdWei: 8_000_000_000_000_000_000_000n, // 8,000 USDC
     antiSnipeBlocks: 2,
     maxHoldPercent: 5.0,

@@ -46,3 +46,8 @@ jobs:
 
       - name: Production Builds
         run: bun run build
+
+      - name: Verify frontoffice build output
+        run: |
+          test -f apps/frontoffice/dist/index.html
+          test -s apps/frontoffice/dist/index.html

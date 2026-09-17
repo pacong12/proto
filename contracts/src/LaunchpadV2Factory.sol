@@ -13,7 +13,8 @@ import {BondingCurve} from "./BondingCurve.sol";
  *   - C-03 fix: constructor validates that feeRecipient and locker are non-zero.
  *   - C-02 fix: exposes migrateToV4() and emergencyWithdraw() pass-throughs so the
  *               factory owner can act as the authorised caller on deployed curves.
- *   - Launch fee is forwarded to treasury before any state mutation.
+ *   - CEI pattern: state storage and event emission precede external fee transfer and curve buy.
+ *   - nonReentrant guard on launchTokenV2.
  */
 contract LaunchpadV2Factory {
     uint256 public constant LAUNCH_FEE = 0.0005 ether;
@@ -28,6 +29,8 @@ contract LaunchpadV2Factory {
 
     address public owner;
     address public pendingOwner;
+
+    bool private _locked;
 
     struct V2Launch {
         address token;
@@ -63,12 +66,14 @@ contract LaunchpadV2Factory {
         _;
     }
 
-    constructor(
-        address payable _feeRecipient,
-        address _locker,
-        address _poolManagerV4,
-        address _memeHook
-    ) {
+    modifier nonReentrant() {
+        require(!_locked, "REENTRANT");
+        _locked = true;
+        _;
+        _locked = false;
+    }
+
+    constructor(address payable _feeRecipient, address _locker, address _poolManagerV4, address _memeHook) {
         // C-03 fix: validate all addresses that receive value or tokens.
         if (_feeRecipient == address(0) || _locker == address(0)) revert ZeroAddress();
 
@@ -109,29 +114,17 @@ contract LaunchpadV2Factory {
         string memory twitter,
         string memory telegram,
         string memory website
-    ) external payable returns (address tokenAddress, address curveAddress) {
+    ) external payable nonReentrant returns (address tokenAddress, address curveAddress) {
         if (msg.value < LAUNCH_FEE) revert InvalidFee();
 
         uint256 initialBuyEth = msg.value - LAUNCH_FEE;
 
         ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials({
-            twitter: twitter,
-            telegram: telegram,
-            discord: "",
-            website: website,
-            farcaster: ""
+            twitter: twitter, telegram: telegram, discord: "", website: website, farcaster: ""
         });
 
-        LaunchpadToken token = new LaunchpadToken(
-            name,
-            symbol,
-            logo,
-            description,
-            socials,
-            msg.sender,
-            address(0),
-            address(this)
-        );
+        LaunchpadToken token =
+            new LaunchpadToken(name, symbol, logo, description, socials, msg.sender, address(0), address(this));
 
         tokenAddress = address(token);
 
@@ -151,19 +144,15 @@ contract LaunchpadV2Factory {
 
         token.transfer(curveAddress, token.totalSupply());
 
-        (bool feeOk, ) = protocolFeeRecipient.call{value: LAUNCH_FEE}("");
-        if (!feeOk) revert TransferFailed();
-
         launches[tokenAddress] = V2Launch({
-            token: tokenAddress,
-            curve: curveAddress,
-            creator: msg.sender,
-            createdAt: block.timestamp,
-            graduated: false
+            token: tokenAddress, curve: curveAddress, creator: msg.sender, createdAt: block.timestamp, graduated: false
         });
         allLaunches.push(tokenAddress);
 
         emit TokenLaunchedV2(tokenAddress, curveAddress, msg.sender, name, symbol, initialBuyEth);
+
+        (bool feeOk,) = protocolFeeRecipient.call{value: LAUNCH_FEE}("");
+        if (!feeOk) revert TransferFailed();
 
         if (initialBuyEth > 0) {
             curve.buyFor{value: initialBuyEth}(msg.sender, 0);

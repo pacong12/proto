@@ -16,22 +16,34 @@ import {
   DevopsController,
   RedisCacheAdapter,
 } from './index';
-import { createPublicClient, http, defineChain } from 'viem';
-import { ROBINHOOD_CHAIN, TransactionIntent, ok, err } from '@proto/shared-types';
+import { createPublicClient, http, defineChain, type PublicClient } from 'viem';
+import {
+  ROBINHOOD_CHAIN,
+  ARC_CHAIN,
+  type NetworkConfig,
+  TransactionIntent,
+  ok,
+  err,
+} from '@proto/shared-types';
 
-const chain = defineChain({
-  id: ROBINHOOD_CHAIN.chainId,
-  name: ROBINHOOD_CHAIN.name,
-  nativeCurrency: ROBINHOOD_CHAIN.nativeCurrency,
-  rpcUrls: {
-    default: { http: [ROBINHOOD_CHAIN.rpcUrl] },
-  },
-});
+function createClientForNetwork(cfg: NetworkConfig) {
+  const c = defineChain({
+    id: cfg.chainId,
+    name: cfg.name,
+    nativeCurrency: cfg.nativeCurrency,
+    rpcUrls: {
+      default: { http: [cfg.rpcUrl] },
+    },
+  });
+  return createPublicClient({
+    chain: c,
+    transport: http(cfg.rpcUrl),
+  });
+}
 
-const publicClient = createPublicClient({
-  chain,
-  transport: http(ROBINHOOD_CHAIN.rpcUrl),
-});
+export const robinhoodClient: PublicClient = createClientForNetwork(ROBINHOOD_CHAIN);
+export const arcClient: PublicClient = createClientForNetwork(ARC_CHAIN);
+export const publicClient: PublicClient = robinhoodClient; // Backward compatibility alias
 
 const PORT = parseInt(
   process.env.PORT ?? process.env.API_PORT ?? (process.env.NODE_ENV === 'test' ? '0' : '3001'),
@@ -68,13 +80,27 @@ const securityController = new SecurityController(securityGateService);
 
 const ipfsService = new IpfsService();
 const ipfsController = new IpfsController(ipfsService);
-const eventPoller = new EventPollerService(
-  publicClient,
+
+// Dedicated pollers for each supported chain (Robinhood Chain & Arc Network)
+const robinhoodPoller = new EventPollerService(
+  robinhoodClient,
   repository,
   chainIndexer,
   calculatePricing,
   priceFeed,
+  ROBINHOOD_CHAIN,
 );
+
+const arcPoller = new EventPollerService(
+  arcClient,
+  repository,
+  chainIndexer,
+  calculatePricing,
+  priceFeed,
+  ARC_CHAIN,
+);
+
+export const eventPoller: EventPollerService = robinhoodPoller; // Backward compatibility alias
 
 const requestTracker = new HttpRequestTracker(logger, cache);
 const devopsController = new DevopsController(requestTracker);
@@ -91,10 +117,10 @@ async function checkRateLimit(ip: string, limit = 120, windowMs = 60_000): Promi
   }
 }
 
-// Start background event poller worker loop
+// Start background event poller worker loop for both Robinhood and Arc chains
 setInterval(async () => {
   try {
-    await eventPoller.pollEvents();
+    await Promise.allSettled([robinhoodPoller.pollEvents(), arcPoller.pollEvents()]);
   } catch {
     // Ignore background polling network errors
   }
@@ -108,15 +134,19 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   const url = new URL(req.url);
 
   // M-05 fix: restrict CORS to known origins instead of wildcard.
-  // Populate CORS_ALLOWED_ORIGINS in the environment as a comma-separated list.
-  // When the variable is absent every origin is allowed (development default).
+  // Public crawler endpoints (/dex/*, /api/v1/*) always allow wildcard CORS (*)
+  // so external aggregators (DEX Screener, GeckoTerminal, GMGN) are never blocked (Fix H-3).
+  const isPublicCrawlerPath =
+    url.pathname.startsWith('/dex/') || url.pathname.startsWith('/api/v1/');
+
   const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || '')
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean);
   const requestOrigin = req.headers.get('origin') || '';
-  const corsOrigin =
-    allowedOrigins.length === 0 || allowedOrigins.includes(requestOrigin)
+  const corsOrigin = isPublicCrawlerPath
+    ? '*'
+    : allowedOrigins.length === 0 || allowedOrigins.includes(requestOrigin)
       ? requestOrigin || '*'
       : '';
 
@@ -159,10 +189,11 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       { status, headers: { ...headers, ...extraHeaders } },
     );
 
-  // Rate Limiting on public/expensive API routes (120 req / minute per IP)
-  // Healthcheck & root probe are exempt from rate limiting for monitoring availability
+  // Rate Limiting: 120 req / minute per IP for standard routes, 600 req / minute for DEX crawlers (Fix H-2).
+  // Healthcheck & root probe are exempt from rate limiting for monitoring availability.
   const isHealthProbe = url.pathname === '/health' || url.pathname === '/';
-  if (!isHealthProbe && !(await checkRateLimit(clientIp, 120, 60_000))) {
+  const maxRequests = isPublicCrawlerPath ? 600 : 120;
+  if (!isHealthProbe && !(await checkRateLimit(clientIp, maxRequests, 60_000))) {
     return replyError('RATE_LIMIT_EXCEEDED', 'Too many requests, please slow down.', 429);
   }
 
@@ -532,19 +563,41 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   // Required endpoints for chain listing & token indexing
   // ---------------------------------------------------------------------------
 
+  function resolveNetworkForToken(token: {
+    pairedToken?: string;
+    poolAddress?: string;
+  }): NetworkConfig {
+    if (
+      token.pairedToken?.toLowerCase() === ARC_CHAIN.contracts.weth.toLowerCase() ||
+      token.poolAddress?.toLowerCase() === ARC_CHAIN.contracts.factory.toLowerCase()
+    ) {
+      return ARC_CHAIN;
+    }
+    return ROBINHOOD_CHAIN;
+  }
+
+  function resolveNetworkByParam(param?: string | null): NetworkConfig {
+    const p = (param || '').toLowerCase();
+    if (p === 'arc' || p === '5042') return ARC_CHAIN;
+    return ROBINHOOD_CHAIN;
+  }
+
   // GET /dex/latest-block  — most recent indexed block
   if (url.pathname === '/dex/latest-block' && req.method === 'GET') {
-    const cacheKey = 'dex:latest-block';
+    const chainParam = url.searchParams.get('chain') || url.searchParams.get('chainId');
+    const targetNetwork = resolveNetworkByParam(chainParam);
+    const targetClient = targetNetwork.chainId === ARC_CHAIN.chainId ? arcClient : robinhoodClient;
+    const cacheKey = `dex:latest-block:${targetNetwork.chainId}`;
     const cached = await cache.get<unknown>(cacheKey);
     if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
 
     let block: bigint;
     try {
-      block = await publicClient.getBlockNumber();
+      block = await targetClient.getBlockNumber();
     } catch {
       block = 0n;
     }
-    const payload = { block: Number(block) };
+    const payload = { block: Number(block), chainId: targetNetwork.chainId };
     await cache.set(cacheKey, payload, 5);
     return replyJson(payload, 200, { 'x-cache': 'MISS' });
   }
@@ -568,9 +621,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       marketData: import('@proto/shared-types').TokenMarketData;
     };
     const t = td.token;
+    const network = resolveNetworkForToken(t);
     const payload = {
-      id: `${ROBINHOOD_CHAIN.chainId}_${t.address}`,
-      caip19: `eip155:${ROBINHOOD_CHAIN.chainId}/erc20:${t.address}`,
+      id: `${network.chainId}_${t.address}`,
+      caip19: `eip155:${network.chainId}/erc20:${t.address}`,
       name: t.name,
       symbol: t.symbol,
       totalSupply: t.totalSupply,
@@ -610,10 +664,11 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
     if (!token) return replyError('NOT_FOUND', 'Pair not found', 404);
 
-    const wethAddress = ROBINHOOD_CHAIN.contracts.weth;
+    const network = resolveNetworkForToken(token);
+    const isArc = network.chainId === ARC_CHAIN.chainId;
     const isToken0 = token.isToken0;
     const payload = {
-      id: `${ROBINHOOD_CHAIN.chainId}_${token.poolAddress}`,
+      id: `${network.chainId}_${token.poolAddress}`,
       dexId: 'proto',
       url: `https://proto.fun/trade/${token.address}`,
       pairAddress: token.poolAddress,
@@ -624,9 +679,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         symbol: token.symbol,
       },
       quoteToken: {
-        address: wethAddress,
-        name: 'Wrapped Ether',
-        symbol: 'WETH',
+        address: network.contracts.weth,
+        name: isArc ? 'USD Coin' : 'Wrapped Ether',
+        symbol: isArc ? 'USDC' : 'WETH',
       },
       quoteTokenOrder: isToken0 ? 'token0' : 'token1',
       fee: token.poolFee / 1_000_000,
@@ -657,6 +712,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     for (const token of allTokens) {
       if (poolAddress && token.poolAddress.toLowerCase() !== poolAddress) continue;
 
+      const network = resolveNetworkForToken(token);
+      const isArc = network.chainId === ARC_CHAIN.chainId;
+      const quotePriceUsd = isArc ? 1.0 : ethPriceUsd;
+
       const trades = await repository.getTrades(token.address, 100, 0);
       for (const trade of trades) {
         const bn =
@@ -676,10 +735,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           txnIndex: 0,
           eventIndex: 0,
           maker: trade.trader,
-          pairId: `${ROBINHOOD_CHAIN.chainId}_${token.poolAddress}`,
-          asset0In: trade.isBuy ? (parseFloat(trade.wethAmount) / ethPriceUsd).toFixed(8) : '0',
+          pairId: `${network.chainId}_${token.poolAddress}`,
+          asset0In: trade.isBuy ? (parseFloat(trade.wethAmount) / quotePriceUsd).toFixed(8) : '0',
           asset1In: trade.isBuy ? '0' : trade.tokenAmount,
-          asset0Out: trade.isBuy ? '0' : (parseFloat(trade.wethAmount) / ethPriceUsd).toFixed(8),
+          asset0Out: trade.isBuy ? '0' : (parseFloat(trade.wethAmount) / quotePriceUsd).toFixed(8),
           asset1Out: trade.isBuy ? trade.tokenAmount : '0',
           priceNative: (parseFloat(trade.wethAmount) / parseFloat(trade.tokenAmount)).toFixed(18),
           priceUsd: trade.priceUsd.toFixed(8),
@@ -701,8 +760,11 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     /^\/api\/v1\/networks\/([^/]+)\/pools\/(0x[a-fA-F0-9]{40})$/,
   );
   if (geckoPoolMatch && req.method === 'GET') {
+    const netParam = geckoPoolMatch[1];
+    const network = resolveNetworkByParam(netParam);
+    const isArc = network.chainId === ARC_CHAIN.chainId;
     const poolAddr = geckoPoolMatch[2].toLowerCase() as `0x${string}`;
-    const cacheKey = `gecko:pool:${poolAddr}`;
+    const cacheKey = `gecko:pool:${network.chainId}:${poolAddr}`;
     const cached = await cache.get<unknown>(cacheKey);
     if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
 
@@ -710,7 +772,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const token = allTokens.find((t) => t.poolAddress.toLowerCase() === poolAddr);
     if (!token) return replyError('NOT_FOUND', 'Pool not found', 404);
 
-    const ethPriceUsd = await priceFeed.getEthPriceUsd();
+    const quotePriceUsd = isArc ? 1.0 : await priceFeed.getEthPriceUsd();
+    const quoteSymbol = isArc ? 'USDC' : 'WETH';
     const trades = await repository.getTrades(token.address, 500, 0);
     let vol24h = 0;
     const cutoff = Date.now() - 86_400_000;
@@ -720,16 +783,16 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
     const payload = {
       data: {
-        id: `${ROBINHOOD_CHAIN.chainId}_${token.poolAddress}`,
+        id: `${network.chainId}_${token.poolAddress}`,
         type: 'pool',
         attributes: {
           base_token_price_usd: (trades[0]?.priceUsd ?? 0).toFixed(12),
-          quote_token_price_usd: ethPriceUsd.toFixed(2),
+          quote_token_price_usd: quotePriceUsd.toFixed(2),
           base_token_price_native_currency: (
             parseFloat(trades[0]?.wethAmount ?? '0') / parseFloat(trades[0]?.tokenAmount ?? '1')
           ).toFixed(18),
           address: token.poolAddress,
-          name: `${token.symbol} / WETH`,
+          name: `${token.symbol} / ${quoteSymbol}`,
           pool_created_at: new Date(token.createdAt).toISOString(),
           token_price_usd: (trades[0]?.priceUsd ?? 0).toFixed(12),
           fdv_usd: null,
@@ -740,16 +803,16 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
             .length,
           transactions_h24_sells: trades.filter((t) => !t.isBuy && (t.timestamp ?? 0) >= cutoff)
             .length,
-          volume_usd: { h24: (vol24h * ethPriceUsd).toFixed(2) },
+          volume_usd: { h24: (vol24h * quotePriceUsd).toFixed(2) },
           reserve_in_usd: null,
         },
         relationships: {
           base_token: {
-            data: { id: `${ROBINHOOD_CHAIN.chainId}_${token.address}`, type: 'token' },
+            data: { id: `${network.chainId}_${token.address}`, type: 'token' },
           },
           quote_token: {
             data: {
-              id: `${ROBINHOOD_CHAIN.chainId}_${ROBINHOOD_CHAIN.contracts.weth}`,
+              id: `${network.chainId}_${network.contracts.weth}`,
               type: 'token',
             },
           },
@@ -766,8 +829,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     /^\/api\/v1\/networks\/([^/]+)\/tokens\/(0x[a-fA-F0-9]{40})$/,
   );
   if (geckoTokenMatch && req.method === 'GET') {
+    const netParam = geckoTokenMatch[1];
+    const network = resolveNetworkByParam(netParam);
     const tokenAddr = geckoTokenMatch[2].toLowerCase() as `0x${string}`;
-    const cacheKey = `gecko:token:${tokenAddr}`;
+    const cacheKey = `gecko:token:${network.chainId}:${tokenAddr}`;
     const cached = await cache.get<unknown>(cacheKey);
     if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
 
@@ -781,7 +846,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
     const payload = {
       data: {
-        id: `${ROBINHOOD_CHAIN.chainId}_${t.address}`,
+        id: `${network.chainId}_${t.address}`,
         type: 'token',
         attributes: {
           address: t.address,
@@ -808,6 +873,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     /^\/api\/v1\/networks\/([^/]+)\/pools\/(0x[a-fA-F0-9]{40})\/ohlcv\/(minute|hour|day)$/,
   );
   if (geckoOhlcvMatch && req.method === 'GET') {
+    const netParam = geckoOhlcvMatch[1];
+    const network = resolveNetworkByParam(netParam);
+    const isArc = network.chainId === ARC_CHAIN.chainId;
     const poolAddr = geckoOhlcvMatch[2].toLowerCase() as `0x${string}`;
     const timeframe = geckoOhlcvMatch[3];
     const limit = Math.min(1000, parseInt(url.searchParams.get('limit') ?? '100', 10));
@@ -823,13 +891,13 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
     const payload = {
       data: {
-        id: `${ROBINHOOD_CHAIN.chainId}_${token.poolAddress}_${timeframe}`,
+        id: `${network.chainId}_${token.poolAddress}_${timeframe}`,
         type: 'ohlcv',
         attributes: {
           ohlcv_list: sliced.map((c) => [c.timestamp, c.open, c.high, c.low, c.close, c.volume]),
         },
       },
-      meta: { base: token.symbol, quote: 'WETH' },
+      meta: { base: token.symbol, quote: isArc ? 'USDC' : 'WETH' },
     };
     return replyJson(payload);
   }
@@ -839,13 +907,16 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     /^\/api\/v1\/networks\/([^/]+)\/pools\/(0x[a-fA-F0-9]{40})\/trades$/,
   );
   if (geckoTradesMatch && req.method === 'GET') {
+    const netParam = geckoTradesMatch[1];
+    const network = resolveNetworkByParam(netParam);
+    const isArc = network.chainId === ARC_CHAIN.chainId;
     const poolAddr = geckoTradesMatch[2].toLowerCase() as `0x${string}`;
     const allTokens = await repository.findAll(200, 0);
     const token = allTokens.find((t) => t.poolAddress.toLowerCase() === poolAddr);
     if (!token) return replyError('NOT_FOUND', 'Pool not found', 404);
 
     const trades = await repository.getTrades(token.address, 100, 0);
-    const ethPriceUsd = await priceFeed.getEthPriceUsd();
+    const quotePriceUsd = isArc ? 1.0 : await priceFeed.getEthPriceUsd();
 
     const payload = {
       data: trades.map((tr) => ({
@@ -857,28 +928,28 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           tx_from_address: tr.trader,
           from_token_amount: tr.isBuy ? tr.wethAmount : tr.tokenAmount,
           to_token_amount: tr.isBuy ? tr.tokenAmount : tr.wethAmount,
-          price_from_in_currency_usd: tr.isBuy ? ethPriceUsd.toFixed(2) : tr.priceUsd.toFixed(8),
-          price_to_in_currency_usd: tr.isBuy ? tr.priceUsd.toFixed(8) : ethPriceUsd.toFixed(2),
-          price_from_in_usd: tr.isBuy ? ethPriceUsd.toFixed(2) : tr.priceUsd.toFixed(8),
-          price_to_in_usd: tr.isBuy ? tr.priceUsd.toFixed(8) : ethPriceUsd.toFixed(2),
+          price_from_in_currency_usd: tr.isBuy ? quotePriceUsd.toFixed(2) : tr.priceUsd.toFixed(8),
+          price_to_in_currency_usd: tr.isBuy ? tr.priceUsd.toFixed(8) : quotePriceUsd.toFixed(2),
+          price_from_in_usd: tr.isBuy ? quotePriceUsd.toFixed(2) : tr.priceUsd.toFixed(8),
+          price_to_in_usd: tr.isBuy ? tr.priceUsd.toFixed(8) : quotePriceUsd.toFixed(2),
           kind: tr.isBuy ? 'buy' : 'sell',
-          volume_in_usd: (parseFloat(tr.wethAmount) * ethPriceUsd).toFixed(2),
+          volume_in_usd: (parseFloat(tr.wethAmount) * quotePriceUsd).toFixed(2),
           block_timestamp: new Date(tr.timestamp ?? 0).toISOString(),
         },
         relationships: {
           from_token: {
             data: {
               id: tr.isBuy
-                ? `${ROBINHOOD_CHAIN.chainId}_${ROBINHOOD_CHAIN.contracts.weth}`
-                : `${ROBINHOOD_CHAIN.chainId}_${token.address}`,
+                ? `${network.chainId}_${network.contracts.weth}`
+                : `${network.chainId}_${token.address}`,
               type: 'token',
             },
           },
           to_token: {
             data: {
               id: tr.isBuy
-                ? `${ROBINHOOD_CHAIN.chainId}_${token.address}`
-                : `${ROBINHOOD_CHAIN.chainId}_${ROBINHOOD_CHAIN.contracts.weth}`,
+                ? `${network.chainId}_${token.address}`
+                : `${network.chainId}_${network.contracts.weth}`,
               type: 'token',
             },
           },
