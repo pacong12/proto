@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { decodeEventLog, parseEther } from 'viem';
+import { decodeEventLog, parseEventLogs, parseUnits } from 'viem';
 import {
   ROBINHOOD_CHAIN,
   getNetworkConfig,
@@ -42,11 +42,22 @@ export function useLaunchpad() {
       const [account] = await walletClient.getAddresses();
       if (!account) throw new Error('Please connect your wallet');
 
-      const network = getNetworkConfig(walletChainId.value ?? undefined);
-      // Use parseEther for full-precision ETH-to-wei conversion (fix MED-02).
+      let activeChainId = walletChainId.value ?? undefined;
+      try {
+        const clientChainId = await walletClient.getChainId();
+        if (clientChainId) {
+          activeChainId = clientChainId;
+          walletChainId.value = clientChainId;
+        }
+      } catch {
+        // Fall back to walletChainId.value
+      }
+
+      const network = getNetworkConfig(activeChainId);
+      // Use parseUnits with chain-specific decimals for exact token/currency amounts.
       const initialBuyWei =
         params.initialBuyAmountEth && params.initialBuyAmountEth !== '0'
-          ? parseEther(params.initialBuyAmountEth)
+          ? parseUnits(params.initialBuyAmountEth, network.nativeCurrency.decimals)
           : 0n;
       const totalValue = network.launchConfig.launchFeeWei + initialBuyWei;
 
@@ -73,29 +84,51 @@ export function useLaunchpad() {
         chain: walletClient.chain,
       });
 
-      const receipt = await getPublicClient().waitForTransactionReceipt({ hash });
+      const publicClient = getPublicClient();
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
 
-      // Decode the event log via ABI to extract properly typed addresses (fix HIGH-02).
-      // Raw topics[1] is a 32-byte padded value and must not be cast directly to an address.
-      const launchLog = receipt.logs.find(
-        (l) => l.address.toLowerCase() === network.contracts.factory.toLowerCase(),
-      );
-
-      if (!launchLog) {
-        throw new Error('TokenLaunched event not found in transaction receipt');
+      if (receipt.status === 'reverted') {
+        throw new Error(
+          `Transaction reverted on-chain (status: reverted). Hash: ${hash}. Check launch fee and gas.`,
+        );
       }
 
-      const decoded = decodeEventLog({
+      // 1. Primary: parse via viem parseEventLogs
+      const v1Events = parseEventLogs({
         abi: launchpadFactoryAbi,
+        logs: receipt.logs,
         eventName: 'TokenLaunched',
-        topics: launchLog.topics,
-        data: launchLog.data,
       });
 
-      return {
-        tokenAddress: decoded.args.token,
-        poolAddress: decoded.args.pool,
-      };
+      if (v1Events.length > 0) {
+        return {
+          tokenAddress: v1Events[0].args.token,
+          poolAddress: v1Events[0].args.pool,
+        };
+      }
+
+      // 2. Secondary fallback: check each log individually
+      for (const log of receipt.logs) {
+        try {
+          const decoded = decodeEventLog({
+            abi: launchpadFactoryAbi,
+            eventName: 'TokenLaunched',
+            topics: log.topics,
+            data: log.data,
+          });
+          if (decoded?.args?.token) {
+            return {
+              tokenAddress: decoded.args.token,
+              poolAddress: decoded.args.pool,
+            };
+          }
+        } catch {
+          // Continue searching logs
+        }
+      }
+
+      console.error('[LaunchpadV1] TokenLaunched not found. Receipt logs:', receipt.logs);
+      throw new Error(`TokenLaunched event not found in transaction receipt. Hash: ${hash}`);
     } catch (err) {
       error.value = (err as Error).message;
       return null;
@@ -127,11 +160,22 @@ export function useLaunchpad() {
       const [account] = await walletClient.getAddresses();
       if (!account) throw new Error('Please connect your wallet');
 
-      const network = getNetworkConfig(walletChainId.value ?? undefined);
-      // Use parseEther for full-precision ETH-to-wei conversion (fix MED-02).
+      let activeChainId = walletChainId.value ?? undefined;
+      try {
+        const clientChainId = await walletClient.getChainId();
+        if (clientChainId) {
+          activeChainId = clientChainId;
+          walletChainId.value = clientChainId;
+        }
+      } catch {
+        // Fall back to walletChainId.value
+      }
+
+      const network = getNetworkConfig(activeChainId);
+      // Use parseUnits with chain-specific decimals for exact token/currency amounts.
       const initialBuyWei =
         params.initialBuyAmountEth && params.initialBuyAmountEth !== '0'
-          ? parseEther(params.initialBuyAmountEth)
+          ? parseUnits(params.initialBuyAmountEth, network.nativeCurrency.decimals)
           : 0n;
       const totalValue = network.launchConfig.launchFeeWei + initialBuyWei;
 
@@ -155,28 +199,65 @@ export function useLaunchpad() {
         chain: walletClient.chain,
       });
 
-      const receipt = await getPublicClient().waitForTransactionReceipt({ hash });
+      const publicClient = getPublicClient();
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
 
-      // Decode the event log via ABI to extract properly typed addresses (fix HIGH-02).
-      const launchLog = receipt.logs.find(
-        (l) => l.address.toLowerCase() === targetFactory.toLowerCase(),
-      );
-
-      if (!launchLog) {
-        throw new Error('TokenLaunchedV2 event not found in transaction receipt');
+      if (receipt.status === 'reverted') {
+        throw new Error(
+          `Transaction reverted on-chain (status: reverted). Hash: ${hash}. Check launch fee and gas.`,
+        );
       }
 
-      const decoded = decodeEventLog({
+      // 1. Primary: decode via viem parseEventLogs
+      const v2Events = parseEventLogs({
         abi: launchpadV2FactoryAbi,
+        logs: receipt.logs,
         eventName: 'TokenLaunchedV2',
-        topics: launchLog.topics,
-        data: launchLog.data,
       });
 
-      return {
-        tokenAddress: decoded.args.token,
-        curveAddress: decoded.args.curve,
-      };
+      if (v2Events.length > 0) {
+        return {
+          tokenAddress: v2Events[0].args.token,
+          curveAddress: v2Events[0].args.curve,
+        };
+      }
+
+      // 2. Secondary fallback: check each log individually with decodeEventLog
+      for (const log of receipt.logs) {
+        try {
+          const decoded = decodeEventLog({
+            abi: launchpadV2FactoryAbi,
+            eventName: 'TokenLaunchedV2',
+            topics: log.topics,
+            data: log.data,
+          });
+          if (decoded?.args?.token) {
+            return {
+              tokenAddress: decoded.args.token,
+              curveAddress: decoded.args.curve,
+            };
+          }
+        } catch {
+          // Continue searching logs
+        }
+      }
+
+      // 3. Tertiary fallback: if deployed as V1
+      const v1Events = parseEventLogs({
+        abi: launchpadFactoryAbi,
+        logs: receipt.logs,
+        eventName: 'TokenLaunched',
+      });
+
+      if (v1Events.length > 0) {
+        return {
+          tokenAddress: v1Events[0].args.token,
+          curveAddress: v1Events[0].args.pool as `0x${string}`,
+        };
+      }
+
+      console.error('[LaunchpadV2] TokenLaunchedV2 not found. Receipt logs:', receipt.logs);
+      throw new Error(`TokenLaunchedV2 event not found in transaction receipt. Hash: ${hash}`);
     } catch (err) {
       error.value = (err as Error).message;
       return null;
