@@ -140,7 +140,7 @@ export const ROBINHOOD_TESTNET: NetworkConfig = {
 
 // ---------------------------------------------------------------------------
 // Mainnet: Arc Network (Chain ID 5042) - Circle Stablecoin L1
-// Verified production infrastructure deployments from ayoo.club / Arc Ecosystem
+// Production Proto launchpad infrastructure on Arc Network
 // ---------------------------------------------------------------------------
 
 export const ARC_CHAIN: NetworkConfig = {
@@ -154,9 +154,9 @@ export const ARC_CHAIN: NetworkConfig = {
   rpcUrl: 'https://rpc.mainnet.arc.io',
   blockExplorer: 'https://explorer.arc.io',
   contracts: {
-    factory: '0xED31e7ec603651803784196003903aCa05550552',
-    factoryV2: '0x2ae8BE8C8F19665396b362859d51bdec09e59AEa',
-    locker: '0x9909ac8759dB233f546b644EF2CBDE1b3Af1dCE0',
+    factory: '0x48844223aBDceeb1Ce502F54d559681358E68200',
+    factoryV2: '0x48844223aBDceeb1Ce502F54d559681358E68200',
+    locker: '0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2',
     uniswapV3Factory: '0xf0db7b58379503491d857dB50AC9ece64c653918',
     positionManager: '0x39654A85A4C05127f5Fd6ED22CAeC077A0fB1377',
     swapRouter: '0x53BF6B0684Ec7eF91e1387Da3D1a1769bC5A6F77',
