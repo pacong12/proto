@@ -203,11 +203,25 @@ function copyAddress() {
                 class="w-3.5 h-3.5 rounded-xs object-contain"
               />
               <span class="font-semibold text-black dark:text-white">{{ activeNetwork.name }}</span>
+              <span
+                class="text-[10px] text-zinc-400 flex items-center gap-1 border-l border-zinc-200 dark:border-zinc-800 pl-1.5 ml-0.5"
+              >
+                <img
+                  :src="
+                    activeNetwork.nativeCurrency.symbol === 'USDC'
+                      ? '/tokens/usdc.svg'
+                      : '/tokens/eth.svg'
+                  "
+                  :alt="activeNetwork.nativeCurrency.symbol"
+                  class="w-2.5 h-2.5 rounded-full object-contain"
+                />
+                {{ activeNetwork.nativeCurrency.symbol }}
+              </span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            class="w-48 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800"
+            class="w-56 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5"
           >
             <DropdownMenuLabel class="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
               Select Network
@@ -216,18 +230,39 @@ function copyAddress() {
             <DropdownMenuItem
               v-for="net in Object.values(SUPPORTED_CHAINS)"
               :key="net.chainId"
-              class="cursor-pointer text-xs font-mono flex items-center justify-between"
+              class="cursor-pointer text-xs font-mono flex items-center justify-between py-2 px-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition"
               @click="switchOrAddNetwork(net)"
             >
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-2.5">
                 <img
                   :src="net.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
                   :alt="net.name"
-                  class="w-3.5 h-3.5 rounded-xs object-contain"
+                  class="w-5 h-5 rounded-md object-contain shrink-0"
                 />
-                <span>{{ net.name }}</span>
+                <div class="flex flex-col text-left">
+                  <span class="font-bold text-black dark:text-white leading-tight">
+                    {{ net.name }}
+                  </span>
+                  <div
+                    class="flex items-center gap-1 text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5"
+                  >
+                    <img
+                      :src="
+                        net.nativeCurrency.symbol === 'USDC'
+                          ? '/tokens/usdc.svg'
+                          : '/tokens/eth.svg'
+                      "
+                      :alt="net.nativeCurrency.symbol"
+                      class="w-2.5 h-2.5 rounded-full object-contain"
+                    />
+                    <span>{{ net.nativeCurrency.symbol }} (Gas)</span>
+                  </div>
+                </div>
               </div>
-              <span class="text-[10px] text-zinc-400">{{ net.nativeCurrency.symbol }}</span>
+              <span
+                v-if="activeNetwork.chainId === net.chainId"
+                class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 ml-2"
+              />
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

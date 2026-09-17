@@ -122,6 +122,14 @@
                   :fallback-text="item.token.symbol"
                   :width="38"
                   :height="38"
+                  :chain-badge="
+                    activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'
+                  "
+                  :currency-badge="
+                    activeNetwork.nativeCurrency.symbol === 'USDC'
+                      ? '/tokens/usdc.svg'
+                      : '/tokens/eth.svg'
+                  "
                   class="rounded-xl border border-zinc-200 dark:border-zinc-800 shrink-0"
                 />
 
