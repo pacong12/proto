@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute, RouterLink } from 'vue-router';
+import { useColorMode } from '@vueuse/core';
 import {
   Search,
   Compass,
@@ -15,12 +16,13 @@ import {
   User,
   Menu,
   X,
+  Sun,
+  Moon,
+  Globe,
 } from 'lucide-vue-next';
 import { useWallet } from '../composables/useWallet';
 import { useI18n } from '../lib/i18n';
 import { SUPPORTED_CHAINS } from '@proto/shared-types';
-import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
-import ThemeToggle from '@/components/ThemeToggle.vue';
 import { Button } from '@/components/ui/button';
 import { Jazzicon } from '@/components/ui/avatar';
 import {
@@ -30,6 +32,10 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuPortal,
 } from '@/components/ui/dropdown-menu';
 import {
   Select,
@@ -44,9 +50,24 @@ defineEmits<{
   (e: 'openSearch'): void;
 }>();
 
-const { t } = useI18n();
+const { t, locale, locales, setLocale, currentLocaleOption } = useI18n();
 const route = useRoute();
 const mobileMenuOpen = ref(false);
+
+const mode = useColorMode({
+  emitAuto: true,
+  modes: {
+    dark: 'dark',
+    light: 'light',
+  },
+  storageKey: 'proto-color-theme',
+});
+
+const isDark = computed(() => mode.value === 'dark');
+
+function toggleTheme() {
+  mode.value = isDark.value ? 'light' : 'dark';
+}
 
 watch(
   () => route.path,
@@ -184,28 +205,6 @@ function copyAddress() {
           </kbd>
         </Button>
 
-        <!-- Language Switcher Component -->
-        <LanguageSwitcher />
-
-        <!-- Dark/Light Theme Mode Toggle -->
-        <ThemeToggle />
-
-        <!-- Official X (Twitter) Community Link -->
-        <a
-          href="https://x.com/protodotfun"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="hidden sm:inline-flex items-center justify-center h-8 w-8 rounded-lg border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 transition cursor-pointer"
-          title="Official X: @protodotfun"
-          aria-label="Official X profile"
-        >
-          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-            <path
-              d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
-            />
-          </svg>
-        </a>
-
         <!-- Network Switcher with Shadcn Select (Multi-Chain: Robinhood & Arc) -->
         <Select
           :model-value="String(activeNetwork.chainId)"
@@ -226,25 +225,11 @@ function copyAddress() {
               <span class="font-semibold text-black dark:text-white sm:hidden">
                 {{ activeNetwork.chainId === 5042 ? 'Arc' : 'Robinhood' }}
               </span>
-              <span
-                class="text-[10px] text-zinc-400 flex items-center gap-1 border-l border-zinc-200 dark:border-zinc-800 pl-1.5 ml-0.5"
-              >
-                <img
-                  :src="
-                    activeNetwork.nativeCurrency.symbol === 'USDC'
-                      ? '/tokens/usdc.svg'
-                      : '/tokens/eth.svg'
-                  "
-                  :alt="activeNetwork.nativeCurrency.symbol"
-                  class="w-2.5 h-2.5 rounded-full object-contain"
-                />
-                {{ activeNetwork.nativeCurrency.symbol }}
-              </span>
             </div>
           </SelectTrigger>
           <SelectContent
             align="end"
-            class="w-56 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-lg"
+            class="w-52 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-lg"
           >
             <SelectLabel
               class="text-[10px] font-mono uppercase tracking-wider text-zinc-400 px-2 py-1"
@@ -264,25 +249,9 @@ function copyAddress() {
                   :alt="net.name"
                   class="w-5 h-5 rounded-md object-contain shrink-0"
                 />
-                <div class="flex flex-col text-left">
-                  <span class="font-bold text-black dark:text-white leading-tight">
-                    {{ net.name }}
-                  </span>
-                  <div
-                    class="flex items-center gap-1 text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5"
-                  >
-                    <img
-                      :src="
-                        net.nativeCurrency.symbol === 'USDC'
-                          ? '/tokens/usdc.svg'
-                          : '/tokens/eth.svg'
-                      "
-                      :alt="net.nativeCurrency.symbol"
-                      class="w-2.5 h-2.5 rounded-full object-contain"
-                    />
-                    <span>{{ net.nativeCurrency.symbol }} (Gas)</span>
-                  </div>
-                </div>
+                <span class="font-bold text-black dark:text-white leading-tight">
+                  {{ net.name }}
+                </span>
               </div>
             </SelectItem>
           </SelectContent>
@@ -301,26 +270,113 @@ function copyAddress() {
           <span class="sm:hidden">Network</span>
         </Button>
 
-        <!-- Connect Wallet Button -->
-        <Button
-          v-if="!isConnected"
-          size="sm"
-          class="h-8 gap-1.5 text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-black shadow-sm"
-          :disabled="isConnecting"
-          @click="openWallet"
-        >
-          <Wallet class="w-3.5 h-3.5" />
-          <span>{{ isConnecting ? t('connecting') : t('connectWallet') }}</span>
-        </Button>
+        <!-- Connect Wallet Button + Disconnected Profile Menu -->
+        <div v-if="!isConnected" class="flex items-center gap-2">
+          <Button
+            size="sm"
+            class="h-8 gap-1.5 text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-black shadow-sm cursor-pointer"
+            :disabled="isConnecting"
+            @click="openWallet"
+          >
+            <Wallet class="w-3.5 h-3.5" />
+            <span>{{ isConnecting ? t('connecting') : t('connectWallet') }}</span>
+          </Button>
 
-        <!-- Connected Wallet Dropdown -->
+          <!-- Disconnected Profile / Settings Dropdown -->
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button
+                variant="outline"
+                size="sm"
+                class="h-8 w-8 p-0 rounded-full border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 cursor-pointer"
+                title="Profile & Preferences"
+                aria-label="Profile and Preferences menu"
+              >
+                <User class="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              class="w-56 p-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-xl"
+            >
+              <DropdownMenuItem as-child>
+                <RouterLink
+                  to="/profile"
+                  class="flex items-center gap-2 w-full cursor-pointer text-black dark:text-white px-2.5 py-1.5 text-xs rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                >
+                  <User class="w-3.5 h-3.5" />
+                  <span>{{ t('profile') }}</span>
+                </RouterLink>
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator class="my-1 border-zinc-200 dark:border-zinc-800" />
+
+              <!-- Theme Toggle -->
+              <DropdownMenuItem
+                class="flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                @click="toggleTheme"
+              >
+                <div class="flex items-center gap-2">
+                  <Sun v-if="isDark" class="w-3.5 h-3.5 text-amber-500" />
+                  <Moon v-else class="w-3.5 h-3.5 text-emerald-500" />
+                  <span>{{ isDark ? 'Light Theme' : 'Dark Theme' }}</span>
+                </div>
+                <span class="text-[10px] font-mono text-zinc-400 capitalize">{{ mode }}</span>
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator class="my-1 border-zinc-200 dark:border-zinc-800" />
+
+              <!-- Language Submenu using DropdownMenuPortal -->
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger
+                  class="flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                >
+                  <div class="flex items-center gap-2">
+                    <Globe class="w-3.5 h-3.5 text-zinc-400" />
+                    <span>Language</span>
+                  </div>
+                  <span class="text-[10px] text-emerald-500 font-bold uppercase font-mono mr-1">{{
+                    currentLocaleOption.code
+                  }}</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent
+                    class="w-48 max-h-64 overflow-y-auto p-1 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-xl z-50"
+                  >
+                    <DropdownMenuItem
+                      v-for="item in locales"
+                      :key="item.code"
+                      class="flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                      :class="{
+                        'font-bold text-emerald-500 dark:text-emerald-400 bg-emerald-500/10':
+                          item.code === locale,
+                      }"
+                      @click="setLocale(item.code)"
+                    >
+                      <div class="flex items-center gap-2">
+                        <span class="text-sm leading-none">{{ item.flag }}</span>
+                        <span>{{ item.nativeName }}</span>
+                      </div>
+                      <Check
+                        v-if="item.code === locale"
+                        class="w-3.5 h-3.5 text-emerald-500 shrink-0"
+                      />
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <!-- Connected Wallet / Profile Dropdown Menu -->
         <div v-else class="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
               <Button
                 variant="outline"
                 size="sm"
-                class="h-8 gap-2 text-xs font-mono border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                class="h-8 gap-2 text-xs font-mono border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 cursor-pointer"
               >
                 <Jazzicon :address="account" :size="16" class="rounded-full" />
                 <span class="font-bold text-black dark:text-white">{{ formattedAddress }}</span>
@@ -331,13 +387,13 @@ function copyAddress() {
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              class="w-60 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800"
+              class="w-60 p-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-xl"
             >
-              <DropdownMenuLabel class="flex items-center gap-2.5 py-2">
+              <DropdownMenuLabel class="flex items-center gap-2.5 py-2 px-2">
                 <Jazzicon
                   :address="account"
                   :size="28"
-                  class="border border-zinc-300 dark:border-zinc-700"
+                  class="rounded-full border border-zinc-300 dark:border-zinc-700"
                 />
                 <div class="truncate">
                   <span class="block text-xs font-bold text-black dark:text-white">{{
@@ -350,12 +406,12 @@ function copyAddress() {
                   </span>
                 </div>
               </DropdownMenuLabel>
-              <DropdownMenuSeparator class="border-zinc-200 dark:border-zinc-800" />
+              <DropdownMenuSeparator class="my-1 border-zinc-200 dark:border-zinc-800" />
 
               <DropdownMenuItem as-child>
                 <RouterLink
                   to="/profile"
-                  class="flex items-center gap-2 w-full cursor-pointer text-black dark:text-white"
+                  class="flex items-center gap-2 w-full cursor-pointer text-black dark:text-white px-2.5 py-1.5 text-xs rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
                 >
                   <User class="w-3.5 h-3.5" />
                   <span>{{ t('myProfileAndFees') }}</span>
@@ -364,7 +420,7 @@ function copyAddress() {
 
               <DropdownMenuItem
                 @click="copyAddress"
-                class="cursor-pointer text-black dark:text-white"
+                class="cursor-pointer text-black dark:text-white px-2.5 py-1.5 text-xs rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900 transition flex items-center gap-2"
               >
                 <Copy v-if="!copied" class="w-3.5 h-3.5" />
                 <Check v-else class="w-3.5 h-3.5 text-emerald-500" />
@@ -373,17 +429,72 @@ function copyAddress() {
 
               <DropdownMenuItem
                 @click="openWallet"
-                class="cursor-pointer text-black dark:text-white"
+                class="cursor-pointer text-black dark:text-white px-2.5 py-1.5 text-xs rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900 transition flex items-center gap-2"
               >
                 <Wallet class="w-3.5 h-3.5" />
                 <span>{{ t('switchManageWallet') }}</span>
               </DropdownMenuItem>
 
-              <DropdownMenuSeparator class="border-zinc-200 dark:border-zinc-800" />
+              <DropdownMenuSeparator class="my-1 border-zinc-200 dark:border-zinc-800" />
+
+              <!-- Theme Toggle in Profile Menu -->
+              <DropdownMenuItem
+                class="flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                @click="toggleTheme"
+              >
+                <div class="flex items-center gap-2">
+                  <Sun v-if="isDark" class="w-3.5 h-3.5 text-amber-500" />
+                  <Moon v-else class="w-3.5 h-3.5 text-emerald-500" />
+                  <span>{{ isDark ? 'Light Theme' : 'Dark Theme' }}</span>
+                </div>
+                <span class="text-[10px] font-mono text-zinc-400 capitalize">{{ mode }}</span>
+              </DropdownMenuItem>
+
+              <!-- Language Submenu using DropdownMenuPortal -->
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger
+                  class="flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                >
+                  <div class="flex items-center gap-2">
+                    <Globe class="w-3.5 h-3.5 text-zinc-400" />
+                    <span>Language</span>
+                  </div>
+                  <span class="text-[10px] text-emerald-500 font-bold uppercase font-mono mr-1">{{
+                    currentLocaleOption.code
+                  }}</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent
+                    class="w-48 max-h-64 overflow-y-auto p-1 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-xl z-50"
+                  >
+                    <DropdownMenuItem
+                      v-for="item in locales"
+                      :key="item.code"
+                      class="flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                      :class="{
+                        'font-bold text-emerald-500 dark:text-emerald-400 bg-emerald-500/10':
+                          item.code === locale,
+                      }"
+                      @click="setLocale(item.code)"
+                    >
+                      <div class="flex items-center gap-2">
+                        <span class="text-sm leading-none">{{ item.flag }}</span>
+                        <span>{{ item.nativeName }}</span>
+                      </div>
+                      <Check
+                        v-if="item.code === locale"
+                        class="w-3.5 h-3.5 text-emerald-500 shrink-0"
+                      />
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+
+              <DropdownMenuSeparator class="my-1 border-zinc-200 dark:border-zinc-800" />
 
               <DropdownMenuItem
                 @click="disconnectWallet"
-                class="text-rose-600 dark:text-rose-400 focus:text-rose-700 dark:focus:text-rose-300 focus:bg-rose-50 dark:focus:bg-rose-950/40 cursor-pointer"
+                class="text-rose-600 dark:text-rose-400 focus:text-rose-700 dark:focus:text-rose-300 focus:bg-rose-50 dark:focus:bg-rose-950/40 cursor-pointer px-2.5 py-1.5 text-xs rounded-lg transition flex items-center gap-2"
               >
                 <LogOut class="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
                 <span>{{ t('disconnect') }}</span>

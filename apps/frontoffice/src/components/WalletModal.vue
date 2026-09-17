@@ -138,9 +138,6 @@
                     class="w-4 h-4 rounded-xs object-contain shrink-0"
                   />
                   <span class="font-bold text-black dark:text-white">{{ activeNetwork.name }}</span>
-                  <span class="text-[10px] text-zinc-400">
-                    ({{ activeNetwork.nativeCurrency.symbol }} Gas)
-                  </span>
                 </div>
               </SelectTrigger>
               <SelectContent
@@ -157,7 +154,7 @@
                   v-for="net in Object.values(SUPPORTED_CHAINS)"
                   :key="net.chainId"
                   :value="String(net.chainId)"
-                  class="cursor-pointer text-xs font-mono py-2 px-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition"
+                  class="cursor-pointer text-xs font-mono py-2.5 px-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition"
                 >
                   <div class="flex items-center gap-2.5">
                     <img
@@ -165,25 +162,9 @@
                       :alt="net.name"
                       class="w-5 h-5 rounded-md object-contain shrink-0"
                     />
-                    <div class="flex flex-col text-left">
-                      <span class="font-bold text-black dark:text-white leading-tight">
-                        {{ net.name }}
-                      </span>
-                      <div
-                        class="flex items-center gap-1 text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5"
-                      >
-                        <img
-                          :src="
-                            net.nativeCurrency.symbol === 'USDC'
-                              ? '/tokens/usdc.svg'
-                              : '/tokens/eth.svg'
-                          "
-                          :alt="net.nativeCurrency.symbol"
-                          class="w-2.5 h-2.5 rounded-full object-contain"
-                        />
-                        <span>{{ net.nativeCurrency.symbol }} (Gas)</span>
-                      </div>
-                    </div>
+                    <span class="font-bold text-black dark:text-white leading-tight">
+                      {{ net.name }}
+                    </span>
                   </div>
                 </SelectItem>
               </SelectContent>

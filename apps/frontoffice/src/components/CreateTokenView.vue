@@ -233,14 +233,9 @@
                     :alt="net.name"
                     class="w-5 h-5 rounded-md object-contain shrink-0"
                   />
-                  <div class="flex flex-col text-left">
-                    <span class="font-bold text-black dark:text-white leading-tight">
-                      {{ net.name }}
-                    </span>
-                    <span class="text-[10px] text-zinc-400">
-                      Paired with {{ net.nativeCurrency.symbol }}
-                    </span>
-                  </div>
+                  <span class="font-bold text-black dark:text-white leading-tight">
+                    {{ net.name }}
+                  </span>
                 </div>
               </SelectItem>
             </SelectContent>
