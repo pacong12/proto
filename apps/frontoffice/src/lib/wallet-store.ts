@@ -33,9 +33,29 @@ export interface WalletSyncMessage {
   providerId?: string | null;
 }
 
+export function getInitialChainId(): number {
+  if (typeof window !== 'undefined' && 'localStorage' in window) {
+    try {
+      const stored = localStorage.getItem(STORAGE_CHAIN_ID_KEY);
+      if (stored) {
+        const parsed = Number.parseInt(stored, 10);
+        if (
+          Number.isFinite(parsed) &&
+          (parsed === 4663 || parsed === 5042 || parsed === 46630 || parsed === 5042002)
+        ) {
+          return parsed;
+        }
+      }
+    } catch {
+      // Ignore storage errors
+    }
+  }
+  return 4663; // Default Robinhood Chain Mainnet
+}
+
 export const walletProvider = shallowRef<WalletProviderLike | null>(null);
 export const walletAddress = shallowRef<`0x${string}` | null>(null);
-export const walletChainId = shallowRef<number | null>(null);
+export const walletChainId = shallowRef<number | null>(getInitialChainId());
 export const walletProviderId = shallowRef<string | null>(null);
 export const walletModalOpen = shallowRef(false);
 

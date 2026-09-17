@@ -243,11 +243,24 @@ export function useWallet() {
     targetConfig: NetworkConfig = ROBINHOOD_CHAIN,
   ): Promise<boolean> {
     error.value = null;
+    walletChainId.value = targetConfig.chainId;
+
+    if (typeof window !== 'undefined' && 'localStorage' in window) {
+      try {
+        localStorage.setItem(STORAGE_CHAIN_ID_KEY, String(targetConfig.chainId));
+      } catch {
+        // Ignore storage errors
+      }
+    }
+
+    if (walletAddress.value) {
+      await syncBalance(walletAddress.value);
+    }
+
     if (appKitConfigured && appKit) {
       try {
         const caip = targetConfig.chainId === 5042 ? arcAppKitChain : robinhoodAppKitChain;
         await appKit.switchNetwork(caip);
-        walletChainId.value = targetConfig.chainId;
         return true;
       } catch (err) {
         console.warn('[useWallet] AppKit switchNetwork failed:', err);
@@ -256,7 +269,6 @@ export function useWallet() {
 
     const provider = walletProvider.value ?? getInjectedProvider();
     if (!provider) {
-      walletChainId.value = targetConfig.chainId;
       return true;
     }
 
@@ -267,8 +279,6 @@ export function useWallet() {
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: hexChainId }],
       });
-      walletChainId.value = targetConfig.chainId;
-      await syncBalance();
       return true;
     } catch (switchError: unknown) {
       const err = switchError as { code?: number };
@@ -286,8 +296,6 @@ export function useWallet() {
               },
             ],
           });
-          walletChainId.value = targetConfig.chainId;
-          await syncBalance();
           return true;
         } catch (addError) {
           error.value = (addError as Error).message;
@@ -420,7 +428,13 @@ export function useWallet() {
           const currentProvider =
             (providerState.walletProvider as unknown as WalletProviderLike) ??
             getInjectedProvider();
-          const currentChain = parseChainId(network.value.chainId) ?? ROBINHOOD_CHAIN.chainId;
+
+          const storedChain =
+            typeof localStorage !== 'undefined'
+              ? parseChainId(localStorage.getItem(STORAGE_CHAIN_ID_KEY))
+              : null;
+          const currentChain =
+            storedChain ?? parseChainId(network.value.chainId) ?? ROBINHOOD_CHAIN.chainId;
 
           if (currentProvider) {
             setConnectedWallet(currentProvider, address, currentChain, 'reown');
@@ -448,10 +462,19 @@ export function useWallet() {
 
     watch(
       () => network.value.chainId,
-      (next) => {
-        const parsed = parseChainId(next);
-        if (parsed !== null) {
-          walletChainId.value = parsed;
+      (next, prev) => {
+        if (next && next !== prev) {
+          const parsed = parseChainId(next);
+          if (parsed !== null && SUPPORTED_CHAINS[parsed]) {
+            walletChainId.value = parsed;
+            if (typeof localStorage !== 'undefined') {
+              try {
+                localStorage.setItem(STORAGE_CHAIN_ID_KEY, String(parsed));
+              } catch {
+                // Ignore
+              }
+            }
+          }
         }
       },
     );
