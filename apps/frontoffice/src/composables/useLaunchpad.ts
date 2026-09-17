@@ -60,7 +60,7 @@ export function useLaunchpad() {
     launchTokenAddress.value = null;
 
     try {
-      const walletClient = getWalletClient();
+      const walletClient = await getWalletClient();
       if (!walletClient) throw new Error('No Web3 wallet detected');
 
       const [account] = await walletClient.getAddresses();
@@ -121,14 +121,14 @@ export function useLaunchpad() {
       launchTxHash.value = hash;
       launchStep.value = 'confirming';
 
-      const publicClient = getPublicClient();
+      const publicClient = getPublicClient(network.chainId);
       let receipt;
       try {
         receipt = await publicClient.waitForTransactionReceipt({
           hash,
-          timeout: 120_000,
-          retryCount: 10,
-          retryDelay: 2000,
+          timeout: 60_000,
+          retryCount: 15,
+          retryDelay: 1500,
         });
       } catch {
         try {
@@ -220,7 +220,7 @@ export function useLaunchpad() {
     launchTokenAddress.value = null;
 
     try {
-      const walletClient = getWalletClient();
+      const walletClient = await getWalletClient();
       if (!walletClient) throw new Error('No Web3 wallet detected');
 
       const [account] = await walletClient.getAddresses();
@@ -274,14 +274,14 @@ export function useLaunchpad() {
       launchTxHash.value = hash;
       launchStep.value = 'confirming';
 
-      const publicClient = getPublicClient();
+      const publicClient = getPublicClient(network.chainId);
       let receipt;
       try {
         receipt = await publicClient.waitForTransactionReceipt({
           hash,
-          timeout: 120_000,
-          retryCount: 10,
-          retryDelay: 2000,
+          timeout: 60_000,
+          retryCount: 15,
+          retryDelay: 1500,
         });
       } catch {
         try {
@@ -518,7 +518,7 @@ export function useLaunchpad() {
     error.value = null;
 
     try {
-      const walletClient = getWalletClient();
+      const walletClient = await getWalletClient();
       if (!walletClient) throw new Error('No Web3 wallet detected');
 
       const [account] = await walletClient.getAddresses();
@@ -534,7 +534,7 @@ export function useLaunchpad() {
         chain: walletClient.chain,
       });
 
-      await getPublicClient().waitForTransactionReceipt({ hash });
+      await getPublicClient(network.chainId).waitForTransactionReceipt({ hash });
       return hash;
     } catch (err) {
       error.value = (err as Error).message;
@@ -556,7 +556,7 @@ export function useLaunchpad() {
     error.value = null;
 
     try {
-      const walletClient = getWalletClient();
+      const walletClient = await getWalletClient();
       if (!walletClient) throw new Error('No Web3 wallet detected');
 
       const [account] = await walletClient.getAddresses();
@@ -572,7 +572,7 @@ export function useLaunchpad() {
         chain: walletClient.chain,
       });
 
-      await getPublicClient().waitForTransactionReceipt({ hash });
+      await getPublicClient(network.chainId).waitForTransactionReceipt({ hash });
       return hash;
     } catch (err) {
       error.value = (err as Error).message;

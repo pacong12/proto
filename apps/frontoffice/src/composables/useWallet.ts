@@ -1,6 +1,5 @@
 import { computed, getCurrentInstance, onMounted, onUnmounted, ref, watch } from 'vue';
 import {
-  useAppKit,
   useAppKitAccount,
   useAppKitNetwork,
   useAppKitProvider,
@@ -14,7 +13,7 @@ import {
   type NetworkConfig,
 } from '@proto/shared-types';
 import { getPublicClient } from '../lib/viem-client';
-import { appKitConfigured } from '../lib/appkit';
+import { appKitConfigured, appKit, robinhoodAppKitChain, arcAppKitChain } from '../lib/appkit';
 import {
   bindProviderListeners,
   clearWalletState,
@@ -49,7 +48,6 @@ function parseChainId(raw: unknown): number | null {
 }
 
 export function useWallet() {
-  const appKit = appKitConfigured ? useAppKit() : null;
   const disconnectAction = appKitConfigured ? useDisconnect() : null;
   const account = useAppKitAccount();
   const providerState = useAppKitProvider<EIP1193Provider>('eip155');
@@ -207,9 +205,8 @@ export function useWallet() {
       try {
         await appKit.open();
         return;
-      } catch (openErr) {
-        // AppKit modal failed; fall back to the local modal.
-        console.warn('[useWallet] AppKit open failed, falling back to local modal:', openErr);
+      } catch (err) {
+        console.warn('[useWallet] AppKit open failed, falling back to local modal:', err);
       }
     }
     walletModalOpen.value = true;
@@ -246,6 +243,17 @@ export function useWallet() {
     targetConfig: NetworkConfig = ROBINHOOD_CHAIN,
   ): Promise<boolean> {
     error.value = null;
+    if (appKitConfigured && appKit) {
+      try {
+        const caip = targetConfig.chainId === 5042 ? arcAppKitChain : robinhoodAppKitChain;
+        await appKit.switchNetwork(caip);
+        walletChainId.value = targetConfig.chainId;
+        return true;
+      } catch (err) {
+        console.warn('[useWallet] AppKit switchNetwork failed:', err);
+      }
+    }
+
     const provider = walletProvider.value ?? getInjectedProvider();
     if (!provider) {
       walletChainId.value = targetConfig.chainId;
@@ -415,13 +423,13 @@ export function useWallet() {
           const currentChain = parseChainId(network.value.chainId) ?? ROBINHOOD_CHAIN.chainId;
 
           if (currentProvider) {
-            setConnectedWallet(currentProvider, address, currentChain, 'appkit');
+            setConnectedWallet(currentProvider, address, currentChain, 'reown');
           } else {
             walletAddress.value = address;
             walletChainId.value = currentChain;
           }
           syncBalance(address);
-        } else if (!next) {
+        } else if (!next && prev) {
           clearWalletState();
         }
       },

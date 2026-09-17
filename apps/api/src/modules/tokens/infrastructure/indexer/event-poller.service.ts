@@ -18,8 +18,9 @@ export class EventPollerService {
   ) {}
 
   async pollEvents(fromBlock?: bigint, toBlock?: bigint): Promise<number> {
+    let currentBlock = 0n;
     try {
-      const currentBlock = toBlock ?? (await this.client.getBlockNumber());
+      currentBlock = toBlock ?? (await this.client.getBlockNumber());
       let startBlock =
         fromBlock ?? (this.lastPolledBlock > 0n ? this.lastPolledBlock + 1n : currentBlock - 50n);
 
@@ -186,10 +187,15 @@ export class EventPollerService {
       this.lastPolledBlock = currentBlock;
       return v1Count + v2Count + tradeCount;
     } catch (error) {
-      console.error('[EventPoller] pollEvents failed:', error);
-      if (toBlock) {
-        this.lastPolledBlock = toBlock;
+      const err = error as { code?: number; message?: string };
+      // Gracefully handle RPC rate limits (429) without crashing or spamming
+      if (err?.code === 429 || err?.message?.includes('Too Many Requests')) {
+        console.warn(`[EventPoller] ${this.network.name} RPC 429 rate limit hit, advancing cursor`);
+      } else {
+        console.error(`[EventPoller] ${this.network.name} pollEvents failed:`, error);
       }
+      // Advance cursor to current block to prevent infinite loop on the same failing range
+      this.lastPolledBlock = currentBlock;
       return 0;
     }
   }

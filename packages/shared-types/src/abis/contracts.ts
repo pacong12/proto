@@ -23,8 +23,11 @@ export const launchpadFactoryAbi = parseAbi([
 
 export const launchpadV2FactoryAbi = parseAbi([
   'function launchTokenV2(string name, string symbol, string logo, string description, string twitter, string telegram, string website) payable returns (address tokenAddress, address curveAddress)',
-  'function getCurveAddress(address token) view returns (address curve)',
-  'function isV2Token(address token) view returns (bool)',
+  'function launches(address token) view returns (address token, address curve, address creator, uint256 createdAt, bool graduated)',
+  'function allLaunches(uint256 index) view returns (address token)',
+  'function getLaunchCount() view returns (uint256)',
+  'function launchFee() view returns (uint256)',
+  'function LAUNCH_FEE() view returns (uint256)',
   'event TokenLaunchedV2(address indexed token, address indexed curve, address indexed creator, string name, string symbol, uint256 initialBuy)',
 ]);
 

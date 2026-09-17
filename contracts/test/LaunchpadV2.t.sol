@@ -253,4 +253,31 @@ contract LaunchpadV2Test is Test {
         vm.expectRevert(LaunchpadV2Factory.TransferFailed.selector);
         factoryReject.launchTokenV2{value: 0.0005 ether}("Fail", "FAIL", "", "", "", "", "");
     }
+
+    function test_SetLaunchFee_OwnerOnlyAndCalibrateArcFee() public {
+        // Default launchFee is 0.0005 ether (Robinhood)
+        assertEq(factory.launchFee(), 0.0005 ether);
+        assertEq(factory.LAUNCH_FEE(), 0.0005 ether);
+
+        // Non-owner cannot change launch fee
+        vm.prank(address(0xDEAD));
+        vm.expectRevert(LaunchpadV2Factory.Unauthorized.selector);
+        factory.setLaunchFee(1.0 ether);
+
+        // Owner changes fee to 1.0 ether (1.00 USDC for Arc Network)
+        factory.setLaunchFee(1.0 ether);
+        assertEq(factory.launchFee(), 1.0 ether);
+        assertEq(factory.LAUNCH_FEE(), 1.0 ether);
+
+        // Launching with less than 1.0 ether reverts
+        vm.prank(creator);
+        vm.expectRevert(LaunchpadV2Factory.InvalidFee.selector);
+        factory.launchTokenV2{value: 0.5 ether}("Arc Token", "ARC", "", "", "", "", "");
+
+        // Launching with 1.0 ether succeeds
+        vm.prank(creator);
+        (address tokenAddress,) =
+            factory.launchTokenV2{value: 1.0 ether}("Arc Token", "ARC", "", "", "", "", "");
+        assertNotEq(tokenAddress, address(0));
+    }
 }

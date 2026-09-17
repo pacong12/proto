@@ -247,6 +247,21 @@
             </li>
           </ul>
         </div>
+
+        <!-- Social & Email Login (Reown AppKit) -->
+        <div
+          v-if="appKitConfigured"
+          class="space-y-2 pt-2 border-t border-zinc-200 dark:border-zinc-800"
+        >
+          <Button
+            variant="outline"
+            class="w-full justify-center h-10 px-3.5 text-xs font-semibold rounded-xl border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/50 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all cursor-pointer gap-2"
+            @click="openAppKitSocial"
+          >
+            <Mail class="w-4 h-4 text-emerald-500" />
+            <span>Social & Email Login (Google, X, Apple)</span>
+          </Button>
+        </div>
       </div>
 
       <!-- AppKit Notice Footer -->
@@ -262,8 +277,9 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue';
-import { Loader2, X, Copy, Check, LogOut, ChevronDown } from 'lucide-vue-next';
+import { Loader2, X, Copy, Check, LogOut, ChevronDown, Mail } from 'lucide-vue-next';
 import { ROBINHOOD_CHAIN, SUPPORTED_CHAINS } from '@proto/shared-types';
+import { useAppKit } from '@reown/appkit/vue';
 import { appKitConfigured } from '../lib/appkit';
 import { useI18n } from '@/lib/i18n';
 import { useWallet } from '../composables/useWallet';
@@ -319,6 +335,19 @@ interface Eip6963ProviderDetail {
 }
 
 const listeners: Array<() => void> = [];
+const appKit = appKitConfigured ? useAppKit() : null;
+
+async function openAppKitSocial() {
+  close();
+  if (appKit) {
+    try {
+      await appKit.open();
+    } catch (e) {
+      console.warn('[WalletModal] Failed to open AppKit:', e);
+    }
+  }
+}
+
 let scanTimer: ReturnType<typeof setTimeout> | null = null;
 
 function isWalletActive(wallet: WalletCandidate): boolean {

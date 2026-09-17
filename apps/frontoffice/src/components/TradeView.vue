@@ -24,13 +24,9 @@
                 :width="44"
                 :height="44"
                 :chain-badge="
-                  activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'
+                  tokenNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'
                 "
-                :currency-badge="
-                  activeNetwork.nativeCurrency.symbol === 'USDC'
-                    ? '/tokens/usdc.svg'
-                    : '/tokens/eth.svg'
-                "
+                :currency-badge="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
                 class="rounded-xl border border-zinc-200 dark:border-zinc-800 shrink-0"
               />
               <div>
@@ -75,7 +71,11 @@
                   GMGN Bot
                 </a>
                 <a
-                  :href="`https://dexscreener.com/robinhood/${currentToken.poolAddress}`"
+                  :href="
+                    isArcToken
+                      ? `https://dexscreener.com/arc/${currentToken.poolAddress}`
+                      : `https://dexscreener.com/robinhood/${currentToken.poolAddress}`
+                  "
                   target="_blank"
                   rel="noopener noreferrer"
                   class="h-6 px-2 text-[10px] font-mono font-semibold bg-zinc-800/80 text-zinc-300 border border-zinc-700/80 rounded-md hover:text-white hover:bg-zinc-700 transition inline-flex items-center gap-1"
@@ -84,7 +84,11 @@
                   DexScreener
                 </a>
                 <a
-                  :href="`https://www.geckoterminal.com/robinhood/pools/${currentToken.poolAddress}`"
+                  :href="
+                    isArcToken
+                      ? `https://www.geckoterminal.com/arc/pools/${currentToken.poolAddress}`
+                      : `https://www.geckoterminal.com/robinhood/pools/${currentToken.poolAddress}`
+                  "
                   target="_blank"
                   rel="noopener noreferrer"
                   class="h-6 px-2 text-[10px] font-mono font-semibold bg-zinc-800/80 text-zinc-300 border border-zinc-700/80 rounded-md hover:text-white hover:bg-zinc-700 transition inline-flex items-center gap-1"
@@ -620,7 +624,11 @@
                 <!-- P4: External Analytics & Explorer Links -->
                 <div class="flex flex-wrap items-center gap-1.5">
                   <a
-                    :href="`https://dexscreener.com/robinhood/${currentToken.poolAddress}`"
+                    :href="
+                      isArcToken
+                        ? `https://dexscreener.com/arc/${currentToken.poolAddress}`
+                        : `https://dexscreener.com/robinhood/${currentToken.poolAddress}`
+                    "
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -634,7 +642,11 @@
                   </a>
 
                   <a
-                    :href="`https://www.geckoterminal.com/robinhood/pools/${currentToken.poolAddress}`"
+                    :href="
+                      isArcToken
+                        ? `https://www.geckoterminal.com/arc/pools/${currentToken.poolAddress}`
+                        : `https://www.geckoterminal.com/robinhood/pools/${currentToken.poolAddress}`
+                    "
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -957,8 +969,27 @@
 
           <!-- Execute Swap Action Button -->
           <Button
+            v-if="!isConnected"
+            class="w-full font-bold h-11 bg-emerald-500 hover:bg-emerald-600 text-black shadow-sm cursor-pointer"
+            size="lg"
+            @click="openWallet"
+          >
+            Connect Wallet to Trade
+          </Button>
+
+          <Button
+            v-else-if="activeNetwork.chainId !== tokenNetwork.chainId"
+            class="w-full font-bold h-11 bg-amber-500 hover:bg-amber-600 text-black shadow-sm cursor-pointer"
+            size="lg"
+            @click="switchOrAddNetwork(tokenNetwork)"
+          >
+            Switch to {{ tokenNetwork.name }} ({{ currencySymbol }})
+          </Button>
+
+          <Button
+            v-else
             @click="handleSwap"
-            :disabled="isSwapping || !amountIn || parseFloat(amountIn) <= 0 || !isConnected"
+            :disabled="isSwapping || !amountIn || parseFloat(amountIn) <= 0"
             :variant="isBuy ? 'default' : 'destructive'"
             size="lg"
             class="w-full font-bold"
@@ -967,11 +998,9 @@
             {{
               isSwapping
                 ? 'Executing Swap...'
-                : !isConnected
-                  ? 'Connect Wallet to Trade'
-                  : isBuy
-                    ? `Buy ${currentToken.symbol}`
-                    : `Sell ${currentToken.symbol}`
+                : isBuy
+                  ? `Buy ${currentToken.symbol}`
+                  : `Sell ${currentToken.symbol}`
             }}
           </Button>
 
@@ -981,7 +1010,7 @@
             class="text-xs text-black dark:text-white bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 flex items-start gap-2"
           >
             <AlertCircle class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-            <span>Connect your wallet to trade on {{ activeNetwork.name }}.</span>
+            <span>Connect your wallet to trade on {{ tokenNetwork.name }}.</span>
           </div>
 
           <div
@@ -1047,6 +1076,7 @@ import { TradingChart } from '@/components/ui/chart';
 import { shortenAddress, formatTokenNumber, formatRelativeTime } from '@/lib/utils';
 import {
   ROBINHOOD_CHAIN,
+  ARC_CHAIN,
   launchpadTokenAbi,
   type LaunchedTokenEntity,
   type TokenMarketData,
@@ -1088,9 +1118,31 @@ interface TokenHolder {
 }
 
 const { executeSwap, isSwapping, swapError, slippage } = useSwap();
-const { isConnected, account, balanceWei, activeNetwork } = useWallet();
-const currencySymbol = computed(() => activeNetwork.value.nativeCurrency.symbol);
-const explorerUrl = computed(() => activeNetwork.value.blockExplorer);
+const { isConnected, account, balanceWei, activeNetwork, switchOrAddNetwork, openWallet } =
+  useWallet();
+
+const isArcToken = computed(() => {
+  const paired = currentToken.value.pairedToken?.toLowerCase();
+  const pool = currentToken.value.poolAddress?.toLowerCase();
+  const curve = currentToken.value.curveAddress?.toLowerCase();
+  const arcFactory = ARC_CHAIN.contracts.factory.toLowerCase();
+  const arcWeth = ARC_CHAIN.contracts.weth.toLowerCase();
+
+  return (
+    paired === arcWeth ||
+    pool === arcFactory ||
+    curve === '0x6c1c1a77771bf8961e27ea5b21f575eb17a7626e' ||
+    (currentToken.value.version === 'v2' && activeNetwork.value.chainId === ARC_CHAIN.chainId)
+  );
+});
+
+const tokenNetwork = computed(() => {
+  if (isArcToken.value) return ARC_CHAIN;
+  return ROBINHOOD_CHAIN;
+});
+
+const currencySymbol = computed(() => tokenNetwork.value.nativeCurrency.symbol);
+const explorerUrl = computed(() => tokenNetwork.value.blockExplorer);
 const buyPresets = computed(() => {
   return currencySymbol.value === 'USDC'
     ? ['10', '50', '100', '500']
@@ -1510,6 +1562,7 @@ async function handleSwap() {
     version: currentToken.value.version,
     curveAddress: currentToken.value.curveAddress,
     isGraduated: currentMarketData.value.isGraduated,
+    chainId: tokenNetwork.value.chainId,
   });
 
   if (hash) {

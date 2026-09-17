@@ -118,13 +118,14 @@ async function checkRateLimit(ip: string, limit = 120, windowMs = 60_000): Promi
 }
 
 // Start background event poller worker loop for both Robinhood and Arc chains
+// 20-second interval balances freshness with public RPC rate limits
 setInterval(async () => {
   try {
     await Promise.allSettled([robinhoodPoller.pollEvents(), arcPoller.pollEvents()]);
   } catch {
     // Ignore background polling network errors
   }
-}, 10000);
+}, 20000);
 
 function safeStringify(value: unknown): string {
   return JSON.stringify(value, (_, v) => (typeof v === 'bigint' ? v.toString() : v));

@@ -7,6 +7,8 @@ import {
   type PublicClient,
   type WalletClient,
 } from 'viem';
+import { getWalletClient as getWagmiWalletClient } from '@wagmi/core';
+import { wagmiAdapter } from './appkit';
 import {
   ROBINHOOD_CHAIN,
   ROBINHOOD_TESTNET,
@@ -73,8 +75,8 @@ const publicClientArcTestnet: PublicClient = createPublicClient({
  * All readContract and waitForTransactionReceipt calls should use this
  * so they follow the connected chain (fix MED-01 and MED-03).
  */
-export function getPublicClient(): PublicClient {
-  const chainId = walletChainId.value;
+export function getPublicClient(explicitChainId?: number): PublicClient {
+  const chainId = explicitChainId ?? walletChainId.value;
   if (chainId === ARC_CHAIN.chainId) return publicClientArcMainnet;
   if (chainId === ARC_TESTNET.chainId) return publicClientArcTestnet;
   if (chainId === ROBINHOOD_TESTNET.chainId) return publicClientTestnet;
@@ -100,7 +102,20 @@ export function createWalletClientFromProvider(provider: unknown, chainId?: numb
   });
 }
 
-export function getWalletClient(): WalletClient | null {
+export async function getWalletClient(): Promise<WalletClient | null> {
+  // 1. Primary: 100% Reown AppKit active connector client
+  if (wagmiAdapter) {
+    try {
+      const client = await getWagmiWalletClient(wagmiAdapter.wagmiConfig);
+      if (client) {
+        return client as unknown as WalletClient;
+      }
+    } catch {
+      // Reown connector not yet connected or in transition
+    }
+  }
+
+  // 2. Direct isolated provider fallback
   let provider = walletProvider.value;
 
   if (typeof window !== 'undefined') {
@@ -108,26 +123,31 @@ export function getWalletClient(): WalletClient | null {
     const bitget =
       (win.bitget as { ethereum?: unknown } | undefined)?.ethereum ||
       (win.bitkeep as { ethereum?: unknown } | undefined)?.ethereum ||
+      (win.bitgetWallet as { ethereum?: unknown } | undefined)?.ethereum ||
       (
         win.ethereum as
           { providers?: Array<{ isBitKeep?: boolean; isBitget?: boolean }> } | undefined
       )?.providers?.find((p) => p.isBitKeep || p.isBitget);
 
+    const okx = win.okxwallet as unknown | undefined;
+
     const storedId =
       (typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_PROVIDER_ID_KEY) : '') ||
       '';
 
-    // If Bitget is installed in the browser:
-    // Resolve Bitget directly when user preferred Bitget, or when OKX hijacked window.ethereum
-    if (bitget) {
-      const isExplicitOkx = storedId.toLowerCase().includes('okx');
-      const isBitgetPreferred =
-        storedId.toLowerCase().includes('bitget') || storedId.toLowerCase().includes('bitkeep');
-      const isProviderOkx = Boolean((provider as { isOkxWallet?: boolean } | null)?.isOkxWallet);
+    const isExplicitOkx = storedId.toLowerCase().includes('okx');
+    const isBitgetPreferred =
+      storedId.toLowerCase().includes('bitget') ||
+      storedId.toLowerCase().includes('bitkeep') ||
+      storedId.toLowerCase().includes('web3');
 
-      if (isBitgetPreferred || (isProviderOkx && !isExplicitOkx)) {
-        provider = bitget as typeof walletProvider.value;
-      }
+    // If Bitget is installed in the browser:
+    // When user preferred Bitget, OR when user did not explicitly pick OKX,
+    // ALWAYS route to Bitget directly to bypass OKX's window.ethereum hijacking.
+    if (bitget && (isBitgetPreferred || !isExplicitOkx)) {
+      provider = bitget as typeof walletProvider.value;
+    } else if (okx && isExplicitOkx) {
+      provider = okx as typeof walletProvider.value;
     }
   }
 

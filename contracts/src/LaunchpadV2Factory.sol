@@ -17,7 +17,7 @@ import {BondingCurve} from "./BondingCurve.sol";
  *   - nonReentrant guard on launchTokenV2.
  */
 contract LaunchpadV2Factory {
-    uint256 public constant LAUNCH_FEE = 0.0005 ether;
+    uint256 public launchFee = 0.0005 ether;
     uint256 public constant GRADUATION_TARGET = 4.2 ether;
     uint256 public constant VIRTUAL_ETH_RESERVE = 3.0 ether;
     uint256 public constant VIRTUAL_TOKEN_RESERVE = 1_073_000_000 * 1e18;
@@ -51,6 +51,7 @@ contract LaunchpadV2Factory {
         string symbol,
         uint256 initialBuy
     );
+    event LaunchFeeUpdated(uint256 oldFee, uint256 newFee);
     event OwnershipTransferProposed(address indexed proposed);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
@@ -84,6 +85,16 @@ contract LaunchpadV2Factory {
         owner = msg.sender;
     }
 
+    function setLaunchFee(uint256 _newFee) external onlyOwner {
+        uint256 oldFee = launchFee;
+        launchFee = _newFee;
+        emit LaunchFeeUpdated(oldFee, _newFee);
+    }
+
+    function LAUNCH_FEE() external view returns (uint256) {
+        return launchFee;
+    }
+
     // ---------------------------------------------------------------------------
     // Owner administration
     // ---------------------------------------------------------------------------
@@ -115,9 +126,9 @@ contract LaunchpadV2Factory {
         string memory telegram,
         string memory website
     ) external payable nonReentrant returns (address tokenAddress, address curveAddress) {
-        if (msg.value < LAUNCH_FEE) revert InvalidFee();
+        if (msg.value < launchFee) revert InvalidFee();
 
-        uint256 initialBuyEth = msg.value - LAUNCH_FEE;
+        uint256 initialBuyEth = msg.value - launchFee;
 
         ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials({
             twitter: twitter, telegram: telegram, discord: "", website: website, farcaster: ""
@@ -151,7 +162,7 @@ contract LaunchpadV2Factory {
 
         emit TokenLaunchedV2(tokenAddress, curveAddress, msg.sender, name, symbol, initialBuyEth);
 
-        (bool feeOk,) = protocolFeeRecipient.call{value: LAUNCH_FEE}("");
+        (bool feeOk,) = protocolFeeRecipient.call{value: launchFee}("");
         if (!feeOk) revert TransferFailed();
 
         if (initialBuyEth > 0) {

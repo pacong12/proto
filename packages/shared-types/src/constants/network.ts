@@ -175,9 +175,8 @@ export const ARC_CHAIN: NetworkConfig = {
   launchConfig: {
     supply: 1_000_000_000n * 10n ** 18n,
     poolFee: 10000,
-    // Aligned with on-chain LAUNCH_FEE = 0.0005 ether (5e14 wei) on deployed Arc contract
-    // 0x48844223aBDceeb1Ce502F54d559681358E68200 to prevent involuntary initial buys (fix CRITICAL-2).
-    launchFeeWei: 500_000_000_000_000n,
+    // 1.00 USDC launch fee (18 decimals native msg.value on Arc Network per Circle Arc specs)
+    launchFeeWei: 1_000_000_000_000_000_000n,
     graduationThresholdWei: 8_000_000_000_000_000_000_000n, // 8,000 USDC
     antiSnipeBlocks: 2,
     maxHoldPercent: 5.0,

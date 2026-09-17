@@ -62,6 +62,10 @@ contract DeployArc is Script {
         );
         factoryAddress = address(factory);
 
+        // On Arc Network, native msg.value uses 18 decimals where 1 ether = 1.00 USDC.
+        // Calibrate launchFee to 1.00 USDC (1 ether = 10^18 wei) per Circle Arc EVM specs.
+        factory.setLaunchFee(1 ether);
+
         vm.stopBroadcast();
 
         console.log("=== ARC PROTO DEPLOYMENT SUCCESSFUL ===");

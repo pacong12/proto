@@ -72,12 +72,14 @@ export function useSwap() {
     version?: 'v1' | 'v2';
     curveAddress?: `0x${string}`;
     isGraduated?: boolean;
+    chainId?: number;
   }): Promise<string | null> {
     isSwapping.value = true;
     swapError.value = null;
 
     try {
-      const walletClient = getWalletClient();
+      const publicClient = getPublicClient(params.chainId);
+      const walletClient = await getWalletClient();
       if (!walletClient) throw new Error('Wallet not connected');
 
       const [account] = await walletClient.getAddresses();
@@ -124,12 +126,12 @@ export function useSwap() {
             chain: walletClient.chain,
           });
 
-          await getPublicClient().waitForTransactionReceipt({ hash: txHash });
+          await publicClient.waitForTransactionReceipt({ hash: txHash });
           return txHash;
         } else {
           // V2 bonding curve sell: approve then call sell().
           // Check existing allowance before approving to avoid unnecessary transactions (fix C-03).
-          const currentAllowance = await getPublicClient().readContract({
+          const currentAllowance = await publicClient.readContract({
             address: params.tokenAddress,
             abi: erc20Abi,
             functionName: 'allowance',
@@ -145,7 +147,7 @@ export function useSwap() {
               account,
               chain: walletClient.chain,
             });
-            await getPublicClient().waitForTransactionReceipt({ hash: approveHash });
+            await publicClient.waitForTransactionReceipt({ hash: approveHash });
           }
 
           const minEthOut = resolveAmountOutMinimum(
@@ -163,7 +165,7 @@ export function useSwap() {
             chain: walletClient.chain,
           });
 
-          await getPublicClient().waitForTransactionReceipt({ hash: txHash });
+          await publicClient.waitForTransactionReceipt({ hash: txHash });
           return txHash;
         }
       }
@@ -176,7 +178,7 @@ export function useSwap() {
 
       if (!params.isBuy) {
         // Check existing allowance before approving (fix C-03).
-        const currentAllowance = await getPublicClient().readContract({
+        const currentAllowance = await publicClient.readContract({
           address: params.tokenAddress,
           abi: erc20Abi,
           functionName: 'allowance',
@@ -192,7 +194,7 @@ export function useSwap() {
             account,
             chain: walletClient.chain,
           });
-          await getPublicClient().waitForTransactionReceipt({ hash: approveHash });
+          await publicClient.waitForTransactionReceipt({ hash: approveHash });
         }
       }
 
@@ -223,7 +225,7 @@ export function useSwap() {
         chain: walletClient.chain,
       });
 
-      await getPublicClient().waitForTransactionReceipt({ hash: swapHash });
+      await publicClient.waitForTransactionReceipt({ hash: swapHash });
       return swapHash;
     } catch (err) {
       swapError.value = (err as Error).message;
