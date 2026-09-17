@@ -200,11 +200,11 @@
             class="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900"
           >
             <div class="flex items-center gap-2 text-sm font-semibold">
-              <div
-                class="w-5 h-5 rounded-full bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-[10px] font-mono font-bold"
-              >
-                {{ currencySymbol.slice(0, 1) }}
-              </div>
+              <img
+                :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
+                :alt="currencySymbol"
+                class="w-5 h-5 rounded-full object-contain shrink-0"
+              />
               <span>{{ currencySymbol }}</span>
             </div>
             <span class="text-xs text-zinc-500">{{ activeNetwork.name }} (Native)</span>

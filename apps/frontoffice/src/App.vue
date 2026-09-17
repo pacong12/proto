@@ -113,16 +113,16 @@
         <p>{{ t('copyright') }}</p>
         <div class="flex items-center gap-4 text-xs">
           <a
-            href="https://x.com/protodotfamily"
+            href="https://x.com/protodotfun"
             target="_blank"
             rel="noopener noreferrer"
-            class="hover:text-zinc-400 transition"
+            class="hover:text-zinc-400 transition font-mono"
           >
-            @protodotfamily
+            @protodotfun
           </a>
           <span>•</span>
           <a
-            href="https://robinhoodchain.blockscout.com"
+            :href="activeNetwork.blockExplorer"
             target="_blank"
             rel="noopener noreferrer"
             class="hover:text-zinc-400 transition"

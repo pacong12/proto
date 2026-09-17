@@ -74,7 +74,8 @@ if (!projectId) {
     enableReconnect: true,
     enableMobileFullScreen: true,
     chainImages: {
-      [ROBINHOOD_CHAIN.chainId]: '/favicon.png',
+      [ROBINHOOD_CHAIN.chainId]: '/chains/robinhood.svg',
+      [ARC_CHAIN.chainId]: '/chains/arc.svg',
     },
     connectorImages: {
       injected: '/favicon.png',
