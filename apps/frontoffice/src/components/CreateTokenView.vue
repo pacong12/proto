@@ -187,22 +187,64 @@
           </div>
         </div>
 
-        <!-- Paired asset -->
+        <!-- Paired asset (with Shadcn Select for Chain Switching) -->
         <div class="space-y-1.5">
           <Label>{{ t('pairedAsset') }}</Label>
-          <div
-            class="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900"
+          <Select
+            :model-value="String(activeNetwork.chainId)"
+            @update:model-value="handleChainSelect"
           >
-            <div class="flex items-center gap-2 text-sm font-semibold">
-              <img
-                :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
-                :alt="currencySymbol"
-                class="w-5 h-5 rounded-full object-contain shrink-0"
-              />
-              <span>{{ currencySymbol }}</span>
-            </div>
-            <span class="text-xs text-zinc-500">{{ activeNetwork.name }} (Native)</span>
-          </div>
+            <SelectTrigger
+              class="w-full flex items-center justify-between p-3 h-auto rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition text-black dark:text-white"
+            >
+              <div class="flex items-center gap-2 text-sm font-semibold">
+                <img
+                  :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
+                  :alt="currencySymbol"
+                  class="w-5 h-5 rounded-full object-contain shrink-0"
+                />
+                <span>{{ currencySymbol }}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-zinc-500 font-mono"
+                  >{{ activeNetwork.name }} (Native)</span
+                >
+              </div>
+            </SelectTrigger>
+            <SelectContent
+              align="end"
+              class="w-64 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-lg"
+            >
+              <SelectLabel
+                class="text-[10px] font-mono uppercase tracking-wider text-zinc-400 px-2 py-1"
+              >
+                Select Network
+              </SelectLabel>
+              <SelectSeparator class="border-zinc-200 dark:border-zinc-800" />
+              <SelectItem
+                v-for="net in Object.values(SUPPORTED_CHAINS)"
+                :key="net.chainId"
+                :value="String(net.chainId)"
+                class="cursor-pointer text-xs font-mono py-2 px-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition"
+              >
+                <div class="flex items-center gap-2.5">
+                  <img
+                    :src="net.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+                    :alt="net.name"
+                    class="w-5 h-5 rounded-md object-contain shrink-0"
+                  />
+                  <div class="flex flex-col text-left">
+                    <span class="font-bold text-black dark:text-white leading-tight">
+                      {{ net.name }}
+                    </span>
+                    <span class="text-[10px] text-zinc-400">
+                      Paired with {{ net.nativeCurrency.symbol }}
+                    </span>
+                  </div>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
           <p class="text-[11px] text-zinc-500 dark:text-zinc-400">
             {{ selectedVersion === 'v2' ? t('v2GraduatesHint') : t('v1PairsHint') }}
           </p>
@@ -384,7 +426,9 @@ import {
   ChevronDown,
   SlidersHorizontal,
   Loader2,
+  Check,
 } from 'lucide-vue-next';
+import { SUPPORTED_CHAINS } from '@proto/shared-types';
 import { useLaunchpad } from '../composables/useLaunchpad';
 import { useWallet } from '../composables/useWallet';
 import { Button } from '@/components/ui/button';
@@ -394,6 +438,14 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectLabel,
+  SelectSeparator,
+} from '@/components/ui/select';
 import { useI18n } from '@/lib/i18n';
 import { compressAndConvertToWebp } from '@/lib/image-optimizer';
 
@@ -403,7 +455,15 @@ const emit = defineEmits<{
 }>();
 
 const { launchToken, loading, error } = useLaunchpad();
-const { isConnected, account, activeNetwork } = useWallet();
+const { isConnected, account, activeNetwork, switchOrAddNetwork } = useWallet();
+
+function handleChainSelect(val: unknown) {
+  const chainId = Number(val);
+  const target = SUPPORTED_CHAINS[chainId];
+  if (target) {
+    switchOrAddNetwork(target);
+  }
+}
 const currencySymbol = computed(() => activeNetwork.value.nativeCurrency.symbol);
 const launchFeeFormatted = computed(() => {
   const feeWei = activeNetwork.value.launchConfig.launchFeeWei;

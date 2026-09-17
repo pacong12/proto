@@ -175,8 +175,8 @@ export function useWallet() {
     error.value = null;
     const provider = walletProvider.value ?? getInjectedProvider();
     if (!provider) {
-      await openWallet();
-      return false;
+      walletChainId.value = targetConfig.chainId;
+      return true;
     }
 
     const hexChainId = `0x${targetConfig.chainId.toString(16)}`;

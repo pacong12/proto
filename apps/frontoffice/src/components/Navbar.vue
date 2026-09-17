@@ -11,6 +11,7 @@ import {
   LogOut,
   Copy,
   Check,
+  ChevronDown,
   User,
   Menu,
   X,
@@ -30,6 +31,14 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectLabel,
+  SelectSeparator,
+} from '@/components/ui/select';
 
 defineEmits<{
   (e: 'openSearch'): void;
@@ -65,6 +74,14 @@ const {
   switchOrAddNetwork,
   openWallet,
 } = useWallet();
+
+function handleChainSelect(val: unknown) {
+  const chainId = Number(val);
+  const target = SUPPORTED_CHAINS[chainId];
+  if (target) {
+    switchOrAddNetwork(target);
+  }
+}
 
 const copied = ref(false);
 function copyAddress() {
@@ -189,20 +206,26 @@ function copyAddress() {
           </svg>
         </a>
 
-        <!-- Network Switcher Dropdown (Multi-Chain: Robinhood & Arc) -->
-        <DropdownMenu v-if="isConnected">
-          <DropdownMenuTrigger as-child>
-            <Button
-              variant="outline"
-              size="sm"
-              class="h-8 px-2.5 gap-1.5 text-xs font-mono border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900"
-            >
+        <!-- Network Switcher with Shadcn Select (Multi-Chain: Robinhood & Arc) -->
+        <Select
+          :model-value="String(activeNetwork.chainId)"
+          @update:model-value="handleChainSelect"
+        >
+          <SelectTrigger
+            class="h-8 px-2.5 gap-1.5 w-auto text-xs font-mono border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 cursor-pointer text-black dark:text-white"
+          >
+            <div class="flex items-center gap-1.5">
               <img
                 :src="activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
                 :alt="activeNetwork.name"
                 class="w-3.5 h-3.5 rounded-xs object-contain"
               />
-              <span class="font-semibold text-black dark:text-white">{{ activeNetwork.name }}</span>
+              <span class="font-semibold text-black dark:text-white hidden sm:inline">
+                {{ activeNetwork.name }}
+              </span>
+              <span class="font-semibold text-black dark:text-white sm:hidden">
+                {{ activeNetwork.chainId === 5042 ? 'Arc' : 'Robinhood' }}
+              </span>
               <span
                 class="text-[10px] text-zinc-400 flex items-center gap-1 border-l border-zinc-200 dark:border-zinc-800 pl-1.5 ml-0.5"
               >
@@ -217,21 +240,23 @@ function copyAddress() {
                 />
                 {{ activeNetwork.nativeCurrency.symbol }}
               </span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
+            </div>
+          </SelectTrigger>
+          <SelectContent
             align="end"
-            class="w-56 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5"
+            class="w-56 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-lg"
           >
-            <DropdownMenuLabel class="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+            <SelectLabel
+              class="text-[10px] font-mono uppercase tracking-wider text-zinc-400 px-2 py-1"
+            >
               Select Network
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator class="border-zinc-200 dark:border-zinc-800" />
-            <DropdownMenuItem
+            </SelectLabel>
+            <SelectSeparator class="border-zinc-200 dark:border-zinc-800" />
+            <SelectItem
               v-for="net in Object.values(SUPPORTED_CHAINS)"
               :key="net.chainId"
-              class="cursor-pointer text-xs font-mono flex items-center justify-between py-2 px-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition"
-              @click="switchOrAddNetwork(net)"
+              :value="String(net.chainId)"
+              class="cursor-pointer text-xs font-mono py-2 px-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition"
             >
               <div class="flex items-center gap-2.5">
                 <img
@@ -259,13 +284,9 @@ function copyAddress() {
                   </div>
                 </div>
               </div>
-              <span
-                v-if="activeNetwork.chainId === net.chainId"
-                class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 ml-2"
-              />
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            </SelectItem>
+          </SelectContent>
+        </Select>
 
         <!-- Wrong Network Warning Button -->
         <Button

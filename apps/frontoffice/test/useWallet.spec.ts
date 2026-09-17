@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { ARC_CHAIN, ROBINHOOD_CHAIN } from '@proto/shared-types';
 import { useWallet } from '../src/composables/useWallet';
 import {
   clearWalletState,
@@ -53,5 +54,14 @@ describe('useWallet composable', () => {
     expect(wallet.account.value).toBeNull();
     expect(wallet.chainId.value).toBeNull();
     expect(wallet.balanceWei.value).toBe(0n);
+  });
+
+  it('switches active network when disconnected', async () => {
+    const wallet = useWallet();
+    expect(wallet.activeNetwork.value.chainId).toBe(ROBINHOOD_CHAIN.chainId);
+
+    const success = await wallet.switchOrAddNetwork(ARC_CHAIN);
+    expect(success).toBe(true);
+    expect(wallet.activeNetwork.value.chainId).toBe(ARC_CHAIN.chainId);
   });
 });
