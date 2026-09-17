@@ -523,7 +523,7 @@
       <!-- Edit Profile Modal -->
       <Dialog v-model:open="editModalOpen">
         <DialogContent
-          class="w-full max-w-md overflow-hidden bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-black dark:text-white"
+          class="w-[calc(100vw-2rem)] sm:max-w-lg bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-black dark:text-white transition-all duration-200"
         >
           <DialogHeader>
             <div class="flex items-center gap-2 text-emerald-400 mb-1">
@@ -612,10 +612,10 @@
                 </Avatar>
 
                 <!-- Status & Action Copy -->
-                <div class="flex-1 min-w-0 overflow-hidden space-y-0.5">
+                <div class="flex-1 min-w-0 space-y-0.5">
                   <div class="flex items-center gap-1.5 min-w-0">
                     <span
-                      class="text-xs font-bold text-black dark:text-white truncate block max-w-[160px] sm:max-w-[210px]"
+                      class="text-xs font-bold text-black dark:text-white truncate block flex-1 min-w-0"
                       :title="
                         avatarFileName ||
                         (editForm.avatarUrl ? 'Custom Photo' : 'Upload from device')
@@ -707,7 +707,7 @@
       <!-- CTO Modal -->
       <Dialog v-model:open="ctoModalOpen">
         <DialogContent
-          class="max-w-md bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-black dark:text-white"
+          class="w-[calc(100vw-2rem)] sm:max-w-lg bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-black dark:text-white transition-all duration-200"
         >
           <DialogHeader>
             <div class="flex items-center gap-2 text-emerald-400 mb-1">
