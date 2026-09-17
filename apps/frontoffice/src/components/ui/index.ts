@@ -15,3 +15,4 @@ export * from './empty';
 export * from './pagination';
 export * from './combobox';
 export * from './switch';
+export * from './select';

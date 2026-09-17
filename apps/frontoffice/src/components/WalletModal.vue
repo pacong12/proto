@@ -117,48 +117,77 @@
             </Button>
           </div>
 
-          <!-- Multi-Chain Network Selector (Robinhood & Arc) -->
+          <!-- Multi-Chain Network Selector (Robinhood & Arc) with Shadcn Select -->
           <div class="space-y-1.5 pt-2 border-t border-zinc-200 dark:border-zinc-800">
             <span class="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">
-              Supported Networks
+              Active Network
             </span>
-            <div class="grid grid-cols-2 gap-2">
-              <Button
-                v-for="net in Object.values(SUPPORTED_CHAINS)"
-                :key="net.chainId"
-                size="sm"
-                :variant="activeNetwork.chainId === net.chainId ? 'default' : 'outline'"
-                class="h-auto py-2 text-[11px] font-mono justify-between px-2.5 cursor-pointer"
-                @click="switchOrAddNetwork(net)"
+            <Select
+              :model-value="String(activeNetwork.chainId)"
+              @update:model-value="handleChainSelect"
+            >
+              <SelectTrigger
+                class="w-full h-10 px-3 justify-between font-mono text-xs border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 cursor-pointer"
               >
-                <div class="flex items-center gap-2 truncate">
+                <div class="flex items-center gap-2.5 truncate">
                   <img
-                    :src="net.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
-                    :alt="net.name"
+                    :src="
+                      activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'
+                    "
+                    :alt="activeNetwork.name"
                     class="w-4 h-4 rounded-xs object-contain shrink-0"
                   />
-                  <div class="flex flex-col text-left truncate">
-                    <span class="truncate font-semibold leading-tight">{{ net.name }}</span>
-                    <div class="flex items-center gap-1 text-[9px] text-zinc-400 mt-0.5">
-                      <img
-                        :src="
-                          net.nativeCurrency.symbol === 'USDC'
-                            ? '/tokens/usdc.svg'
-                            : '/tokens/eth.svg'
-                        "
-                        :alt="net.nativeCurrency.symbol"
-                        class="w-2.5 h-2.5 rounded-full object-contain"
-                      />
-                      <span>{{ net.nativeCurrency.symbol }}</span>
+                  <span class="font-bold text-black dark:text-white">{{ activeNetwork.name }}</span>
+                  <span class="text-[10px] text-zinc-400">
+                    ({{ activeNetwork.nativeCurrency.symbol }} Gas)
+                  </span>
+                </div>
+              </SelectTrigger>
+              <SelectContent
+                align="start"
+                class="w-[--radix-select-trigger-width] min-w-[280px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-lg"
+              >
+                <SelectLabel
+                  class="text-[10px] font-mono uppercase tracking-wider text-zinc-400 px-2 py-1"
+                >
+                  Select Network
+                </SelectLabel>
+                <SelectSeparator class="border-zinc-200 dark:border-zinc-800" />
+                <SelectItem
+                  v-for="net in Object.values(SUPPORTED_CHAINS)"
+                  :key="net.chainId"
+                  :value="String(net.chainId)"
+                  class="cursor-pointer text-xs font-mono py-2 px-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition"
+                >
+                  <div class="flex items-center gap-2.5">
+                    <img
+                      :src="net.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+                      :alt="net.name"
+                      class="w-5 h-5 rounded-md object-contain shrink-0"
+                    />
+                    <div class="flex flex-col text-left">
+                      <span class="font-bold text-black dark:text-white leading-tight">
+                        {{ net.name }}
+                      </span>
+                      <div
+                        class="flex items-center gap-1 text-[10px] text-zinc-500 dark:text-zinc-400 mt-0.5"
+                      >
+                        <img
+                          :src="
+                            net.nativeCurrency.symbol === 'USDC'
+                              ? '/tokens/usdc.svg'
+                              : '/tokens/eth.svg'
+                          "
+                          :alt="net.nativeCurrency.symbol"
+                          class="w-2.5 h-2.5 rounded-full object-contain"
+                        />
+                        <span>{{ net.nativeCurrency.symbol }} (Gas)</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <span
-                  v-if="activeNetwork.chainId === net.chainId"
-                  class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 ml-1"
-                />
-              </Button>
-            </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -252,7 +281,7 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue';
-import { Loader2, X, Copy, Check, LogOut } from 'lucide-vue-next';
+import { Loader2, X, Copy, Check, LogOut, ChevronDown } from 'lucide-vue-next';
 import { ROBINHOOD_CHAIN, SUPPORTED_CHAINS } from '@proto/shared-types';
 import { appKitConfigured } from '../lib/appkit';
 import { useI18n } from '@/lib/i18n';
@@ -261,6 +290,14 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage, Jazzicon } from '@/components/ui/avatar';
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectLabel,
+  SelectSeparator,
+} from '@/components/ui/select';
 import {
   setConnectedWallet,
   walletModalOpen,
@@ -280,6 +317,14 @@ const {
   disconnectWallet,
   switchOrAddNetwork,
 } = useWallet();
+
+function handleChainSelect(val: unknown) {
+  const chainId = Number(val);
+  const target = SUPPORTED_CHAINS[chainId];
+  if (target) {
+    switchOrAddNetwork(target);
+  }
+}
 
 const wallets = ref<WalletCandidate[]>([]);
 const scanning = ref(true);
