@@ -14,20 +14,26 @@ contract DeployArc is Script {
         string memory mnemonic = vm.envOr("MNEMONIC", string(""));
         uint256 deployerPrivateKey;
         address deployer;
+        bool hasExplicitKey = false;
 
         if (bytes(mnemonic).length > 0) {
             (deployer, deployerPrivateKey) = deriveRememberKey(mnemonic, 0);
+            hasExplicitKey = true;
         } else {
-            deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-            deployer = vm.addr(deployerPrivateKey);
+            try vm.envUint("PRIVATE_KEY") returns (uint256 pk) {
+                deployerPrivateKey = pk;
+                deployer = vm.addr(pk);
+                hasExplicitKey = true;
+            } catch {
+                deployer = msg.sender;
+            }
         }
 
         address feeRecipient;
         try vm.envAddress("PROTOCOL_FEE_RECIPIENT") returns (address r) {
             feeRecipient = r;
         } catch {
-            feeRecipient = deployer;
-            console.log("WARNING: PROTOCOL_FEE_RECIPIENT not set. Using deployer address.");
+            feeRecipient = 0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2;
         }
 
         address lockerAddress;
@@ -35,16 +41,18 @@ contract DeployArc is Script {
             lockerAddress = l;
         } catch {
             lockerAddress = feeRecipient;
-            console.log("WARNING: LIQUIDITY_LOCKER_ADDRESS not set. Using fee recipient address.");
         }
 
         console.log("=== ARC NETWORK PROTOCOL DEPLOYER ===");
         console.log("Deployer Address  :", deployer);
         console.log("Fee Recipient     :", feeRecipient);
         console.log("Locker Address    :", lockerAddress);
-        console.log("Balance Wei       :", deployer.balance);
 
-        vm.startBroadcast(deployerPrivateKey);
+        if (hasExplicitKey) {
+            vm.startBroadcast(deployerPrivateKey);
+        } else {
+            vm.startBroadcast();
+        }
 
         LaunchpadV2Factory factory = new LaunchpadV2Factory(
             payable(feeRecipient),
@@ -58,5 +66,6 @@ contract DeployArc is Script {
 
         console.log("=== ARC PROTO DEPLOYMENT SUCCESSFUL ===");
         console.log("V2 Factory Address:", factoryAddress);
+        console.log("Fee Recipient     :", feeRecipient);
     }
 }
