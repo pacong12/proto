@@ -92,14 +92,16 @@
                 >
                   GeckoTerminal
                 </a>
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
                   @click="copyTradeLink"
-                  class="h-6 px-2 text-[10px] font-mono font-semibold bg-zinc-800/80 text-zinc-300 border border-zinc-700/80 rounded-md hover:text-white hover:bg-zinc-700 transition inline-flex items-center gap-1"
+                  class="h-6 px-2 text-[10px] font-mono font-semibold bg-zinc-800/80 text-zinc-300 border border-zinc-700/80 rounded-md hover:text-white hover:bg-zinc-700 transition inline-flex items-center gap-1 cursor-pointer"
                   title="Copy Trade URL"
                 >
                   {{ copiedTradeLink ? 'Copied!' : 'Copy Trade' }}
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -293,8 +295,10 @@
                             class="border border-zinc-200 dark:border-zinc-700"
                           />
                           <span>{{ truncateAddress(trade.trader) }}</span>
-                          <button
-                            class="hover:text-emerald-400 p-0.5 rounded"
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            class="h-5 w-5 p-0 hover:text-emerald-400 rounded cursor-pointer"
                             title="Copy address"
                             @click="copyText(trade.trader, trade.id + '-trader')"
                           >
@@ -303,7 +307,7 @@
                               class="w-3 h-3 text-emerald-400"
                             />
                             <Copy v-else class="w-3 h-3" />
-                          </button>
+                          </Button>
                         </div>
                       </td>
                       <!-- Relative Time -->
@@ -379,13 +383,15 @@
                           <span class="text-black dark:text-white font-medium">{{
                             truncateAddress(trader.address)
                           }}</span>
-                          <button
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             @click="copyText(trader.address, `trader-${trader.address}`)"
-                            class="text-zinc-500 hover:text-emerald-400 p-0.5 rounded"
+                            class="h-5 w-5 p-0 text-zinc-500 hover:text-emerald-400 rounded cursor-pointer"
                             title="Copy address"
                           >
                             <Copy class="w-3 h-3" />
-                          </button>
+                          </Button>
                         </div>
                       </td>
                       <td class="py-2.5 px-3">
@@ -507,8 +513,10 @@
                           <span class="text-black dark:text-white font-medium">
                             {{ truncateAddress(holder.address) }}
                           </span>
-                          <button
-                            class="text-black dark:text-white hover:text-emerald-400 p-0.5 rounded"
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            class="h-5 w-5 p-0 text-black dark:text-white hover:text-emerald-400 rounded cursor-pointer"
                             title="Copy address"
                             @click="copyText(holder.address, 'holder-' + idx)"
                           >
@@ -517,7 +525,7 @@
                               class="w-3 h-3 text-emerald-400"
                             />
                             <Copy v-else class="w-3 h-3" />
-                          </button>
+                          </Button>
 
                           <!-- Special Tag Badges -->
                           <Badge

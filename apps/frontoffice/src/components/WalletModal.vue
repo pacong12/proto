@@ -31,13 +31,15 @@
         class="mx-4 mt-3 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 text-xs flex items-center justify-between"
       >
         <span>{{ error }}</span>
-        <button
+        <Button
           type="button"
-          class="text-rose-400 hover:text-rose-600 cursor-pointer ml-2"
+          variant="ghost"
+          size="sm"
+          class="h-5 w-5 p-0 text-rose-400 hover:text-rose-600 cursor-pointer ml-2 rounded"
           @click="error = null"
         >
           &times;
-        </button>
+        </Button>
       </div>
 
       <div class="p-4 space-y-4 max-h-[75vh] overflow-y-auto">

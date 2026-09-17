@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { ShieldCheck } from 'lucide-vue-next';
 
 const { t } = useI18n();
@@ -63,16 +64,11 @@ function handleAccept() {
         </p>
       </div>
 
-      <div class="flex items-center space-x-2 pt-2">
-        <input
-          id="privacy-terms"
-          v-model="agreed"
-          type="checkbox"
-          class="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-emerald-500 focus:ring-emerald-500 accent-emerald-500"
-        />
+      <div class="flex items-center space-x-2.5 pt-2">
+        <Switch id="privacy-terms" :checked="agreed" @update:checked="agreed = $event" />
         <Label
           for="privacy-terms"
-          class="text-xs font-normal text-zinc-300 normal-case cursor-pointer"
+          class="text-xs font-normal text-zinc-300 normal-case cursor-pointer select-none"
         >
           <a
             href="/terms-of-service"

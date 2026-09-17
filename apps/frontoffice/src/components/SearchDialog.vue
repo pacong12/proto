@@ -106,10 +106,11 @@
 
         <ul v-else class="space-y-1.5">
           <li v-for="(item, idx) in filteredTokens" :key="item.token.address">
-            <button
+            <Button
+              variant="ghost"
               @click="selectToken(item.token.address)"
               :class="[
-                'w-full flex items-center justify-between p-3 rounded-xl transition text-left group cursor-pointer border',
+                'w-full h-auto flex items-center justify-between p-3 rounded-xl transition text-left group cursor-pointer border justify-start font-normal',
                 idx === selectedIndex
                   ? 'bg-zinc-100 dark:bg-zinc-800/90 border-emerald-500/40 ring-1 ring-emerald-500/30'
                   : 'bg-zinc-50/50 dark:bg-zinc-900/30 border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-900',
@@ -180,7 +181,7 @@
                   </span>
                 </div>
               </div>
-            </button>
+            </Button>
           </li>
         </ul>
       </div>
@@ -219,6 +220,7 @@ import { useI18n } from '@/lib/i18n';
 import { useWallet } from '@/composables/useWallet';
 import { shortenAddress } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';

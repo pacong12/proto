@@ -13,33 +13,27 @@
     <!-- Form container using Shadcn Card -->
     <Card class="p-6 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
       <!-- Dual Launch Architecture Tabs (v2 / v1) -->
-      <div class="mb-6 p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-xl flex">
-        <button
+      <div class="mb-6 p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-xl flex gap-1">
+        <Button
           type="button"
           @click="selectedVersion = 'v2'"
-          :class="[
-            'flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-2',
-            selectedVersion === 'v2'
-              ? 'bg-white dark:bg-zinc-900 text-black dark:text-white shadow-sm'
-              : 'text-zinc-500 hover:text-black dark:hover:text-white',
-          ]"
+          :variant="selectedVersion === 'v2' ? 'default' : 'ghost'"
+          size="sm"
+          class="flex-1 text-xs font-semibold gap-2 transition-all cursor-pointer"
         >
           <Rocket class="w-3.5 h-3.5 text-emerald-500" />
           <span>{{ t('v2BondingCurveTab') }}</span>
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           @click="selectedVersion = 'v1'"
-          :class="[
-            'flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-2',
-            selectedVersion === 'v1'
-              ? 'bg-white dark:bg-zinc-900 text-black dark:text-white shadow-sm'
-              : 'text-zinc-500 hover:text-black dark:hover:text-white',
-          ]"
+          :variant="selectedVersion === 'v1' ? 'default' : 'ghost'"
+          size="sm"
+          class="flex-1 text-xs font-semibold gap-2 transition-all cursor-pointer"
         >
           <Lock class="w-3.5 h-3.5 text-zinc-400" />
           <span>{{ t('v1DirectPoolTab') }}</span>
-        </button>
+        </Button>
       </div>
 
       <form @submit.prevent="handleLaunch" class="space-y-5">
@@ -242,10 +236,11 @@
         <Card
           class="rounded-xl border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/40 dark:bg-zinc-950/30 overflow-hidden p-0"
         >
-          <button
+          <Button
             type="button"
+            variant="ghost"
             @click="advancedOpen = !advancedOpen"
-            class="w-full flex items-center justify-between px-4 py-3 text-xs font-semibold transition hover:bg-zinc-100 dark:hover:bg-zinc-900/50 cursor-pointer"
+            class="w-full flex items-center justify-between px-4 py-3 h-auto text-xs font-semibold transition hover:bg-zinc-100 dark:hover:bg-zinc-900/50 cursor-pointer rounded-none"
           >
             <span class="flex items-center gap-2">
               <SlidersHorizontal class="w-3.5 h-3.5 text-zinc-400" />
@@ -255,7 +250,7 @@
               class="w-3.5 h-3.5 transition-transform duration-200 opacity-60"
               :class="advancedOpen ? 'rotate-180' : ''"
             />
-          </button>
+          </Button>
 
           <div
             v-show="advancedOpen"
