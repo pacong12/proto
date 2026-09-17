@@ -138,6 +138,347 @@ export default defineConfig({
     // @ts-expect-error Tailwind v4 Vite 6 plugin interface divergence with VitePress bundled Vite 5
     plugins: [tailwindcss()],
   },
+  locales: {
+    root: {
+      label: 'English',
+      lang: 'en',
+      themeConfig: {
+        nav: [
+          { text: 'Getting Started', link: '/protocol/overview' },
+          { text: 'How to Launch', link: '/protocol/launches' },
+          { text: 'Trading Guide', link: '/protocol/trading-guide' },
+          { text: 'FAQ', link: '/protocol/faq' },
+          { text: 'Safety', link: '/protocol/anti-snipe' },
+          { text: 'Launchpad App', link: 'https://proto.family' },
+        ],
+        sidebar: [
+          {
+            text: 'Getting Started',
+            collapsed: false,
+            items: [
+              { text: 'What is Proto?', link: '/protocol/overview' },
+              { text: 'Frequently Asked Questions', link: '/protocol/faq' },
+            ],
+          },
+          {
+            text: 'Token Launches & Trading',
+            collapsed: false,
+            items: [
+              { text: 'How to Launch a Token', link: '/protocol/launches' },
+              { text: 'Trading & Swaps Guide', link: '/protocol/trading-guide' },
+              { text: 'Anti-Snipe & Fair Launch', link: '/protocol/anti-snipe' },
+            ],
+          },
+          {
+            text: 'Economics & Community',
+            collapsed: false,
+            items: [
+              { text: 'Creator Fees & Rewards', link: '/protocol/fees-and-burns' },
+              { text: 'Community Takeovers (CTO)', link: '/protocol/community-takeovers' },
+            ],
+          },
+          {
+            text: 'Network & Contracts',
+            collapsed: false,
+            items: [
+              { text: 'Network Setup (Robinhood & Arc)', link: '/integration/network' },
+              { text: 'Verified Smart Contracts', link: '/integration/contracts' },
+            ],
+          },
+          {
+            text: 'Legal & Policies',
+            collapsed: true,
+            items: [
+              { text: 'Terms of Service', link: '/terms-of-service' },
+              { text: 'Privacy Policy', link: '/privacy-policy' },
+              { text: 'Cookie & Storage Policy', link: '/cookie-policy' },
+            ],
+          },
+        ],
+      },
+    },
+
+    id: {
+      label: 'Bahasa Indonesia',
+      lang: 'id',
+      link: '/id/',
+      themeConfig: {
+        nav: [
+          { text: 'Mulai', link: '/id/protocol/overview' },
+          { text: 'Cara Launch', link: '/id/protocol/launches' },
+          { text: 'Panduan Trading', link: '/id/protocol/trading-guide' },
+          { text: 'FAQ', link: '/id/protocol/faq' },
+          { text: 'Keamanan', link: '/id/protocol/anti-snipe' },
+          { text: 'Aplikasi Launchpad', link: 'https://proto.family' },
+        ],
+        sidebar: [
+          {
+            text: 'Panduan Pengguna',
+            collapsed: false,
+            items: [
+              { text: 'Apa itu Proto?', link: '/id/protocol/overview' },
+              { text: 'Pertanyaan Umum (FAQ)', link: '/id/protocol/faq' },
+            ],
+          },
+          {
+            text: 'Peluncuran & Trading',
+            collapsed: false,
+            items: [
+              { text: 'Cara Meluncurkan Token', link: '/id/protocol/launches' },
+              { text: 'Panduan Trading & Swap', link: '/id/protocol/trading-guide' },
+              { text: 'Anti-Snipe & Fair Launch', link: '/id/protocol/anti-snipe' },
+            ],
+          },
+          {
+            text: 'Ekonomi & Komunitas',
+            collapsed: false,
+            items: [
+              { text: 'Fee Kreator & Reward', link: '/id/protocol/fees-and-burns' },
+              { text: 'Pengambilalihan Komunitas (CTO)', link: '/id/protocol/community-takeovers' },
+            ],
+          },
+          {
+            text: 'Jaringan & Kontrak',
+            collapsed: false,
+            items: [
+              { text: 'Konfigurasi Jaringan', link: '/id/integration/network' },
+              { text: 'Kontrak Pintar Terverifikasi', link: '/id/integration/contracts' },
+            ],
+          },
+          {
+            text: 'Hukum & Kebijakan',
+            collapsed: true,
+            items: [
+              { text: 'Ketentuan Layanan', link: '/id/terms-of-service' },
+              { text: 'Kebijakan Privasi', link: '/id/privacy-policy' },
+              { text: 'Kebijakan Cookie & Penyimpanan', link: '/id/cookie-policy' },
+            ],
+          },
+        ],
+      },
+    },
+
+    zh: {
+      label: '简体中文',
+      lang: 'zh',
+      link: '/zh/',
+      themeConfig: {
+        nav: [
+          { text: '快速开始', link: '/zh/protocol/overview' },
+          { text: '发行代币', link: '/zh/protocol/launches' },
+          { text: '交易指南', link: '/zh/protocol/trading-guide' },
+          { text: '常见问题', link: '/zh/protocol/faq' },
+          { text: '安全机制', link: '/zh/protocol/anti-snipe' },
+          { text: '进入 Launchpad', link: 'https://proto.family' },
+        ],
+        sidebar: [
+          {
+            text: '新手指南',
+            collapsed: false,
+            items: [
+              { text: '什么是 Proto？', link: '/zh/protocol/overview' },
+              { text: '常见问题 (FAQ)', link: '/zh/protocol/faq' },
+            ],
+          },
+          {
+            text: '代币发行与交易',
+            collapsed: false,
+            items: [
+              { text: '如何发行代币', link: '/zh/protocol/launches' },
+              { text: '交易与兑换指南', link: '/zh/protocol/trading-guide' },
+              { text: '防抢跑与公平发射', link: '/zh/protocol/anti-snipe' },
+            ],
+          },
+          {
+            text: '代币经济与社区',
+            collapsed: false,
+            items: [
+              { text: '创作者分成与回购销毁', link: '/zh/protocol/fees-and-burns' },
+              { text: '社区接管 (CTO)', link: '/zh/protocol/community-takeovers' },
+            ],
+          },
+          {
+            text: '网络与合约',
+            collapsed: false,
+            items: [
+              { text: '网络配置 (Robinhood & Arc)', link: '/zh/integration/network' },
+              { text: '已验证智能合约', link: '/zh/integration/contracts' },
+            ],
+          },
+          {
+            text: '法律与政策',
+            collapsed: true,
+            items: [
+              { text: '服务条款', link: '/zh/terms-of-service' },
+              { text: '隐私政策', link: '/zh/privacy-policy' },
+              { text: 'Cookie 与存储政策', link: '/zh/cookie-policy' },
+            ],
+          },
+        ],
+      },
+    },
+
+    es: {
+      label: 'Español',
+      lang: 'es',
+      link: '/es/',
+      themeConfig: {
+        nav: [
+          { text: 'Primeros Pasos', link: '/es/protocol/overview' },
+          { text: 'Cómo Lanzar', link: '/es/protocol/overview' },
+          { text: 'Ir a Launchpad', link: 'https://proto.family' },
+        ],
+        sidebar: [
+          {
+            text: 'Guía del Usuario',
+            collapsed: false,
+            items: [{ text: '¿Qué es Proto?', link: '/es/protocol/overview' }],
+          },
+        ],
+      },
+    },
+
+    ja: {
+      label: '日本語',
+      lang: 'ja',
+      link: '/ja/',
+      themeConfig: {
+        nav: [
+          { text: '概要', link: '/ja/protocol/overview' },
+          { text: 'トークン作成', link: '/ja/protocol/overview' },
+          { text: 'Launchpadアプリ', link: 'https://proto.family' },
+        ],
+        sidebar: [
+          {
+            text: 'ユーザーハンドブック',
+            collapsed: false,
+            items: [{ text: 'Proto とは？', link: '/ja/protocol/overview' }],
+          },
+        ],
+      },
+    },
+
+    ko: {
+      label: '한국어',
+      lang: 'ko',
+      link: '/ko/',
+      themeConfig: {
+        nav: [
+          { text: '시작하기', link: '/ko/protocol/overview' },
+          { text: '토큰 런칭', link: '/ko/protocol/overview' },
+          { text: '런치패드 앱', link: 'https://proto.family' },
+        ],
+        sidebar: [
+          {
+            text: '사용자 가이드',
+            collapsed: false,
+            items: [{ text: 'Proto란 무엇인가요?', link: '/ko/protocol/overview' }],
+          },
+        ],
+      },
+    },
+
+    ru: {
+      label: 'Русский',
+      lang: 'ru',
+      link: '/ru/',
+      themeConfig: {
+        nav: [
+          { text: 'Введение', link: '/ru/protocol/overview' },
+          { text: 'Создание токена', link: '/ru/protocol/overview' },
+          { text: 'Приложение Launchpad', link: 'https://proto.family' },
+        ],
+        sidebar: [
+          {
+            text: 'Руководство пользователя',
+            collapsed: false,
+            items: [{ text: 'Что такое Proto?', link: '/ru/protocol/overview' }],
+          },
+        ],
+      },
+    },
+
+    ar: {
+      label: 'العربية',
+      lang: 'ar',
+      link: '/ar/',
+      themeConfig: {
+        nav: [
+          { text: 'البداية', link: '/ar/protocol/overview' },
+          { text: 'إنشاء عملة', link: '/ar/protocol/overview' },
+          { text: 'تطبيق المنصة', link: 'https://proto.family' },
+        ],
+        sidebar: [
+          {
+            text: 'دليل المستخدم',
+            collapsed: false,
+            items: [{ text: 'ما هو Proto؟', link: '/ar/protocol/overview' }],
+          },
+        ],
+      },
+    },
+
+    fr: {
+      label: 'Français',
+      lang: 'fr',
+      link: '/fr/',
+      themeConfig: {
+        nav: [
+          { text: 'Premiers Pas', link: '/fr/protocol/overview' },
+          { text: 'Lancer un Token', link: '/fr/protocol/overview' },
+          { text: 'Application Launchpad', link: 'https://proto.family' },
+        ],
+        sidebar: [
+          {
+            text: 'Guide Utilisateur',
+            collapsed: false,
+            items: [{ text: 'Qu’est-ce que Proto ?', link: '/fr/protocol/overview' }],
+          },
+        ],
+      },
+    },
+
+    de: {
+      label: 'Deutsch',
+      lang: 'de',
+      link: '/de/',
+      themeConfig: {
+        nav: [
+          { text: 'Erste Schritte', link: '/de/protocol/overview' },
+          { text: 'Token erstellen', link: '/de/protocol/overview' },
+          { text: 'Launchpad App', link: 'https://proto.family' },
+        ],
+        sidebar: [
+          {
+            text: 'Benutzerhandbuch',
+            collapsed: false,
+            items: [{ text: 'Was ist Proto?', link: '/de/protocol/overview' }],
+          },
+        ],
+      },
+    },
+
+    pt: {
+      label: 'Português',
+      lang: 'pt',
+      link: '/pt/',
+      themeConfig: {
+        nav: [
+          { text: 'Primeiros Passos', link: '/pt/protocol/overview' },
+          { text: 'Criar Token', link: '/pt/protocol/overview' },
+          { text: 'App Launchpad', link: 'https://proto.family' },
+        ],
+        sidebar: [
+          {
+            text: 'Manual do Usuário',
+            collapsed: false,
+            items: [{ text: 'O que é o Proto?', link: '/pt/protocol/overview' }],
+          },
+        ],
+      },
+    },
+  },
+
   themeConfig: {
     siteTitle: 'Proto Guide',
     search: {
@@ -147,58 +488,6 @@ export default defineConfig({
       level: [2, 3],
       label: 'On this page',
     },
-    nav: [
-      { text: 'Getting Started', link: '/protocol/overview' },
-      { text: 'How to Launch', link: '/protocol/launches' },
-      { text: 'Trading Guide', link: '/protocol/trading-guide' },
-      { text: 'FAQ', link: '/protocol/faq' },
-      { text: 'Safety', link: '/protocol/anti-snipe' },
-      { text: 'Launchpad App', link: 'https://proto.family' },
-    ],
-    sidebar: [
-      {
-        text: 'Getting Started',
-        collapsed: false,
-        items: [
-          { text: 'What is Proto?', link: '/protocol/overview' },
-          { text: 'Frequently Asked Questions', link: '/protocol/faq' },
-        ],
-      },
-      {
-        text: 'Token Launches & Trading',
-        collapsed: false,
-        items: [
-          { text: 'How to Launch a Token', link: '/protocol/launches' },
-          { text: 'Trading & Swaps Guide', link: '/protocol/trading-guide' },
-          { text: 'Anti-Snipe & Fair Launch', link: '/protocol/anti-snipe' },
-        ],
-      },
-      {
-        text: 'Economics & Community',
-        collapsed: false,
-        items: [
-          { text: 'Creator Fees & Rewards', link: '/protocol/fees-and-burns' },
-          { text: 'Community Takeovers (CTO)', link: '/protocol/community-takeovers' },
-        ],
-      },
-      {
-        text: 'Network & Contracts',
-        collapsed: false,
-        items: [
-          { text: 'Network Setup (Robinhood & Arc)', link: '/integration/network' },
-          { text: 'Verified Smart Contracts', link: '/integration/contracts' },
-        ],
-      },
-      {
-        text: 'Legal & Policies',
-        collapsed: true,
-        items: [
-          { text: 'Terms of Service', link: '/terms-of-service' },
-          { text: 'Privacy Policy', link: '/privacy-policy' },
-          { text: 'Cookie & Storage Policy', link: '/cookie-policy' },
-        ],
-      },
-    ],
     socialLinks: [{ icon: 'github', link: 'https://github.com/pacong12/proto' }],
     footer: {
       message: 'Released under the MIT License.',
