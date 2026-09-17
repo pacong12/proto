@@ -6,17 +6,30 @@
     >
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div class="flex items-center gap-4">
-          <Avatar
-            class="w-16 h-16 rounded-full border-2 border-emerald-500/40 overflow-hidden shadow-lg"
-          >
-            <img
-              v-if="profileData.avatarUrl"
-              :src="profileData.avatarUrl"
-              :alt="profileData.displayName"
-              class="w-full h-full object-cover rounded-full"
-            />
-            <Jazzicon v-else :address="userAddress" :size="64" class="w-full h-full rounded-full" />
-          </Avatar>
+          <div class="relative group cursor-pointer" @click="editModalOpen = true">
+            <Avatar
+              class="w-16 h-16 rounded-full border-2 border-emerald-500/40 overflow-hidden shadow-lg transition group-hover:opacity-85"
+            >
+              <img
+                v-if="resolvedAvatarUrl"
+                :src="resolvedAvatarUrl"
+                :alt="profileData.displayName"
+                class="w-full h-full object-cover rounded-full"
+              />
+              <Jazzicon
+                v-else
+                :address="userAddress"
+                :size="64"
+                class="w-full h-full rounded-full"
+              />
+            </Avatar>
+            <div
+              class="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              title="Update profile photo"
+            >
+              <Camera class="w-5 h-5 text-white" />
+            </div>
+          </div>
 
           <div class="space-y-1">
             <div class="flex items-center gap-2">
@@ -510,7 +523,7 @@
       <!-- Edit Profile Modal -->
       <Dialog v-model:open="editModalOpen">
         <DialogContent
-          class="max-w-md bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-black dark:text-white"
+          class="w-full max-w-md overflow-hidden bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-black dark:text-white"
         >
           <DialogHeader>
             <div class="flex items-center gap-2 text-emerald-400 mb-1">
@@ -551,14 +564,102 @@
               />
             </div>
 
+            <!-- Profile Photo Upload Zone -->
             <div class="space-y-1.5">
-              <Label for="edit-avatar" class="text-xs font-medium">Custom Avatar URL</Label>
-              <Input
-                id="edit-avatar"
-                v-model="editForm.avatarUrl"
-                placeholder="https://... (Leave blank for Jazzicon)"
-                class="text-xs font-mono"
-              />
+              <Label class="text-xs font-medium">Profile Photo</Label>
+              <div
+                @dragover.prevent="dragOverAvatar = true"
+                @dragleave.prevent="dragOverAvatar = false"
+                @drop.prevent="handleAvatarDrop"
+                :class="[
+                  'relative border-2 border-dashed rounded-xl p-3.5 transition-all flex items-center gap-3.5 text-left cursor-pointer min-w-0 overflow-hidden',
+                  dragOverAvatar
+                    ? 'border-emerald-500 bg-emerald-500/10'
+                    : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-700',
+                ]"
+                @click="triggerAvatarUpload"
+              >
+                <input
+                  ref="avatarFileRef"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  class="hidden"
+                  @change="handleAvatarFileChange"
+                />
+
+                <!-- Circular Avatar Preview -->
+                <Avatar
+                  class="w-14 h-14 rounded-full border border-zinc-200 dark:border-zinc-700 overflow-hidden shrink-0 shadow-xs"
+                >
+                  <img
+                    v-if="editResolvedAvatar"
+                    :src="editResolvedAvatar"
+                    alt="Preview"
+                    class="w-full h-full object-cover rounded-full"
+                  />
+                  <div
+                    v-else-if="isUploadingAvatar"
+                    class="w-full h-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800"
+                  >
+                    <Loader2 class="w-5 h-5 text-emerald-500 animate-spin" />
+                  </div>
+                  <Jazzicon
+                    v-else
+                    :address="userAddress"
+                    :size="56"
+                    class="w-full h-full rounded-full"
+                  />
+                </Avatar>
+
+                <!-- Status & Action Copy -->
+                <div class="flex-1 min-w-0 overflow-hidden space-y-0.5">
+                  <div class="flex items-center gap-1.5 min-w-0">
+                    <span
+                      class="text-xs font-bold text-black dark:text-white truncate block max-w-[160px] sm:max-w-[210px]"
+                      :title="
+                        avatarFileName ||
+                        (editForm.avatarUrl ? 'Custom Photo' : 'Upload from device')
+                      "
+                    >
+                      {{
+                        avatarFileName ||
+                        (editForm.avatarUrl ? 'Custom Photo' : 'Upload from device')
+                      }}
+                    </span>
+                    <Badge
+                      v-if="isUploadingAvatar"
+                      variant="outline"
+                      class="text-[9px] px-1 py-0 bg-amber-500/10 text-amber-500 border-amber-500/30 flex items-center gap-1 shrink-0"
+                    >
+                      <Loader2 class="w-2.5 h-2.5 animate-spin" />
+                      Optimizing...
+                    </Badge>
+                    <Badge
+                      v-else-if="editForm.avatarUrl"
+                      variant="outline"
+                      class="text-[9px] px-1 py-0 bg-emerald-500/10 text-emerald-500 border-emerald-500/30 shrink-0"
+                    >
+                      Active
+                    </Badge>
+                  </div>
+                  <p class="text-[11px] text-zinc-400 truncate">
+                    Click or drag image (PNG, JPG, WEBP max 5MB).
+                  </p>
+                </div>
+
+                <!-- Remove Photo Button -->
+                <Button
+                  v-if="editForm.avatarUrl"
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  class="h-7 w-7 p-0 text-zinc-400 hover:text-rose-500 rounded cursor-pointer"
+                  title="Remove photo"
+                  @click.stop="removeAvatar"
+                >
+                  <Trash2 class="w-3.5 h-3.5" />
+                </Button>
+              </div>
             </div>
 
             <div class="grid grid-cols-2 gap-3">
@@ -678,12 +779,16 @@ import {
   PieChart,
   Activity,
   ExternalLink,
+  Camera,
+  Trash2,
+  UploadCloud,
 } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { useLaunchpad } from '../composables/useLaunchpad';
 import { useWallet } from '../composables/useWallet';
 import { walletAddress } from '../lib/wallet-store';
 import { shortenAddress } from '@/lib/utils';
+import { compressAndConvertToWebp } from '@/lib/image-optimizer';
 
 const { t } = useI18n();
 const { activeNetwork } = useWallet();
@@ -718,6 +823,71 @@ const successTx = ref<string | null>(null);
 const loadingLaunches = ref(false);
 const copiedShare = ref(false);
 
+const avatarFileRef = ref<HTMLInputElement | null>(null);
+const isUploadingAvatar = ref(false);
+const dragOverAvatar = ref(false);
+const avatarFileName = ref('');
+
+function triggerAvatarUpload() {
+  avatarFileRef.value?.click();
+}
+
+async function handleAvatarFileChange(e: Event) {
+  const input = e.target as HTMLInputElement;
+  if (input.files && input.files[0]) {
+    await processAvatarFile(input.files[0]);
+  }
+}
+
+async function handleAvatarDrop(e: DragEvent) {
+  dragOverAvatar.value = false;
+  if (e.dataTransfer?.files && e.dataTransfer.files[0]) {
+    await processAvatarFile(e.dataTransfer.files[0]);
+  }
+}
+
+async function processAvatarFile(file: File) {
+  if (!file.type.startsWith('image/')) {
+    alert('Please select a valid image file (PNG, JPG, WEBP, GIF).');
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    alert('Image file size must be less than 5MB.');
+    return;
+  }
+
+  avatarFileName.value = file.name;
+  try {
+    isUploadingAvatar.value = true;
+    const processed = await compressAndConvertToWebp(file, 256, 0.85);
+    editForm.value.avatarUrl = processed.dataUrl;
+
+    const formData = new FormData();
+    formData.append('file', processed.file);
+
+    const res = await fetch('/api/ipfs/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.data?.cid) {
+        editForm.value.avatarUrl = `ipfs://${data.data.cid}`;
+      }
+    }
+  } catch (err) {
+    console.warn('[Profile] Avatar upload/compression error, keeping preview:', err);
+  } finally {
+    isUploadingAvatar.value = false;
+  }
+}
+
+function removeAvatar() {
+  editForm.value.avatarUrl = '';
+  avatarFileName.value = '';
+  if (avatarFileRef.value) avatarFileRef.value.value = '';
+}
+
 interface ProfileStorageData {
   displayName: string;
   bio: string;
@@ -740,6 +910,24 @@ const editForm = ref<ProfileStorageData>({
   avatarUrl: '',
   twitter: '',
   telegram: '',
+});
+
+const resolvedAvatarUrl = computed(() => {
+  if (!profileData.value.avatarUrl) return '';
+  if (profileData.value.avatarUrl.startsWith('ipfs://')) {
+    const hash = profileData.value.avatarUrl.replace('ipfs://', '');
+    return `https://ipfs.io/ipfs/${hash}`;
+  }
+  return profileData.value.avatarUrl;
+});
+
+const editResolvedAvatar = computed(() => {
+  if (!editForm.value.avatarUrl) return '';
+  if (editForm.value.avatarUrl.startsWith('ipfs://')) {
+    const hash = editForm.value.avatarUrl.replace('ipfs://', '');
+    return `https://ipfs.io/ipfs/${hash}`;
+  }
+  return editForm.value.avatarUrl;
 });
 
 interface MyLaunchItem {

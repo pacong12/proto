@@ -83,7 +83,7 @@
             @dragleave.prevent="dragOver = false"
             @drop.prevent="handleDrop"
             :class="[
-              'relative border-2 border-dashed rounded-xl p-4 transition-all flex flex-col sm:flex-row items-center gap-4 text-left cursor-pointer',
+              'relative border-2 border-dashed rounded-xl p-4 transition-all flex flex-col sm:flex-row items-center gap-4 text-left cursor-pointer min-w-0 overflow-hidden',
               dragOver
                 ? 'border-emerald-500 bg-emerald-500/10'
                 : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600',
@@ -112,15 +112,18 @@
             </div>
 
             <!-- Upload copy & status -->
-            <div class="flex-1 min-w-0 space-y-1">
-              <div class="flex items-center gap-2">
-                <span class="text-xs font-semibold text-black dark:text-white">
+            <div class="flex-1 min-w-0 overflow-hidden space-y-1">
+              <div class="flex items-center gap-2 min-w-0">
+                <span
+                  class="text-xs font-semibold text-black dark:text-white truncate block max-w-[180px] sm:max-w-[320px]"
+                  :title="selectedFileName"
+                >
                   {{ selectedFileName || t('noFileChosen') }}
                 </span>
                 <Badge
                   v-if="isUploadingIpfs"
                   variant="outline"
-                  class="text-[10px] bg-amber-500/10 text-amber-500 border-amber-500/30 flex items-center gap-1"
+                  class="text-[10px] bg-amber-500/10 text-amber-500 border-amber-500/30 flex items-center gap-1 shrink-0"
                 >
                   <Loader2 class="w-3 h-3 animate-spin" />
                   {{ t('pinningIpfs') }}
@@ -128,12 +131,12 @@
                 <Badge
                   v-else-if="form.logo"
                   variant="outline"
-                  class="text-[10px] bg-emerald-500/10 text-emerald-500 border-emerald-500/30"
+                  class="text-[10px] bg-emerald-500/10 text-emerald-500 border-emerald-500/30 shrink-0"
                 >
                   {{ t('ipfsReady') }}
                 </Badge>
               </div>
-              <p class="text-[11px] leading-normal text-zinc-500 dark:text-zinc-400">
+              <p class="text-[11px] leading-normal text-zinc-500 dark:text-zinc-400 truncate">
                 {{ t('chooseImage') }}
               </p>
             </div>
