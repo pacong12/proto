@@ -1153,6 +1153,23 @@ watch(activeMarketTab, (newTab) => {
 const filteredTokens = computed(() => {
   let list = allTokens.value;
 
+  // 0. Filter by Active Network (Robinhood Chain 4663 vs Arc Network 5042)
+  const isArc = activeNetwork.value.chainId === 5042 || activeNetwork.value.chainId === 5042002;
+  const arcWeth = '0x3600000000000000000000000000000000000000';
+  const arcFactory = '0x48844223abdceeb1ce502f54d559681358e68200';
+
+  list = list.filter((item) => {
+    const paired = item.token.pairedToken?.toLowerCase();
+    const pool = item.token.poolAddress?.toLowerCase();
+    const curve = item.token.curveAddress?.toLowerCase();
+    const isTokenArc =
+      paired === arcWeth ||
+      pool === arcFactory ||
+      curve === '0x6c1c1a77771bf8961e27ea5b21f575eb17a7626e';
+
+    return isArc ? isTokenArc : !isTokenArc;
+  });
+
   // 1. Filter Search Query
   const q = searchQuery.value.trim().toLowerCase();
   if (q) {

@@ -310,9 +310,25 @@ onMounted(async () => {
 });
 
 const filteredTokens = computed(() => {
+  const isArc = activeNetwork.value.chainId === 5042 || activeNetwork.value.chainId === 5042002;
+  const arcWeth = '0x3600000000000000000000000000000000000000';
+  const arcFactory = '0x48844223abdceeb1ce502f54d559681358e68200';
+
+  const chainFiltered = tokens.value.filter((item) => {
+    const paired = item.token.pairedToken?.toLowerCase();
+    const pool = item.token.poolAddress?.toLowerCase();
+    const curve = item.token.curveAddress?.toLowerCase();
+    const isTokenArc =
+      paired === arcWeth ||
+      pool === arcFactory ||
+      curve === '0x6c1c1a77771bf8961e27ea5b21f575eb17a7626e';
+
+    return isArc ? isTokenArc : !isTokenArc;
+  });
+
   const q = query.value.trim().toLowerCase();
-  if (!q) return tokens.value.slice(0, 8);
-  return tokens.value.filter((item) => {
+  if (!q) return chainFiltered.slice(0, 8);
+  return chainFiltered.filter((item) => {
     return (
       item.token.name.toLowerCase().includes(q) ||
       item.token.symbol.toLowerCase().includes(q) ||
