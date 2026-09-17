@@ -4,7 +4,7 @@
     @click.self="$emit('close')"
   >
     <Card
-      class="w-full max-w-2xl sm:max-w-3xl shadow-2xl overflow-hidden p-0 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 rounded-2xl"
+      class="w-[calc(100vw-2rem)] sm:w-full max-w-2xl sm:max-w-3xl shadow-2xl overflow-hidden p-0 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 rounded-2xl flex flex-col transition-all duration-200"
     >
       <!-- Search Input Header -->
       <div

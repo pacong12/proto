@@ -115,7 +115,7 @@
             <div class="flex-1 min-w-0 overflow-hidden space-y-1">
               <div class="flex items-center gap-2 min-w-0">
                 <span
-                  class="text-xs font-semibold text-black dark:text-white truncate block max-w-[180px] sm:max-w-[320px]"
+                  class="text-xs font-semibold text-black dark:text-white truncate block flex-1 min-w-0"
                   :title="selectedFileName"
                 >
                   {{ selectedFileName || t('noFileChosen') }}
