@@ -380,27 +380,32 @@ function copyAddress() {
               >
                 <Jazzicon :address="account" :size="16" class="rounded-full" />
                 <span class="font-bold text-black dark:text-white">{{ formattedAddress }}</span>
-                <span class="hidden sm:inline text-zinc-500 font-normal"
-                  >({{ formattedBalance }})</span
-                >
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              class="w-60 p-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-xl"
+              class="w-64 p-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-xl"
             >
-              <DropdownMenuLabel class="flex items-center gap-2.5 py-2 px-2">
+              <DropdownMenuLabel class="flex items-center gap-2.5 py-2.5 px-2.5">
                 <Jazzicon
                   :address="account"
-                  :size="28"
-                  class="rounded-full border border-zinc-300 dark:border-zinc-700"
+                  :size="32"
+                  class="rounded-full border border-zinc-300 dark:border-zinc-700 shrink-0"
                 />
-                <div class="truncate">
-                  <span class="block text-xs font-bold text-black dark:text-white">{{
-                    t('connectedAccount')
-                  }}</span>
+                <div class="truncate min-w-0 flex-1">
+                  <div class="flex items-center justify-between gap-1">
+                    <span class="text-xs font-bold text-black dark:text-white font-mono truncate">
+                      {{ formattedAddress }}
+                    </span>
+                    <span
+                      class="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400 shrink-0"
+                    >
+                      {{ formattedBalance }}
+                    </span>
+                  </div>
                   <span
-                    class="block text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold truncate"
+                    class="block text-[10px] font-mono text-zinc-400 truncate mt-0.5"
+                    :title="account || ''"
                   >
                     {{ account }}
                   </span>
