@@ -7,15 +7,15 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div class="flex items-center gap-4">
           <Avatar
-            class="w-16 h-16 rounded-2xl border-2 border-emerald-500/40 overflow-hidden shadow-lg"
+            class="w-16 h-16 rounded-full border-2 border-emerald-500/40 overflow-hidden shadow-lg"
           >
             <img
               v-if="profileData.avatarUrl"
               :src="profileData.avatarUrl"
               :alt="profileData.displayName"
-              class="w-full h-full object-cover"
+              class="w-full h-full object-cover rounded-full"
             />
-            <Jazzicon v-else :address="userAddress" :size="64" class="w-full h-full" />
+            <Jazzicon v-else :address="userAddress" :size="64" class="w-full h-full rounded-full" />
           </Avatar>
 
           <div class="space-y-1">
@@ -26,16 +26,13 @@
                   (userAddress ? shortenAddress(userAddress) : 'Anonymous Creator')
                 }}
               </h1>
-              <Badge
-                variant="outline"
-                class="text-[10px] font-mono text-emerald-400 border-emerald-500/30"
-              >
-                {{ activeNetwork.name }}
-              </Badge>
             </div>
 
             <p class="text-xs text-zinc-400 max-w-md">
-              {{ profileData.bio || `Non-custodial creator and trader on ${activeNetwork.name}.` }}
+              {{
+                profileData.bio ||
+                'Non-custodial creator and trader on Proto multi-chain launchpad.'
+              }}
             </p>
 
             <div class="flex items-center gap-4 pt-1 text-xs text-zinc-400">
@@ -111,7 +108,7 @@
             {{ t('claimableFees') }}
           </p>
           <p class="text-2xl font-bold font-mono text-emerald-400 mt-2">
-            {{ totalClaimableWeth }} ETH
+            {{ totalClaimableWeth }} {{ activeNetwork.nativeCurrency.symbol }}
           </p>
           <p class="text-xs text-zinc-500 mt-1">70% creator share</p>
         </Card>

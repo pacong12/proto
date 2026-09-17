@@ -19,8 +19,19 @@ export interface WalletCandidate {
   provider: WalletProviderLike;
 }
 
-const STORAGE_CONNECTED_KEY = 'proto_wallet_connected';
-const STORAGE_PROVIDER_ID_KEY = 'proto_wallet_provider_id';
+export const STORAGE_CONNECTED_KEY = 'proto_wallet_connected';
+export const STORAGE_PROVIDER_ID_KEY = 'proto_wallet_provider_id';
+export const STORAGE_ADDRESS_KEY = 'proto_wallet_address';
+export const STORAGE_CHAIN_ID_KEY = 'proto_wallet_chain_id';
+export const WALLET_SYNC_CHANNEL = 'proto_wallet_sync';
+
+export interface WalletSyncMessage {
+  type:
+    'WALLET_CONNECTED' | 'WALLET_DISCONNECTED' | 'WALLET_CHAIN_CHANGED' | 'WALLET_ACCOUNTS_CHANGED';
+  address?: string;
+  chainId?: number;
+  providerId?: string | null;
+}
 
 export const walletProvider = shallowRef<WalletProviderLike | null>(null);
 export const walletAddress = shallowRef<`0x${string}` | null>(null);
@@ -29,6 +40,30 @@ export const walletProviderId = shallowRef<string | null>(null);
 export const walletModalOpen = shallowRef(false);
 
 let activeProviderCleanup: (() => void) | null = null;
+let syncChannel: BroadcastChannel | null = null;
+
+export function getWalletSyncChannel(): BroadcastChannel | null {
+  if (typeof window === 'undefined' || typeof BroadcastChannel === 'undefined') return null;
+  if (!syncChannel) {
+    try {
+      syncChannel = new BroadcastChannel(WALLET_SYNC_CHANNEL);
+    } catch {
+      syncChannel = null;
+    }
+  }
+  return syncChannel;
+}
+
+export function broadcastWalletEvent(message: WalletSyncMessage) {
+  const channel = getWalletSyncChannel();
+  if (channel) {
+    try {
+      channel.postMessage(message);
+    } catch {
+      // Ignore postMessage error
+    }
+  }
+}
 
 function normalizeChainId(raw: unknown): number | null {
   if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
@@ -59,8 +94,21 @@ export function bindProviderListeners(
     if (list.length === 0) {
       clearWalletState();
     } else {
-      walletAddress.value = list[0] as `0x${string}`;
+      const nextAddr = list[0] as `0x${string}`;
+      walletAddress.value = nextAddr;
+      if (typeof window !== 'undefined' && 'localStorage' in window) {
+        try {
+          localStorage.setItem(STORAGE_ADDRESS_KEY, nextAddr);
+        } catch {
+          // Ignore
+        }
+      }
       callbacks?.onAccountsChanged?.(list);
+      broadcastWalletEvent({
+        type: 'WALLET_ACCOUNTS_CHANGED',
+        address: nextAddr,
+        chainId: walletChainId.value ?? undefined,
+      });
     }
   };
 
@@ -68,7 +116,19 @@ export function bindProviderListeners(
     const parsed = normalizeChainId(rawChainId);
     if (parsed !== null) {
       walletChainId.value = parsed;
+      if (typeof window !== 'undefined' && 'localStorage' in window) {
+        try {
+          localStorage.setItem(STORAGE_CHAIN_ID_KEY, String(parsed));
+        } catch {
+          // Ignore
+        }
+      }
       callbacks?.onChainChanged?.(parsed);
+      broadcastWalletEvent({
+        type: 'WALLET_CHAIN_CHANGED',
+        chainId: parsed,
+        address: walletAddress.value ?? undefined,
+      });
     }
   };
 
@@ -93,6 +153,7 @@ export function setConnectedWallet(
   address: `0x${string}`,
   chainId: number,
   providerId?: string,
+  options: { broadcast?: boolean } = { broadcast: true },
 ) {
   walletProvider.value = provider;
   walletAddress.value = address;
@@ -102,6 +163,8 @@ export function setConnectedWallet(
   if (typeof window !== 'undefined' && 'localStorage' in window) {
     try {
       localStorage.setItem(STORAGE_CONNECTED_KEY, 'true');
+      localStorage.setItem(STORAGE_ADDRESS_KEY, address);
+      localStorage.setItem(STORAGE_CHAIN_ID_KEY, String(chainId));
       if (providerId) {
         localStorage.setItem(STORAGE_PROVIDER_ID_KEY, providerId);
       }
@@ -111,9 +174,18 @@ export function setConnectedWallet(
   }
 
   bindProviderListeners(provider);
+
+  if (options.broadcast !== false) {
+    broadcastWalletEvent({
+      type: 'WALLET_CONNECTED',
+      address,
+      chainId,
+      providerId: providerId ?? null,
+    });
+  }
 }
 
-export function clearWalletState() {
+export function clearWalletState(options: { broadcast?: boolean } = { broadcast: true }) {
   if (activeProviderCleanup) {
     activeProviderCleanup();
     activeProviderCleanup = null;
@@ -127,10 +199,16 @@ export function clearWalletState() {
   if (typeof window !== 'undefined' && 'localStorage' in window) {
     try {
       localStorage.removeItem(STORAGE_CONNECTED_KEY);
+      localStorage.removeItem(STORAGE_ADDRESS_KEY);
+      localStorage.removeItem(STORAGE_CHAIN_ID_KEY);
       localStorage.removeItem(STORAGE_PROVIDER_ID_KEY);
     } catch {
       // Ignore
     }
+  }
+
+  if (options.broadcast !== false) {
+    broadcastWalletEvent({ type: 'WALLET_DISCONNECTED' });
   }
 }
 
