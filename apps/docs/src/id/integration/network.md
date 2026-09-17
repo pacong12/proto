@@ -18,15 +18,22 @@ Untuk berinteraksi dengan Proto, tambahkan jaringan yang diinginkan ke dompet We
 
 ---
 
-## 2. Arc Testnet (Circle Stablecoin L1)
+## 2. Arc Network (Circle Stablecoin L1)
 
-| Parameter              | Nilai                             |
-| :--------------------- | :-------------------------------- |
-| **Nama Jaringan**      | Arc Testnet                       |
-| **RPC URL**            | `https://rpc.testnet.arc.network` |
-| **Chain ID**           | `5042002` (`0x4cef52`)            |
-| **Simbol Mata Uang**   | `USDC` (6 desimal - Native Gas)   |
-| **URL Block Explorer** | `https://testnet.arcscan.app`     |
+| Parameter              | Nilai                                                      |
+| :--------------------- | :--------------------------------------------------------- |
+| **Nama Jaringan**      | Arc Network (Mainnet)                                      |
+| **RPC URL**            | `https://rpc.mainnet.arc.io`                               |
+| **Chain ID**           | `5042` (`0x13b2`)                                          |
+| **Simbol Mata Uang**   | `USDC` (Gas Asli: 18 desimal msg.value / 6 desimal ERC-20) |
+| **URL Block Explorer** | `https://explorer.arc.io`                                  |
+
+---
+
+## 3. Jaringan Uji Coba (Testnet)
+
+- **Robinhood Chain Testnet**: Chain ID `46630`, RPC `https://rpc.testnet.chain.robinhood.com`
+- **Arc Testnet**: Chain ID `5042002`, RPC `https://rpc.testnet.arc.io`, Explorer `https://explorer.testnet.arc.io`
 
 ---
 

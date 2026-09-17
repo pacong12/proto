@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { decodeEventLog, parseEventLogs, parseUnits } from 'viem';
+import { decodeEventLog, parseEventLogs, parseEther } from 'viem';
 import {
   ROBINHOOD_CHAIN,
   getNetworkConfig,
@@ -54,10 +54,11 @@ export function useLaunchpad() {
       }
 
       const network = getNetworkConfig(activeChainId);
-      // Use parseUnits with chain-specific decimals for exact token/currency amounts.
+      // On all EVM chains (including Arc Network), native msg.value uses 18 decimals
+      // (1e18 native wei = 1.0 token / 1.0 USDC) per Circle Arc EVM differences specification.
       const initialBuyWei =
         params.initialBuyAmountEth && params.initialBuyAmountEth !== '0'
-          ? parseUnits(params.initialBuyAmountEth, network.nativeCurrency.decimals)
+          ? parseEther(params.initialBuyAmountEth)
           : 0n;
       const totalValue = network.launchConfig.launchFeeWei + initialBuyWei;
 
@@ -172,10 +173,11 @@ export function useLaunchpad() {
       }
 
       const network = getNetworkConfig(activeChainId);
-      // Use parseUnits with chain-specific decimals for exact token/currency amounts.
+      // On all EVM chains (including Arc Network), native msg.value uses 18 decimals
+      // (1e18 native wei = 1.0 token / 1.0 USDC) per Circle Arc EVM differences specification.
       const initialBuyWei =
         params.initialBuyAmountEth && params.initialBuyAmountEth !== '0'
-          ? parseUnits(params.initialBuyAmountEth, network.nativeCurrency.decimals)
+          ? parseEther(params.initialBuyAmountEth)
           : 0n;
       const totalValue = network.launchConfig.launchFeeWei + initialBuyWei;
 

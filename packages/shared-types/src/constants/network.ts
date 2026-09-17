@@ -151,8 +151,8 @@ export const ARC_CHAIN: NetworkConfig = {
     symbol: 'USDC',
     decimals: 6,
   },
-  rpcUrl: 'https://arc.drpc.org',
-  blockExplorer: 'https://arcscan.app',
+  rpcUrl: 'https://rpc.mainnet.arc.io',
+  blockExplorer: 'https://explorer.arc.io',
   contracts: {
     factory: '0xED31e7ec603651803784196003903aCa05550552',
     factoryV2: '0x2ae8BE8C8F19665396b362859d51bdec09e59AEa',
@@ -166,15 +166,15 @@ export const ARC_CHAIN: NetworkConfig = {
   launchConfigV2: {
     supply: 1_000_000_000n * 10n ** 18n,
     curveTokenAllocation: 800_000_000n * 10n ** 18n,
-    graduationTargetWei: 8_400_000_000n, // 8,400 USDC (6 decimals)
+    graduationTargetWei: 8_000_000_000_000_000_000_000n, // 8,000 USDC (18 decimals native msg.value)
     platformFeeBps: 100,
     snipeTaxMaxBps: 9900,
   },
   launchConfig: {
     supply: 1_000_000_000n * 10n ** 18n,
     poolFee: 10000,
-    launchFeeWei: 1_000_000n, // 1 USDC (6 decimals)
-    graduationThresholdWei: 8_400_000_000n, // 8,400 USDC
+    launchFeeWei: 1_000_000_000_000_000_000n, // 1 USDC (18 decimals native msg.value)
+    graduationThresholdWei: 8_000_000_000_000_000_000_000n, // 8,000 USDC
     antiSnipeBlocks: 2,
     maxHoldPercent: 5.0,
     maxBuyPercent: 5.5,
@@ -191,8 +191,8 @@ export const ARC_TESTNET: NetworkConfig = {
     symbol: 'USDC',
     decimals: 6,
   },
-  rpcUrl: 'https://rpc.testnet.arc.network',
-  blockExplorer: 'https://testnet.arcscan.app',
+  rpcUrl: 'https://rpc.testnet.arc.io',
+  blockExplorer: 'https://explorer.testnet.arc.io',
   contracts: {
     factory: '0x92cB206557907e4955faEeBd387D9602872d52cA',
     factoryV2: '0x9C7Ff544aAc9f4A4ECAE3ca8c110740888fF70E3',
@@ -206,15 +206,15 @@ export const ARC_TESTNET: NetworkConfig = {
   launchConfigV2: {
     supply: 1_000_000_000n * 10n ** 18n,
     curveTokenAllocation: 800_000_000n * 10n ** 18n,
-    graduationTargetWei: 8_400_000_000n, // 8,400 USDC (6 decimals)
+    graduationTargetWei: 8_000_000_000_000_000_000_000n, // 8,000 USDC (18 decimals native msg.value)
     platformFeeBps: 100,
     snipeTaxMaxBps: 9900,
   },
   launchConfig: {
     supply: 1_000_000_000n * 10n ** 18n,
     poolFee: 10000,
-    launchFeeWei: 1_000_000n, // 1 USDC (6 decimals)
-    graduationThresholdWei: 8_400_000_000n, // 8,400 USDC
+    launchFeeWei: 1_000_000_000_000_000_000n, // 1 USDC (18 decimals native msg.value)
+    graduationThresholdWei: 8_000_000_000_000_000_000_000n, // 8,000 USDC
     antiSnipeBlocks: 2,
     maxHoldPercent: 5.0,
     maxBuyPercent: 5.5,
