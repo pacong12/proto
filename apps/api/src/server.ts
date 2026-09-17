@@ -527,6 +527,367 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // DEX Screener Partner API (https://docs.dexscreener.com/api/partner)
+  // Required endpoints for chain listing & token indexing
+  // ---------------------------------------------------------------------------
+
+  // GET /dex/latest-block  — most recent indexed block
+  if (url.pathname === '/dex/latest-block' && req.method === 'GET') {
+    const cacheKey = 'dex:latest-block';
+    const cached = await cache.get<unknown>(cacheKey);
+    if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
+
+    let block: bigint;
+    try {
+      block = await publicClient.getBlockNumber();
+    } catch {
+      block = 0n;
+    }
+    const payload = { block: Number(block) };
+    await cache.set(cacheKey, payload, 5);
+    return replyJson(payload, 200, { 'x-cache': 'MISS' });
+  }
+
+  // GET /dex/asset — token metadata for a given address
+  if (url.pathname === '/dex/asset' && req.method === 'GET') {
+    const id = url.searchParams.get('id') ?? '';
+    const addrMatch = id.match(/(0x[a-fA-F0-9]{40})/);
+    if (!addrMatch) return replyError('BAD_REQUEST', 'Missing or invalid id param', 400);
+
+    const address = addrMatch[1].toLowerCase() as `0x${string}`;
+    const cacheKey = `dex:asset:${address}`;
+    const cached = await cache.get<unknown>(cacheKey);
+    if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
+
+    const res = await tokenController.getToken(address);
+    if (!res.success || !res.data) return replyError('NOT_FOUND', 'Asset not found', 404);
+
+    const td = res.data as {
+      token: import('@proto/shared-types').LaunchedTokenEntity;
+      marketData: import('@proto/shared-types').TokenMarketData;
+    };
+    const t = td.token;
+    const payload = {
+      id: `${ROBINHOOD_CHAIN.chainId}_${t.address}`,
+      caip19: `eip155:${ROBINHOOD_CHAIN.chainId}/erc20:${t.address}`,
+      name: t.name,
+      symbol: t.symbol,
+      totalSupply: t.totalSupply,
+      circulatingSupply: t.totalSupply,
+      coinGeckoId: null,
+      coinMarketCapId: null,
+      decimals: t.decimals,
+      metadata: {
+        description: t.description || null,
+        image: t.logo || null,
+        twitter: t.socials?.twitter || null,
+        telegram: t.socials?.telegram || null,
+        discord: t.socials?.discord || null,
+        website: t.socials?.website || null,
+      },
+    };
+    await cache.set(cacheKey, payload, 60);
+    return replyJson(payload, 200, { 'x-cache': 'MISS' });
+  }
+
+  // GET /dex/pair — pool/pair metadata
+  if (url.pathname === '/dex/pair' && req.method === 'GET') {
+    const id = url.searchParams.get('id') ?? '';
+    const addrMatch = id.match(/(0x[a-fA-F0-9]{40})/);
+    if (!addrMatch) return replyError('BAD_REQUEST', 'Missing or invalid id param', 400);
+
+    const address = addrMatch[1].toLowerCase() as `0x${string}`;
+    const cacheKey = `dex:pair:${address}`;
+    const cached = await cache.get<unknown>(cacheKey);
+    if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
+
+    // Find token by pool address or token address
+    const allTokens = await repository.findAll(200, 0);
+    const token =
+      allTokens.find((t) => t.poolAddress.toLowerCase() === address) ??
+      allTokens.find((t) => t.address.toLowerCase() === address);
+
+    if (!token) return replyError('NOT_FOUND', 'Pair not found', 404);
+
+    const wethAddress = ROBINHOOD_CHAIN.contracts.weth;
+    const isToken0 = token.isToken0;
+    const payload = {
+      id: `${ROBINHOOD_CHAIN.chainId}_${token.poolAddress}`,
+      dexId: 'proto',
+      url: `https://proto.fun/trade/${token.address}`,
+      pairAddress: token.poolAddress,
+      labels: ['proto-v2'],
+      baseToken: {
+        address: token.address,
+        name: token.name,
+        symbol: token.symbol,
+      },
+      quoteToken: {
+        address: wethAddress,
+        name: 'Wrapped Ether',
+        symbol: 'WETH',
+      },
+      quoteTokenOrder: isToken0 ? 'token0' : 'token1',
+      fee: token.poolFee / 1_000_000,
+      tickSpacing: 200,
+      hooks: '0x0000000000000000000000000000000000000000',
+    };
+    await cache.set(cacheKey, payload, 30);
+    return replyJson(payload, 200, { 'x-cache': 'MISS' });
+  }
+
+  // GET /dex/events — swap events for DEX Screener live price feed
+  if (url.pathname === '/dex/events' && req.method === 'GET') {
+    const fromBlock = BigInt(url.searchParams.get('fromBlock') ?? '0');
+    const toBlock = BigInt(url.searchParams.get('toBlock') ?? '0');
+    const pairId = url.searchParams.get('id') ?? '';
+    const poolMatch = pairId.match(/(0x[a-fA-F0-9]{40})/);
+    const poolAddress = poolMatch ? (poolMatch[1].toLowerCase() as `0x${string}`) : null;
+
+    const cacheKey = `dex:events:${poolAddress ?? 'all'}:${fromBlock}:${toBlock}`;
+    const cached = await cache.get<unknown>(cacheKey);
+    if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
+
+    const allTokens = await repository.findAll(200, 0);
+    const ethPriceUsd = await priceFeed.getEthPriceUsd();
+
+    const swaps: unknown[] = [];
+
+    for (const token of allTokens) {
+      if (poolAddress && token.poolAddress.toLowerCase() !== poolAddress) continue;
+
+      const trades = await repository.getTrades(token.address, 100, 0);
+      for (const trade of trades) {
+        const bn =
+          typeof trade.blockNumber === 'bigint'
+            ? trade.blockNumber
+            : BigInt(trade.blockNumber ?? 0);
+        if (fromBlock > 0n && bn < fromBlock) continue;
+        if (toBlock > 0n && bn > toBlock) continue;
+
+        swaps.push({
+          block: {
+            blockNumber: Number(bn),
+            blockTimestamp: trade.timestamp,
+          },
+          eventType: trade.isBuy ? 'buy' : 'sell',
+          txnId: trade.transactionHash,
+          txnIndex: 0,
+          eventIndex: 0,
+          maker: trade.trader,
+          pairId: `${ROBINHOOD_CHAIN.chainId}_${token.poolAddress}`,
+          asset0In: trade.isBuy ? (parseFloat(trade.wethAmount) / ethPriceUsd).toFixed(8) : '0',
+          asset1In: trade.isBuy ? '0' : trade.tokenAmount,
+          asset0Out: trade.isBuy ? '0' : (parseFloat(trade.wethAmount) / ethPriceUsd).toFixed(8),
+          asset1Out: trade.isBuy ? trade.tokenAmount : '0',
+          priceNative: (parseFloat(trade.wethAmount) / parseFloat(trade.tokenAmount)).toFixed(18),
+          priceUsd: trade.priceUsd.toFixed(8),
+        });
+      }
+    }
+
+    const payload = { events: swaps };
+    await cache.set(cacheKey, payload, 5);
+    return replyJson(payload, 200, { 'x-cache': 'MISS' });
+  }
+
+  // ---------------------------------------------------------------------------
+  // GeckoTerminal / GMGN compatibility
+  // GET /api/v1/networks/:network/pools/:pool
+  // ---------------------------------------------------------------------------
+
+  const geckoPoolMatch = url.pathname.match(
+    /^\/api\/v1\/networks\/([^/]+)\/pools\/(0x[a-fA-F0-9]{40})$/,
+  );
+  if (geckoPoolMatch && req.method === 'GET') {
+    const poolAddr = geckoPoolMatch[2].toLowerCase() as `0x${string}`;
+    const cacheKey = `gecko:pool:${poolAddr}`;
+    const cached = await cache.get<unknown>(cacheKey);
+    if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
+
+    const allTokens = await repository.findAll(200, 0);
+    const token = allTokens.find((t) => t.poolAddress.toLowerCase() === poolAddr);
+    if (!token) return replyError('NOT_FOUND', 'Pool not found', 404);
+
+    const ethPriceUsd = await priceFeed.getEthPriceUsd();
+    const trades = await repository.getTrades(token.address, 500, 0);
+    let vol24h = 0;
+    const cutoff = Date.now() - 86_400_000;
+    for (const tr of trades) {
+      if ((tr.timestamp ?? 0) >= cutoff) vol24h += parseFloat(tr.wethAmount);
+    }
+
+    const payload = {
+      data: {
+        id: `${ROBINHOOD_CHAIN.chainId}_${token.poolAddress}`,
+        type: 'pool',
+        attributes: {
+          base_token_price_usd: (trades[0]?.priceUsd ?? 0).toFixed(12),
+          quote_token_price_usd: ethPriceUsd.toFixed(2),
+          base_token_price_native_currency: (
+            parseFloat(trades[0]?.wethAmount ?? '0') / parseFloat(trades[0]?.tokenAmount ?? '1')
+          ).toFixed(18),
+          address: token.poolAddress,
+          name: `${token.symbol} / WETH`,
+          pool_created_at: new Date(token.createdAt).toISOString(),
+          token_price_usd: (trades[0]?.priceUsd ?? 0).toFixed(12),
+          fdv_usd: null,
+          market_cap_usd: null,
+          price_change_h1: null,
+          price_change_h24: null,
+          transactions_h24_buys: trades.filter((t) => t.isBuy && (t.timestamp ?? 0) >= cutoff)
+            .length,
+          transactions_h24_sells: trades.filter((t) => !t.isBuy && (t.timestamp ?? 0) >= cutoff)
+            .length,
+          volume_usd: { h24: (vol24h * ethPriceUsd).toFixed(2) },
+          reserve_in_usd: null,
+        },
+        relationships: {
+          base_token: {
+            data: { id: `${ROBINHOOD_CHAIN.chainId}_${token.address}`, type: 'token' },
+          },
+          quote_token: {
+            data: {
+              id: `${ROBINHOOD_CHAIN.chainId}_${ROBINHOOD_CHAIN.contracts.weth}`,
+              type: 'token',
+            },
+          },
+          dex: { data: { id: 'proto', type: 'dex' } },
+        },
+      },
+    };
+    await cache.set(cacheKey, payload, 15);
+    return replyJson(payload, 200, { 'x-cache': 'MISS' });
+  }
+
+  // GET /api/v1/networks/:network/tokens/:address
+  const geckoTokenMatch = url.pathname.match(
+    /^\/api\/v1\/networks\/([^/]+)\/tokens\/(0x[a-fA-F0-9]{40})$/,
+  );
+  if (geckoTokenMatch && req.method === 'GET') {
+    const tokenAddr = geckoTokenMatch[2].toLowerCase() as `0x${string}`;
+    const cacheKey = `gecko:token:${tokenAddr}`;
+    const cached = await cache.get<unknown>(cacheKey);
+    if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
+
+    const res = await tokenController.getToken(tokenAddr);
+    if (!res.success || !res.data) return replyError('NOT_FOUND', 'Token not found', 404);
+    const td = res.data as {
+      token: import('@proto/shared-types').LaunchedTokenEntity;
+      marketData: import('@proto/shared-types').TokenMarketData;
+    };
+    const t = td.token;
+
+    const payload = {
+      data: {
+        id: `${ROBINHOOD_CHAIN.chainId}_${t.address}`,
+        type: 'token',
+        attributes: {
+          address: t.address,
+          name: t.name,
+          symbol: t.symbol,
+          decimals: t.decimals,
+          image_url: t.logo || null,
+          coingecko_coin_id: null,
+          total_supply: t.totalSupply,
+          price_usd: null,
+          fdv_usd: null,
+          total_reserve_in_usd: null,
+          volume_usd: { h24: null },
+          market_cap_usd: null,
+        },
+      },
+    };
+    await cache.set(cacheKey, payload, 30);
+    return replyJson(payload, 200, { 'x-cache': 'MISS' });
+  }
+
+  // GET /api/v1/networks/:network/pools/:pool/ohlcv/:timeframe
+  const geckoOhlcvMatch = url.pathname.match(
+    /^\/api\/v1\/networks\/([^/]+)\/pools\/(0x[a-fA-F0-9]{40})\/ohlcv\/(minute|hour|day)$/,
+  );
+  if (geckoOhlcvMatch && req.method === 'GET') {
+    const poolAddr = geckoOhlcvMatch[2].toLowerCase() as `0x${string}`;
+    const timeframe = geckoOhlcvMatch[3];
+    const limit = Math.min(1000, parseInt(url.searchParams.get('limit') ?? '100', 10));
+
+    const allTokens = await repository.findAll(200, 0);
+    const token = allTokens.find((t) => t.poolAddress.toLowerCase() === poolAddr);
+    if (!token) return replyError('NOT_FOUND', 'Pool not found', 404);
+
+    const resolution = timeframe === 'minute' ? 1 : timeframe === 'hour' ? 60 : 1440;
+    const ohlcvRes = await tokenController.getCandlesticks(token.address, resolution);
+    const candles = (ohlcvRes.data ?? []) as import('@proto/shared-types').CandlestickEntity[];
+    const sliced = candles.slice(-limit);
+
+    const payload = {
+      data: {
+        id: `${ROBINHOOD_CHAIN.chainId}_${token.poolAddress}_${timeframe}`,
+        type: 'ohlcv',
+        attributes: {
+          ohlcv_list: sliced.map((c) => [c.timestamp, c.open, c.high, c.low, c.close, c.volume]),
+        },
+      },
+      meta: { base: token.symbol, quote: 'WETH' },
+    };
+    return replyJson(payload);
+  }
+
+  // GET /api/v1/networks/:network/pools/:pool/trades
+  const geckoTradesMatch = url.pathname.match(
+    /^\/api\/v1\/networks\/([^/]+)\/pools\/(0x[a-fA-F0-9]{40})\/trades$/,
+  );
+  if (geckoTradesMatch && req.method === 'GET') {
+    const poolAddr = geckoTradesMatch[2].toLowerCase() as `0x${string}`;
+    const allTokens = await repository.findAll(200, 0);
+    const token = allTokens.find((t) => t.poolAddress.toLowerCase() === poolAddr);
+    if (!token) return replyError('NOT_FOUND', 'Pool not found', 404);
+
+    const trades = await repository.getTrades(token.address, 100, 0);
+    const ethPriceUsd = await priceFeed.getEthPriceUsd();
+
+    const payload = {
+      data: trades.map((tr) => ({
+        id: tr.transactionHash,
+        type: 'trade',
+        attributes: {
+          block_number: Number(tr.blockNumber),
+          tx_hash: tr.transactionHash,
+          tx_from_address: tr.trader,
+          from_token_amount: tr.isBuy ? tr.wethAmount : tr.tokenAmount,
+          to_token_amount: tr.isBuy ? tr.tokenAmount : tr.wethAmount,
+          price_from_in_currency_usd: tr.isBuy ? ethPriceUsd.toFixed(2) : tr.priceUsd.toFixed(8),
+          price_to_in_currency_usd: tr.isBuy ? tr.priceUsd.toFixed(8) : ethPriceUsd.toFixed(2),
+          price_from_in_usd: tr.isBuy ? ethPriceUsd.toFixed(2) : tr.priceUsd.toFixed(8),
+          price_to_in_usd: tr.isBuy ? tr.priceUsd.toFixed(8) : ethPriceUsd.toFixed(2),
+          kind: tr.isBuy ? 'buy' : 'sell',
+          volume_in_usd: (parseFloat(tr.wethAmount) * ethPriceUsd).toFixed(2),
+          block_timestamp: new Date(tr.timestamp ?? 0).toISOString(),
+        },
+        relationships: {
+          from_token: {
+            data: {
+              id: tr.isBuy
+                ? `${ROBINHOOD_CHAIN.chainId}_${ROBINHOOD_CHAIN.contracts.weth}`
+                : `${ROBINHOOD_CHAIN.chainId}_${token.address}`,
+              type: 'token',
+            },
+          },
+          to_token: {
+            data: {
+              id: tr.isBuy
+                ? `${ROBINHOOD_CHAIN.chainId}_${token.address}`
+                : `${ROBINHOOD_CHAIN.chainId}_${ROBINHOOD_CHAIN.contracts.weth}`,
+              type: 'token',
+            },
+          },
+        },
+      })),
+    };
+    return replyJson(payload);
+  }
+
   return replyError('NOT_FOUND', `Route ${url.pathname} not found`, 404);
 }
 
