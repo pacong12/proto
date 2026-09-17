@@ -65,6 +65,9 @@ if (!projectId) {
     },
     features: {
       analytics: false,
+      email: true,
+      socials: ['google', 'x', 'discord', 'github', 'apple', 'farcaster'],
+      emailShowWallets: true,
     },
     enableWalletGuide: true,
     enableNetworkSwitch: true,
