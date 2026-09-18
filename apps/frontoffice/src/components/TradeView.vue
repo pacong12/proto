@@ -208,6 +208,7 @@
             <TradingChart
               :data="candlestickData"
               :token-symbol="currentToken.symbol"
+              :token-address="currentToken.address"
               :height="420"
             />
           </div>

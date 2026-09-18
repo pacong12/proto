@@ -16,6 +16,10 @@ import {
 } from 'lightweight-charts';
 import { CandlestickChart, TrendingUp, Maximize2 } from 'lucide-vue-next';
 
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
 export interface CandlePoint {
   time: number | string;
   open: number;
@@ -38,6 +42,10 @@ const props = withDefaults(defineProps<Props>(), {
   height: 420,
 });
 
+// ---------------------------------------------------------------------------
+// Refs / state
+// ---------------------------------------------------------------------------
+
 const chartContainer = ref<HTMLDivElement | null>(null);
 let chart: IChartApi | null = null;
 let candleSeries: ISeriesApi<'Candlestick'> | null = null;
@@ -46,29 +54,53 @@ let volumeSeries: ISeriesApi<'Histogram'> | null = null;
 let resizeObserver: ResizeObserver | null = null;
 let themeObserver: MutationObserver | null = null;
 
-// User Interactive Chart Controls (TradingView Style)
 const chartMode = ref<'curve' | 'tradingview'>('curve');
 const chartType = ref<'candles' | 'area'>('candles');
 const isLogScale = ref(false);
 const hoveredBar = ref<CandlePoint | null>(null);
 
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
 function checkDark(): boolean {
   return typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+}
+
+/**
+ * Detect whether the entire dataset has zero price variance.
+ * lightweight-charts collapses to a hairline when minValue === maxValue
+ * across all bars; we need to know this upfront to apply autoscaleInfoProvider.
+ */
+function isDataFlat(data: ReturnType<typeof formatData>): boolean {
+  if (data.length === 0) return true;
+  const first = data[0].close;
+  return data.every(
+    (d) => d.open === first && d.high === first && d.low === first && d.close === first,
+  );
 }
 
 const tradingViewUrl = computed(() => {
   const isDark = checkDark();
   const theme = isDark ? 'dark' : 'light';
-  const sym = props.tokenSymbol?.toUpperCase();
-  const tvSymbol =
-    sym === 'PROTO' || sym === 'USDC'
-      ? 'BINANCE:USDCUSDT'
-      : sym === 'ETH' || sym === 'WETH'
-        ? 'BINANCE:ETHUSDT'
-        : 'BINANCE:ETHUSDT';
-
-  return `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_embed&symbol=${encodeURIComponent(tvSymbol)}&interval=15&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=${isDark ? '09090b' : 'ffffff'}&studies=[]&theme=${theme}&style=1&timezone=Etc%2FUTC&withdateranges=1&hideideas=1`;
+  const sym = props.tokenSymbol?.toUpperCase() ?? '';
+  let tvSym = 'BINANCE:ETHUSDT';
+  if (sym === 'BTC' || sym === 'WBTC') tvSym = 'BINANCE:BTCUSDT';
+  else if (sym === 'BNB') tvSym = 'BINANCE:BNBUSDT';
+  return (
+    `https://s.tradingview.com/widgetembed/?frameElementId=tv_embed` +
+    `&symbol=${encodeURIComponent(tvSym)}` +
+    `&interval=15` +
+    `&hidesidetoolbar=0&symboledit=1&saveimage=1` +
+    `&toolbarbg=${isDark ? '09090b' : 'ffffff'}` +
+    `&studies=[]&theme=${theme}&style=1&timezone=Etc%2FUTC` +
+    `&withdateranges=1&hideideas=1`
+  );
 });
+
+// ---------------------------------------------------------------------------
+// Theme configuration
+// ---------------------------------------------------------------------------
 
 function getThemeConfig(isDark: boolean) {
   return {
@@ -81,8 +113,8 @@ function getThemeConfig(isDark: boolean) {
       fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
     },
     grid: {
-      vertLines: { color: isDark ? 'rgba(39, 39, 42, 0.4)' : 'rgba(244, 244, 245, 0.8)' },
-      horzLines: { color: isDark ? 'rgba(39, 39, 42, 0.4)' : 'rgba(244, 244, 245, 0.8)' },
+      vertLines: { color: isDark ? 'rgba(39,39,42,0.4)' : 'rgba(244,244,245,0.8)' },
+      horzLines: { color: isDark ? 'rgba(39,39,42,0.4)' : 'rgba(244,244,245,0.8)' },
     },
     crosshair: {
       mode: CrosshairMode.Normal,
@@ -101,10 +133,7 @@ function getThemeConfig(isDark: boolean) {
     },
     rightPriceScale: {
       borderColor: isDark ? '#27272a' : '#e4e4e7',
-      scaleMargins: {
-        top: 0.1,
-        bottom: 0.2, // Leave bottom 20% for the volume histogram
-      },
+      scaleMargins: { top: 0.12, bottom: 0.22 },
       mode: isLogScale.value ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal,
     },
     timeScale: {
@@ -112,30 +141,42 @@ function getThemeConfig(isDark: boolean) {
       timeVisible: true,
       secondsVisible: false,
       rightOffset: 6,
-      barSpacing: 12,
+      barSpacing: 8,
+      minBarSpacing: 1,
     },
   };
 }
+
+// ---------------------------------------------------------------------------
+// Data formatting
+// Per lightweight-charts docs:
+//   - time must be UTCTimestamp (integer seconds, strictly ascending, no dups)
+//   - high >= max(open, close), low <= min(open, close)
+//   - Never mutate raw OHLC values; use autoscaleInfoProvider for display margin
+// ---------------------------------------------------------------------------
 
 function formatData(rawData: CandlePoint[]) {
   if (!rawData || rawData.length === 0) return [];
 
   const converted = rawData.map((item) => {
-    let t = item.time;
-    if (typeof t === 'number' && t > 2000000000) {
-      t = Math.floor(t / 1000);
-    }
+    // Normalize timestamp: accept ms (>2e9) or seconds
+    let tNum =
+      typeof item.time === 'string' ? new Date(item.time).getTime() / 1000 : Number(item.time);
+    if (tNum > 2_000_000_000) tNum = tNum / 1000;
+    const t = Math.floor(tNum);
+
     const open = Number(item.open);
     const close = Number(item.close);
     const rawHigh = Number(item.high);
     const rawLow = Number(item.low);
 
-    // Strictly standard OHLC bounds — never inject artificial wicks
+    // Enforce OHLC invariant: high >= max(o,c), low <= min(o,c)
+    // Do NOT add synthetic wicks — pass raw values as-is
     const high = Math.max(open, close, rawHigh);
     const low = Math.min(open, close, rawLow);
 
     return {
-      time: Math.floor(Number(t)) as Time,
+      time: t as Time,
       open,
       high,
       low,
@@ -144,16 +185,48 @@ function formatData(rawData: CandlePoint[]) {
     };
   });
 
-  // Sort strictly ascending by timestamp
+  // Sort strictly ascending by integer seconds timestamp
   converted.sort((a, b) => Number(a.time) - Number(b.time));
 
-  // Deduplicate by integer seconds timestamp for lightweight-charts
-  const unique = new Map<number, (typeof converted)[0]>();
-  for (const item of converted) {
-    unique.set(Number(item.time), item);
+  // Deduplicate: keep last entry for each timestamp (latest update wins)
+  const seen = new Map<number, (typeof converted)[0]>();
+  for (const bar of converted) {
+    seen.set(Number(bar.time), bar);
   }
-  return Array.from(unique.values());
+
+  return Array.from(seen.values()).sort((a, b) => Number(a.time) - Number(b.time));
 }
+
+// ---------------------------------------------------------------------------
+// autoscaleInfoProvider factory
+// Per docs: return null to use default; return AutoscaleInfo to override.
+// We only intervene when the price range is zero (flat dataset).
+// ---------------------------------------------------------------------------
+
+function makeAutoscaleProvider(flatPrice: number | null) {
+  return (original: () => AutoscaleInfo | null): AutoscaleInfo | null => {
+    const res = original();
+    if (!res || !res.priceRange) return res;
+    const { minValue, maxValue } = res.priceRange;
+    if (minValue === maxValue) {
+      const val = flatPrice ?? minValue;
+      // Use 5 % band around the flat price for readable scale
+      const margin = val > 0 ? val * 0.05 : 0.000001;
+      return {
+        priceRange: {
+          minValue: Math.max(0, val - margin),
+          maxValue: val + margin,
+        },
+        margins: res.margins,
+      };
+    }
+    return res;
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Formatters for the OHLCV toolbar
+// ---------------------------------------------------------------------------
 
 function formatPrice(val: number): string {
   if (isNaN(val) || val === 0) return '0.00';
@@ -166,11 +239,14 @@ function formatVolume(val: number): string {
   if (isNaN(val) || val === 0) return '0';
   if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(2)}M`;
   if (val >= 1_000) return `${(val / 1_000).toFixed(2)}K`;
-  return val.toFixed(2);
+  return val.toFixed(4);
 }
 
-// Active display bar (hovered candle or fallback to latest candle)
-const activeBar = computed(() => {
+// ---------------------------------------------------------------------------
+// Computed: active toolbar bar (hovered or last)
+// ---------------------------------------------------------------------------
+
+const activeBar = computed<CandlePoint | null>(() => {
   if (hoveredBar.value) return hoveredBar.value;
   const formatted = formatData(props.data);
   if (formatted.length > 0) {
@@ -192,9 +268,22 @@ const barChangePercent = computed(() => {
   return ((activeBar.value.close - activeBar.value.open) / activeBar.value.open) * 100;
 });
 
-function initChart() {
-  if (!chartContainer.value || chartMode.value !== 'curve') return;
+// Whether all candles share the same price (informational label)
+const dataIsFlat = computed(() => isDataFlat(formatData(props.data)));
 
+// ---------------------------------------------------------------------------
+// Chart initialisation
+// ---------------------------------------------------------------------------
+
+function destroyChart() {
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+    resizeObserver = null;
+  }
+  if (themeObserver) {
+    themeObserver.disconnect();
+    themeObserver = null;
+  }
   if (chart) {
     chart.remove();
     chart = null;
@@ -202,34 +291,43 @@ function initChart() {
     areaSeries = null;
     volumeSeries = null;
   }
+}
+
+function initChart() {
+  if (!chartContainer.value || chartMode.value !== 'curve') return;
+  destroyChart();
 
   const isDark = checkDark();
-  const width = chartContainer.value.clientWidth || 600;
+  const width = chartContainer.value.clientWidth || 700;
+  const formatted = formatData(props.data);
+  const flatPrice = dataIsFlat.value && formatted.length > 0 ? formatted[0].close : null;
 
   chart = createChart(chartContainer.value, {
     width,
     height: props.height,
     ...getThemeConfig(isDark),
+    // Disable built-in kinetic scroll so the series autoscale can breathe
+    handleScroll: {
+      mouseWheel: true,
+      pressedMouseMove: true,
+      horzTouchDrag: true,
+      vertTouchDrag: false,
+    },
+    handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
   });
 
-  const formatted = formatData(props.data);
-
-  // 1. Volume Histogram Series (Bottom 20% overlay)
+  // 1. Volume histogram — overlaid on its own scale (bottom 22%)
   volumeSeries = chart.addSeries(HistogramSeries, {
-    priceFormat: {
-      type: 'volume',
-    },
-    priceScaleId: '', // Overlay inside the chart pane
+    priceFormat: { type: 'volume' },
+    priceScaleId: 'vol',
   });
-
   volumeSeries.priceScale().applyOptions({
-    scaleMargins: {
-      top: 0.8,
-      bottom: 0,
-    },
+    scaleMargins: { top: 0.78, bottom: 0 },
   });
 
-  // 2. Primary Price Series (Candles or Area) with TradingView autoscaleInfoProvider
+  const autoscaleProvider = makeAutoscaleProvider(flatPrice);
+
+  // 2. Main price series
   if (chartType.value === 'candles') {
     candleSeries = chart.addSeries(CandlestickSeries, {
       upColor: '#10b981',
@@ -240,106 +338,64 @@ function initChart() {
       wickVisible: true,
       wickUpColor: '#10b981',
       wickDownColor: '#f43f5e',
-      priceFormat: {
-        type: 'price',
-        precision: 8,
-        minMove: 0.00000001,
-      },
-      autoscaleInfoProvider: (original: () => AutoscaleInfo | null) => {
-        const res = original();
-        if (res !== null && res.priceRange !== null) {
-          // If flat range (min === max), expand 5% margin so candle is cleanly centered
-          if (res.priceRange.minValue === res.priceRange.maxValue) {
-            const val = res.priceRange.minValue;
-            const margin = val > 0 ? val * 0.05 : 0.000001;
-            return {
-              priceRange: {
-                minValue: Math.max(0, val - margin),
-                maxValue: val + margin,
-              },
-              margins: res.margins,
-            };
-          }
-        }
-        return res;
-      },
+      priceFormat: { type: 'price', precision: 8, minMove: 0.00000001 },
+      autoscaleInfoProvider: autoscaleProvider,
     });
     candleSeries.setData(formatted);
   } else {
     areaSeries = chart.addSeries(AreaSeries, {
-      topColor: 'rgba(16, 185, 129, 0.28)',
-      bottomColor: 'rgba(16, 185, 129, 0.02)',
+      topColor: 'rgba(16,185,129,0.28)',
+      bottomColor: 'rgba(16,185,129,0.02)',
       lineColor: '#10b981',
       lineWidth: 2,
-      priceFormat: {
-        type: 'price',
-        precision: 8,
-        minMove: 0.00000001,
-      },
-      autoscaleInfoProvider: (original: () => AutoscaleInfo | null) => {
-        const res = original();
-        if (res !== null && res.priceRange !== null) {
-          if (res.priceRange.minValue === res.priceRange.maxValue) {
-            const val = res.priceRange.minValue;
-            const margin = val > 0 ? val * 0.05 : 0.000001;
-            return {
-              priceRange: {
-                minValue: Math.max(0, val - margin),
-                maxValue: val + margin,
-              },
-              margins: res.margins,
-            };
-          }
-        }
-        return res;
-      },
+      priceFormat: { type: 'price', precision: 8, minMove: 0.00000001 },
+      autoscaleInfoProvider: autoscaleProvider,
     });
-    const areaData = formatted.map((d) => ({ time: d.time, value: d.close }));
-    areaSeries.setData(areaData);
+    areaSeries.setData(formatted.map((d) => ({ time: d.time, value: d.close })));
   }
 
-  // 3. Set Volume Data
-  const volumeData = formatted.map((d) => ({
+  // 3. Volume data
+  const volData = formatted.map((d) => ({
     time: d.time,
     value: d.volume,
-    color: d.close >= d.open ? 'rgba(16, 185, 129, 0.4)' : 'rgba(244, 63, 94, 0.4)',
+    color: d.close >= d.open ? 'rgba(16,185,129,0.45)' : 'rgba(244,63,94,0.45)',
   }));
-  volumeSeries.setData(volumeData);
+  volumeSeries.setData(volData);
 
   if (formatted.length > 0) {
     chart.timeScale().fitContent();
   }
 
-  // Crosshair move handler
+  // 4. Crosshair move — update toolbar
   chart.subscribeCrosshairMove((param) => {
     if (!param || !param.time) {
       hoveredBar.value = null;
       return;
     }
-    const currentActiveSeries = candleSeries || areaSeries;
-    if (!currentActiveSeries) return;
+    const activeSeries = candleSeries ?? areaSeries;
+    if (!activeSeries) return;
 
-    const dataAtTime = param.seriesData.get(currentActiveSeries);
+    const barData = param.seriesData.get(activeSeries);
     const volAtTime = volumeSeries ? param.seriesData.get(volumeSeries) : null;
     const vol = volAtTime && 'value' in volAtTime ? Number(volAtTime.value) : undefined;
 
-    if (dataAtTime && 'open' in dataAtTime) {
+    if (barData && 'open' in barData) {
       hoveredBar.value = {
         time: String(param.time),
-        open: Number(dataAtTime.open),
-        high: Number(dataAtTime.high),
-        low: Number(dataAtTime.low),
-        close: Number(dataAtTime.close),
+        open: Number(barData.open),
+        high: Number(barData.high),
+        low: Number(barData.low),
+        close: Number(barData.close),
         volume: vol,
       };
-    } else if (dataAtTime && 'value' in dataAtTime) {
-      const val = Number(dataAtTime.value);
+    } else if (barData && 'value' in barData) {
+      const v = Number(barData.value);
       hoveredBar.value = {
         time: String(param.time),
-        open: val,
-        high: val,
-        low: val,
-        close: val,
+        open: v,
+        high: v,
+        low: v,
+        close: v,
         volume: vol,
       };
     } else {
@@ -347,22 +403,18 @@ function initChart() {
     }
   });
 
-  // ResizeObserver for responsive width
+  // 5. ResizeObserver — responsive width
   resizeObserver = new ResizeObserver((entries) => {
-    if (!entries || entries.length === 0 || !chart) return;
-    const newWidth = entries[0].contentRect.width;
-    if (newWidth > 0) {
-      chart.applyOptions({ width: newWidth });
-    }
+    const w = entries[0]?.contentRect.width;
+    if (w && w > 0 && chart) chart.applyOptions({ width: w });
   });
   resizeObserver.observe(chartContainer.value);
 
-  // Theme observer for dark mode switching
+  // 6. MutationObserver — dark mode switch
   if (typeof document !== 'undefined') {
     themeObserver = new MutationObserver(() => {
       if (!chart) return;
-      const currentDark = checkDark();
-      chart.applyOptions(getThemeConfig(currentDark));
+      chart.applyOptions(getThemeConfig(checkDark()));
     });
     themeObserver.observe(document.documentElement, {
       attributes: true,
@@ -371,13 +423,13 @@ function initChart() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Controls
+// ---------------------------------------------------------------------------
+
 function setChartMode(mode: 'curve' | 'tradingview') {
   chartMode.value = mode;
-  if (mode === 'curve') {
-    setTimeout(() => {
-      initChart();
-    }, 50);
-  }
+  if (mode === 'curve') setTimeout(() => initChart(), 50);
 }
 
 function toggleChartType(type: 'candles' | 'area') {
@@ -396,10 +448,12 @@ function toggleLogScale() {
 }
 
 function fitContent() {
-  if (chart) {
-    chart.timeScale().fitContent();
-  }
+  if (chart) chart.timeScale().fitContent();
 }
+
+// ---------------------------------------------------------------------------
+// Watcher — update series data when prop changes
+// ---------------------------------------------------------------------------
 
 watch(
   () => props.data,
@@ -408,61 +462,50 @@ watch(
       if (chartContainer.value) initChart();
       return;
     }
+
     const formatted = formatData(newData);
+    const flatPrice = isDataFlat(formatted) && formatted.length > 0 ? formatted[0].close : null;
 
     if (candleSeries) {
+      // Re-apply autoscaleInfoProvider with updated flat-price if needed
+      candleSeries.applyOptions({ autoscaleInfoProvider: makeAutoscaleProvider(flatPrice) });
       candleSeries.setData(formatted);
     } else if (areaSeries) {
+      areaSeries.applyOptions({ autoscaleInfoProvider: makeAutoscaleProvider(flatPrice) });
       areaSeries.setData(formatted.map((d) => ({ time: d.time, value: d.close })));
     }
 
     if (volumeSeries) {
-      const volumeData = formatted.map((d) => ({
-        time: d.time,
-        value: d.volume,
-        color: d.close >= d.open ? 'rgba(16, 185, 129, 0.4)' : 'rgba(244, 63, 94, 0.4)',
-      }));
-      volumeSeries.setData(volumeData);
+      volumeSeries.setData(
+        formatted.map((d) => ({
+          time: d.time,
+          value: d.volume,
+          color: d.close >= d.open ? 'rgba(16,185,129,0.45)' : 'rgba(244,63,94,0.45)',
+        })),
+      );
     }
 
-    const isMajorChange = !oldData || Math.abs(newData.length - oldData.length) > 5;
-    if (formatted.length > 0 && isMajorChange) {
-      chart.timeScale().fitContent();
-    }
+    const isMajorUpdate = !oldData || Math.abs(newData.length - oldData.length) > 3;
+    if (isMajorUpdate && formatted.length > 0) chart.timeScale().fitContent();
   },
   { deep: true },
 );
 
-onMounted(() => {
-  initChart();
-});
+// ---------------------------------------------------------------------------
+// Lifecycle
+// ---------------------------------------------------------------------------
 
-onUnmounted(() => {
-  if (themeObserver) {
-    themeObserver.disconnect();
-    themeObserver = null;
-  }
-  if (resizeObserver) {
-    resizeObserver.disconnect();
-    resizeObserver = null;
-  }
-  if (chart) {
-    chart.remove();
-    chart = null;
-    candleSeries = null;
-    areaSeries = null;
-    volumeSeries = null;
-  }
-});
+onMounted(() => initChart());
+onUnmounted(() => destroyChart());
 </script>
 
 <template>
   <div class="w-full flex flex-col gap-2">
-    <!-- TradingView Professional Metric Toolbar -->
+    <!-- OHLCV Professional Toolbar -->
     <div
       class="flex flex-wrap items-center justify-between gap-2 text-xs font-mono px-2 py-1.5 rounded-lg bg-zinc-50/80 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800"
     >
-      <!-- Left: Symbol + Live OHLCV Bar -->
+      <!-- Left: Symbol + OHLCV live bar -->
       <div class="flex items-center gap-3 flex-wrap min-w-0">
         <span
           v-if="tokenSymbol"
@@ -500,7 +543,7 @@ onUnmounted(() => {
             </span>
           </span>
           <span
-            class="px-1.5 py-0.2 rounded font-bold text-[10px]"
+            class="px-1.5 rounded font-bold text-[10px]"
             :class="
               barChangePercent >= 0
                 ? 'bg-emerald-500/15 text-emerald-500'
@@ -516,11 +559,19 @@ onUnmounted(() => {
             >
           </span>
         </div>
+
+        <!-- Flat-data informational label -->
+        <span
+          v-if="chartMode === 'curve' && dataIsFlat && (data?.length ?? 0) > 1"
+          class="text-[10px] font-mono text-zinc-400 dark:text-zinc-600 ml-1 italic"
+        >
+          no price movement yet
+        </span>
       </div>
 
-      <!-- Right: Chart Mode (Curve / TradingView) + Chart Controls -->
+      <!-- Right: Mode selector + chart controls -->
       <div class="flex items-center gap-1.5 shrink-0 ml-auto flex-wrap">
-        <!-- Mode Switcher: Curve vs TradingView -->
+        <!-- Bonding Curve vs TradingView toggle -->
         <div
           class="flex items-center rounded-lg border border-zinc-200 dark:border-zinc-800 p-0.5 text-[10px] font-bold bg-zinc-100 dark:bg-zinc-950"
         >
@@ -551,6 +602,7 @@ onUnmounted(() => {
         </div>
 
         <template v-if="chartMode === 'curve'">
+          <!-- Candles toggle -->
           <button
             type="button"
             class="p-1 rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
@@ -559,18 +611,20 @@ onUnmounted(() => {
                 ? 'bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white'
                 : ''
             "
-            title="Candlesticks"
+            title="Candlestick chart"
             @click="toggleChartType('candles')"
           >
             <CandlestickChart class="w-3.5 h-3.5" />
           </button>
+
+          <!-- Area toggle -->
           <button
             type="button"
             class="p-1 rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
             :class="
               chartType === 'area' ? 'bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white' : ''
             "
-            title="Area Line"
+            title="Area chart"
             @click="toggleChartType('area')"
           >
             <TrendingUp class="w-3.5 h-3.5" />
@@ -578,20 +632,22 @@ onUnmounted(() => {
 
           <span class="w-px h-3.5 bg-zinc-300 dark:bg-zinc-700 mx-0.5" />
 
+          <!-- LOG / LIN -->
           <button
             type="button"
             class="px-1.5 py-0.5 text-[10px] font-bold rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
             :class="isLogScale ? 'bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white' : ''"
-            title="Toggle Logarithmic / Linear Scale"
+            title="Toggle log / linear scale"
             @click="toggleLogScale"
           >
             {{ isLogScale ? 'LOG' : 'LIN' }}
           </button>
 
+          <!-- Fit content -->
           <button
             type="button"
             class="p-1 rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
-            title="Fit Chart to Content"
+            title="Fit chart to content"
             @click="fitContent"
           >
             <Maximize2 class="w-3.5 h-3.5" />
@@ -600,7 +656,7 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Chart Canvas Container (Native Bonding Curve Lightweight Charts) -->
+    <!-- Bonding Curve chart canvas (lightweight-charts) -->
     <div
       v-show="chartMode === 'curve'"
       ref="chartContainer"
@@ -608,7 +664,7 @@ onUnmounted(() => {
       :style="{ minHeight: `${props.height}px` }"
     />
 
-    <!-- TradingView Iframe Widget Embed (Full Web TradingView Suite) -->
+    <!-- TradingView iframe embed -->
     <div
       v-if="chartMode === 'tradingview'"
       class="w-full rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#09090b] shadow-xs"
