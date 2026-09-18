@@ -269,6 +269,7 @@ export class TokenController {
   async getCandlesticks(
     address: string,
     resolutionSeconds = 60,
+    fillGaps = false,
   ): Promise<ApiEnvelope<CandlestickEntity[]>> {
     if (!address.startsWith('0x') || address.length !== 42) {
       return err('INVALID_ADDRESS', 'Token address must be a valid 42-character hex string');
@@ -278,6 +279,7 @@ export class TokenController {
       const candles = await this.tokenRepository.getCandlesticks(
         address as `0x${string}`,
         resolutionSeconds,
+        fillGaps,
       );
       return ok(candles);
     } catch (error) {

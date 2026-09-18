@@ -357,14 +357,23 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
   async getCandlesticks(
     tokenAddress: `0x${string}`,
     resolutionSeconds = 60,
+    fillGaps = false,
   ): Promise<CandlestickEntity[]> {
+    const token = await this.findByAddress(tokenAddress);
+    const mkt = await this.getMarketData(tokenAddress);
     const stmt = this.db.prepare(`
       SELECT * FROM trades
       WHERE LOWER(tokenAddress) = LOWER(?)
       ORDER BY timestamp ASC, rowid ASC
     `);
     const rows = stmt.all(tokenAddress) as TradeRow[];
-    return aggregateCandlesticks(rows, resolutionSeconds);
+    return aggregateCandlesticks(rows, resolutionSeconds, {
+      startTime: token?.createdAt,
+      endTime: Date.now(),
+      fillGaps,
+      maxCandles: 1000,
+      fallbackPrice: mkt?.priceUsd || (token?.version === 'v2' ? 0.0000042 : 0),
+    });
   }
 
   async getHolders(

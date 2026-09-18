@@ -12,39 +12,114 @@ export interface HolderItem {
   percent: number;
 }
 
+export interface AggregateCandlesticksOptions {
+  startTime?: number; // token creation / release timestamp (ms)
+  endTime?: number; // current timestamp (ms), defaults to Date.now()
+  fillGaps?: boolean; // fill gaps between release and now
+  maxCandles?: number; // max bars to return (default 1000)
+  fallbackPrice?: number;
+}
+
 export function aggregateCandlesticks(
   trades: RawTradeForCandles[],
   resolutionSeconds = 60,
+  options?: AggregateCandlesticksOptions,
 ): CandlestickEntity[] {
-  if (!trades || trades.length === 0) return [];
-
   const bucketDurationMs = resolutionSeconds * 1000;
   const buckets = new Map<number, RawTradeForCandles[]>();
 
+  let earliestTradeTime = trades.length > 0 ? trades[0].timestamp : undefined;
   for (const trade of trades) {
+    if (earliestTradeTime === undefined || trade.timestamp < earliestTradeTime) {
+      earliestTradeTime = trade.timestamp;
+    }
     const bucketTime = Math.floor(trade.timestamp / bucketDurationMs) * bucketDurationMs;
     const list = buckets.get(bucketTime) ?? [];
     list.push(trade);
     buckets.set(bucketTime, list);
   }
 
-  const candles: CandlestickEntity[] = [];
-  for (const [timestamp, bucketTrades] of buckets.entries()) {
-    const sorted = [...bucketTrades].sort((a, b) => a.timestamp - b.timestamp);
-    const prices = sorted.map((t) => Number(t.priceUsd));
-    const volume = sorted.reduce((sum, t) => sum + parseFloat(t.wethAmount || '0'), 0);
+  // Classic mode: if fillGaps not enabled, return pure trade buckets
+  if (!options?.fillGaps) {
+    if (!trades || trades.length === 0) return [];
+    const candles: CandlestickEntity[] = [];
+    for (const [timestamp, bucketTrades] of buckets.entries()) {
+      const sorted = [...bucketTrades].sort((a, b) => a.timestamp - b.timestamp);
+      const prices = sorted.map((t) => Number(t.priceUsd));
+      const volume = sorted.reduce((sum, t) => sum + parseFloat(t.wethAmount || '0'), 0);
 
-    candles.push({
-      timestamp,
-      open: prices[0] ?? 0,
-      high: Math.max(...prices),
-      low: Math.min(...prices),
-      close: prices[prices.length - 1] ?? 0,
-      volume,
-    });
+      candles.push({
+        timestamp,
+        open: prices[0] ?? 0,
+        high: Math.max(...prices),
+        low: Math.min(...prices),
+        close: prices[prices.length - 1] ?? 0,
+        volume,
+      });
+    }
+    return candles.sort((a, b) => a.timestamp - b.timestamp);
   }
 
-  return candles.sort((a, b) => a.timestamp - b.timestamp);
+  // Gap-filling mode: runs continuously from release/start to now
+  const rawStart = options.startTime ?? earliestTradeTime ?? Date.now();
+  const rawEnd = options.endTime ?? Date.now();
+  let startBucket = Math.floor(rawStart / bucketDurationMs) * bucketDurationMs;
+  const endBucket = Math.floor(rawEnd / bucketDurationMs) * bucketDurationMs;
+
+  const maxBars = options.maxCandles ?? 1000;
+  if (startBucket > endBucket) {
+    startBucket = endBucket;
+  }
+  if ((endBucket - startBucket) / bucketDurationMs > maxBars) {
+    startBucket = endBucket - maxBars * bucketDurationMs;
+  }
+
+  // Determine baseline price
+  let currentPrice = options.fallbackPrice ?? 0;
+  if (trades.length > 0) {
+    const sortedAll = [...trades].sort((a, b) => a.timestamp - b.timestamp);
+    currentPrice = Number(sortedAll[0].priceUsd);
+  }
+
+  if (currentPrice <= 0 && buckets.size === 0) {
+    return [];
+  }
+
+  const candles: CandlestickEntity[] = [];
+  for (let t = startBucket; t <= endBucket; t += bucketDurationMs) {
+    const bucketTrades = buckets.get(t);
+    if (bucketTrades && bucketTrades.length > 0) {
+      const sorted = [...bucketTrades].sort((a, b) => a.timestamp - b.timestamp);
+      const prices = sorted.map((item) => Number(item.priceUsd));
+      const open = prices[0] ?? currentPrice;
+      const high = Math.max(...prices);
+      const low = Math.min(...prices);
+      const close = prices[prices.length - 1] ?? currentPrice;
+      const volume = sorted.reduce((sum, item) => sum + parseFloat(item.wethAmount || '0'), 0);
+
+      currentPrice = close;
+      candles.push({
+        timestamp: t,
+        open,
+        high,
+        low,
+        close,
+        volume,
+      });
+    } else {
+      // Flat candle at current price (zero volume)
+      candles.push({
+        timestamp: t,
+        open: currentPrice,
+        high: currentPrice,
+        low: currentPrice,
+        close: currentPrice,
+        volume: 0,
+      });
+    }
+  }
+
+  return candles;
 }
 
 export function computeHoldersDistribution(

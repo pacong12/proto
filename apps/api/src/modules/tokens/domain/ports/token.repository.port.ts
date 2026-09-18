@@ -22,6 +22,7 @@ export interface TokenRepositoryPort {
   getCandlesticks(
     tokenAddress: `0x${string}`,
     resolutionSeconds?: number,
+    fillGaps?: boolean,
   ): Promise<CandlestickEntity[]>;
   getHolders(
     tokenAddress: string,

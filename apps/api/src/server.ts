@@ -391,7 +391,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   if (ohlcvMatch && req.method === 'GET') {
     const address = ohlcvMatch[1];
     const resolution = parseInt(url.searchParams.get('resolution') ?? '60', 10);
-    const res = await tokenController.getCandlesticks(address, resolution);
+    const fillGaps = url.searchParams.get('fillGaps') !== 'false';
+    const res = await tokenController.getCandlesticks(address, resolution, fillGaps);
     return new Response(safeStringify(res), { headers });
   }
   // GET /api/tokens/:address/top-traders

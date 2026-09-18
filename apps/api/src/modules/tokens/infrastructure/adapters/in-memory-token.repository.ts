@@ -57,9 +57,18 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
   async getCandlesticks(
     tokenAddress: `0x${string}`,
     resolutionSeconds = 60,
+    fillGaps = false,
   ): Promise<CandlestickEntity[]> {
+    const token = await this.findByAddress(tokenAddress.toLowerCase() as `0x${string}`);
+    const mkt = await this.getMarketData(tokenAddress.toLowerCase() as `0x${string}`);
     const trades = this.trades.get(tokenAddress.toLowerCase()) ?? [];
-    return aggregateCandlesticks(trades, resolutionSeconds);
+    return aggregateCandlesticks(trades, resolutionSeconds, {
+      startTime: token?.createdAt,
+      endTime: Date.now(),
+      fillGaps,
+      maxCandles: 1000,
+      fallbackPrice: mkt?.priceUsd || 0,
+    });
   }
 
   async getHolders(

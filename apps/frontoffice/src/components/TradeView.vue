@@ -62,6 +62,45 @@
           </Badge>
         </div>
 
+        <!-- Sentiment Voting (Bullish / Bearish) -->
+        <div
+          class="flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-900 px-2 py-1 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-mono"
+        >
+          <button
+            type="button"
+            class="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold transition cursor-pointer"
+            :class="
+              votesSummary.viewerVote === 'bullish'
+                ? 'bg-emerald-500 text-black'
+                : 'text-emerald-500 hover:bg-emerald-500/15'
+            "
+            title="Vote Bullish"
+            @click="castVote('bullish')"
+          >
+            <Rocket class="w-3 h-3" />
+            <span>{{ votesSummary.bullishCount }}</span>
+          </button>
+
+          <span class="text-zinc-400 text-[10px] font-bold"
+            >{{ votesSummary.bullishPercent }}%</span
+          >
+
+          <button
+            type="button"
+            class="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold transition cursor-pointer"
+            :class="
+              votesSummary.viewerVote === 'bearish'
+                ? 'bg-rose-500 text-white'
+                : 'text-rose-500 hover:bg-rose-500/15'
+            "
+            title="Vote Bearish"
+            @click="castVote('bearish')"
+          >
+            <Flame class="w-3 h-3" />
+            <span>{{ votesSummary.bearishCount }}</span>
+          </button>
+        </div>
+
         <!-- Live market stats pill row -->
         <div class="flex items-center gap-4 ml-auto font-mono text-xs flex-wrap">
           <div class="flex flex-col items-end">
@@ -164,7 +203,7 @@
             </div>
           </div>
 
-          <!-- TradingChart (full width, no card wrapper) -->
+          <!-- TradingChart (full width, continuous timeline from launch to now) -->
           <div class="flex-1 px-3 py-3 bg-white dark:bg-zinc-950">
             <TradingChart
               :data="candlestickData"
@@ -174,7 +213,7 @@
           </div>
 
           <!-- ============================================================
-               Bottom Tabs: Trades | Top Traders | Holders | About
+               Bottom Tabs: Thread | Trades | Top Traders | Holders | About
                ============================================================ -->
           <div class="border-t border-zinc-200 dark:border-zinc-800">
             <Tabs v-model="activeBottomTab" class="w-full">
@@ -185,6 +224,7 @@
                 <TabsList class="flex gap-0 bg-transparent border-0 rounded-none h-auto p-0">
                   <TabsTrigger
                     v-for="tab in [
+                      { value: 'thread', label: 'Thread' },
                       { value: 'trades', label: t('trades') },
                       { value: 'top-traders', label: t('topTraders') },
                       { value: 'holders', label: t('holders') },
@@ -195,6 +235,12 @@
                     class="px-4 py-2.5 text-xs font-semibold rounded-none border-b-2 border-transparent data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 dark:data-[state=active]:text-emerald-400 text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white bg-transparent transition-all"
                   >
                     {{ tab.label }}
+                    <span
+                      v-if="tab.value === 'thread' && comments.length > 0"
+                      class="ml-1 px-1 py-0.2 rounded-full bg-zinc-200 dark:bg-zinc-800 text-[10px]"
+                    >
+                      {{ comments.length }}
+                    </span>
                   </TabsTrigger>
                 </TabsList>
 
@@ -207,9 +253,138 @@
                 >
                   Refresh
                 </Button>
+                <Button
+                  v-if="activeBottomTab === 'thread'"
+                  variant="ghost"
+                  size="sm"
+                  class="ml-auto h-7 text-xs font-mono text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white cursor-pointer"
+                  @click="fetchComments(currentToken.address)"
+                >
+                  Refresh
+                </Button>
               </div>
 
-              <!-- Tab 1: Live Trades -->
+              <!-- Tab: Discussion Thread & Comments -->
+              <TabsContent value="thread" class="mt-0 max-h-[380px] overflow-y-auto p-4 space-y-4">
+                <!-- Post Comment Form -->
+                <div
+                  class="p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 space-y-2.5"
+                >
+                  <div
+                    class="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 font-mono"
+                  >
+                    <span
+                      class="flex items-center gap-1.5 font-semibold text-black dark:text-white"
+                    >
+                      <MessageSquare class="w-3.5 h-3.5 text-emerald-500" />
+                      Share your take on ${{ currentToken.symbol }}
+                    </span>
+                    <span v-if="account" class="text-[10px]">
+                      Posting as
+                      <span class="font-bold text-black dark:text-white">{{
+                        truncateAddress(account)
+                      }}</span>
+                    </span>
+                  </div>
+
+                  <div class="relative">
+                    <textarea
+                      v-model="newCommentText"
+                      rows="2"
+                      maxlength="500"
+                      placeholder="What is your price target or reaction?..."
+                      class="w-full text-xs font-sans p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-black dark:text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-none"
+                    />
+                  </div>
+
+                  <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-mono text-zinc-400"
+                      >{{ newCommentText.length }}/500</span
+                    >
+                    <Button
+                      size="sm"
+                      class="h-7 px-3 text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-black cursor-pointer rounded-lg flex items-center gap-1"
+                      :disabled="isPostingComment || !newCommentText.trim()"
+                      @click="postComment"
+                    >
+                      <Loader2 v-if="isPostingComment" class="w-3 h-3 animate-spin" />
+                      <Send v-else class="w-3 h-3" />
+                      <span>Post Comment</span>
+                    </Button>
+                  </div>
+                </div>
+
+                <!-- Comments Feed -->
+                <div
+                  v-if="commentsLoading && comments.length === 0"
+                  class="py-12 text-center text-zinc-500"
+                >
+                  <Loader2 class="w-4 h-4 animate-spin mx-auto mb-2 text-emerald-500" />
+                  <span class="text-xs">Loading comments...</span>
+                </div>
+                <div
+                  v-else-if="comments.length === 0"
+                  class="py-12 text-center text-zinc-500 space-y-1"
+                >
+                  <MessageSquare class="w-6 h-6 mx-auto mb-1.5 text-zinc-400 opacity-60" />
+                  <p class="text-xs font-mono font-medium">No comments yet.</p>
+                  <p class="text-[11px] text-zinc-400">
+                    Be the first to share your thoughts on ${{ currentToken.symbol }}!
+                  </p>
+                </div>
+                <div v-else class="space-y-2.5">
+                  <div
+                    v-for="cmt in comments"
+                    :key="cmt.id"
+                    class="p-3 rounded-xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/40 hover:bg-zinc-50 dark:hover:bg-zinc-900/80 transition-colors space-y-1.5"
+                  >
+                    <div class="flex items-center justify-between gap-2">
+                      <div class="flex items-center gap-2">
+                        <Jazzicon :address="cmt.authorAddress" :size="16" />
+                        <span class="text-xs font-mono font-semibold text-black dark:text-white">
+                          {{ truncateAddress(cmt.authorAddress) }}
+                        </span>
+                        <Badge
+                          v-if="
+                            cmt.authorAddress.toLowerCase() === currentToken.deployer?.toLowerCase()
+                          "
+                          class="text-[9px] px-1.5 py-0 h-4 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                        >
+                          Creator
+                        </Badge>
+                      </div>
+                      <span class="text-[10px] font-mono text-zinc-400">
+                        {{ formatRelativeTime(cmt.createdAt) }}
+                      </span>
+                    </div>
+
+                    <p
+                      class="text-xs leading-relaxed text-zinc-800 dark:text-zinc-200 font-sans break-words whitespace-pre-wrap"
+                    >
+                      {{ cmt.content }}
+                    </p>
+
+                    <div
+                      class="flex items-center justify-end gap-2 pt-1 border-t border-zinc-100 dark:border-zinc-800/40"
+                    >
+                      <button
+                        type="button"
+                        class="flex items-center gap-1 text-[11px] font-mono text-zinc-400 hover:text-rose-500 transition cursor-pointer"
+                        :class="cmt.isLikedByViewer ? 'text-rose-500 font-bold' : ''"
+                        @click="toggleLike(cmt.id)"
+                      >
+                        <Heart
+                          class="w-3.5 h-3.5"
+                          :class="cmt.isLikedByViewer ? 'fill-rose-500 text-rose-500' : ''"
+                        />
+                        <span>{{ cmt.likesCount }}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <!-- Tab: Live Trades -->
               <TabsContent value="trades" class="mt-0 max-h-[340px] overflow-y-auto">
                 <div
                   v-if="tradesLoading && trades.length === 0"
@@ -307,7 +482,7 @@
                 </div>
               </TabsContent>
 
-              <!-- Tab 2: Top Traders -->
+              <!-- Tab: Top Traders -->
               <TabsContent value="top-traders" class="mt-0 max-h-[340px] overflow-y-auto">
                 <div
                   v-if="topTradersLoading && topTraders.length === 0"
@@ -412,7 +587,7 @@
                 </div>
               </TabsContent>
 
-              <!-- Tab 3: Holders -->
+              <!-- Tab: Holders -->
               <TabsContent value="holders" class="mt-0 max-h-[340px] overflow-y-auto">
                 <div
                   v-if="holdersLoading && holders.length === 0"
@@ -501,7 +676,7 @@
                 </div>
               </TabsContent>
 
-              <!-- Tab 4: About -->
+              <!-- Tab: About -->
               <TabsContent value="about" class="mt-0 p-4 space-y-5 max-h-[340px] overflow-y-auto">
                 <!-- Description -->
                 <p class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
@@ -911,7 +1086,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { parseAbi } from 'viem';
 import { useI18n } from '@/lib/i18n';
 import {
@@ -924,6 +1099,11 @@ import {
   ExternalLink,
   ShieldCheck,
   Sparkles,
+  Rocket,
+  Flame,
+  MessageSquare,
+  Send,
+  Heart,
 } from 'lucide-vue-next';
 import { useSwap, SLIPPAGE_WARN_THRESHOLD } from '../composables/useSwap';
 import { useWallet } from '../composables/useWallet';
@@ -950,6 +1130,8 @@ import {
   launchpadTokenAbi,
   type LaunchedTokenEntity,
   type TokenMarketData,
+  type TokenCommentEntity,
+  type TokenVotesSummary,
 } from '@proto/shared-types';
 
 const props = defineProps<{
@@ -1121,7 +1303,7 @@ const swapSuccessTx = ref<string | null>(null);
 const copied = ref(false);
 const copiedId = ref<string | null>(null);
 const tokenLoading = ref(true);
-const activeBottomTab = ref<'trades' | 'top-traders' | 'holders' | 'about'>('trades');
+const activeBottomTab = ref<'thread' | 'trades' | 'top-traders' | 'holders' | 'about'>('thread');
 
 // Trades
 const trades = ref<LiveTrade[]>([]);
@@ -1131,6 +1313,21 @@ const userTokenBalance = ref<bigint>(0n);
 // Slippage
 const isCustomSlippage = ref(false);
 const customSlippageInput = ref('');
+
+// Comments & Discussion State
+const comments = ref<TokenCommentEntity[]>([]);
+const commentsLoading = ref(false);
+const newCommentText = ref('');
+const isPostingComment = ref(false);
+
+// Sentiment Votes State
+const votesSummary = ref<TokenVotesSummary>({
+  tokenAddress: '',
+  bullishCount: 0,
+  bearishCount: 0,
+  totalVotes: 0,
+  bullishPercent: 50,
+});
 
 // Resolution & candle data
 const resolutions = [
@@ -1145,6 +1342,7 @@ const selectedResolution = ref(60);
 const candlestickData = ref<
   Array<{ time: number; open: number; high: number; low: number; close: number; volume: number }>
 >([]);
+let liveCandleTimer: ReturnType<typeof setInterval> | null = null;
 
 // -----------------------------------------------------------------------
 // Bonding curve AMM preview math
@@ -1350,9 +1548,127 @@ async function fetchDevActivity(address: string) {
   }
 }
 
+// -----------------------------------------------------------------------
+// Discussion Comments & Sentiment Votes Fetchers
+// -----------------------------------------------------------------------
+async function fetchComments(address: string) {
+  commentsLoading.value = true;
+  try {
+    const viewerParam = account.value ? `?viewer=${account.value}` : '';
+    const res = await fetch(`/api/tokens/${address}/comments${viewerParam}`);
+    const envelope = await res.json();
+    if (envelope.success && Array.isArray(envelope.data)) {
+      comments.value = envelope.data;
+    }
+  } catch {
+    comments.value = [];
+  } finally {
+    commentsLoading.value = false;
+  }
+}
+
+async function postComment() {
+  if (!account.value) {
+    openWallet();
+    return;
+  }
+  const content = newCommentText.value.trim();
+  if (!content || isPostingComment.value) return;
+
+  isPostingComment.value = true;
+  try {
+    const res = await fetch(`/api/tokens/${currentToken.value.address}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        authorAddress: account.value,
+        content,
+      }),
+    });
+    const envelope = await res.json();
+    if (envelope.success && envelope.data) {
+      newCommentText.value = '';
+      await fetchComments(currentToken.value.address);
+    }
+  } catch {
+    // Non-blocking
+  } finally {
+    isPostingComment.value = false;
+  }
+}
+
+async function toggleLike(commentId: string) {
+  if (!account.value) {
+    openWallet();
+    return;
+  }
+  try {
+    const res = await fetch(
+      `/api/tokens/${currentToken.value.address}/comments/${commentId}/like`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userAddress: account.value }),
+      },
+    );
+    const envelope = await res.json();
+    if (envelope.success && envelope.data) {
+      const comment = comments.value.find((c) => c.id === commentId);
+      if (comment) {
+        comment.isLikedByViewer = envelope.data.liked;
+        comment.likesCount = envelope.data.likesCount;
+      }
+    }
+  } catch {
+    // Non-blocking
+  }
+}
+
+async function fetchVotes(address: string) {
+  try {
+    const viewerParam = account.value ? `?viewer=${account.value}` : '';
+    const res = await fetch(`/api/tokens/${address}/votes${viewerParam}`);
+    const envelope = await res.json();
+    if (envelope.success && envelope.data) {
+      votesSummary.value = envelope.data;
+    }
+  } catch {
+    // Non-blocking
+  }
+}
+
+async function castVote(type: 'bullish' | 'bearish') {
+  if (!account.value) {
+    openWallet();
+    return;
+  }
+  try {
+    const res = await fetch(`/api/tokens/${currentToken.value.address}/vote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userAddress: account.value,
+        voteType: type,
+      }),
+    });
+    const envelope = await res.json();
+    if (envelope.success && envelope.data) {
+      votesSummary.value = envelope.data;
+    }
+  } catch {
+    // Non-blocking
+  }
+}
+
+// -----------------------------------------------------------------------
+// Multi-Timeframe Candlestick Engine (1m, 5m, 15m, 1h, 4h, 1d)
+// Continuous timeline from token release to now
+// -----------------------------------------------------------------------
 async function fetchCandlesticks(address: string, resolutionSeconds = 60) {
   try {
-    const res = await fetch(`/api/tokens/${address}/ohlcv?resolution=${resolutionSeconds}`);
+    const res = await fetch(
+      `/api/tokens/${address}/ohlcv?resolution=${resolutionSeconds}&fillGaps=true`,
+    );
     const envelope = await res.json();
     if (envelope.success && Array.isArray(envelope.data) && envelope.data.length > 0) {
       const parsed = envelope.data.map(
@@ -1372,7 +1688,8 @@ async function fetchCandlesticks(address: string, resolutionSeconds = 60) {
           volume: c.volume ?? 0,
         }),
       );
-      // Need >= 2 points for lightweight-charts to render
+
+      // If only 1 candle returned (e.g. token just launched), append current candle
       if (parsed.length === 1 && currentMarketData.value.priceUsd > 0) {
         const nowSec = Math.floor(Date.now() / 1000);
         if (nowSec > parsed[0].time) {
@@ -1389,17 +1706,47 @@ async function fetchCandlesticks(address: string, resolutionSeconds = 60) {
       candlestickData.value = parsed;
       return;
     }
-    // Genesis candle fallback from launch spot price
+
+    // Client-side gap-filling fallback if API has no trades yet:
+    // Generate a sequence of candles from launch time up to now!
     if (currentMarketData.value.priceUsd > 0) {
       const tokenCreatedSec = currentToken.value.createdAt
         ? Math.floor(currentToken.value.createdAt / 1000)
-        : Math.floor(Date.now() / 1000) - 300;
+        : Math.floor(Date.now() / 1000) - 3600;
       const nowSec = Math.floor(Date.now() / 1000);
+      const step = resolutionSeconds;
       const price = currentMarketData.value.priceUsd;
-      candlestickData.value = [
-        { time: tokenCreatedSec, open: price, high: price, low: price, close: price, volume: 0 },
-        { time: nowSec, open: price, high: price, low: price, close: price, volume: 0 },
-      ];
+      const synthetic: Array<{
+        time: number;
+        open: number;
+        high: number;
+        low: number;
+        close: number;
+        volume: number;
+      }> = [];
+      const start = Math.floor(tokenCreatedSec / step) * step;
+      const end = Math.floor(nowSec / step) * step;
+      for (let t = start; t <= end; t += step) {
+        synthetic.push({
+          time: t,
+          open: price,
+          high: price,
+          low: price,
+          close: price,
+          volume: 0,
+        });
+      }
+      if (synthetic.length === 1) {
+        synthetic.push({
+          time: end + step,
+          open: price,
+          high: price,
+          low: price,
+          close: price,
+          volume: 0,
+        });
+      }
+      candlestickData.value = synthetic;
       return;
     }
     candlestickData.value = [];
@@ -1449,6 +1796,7 @@ async function handleSwap() {
     swapSuccessTx.value = hash;
     await fetchUserTokenBalance();
     await fetchTrades(currentToken.value.address);
+    await fetchCandlesticks(currentToken.value.address, selectedResolution.value);
   }
 }
 
@@ -1464,12 +1812,16 @@ async function loadTokenData(address: `0x${string}`) {
   } catch {
     // non-blocking fallback
   } finally {
-    await fetchCandlesticks(address, selectedResolution.value);
-    await fetchTrades(address);
-    await fetchTopTraders(address);
-    await fetchDevActivity(address);
-    await fetchHolders(address);
-    await fetchUserTokenBalance();
+    await Promise.allSettled([
+      fetchCandlesticks(address, selectedResolution.value),
+      fetchTrades(address),
+      fetchTopTraders(address),
+      fetchDevActivity(address),
+      fetchHolders(address),
+      fetchComments(address),
+      fetchVotes(address),
+      fetchUserTokenBalance(),
+    ]);
     tokenLoading.value = false;
   }
 }
@@ -1487,7 +1839,11 @@ watch(
 watch(
   () => account.value,
   async () => {
-    await fetchUserTokenBalance();
+    await Promise.allSettled([
+      fetchUserTokenBalance(),
+      fetchComments(currentToken.value.address),
+      fetchVotes(currentToken.value.address),
+    ]);
   },
 );
 
@@ -1496,6 +1852,20 @@ onMounted(async () => {
   if (addr && addr !== '0x0000000000000000000000000000000000000000') {
     currentToken.value.address = addr;
     await loadTokenData(addr);
+  }
+
+  // Real-time chart & data poller: refreshes every 10 seconds to keep timeframe advancing to current second
+  liveCandleTimer = setInterval(() => {
+    if (currentToken.value.address && !tokenLoading.value) {
+      fetchCandlesticks(currentToken.value.address, selectedResolution.value);
+    }
+  }, 10000);
+});
+
+onUnmounted(() => {
+  if (liveCandleTimer) {
+    clearInterval(liveCandleTimer);
+    liveCandleTimer = null;
   }
 });
 </script>
