@@ -12,6 +12,7 @@ import {
   type IChartApi,
   type ISeriesApi,
   type Time,
+  type AutoscaleInfo,
 } from 'lightweight-charts';
 import { CandlestickChart, TrendingUp, Maximize2 } from 'lucide-vue-next';
 
@@ -27,12 +28,14 @@ export interface CandlePoint {
 interface Props {
   data: CandlePoint[];
   tokenSymbol?: string;
+  tokenAddress?: string;
   height?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   tokenSymbol: '',
-  height: 400,
+  tokenAddress: '',
+  height: 420,
 });
 
 const chartContainer = ref<HTMLDivElement | null>(null);
@@ -44,6 +47,7 @@ let resizeObserver: ResizeObserver | null = null;
 let themeObserver: MutationObserver | null = null;
 
 // User Interactive Chart Controls (TradingView Style)
+const chartMode = ref<'curve' | 'tradingview'>('curve');
 const chartType = ref<'candles' | 'area'>('candles');
 const isLogScale = ref(false);
 const hoveredBar = ref<CandlePoint | null>(null);
@@ -51,6 +55,20 @@ const hoveredBar = ref<CandlePoint | null>(null);
 function checkDark(): boolean {
   return typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
 }
+
+const tradingViewUrl = computed(() => {
+  const isDark = checkDark();
+  const theme = isDark ? 'dark' : 'light';
+  const sym = props.tokenSymbol?.toUpperCase();
+  const tvSymbol =
+    sym === 'PROTO' || sym === 'USDC'
+      ? 'BINANCE:USDCUSDT'
+      : sym === 'ETH' || sym === 'WETH'
+        ? 'BINANCE:ETHUSDT'
+        : 'BINANCE:ETHUSDT';
+
+  return `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_embed&symbol=${encodeURIComponent(tvSymbol)}&interval=15&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=${isDark ? '09090b' : 'ffffff'}&studies=[]&theme=${theme}&style=1&timezone=Etc%2FUTC&withdateranges=1&hideideas=1`;
+});
 
 function getThemeConfig(isDark: boolean) {
   return {
@@ -109,52 +127,30 @@ function formatData(rawData: CandlePoint[]) {
     }
     const open = Number(item.open);
     const close = Number(item.close);
-    let rawHigh = Number(item.high);
-    let rawLow = Number(item.low);
+    const rawHigh = Number(item.high);
+    const rawLow = Number(item.low);
 
-    // If candle has 0 range (e.g. single trade or flat genesis), add a micro 0.05% visual range so candle is visible
-    if (rawHigh === rawLow && rawHigh > 0) {
-      rawHigh = rawHigh * 1.0005;
-      rawLow = rawLow * 0.9995;
-    }
-
+    // Strictly standard OHLC bounds — never inject artificial wicks
     const high = Math.max(open, close, rawHigh);
     const low = Math.min(open, close, rawLow);
 
     return {
-      time: t as Time,
+      time: Math.floor(Number(t)) as Time,
       open,
       high,
       low,
       close,
-      volume: item.volume ?? 0,
+      volume: Number(item.volume ?? 0),
     };
   });
 
-  function parseTimeToMs(t: Time | number | string): number {
-    if (typeof t === 'number') {
-      return t > 2000000000 ? t : t * 1000;
-    }
-    if (typeof t === 'string') {
-      return new Date(t).getTime();
-    }
-    if (typeof t === 'object' && t !== null && 'year' in t) {
-      return new Date(t.year, t.month - 1, t.day).getTime();
-    }
-    return 0;
-  }
+  // Sort strictly ascending by timestamp
+  converted.sort((a, b) => Number(a.time) - Number(b.time));
 
-  // Sort by time ascending
-  converted.sort((a, b) => parseTimeToMs(a.time) - parseTimeToMs(b.time));
-
-  // Deduplicate by time for lightweight-charts requirement
-  const unique = new Map<string, (typeof converted)[0]>();
+  // Deduplicate by integer seconds timestamp for lightweight-charts
+  const unique = new Map<number, (typeof converted)[0]>();
   for (const item of converted) {
-    const key =
-      typeof item.time === 'object' && item.time !== null && 'year' in item.time
-        ? `${item.time.year}-${item.time.month}-${item.time.day}`
-        : String(item.time);
-    unique.set(key, item);
+    unique.set(Number(item.time), item);
   }
   return Array.from(unique.values());
 }
@@ -197,7 +193,7 @@ const barChangePercent = computed(() => {
 });
 
 function initChart() {
-  if (!chartContainer.value) return;
+  if (!chartContainer.value || chartMode.value !== 'curve') return;
 
   if (chart) {
     chart.remove();
@@ -223,7 +219,7 @@ function initChart() {
     priceFormat: {
       type: 'volume',
     },
-    priceScaleId: '', // Overlay as secondary scale inside chart
+    priceScaleId: '', // Overlay inside the chart pane
   });
 
   volumeSeries.priceScale().applyOptions({
@@ -233,7 +229,7 @@ function initChart() {
     },
   });
 
-  // 2. Primary Price Series (Candles or Area)
+  // 2. Primary Price Series (Candles or Area) with TradingView autoscaleInfoProvider
   if (chartType.value === 'candles') {
     candleSeries = chart.addSeries(CandlestickSeries, {
       upColor: '#10b981',
@@ -249,6 +245,24 @@ function initChart() {
         precision: 8,
         minMove: 0.00000001,
       },
+      autoscaleInfoProvider: (original: () => AutoscaleInfo | null) => {
+        const res = original();
+        if (res !== null && res.priceRange !== null) {
+          // If flat range (min === max), expand 5% margin so candle is cleanly centered
+          if (res.priceRange.minValue === res.priceRange.maxValue) {
+            const val = res.priceRange.minValue;
+            const margin = val > 0 ? val * 0.05 : 0.000001;
+            return {
+              priceRange: {
+                minValue: Math.max(0, val - margin),
+                maxValue: val + margin,
+              },
+              margins: res.margins,
+            };
+          }
+        }
+        return res;
+      },
     });
     candleSeries.setData(formatted);
   } else {
@@ -261,6 +275,23 @@ function initChart() {
         type: 'price',
         precision: 8,
         minMove: 0.00000001,
+      },
+      autoscaleInfoProvider: (original: () => AutoscaleInfo | null) => {
+        const res = original();
+        if (res !== null && res.priceRange !== null) {
+          if (res.priceRange.minValue === res.priceRange.maxValue) {
+            const val = res.priceRange.minValue;
+            const margin = val > 0 ? val * 0.05 : 0.000001;
+            return {
+              priceRange: {
+                minValue: Math.max(0, val - margin),
+                maxValue: val + margin,
+              },
+              margins: res.margins,
+            };
+          }
+        }
+        return res;
       },
     });
     const areaData = formatted.map((d) => ({ time: d.time, value: d.close }));
@@ -340,6 +371,15 @@ function initChart() {
   }
 }
 
+function setChartMode(mode: 'curve' | 'tradingview') {
+  chartMode.value = mode;
+  if (mode === 'curve') {
+    setTimeout(() => {
+      initChart();
+    }, 50);
+  }
+}
+
 function toggleChartType(type: 'candles' | 'area') {
   if (chartType.value === type) return;
   chartType.value = type;
@@ -363,7 +403,7 @@ function fitContent() {
 
 watch(
   () => props.data,
-  (newData) => {
+  (newData, oldData) => {
     if (!chart) {
       if (chartContainer.value) initChart();
       return;
@@ -385,7 +425,8 @@ watch(
       volumeSeries.setData(volumeData);
     }
 
-    if (formatted.length > 0) {
+    const isMajorChange = !oldData || Math.abs(newData.length - oldData.length) > 5;
+    if (formatted.length > 0 && isMajorChange) {
       chart.timeScale().fitContent();
     }
   },
@@ -477,59 +518,108 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <!-- Right: Chart Control Actions (Candles/Area, Log/Linear, Fit) -->
-      <div class="flex items-center gap-1 shrink-0 ml-auto">
-        <button
-          type="button"
-          class="p-1 rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
-          :class="
-            chartType === 'candles' ? 'bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white' : ''
-          "
-          title="Candlesticks"
-          @click="toggleChartType('candles')"
+      <!-- Right: Chart Mode (Curve / TradingView) + Chart Controls -->
+      <div class="flex items-center gap-1.5 shrink-0 ml-auto flex-wrap">
+        <!-- Mode Switcher: Curve vs TradingView -->
+        <div
+          class="flex items-center rounded-lg border border-zinc-200 dark:border-zinc-800 p-0.5 text-[10px] font-bold bg-zinc-100 dark:bg-zinc-950"
         >
-          <CandlestickChart class="w-3.5 h-3.5" />
-        </button>
-        <button
-          type="button"
-          class="p-1 rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
-          :class="
-            chartType === 'area' ? 'bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white' : ''
-          "
-          title="Area Line"
-          @click="toggleChartType('area')"
-        >
-          <TrendingUp class="w-3.5 h-3.5" />
-        </button>
+          <button
+            type="button"
+            class="px-2 py-0.5 rounded transition cursor-pointer"
+            :class="
+              chartMode === 'curve'
+                ? 'bg-emerald-500 text-black'
+                : 'text-zinc-500 hover:text-black dark:hover:text-white'
+            "
+            @click="setChartMode('curve')"
+          >
+            Bonding Curve
+          </button>
+          <button
+            type="button"
+            class="px-2 py-0.5 rounded transition cursor-pointer"
+            :class="
+              chartMode === 'tradingview'
+                ? 'bg-emerald-500 text-black'
+                : 'text-zinc-500 hover:text-black dark:hover:text-white'
+            "
+            @click="setChartMode('tradingview')"
+          >
+            TradingView
+          </button>
+        </div>
 
-        <span class="w-px h-3.5 bg-zinc-300 dark:bg-zinc-700 mx-0.5" />
+        <template v-if="chartMode === 'curve'">
+          <button
+            type="button"
+            class="p-1 rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
+            :class="
+              chartType === 'candles'
+                ? 'bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white'
+                : ''
+            "
+            title="Candlesticks"
+            @click="toggleChartType('candles')"
+          >
+            <CandlestickChart class="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            class="p-1 rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
+            :class="
+              chartType === 'area' ? 'bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white' : ''
+            "
+            title="Area Line"
+            @click="toggleChartType('area')"
+          >
+            <TrendingUp class="w-3.5 h-3.5" />
+          </button>
 
-        <button
-          type="button"
-          class="px-1.5 py-0.5 text-[10px] font-bold rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
-          :class="isLogScale ? 'bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white' : ''"
-          title="Toggle Logarithmic / Linear Scale"
-          @click="toggleLogScale"
-        >
-          {{ isLogScale ? 'LOG' : 'LIN' }}
-        </button>
+          <span class="w-px h-3.5 bg-zinc-300 dark:bg-zinc-700 mx-0.5" />
 
-        <button
-          type="button"
-          class="p-1 rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
-          title="Fit Chart to Content"
-          @click="fitContent"
-        >
-          <Maximize2 class="w-3.5 h-3.5" />
-        </button>
+          <button
+            type="button"
+            class="px-1.5 py-0.5 text-[10px] font-bold rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
+            :class="isLogScale ? 'bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white' : ''"
+            title="Toggle Logarithmic / Linear Scale"
+            @click="toggleLogScale"
+          >
+            {{ isLogScale ? 'LOG' : 'LIN' }}
+          </button>
+
+          <button
+            type="button"
+            class="p-1 rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
+            title="Fit Chart to Content"
+            @click="fitContent"
+          >
+            <Maximize2 class="w-3.5 h-3.5" />
+          </button>
+        </template>
       </div>
     </div>
 
-    <!-- Chart Canvas Container -->
+    <!-- Chart Canvas Container (Native Bonding Curve Lightweight Charts) -->
     <div
+      v-show="chartMode === 'curve'"
       ref="chartContainer"
       class="w-full rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#09090b] shadow-xs"
       :style="{ minHeight: `${props.height}px` }"
     />
+
+    <!-- TradingView Iframe Widget Embed (Full Web TradingView Suite) -->
+    <div
+      v-if="chartMode === 'tradingview'"
+      class="w-full rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#09090b] shadow-xs"
+      :style="{ height: `${props.height}px` }"
+    >
+      <iframe
+        :src="tradingViewUrl"
+        class="w-full h-full border-0"
+        allowtransparency="true"
+        scrolling="no"
+      />
+    </div>
   </div>
 </template>
