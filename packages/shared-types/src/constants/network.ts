@@ -149,40 +149,41 @@ export const ARC_CHAIN: NetworkConfig = {
   nativeCurrency: {
     name: 'USD Coin',
     symbol: 'USDC',
-    decimals: 6,
+    decimals: 18, // Arc EVM native USDC uses 18 decimals in msg.value (1 ether = 1.00 USDC)
   },
   rpcUrl: 'https://rpc.mainnet.arc.io',
   blockExplorer: 'https://explorer.arc.io',
   contracts: {
-    // Arc Network currently operates purely on V2 bonding curve infrastructure.
-    // factory and factoryV2 both point to the deployed LaunchpadV2Factory.
+    // LaunchpadV2FactoryArc — correct Arc Standard constants (69K graduation, 4200 USDC virtual)
+    // TODO: replace with new deployment address after re-deploy
     factory: '0x48844223aBDceeb1Ce502F54d559681358E68200',
     factoryV2: '0x48844223aBDceeb1Ce502F54d559681358E68200',
-    locker: '0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2',
+    // TODO: replace with LiquidityLocker deployment address after deploy
+    locker: '0x0000000000000000000000000000000000000000',
     uniswapV3Factory: '0xf0db7b58379503491d857dB50AC9ece64c653918',
     positionManager: '0x39654A85A4C05127f5Fd6ED22CAeC077A0fB1377',
     swapRouter: '0x53BF6B0684Ec7eF91e1387Da3D1a1769bC5A6F77',
+    // TODO: verify correct QuoterV2 address on Arc Network
     quoterV2: '0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7',
     weth: '0x3600000000000000000000000000000000000000', // Native USDC on Arc
   },
   launchConfigV2: {
     supply: 1_000_000_000n * 10n ** 18n,
-    curveTokenAllocation: 738_600_000n * 10n ** 18n, // 73.86% on curve, 26.14% for pool (Arc standard)
-    graduationTargetWei: 69_000_000_000_000_000_000_000n, // 69,000 USDC graduation threshold
-    platformFeeBps: 75, // 0.75% protocol fee
+    curveTokenAllocation: 738_600_000n * 10n ** 18n, // 73.86% on curve (Arc standard)
+    graduationTargetWei: 69_000n * 10n ** 18n, // 69,000 USDC (18 decimals)
+    platformFeeBps: 100, // 1% trading fee (Arc standard)
     snipeTaxMaxBps: 9900, // 99% decaying anti-snipe
   },
   launchConfig: {
     supply: 1_000_000_000n * 10n ** 18n,
     poolFee: 10000,
-    // 1.00 USDC launch fee (18 decimals native msg.value on Arc Network per Circle Arc specs)
-    launchFeeWei: 1_000_000_000_000_000_000n,
-    graduationThresholdWei: 69_000_000_000_000_000_000_000n, // 69,000 USDC
+    launchFeeWei: 1n * 10n ** 18n, // 1.00 USDC (18 decimals native)
+    graduationThresholdWei: 69_000n * 10n ** 18n, // 69,000 USDC
     antiSnipeBlocks: 2,
     maxHoldPercent: 5.0,
     maxBuyPercent: 5.5,
-    protocolFeeSharePercent: 75,
-    creatorFeeSharePercent: 25,
+    protocolFeeSharePercent: 30,
+    creatorFeeSharePercent: 70,
   },
 };
 

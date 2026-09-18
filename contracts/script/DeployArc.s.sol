@@ -2,20 +2,40 @@
 pragma solidity ^0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
-import {LaunchpadV2Factory} from "../src/LaunchpadV2Factory.sol";
+import {LaunchpadV2FactoryArc} from "../src/LaunchpadV2FactoryArc.sol";
+import {LiquidityLocker} from "../src/LiquidityLocker.sol";
 
 /**
  * @title DeployArc
- * @notice Automated deployment script for Circle Arc Network (Chain ID: 5042 Mainnet / 5042002 Testnet).
- * Deploys LaunchpadV2Factory using native USDC gas (18 decimals native msg.value).
+ * @notice Deployment script for Arc Network (Chain ID: 5042).
+ *
+ * Arc Network Standard:
+ *   - Native gas: USDC (18 decimals native msg.value)
+ *   - Launch fee: 1.00 USDC (1 ether)
+ *   - Opening FDV: $4,200 USDC
+ *   - Graduation target: $69,000 USDC
+ *   - Virtual USDC reserve: 4,200 ether
+ *   - Virtual token reserve: 1,000,000,000 * 1e18
+ *
+ * Usage:
+ *   forge script contracts/script/DeployArc.s.sol \
+ *     --rpc-url https://rpc.mainnet.arc.io \
+ *     --broadcast \
+ *     --private-key $PRIVATE_KEY
+ *
+ * Env vars (optional overrides):
+ *   PRIVATE_KEY               - hex private key (no 0x prefix)
+ *   MNEMONIC                  - BIP-39 mnemonic (alternative to PRIVATE_KEY)
+ *   PROTOCOL_FEE_RECIPIENT    - override fee recipient address
+ *   LIQUIDITY_LOCKER_ADDRESS  - use existing locker (skips LiquidityLocker deploy)
  */
 contract DeployArc is Script {
-    function run() external returns (address factoryAddress) {
-        string memory mnemonic = vm.envOr("MNEMONIC", string(""));
+    function run() external returns (address factoryAddress, address lockerAddress) {
         uint256 deployerPrivateKey;
         address deployer;
         bool hasExplicitKey = false;
 
+        string memory mnemonic = vm.envOr("MNEMONIC", string(""));
         if (bytes(mnemonic).length > 0) {
             (deployer, deployerPrivateKey) = deriveRememberKey(mnemonic, 0);
             hasExplicitKey = true;
@@ -36,17 +56,33 @@ contract DeployArc is Script {
             feeRecipient = 0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2;
         }
 
-        address lockerAddress;
-        try vm.envAddress("LIQUIDITY_LOCKER_ADDRESS") returns (address l) {
-            lockerAddress = l;
+        address positionManager;
+        try vm.envAddress("POSITION_MANAGER") returns (address pm) {
+            positionManager = pm;
         } catch {
-            lockerAddress = feeRecipient;
+            positionManager = 0x39654A85A4C05127f5Fd6ED22CAeC077A0fB1377;
         }
 
-        console.log("=== ARC NETWORK PROTOCOL DEPLOYER ===");
-        console.log("Deployer Address  :", deployer);
+        address weth;
+        try vm.envAddress("WETH_ADDRESS") returns (address w) {
+            weth = w;
+        } catch {
+            // Native USDC standard on Arc Network
+            weth = 0x3600000000000000000000000000000000000000;
+        }
+
+        address existingLocker;
+        bool hasExistingLocker = false;
+        try vm.envAddress("LIQUIDITY_LOCKER_ADDRESS") returns (address l) {
+            existingLocker = l;
+            hasExistingLocker = true;
+        } catch {}
+
+        console.log("=== ARC NETWORK PROTO DEPLOYER ===");
+        console.log("Chain ID          :", block.chainid);
+        console.log("Deployer          :", deployer);
         console.log("Fee Recipient     :", feeRecipient);
-        console.log("Locker Address    :", lockerAddress);
+        console.log("Has existing locker:", hasExistingLocker);
 
         if (hasExplicitKey) {
             vm.startBroadcast(deployerPrivateKey);
@@ -54,22 +90,33 @@ contract DeployArc is Script {
             vm.startBroadcast();
         }
 
-        LaunchpadV2Factory factory = new LaunchpadV2Factory(
+        // 1. Deploy LiquidityLocker if not provided
+        if (hasExistingLocker) {
+            lockerAddress = existingLocker;
+            console.log("Reusing locker    :", lockerAddress);
+        } else {
+            LiquidityLocker locker = new LiquidityLocker(positionManager, weth, feeRecipient);
+            lockerAddress = address(locker);
+            console.log("LiquidityLocker   :", lockerAddress);
+        }
+
+        // 2. Deploy LaunchpadV2FactoryArc with Arc Standard constants
+        LaunchpadV2FactoryArc factory = new LaunchpadV2FactoryArc(
             payable(feeRecipient),
             lockerAddress,
-            address(0),
-            address(0)
+            address(0), // poolManagerV4: not yet deployed on Arc
+            address(0)  // memeHook: not yet deployed on Arc
         );
         factoryAddress = address(factory);
 
-        // On Arc Network, native msg.value uses 18 decimals where 1 ether = 1.00 USDC.
-        // Calibrate launchFee to 1.00 USDC (1 ether = 10^18 wei) per Circle Arc EVM specs.
-        factory.setLaunchFee(1 ether);
-
         vm.stopBroadcast();
 
-        console.log("=== ARC PROTO DEPLOYMENT SUCCESSFUL ===");
-        console.log("V2 Factory Address:", factoryAddress);
-        console.log("Fee Recipient     :", feeRecipient);
+        console.log("=== DEPLOYMENT COMPLETE ===");
+        console.log("LaunchpadV2FactoryArc :", factoryAddress);
+        console.log("LiquidityLocker       :", lockerAddress);
+        console.log("Fee Recipient         :", feeRecipient);
+        console.log("Launch Fee            :", factory.launchFee(), "wei (1.00 USDC)");
+        console.log("Graduation Target     :", factory.GRADUATION_TARGET(), "wei (69,000 USDC)");
+        console.log("Virtual USDC Reserve  :", factory.VIRTUAL_USDC_RESERVE(), "wei (4,200 USDC)");
     }
 }
