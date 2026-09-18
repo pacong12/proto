@@ -1111,6 +1111,7 @@ const resolutions = [
   { label: '5m', seconds: 300 },
   { label: '15m', seconds: 900 },
   { label: '1h', seconds: 3600 },
+  { label: '4h', seconds: 14400 },
   { label: '1d', seconds: 86400 },
 ];
 const selectedResolution = ref(60);
