@@ -58,55 +58,6 @@
                   </Badge>
                 </div>
               </div>
-
-              <!-- External Trading Terminal & Bot Shortcuts -->
-              <div class="hidden sm:flex items-center gap-1.5 ml-2">
-                <a
-                  :href="`https://t.me/GMGN_sol01_bot?start=rh_${currentToken.address}`"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="h-6 px-2 text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-md hover:bg-emerald-500/20 transition inline-flex items-center gap-1"
-                  title="Snipe & Copy Trade on GMGN Telegram Bot"
-                >
-                  GMGN Bot
-                </a>
-                <a
-                  :href="
-                    isArcToken
-                      ? `https://dexscreener.com/arc/${currentToken.poolAddress}`
-                      : `https://dexscreener.com/robinhood/${currentToken.poolAddress}`
-                  "
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="h-6 px-2 text-[10px] font-mono font-semibold bg-zinc-800/80 text-zinc-300 border border-zinc-700/80 rounded-md hover:text-white hover:bg-zinc-700 transition inline-flex items-center gap-1"
-                  title="View on DexScreener"
-                >
-                  DexScreener
-                </a>
-                <a
-                  :href="
-                    isArcToken
-                      ? `https://www.geckoterminal.com/arc/pools/${currentToken.poolAddress}`
-                      : `https://www.geckoterminal.com/robinhood/pools/${currentToken.poolAddress}`
-                  "
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="h-6 px-2 text-[10px] font-mono font-semibold bg-zinc-800/80 text-zinc-300 border border-zinc-700/80 rounded-md hover:text-white hover:bg-zinc-700 transition inline-flex items-center gap-1"
-                  title="View on GeckoTerminal"
-                >
-                  GeckoTerminal
-                </a>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  @click="copyTradeLink"
-                  class="h-6 px-2 text-[10px] font-mono font-semibold bg-zinc-800/80 text-zinc-300 border border-zinc-700/80 rounded-md hover:text-white hover:bg-zinc-700 transition inline-flex items-center gap-1 cursor-pointer"
-                  title="Copy Trade URL"
-                >
-                  {{ copiedTradeLink ? 'Copied!' : 'Copy Trade' }}
-                </Button>
-              </div>
             </div>
 
             <!-- Resolution Switcher (1m, 5m, 15m, 1h, 1d) -->
@@ -621,44 +572,8 @@
                   </div>
                 </div>
 
-                <!-- P4: External Analytics & Explorer Links -->
+                <!-- Official Block Explorer Links -->
                 <div class="flex flex-wrap items-center gap-1.5">
-                  <a
-                    :href="
-                      isArcToken
-                        ? `https://dexscreener.com/arc/${currentToken.poolAddress}`
-                        : `https://dexscreener.com/robinhood/${currentToken.poolAddress}`
-                    "
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      class="h-7 px-2 text-[11px] font-mono flex items-center gap-1 text-black dark:text-white border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                    >
-                      <span>DexScreener</span>
-                    </Button>
-                  </a>
-
-                  <a
-                    :href="
-                      isArcToken
-                        ? `https://www.geckoterminal.com/arc/pools/${currentToken.poolAddress}`
-                        : `https://www.geckoterminal.com/robinhood/pools/${currentToken.poolAddress}`
-                    "
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      class="h-7 px-2 text-[11px] font-mono flex items-center gap-1 text-black dark:text-white border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                    >
-                      <span>GeckoTerminal</span>
-                    </Button>
-                  </a>
-
                   <a
                     :href="`${explorerUrl}/address/${currentToken.address}`"
                     target="_blank"
@@ -667,10 +582,10 @@
                     <Button
                       variant="outline"
                       size="sm"
-                      class="h-7 px-2 text-[11px] font-mono flex items-center gap-1 text-black dark:text-white border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      class="h-7 px-2.5 text-[11px] font-mono flex items-center gap-1 text-black dark:text-white border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
                     >
                       <ExternalLink class="w-3 h-3" />
-                      <span>Explorer</span>
+                      <span>Token Explorer</span>
                     </Button>
                   </a>
 
@@ -682,9 +597,10 @@
                     <Button
                       variant="outline"
                       size="sm"
-                      class="h-7 px-2 text-[11px] font-mono flex items-center gap-1 text-black dark:text-white border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      class="h-7 px-2.5 text-[11px] font-mono flex items-center gap-1 text-black dark:text-white border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
                     >
-                      <span>Pool</span>
+                      <ExternalLink class="w-3 h-3" />
+                      <span>Pool Contract</span>
                     </Button>
                   </a>
                 </div>
@@ -1093,16 +1009,6 @@ const props = defineProps<{
 
 const { t } = useI18n();
 
-const copiedTradeLink = ref(false);
-function copyTradeLink() {
-  if (typeof window === 'undefined') return;
-  navigator.clipboard.writeText(window.location.href);
-  copiedTradeLink.value = true;
-  setTimeout(() => {
-    copiedTradeLink.value = false;
-  }, 2000);
-}
-
 interface LiveTrade {
   id: string;
   tokenAddress: string;
@@ -1508,7 +1414,7 @@ async function fetchCandlesticks(address: string, resolutionSeconds = 60) {
     const res = await fetch(`/api/tokens/${address}/ohlcv?resolution=${resolutionSeconds}`);
     const envelope = await res.json();
     if (envelope.success && Array.isArray(envelope.data) && envelope.data.length > 0) {
-      candlestickData.value = envelope.data.map(
+      const parsed = envelope.data.map(
         (c: {
           timestamp: number;
           open: number;
@@ -1525,8 +1431,40 @@ async function fetchCandlesticks(address: string, resolutionSeconds = 60) {
           volume: c.volume ?? 0,
         }),
       );
+
+      // Lightweight-charts needs at least 2 points to render an active timeframe
+      if (parsed.length === 1 && currentMarketData.value.priceUsd > 0) {
+        const nowSec = Math.floor(Date.now() / 1000);
+        if (nowSec > parsed[0].time) {
+          parsed.push({
+            time: nowSec,
+            open: parsed[0].close,
+            high: Math.max(parsed[0].close, currentMarketData.value.priceUsd),
+            low: Math.min(parsed[0].close, currentMarketData.value.priceUsd),
+            close: currentMarketData.value.priceUsd,
+            volume: 0,
+          });
+        }
+      }
+
+      candlestickData.value = parsed;
       return;
     }
+
+    // Baseline fallback: construct initial genesis timeline from launch spot price
+    if (currentMarketData.value.priceUsd > 0) {
+      const tokenCreatedSec = currentToken.value.createdAt
+        ? Math.floor(currentToken.value.createdAt / 1000)
+        : Math.floor(Date.now() / 1000) - 300;
+      const nowSec = Math.floor(Date.now() / 1000);
+      const price = currentMarketData.value.priceUsd;
+      candlestickData.value = [
+        { time: tokenCreatedSec, open: price, high: price, low: price, close: price, volume: 0 },
+        { time: nowSec, open: price, high: price, low: price, close: price, volume: 0 },
+      ];
+      return;
+    }
+
     candlestickData.value = [];
   } catch {
     candlestickData.value = [];

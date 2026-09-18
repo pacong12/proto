@@ -79,8 +79,15 @@ function formatData(rawData: CandlePoint[]) {
     }
     const open = Number(item.open);
     const close = Number(item.close);
-    const rawHigh = Number(item.high);
-    const rawLow = Number(item.low);
+    let rawHigh = Number(item.high);
+    let rawLow = Number(item.low);
+
+    // If candle has 0 range (e.g. single trade or flat genesis), add a micro 0.05% visual range so candle is visible
+    if (rawHigh === rawLow && rawHigh > 0) {
+      rawHigh = rawHigh * 1.0005;
+      rawLow = rawLow * 0.9995;
+    }
+
     const high = Math.max(open, close, rawHigh);
     const low = Math.min(open, close, rawLow);
 
@@ -150,6 +157,11 @@ function initChart() {
     wickVisible: true,
     wickUpColor: '#10b981',
     wickDownColor: '#f43f5e',
+    priceFormat: {
+      type: 'price',
+      precision: 8,
+      minMove: 0.00000001,
+    },
   });
 
   const formatted = formatData(props.data);
