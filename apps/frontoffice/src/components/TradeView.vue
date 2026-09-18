@@ -1530,13 +1530,13 @@ async function loadTokenData(address: `0x${string}`) {
   } catch {
     // Non-blocking fallback
   } finally {
-    tokenLoading.value = false;
     await fetchCandlesticks(address, selectedResolution.value);
     await fetchTrades(address);
     await fetchTopTraders(address);
     await fetchDevActivity(address);
     await fetchHolders(address);
     await fetchUserTokenBalance();
+    tokenLoading.value = false;
   }
 }
 
@@ -1558,6 +1558,10 @@ watch(
 );
 
 onMounted(async () => {
-  await loadTokenData(currentToken.value.address);
+  const addr = (props.tokenAddress as `0x${string}`) || currentToken.value.address;
+  if (addr && addr !== '0x0000000000000000000000000000000000000000') {
+    currentToken.value.address = addr;
+    await loadTokenData(addr);
+  }
 });
 </script>

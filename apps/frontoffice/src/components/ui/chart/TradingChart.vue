@@ -139,6 +139,12 @@ function formatPrice(val: number): string {
 function initChart() {
   if (!chartContainer.value) return;
 
+  if (chart) {
+    chart.remove();
+    chart = null;
+    series = null;
+  }
+
   const isDark = checkDark();
   const width = chartContainer.value.clientWidth || 600;
 
@@ -217,7 +223,12 @@ function initChart() {
 watch(
   () => props.data,
   (newData) => {
-    if (!series || !chart) return;
+    if (!series || !chart) {
+      if (chartContainer.value) {
+        initChart();
+      }
+      return;
+    }
     const formatted = formatData(newData);
     series.setData(formatted);
     if (formatted.length > 0) {
@@ -297,6 +308,7 @@ onUnmounted(() => {
     <div
       ref="chartContainer"
       class="w-full rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black"
+      :style="{ minHeight: `${props.height}px` }"
     />
   </div>
 </template>
