@@ -4,7 +4,7 @@
   >
     <Navbar @open-search="searchOpen = true" />
 
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-8">
+    <main :class="isTradeRoute ? 'flex-1 w-full' : 'flex-1 max-w-7xl w-full mx-auto px-4 py-8'">
       <RouterView />
     </main>
 
@@ -157,8 +157,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from 'vue';
-import { useRouter, RouterLink, RouterView } from 'vue-router';
+import { onMounted, onUnmounted, ref, watch, computed } from 'vue';
+import { useRouter, useRoute, RouterLink, RouterView } from 'vue-router';
 import { ExternalLink, BookOpen } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import Navbar from './components/Navbar.vue';
@@ -172,7 +172,13 @@ import { useWallet } from './composables/useWallet';
 const { t } = useI18n();
 const { activeNetwork } = useWallet();
 const router = useRouter();
+const route = useRoute();
 const docsUrl = import.meta.env.VITE_DOCS_URL || 'https://docs.proto.family';
+
+// Trade page uses full-width terminal layout — no outer max-width / padding
+const isTradeRoute = computed(
+  () => route.name === 'trade' || route.path.startsWith('/launchpad/0x'),
+);
 
 const PRIVACY_STORAGE_KEY = 'proto_privacy_policy_accepted_v1';
 
