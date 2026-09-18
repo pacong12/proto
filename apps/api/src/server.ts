@@ -22,6 +22,7 @@ import {
   ARC_CHAIN,
   type NetworkConfig,
   TransactionIntent,
+  type TokenCommentEntity,
   ok,
   err,
 } from '@proto/shared-types';
@@ -408,6 +409,127 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const address = devActivityMatch[1];
     const res = await tokenController.getDevActivity(address);
     return new Response(safeStringify(res), { headers });
+  }
+
+  // GET & POST /api/tokens/:address/comments
+  const commentsMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/comments$/);
+  if (commentsMatch && req.method === 'GET') {
+    const address = commentsMatch[1];
+    const viewer = url.searchParams.get('viewer') || undefined;
+    const comments = (await repository.getComments?.(address, viewer)) || [];
+    return new Response(safeStringify({ success: true, data: comments, timestamp: Date.now() }), {
+      headers,
+    });
+  }
+
+  if (commentsMatch && req.method === 'POST') {
+    const address = commentsMatch[1];
+    try {
+      const body = (await req.json()) as {
+        content?: string;
+        authorAddress?: string;
+        imageUrl?: string;
+      };
+      const content = String(body.content || '').trim();
+      const authorAddress = String(body.authorAddress || '').trim();
+      const imageUrl = body.imageUrl ? String(body.imageUrl).trim() : undefined;
+
+      if (!content || content.length > 500) {
+        return replyError(
+          'INVALID_COMMENT',
+          'Comment content must be between 1 and 500 characters',
+          400,
+        );
+      }
+      if (!authorAddress || !/^0x[a-fA-F0-9]{40}$/.test(authorAddress)) {
+        return replyError(
+          'INVALID_AUTHOR',
+          'Valid Ethereum wallet address is required to comment',
+          400,
+        );
+      }
+
+      const comment: TokenCommentEntity = {
+        id: `cmt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        tokenAddress: address,
+        authorAddress,
+        content,
+        imageUrl,
+        likesCount: 0,
+        createdAt: Date.now(),
+      };
+
+      await repository.saveComment?.(comment);
+      return new Response(safeStringify({ success: true, data: comment, timestamp: Date.now() }), {
+        status: 201,
+        headers,
+      });
+    } catch (err) {
+      return replyError('COMMENT_ERROR', (err as Error).message, 400);
+    }
+  }
+
+  // POST /api/tokens/:address/comments/:commentId/like
+  const commentLikeMatch = url.pathname.match(
+    /^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/comments\/([^/]+)\/like$/,
+  );
+  if (commentLikeMatch && req.method === 'POST') {
+    const commentId = commentLikeMatch[2];
+    try {
+      const body = (await req.json()) as { userAddress?: string };
+      const userAddress = String(body.userAddress || '').trim();
+      if (!userAddress || !/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
+        return replyError('INVALID_ADDRESS', 'Valid Ethereum address required to like', 400);
+      }
+      const result = (await repository.toggleCommentLike?.(commentId, userAddress)) ?? {
+        liked: false,
+        likesCount: 0,
+      };
+      return new Response(safeStringify({ success: true, data: result, timestamp: Date.now() }), {
+        headers,
+      });
+    } catch (err) {
+      return replyError('LIKE_ERROR', (err as Error).message, 400);
+    }
+  }
+
+  // GET & POST /api/tokens/:address/votes (or /vote)
+  const votesMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/votes?$/);
+  if (votesMatch && req.method === 'GET') {
+    const address = votesMatch[1];
+    const viewer = url.searchParams.get('viewer') || undefined;
+    const summary = (await repository.getVotes?.(address, viewer)) || {
+      tokenAddress: address,
+      bullishCount: 0,
+      bearishCount: 0,
+      totalVotes: 0,
+      bullishPercent: 50,
+    };
+    return new Response(safeStringify({ success: true, data: summary, timestamp: Date.now() }), {
+      headers,
+    });
+  }
+
+  if (votesMatch && req.method === 'POST') {
+    const address = votesMatch[1];
+    try {
+      const body = (await req.json()) as { userAddress?: string; voteType?: string };
+      const userAddress = String(body.userAddress || '').trim();
+      const voteType = String(body.voteType || '').toLowerCase();
+      if (!userAddress || !/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
+        return replyError('INVALID_ADDRESS', 'Valid Ethereum address required to vote', 400);
+      }
+      if (voteType !== 'bullish' && voteType !== 'bearish') {
+        return replyError('INVALID_VOTE', 'Vote type must be "bullish" or "bearish"', 400);
+      }
+      await repository.saveVote?.(address, userAddress, voteType as 'bullish' | 'bearish');
+      const summary = await repository.getVotes?.(address, userAddress);
+      return new Response(safeStringify({ success: true, data: summary, timestamp: Date.now() }), {
+        headers,
+      });
+    } catch (err) {
+      return replyError('VOTE_ERROR', (err as Error).message, 400);
+    }
   }
 
   // GET /api/tokens/:address

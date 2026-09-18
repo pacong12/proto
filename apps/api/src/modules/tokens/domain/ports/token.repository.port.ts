@@ -3,6 +3,8 @@ import {
   TokenMarketData,
   TradeEventEntity,
   CandlestickEntity,
+  TokenCommentEntity,
+  TokenVotesSummary,
 } from '@proto/shared-types';
 
 export interface TokenRepositoryPort {
@@ -27,4 +29,18 @@ export interface TokenRepositoryPort {
   ): Promise<Array<{ address: string; balance: string; percent: number }>>;
   getRecentTrades?(limit?: number): Promise<TradeEventEntity[]>;
   findTradeByHash?(txHash: string): Promise<TradeEventEntity | null>;
+
+  // Discussion comments & sentiment voting
+  saveComment?(comment: TokenCommentEntity): Promise<void>;
+  getComments?(tokenAddress: string, viewerAddress?: string): Promise<TokenCommentEntity[]>;
+  toggleCommentLike?(
+    commentId: string,
+    userAddress: string,
+  ): Promise<{ liked: boolean; likesCount: number }>;
+  saveVote?(
+    tokenAddress: string,
+    userAddress: string,
+    voteType: 'bullish' | 'bearish',
+  ): Promise<void>;
+  getVotes?(tokenAddress: string, viewerAddress?: string): Promise<TokenVotesSummary>;
 }

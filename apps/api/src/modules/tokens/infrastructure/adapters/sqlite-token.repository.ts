@@ -6,6 +6,8 @@ import {
   TokenMarketData,
   TradeEventEntity,
   CandlestickEntity,
+  TokenCommentEntity,
+  TokenVotesSummary,
 } from '@proto/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import {
@@ -180,6 +182,41 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
         close REAL NOT NULL,
         volume REAL NOT NULL,
         PRIMARY KEY (tokenAddress, resolutionSeconds, timestamp)
+      );
+    `);
+
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS comments (
+        id TEXT PRIMARY KEY,
+        token_address TEXT NOT NULL,
+        author_address TEXT NOT NULL,
+        content TEXT NOT NULL,
+        image_url TEXT,
+        likes_count INTEGER DEFAULT 0,
+        created_at INTEGER NOT NULL
+      );
+    `);
+
+    this.db.run(`
+      CREATE INDEX IF NOT EXISTS idx_comments_token ON comments (token_address, created_at DESC);
+    `);
+
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS comment_likes (
+        comment_id TEXT NOT NULL,
+        user_address TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (comment_id, user_address)
+      );
+    `);
+
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS token_votes (
+        token_address TEXT NOT NULL,
+        user_address TEXT NOT NULL,
+        vote_type TEXT NOT NULL CHECK (vote_type IN ('bullish', 'bearish')),
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (token_address, user_address)
       );
     `);
   }
@@ -357,6 +394,156 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     `);
     const row = stmt.get(txHash) as TradeRow | null;
     return row ? this.mapRowToTrade(row) : null;
+  }
+
+  async saveComment(comment: TokenCommentEntity): Promise<void> {
+    const stmt = this.db.prepare(`
+      INSERT INTO comments (id, token_address, author_address, content, image_url, likes_count, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    stmt.run(
+      comment.id,
+      comment.tokenAddress.toLowerCase(),
+      comment.authorAddress.toLowerCase(),
+      comment.content,
+      comment.imageUrl ?? null,
+      comment.likesCount || 0,
+      comment.createdAt,
+    );
+  }
+
+  async getComments(tokenAddress: string, viewerAddress?: string): Promise<TokenCommentEntity[]> {
+    const stmt = this.db.prepare(`
+      SELECT * FROM comments
+      WHERE LOWER(token_address) = LOWER(?)
+      ORDER BY created_at DESC
+      LIMIT 100
+    `);
+    interface CommentRow {
+      id: string;
+      token_address: string;
+      author_address: string;
+      content: string;
+      image_url: string | null;
+      likes_count: number;
+      created_at: number;
+    }
+    const rows = stmt.all(tokenAddress) as CommentRow[];
+
+    let viewerLikedIds = new Set<string>();
+    if (viewerAddress) {
+      const likeStmt = this.db.prepare(`
+        SELECT comment_id FROM comment_likes
+        WHERE LOWER(user_address) = LOWER(?)
+      `);
+      const likeRows = likeStmt.all(viewerAddress) as Array<{ comment_id: string }>;
+      viewerLikedIds = new Set(likeRows.map((r) => r.comment_id));
+    }
+
+    return rows.map((r) => ({
+      id: r.id,
+      tokenAddress: r.token_address,
+      authorAddress: r.author_address,
+      content: r.content,
+      imageUrl: r.image_url ?? undefined,
+      likesCount: Number(r.likes_count || 0),
+      createdAt: Number(r.created_at),
+      isLikedByViewer: viewerLikedIds.has(r.id),
+    }));
+  }
+
+  async toggleCommentLike(
+    commentId: string,
+    userAddress: string,
+  ): Promise<{ liked: boolean; likesCount: number }> {
+    const checkStmt = this.db.prepare(`
+      SELECT 1 FROM comment_likes
+      WHERE comment_id = ? AND LOWER(user_address) = LOWER(?)
+      LIMIT 1
+    `);
+    const existing = checkStmt.get(commentId, userAddress);
+
+    if (existing) {
+      this.db
+        .prepare(
+          `DELETE FROM comment_likes WHERE comment_id = ? AND LOWER(user_address) = LOWER(?)`,
+        )
+        .run(commentId, userAddress);
+      this.db
+        .prepare(`UPDATE comments SET likes_count = MAX(0, likes_count - 1) WHERE id = ?`)
+        .run(commentId);
+      const countRow = this.db
+        .prepare(`SELECT likes_count FROM comments WHERE id = ?`)
+        .get(commentId) as { likes_count: number } | null;
+      return { liked: false, likesCount: countRow ? Number(countRow.likes_count) : 0 };
+    } else {
+      this.db
+        .prepare(
+          `INSERT OR REPLACE INTO comment_likes (comment_id, user_address, created_at) VALUES (?, ?, ?)`,
+        )
+        .run(commentId, userAddress.toLowerCase(), Date.now());
+      this.db
+        .prepare(`UPDATE comments SET likes_count = likes_count + 1 WHERE id = ?`)
+        .run(commentId);
+      const countRow = this.db
+        .prepare(`SELECT likes_count FROM comments WHERE id = ?`)
+        .get(commentId) as { likes_count: number } | null;
+      return { liked: true, likesCount: countRow ? Number(countRow.likes_count) : 1 };
+    }
+  }
+
+  async saveVote(
+    tokenAddress: string,
+    userAddress: string,
+    voteType: 'bullish' | 'bearish',
+  ): Promise<void> {
+    const stmt = this.db.prepare(`
+      INSERT OR REPLACE INTO token_votes (token_address, user_address, vote_type, created_at)
+      VALUES (?, ?, ?, ?)
+    `);
+    stmt.run(tokenAddress.toLowerCase(), userAddress.toLowerCase(), voteType, Date.now());
+  }
+
+  async getVotes(tokenAddress: string, viewerAddress?: string): Promise<TokenVotesSummary> {
+    const countStmt = this.db.prepare(`
+      SELECT
+        SUM(CASE WHEN vote_type = 'bullish' THEN 1 ELSE 0 END) as bullish,
+        SUM(CASE WHEN vote_type = 'bearish' THEN 1 ELSE 0 END) as bearish,
+        COUNT(*) as total
+      FROM token_votes
+      WHERE LOWER(token_address) = LOWER(?)
+    `);
+    const counts = countStmt.get(tokenAddress) as {
+      bullish: number | null;
+      bearish: number | null;
+      total: number | null;
+    } | null;
+    const bullishCount = Number(counts?.bullish || 0);
+    const bearishCount = Number(counts?.bearish || 0);
+    const totalVotes = Number(counts?.total || 0);
+    const bullishPercent = totalVotes > 0 ? Math.round((bullishCount / totalVotes) * 100) : 50;
+
+    let viewerVote: 'bullish' | 'bearish' | undefined;
+    if (viewerAddress) {
+      const viewerStmt = this.db.prepare(`
+        SELECT vote_type FROM token_votes
+        WHERE LOWER(token_address) = LOWER(?) AND LOWER(user_address) = LOWER(?)
+        LIMIT 1
+      `);
+      const row = viewerStmt.get(tokenAddress, viewerAddress) as {
+        vote_type: 'bullish' | 'bearish';
+      } | null;
+      if (row) viewerVote = row.vote_type;
+    }
+
+    return {
+      tokenAddress,
+      bullishCount,
+      bearishCount,
+      totalVotes,
+      bullishPercent,
+      viewerVote,
+    };
   }
 
   close(): void {

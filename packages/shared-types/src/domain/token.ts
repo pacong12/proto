@@ -98,3 +98,23 @@ export interface TokenHolder {
   balance: string;
   percent: number;
 }
+
+export interface TokenCommentEntity {
+  id: string;
+  tokenAddress: string;
+  authorAddress: string;
+  content: string;
+  imageUrl?: string;
+  likesCount: number;
+  createdAt: number;
+  isLikedByViewer?: boolean;
+}
+
+export interface TokenVotesSummary {
+  tokenAddress: string;
+  bullishCount: number;
+  bearishCount: number;
+  totalVotes: number;
+  bullishPercent: number;
+  viewerVote?: 'bullish' | 'bearish';
+}

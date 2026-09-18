@@ -3,6 +3,8 @@ import {
   TokenMarketData,
   TradeEventEntity,
   CandlestickEntity,
+  TokenCommentEntity,
+  TokenVotesSummary,
 } from '@proto/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import {
@@ -82,5 +84,88 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
       if (match) return match;
     }
     return null;
+  }
+
+  private comments = new Map<string, TokenCommentEntity[]>();
+  private commentLikes = new Map<string, Set<string>>();
+  private votes = new Map<string, Map<string, 'bullish' | 'bearish'>>();
+
+  async saveComment(comment: TokenCommentEntity): Promise<void> {
+    const key = comment.tokenAddress.toLowerCase();
+    const existing = this.comments.get(key) ?? [];
+    existing.unshift(comment);
+    this.comments.set(key, existing);
+  }
+
+  async getComments(tokenAddress: string, viewerAddress?: string): Promise<TokenCommentEntity[]> {
+    const key = tokenAddress.toLowerCase();
+    const list = this.comments.get(key) ?? [];
+    const viewer = viewerAddress?.toLowerCase();
+    return list.map((c) => ({
+      ...c,
+      isLikedByViewer: viewer ? (this.commentLikes.get(c.id)?.has(viewer) ?? false) : false,
+    }));
+  }
+
+  async toggleCommentLike(
+    commentId: string,
+    userAddress: string,
+  ): Promise<{ liked: boolean; likesCount: number }> {
+    const user = userAddress.toLowerCase();
+    let set = this.commentLikes.get(commentId);
+    if (!set) {
+      set = new Set<string>();
+      this.commentLikes.set(commentId, set);
+    }
+    const liked = set.has(user);
+    if (liked) {
+      set.delete(user);
+    } else {
+      set.add(user);
+    }
+    const likesCount = set.size;
+    // update comment in list
+    for (const list of this.comments.values()) {
+      const match = list.find((c) => c.id === commentId);
+      if (match) match.likesCount = likesCount;
+    }
+    return { liked: !liked, likesCount };
+  }
+
+  async saveVote(
+    tokenAddress: string,
+    userAddress: string,
+    voteType: 'bullish' | 'bearish',
+  ): Promise<void> {
+    const tokenKey = tokenAddress.toLowerCase();
+    let tokenVoteMap = this.votes.get(tokenKey);
+    if (!tokenVoteMap) {
+      tokenVoteMap = new Map();
+      this.votes.set(tokenKey, tokenVoteMap);
+    }
+    tokenVoteMap.set(userAddress.toLowerCase(), voteType);
+  }
+
+  async getVotes(tokenAddress: string, viewerAddress?: string): Promise<TokenVotesSummary> {
+    const tokenKey = tokenAddress.toLowerCase();
+    const tokenVoteMap = this.votes.get(tokenKey) ?? new Map();
+    let bullishCount = 0;
+    let bearishCount = 0;
+    for (const v of tokenVoteMap.values()) {
+      if (v === 'bullish') bullishCount++;
+      else if (v === 'bearish') bearishCount++;
+    }
+    const totalVotes = bullishCount + bearishCount;
+    const bullishPercent = totalVotes > 0 ? Math.round((bullishCount / totalVotes) * 100) : 50;
+    const viewer = viewerAddress?.toLowerCase();
+    const viewerVote = viewer ? tokenVoteMap.get(viewer) : undefined;
+    return {
+      tokenAddress,
+      bullishCount,
+      bearishCount,
+      totalVotes,
+      bullishPercent,
+      viewerVote,
+    };
   }
 }
