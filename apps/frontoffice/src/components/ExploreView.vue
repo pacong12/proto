@@ -491,7 +491,7 @@
 
               <!-- Last Price -->
               <td class="py-3 px-4 text-right font-bold text-black dark:text-white">
-                ${{ item.marketData.priceUsd.toFixed(8) }}
+                {{ formatPriceUsd(item.marketData.priceUsd) }}
               </td>
 
               <!-- 24h Change -->
@@ -502,12 +502,12 @@
 
               <!-- 24h Volume -->
               <td class="py-3 px-4 text-right text-zinc-600 dark:text-zinc-300">
-                ${{ (item.marketData.volume24hUsd || 0).toLocaleString() }}
+                {{ formatCompactUsd(item.marketData.volume24hUsd) }}
               </td>
 
               <!-- Market Cap -->
               <td class="py-3 px-4 text-right text-zinc-600 dark:text-zinc-300 font-semibold">
-                ${{ item.marketData.marketCapUsd.toLocaleString() }}
+                {{ formatCompactUsd(item.marketData.marketCapUsd) }}
               </td>
 
               <!-- Graduation / Bonding Progress -->
@@ -613,15 +613,15 @@
             >
               <div>
                 <span class="text-[10px] text-zinc-400 block">{{ t('lastPriceCol') }}</span>
-                <span class="font-bold text-black dark:text-white"
-                  >${{ item.marketData.priceUsd.toFixed(8) }}</span
-                >
+                <span class="font-bold text-black dark:text-white">{{
+                  formatPriceUsd(item.marketData.priceUsd)
+                }}</span>
               </div>
               <div class="text-right">
                 <span class="text-[10px] text-zinc-400 block">{{ t('marketCapCol') }}</span>
-                <span class="font-semibold text-zinc-600 dark:text-zinc-300"
-                  >${{ item.marketData.marketCapUsd.toLocaleString() }}</span
-                >
+                <span class="font-semibold text-zinc-600 dark:text-zinc-300">{{
+                  formatCompactUsd(item.marketData.marketCapUsd)
+                }}</span>
               </div>
             </div>
 
@@ -730,11 +730,11 @@
               class="mt-2.5 flex items-center justify-between font-mono text-[11px] pt-2 border-t border-zinc-100 dark:border-zinc-900"
             >
               <span class="text-zinc-400"
-                >MCap: ${{ item.marketData.marketCapUsd.toLocaleString() }}</span
+                >MCap: {{ formatCompactUsd(item.marketData.marketCapUsd) }}</span
               >
-              <span class="font-bold text-black dark:text-white"
-                >${{ item.marketData.priceUsd.toFixed(6) }}</span
-              >
+              <span class="font-bold text-black dark:text-white">{{
+                formatPriceUsd(item.marketData.priceUsd)
+              }}</span>
             </div>
 
             <div class="mt-2 space-y-1">
@@ -826,11 +826,11 @@
               class="mt-2.5 flex items-center justify-between font-mono text-[11px] pt-2 border-t border-zinc-100 dark:border-zinc-900"
             >
               <span class="text-zinc-400"
-                >MCap: ${{ item.marketData.marketCapUsd.toLocaleString() }}</span
+                >MCap: {{ formatCompactUsd(item.marketData.marketCapUsd) }}</span
               >
-              <span class="font-bold text-black dark:text-white"
-                >${{ item.marketData.priceUsd.toFixed(6) }}</span
-              >
+              <span class="font-bold text-black dark:text-white">{{
+                formatPriceUsd(item.marketData.priceUsd)
+              }}</span>
             </div>
 
             <div class="mt-2 space-y-1">
@@ -922,11 +922,11 @@
               class="mt-2.5 flex items-center justify-between font-mono text-[11px] pt-2 border-t border-zinc-100 dark:border-zinc-900"
             >
               <span class="text-zinc-400"
-                >MCap: ${{ item.marketData.marketCapUsd.toLocaleString() }}</span
+                >MCap: {{ formatCompactUsd(item.marketData.marketCapUsd) }}</span
               >
-              <span class="font-bold text-black dark:text-white"
-                >${{ item.marketData.priceUsd.toFixed(6) }}</span
-              >
+              <span class="font-bold text-black dark:text-white">{{
+                formatPriceUsd(item.marketData.priceUsd)
+              }}</span>
             </div>
 
             <div
@@ -974,7 +974,13 @@ import { Pagination } from '@/components/ui/pagination';
 import type { LaunchedTokenEntity, TokenMarketData, TradeEventEntity } from '@proto/shared-types';
 import { useI18n } from '@/lib/i18n';
 import { useWallet } from '@/composables/useWallet';
-import { shortenAddress, formatTokenNumber, formatRelativeTime } from '@/lib/utils';
+import {
+  shortenAddress,
+  formatTokenNumber,
+  formatRelativeTime,
+  formatCompactUsd,
+  formatPriceUsd,
+} from '@/lib/utils';
 
 const { t } = useI18n();
 const { activeNetwork } = useWallet();

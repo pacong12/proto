@@ -35,12 +35,36 @@ export class GetTokenByAddressUseCase {
       this.priceFeed.getEthPriceUsd(),
     ]);
 
+    const isArc =
+      token.pairedToken?.toLowerCase() === '0x3600000000000000000000000000000000000000' ||
+      token.poolAddress?.toLowerCase() === '0x48844223abdceeb1Ce502f54d559681358e68200';
+
+    const quoteAssetPrice = isArc ? 1.0 : ethPriceUsd;
+
+    let spotPriceNative: number | undefined;
+    let pairedPrincipalWei = graduation.pairedPrincipal;
+    let thresholdWei: bigint | undefined;
+
+    if (token.version === 'v2' && !token.isGraduated) {
+      const initialBuy = parseFloat(token.initialBuyAmount || '0');
+      // Arc Chain Minara standard: 4,200 USDC opening FDV, 1B supply
+      const virtualReserve = isArc ? 4200.0 + initialBuy : 3.0 + initialBuy;
+      const virtualTokens = 1_000_000_000;
+      spotPriceNative = virtualReserve / virtualTokens;
+      pairedPrincipalWei = BigInt(Math.floor(initialBuy * 1e18));
+      thresholdWei = isArc
+        ? 69_000_000_000_000_000_000_000n // 69K USDC graduation target (~73.86% curve supply)
+        : 4_200_000_000_000_000_000n;
+    }
+
     const marketData = this.calculatePricing.execute({
       address: token.address,
       sqrtPriceX96: slot0.sqrtPriceX96,
+      spotPriceNative,
       isToken0: token.isToken0,
-      pairedPrincipalWei: graduation.pairedPrincipal,
-      ethPriceUsd,
+      pairedPrincipalWei,
+      ethPriceUsd: quoteAssetPrice,
+      thresholdWei,
     });
 
     await this.tokenRepository.saveMarketData(marketData);

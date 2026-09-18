@@ -159,11 +159,11 @@
 
               <div class="text-right shrink-0 font-mono text-xs ml-4 space-y-0.5">
                 <span class="font-bold block text-black dark:text-white">
-                  ${{ item.marketData.priceUsd.toFixed(8) }}
+                  {{ formatPriceUsd(item.marketData.priceUsd) }}
                 </span>
                 <div class="flex items-center justify-end gap-2 text-[11px]">
                   <span class="text-zinc-500 dark:text-zinc-400">
-                    MCap: ${{ item.marketData.marketCapUsd.toLocaleString() }}
+                    MCap: {{ formatCompactUsd(item.marketData.marketCapUsd) }}
                   </span>
                   <span>•</span>
                   <span
@@ -218,7 +218,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { Search, Loader2, ExternalLink } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { useWallet } from '@/composables/useWallet';
-import { shortenAddress } from '@/lib/utils';
+import { shortenAddress, formatCompactUsd, formatPriceUsd } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

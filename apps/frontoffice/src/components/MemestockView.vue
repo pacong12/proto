@@ -121,9 +121,9 @@
           <div class="mt-5 pt-4 border-t border-zinc-800 space-y-2">
             <div class="flex justify-between text-xs font-mono">
               <span>Market Cap</span>
-              <span class="font-semibold"
-                >${{ item.marketData.marketCapUsd.toLocaleString() }}</span
-              >
+              <span class="font-semibold">{{
+                formatCompactUsd(item.marketData.marketCapUsd)
+              }}</span>
             </div>
             <div class="flex justify-between text-xs font-mono">
               <span
@@ -169,6 +169,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Empty } from '@/components/ui/empty';
 import { Pagination } from '@/components/ui/pagination';
 import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
+import { formatCompactUsd } from '@/lib/utils';
 import { useWallet } from '@/composables/useWallet';
 
 defineEmits<{

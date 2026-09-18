@@ -706,7 +706,7 @@
                   <p
                     class="text-sm sm:text-base font-bold font-mono mt-0.5 text-black dark:text-white"
                   >
-                    ${{ currentMarketData.priceUsd.toFixed(8) }}
+                    {{ formatPriceUsd(currentMarketData.priceUsd) }}
                   </p>
                 </div>
                 <div>
@@ -714,7 +714,7 @@
                   <p
                     class="text-sm sm:text-base font-bold font-mono mt-0.5 text-black dark:text-white"
                   >
-                    ${{ currentMarketData.marketCapUsd.toLocaleString() }}
+                    {{ formatCompactUsd(currentMarketData.marketCapUsd) }}
                   </p>
                 </div>
                 <div>
@@ -722,7 +722,7 @@
                   <p
                     class="text-sm sm:text-base font-bold font-mono mt-0.5 text-black dark:text-white"
                   >
-                    ${{ currentMarketData.volume24hUsd.toLocaleString() }}
+                    {{ formatCompactUsd(currentMarketData.volume24hUsd) }}
                   </p>
                 </div>
               </div>
@@ -1073,7 +1073,13 @@ import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { TradingChart } from '@/components/ui/chart';
-import { shortenAddress, formatTokenNumber, formatRelativeTime } from '@/lib/utils';
+import {
+  shortenAddress,
+  formatTokenNumber,
+  formatRelativeTime,
+  formatCompactUsd,
+  formatPriceUsd,
+} from '@/lib/utils';
 import {
   ROBINHOOD_CHAIN,
   ARC_CHAIN,
@@ -1166,7 +1172,7 @@ const remainingToGraduate = computed(() => {
   const current = Number(currentMarketData.value.pairedPrincipalWeth || 0);
   const target = Number(
     currentMarketData.value.graduationThresholdWeth ||
-      (currencySymbol.value === 'USDC' ? 10000 : 2.5),
+      (currencySymbol.value === 'USDC' ? 69000 : 4.2),
   );
   const diff = Math.max(0, target - current);
   return currencySymbol.value === 'USDC' ? diff.toFixed(0) : diff.toFixed(3);
@@ -1286,8 +1292,9 @@ function computeCurveBuyOutput(ethIn: number): number {
   const netEth = ethIn * 0.99; // 1% fee
   const currentRaised = parseFloat(currentMarketData.value.pairedPrincipalWeth) || 0;
   const isArc = currencySymbol.value === 'USDC';
-  const virtualEth = (isArc ? 400.0 : 3.0) + currentRaised;
-  const virtualTokens = 1073000000;
+  // Minara Arc standard: 4,200 USDC opening FDV virtual reserve
+  const virtualEth = (isArc ? 4200.0 : 3.0) + currentRaised;
+  const virtualTokens = 1000000000;
   const currentK = virtualEth * virtualTokens;
   const newEthReserve = virtualEth + netEth;
   const newTokenReserve = currentK / newEthReserve;
@@ -1298,8 +1305,8 @@ function computeCurveSellOutput(tokensIn: number): number {
   if (tokensIn <= 0) return 0;
   const currentRaised = parseFloat(currentMarketData.value.pairedPrincipalWeth) || 0;
   const isArc = currencySymbol.value === 'USDC';
-  const virtualEth = (isArc ? 400.0 : 3.0) + currentRaised;
-  const virtualTokens = 1073000000;
+  const virtualEth = (isArc ? 4200.0 : 3.0) + currentRaised;
+  const virtualTokens = 1000000000;
   const currentK = virtualEth * virtualTokens;
   const newTokenReserve = virtualTokens + tokensIn;
   const newEthReserve = currentK / newTokenReserve;

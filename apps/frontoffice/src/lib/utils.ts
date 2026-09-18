@@ -33,6 +33,36 @@ export function formatUsd(value: number): string {
 }
 
 /**
+ * Format a number as a compact USD currency string (e.g. $1.25K, $50.40M, $1.20B, $2.46T).
+ * Guarantees values never overflow table cells with long number strings.
+ */
+export function formatCompactUsd(value: number | string | undefined | null): string {
+  const num = typeof value === 'string' ? parseFloat(value) : (value ?? 0);
+  if (isNaN(num) || num <= 0) return '$0';
+  if (num >= 1_000_000_000_000) return `$${(num / 1_000_000_000_000).toFixed(2)}T`;
+  if (num >= 1_000_000_000) return `$${(num / 1_000_000_000).toFixed(2)}B`;
+  if (num >= 1_000_000) return `$${(num / 1_000_000).toFixed(2)}M`;
+  if (num >= 1_000) return `$${(num / 1_000).toFixed(2)}K`;
+  if (num >= 1) return `$${num.toFixed(2)}`;
+  if (num >= 0.01) return `$${num.toFixed(3)}`;
+  return `$${num.toFixed(4)}`;
+}
+
+/**
+ * Format token spot price in USD cleanly without visual overflow.
+ */
+export function formatPriceUsd(price: number | string | undefined | null): string {
+  const num = typeof price === 'string' ? parseFloat(price) : (price ?? 0);
+  if (isNaN(num) || num <= 0) return '$0.00';
+  if (num >= 1_000_000) return `$${(num / 1_000_000).toFixed(2)}M`;
+  if (num >= 1_000) return `$${(num / 1_000).toFixed(2)}K`;
+  if (num >= 1) return `$${num.toFixed(2)}`;
+  if (num >= 0.01) return `$${num.toFixed(4)}`;
+  if (num >= 0.0001) return `$${num.toFixed(6)}`;
+  return `$${num.toFixed(8)}`;
+}
+
+/**
  * Format token quantities compactly (e.g. 1.25M, 450.00K).
  */
 export function formatTokenNumber(raw: string | number): string {

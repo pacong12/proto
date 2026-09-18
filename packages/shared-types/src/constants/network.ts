@@ -167,22 +167,22 @@ export const ARC_CHAIN: NetworkConfig = {
   },
   launchConfigV2: {
     supply: 1_000_000_000n * 10n ** 18n,
-    curveTokenAllocation: 800_000_000n * 10n ** 18n,
-    graduationTargetWei: 8_000_000_000_000_000_000_000n, // 8,000 USDC (18 decimals native msg.value)
-    platformFeeBps: 100,
-    snipeTaxMaxBps: 9900,
+    curveTokenAllocation: 738_600_000n * 10n ** 18n, // 73.86% on curve, 26.14% for pool (Arc standard)
+    graduationTargetWei: 69_000_000_000_000_000_000_000n, // 69,000 USDC graduation threshold
+    platformFeeBps: 75, // 0.75% protocol fee
+    snipeTaxMaxBps: 9900, // 99% decaying anti-snipe
   },
   launchConfig: {
     supply: 1_000_000_000n * 10n ** 18n,
     poolFee: 10000,
     // 1.00 USDC launch fee (18 decimals native msg.value on Arc Network per Circle Arc specs)
     launchFeeWei: 1_000_000_000_000_000_000n,
-    graduationThresholdWei: 8_000_000_000_000_000_000_000n, // 8,000 USDC
+    graduationThresholdWei: 69_000_000_000_000_000_000_000n, // 69,000 USDC
     antiSnipeBlocks: 2,
     maxHoldPercent: 5.0,
     maxBuyPercent: 5.5,
-    protocolFeeSharePercent: 30,
-    creatorFeeSharePercent: 70,
+    protocolFeeSharePercent: 75,
+    creatorFeeSharePercent: 25,
   },
 };
 
