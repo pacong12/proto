@@ -583,7 +583,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
     const tokens = await repository.findAll();
     const totalTokens = tokens.length;
-    let totalVolumeEth = 0;
+    let totalVolumeUsd = 0;
 
     // Collect 24h bucketed data for reactive SVG chart (6 x 4-hour slots)
     const now = Date.now();
@@ -620,34 +620,38 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     }
 
     const ethPriceUsd = await priceFeed.getEthPriceUsd();
+    // Arc tokens use USDC as quote (always $1.00); Robinhood tokens use ETH price
+    const arcWeth = ARC_CHAIN.contracts.weth.toLowerCase();
 
     for (const t of tokens) {
+      const isArcToken = t.pairedToken?.toLowerCase() === arcWeth;
+      const quotePriceUsd = isArcToken ? 1.0 : ethPriceUsd;
       const trades = await repository.getTrades(t.address, 500, 0);
       for (const tr of trades) {
-        const weth = parseFloat(tr.wethAmount || '0');
-        totalVolumeEth += weth;
+        const quoteAmount = parseFloat(tr.wethAmount || '0');
+        const tradeUsd = quoteAmount * quotePriceUsd;
+        totalVolumeUsd += tradeUsd;
 
         if (tr.timestamp) {
           const age = now - tr.timestamp;
           if (age >= 0 && age < 24 * 60 * 60 * 1000) {
             const slotIdx = Math.min(6, Math.floor(age / fourHoursMs));
-            const volumeUsd = Math.round(weth * ethPriceUsd);
-            timeSlots[6 - slotIdx].value += volumeUsd;
+            timeSlots[6 - slotIdx].value += Math.round(tradeUsd);
           }
         }
       }
     }
 
-    const totalVolumeUsd = Math.round(totalVolumeEth * ethPriceUsd);
-    const totalBuybackEth = (totalVolumeEth * 0.01 * 0.3 * 0.8).toFixed(3); // 80% of 30% protocol fee
+    // Buyback estimate: 1% fee * 30% protocol share * 80% allocated to buyback
+    const totalBuybackUsd = (totalVolumeUsd * 0.01 * 0.3 * 0.8).toFixed(2);
 
     const payload = {
       success: true,
       data: {
-        totalVolume: totalVolumeUsd,
+        totalVolume: Math.round(totalVolumeUsd),
         totalTokens: totalTokens,
-        totalBuyback: totalBuybackEth,
-        totalVolumeEth: totalVolumeEth.toFixed(4),
+        totalBuyback: totalBuybackUsd,
+        totalVolumeUsd: totalVolumeUsd.toFixed(2),
         ethPriceUsd,
         volumeHistory: timeSlots,
         tokenHistory: tokenLaunchSlots,

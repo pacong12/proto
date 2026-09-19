@@ -112,20 +112,29 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
         initialBuyAmount TEXT,
         tax_config_json TEXT,
         version TEXT,
-        curve_address TEXT
+        curve_address TEXT,
+        is_graduated INTEGER DEFAULT 0,
+        virtual_eth_reserve TEXT,
+        virtual_token_reserve TEXT,
+        graduation_target TEXT
       );
     `);
 
-    // Safe migrations if table already exists without failing on duplicate column
-    try {
-      this.db.run(`ALTER TABLE tokens ADD COLUMN version TEXT;`);
-    } catch (_e) {
-      void _e;
-    }
-    try {
-      this.db.run(`ALTER TABLE tokens ADD COLUMN curve_address TEXT;`);
-    } catch (_e) {
-      void _e;
+    // Safe additive migrations for existing databases
+    const tokenMigrations = [
+      'ALTER TABLE tokens ADD COLUMN version TEXT',
+      'ALTER TABLE tokens ADD COLUMN curve_address TEXT',
+      'ALTER TABLE tokens ADD COLUMN is_graduated INTEGER DEFAULT 0',
+      'ALTER TABLE tokens ADD COLUMN virtual_eth_reserve TEXT',
+      'ALTER TABLE tokens ADD COLUMN virtual_token_reserve TEXT',
+      'ALTER TABLE tokens ADD COLUMN graduation_target TEXT',
+    ];
+    for (const sql of tokenMigrations) {
+      try {
+        this.db.run(sql);
+      } catch {
+        /* column already exists */
+      }
     }
 
     this.db.run(`
@@ -144,17 +153,15 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       );
     `);
 
-    this.db.run(`
-      CREATE INDEX IF NOT EXISTS idx_trades_tokenAddress ON trades(tokenAddress);
-    `);
-
-    this.db.run(`
-      CREATE INDEX IF NOT EXISTS idx_trades_timestamp ON trades(timestamp);
-    `);
-
-    this.db.run(`
-      CREATE INDEX IF NOT EXISTS idx_trades_txHash ON trades(transactionHash);
-    `);
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_trades_tokenAddress ON trades(tokenAddress);`);
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_trades_timestamp ON trades(timestamp);`);
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_trades_txHash ON trades(transactionHash);`);
+    // Added: trader index for top-traders query performance
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_trades_trader ON trades(trader);`);
+    // Added: composite index for per-token chronological trade queries
+    this.db.run(
+      `CREATE INDEX IF NOT EXISTS idx_trades_token_ts ON trades(tokenAddress, timestamp DESC);`,
+    );
 
     this.db.run(`
       CREATE TABLE IF NOT EXISTS market_data (
@@ -227,12 +234,12 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
         address, name, symbol, decimals, totalSupply, logo, description,
         socials_json, deployer, pairedToken, poolAddress, isToken0, poolFee,
         positionId, restrictionsEndBlock, launchBlock, createdAt, initialBuyAmount, tax_config_json,
-        version, curve_address
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        version, curve_address, is_graduated, virtual_eth_reserve, virtual_token_reserve, graduation_target
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
-      token.address,
+      token.address.toLowerCase(),
       token.name,
       token.symbol,
       token.decimals,
@@ -240,9 +247,9 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       token.logo ?? '',
       token.description ?? '',
       JSON.stringify(token.socials ?? {}),
-      token.deployer,
-      token.pairedToken,
-      token.poolAddress,
+      token.deployer.toLowerCase(),
+      token.pairedToken.toLowerCase(),
+      token.poolAddress.toLowerCase(),
       token.isToken0 ? 1 : 0,
       token.poolFee,
       token.positionId.toString(),
@@ -252,7 +259,11 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       token.initialBuyAmount ?? null,
       token.taxConfig ? JSON.stringify(token.taxConfig) : null,
       token.version ?? null,
-      token.curveAddress ?? null,
+      token.curveAddress?.toLowerCase() ?? null,
+      token.isGraduated ? 1 : 0,
+      token.virtualEthReserve ?? null,
+      token.virtualTokenReserve ?? null,
+      token.graduationTarget ?? null,
     );
   }
 
@@ -584,6 +595,15 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       initialBuyAmount: row.initialBuyAmount ?? undefined,
       version: (row.version as 'v1' | 'v2' | null) ?? undefined,
       curveAddress: (row.curve_address as `0x${string}` | null) ?? undefined,
+      isGraduated: Boolean((row as TokenRow & { is_graduated?: number }).is_graduated),
+      virtualEthReserve:
+        (row as TokenRow & { virtual_eth_reserve?: string | null }).virtual_eth_reserve ??
+        undefined,
+      virtualTokenReserve:
+        (row as TokenRow & { virtual_token_reserve?: string | null }).virtual_token_reserve ??
+        undefined,
+      graduationTarget:
+        (row as TokenRow & { graduation_target?: string | null }).graduation_target ?? undefined,
     };
   }
 

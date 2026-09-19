@@ -1,6 +1,11 @@
-import { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
+import {
+  LaunchedTokenEntity,
+  TokenMarketData,
+  ARC_CHAIN,
+  ROBINHOOD_CHAIN,
+} from '@proto/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
-import { ChainIndexerPort } from '../../domain/ports/chain.indexer.port';
+import { ViemChainIndexerAdapter } from '../../infrastructure/adapters/viem-chain-indexer.adapter';
 import { PriceFeedPort } from '../../domain/ports/price-feed.port';
 import { CalculatePricingUseCase } from './calculate-pricing.use-case';
 
@@ -12,7 +17,7 @@ export interface TokenDetailResult {
 export class GetTokenByAddressUseCase {
   constructor(
     private readonly tokenRepository: TokenRepositoryPort,
-    private readonly chainIndexer: ChainIndexerPort,
+    private readonly chainIndexer: ViemChainIndexerAdapter,
     private readonly calculatePricing: CalculatePricingUseCase,
     private readonly priceFeed: PriceFeedPort,
   ) {}
@@ -20,58 +25,91 @@ export class GetTokenByAddressUseCase {
   async execute(address: `0x${string}`): Promise<TokenDetailResult | null> {
     let token = await this.tokenRepository.findByAddress(address);
 
+    // Try to hydrate from chain if not in DB yet
     if (!token) {
-      token = await this.chainIndexer.fetchLaunchedTokenFromChain(address);
-      if (token) {
-        await this.tokenRepository.save(token);
+      // Try Robinhood V1 first, then Arc V1
+      token = await this.chainIndexer.fetchLaunchedTokenFromChain(address, ROBINHOOD_CHAIN);
+      if (!token) {
+        token = await this.chainIndexer.fetchLaunchedTokenFromChain(address, ARC_CHAIN);
       }
+      if (token) await this.tokenRepository.save(token);
     }
 
     if (!token) return null;
 
-    const [slot0, graduation, ethPriceUsd] = await Promise.all([
-      this.chainIndexer.fetchPoolSlot0(token.poolAddress),
-      this.chainIndexer.fetchGraduationStatus(token.address),
-      this.priceFeed.getEthPriceUsd(),
-    ]);
-
+    // ------------------------------------------------------------------
+    // Determine network
+    // ------------------------------------------------------------------
     const isArc =
-      token.pairedToken?.toLowerCase() === '0x3600000000000000000000000000000000000000' ||
-      token.poolAddress?.toLowerCase() === '0x48844223abdceeb1Ce502f54d559681358e68200';
+      token.pairedToken?.toLowerCase() === ARC_CHAIN.contracts.weth.toLowerCase() ||
+      token.curveAddress?.toLowerCase() === ARC_CHAIN.contracts.factory.toLowerCase() ||
+      token.curveAddress?.toLowerCase() ===
+        (ARC_CHAIN.contracts.factoryV2 ?? ARC_CHAIN.contracts.factory).toLowerCase();
 
-    const quoteAssetPrice = isArc ? 1.0 : ethPriceUsd;
+    const network = isArc ? ARC_CHAIN : ROBINHOOD_CHAIN;
+    // USDC is always $1.00 on Arc; ETH needs oracle price on Robinhood
+    const quoteAssetPriceUsd = isArc ? 1.0 : await this.priceFeed.getEthPriceUsd();
 
-    let spotPriceNative: number | undefined;
-    let pairedPrincipalWei = graduation.pairedPrincipal;
-    let thresholdWei: bigint | undefined;
+    // ------------------------------------------------------------------
+    // V2 Bonding Curve pricing path
+    // ------------------------------------------------------------------
+    if (token.version === 'v2' && token.curveAddress) {
+      const curveAddr = token.curveAddress as `0x${string}`;
 
-    if (token.version === 'v2' && !token.isGraduated) {
-      const initialBuy = parseFloat(token.initialBuyAmount || '0');
-      // Arc Chain Minara standard: 4,200 USDC opening FDV, 1B supply
-      const virtualReserve = isArc ? 4200.0 + initialBuy : 3.0 + initialBuy;
-      const virtualTokens = 1_000_000_000;
-      spotPriceNative = virtualReserve / virtualTokens;
-      pairedPrincipalWei = BigInt(Math.floor(initialBuy * 1e18));
-      thresholdWei = isArc
-        ? 69_000_000_000_000_000_000_000n // 69K USDC graduation target (~73.86% curve supply)
-        : 4_200_000_000_000_000_000n;
+      // Fetch live on-chain curve state — never use DB snapshot for pricing
+      const curveState = await this.chainIndexer.fetchV2CurveState(curveAddr, network);
+
+      // Effective reserve = virtual base + actual ETH raised to date
+      const effectiveReserve =
+        Number(curveState.virtualEthReserve + curveState.totalEthRaised) / 1e18;
+      const virtualTokensNum = Number(curveState.virtualTokenReserve) / 1e18;
+      const spotPriceNative = virtualTokensNum > 0 ? effectiveReserve / virtualTokensNum : 0;
+
+      const marketData = this.calculatePricing.execute({
+        address: token.address,
+        spotPriceNative,
+        isToken0: token.isToken0,
+        pairedPrincipalWei: curveState.totalEthRaised,
+        ethPriceUsd: quoteAssetPriceUsd,
+        thresholdWei: curveState.graduationTarget,
+        totalSupply: BigInt(token.totalSupply || '1000000000000000000000000000'),
+      });
+
+      await this.tokenRepository.saveMarketData(marketData);
+
+      // Refresh stored V2 curve params
+      await this.tokenRepository.save({
+        ...token,
+        initialBuyAmount: curveState.totalEthRaised.toString(),
+        isGraduated: curveState.graduated,
+        virtualEthReserve: curveState.virtualEthReserve.toString(),
+        virtualTokenReserve: curveState.virtualTokenReserve.toString(),
+        graduationTarget: curveState.graduationTarget.toString(),
+      });
+
+      return { token: { ...token, isGraduated: curveState.graduated }, marketData };
     }
+
+    // ------------------------------------------------------------------
+    // V1 Uniswap V3 pricing path
+    // ------------------------------------------------------------------
+    const [slot0, graduation] = await Promise.all([
+      this.chainIndexer.fetchPoolSlot0(token.poolAddress as `0x${string}`),
+      this.chainIndexer.fetchGraduationStatus(token.address, network),
+    ]);
 
     const marketData = this.calculatePricing.execute({
       address: token.address,
       sqrtPriceX96: slot0.sqrtPriceX96,
-      spotPriceNative,
       isToken0: token.isToken0,
-      pairedPrincipalWei,
-      ethPriceUsd: quoteAssetPrice,
-      thresholdWei,
+      pairedPrincipalWei: graduation.pairedPrincipal,
+      ethPriceUsd: quoteAssetPriceUsd,
+      thresholdWei: graduation.threshold,
+      totalSupply: BigInt(token.totalSupply || '1000000000000000000000000000'),
     });
 
     await this.tokenRepository.saveMarketData(marketData);
 
-    return {
-      token,
-      marketData,
-    };
+    return { token, marketData };
   }
 }

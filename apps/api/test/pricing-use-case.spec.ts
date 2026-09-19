@@ -55,6 +55,6 @@ describe('CalculatePricingUseCase', () => {
         pairedPrincipalWei,
         ethPriceUsd: 0,
       }),
-    ).toThrow('Valid live ethPriceUsd is required');
+    ).toThrow('Valid quoteAssetPriceUsd (ethPriceUsd) required for pricing');
   });
 });

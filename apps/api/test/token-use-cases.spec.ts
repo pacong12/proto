@@ -5,10 +5,11 @@ import { GetTokensUseCase } from '../src/modules/tokens/application/use-cases/ge
 import { GetTokenByAddressUseCase } from '../src/modules/tokens/application/use-cases/get-token-by-address.use-case';
 import { TokenController } from '../src/modules/tokens/presentation/token.controller';
 import { CoinGeckoPriceFeedAdapter } from '../src/modules/tokens/infrastructure/adapters/coingecko-price-feed.adapter';
-import { ChainIndexerPort } from '../src/modules/tokens/domain/ports/chain.indexer.port';
+import type { ViemChainIndexerAdapter } from '../src/modules/tokens/infrastructure/adapters/viem-chain-indexer.adapter';
 import { LaunchedTokenEntity, GraduationStatus } from '@proto/shared-types';
 
-class MockChainIndexer implements ChainIndexerPort {
+// Minimal mock that satisfies the methods actually called by use-cases
+const mockChainIndexer = {
   async fetchLaunchedTokenFromChain(address: `0x${string}`): Promise<LaunchedTokenEntity | null> {
     return {
       address,
@@ -28,9 +29,18 @@ class MockChainIndexer implements ChainIndexerPort {
       restrictionsEndBlock: 102n,
       launchBlock: 100n,
       createdAt: Date.now(),
+      version: 'v1',
     };
-  }
-
+  },
+  async fetchV2CurveState() {
+    return {
+      totalEthRaised: 0n,
+      virtualEthReserve: 3n * 10n ** 18n,
+      virtualTokenReserve: 1_000_000_000n * 10n ** 18n,
+      graduationTarget: 4_200n * 10n ** 15n,
+      graduated: false,
+    };
+  },
   async fetchGraduationStatus(_tokenAddress: `0x${string}`): Promise<GraduationStatus> {
     return {
       pairedPrincipal: 1_000_000_000_000_000_000n,
@@ -38,25 +48,19 @@ class MockChainIndexer implements ChainIndexerPort {
       graduated: false,
       progress: 0.238,
     };
-  }
-
+  },
   async fetchPoolSlot0(
     _poolAddress: `0x${string}`,
   ): Promise<{ sqrtPriceX96: bigint; tick: number }> {
-    return {
-      sqrtPriceX96: 2505414483750479299401734n,
-      tick: 0,
-    };
-  }
-
+    return { sqrtPriceX96: 2505414483750479299401734n, tick: 0 };
+  },
   async fetchWethBalance(_account: `0x${string}`): Promise<bigint> {
     return 100n * 10n ** 18n;
-  }
-}
+  },
+} satisfies Partial<ViemChainIndexerAdapter>;
 
 describe('Token Use Cases & Controller', () => {
   let repository: InMemoryTokenRepository;
-  let chainIndexer: MockChainIndexer;
   let calculatePricing: CalculatePricingUseCase;
   let getTokensUseCase: GetTokensUseCase;
   let getTokenByAddressUseCase: GetTokenByAddressUseCase;
@@ -67,13 +71,12 @@ describe('Token Use Cases & Controller', () => {
 
   beforeEach(() => {
     repository = new InMemoryTokenRepository();
-    chainIndexer = new MockChainIndexer();
     calculatePricing = new CalculatePricingUseCase();
     priceFeed = new CoinGeckoPriceFeedAdapter({ initialPrice: 2500 });
     getTokensUseCase = new GetTokensUseCase(repository);
     getTokenByAddressUseCase = new GetTokenByAddressUseCase(
       repository,
-      chainIndexer,
+      mockChainIndexer as unknown as ViemChainIndexerAdapter,
       calculatePricing,
       priceFeed,
     );
