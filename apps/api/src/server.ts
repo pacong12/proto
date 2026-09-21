@@ -15,6 +15,7 @@ import {
   HttpRequestTracker,
   DevopsController,
   RedisCacheAdapter,
+  TOKEN_LAUNCHED_V2_EVENT,
 } from './index';
 import { createPublicClient, http, defineChain, type PublicClient } from 'viem';
 import {
@@ -38,7 +39,9 @@ function createClientForNetwork(cfg: NetworkConfig) {
   });
   return createPublicClient({
     chain: c,
-    transport: http(cfg.rpcUrl),
+    // retryCount=0: polling errors are already caught in try/catch blocks;
+    // viem default retry=3 with backoff causes CPU spikes on reverted calls.
+    transport: http(cfg.rpcUrl, { retryCount: 0, timeout: 10_000 }),
   });
 }
 
@@ -62,7 +65,12 @@ const priceFeed = new CoinGeckoPriceFeedAdapter({
   initialPrice: process.env.NODE_ENV === 'test' ? 2500 : undefined,
 });
 const calculatePricing = new CalculatePricingUseCase();
-const getTokensUseCase = new GetTokensUseCase(repository);
+const getTokensUseCase = new GetTokensUseCase(
+  repository,
+  chainIndexer,
+  priceFeed,
+  calculatePricing,
+);
 const getTokenByAddressUseCase = new GetTokenByAddressUseCase(
   repository,
   chainIndexer,
@@ -118,15 +126,26 @@ async function checkRateLimit(ip: string, limit = 120, windowMs = 60_000): Promi
   }
 }
 
-// Start background event poller worker loop for both Robinhood and Arc chains
-// 20-second interval balances freshness with public RPC rate limits
+// Start background event poller worker loop for both Robinhood and Arc chains.
+// 60-second interval: one block ~2s on Robinhood/Arc so 60s = ~30 blocks missed max.
+// Chains are staggered by 5s to avoid simultaneous RPC bursts.
 setInterval(async () => {
   try {
-    await Promise.allSettled([robinhoodPoller.pollEvents(), arcPoller.pollEvents()]);
+    await robinhoodPoller.pollEvents();
   } catch {
-    // Ignore background polling network errors
+    // non-fatal
   }
-}, 20000);
+}, 60_000);
+
+setTimeout(() => {
+  setInterval(async () => {
+    try {
+      await arcPoller.pollEvents();
+    } catch {
+      // non-fatal
+    }
+  }, 60_000);
+}, 5_000);
 
 function safeStringify(value: unknown): string {
   return JSON.stringify(value, (_, v) => (typeof v === 'bigint' ? v.toString() : v));
@@ -146,11 +165,21 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     .map((o) => o.trim())
     .filter(Boolean);
   const requestOrigin = req.headers.get('origin') || '';
-  const corsOrigin = isPublicCrawlerPath
-    ? '*'
-    : allowedOrigins.length === 0 || allowedOrigins.includes(requestOrigin)
-      ? requestOrigin || '*'
-      : '';
+
+  let corsOrigin = '';
+  if (isPublicCrawlerPath) {
+    // Public aggregator routes: open to all origins by spec requirement
+    corsOrigin = '*';
+  } else if (allowedOrigins.length > 0) {
+    // Production: only reflect origin if it is in the explicit allow-list
+    corsOrigin = allowedOrigins.includes(requestOrigin) ? requestOrigin : '';
+  } else {
+    // No allow-list configured: permit localhost origins only (development)
+    corsOrigin =
+      requestOrigin.startsWith('http://localhost:') || requestOrigin.startsWith('http://127.0.0.1:')
+        ? requestOrigin
+        : '';
+  }
 
   const headers = {
     'Content-Type': 'application/json',
@@ -193,6 +222,28 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
   // Rate Limiting: 120 req / minute per IP for standard routes, 600 req / minute for DEX crawlers (Fix H-2).
   // Healthcheck & root probe are exempt from rate limiting for monitoring availability.
+
+  // Helper: convert an ApiEnvelope to the correct HTTP status code.
+  // Controllers return envelopes with success:false but no HTTP status — derive it here.
+  const envelopeStatus = (env: { success: boolean; error?: { code?: string } | null }): number => {
+    if (env.success) return 200;
+    const code = env.error?.code ?? '';
+    if (code === 'TOKEN_NOT_FOUND' || code === 'INVALID_ADDRESS' || code === 'NOT_FOUND')
+      return 404;
+    if (code === 'INVALID_INPUT' || code === 'INVALID_INTENT' || code === 'VALIDATION_ERROR')
+      return 400;
+    return 500;
+  };
+
+  const replyEnvelope = (
+    env: { success: boolean; error?: { code?: string } | null },
+    extraHeaders: Record<string, string> = {},
+  ) =>
+    new Response(safeStringify(env), {
+      status: envelopeStatus(env),
+      headers: { ...headers, ...extraHeaders },
+    });
+
   const isHealthProbe = url.pathname === '/health' || url.pathname === '/';
   const maxRequests = isPublicCrawlerPath ? 600 : 120;
   if (!isHealthProbe && !(await checkRateLimit(clientIp, maxRequests, 60_000))) {
@@ -374,7 +425,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const limit = parseInt(url.searchParams.get('limit') ?? '50', 10);
     const offset = parseInt(url.searchParams.get('offset') ?? '0', 10);
     const res = await tokenController.getTrades(address, limit, offset);
-    return new Response(safeStringify(res), { headers });
+    return replyEnvelope(res);
   }
 
   // GET /api/tokens/:address/holders
@@ -383,7 +434,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const address = holdersMatch[1];
     const limit = parseInt(url.searchParams.get('limit') ?? '50', 10);
     const res = await tokenController.getHolders(address, limit);
-    return new Response(safeStringify(res), { headers });
+    return replyEnvelope(res);
   }
 
   // GET /api/tokens/:address/ohlcv
@@ -393,7 +444,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const resolution = parseInt(url.searchParams.get('resolution') ?? '60', 10);
     const fillGaps = url.searchParams.get('fillGaps') !== 'false';
     const res = await tokenController.getCandlesticks(address, resolution, fillGaps);
-    return new Response(safeStringify(res), { headers });
+    return replyEnvelope(res);
   }
   // GET /api/tokens/:address/top-traders
   const topTradersMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/top-traders$/);
@@ -401,7 +452,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const address = topTradersMatch[1];
     const limit = parseInt(url.searchParams.get('limit') ?? '20', 10);
     const res = await tokenController.getTopTraders(address, limit);
-    return new Response(safeStringify(res), { headers });
+    return replyEnvelope(res);
   }
 
   // GET /api/tokens/:address/dev-activity
@@ -409,7 +460,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   if (devActivityMatch && req.method === 'GET') {
     const address = devActivityMatch[1];
     const res = await tokenController.getDevActivity(address);
-    return new Response(safeStringify(res), { headers });
+    return replyEnvelope(res);
   }
 
   // GET & POST /api/tokens/:address/comments
@@ -549,9 +600,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     if (res.success) {
       await cache.set(cacheKey, res, 15); // Cache for 15s
     }
-    return new Response(safeStringify(res), {
-      headers: { ...headers, 'x-cache': 'MISS' },
-    });
+    return replyEnvelope(res, { 'x-cache': 'MISS' });
   }
 
   // GET /api/price — returns live ETH price from CoinGecko
@@ -669,9 +718,74 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     try {
       const body = (await req.json()) as TransactionIntent;
       const res = securityController.evaluateIntent(body);
-      return replyJson(res);
+      return replyEnvelope(res);
     } catch {
       return replyError('BAD_REQUEST', 'Malformed JSON payload', 400);
+    }
+  }
+
+  // POST /api/admin/backfill — trigger historical token indexing for a chain.
+  // Protected by ADMIN_SECRET env var; disabled if not set.
+  if (url.pathname === '/api/admin/backfill' && req.method === 'POST') {
+    const adminSecret = process.env.ADMIN_SECRET;
+    const authHeader = req.headers.get('authorization') ?? '';
+    if (!adminSecret || authHeader !== `Bearer ${adminSecret}`) {
+      return replyError('UNAUTHORIZED', 'Valid Authorization: Bearer <ADMIN_SECRET> required', 401);
+    }
+    try {
+      const body = (await req.json()) as {
+        chain?: string;
+        fromBlock?: number;
+        toBlock?: number;
+      };
+      const chainName = body.chain === 'robinhood' ? 'robinhood' : 'arc';
+      const network = chainName === 'arc' ? ARC_CHAIN : ROBINHOOD_CHAIN;
+      const targetClient = chainName === 'arc' ? arcClient : robinhoodClient;
+      const currentBlock = await targetClient.getBlockNumber();
+      const fromBlock = body.fromBlock ? BigInt(body.fromBlock) : currentBlock - 100_000n;
+      const toBlock = body.toBlock ? BigInt(body.toBlock) : currentBlock;
+
+      // Run backfill in background; return accepted immediately
+      (async () => {
+        const BATCH = 500n;
+        let from = fromBlock;
+        let totalNew = 0;
+        while (from <= toBlock) {
+          const to = from + BATCH - 1n < toBlock ? from + BATCH - 1n : toBlock;
+          try {
+            const logs = await targetClient.getLogs({
+              address: (network.contracts.factoryV2 ?? network.contracts.factory) as `0x${string}`,
+              event: TOKEN_LAUNCHED_V2_EVENT,
+              fromBlock: from,
+              toBlock: to,
+            });
+            for (const log of logs) {
+              const tokenAddr = log.args.token as `0x${string}`;
+              const curveAddr = log.args.curve as `0x${string}`;
+              if (!tokenAddr || !curveAddr) continue;
+              const existing = await repository.findByAddress(tokenAddr);
+              if (existing) continue;
+              const entity = await chainIndexer.fetchV2LaunchedToken(tokenAddr, curveAddr, network);
+              if (entity) {
+                await repository.save({ ...entity, version: 'v2', curveAddress: curveAddr });
+                totalNew++;
+              }
+            }
+          } catch {
+            // non-fatal batch error
+          }
+          from = to + 1n;
+        }
+        logger.info(`[Admin] Backfill complete: ${totalNew} new tokens indexed on ${network.name}`);
+      })();
+
+      return replyJson({
+        success: true,
+        data: { message: `Backfill started for ${network.name} blocks ${fromBlock}-${toBlock}` },
+        timestamp: Date.now(),
+      });
+    } catch (err) {
+      return replyError('BACKFILL_ERROR', (err as Error).message, 500);
     }
   }
 
@@ -1138,5 +1252,17 @@ export const server =
         port: PORT,
         fetch: handleRequest,
       };
+
+// Prevent unhandled promise rejections from crashing the process.
+// Background pollers and RPC calls can throw; we log and continue.
+process.on('unhandledRejection', (reason) => {
+  logger.warn('[Server] Unhandled promise rejection (non-fatal):', {
+    reason: reason instanceof Error ? reason.message : String(reason),
+  });
+});
+
+process.on('uncaughtException', (err) => {
+  logger.error('[Server] Uncaught exception (non-fatal):', { message: err.message });
+});
 
 console.info(`Proto API Server & Indexer running at http://localhost:${PORT}`);

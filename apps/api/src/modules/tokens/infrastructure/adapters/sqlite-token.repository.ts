@@ -92,7 +92,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
   private initTables(): void {
     this.db.run(`
       CREATE TABLE IF NOT EXISTS tokens (
-        address TEXT PRIMARY KEY,
+        address TEXT PRIMARY KEY COLLATE NOCASE,
         name TEXT NOT NULL,
         symbol TEXT NOT NULL,
         decimals INTEGER NOT NULL,
@@ -137,6 +137,73 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       }
     }
 
+    // Structural migration: recreate tokens table with COLLATE NOCASE on address
+    // so that checksummed and lowercase variants of the same address never produce
+    // duplicate rows. Only runs when the existing table still lacks NOCASE.
+    const addrColInfo = this.db
+      .query<{ type: string }, []>(`PRAGMA table_info(tokens)`)
+      .all()
+      .find((c: Record<string, unknown>) => c['name'] === 'address');
+    const hasNocase =
+      typeof addrColInfo === 'object' &&
+      addrColInfo !== null &&
+      String((addrColInfo as Record<string, unknown>)['type'])
+        .toUpperCase()
+        .includes('NOCASE');
+    if (!hasNocase) {
+      this.db.run('BEGIN');
+      try {
+        this.db.run('ALTER TABLE tokens RENAME TO tokens_old');
+        this.db.run(`
+          CREATE TABLE tokens (
+            address TEXT PRIMARY KEY COLLATE NOCASE,
+            name TEXT NOT NULL,
+            symbol TEXT NOT NULL,
+            decimals INTEGER NOT NULL,
+            totalSupply TEXT NOT NULL,
+            logo TEXT,
+            description TEXT,
+            socials_json TEXT,
+            deployer TEXT NOT NULL,
+            pairedToken TEXT NOT NULL,
+            poolAddress TEXT NOT NULL,
+            isToken0 INTEGER NOT NULL,
+            poolFee INTEGER NOT NULL,
+            positionId TEXT NOT NULL,
+            restrictionsEndBlock TEXT NOT NULL,
+            launchBlock TEXT NOT NULL,
+            createdAt INTEGER NOT NULL,
+            initialBuyAmount TEXT,
+            tax_config_json TEXT,
+            version TEXT,
+            curve_address TEXT,
+            is_graduated INTEGER DEFAULT 0,
+            virtual_eth_reserve TEXT,
+            virtual_token_reserve TEXT,
+            graduation_target TEXT
+          )
+        `);
+        // Copy rows; normalise address to lowercase to remove pre-existing duplicates.
+        this.db.run(`
+          INSERT OR IGNORE INTO tokens
+          SELECT LOWER(address), name, symbol, decimals, totalSupply, logo, description,
+                 socials_json, LOWER(deployer), LOWER(pairedToken), LOWER(poolAddress),
+                 isToken0, poolFee, positionId, restrictionsEndBlock, launchBlock, createdAt,
+                 initialBuyAmount, tax_config_json, version,
+                 CASE WHEN curve_address IS NOT NULL THEN LOWER(curve_address) ELSE NULL END,
+                 is_graduated,
+                 virtual_eth_reserve, virtual_token_reserve, graduation_target
+          FROM tokens_old
+        `);
+        this.db.run('DROP TABLE tokens_old');
+        this.db.run('COMMIT');
+      } catch (err) {
+        this.db.run('ROLLBACK');
+        // Non-fatal: table may already be in correct state
+        console.warn('[SqliteTokenRepository] NOCASE migration failed:', (err as Error).message);
+      }
+    }
+
     this.db.run(`
       CREATE TABLE IF NOT EXISTS trades (
         id TEXT PRIMARY KEY,
@@ -165,7 +232,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
 
     this.db.run(`
       CREATE TABLE IF NOT EXISTS market_data (
-        address TEXT PRIMARY KEY,
+        address TEXT PRIMARY KEY COLLATE NOCASE,
         priceInWeth REAL NOT NULL,
         priceUsd REAL NOT NULL,
         marketCapUsd REAL NOT NULL,
