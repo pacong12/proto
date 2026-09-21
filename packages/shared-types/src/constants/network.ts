@@ -154,7 +154,7 @@ export const ARC_CHAIN: NetworkConfig = {
   rpcUrl: 'https://rpc.mainnet.arc.io',
   blockExplorer: 'https://explorer.arc.io',
   contracts: {
-    // LaunchpadV2FactoryArc — correct Arc Standard constants (69K graduation, 4200 USDC virtual)
+    // LaunchpadV2FactoryArc - correct Arc Standard constants (69K graduation, 4200 USDC virtual)
     // TODO: replace with new deployment address after re-deploy
     factory: '0x48844223aBDceeb1Ce502F54d559681358E68200',
     factoryV2: '0x48844223aBDceeb1Ce502F54d559681358E68200',
