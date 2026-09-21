@@ -1,8 +1,7 @@
 FROM oven/bun:1-alpine AS base
 WORKDIR /app
 
-# Stage 1: Install dependencies
-FROM base AS deps
+# Copy root manifests and workspace package manifests
 COPY package.json bun.lock ./
 COPY packages/shared-types/package.json ./packages/shared-types/
 COPY apps/api/package.json ./apps/api/
@@ -12,12 +11,7 @@ COPY apps/docs/package.json ./apps/docs/
 
 RUN bun install --frozen-lockfile
 
-# Stage 2: Runtime image (lean, no devDeps)
-FROM base AS runner
-
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/packages/shared-types/node_modules ./packages/shared-types/node_modules
-
+# Copy source files
 COPY tsconfig.base.json ./
 COPY packages/shared-types ./packages/shared-types
 COPY apps/api ./apps/api
@@ -29,5 +23,12 @@ ENV NODE_ENV=production
 # Health check using wget (available in alpine)
 HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://localhost:3001/health || exit 1
+
+# Create non-root user and transfer ownership before switching
+RUN addgroup -S protoapi \
+  && adduser -S protoapi -G protoapi \
+  && chown -R protoapi:protoapi /app
+
+USER protoapi
 
 CMD ["bun", "run", "apps/api/src/server.ts"]

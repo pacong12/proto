@@ -49,11 +49,20 @@ jobs:
       - name: Container Boot & Smoke Test
         run: |
           docker run -d --name test-api -p 3001:3001 proto-api:test
-          sleep 4
-          HEALTH=$(curl -s http://127.0.0.1:3001/health || echo '{"status":"failed"}')
-          echo "Health response: $HEALTH"
+          for i in $(seq 1 15); do
+            HEALTH=$(curl -sf http://127.0.0.1:3001/health 2>/dev/null || true)
+            if echo "$HEALTH" | grep -q '"status":"ok"'; then
+              echo "Health check passed on attempt $i: $HEALTH"
+              docker stop test-api && docker rm test-api
+              exit 0
+            fi
+            echo "Attempt $i: not ready yet, waiting 2s..."
+            sleep 2
+          done
+          echo "Health check failed after 30s. Container logs:"
+          docker logs test-api
           docker stop test-api && docker rm test-api
-          echo "$HEALTH" | grep -q '"status":"ok"' || exit 1
+          exit 1
 
       - name: Log in to GitHub Container Registry
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
