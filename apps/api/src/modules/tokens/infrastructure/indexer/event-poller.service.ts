@@ -19,9 +19,12 @@ const TRADE_EVENT = parseAbiItem(
   'event Trade(address indexed trader, bool isBuy, uint256 ethAmount, uint256 tokenAmount, uint256 feeEth)',
 );
 
-/** V2 BondingCurve — TokenLaunchedV2 from factory */
-const TOKEN_LAUNCHED_V2_EVENT = parseAbiItem(
-  'event TokenLaunchedV2(address indexed token, address indexed curve, address indexed creator, string name, string symbol, uint256 initialBuy)',
+/** V2 BondingCurve - TokenLaunched from factory (same event name as V1 but different signature).
+ * topic0: 0x8d4aad4953d0ca700d468f3753aa14432d1b35b43ec6409f051fb6aa43a89607
+ * Verified on-chain: factory 0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e
+ */
+export const TOKEN_LAUNCHED_V2_EVENT = parseAbiItem(
+  'event TokenLaunched(address indexed token, address indexed curve, address indexed creator, address pairedToken, uint256 positionId, uint256 initialBuyAmount)',
 );
 
 /** V1 — TokenLaunched from factory */
@@ -141,6 +144,10 @@ export class EventPollerService {
         const curveAddress = log.args.curve as Address;
         if (!tokenAddress || !curveAddress) continue;
 
+        // Skip RPC fetch if this token is already indexed
+        const existing = await this.tokenRepository.findByAddress(tokenAddress);
+        if (existing) continue;
+
         const entity = await this.chainIndexer.fetchV2LaunchedToken(
           tokenAddress,
           curveAddress,
@@ -172,7 +179,13 @@ export class EventPollerService {
   private async pollV2Trades(from: bigint, to: bigint): Promise<number> {
     // Fetch all V2 tokens from repository
     const allTokens = await this.tokenRepository.findAll(200, 0);
-    const v2Tokens = allTokens.filter((t) => t.version === 'v2' && t.poolAddress);
+    const v2Tokens = allTokens.filter(
+      (t) =>
+        t.version === 'v2' &&
+        typeof t.poolAddress === 'string' &&
+        t.poolAddress.length === 42 &&
+        t.poolAddress.startsWith('0x'),
+    );
 
     if (v2Tokens.length === 0) return 0;
 
@@ -262,7 +275,11 @@ export class EventPollerService {
     const allTokens = await this.tokenRepository.findAll(200, 0);
     // Only poll V1 tokens (or graduated V2 which now have a Uniswap V3 pool)
     const v1Tokens = allTokens.filter(
-      (t) => (t.version === 'v1' || t.isGraduated) && t.poolAddress,
+      (t) =>
+        (t.version === 'v1' || t.isGraduated) &&
+        typeof t.poolAddress === 'string' &&
+        t.poolAddress.length === 42 &&
+        t.poolAddress.startsWith('0x'),
     );
 
     if (v1Tokens.length === 0) return 0;
