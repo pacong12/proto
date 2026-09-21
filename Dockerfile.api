@@ -1,23 +1,33 @@
 FROM oven/bun:1-alpine AS base
 WORKDIR /app
 
-# Copy root manifests and workspace package manifests
+# Stage 1: Install dependencies
+FROM base AS deps
 COPY package.json bun.lock ./
 COPY packages/shared-types/package.json ./packages/shared-types/
 COPY apps/api/package.json ./apps/api/
+# Stub other workspaces so bun install resolves the full workspace graph
 COPY apps/frontoffice/package.json ./apps/frontoffice/
 COPY apps/docs/package.json ./apps/docs/
 
-RUN bun install --frozen-lockfile
+RUN bun install --frozen-lockfile --production=false
 
-# Copy source files
+# Stage 2: Runtime image (lean, no devDeps)
+FROM base AS runner
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/packages/shared-types/node_modules ./packages/shared-types/node_modules
+
 COPY tsconfig.base.json ./
 COPY packages/shared-types ./packages/shared-types
-COPY apps/frontoffice ./apps/frontoffice
 COPY apps/api ./apps/api
 
 EXPOSE 3001
 ENV PORT=3001
 ENV NODE_ENV=production
+
+# Health check using wget (available in alpine)
+HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -qO- http://localhost:3001/health || exit 1
 
 CMD ["bun", "run", "apps/api/src/server.ts"]
