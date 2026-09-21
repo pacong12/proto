@@ -1,7 +1,28 @@
 import { ref } from 'vue';
 import { decodeEventLog, parseEventLogs, parseEther } from 'viem';
+
+/**
+ * Return true when the error originates from the user explicitly rejecting
+ * the transaction in their wallet (EIP-1193 code 4001 or equivalent messages
+ * from MetaMask, WalletConnect, OKX, Bitget, Coinbase Wallet).
+ */
+function isUserRejection(err: unknown): boolean {
+  const msg = ((err as Error)?.message ?? '').toLowerCase();
+  const code = (err as { code?: number })?.code;
+  return (
+    code === 4001 ||
+    msg.includes('user reject') ||
+    msg.includes('user denied') ||
+    msg.includes('user cancelled') ||
+    msg.includes('user canceled') ||
+    msg.includes('action_rejected') ||
+    msg.includes('rejected the request') ||
+    msg.includes('rejected by user') ||
+    msg.includes('transaction was rejected') ||
+    msg.includes('request rejected')
+  );
+}
 import {
-  ROBINHOOD_CHAIN,
   getNetworkConfig,
   launchpadFactoryAbi,
   launchpadV2FactoryAbi,
@@ -192,8 +213,13 @@ export function useLaunchpad() {
       console.error('[LaunchpadV1] TokenLaunched not found. Receipt logs:', receipt.logs);
       throw new Error(`TokenLaunched event not found in transaction receipt. Hash: ${hash}`);
     } catch (err) {
-      launchStep.value = 'error';
-      error.value = (err as Error).message;
+      if (isUserRejection(err)) {
+        launchStep.value = 'idle';
+        error.value = null;
+      } else {
+        launchStep.value = 'error';
+        error.value = (err as Error).message;
+      }
       return null;
     } finally {
       loading.value = false;
@@ -305,10 +331,12 @@ export function useLaunchpad() {
       launchStep.value = 'indexing';
 
       // 1. Primary: decode via viem parseEventLogs
+      // The V2 factory emits 'TokenLaunched' (not 'TokenLaunchedV2') with
+      // 3 indexed address params: token, curve, creator.
       const v2Events = parseEventLogs({
         abi: launchpadV2FactoryAbi,
         logs: receipt.logs,
-        eventName: 'TokenLaunchedV2',
+        eventName: 'TokenLaunched',
       });
 
       if (v2Events.length > 0) {
@@ -325,7 +353,7 @@ export function useLaunchpad() {
         try {
           const decoded = decodeEventLog({
             abi: launchpadV2FactoryAbi,
-            eventName: 'TokenLaunchedV2',
+            eventName: 'TokenLaunched',
             topics: log.topics,
             data: log.data,
           });
@@ -358,11 +386,16 @@ export function useLaunchpad() {
         };
       }
 
-      console.error('[LaunchpadV2] TokenLaunchedV2 not found. Receipt logs:', receipt.logs);
-      throw new Error(`TokenLaunchedV2 event not found in transaction receipt. Hash: ${hash}`);
+      console.error('[LaunchpadV2] TokenLaunched not found in V2 receipt. Logs:', receipt.logs);
+      throw new Error(`TokenLaunched event not found in transaction receipt. Hash: ${hash}`);
     } catch (err) {
-      launchStep.value = 'error';
-      error.value = (err as Error).message;
+      if (isUserRejection(err)) {
+        launchStep.value = 'idle';
+        error.value = null;
+      } else {
+        launchStep.value = 'error';
+        error.value = (err as Error).message;
+      }
       return null;
     } finally {
       loading.value = false;
@@ -398,7 +431,19 @@ export function useLaunchpad() {
   async function fetchTokenDetails(tokenAddress: `0x${string}`) {
     try {
       const client = getPublicClient();
-      const [name, symbol, logo, description, pool, graduation] = await Promise.all([
+      const network = getNetworkConfig(walletChainId.value ?? undefined);
+
+      const [
+        name,
+        symbol,
+        logo,
+        description,
+        pool,
+        graduation,
+        restrictionsEndBlock,
+        launchBlock,
+        launched,
+      ] = await Promise.all([
         client.readContract({
           address: tokenAddress,
           abi: launchpadTokenAbi,
@@ -425,11 +470,33 @@ export function useLaunchpad() {
           functionName: 'liquidityPool',
         }),
         client.readContract({
-          address: ROBINHOOD_CHAIN.contracts.factory,
+          address: network.contracts.factory,
           abi: launchpadFactoryAbi,
           functionName: 'graduationStatus',
           args: [tokenAddress],
         }),
+        client
+          .readContract({
+            address: tokenAddress,
+            abi: launchpadTokenAbi,
+            functionName: 'restrictionsEndBlock',
+          })
+          .catch(() => 0n),
+        client
+          .readContract({
+            address: tokenAddress,
+            abi: launchpadTokenAbi,
+            functionName: 'launchBlock',
+          })
+          .catch(() => 0n),
+        client
+          .readContract({
+            address: network.contracts.factory,
+            abi: launchpadFactoryAbi,
+            functionName: 'getLaunchedToken',
+            args: [tokenAddress],
+          })
+          .catch(() => null),
       ]);
 
       const [pairedPrincipal, threshold, graduated] = graduation;
@@ -463,7 +530,10 @@ export function useLaunchpad() {
       const sqrtPriceX96 = sqrtPriceX96Result[0] as bigint;
       const ratio = Number(sqrtPriceX96) / 2 ** 96;
       const token1PerToken0 = ratio * ratio;
-      // Assume isToken0 = true for display purposes; the API provides the authoritative value.
+      // isToken0 is read from the factory record; fall back to true for display purposes.
+      // The API endpoint provides the authoritative value for trade routing.
+      const isToken0 = launched ? Boolean(launched.isToken0) : true;
+      const positionId = launched ? BigInt(launched.positionId) : 0n;
       const priceInWeth = token1PerToken0;
       const ethPriceUsd = await getLiveEthPriceUsd();
       const priceUsd = priceInWeth * ethPriceUsd;
@@ -480,14 +550,14 @@ export function useLaunchpad() {
           logo,
           description,
           socials: {},
-          deployer: tokenAddress,
-          pairedToken: ROBINHOOD_CHAIN.contracts.weth,
+          deployer: launched?.deployer ?? tokenAddress,
+          pairedToken: launched?.pairedToken ?? network.contracts.weth,
           poolAddress: pool,
-          isToken0: true,
-          poolFee: 10000,
-          positionId: 1n,
-          restrictionsEndBlock: 100n,
-          launchBlock: 98n,
+          isToken0,
+          poolFee: launched?.poolFee ?? network.launchConfig.poolFee,
+          positionId,
+          restrictionsEndBlock: restrictionsEndBlock as bigint,
+          launchBlock: launchBlock as bigint,
           createdAt: Date.now(),
         },
         marketData: {
@@ -537,7 +607,9 @@ export function useLaunchpad() {
       await getPublicClient(network.chainId).waitForTransactionReceipt({ hash });
       return hash;
     } catch (err) {
-      error.value = (err as Error).message;
+      if (!isUserRejection(err)) {
+        error.value = (err as Error).message;
+      }
       return null;
     } finally {
       loading.value = false;
@@ -575,7 +647,9 @@ export function useLaunchpad() {
       await getPublicClient(network.chainId).waitForTransactionReceipt({ hash });
       return hash;
     } catch (err) {
-      error.value = (err as Error).message;
+      if (!isUserRejection(err)) {
+        error.value = (err as Error).message;
+      }
       return null;
     } finally {
       loading.value = false;

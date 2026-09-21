@@ -48,6 +48,31 @@ function resolveAmountOutMinimum(
   );
 }
 
+/**
+ * Return true when the error originates from the user explicitly rejecting
+ * the transaction in their wallet. These errors must not be shown as red
+ * error banners because they are intentional user actions, not failures.
+ *
+ * Covers EIP-1193 code 4001, Viem ACTION_REJECTED, MetaMask, WalletConnect,
+ * Coinbase Wallet, OKX, Bitget, and generic "cancel" messages.
+ */
+function isUserRejection(err: unknown): boolean {
+  const msg = ((err as Error)?.message ?? '').toLowerCase();
+  const code = (err as { code?: number })?.code;
+  return (
+    code === 4001 ||
+    msg.includes('user reject') ||
+    msg.includes('user denied') ||
+    msg.includes('user cancelled') ||
+    msg.includes('user canceled') ||
+    msg.includes('action_rejected') ||
+    msg.includes('rejected the request') ||
+    msg.includes('rejected by user') ||
+    msg.includes('transaction was rejected') ||
+    msg.includes('request rejected')
+  );
+}
+
 export function useSwap() {
   const isSwapping = ref(false);
   const swapError = ref<string | null>(null);
@@ -228,7 +253,12 @@ export function useSwap() {
       await publicClient.waitForTransactionReceipt({ hash: swapHash });
       return swapHash;
     } catch (err) {
-      swapError.value = (err as Error).message;
+      if (isUserRejection(err)) {
+        // User cancelled in wallet - not an error, clear any previous error.
+        swapError.value = null;
+      } else {
+        swapError.value = (err as Error).message;
+      }
       return null;
     } finally {
       isSwapping.value = false;
@@ -238,6 +268,7 @@ export function useSwap() {
   return {
     isSwapping,
     swapError,
+    isUserRejection,
     slippage,
     executeSwap,
   };
