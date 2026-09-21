@@ -10,10 +10,23 @@
       <span class="text-sm font-medium">Loading token data...</span>
     </div>
 
+    <!-- Token not found state -->
+    <div
+      v-else-if="tokenNotFound"
+      class="flex flex-col items-center justify-center py-32 gap-4 text-center px-4"
+    >
+      <AlertCircle class="w-10 h-10 text-zinc-400" />
+      <div class="space-y-1">
+        <p class="text-base font-semibold text-black dark:text-white">Token not found</p>
+        <p class="text-xs text-zinc-500 font-mono">{{ props.tokenAddress }}</p>
+        <p class="text-xs text-zinc-400">
+          This token has not been indexed yet or does not exist on this network.
+        </p>
+      </div>
+    </div>
+
     <template v-else>
-      <!-- ============================================================
-           ROW 1: Token Identity Bar (full width)
-           ============================================================ -->
+      ============================================================ -->
       <div
         class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950"
       >
@@ -140,7 +153,7 @@
       </div>
 
       <!-- ============================================================
-           ROW 2: Main Trading Layout — Chart (left) + Swap Panel (right)
+           ROW 2: Main Trading Layout - Chart (left) + Swap Panel (right)
            ============================================================ -->
       <div class="flex flex-col lg:flex-row gap-0 min-h-[600px]">
         <!-- ============================================================
@@ -312,6 +325,13 @@
                       <Send v-else class="w-3 h-3" />
                       <span>Post Comment</span>
                     </Button>
+                  </div>
+                  <div
+                    v-if="commentError"
+                    class="text-[10px] font-mono text-rose-500 flex items-center gap-1 mt-1"
+                  >
+                    <AlertCircle class="w-3 h-3 shrink-0" />
+                    <span>{{ commentError }}</span>
                   </div>
                 </div>
 
@@ -937,11 +957,11 @@
                       >
                     </div>
                     <div
-                      v-if="slippage > 5"
+                      v-if="slippage > SLIPPAGE_WARN_THRESHOLD"
                       class="text-[10px] font-mono text-amber-500 flex items-center gap-1"
                     >
                       <AlertCircle class="w-3 h-3 shrink-0" />
-                      High slippage — sandwich attack risk.
+                      High slippage - sandwich attack risk.
                     </div>
                   </div>
                 </PopoverContent>
@@ -1141,10 +1161,8 @@ const props = defineProps<{
 
 const { t } = useI18n();
 
-// Suppress unused import warning — SLIPPAGE_WARN_THRESHOLD used in template logic
-void SLIPPAGE_WARN_THRESHOLD;
-// Suppress parseAbi — used in fetchUserTokenBalance readContract fallback
-void parseAbi;
+// Suppress unused import warning - SLIPPAGE_WARN_THRESHOLD is used directly in the template
+// to keep the threshold in sync with useSwap without duplicating the magic number.
 
 interface LiveTrade {
   id: string;
@@ -1300,6 +1318,7 @@ const remainingToGraduate = computed(() => {
 const tradeTab = ref<'buy' | 'sell'>('buy');
 const isBuy = computed(() => tradeTab.value === 'buy');
 const amountIn = ref('0.05');
+const tokenNotFound = ref(false);
 const swapSuccessTx = ref<string | null>(null);
 const copied = ref(false);
 const copiedId = ref<string | null>(null);
@@ -1320,6 +1339,7 @@ const comments = ref<TokenCommentEntity[]>([]);
 const commentsLoading = ref(false);
 const newCommentText = ref('');
 const isPostingComment = ref(false);
+const commentError = ref<string | null>(null);
 
 // Sentiment Votes State
 const votesSummary = ref<TokenVotesSummary>({
@@ -1577,6 +1597,7 @@ async function postComment() {
   if (!content || isPostingComment.value) return;
 
   isPostingComment.value = true;
+  commentError.value = null;
   try {
     const res = await fetch(`/api/tokens/${currentToken.value.address}/comments`, {
       method: 'POST',
@@ -1589,10 +1610,13 @@ async function postComment() {
     const envelope = await res.json();
     if (envelope.success && envelope.data) {
       newCommentText.value = '';
+      commentError.value = null;
       await fetchComments(currentToken.value.address);
+    } else {
+      commentError.value = envelope.error?.message || 'Failed to post comment.';
     }
-  } catch {
-    // Non-blocking
+  } catch (e) {
+    commentError.value = (e as Error).message || 'Network error.';
   } finally {
     isPostingComment.value = false;
   }
@@ -1803,12 +1827,15 @@ async function handleSwap() {
 
 async function loadTokenData(address: `0x${string}`) {
   tokenLoading.value = true;
+  tokenNotFound.value = false;
   try {
     const res = await fetch(`/api/tokens/${address}`);
     const envelope = await res.json();
     if (envelope.success && envelope.data) {
       currentToken.value = envelope.data.token;
       currentMarketData.value = envelope.data.marketData;
+    } else if (res.status === 404) {
+      tokenNotFound.value = true;
     }
   } catch {
     // non-blocking fallback
@@ -1826,6 +1853,13 @@ async function loadTokenData(address: `0x${string}`) {
     tokenLoading.value = false;
   }
 }
+
+// Reset amount and success state when switching between buy and sell tabs
+// to avoid unit confusion (ETH vs token amount).
+watch(tradeTab, () => {
+  amountIn.value = '';
+  swapSuccessTx.value = null;
+});
 
 watch(
   () => props.tokenAddress,

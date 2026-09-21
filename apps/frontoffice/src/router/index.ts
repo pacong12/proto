@@ -3,6 +3,13 @@ import ExplorePage from '@/pages/ExplorePage.vue';
 
 export const router = createRouter({
   history: createWebHistory(),
+  scrollBehavior(_to, _from, savedPosition) {
+    // Restore scroll position when navigating back; scroll to top on new routes.
+    if (savedPosition) {
+      return savedPosition;
+    }
+    return { top: 0, behavior: 'smooth' };
+  },
   routes: [
     {
       path: '/',

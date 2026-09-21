@@ -356,6 +356,16 @@ button:active:not(:disabled),
   color: #ffffff !important;
 }
 
+/* Hide scrollbars while preserving scroll functionality (used on overflow-x-auto nav strips) */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE / Edge */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome / Safari / Opera */
+}
+
 /* Inputs */
 html:not(.dark) input,
 html:not(.dark) textarea,
