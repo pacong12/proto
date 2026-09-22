@@ -92,7 +92,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
   private initTables(): void {
     this.db.run(`
       CREATE TABLE IF NOT EXISTS tokens (
-        address TEXT PRIMARY KEY,
+        address TEXT PRIMARY KEY COLLATE NOCASE,
         name TEXT NOT NULL,
         symbol TEXT NOT NULL,
         decimals INTEGER NOT NULL,
@@ -112,20 +112,96 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
         initialBuyAmount TEXT,
         tax_config_json TEXT,
         version TEXT,
-        curve_address TEXT
+        curve_address TEXT,
+        is_graduated INTEGER DEFAULT 0,
+        virtual_eth_reserve TEXT,
+        virtual_token_reserve TEXT,
+        graduation_target TEXT
       );
     `);
 
-    // Safe migrations if table already exists without failing on duplicate column
-    try {
-      this.db.run(`ALTER TABLE tokens ADD COLUMN version TEXT;`);
-    } catch (_e) {
-      void _e;
+    // Safe additive migrations for existing databases
+    const tokenMigrations = [
+      'ALTER TABLE tokens ADD COLUMN version TEXT',
+      'ALTER TABLE tokens ADD COLUMN curve_address TEXT',
+      'ALTER TABLE tokens ADD COLUMN is_graduated INTEGER DEFAULT 0',
+      'ALTER TABLE tokens ADD COLUMN virtual_eth_reserve TEXT',
+      'ALTER TABLE tokens ADD COLUMN virtual_token_reserve TEXT',
+      'ALTER TABLE tokens ADD COLUMN graduation_target TEXT',
+    ];
+    for (const sql of tokenMigrations) {
+      try {
+        this.db.run(sql);
+      } catch {
+        /* column already exists */
+      }
     }
-    try {
-      this.db.run(`ALTER TABLE tokens ADD COLUMN curve_address TEXT;`);
-    } catch (_e) {
-      void _e;
+
+    // Structural migration: recreate tokens table with COLLATE NOCASE on address
+    // so that checksummed and lowercase variants of the same address never produce
+    // duplicate rows. Only runs when the existing table still lacks NOCASE.
+    const addrColInfo = this.db
+      .query<{ type: string }, []>(`PRAGMA table_info(tokens)`)
+      .all()
+      .find((c: Record<string, unknown>) => c['name'] === 'address');
+    const hasNocase =
+      typeof addrColInfo === 'object' &&
+      addrColInfo !== null &&
+      String((addrColInfo as Record<string, unknown>)['type'])
+        .toUpperCase()
+        .includes('NOCASE');
+    if (!hasNocase) {
+      this.db.run('BEGIN');
+      try {
+        this.db.run('ALTER TABLE tokens RENAME TO tokens_old');
+        this.db.run(`
+          CREATE TABLE tokens (
+            address TEXT PRIMARY KEY COLLATE NOCASE,
+            name TEXT NOT NULL,
+            symbol TEXT NOT NULL,
+            decimals INTEGER NOT NULL,
+            totalSupply TEXT NOT NULL,
+            logo TEXT,
+            description TEXT,
+            socials_json TEXT,
+            deployer TEXT NOT NULL,
+            pairedToken TEXT NOT NULL,
+            poolAddress TEXT NOT NULL,
+            isToken0 INTEGER NOT NULL,
+            poolFee INTEGER NOT NULL,
+            positionId TEXT NOT NULL,
+            restrictionsEndBlock TEXT NOT NULL,
+            launchBlock TEXT NOT NULL,
+            createdAt INTEGER NOT NULL,
+            initialBuyAmount TEXT,
+            tax_config_json TEXT,
+            version TEXT,
+            curve_address TEXT,
+            is_graduated INTEGER DEFAULT 0,
+            virtual_eth_reserve TEXT,
+            virtual_token_reserve TEXT,
+            graduation_target TEXT
+          )
+        `);
+        // Copy rows; normalise address to lowercase to remove pre-existing duplicates.
+        this.db.run(`
+          INSERT OR IGNORE INTO tokens
+          SELECT LOWER(address), name, symbol, decimals, totalSupply, logo, description,
+                 socials_json, LOWER(deployer), LOWER(pairedToken), LOWER(poolAddress),
+                 isToken0, poolFee, positionId, restrictionsEndBlock, launchBlock, createdAt,
+                 initialBuyAmount, tax_config_json, version,
+                 CASE WHEN curve_address IS NOT NULL THEN LOWER(curve_address) ELSE NULL END,
+                 is_graduated,
+                 virtual_eth_reserve, virtual_token_reserve, graduation_target
+          FROM tokens_old
+        `);
+        this.db.run('DROP TABLE tokens_old');
+        this.db.run('COMMIT');
+      } catch (err) {
+        this.db.run('ROLLBACK');
+        // Non-fatal: table may already be in correct state
+        console.warn('[SqliteTokenRepository] NOCASE migration failed:', (err as Error).message);
+      }
     }
 
     this.db.run(`
@@ -144,21 +220,19 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       );
     `);
 
-    this.db.run(`
-      CREATE INDEX IF NOT EXISTS idx_trades_tokenAddress ON trades(tokenAddress);
-    `);
-
-    this.db.run(`
-      CREATE INDEX IF NOT EXISTS idx_trades_timestamp ON trades(timestamp);
-    `);
-
-    this.db.run(`
-      CREATE INDEX IF NOT EXISTS idx_trades_txHash ON trades(transactionHash);
-    `);
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_trades_tokenAddress ON trades(tokenAddress);`);
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_trades_timestamp ON trades(timestamp);`);
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_trades_txHash ON trades(transactionHash);`);
+    // Added: trader index for top-traders query performance
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_trades_trader ON trades(trader);`);
+    // Added: composite index for per-token chronological trade queries
+    this.db.run(
+      `CREATE INDEX IF NOT EXISTS idx_trades_token_ts ON trades(tokenAddress, timestamp DESC);`,
+    );
 
     this.db.run(`
       CREATE TABLE IF NOT EXISTS market_data (
-        address TEXT PRIMARY KEY,
+        address TEXT PRIMARY KEY COLLATE NOCASE,
         priceInWeth REAL NOT NULL,
         priceUsd REAL NOT NULL,
         marketCapUsd REAL NOT NULL,
@@ -227,12 +301,12 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
         address, name, symbol, decimals, totalSupply, logo, description,
         socials_json, deployer, pairedToken, poolAddress, isToken0, poolFee,
         positionId, restrictionsEndBlock, launchBlock, createdAt, initialBuyAmount, tax_config_json,
-        version, curve_address
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        version, curve_address, is_graduated, virtual_eth_reserve, virtual_token_reserve, graduation_target
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
-      token.address,
+      token.address.toLowerCase(),
       token.name,
       token.symbol,
       token.decimals,
@@ -240,9 +314,9 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       token.logo ?? '',
       token.description ?? '',
       JSON.stringify(token.socials ?? {}),
-      token.deployer,
-      token.pairedToken,
-      token.poolAddress,
+      token.deployer.toLowerCase(),
+      token.pairedToken.toLowerCase(),
+      token.poolAddress.toLowerCase(),
       token.isToken0 ? 1 : 0,
       token.poolFee,
       token.positionId.toString(),
@@ -252,7 +326,11 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       token.initialBuyAmount ?? null,
       token.taxConfig ? JSON.stringify(token.taxConfig) : null,
       token.version ?? null,
-      token.curveAddress ?? null,
+      token.curveAddress?.toLowerCase() ?? null,
+      token.isGraduated ? 1 : 0,
+      token.virtualEthReserve ?? null,
+      token.virtualTokenReserve ?? null,
+      token.graduationTarget ?? null,
     );
   }
 
@@ -584,6 +662,15 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       initialBuyAmount: row.initialBuyAmount ?? undefined,
       version: (row.version as 'v1' | 'v2' | null) ?? undefined,
       curveAddress: (row.curve_address as `0x${string}` | null) ?? undefined,
+      isGraduated: Boolean((row as TokenRow & { is_graduated?: number }).is_graduated),
+      virtualEthReserve:
+        (row as TokenRow & { virtual_eth_reserve?: string | null }).virtual_eth_reserve ??
+        undefined,
+      virtualTokenReserve:
+        (row as TokenRow & { virtual_token_reserve?: string | null }).virtual_token_reserve ??
+        undefined,
+      graduationTarget:
+        (row as TokenRow & { graduation_target?: string | null }).graduation_target ?? undefined,
     };
   }
 

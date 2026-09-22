@@ -491,23 +491,23 @@
 
               <!-- Last Price -->
               <td class="py-3 px-4 text-right font-bold text-black dark:text-white">
-                {{ formatPriceUsd(item.marketData.priceUsd) }}
+                {{ formatPriceUsd(item.marketData?.priceUsd) }}
               </td>
 
               <!-- 24h Change -->
               <td class="py-3 px-4 text-right font-bold text-emerald-500 dark:text-emerald-400">
-                {{ (item.marketData.priceChange24h ?? 0) >= 0 ? '+' : ''
-                }}{{ (item.marketData.priceChange24h ?? 0).toFixed(2) }}%
+                {{ (item.marketData?.priceChange24h ?? 0) >= 0 ? '+' : ''
+                }}{{ (item.marketData?.priceChange24h ?? 0).toFixed(2) }}%
               </td>
 
               <!-- 24h Volume -->
               <td class="py-3 px-4 text-right text-zinc-600 dark:text-zinc-300">
-                {{ formatCompactUsd(item.marketData.volume24hUsd) }}
+                {{ formatCompactUsd(item.marketData?.volume24hUsd) }}
               </td>
 
               <!-- Market Cap -->
               <td class="py-3 px-4 text-right text-zinc-600 dark:text-zinc-300 font-semibold">
-                {{ formatCompactUsd(item.marketData.marketCapUsd) }}
+                {{ formatCompactUsd(item.marketData?.marketCapUsd) }}
               </td>
 
               <!-- Graduation / Bonding Progress -->
@@ -515,14 +515,14 @@
                 <div class="space-y-1 max-w-[160px] mx-auto">
                   <div class="flex justify-between text-[10px]">
                     <span class="text-zinc-400">
-                      {{ item.marketData.isGraduated ? 'DEX Pool' : 'Curve' }}
+                      {{ item.marketData?.isGraduated ? 'DEX Pool' : 'Curve' }}
                     </span>
                     <span class="font-bold text-emerald-500 dark:text-emerald-400">
-                      {{ (item.marketData.graduationProgress * 100).toFixed(1) }}%
+                      {{ ((item.marketData?.graduationProgress ?? 0) * 100).toFixed(1) }}%
                     </span>
                   </div>
                   <Progress
-                    :model-value="item.marketData.graduationProgress * 100"
+                    :model-value="(item.marketData?.graduationProgress ?? 0) * 100"
                     class="h-1.5 rounded-full"
                   />
                 </div>
@@ -602,8 +602,8 @@
               </div>
 
               <span class="text-xs font-mono font-bold text-emerald-500">
-                {{ (item.marketData.priceChange24h ?? 0) >= 0 ? '+' : ''
-                }}{{ (item.marketData.priceChange24h ?? 0).toFixed(2) }}%
+                {{ (item.marketData?.priceChange24h ?? 0) >= 0 ? '+' : ''
+                }}{{ (item.marketData?.priceChange24h ?? 0).toFixed(2) }}%
               </span>
             </div>
 
@@ -614,13 +614,13 @@
               <div>
                 <span class="text-[10px] text-zinc-400 block">{{ t('lastPriceCol') }}</span>
                 <span class="font-bold text-black dark:text-white">{{
-                  formatPriceUsd(item.marketData.priceUsd)
+                  formatPriceUsd(item.marketData?.priceUsd)
                 }}</span>
               </div>
               <div class="text-right">
                 <span class="text-[10px] text-zinc-400 block">{{ t('marketCapCol') }}</span>
                 <span class="font-semibold text-zinc-600 dark:text-zinc-300">{{
-                  formatCompactUsd(item.marketData.marketCapUsd)
+                  formatCompactUsd(item.marketData?.marketCapUsd)
                 }}</span>
               </div>
             </div>
@@ -629,14 +629,14 @@
             <div class="space-y-1">
               <div class="flex justify-between text-[10px] font-mono">
                 <span class="text-zinc-400">{{
-                  item.marketData.isGraduated ? 'Graduated' : 'Curve'
+                  item.marketData?.isGraduated ? 'Graduated' : 'Curve'
                 }}</span>
                 <span class="font-bold text-emerald-500"
-                  >{{ (item.marketData.graduationProgress * 100).toFixed(1) }}%</span
+                  >{{ ((item.marketData?.graduationProgress ?? 0) * 100).toFixed(1) }}%</span
                 >
               </div>
               <Progress
-                :model-value="item.marketData.graduationProgress * 100"
+                :model-value="(item.marketData?.graduationProgress ?? 0) * 100"
                 class="h-1.5 rounded-full"
               />
             </div>
@@ -730,10 +730,10 @@
               class="mt-2.5 flex items-center justify-between font-mono text-[11px] pt-2 border-t border-zinc-100 dark:border-zinc-900"
             >
               <span class="text-zinc-400"
-                >MCap: {{ formatCompactUsd(item.marketData.marketCapUsd) }}</span
+                >MCap: {{ formatCompactUsd(item.marketData?.marketCapUsd) }}</span
               >
               <span class="font-bold text-black dark:text-white">{{
-                formatPriceUsd(item.marketData.priceUsd)
+                formatPriceUsd(item.marketData?.priceUsd)
               }}</span>
             </div>
 
@@ -741,11 +741,11 @@
               <div class="flex justify-between text-[10px] font-mono">
                 <span class="text-zinc-400">Curve Progress</span>
                 <span class="font-bold text-emerald-500"
-                  >{{ (item.marketData.graduationProgress * 100).toFixed(1) }}%</span
+                  >{{ ((item.marketData?.graduationProgress ?? 0) * 100).toFixed(1) }}%</span
                 >
               </div>
               <Progress
-                :model-value="item.marketData.graduationProgress * 100"
+                :model-value="(item.marketData?.graduationProgress ?? 0) * 100"
                 class="h-1 rounded-full"
               />
             </div>
@@ -826,10 +826,10 @@
               class="mt-2.5 flex items-center justify-between font-mono text-[11px] pt-2 border-t border-zinc-100 dark:border-zinc-900"
             >
               <span class="text-zinc-400"
-                >MCap: {{ formatCompactUsd(item.marketData.marketCapUsd) }}</span
+                >MCap: {{ formatCompactUsd(item.marketData?.marketCapUsd) }}</span
               >
               <span class="font-bold text-black dark:text-white">{{
-                formatPriceUsd(item.marketData.priceUsd)
+                formatPriceUsd(item.marketData?.priceUsd)
               }}</span>
             </div>
 
@@ -837,11 +837,11 @@
               <div class="flex justify-between text-[10px] font-mono">
                 <span class="text-zinc-400">Nearing DEX</span>
                 <span class="font-bold text-amber-500"
-                  >{{ (item.marketData.graduationProgress * 100).toFixed(1) }}%</span
+                  >{{ ((item.marketData?.graduationProgress ?? 0) * 100).toFixed(1) }}%</span
                 >
               </div>
               <Progress
-                :model-value="item.marketData.graduationProgress * 100"
+                :model-value="(item.marketData?.graduationProgress ?? 0) * 100"
                 class="h-1 rounded-full"
               />
             </div>
@@ -922,10 +922,10 @@
               class="mt-2.5 flex items-center justify-between font-mono text-[11px] pt-2 border-t border-zinc-100 dark:border-zinc-900"
             >
               <span class="text-zinc-400"
-                >MCap: {{ formatCompactUsd(item.marketData.marketCapUsd) }}</span
+                >MCap: {{ formatCompactUsd(item.marketData?.marketCapUsd) }}</span
               >
               <span class="font-bold text-black dark:text-white">{{
-                formatPriceUsd(item.marketData.priceUsd)
+                formatPriceUsd(item.marketData?.priceUsd)
               }}</span>
             </div>
 
@@ -972,8 +972,10 @@ import { Empty } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
 import type { LaunchedTokenEntity, TokenMarketData, TradeEventEntity } from '@proto/shared-types';
+import { ARC_CHAIN } from '@proto/shared-types';
 import { useI18n } from '@/lib/i18n';
 import { useWallet } from '@/composables/useWallet';
+import { useTokenStore } from '@/composables/useTokenStore';
 import {
   shortenAddress,
   formatTokenNumber,
@@ -995,18 +997,18 @@ const viewMode = ref<'table' | 'grid' | 'trenches'>('table');
 
 const trenchesNewCreations = computed(() => {
   return filteredTokens.value.filter(
-    (item) => !item.marketData.isGraduated && item.marketData.graduationProgress < 0.2,
+    (item) => !item.marketData?.isGraduated && (item.marketData?.graduationProgress ?? 1) < 0.2,
   );
 });
 
 const trenchesCompleting = computed(() => {
   return filteredTokens.value.filter(
-    (item) => !item.marketData.isGraduated && item.marketData.graduationProgress >= 0.2,
+    (item) => !item.marketData?.isGraduated && (item.marketData?.graduationProgress ?? 0) >= 0.2,
   );
 });
 
 const trenchesGraduated = computed(() => {
-  return filteredTokens.value.filter((item) => item.marketData.isGraduated);
+  return filteredTokens.value.filter((item) => item.marketData?.isGraduated);
 });
 
 // Active Market Category Tab (OKX-Style: All Markets / Trending / New Launches / Top Gainers / Live Trades)
@@ -1033,12 +1035,12 @@ const selectedLifecycle = ref<'all' | 'curve' | 'graduated'>('all');
 const filterHasSocials = ref(false);
 const activeSort = ref('recent');
 
-const loading = ref(true);
+const tokenStore = useTokenStore();
+const allTokens = tokenStore.tokens;
+const loading = tokenStore.loading;
 const apiError = ref<string | null>(null);
-const allTokens = ref<Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }>>([]);
 const currentPage = ref(1);
 const pageSize = 10; // 10 rows per page like standard exchange tables
-
 // Live Trades & Tx Hash Search States
 const recentTrades = ref<TradeEventEntity[]>([]);
 const tradesLoading = ref(false);
@@ -1069,20 +1071,20 @@ const topTrendingChange = computed(() => {
 const topGainerSymbol = computed(() => {
   if (allTokens.value.length === 0) return '—';
   const sorted = [...allTokens.value].sort(
-    (a, b) => (b.marketData.priceChange24h ?? 0) - (a.marketData.priceChange24h ?? 0),
+    (a, b) => (b.marketData?.priceChange24h ?? 0) - (a.marketData?.priceChange24h ?? 0),
   );
   return sorted[0]?.token.symbol || '—';
 });
 const topGainerChange = computed(() => {
   if (allTokens.value.length === 0) return '0.00%';
   const sorted = [...allTokens.value].sort(
-    (a, b) => (b.marketData.priceChange24h ?? 0) - (a.marketData.priceChange24h ?? 0),
+    (a, b) => (b.marketData?.priceChange24h ?? 0) - (a.marketData?.priceChange24h ?? 0),
   );
   const chg = sorted[0]?.marketData?.priceChange24h ?? 0;
   return `${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%`;
 });
 const totalVolume24hUsd = computed(() => {
-  return allTokens.value.reduce((acc, curr) => acc + (curr.marketData.volume24hUsd || 0), 0);
+  return allTokens.value.reduce((acc, curr) => acc + (curr.marketData?.volume24hUsd || 0), 0);
 });
 
 const tokenByAddress = computed(() => {
@@ -1160,18 +1162,19 @@ const filteredTokens = computed(() => {
   let list = allTokens.value;
 
   // 0. Filter by Active Network (Robinhood Chain 4663 vs Arc Network 5042)
-  const isArc = activeNetwork.value.chainId === 5042 || activeNetwork.value.chainId === 5042002;
-  const arcWeth = '0x3600000000000000000000000000000000000000';
-  const arcFactory = '0x48844223abdceeb1ce502f54d559681358e68200';
+  const isArc = activeNetwork.value.chainId === ARC_CHAIN.chainId;
+  const arcWeth = ARC_CHAIN.contracts.weth.toLowerCase();
+  const arcFactory = ARC_CHAIN.contracts.factory.toLowerCase();
 
   list = list.filter((item) => {
     const paired = item.token.pairedToken?.toLowerCase();
     const pool = item.token.poolAddress?.toLowerCase();
-    const curve = item.token.curveAddress?.toLowerCase();
-    const isTokenArc =
-      paired === arcWeth ||
-      pool === arcFactory ||
-      curve === '0x6c1c1a77771bf8961e27ea5b21f575eb17a7626e';
+    const arcFactoryV2 = (
+      ARC_CHAIN.contracts.factoryV2 ?? ARC_CHAIN.contracts.factory
+    ).toLowerCase();
+    // A token belongs to Arc if its paired asset is Arc USDC (0x3600...)
+    // or if its pool/factory matches the Arc V1 or V2 factory address.
+    const isTokenArc = paired === arcWeth || pool === arcFactory || pool === arcFactoryV2;
 
     return isArc ? isTokenArc : !isTokenArc;
   });
@@ -1191,24 +1194,25 @@ const filteredTokens = computed(() => {
   if (activeMarketTab.value === 'trending') {
     list = list.filter(
       (item) =>
-        (item.marketData.volume24hUsd || 0) > 5000 || item.marketData.graduationProgress > 0.5,
+        (item.marketData?.volume24hUsd || 0) > 5000 ||
+        (item.marketData?.graduationProgress ?? 0) > 0.5,
     );
   } else if (activeMarketTab.value === 'newest') {
     const sortedNew = [...list].sort((a, b) => b.token.createdAt - a.token.createdAt);
     list = sortedNew;
   } else if (activeMarketTab.value === 'gainers') {
     list = [...list].sort(
-      (a, b) => (b.marketData.priceChange24h ?? 0) - (a.marketData.priceChange24h ?? 0),
+      (a, b) => (b.marketData?.priceChange24h ?? 0) - (a.marketData?.priceChange24h ?? 0),
     );
   } else if (activeMarketTab.value === 'graduated') {
-    list = list.filter((item) => item.marketData.isGraduated);
+    list = list.filter((item) => item.marketData?.isGraduated);
   }
 
   // 3. Filter Lifecycle Status Toggle
   if (selectedLifecycle.value === 'curve') {
-    list = list.filter((item) => !item.marketData.isGraduated);
+    list = list.filter((item) => !item.marketData?.isGraduated);
   } else if (selectedLifecycle.value === 'graduated') {
-    list = list.filter((item) => item.marketData.isGraduated);
+    list = list.filter((item) => item.marketData?.isGraduated);
   }
 
   // 4. Filter Socials Only
@@ -1224,11 +1228,13 @@ const filteredTokens = computed(() => {
   if (activeSort.value === 'newest') {
     sorted.sort((a, b) => b.token.createdAt - a.token.createdAt);
   } else if (activeSort.value === 'mcap') {
-    sorted.sort((a, b) => b.marketData.marketCapUsd - a.marketData.marketCapUsd);
+    sorted.sort((a, b) => (b.marketData?.marketCapUsd ?? 0) - (a.marketData?.marketCapUsd ?? 0));
   } else if (activeSort.value === 'volume') {
-    sorted.sort((a, b) => (b.marketData.volume24hUsd || 0) - (a.marketData.volume24hUsd || 0));
+    sorted.sort((a, b) => (b.marketData?.volume24hUsd ?? 0) - (a.marketData?.volume24hUsd ?? 0));
   } else if (activeSort.value === 'graduation') {
-    sorted.sort((a, b) => b.marketData.graduationProgress - a.marketData.graduationProgress);
+    sorted.sort(
+      (a, b) => (b.marketData?.graduationProgress ?? 0) - (a.marketData?.graduationProgress ?? 0),
+    );
   } else {
     sorted.sort((a, b) => Number(b.token.launchBlock) - Number(a.token.launchBlock));
   }
@@ -1247,17 +1253,12 @@ const paginatedTokens = computed(() => {
 
 onMounted(async () => {
   try {
-    const res = await fetch('/api/tokens');
-    const envelope = await res.json();
-    if (envelope.success && Array.isArray(envelope.data)) {
-      allTokens.value = envelope.data;
-    } else {
-      apiError.value = envelope.error?.message || 'Unable to fetch tokens';
+    await tokenStore.fetchTokens();
+    if (tokenStore.error.value) {
+      apiError.value = tokenStore.error.value;
     }
   } catch (e) {
     apiError.value = (e as Error).message;
-  } finally {
-    loading.value = false;
   }
 
   // Periodic poll for live protocol trades every 8s when window is visible

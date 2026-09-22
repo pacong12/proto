@@ -1,4 +1,11 @@
-import { ApiEnvelope, TradeEventEntity, CandlestickEntity, ok, err } from '@proto/shared-types';
+import {
+  ApiEnvelope,
+  TradeEventEntity,
+  CandlestickEntity,
+  ok,
+  err,
+  ARC_CHAIN,
+} from '@proto/shared-types';
 import {
   GetTokensUseCase,
   TokenWithMarketData,
@@ -131,6 +138,10 @@ export class TokenController {
       >();
 
       const ethPrice = await this.priceFeed.getEthPriceUsd();
+      // Multi-chain: Arc tokens use USDC quote (always $1.00)
+      const isArcToken =
+        token?.pairedToken?.toLowerCase() === ARC_CHAIN.contracts.weth.toLowerCase();
+      const quotePrice = isArcToken ? 1.0 : ethPrice;
       // Trades are sorted newest first, sort chronological to determine first buy
       const chronologicalTrades = [...trades].sort((a, b) => a.timestamp - b.timestamp);
 
@@ -146,7 +157,7 @@ export class TokenController {
           firstBuyPrice: 0,
         };
 
-        const valUsd = parseFloat(t.wethAmount || '0') * ethPrice;
+        const valUsd = parseFloat(t.wethAmount || '0') * quotePrice;
         let tokenAmountWei = 0n;
         try {
           tokenAmountWei = BigInt(t.tokenAmount || '0');
@@ -273,6 +284,14 @@ export class TokenController {
   ): Promise<ApiEnvelope<CandlestickEntity[]>> {
     if (!address.startsWith('0x') || address.length !== 42) {
       return err('INVALID_ADDRESS', 'Token address must be a valid 42-character hex string');
+    }
+
+    const VALID_RESOLUTIONS = [60, 300, 900, 3600, 14400, 86400];
+    if (!VALID_RESOLUTIONS.includes(resolutionSeconds)) {
+      return err(
+        'INVALID_RESOLUTION',
+        `Resolution must be one of: ${VALID_RESOLUTIONS.join(', ')} seconds`,
+      );
     }
 
     try {

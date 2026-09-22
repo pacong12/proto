@@ -2,6 +2,11 @@ interface Env {
   ASSETS: {
     fetch: (request: Request) => Promise<Response>;
   };
+  // Set to 'true' in wrangler.toml [vars] to send CSP as Report-Only.
+  // Use this in staging before enforcing in production.
+  CSP_REPORT_ONLY?: string;
+  // Optional endpoint for CSP violation reports.
+  CSP_REPORT_URI?: string;
 }
 
 /**
@@ -33,7 +38,7 @@ async function hashIp(ip: string): Promise<string> {
  *   img-src     - self + data URIs + IPFS gateways
  *   frame-ancestors - none (consistent with X-Frame-Options: DENY)
  */
-function buildCsp(): string {
+function buildCsp(reportUri?: string): string {
   const directives: string[] = [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' blob:",
@@ -57,6 +62,9 @@ function buildCsp(): string {
     "form-action 'self'",
     'upgrade-insecure-requests',
   ];
+  if (reportUri) {
+    directives.push(`report-uri ${reportUri}`);
+  }
   return directives.join('; ');
 }
 
@@ -107,7 +115,14 @@ export default {
     newHeaders.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
     newHeaders.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
     newHeaders.set('x-request-id', rayId);
-    newHeaders.set('Content-Security-Policy', buildCsp()); // fix LOW-01
+    // Content-Security-Policy: use Report-Only mode in staging (CSP_REPORT_ONLY=true)
+    // to catch violations before enforcing. Switch to enforcing in production.
+    const cspValue = buildCsp(env.CSP_REPORT_URI);
+    const cspHeader =
+      env.CSP_REPORT_ONLY === 'true'
+        ? 'Content-Security-Policy-Report-Only'
+        : 'Content-Security-Policy';
+    newHeaders.set(cspHeader, cspValue);
 
     return new Response(response.body, {
       status: response.status,

@@ -5,7 +5,33 @@ import { GetTokensUseCase } from '../src/modules/tokens/application/use-cases/ge
 import { GetTokenByAddressUseCase } from '../src/modules/tokens/application/use-cases/get-token-by-address.use-case';
 import { TokenController } from '../src/modules/tokens/presentation/token.controller';
 import { CoinGeckoPriceFeedAdapter } from '../src/modules/tokens/infrastructure/adapters/coingecko-price-feed.adapter';
+import type { ViemChainIndexerAdapter } from '../src/modules/tokens/infrastructure/adapters/viem-chain-indexer.adapter';
 import { TradeEventEntity } from '@proto/shared-types';
+
+// Minimal stub: only covers methods called by GetTokenByAddressUseCase for v1 tokens
+const stubIndexer = {
+  async fetchLaunchedTokenFromChain() {
+    return null;
+  },
+  async fetchV2CurveState() {
+    return {
+      totalEthRaised: 0n,
+      virtualEthReserve: 3n * 10n ** 18n,
+      virtualTokenReserve: 1_000_000_000n * 10n ** 18n,
+      graduationTarget: 4_200n * 10n ** 15n,
+      graduated: false,
+    };
+  },
+  async fetchGraduationStatus() {
+    return { pairedPrincipal: 0n, threshold: 4200000000000000000n, graduated: false, progress: 0 };
+  },
+  async fetchPoolSlot0() {
+    return { sqrtPriceX96: 2505414483750479299401734n, tick: 0 };
+  },
+  async fetchWethBalance() {
+    return 0n;
+  },
+} satisfies Partial<ViemChainIndexerAdapter>;
 
 describe('Event Indexer, Trades & Candlestick Aggregation', () => {
   let repository: InMemoryTokenRepository;
@@ -25,17 +51,7 @@ describe('Event Indexer, Trades & Candlestick Aggregation', () => {
     getTokensUseCase = new GetTokensUseCase(repository);
     getTokenByAddressUseCase = new GetTokenByAddressUseCase(
       repository,
-      {
-        fetchLaunchedTokenFromChain: async () => null,
-        fetchGraduationStatus: async () => ({
-          pairedPrincipal: 0n,
-          threshold: 4200000000000000000n,
-          graduated: false,
-          progress: 0,
-        }),
-        fetchPoolSlot0: async () => ({ sqrtPriceX96: 2505414483750479299401734n, tick: 0 }),
-        fetchWethBalance: async () => 0n,
-      },
+      stubIndexer as unknown as ViemChainIndexerAdapter,
       calculatePricing,
       priceFeed,
     );

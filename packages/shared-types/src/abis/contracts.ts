@@ -28,7 +28,10 @@ export const launchpadV2FactoryAbi = parseAbi([
   'function getLaunchCount() view returns (uint256)',
   'function launchFee() view returns (uint256)',
   'function LAUNCH_FEE() view returns (uint256)',
-  'event TokenLaunchedV2(address indexed token, address indexed curve, address indexed creator, string name, string symbol, uint256 initialBuy)',
+  // The V2 factory emits TokenLaunched (not TokenLaunchedV2) with this exact signature.
+  // topic0: 0x8d4aad4953d0ca700d468f3753aa14432d1b35b43ec6409f051fb6aa43a89607
+  // Verified on-chain from factory 0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e.
+  'event TokenLaunched(address indexed token, address indexed curve, address indexed creator, address pairedToken, uint256 positionId, uint256 initialBuyAmount)',
 ]);
 
 // ---------------------------------------------------------------------------

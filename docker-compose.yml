@@ -4,6 +4,9 @@ services:
     container_name: proto-redis
     ports:
       - "6380:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -20,13 +23,30 @@ services:
       - PORT=3001
       - NODE_ENV=production
       - REDIS_URL=redis://redis:6379
-      - ROBINHOOD_RPC_URL=https://rpc.mainnet.chain.robinhood.com
-      - CHAIN_ID=4663
+      # Robinhood Chain Mainnet (Chain ID 4663)
+      - ROBINHOOD_RPC_URL=${ROBINHOOD_RPC_URL:-https://rpc.mainnet.chain.robinhood.com}
+      - ROBINHOOD_FACTORY_V2=${ROBINHOOD_FACTORY_V2:-0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e}
+      # Arc Network Mainnet (Chain ID 5042)
+      - ARC_RPC_URL=${ARC_RPC_URL:-https://rpc.mainnet.arc.io}
+      - ARC_FACTORY_ADDRESS=${ARC_FACTORY_ADDRESS:-0x48844223aBDceeb1Ce502F54d559681358E68200}
+      - ARC_LOCKER_ADDRESS=${ARC_LOCKER_ADDRESS:-0x0000000000000000000000000000000000000000}
+      # Protocol config
+      - PROTOCOL_FEE_RECIPIENT=${PROTOCOL_FEE_RECIPIENT:-0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2}
+      # Optional: CoinGecko API key for higher rate limits
+      - COINGECKO_API_KEY=${COINGECKO_API_KEY:-}
+      # Optional: Pinata for IPFS uploads
+      - PINATA_JWT=${PINATA_JWT:-}
     ports:
       - "3001:3001"
     depends_on:
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     restart: unless-stopped
 
   frontoffice:
@@ -34,14 +54,16 @@ services:
       context: .
       dockerfile: Dockerfile.frontoffice
       args:
-        VITE_REOWN_PROJECT_ID: ${VITE_REOWN_PROJECT_ID}
+        VITE_REOWN_PROJECT_ID: ${VITE_REOWN_PROJECT_ID:-}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
     container_name: proto-frontoffice
     environment:
       - API_HOST=api:3001
     ports:
       - "3000:3000"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     restart: unless-stopped
 
   docs:
@@ -52,3 +74,7 @@ services:
     ports:
       - "3002:3002"
     restart: unless-stopped
+
+volumes:
+  redis_data:
+    driver: local

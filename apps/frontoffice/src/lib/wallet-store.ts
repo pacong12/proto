@@ -1,4 +1,5 @@
 import { shallowRef } from 'vue';
+import { ARC_CHAIN } from '@proto/shared-types';
 
 export interface WalletRequestArgs {
   method: string;
@@ -50,7 +51,7 @@ export function getInitialChainId(): number {
       // Ignore storage errors
     }
   }
-  return 4663; // Default Robinhood Chain Mainnet
+  return ARC_CHAIN.chainId; // Default to Arc Network (where all launchpad tokens live)
 }
 
 export const walletProvider = shallowRef<WalletProviderLike | null>(null);

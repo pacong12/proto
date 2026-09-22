@@ -1,6 +1,6 @@
 name = "proto"
 main = "worker.ts"
-compatibility_date = "2026-09-11"
+compatibility_date = "2026-09-16"
 
 [build]
 command = "bun run --filter @proto/frontoffice build"
@@ -9,3 +9,19 @@ command = "bun run --filter @proto/frontoffice build"
 directory = "apps/frontoffice/dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
+
+# Staging environment: CSP in Report-Only mode to catch violations safely.
+# Switch CSP_REPORT_ONLY to "false" (or remove) when ready for production enforcement.
+[env.staging]
+name = "proto-staging"
+
+[env.staging.vars]
+CSP_REPORT_ONLY = "true"
+CSP_REPORT_URI = "https://your-csp-report-endpoint.example.com/csp-report"
+
+# Production environment: CSP enforced, no report-only.
+[env.production]
+name = "proto-production"
+
+[env.production.vars]
+CSP_REPORT_ONLY = "false"

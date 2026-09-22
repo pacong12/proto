@@ -159,24 +159,24 @@
 
               <div class="text-right shrink-0 font-mono text-xs ml-4 space-y-0.5">
                 <span class="font-bold block text-black dark:text-white">
-                  {{ formatPriceUsd(item.marketData.priceUsd) }}
+                  {{ formatPriceUsd(item.marketData?.priceUsd) }}
                 </span>
                 <div class="flex items-center justify-end gap-2 text-[11px]">
                   <span class="text-zinc-500 dark:text-zinc-400">
-                    MCap: {{ formatCompactUsd(item.marketData.marketCapUsd) }}
+                    MCap: {{ formatCompactUsd(item.marketData?.marketCapUsd) }}
                   </span>
                   <span>•</span>
                   <span
                     :class="
-                      item.marketData.isGraduated
+                      item.marketData?.isGraduated
                         ? 'text-emerald-500 dark:text-emerald-400 font-bold'
                         : 'text-zinc-500 dark:text-zinc-400'
                     "
                   >
                     {{
-                      item.marketData.isGraduated
+                      item.marketData?.isGraduated
                         ? t('graduated')
-                        : `${(item.marketData.graduationProgress * 100).toFixed(0)}%`
+                        : `${((item.marketData?.graduationProgress ?? 0) * 100).toFixed(0)}%`
                     }}
                   </span>
                 </div>
@@ -218,6 +218,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { Search, Loader2, ExternalLink } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { useWallet } from '@/composables/useWallet';
+import { useTokenStore } from '@/composables/useTokenStore';
 import { shortenAddress, formatCompactUsd, formatPriceUsd } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -226,9 +227,11 @@ import { Badge } from '@/components/ui/badge';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { Empty } from '@/components/ui/empty';
 import type { LaunchedTokenEntity, TokenMarketData, TradeEventEntity } from '@proto/shared-types';
+import { ARC_CHAIN } from '@proto/shared-types';
 
 const { t } = useI18n();
 const { activeNetwork } = useWallet();
+const tokenStore = useTokenStore();
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -237,10 +240,10 @@ const emit = defineEmits<{
 
 const query = ref('');
 const searchInput = ref<HTMLInputElement | null>(null);
-const loading = ref(false);
+const loading = tokenStore.loading;
 const searchingTx = ref(false);
 const matchedTrade = ref<TradeEventEntity | null>(null);
-const tokens = ref<Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }>>([]);
+const tokens = tokenStore.tokens;
 const selectedIndex = ref(0);
 
 let txLookupDebounce: ReturnType<typeof setTimeout> | null = null;
@@ -295,24 +298,15 @@ function handleKeydown(e: KeyboardEvent) {
 
 onMounted(async () => {
   searchInput.value?.focus();
-  loading.value = true;
-  try {
-    const res = await fetch('/api/tokens');
-    const envelope = await res.json();
-    if (envelope.success && Array.isArray(envelope.data)) {
-      tokens.value = envelope.data;
-    }
-  } catch {
-    // Non-blocking
-  } finally {
-    loading.value = false;
-  }
+  // Share the already-fetched token list from the store; no extra network request
+  // if ExploreView already populated it within the last 15 seconds.
+  await tokenStore.fetchTokens();
 });
 
 const filteredTokens = computed(() => {
-  const isArc = activeNetwork.value.chainId === 5042 || activeNetwork.value.chainId === 5042002;
-  const arcWeth = '0x3600000000000000000000000000000000000000';
-  const arcFactory = '0x48844223abdceeb1ce502f54d559681358e68200';
+  const isArc = activeNetwork.value.chainId === ARC_CHAIN.chainId;
+  const arcWeth = ARC_CHAIN.contracts.weth.toLowerCase();
+  const arcFactory = ARC_CHAIN.contracts.factory.toLowerCase();
 
   const chainFiltered = tokens.value.filter((item) => {
     const paired = item.token.pairedToken?.toLowerCase();

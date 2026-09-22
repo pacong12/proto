@@ -154,7 +154,15 @@
           </div>
         </div>
 
-        <!-- X profile -->
+        <!-- Image validation error -->
+        <div
+          v-if="imageError"
+          class="flex items-start gap-2 text-xs text-rose-500 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2"
+        >
+          <AlertCircle class="w-3.5 h-3.5 shrink-0 mt-0.5" />
+          <span>{{ imageError }}</span>
+        </div>
+
         <div class="space-y-1.5">
           <Label for="token-x">X profile</Label>
           <div class="relative">
@@ -799,6 +807,7 @@ const selectedFileName = ref('');
 const imagePreview = ref('');
 const dragOver = ref(false);
 const isUploadingIpfs = ref(false);
+const imageError = ref('');
 const advancedOpen = ref(false);
 const holderFeeSharing = ref(false);
 
@@ -806,6 +815,7 @@ function clearImage() {
   selectedFileName.value = '';
   imagePreview.value = '';
   form.value.logo = '';
+  imageError.value = '';
   if (fileInputRef.value) fileInputRef.value.value = '';
 }
 
@@ -828,12 +838,13 @@ function triggerFileInput() {
 }
 
 async function processImageFile(file: File) {
+  imageError.value = '';
   if (!file.type.startsWith('image/')) {
-    alert('Please select a valid image file (PNG, JPG, WEBP, GIF).');
+    imageError.value = 'Please select a valid image file (PNG, JPG, WEBP, GIF).';
     return;
   }
   if (file.size > 5 * 1024 * 1024) {
-    alert('Image file size must be less than 5MB.');
+    imageError.value = 'Image file size must be less than 5MB.';
     return;
   }
 

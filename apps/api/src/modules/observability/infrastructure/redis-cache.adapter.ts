@@ -73,14 +73,18 @@ export class RedisCacheAdapter implements CachePort {
     }
 
     try {
-      const serialized = JSON.stringify(value);
+      // Use a BigInt-safe replacer so token fields like positionId / launchBlock
+      // do not cause a silent serialization failure and a permanent cache miss.
+      const serialized = JSON.stringify(value, (_k, v) =>
+        typeof v === 'bigint' ? v.toString() : v,
+      );
       if (ttlSeconds > 0) {
         await this.client.set(key, serialized, 'EX', ttlSeconds);
       } else {
         await this.client.set(key, serialized);
       }
-    } catch {
-      // Non-blocking fallback
+    } catch (err) {
+      this.logger?.warn(`[RedisCacheAdapter] set("${key}") failed: ${(err as Error).message}`);
     }
   }
 
