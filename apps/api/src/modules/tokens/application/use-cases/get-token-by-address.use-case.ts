@@ -22,6 +22,26 @@ export class GetTokenByAddressUseCase {
     private readonly priceFeed: PriceFeedPort,
   ) {}
 
+  /**
+   * Derive 24h price change percentage from trade history.
+   * Finds the first trade that occurred >= 24h ago and computes
+   * (currentPriceUsd - price24hAgo) / price24hAgo * 100.
+   * Returns 0 when there is insufficient history.
+   */
+  private async computePriceChange24h(
+    address: `0x${string}`,
+    currentPriceUsd: number,
+  ): Promise<number> {
+    if (currentPriceUsd <= 0) return 0;
+    const cutoff = Math.floor((Date.now() - 86_400_000) / 1000); // unix seconds, 24h ago
+    // Fetch enough trades to reach 24h back; 500 is sufficient for active tokens
+    const trades = await this.tokenRepository.getTrades(address, 500, 0);
+    // Trades are ordered DESC by timestamp; find the first one older than 24h
+    const anchor = trades.find((t) => t.timestamp <= cutoff);
+    if (!anchor || anchor.priceUsd <= 0) return 0;
+    return ((currentPriceUsd - anchor.priceUsd) / anchor.priceUsd) * 100;
+  }
+
   async execute(address: `0x${string}`): Promise<TokenDetailResult | null> {
     let token = await this.tokenRepository.findByAddress(address);
 
@@ -75,7 +95,10 @@ export class GetTokenByAddressUseCase {
         totalSupply: BigInt(token.totalSupply || '1000000000000000000000000000'),
       });
 
-      await this.tokenRepository.saveMarketData(marketData);
+      const priceChange24h = await this.computePriceChange24h(token.address, marketData.priceUsd);
+      const marketDataWithChange = { ...marketData, priceChange24h };
+
+      await this.tokenRepository.saveMarketData(marketDataWithChange);
 
       // Refresh stored V2 curve params
       await this.tokenRepository.save({
@@ -87,7 +110,10 @@ export class GetTokenByAddressUseCase {
         graduationTarget: curveState.graduationTarget.toString(),
       });
 
-      return { token: { ...token, isGraduated: curveState.graduated }, marketData };
+      return {
+        token: { ...token, isGraduated: curveState.graduated },
+        marketData: marketDataWithChange,
+      };
     }
 
     // ------------------------------------------------------------------
@@ -108,8 +134,11 @@ export class GetTokenByAddressUseCase {
       totalSupply: BigInt(token.totalSupply || '1000000000000000000000000000'),
     });
 
-    await this.tokenRepository.saveMarketData(marketData);
+    const priceChange24h = await this.computePriceChange24h(token.address, marketData.priceUsd);
+    const marketDataWithChange = { ...marketData, priceChange24h };
 
-    return { token, marketData };
+    await this.tokenRepository.saveMarketData(marketDataWithChange);
+
+    return { token, marketData: marketDataWithChange };
   }
 }

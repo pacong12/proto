@@ -31,7 +31,10 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
   }
 
   async saveMarketData(data: TokenMarketData): Promise<void> {
-    this.marketData.set(data.address.toLowerCase(), data);
+    this.marketData.set(data.address.toLowerCase(), {
+      ...data,
+      priceChange24h: data.priceChange24h ?? 0,
+    });
   }
 
   async getMarketData(address: `0x${string}`): Promise<TokenMarketData | null> {

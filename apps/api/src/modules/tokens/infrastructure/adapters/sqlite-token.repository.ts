@@ -241,9 +241,17 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
         graduationThresholdWeth TEXT NOT NULL,
         graduationProgress REAL NOT NULL,
         isGraduated INTEGER NOT NULL,
-        volume24hUsd REAL NOT NULL
+        volume24hUsd REAL NOT NULL,
+        priceChange24h REAL NOT NULL DEFAULT 0
       );
     `);
+
+    // Safe migration: add priceChange24h column to existing databases
+    try {
+      this.db.run(`ALTER TABLE market_data ADD COLUMN priceChange24h REAL NOT NULL DEFAULT 0`);
+    } catch {
+      /* column already exists */
+    }
 
     this.db.run(`
       CREATE TABLE IF NOT EXISTS candlesticks (
@@ -355,8 +363,9 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO market_data (
         address, priceInWeth, priceUsd, marketCapUsd, fdvUsd,
-        pairedPrincipalWeth, graduationThresholdWeth, graduationProgress, isGraduated, volume24hUsd
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        pairedPrincipalWeth, graduationThresholdWeth, graduationProgress, isGraduated,
+        volume24hUsd, priceChange24h
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
@@ -370,6 +379,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       marketData.graduationProgress,
       marketData.isGraduated ? 1 : 0,
       marketData.volume24hUsd,
+      marketData.priceChange24h ?? 0,
     );
   }
 
@@ -391,6 +401,9 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       graduationProgress: Number(row.graduationProgress),
       isGraduated: Boolean(row.isGraduated),
       volume24hUsd: Number(row.volume24hUsd),
+      priceChange24h: Number(
+        (row as MarketDataRow & { priceChange24h?: number }).priceChange24h ?? 0,
+      ),
     };
   }
 
