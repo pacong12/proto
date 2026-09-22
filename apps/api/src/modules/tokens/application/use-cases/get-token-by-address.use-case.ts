@@ -95,10 +95,7 @@ export class GetTokenByAddressUseCase {
         totalSupply: BigInt(token.totalSupply || '1000000000000000000000000000'),
       });
 
-      const priceChange24h = await this.computePriceChange24h(
-        token.address,
-        marketData.priceUsd,
-      );
+      const priceChange24h = await this.computePriceChange24h(token.address, marketData.priceUsd);
       const marketDataWithChange = { ...marketData, priceChange24h };
 
       await this.tokenRepository.saveMarketData(marketDataWithChange);
@@ -113,7 +110,10 @@ export class GetTokenByAddressUseCase {
         graduationTarget: curveState.graduationTarget.toString(),
       });
 
-      return { token: { ...token, isGraduated: curveState.graduated }, marketData: marketDataWithChange };
+      return {
+        token: { ...token, isGraduated: curveState.graduated },
+        marketData: marketDataWithChange,
+      };
     }
 
     // ------------------------------------------------------------------
