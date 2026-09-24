@@ -220,14 +220,24 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       );
     `);
 
-    this.db.run(`CREATE INDEX IF NOT EXISTS idx_trades_tokenAddress ON trades(tokenAddress);`);
-    this.db.run(`CREATE INDEX IF NOT EXISTS idx_trades_timestamp ON trades(timestamp);`);
-    this.db.run(`CREATE INDEX IF NOT EXISTS idx_trades_txHash ON trades(transactionHash);`);
-    // Added: trader index for top-traders query performance
-    this.db.run(`CREATE INDEX IF NOT EXISTS idx_trades_trader ON trades(trader);`);
-    // Added: composite index for per-token chronological trade queries
     this.db.run(
-      `CREATE INDEX IF NOT EXISTS idx_trades_token_ts ON trades(tokenAddress, timestamp DESC);`,
+      `CREATE INDEX IF NOT EXISTS idx_trades_tokenAddress ON trades(tokenAddress COLLATE NOCASE);`,
+    );
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_trades_timestamp ON trades(timestamp);`);
+    this.db.run(
+      `CREATE INDEX IF NOT EXISTS idx_trades_txHash ON trades(transactionHash COLLATE NOCASE);`,
+    );
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_trades_trader ON trades(trader COLLATE NOCASE);`);
+    // Composite index covering the most common query: all trades for a token ordered by time.
+    // COLLATE NOCASE on the leading column lets LOWER(tokenAddress) = LOWER(?) use the index.
+    this.db.run(
+      `CREATE INDEX IF NOT EXISTS idx_trades_token_ts ON trades(tokenAddress COLLATE NOCASE, timestamp DESC);`,
+    );
+    // blockNumber index for block-range filtering in DEX event queries.
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_trades_block ON trades(blockNumber);`);
+    // poolAddress index on tokens for direct pool lookup without full-table JS scan.
+    this.db.run(
+      `CREATE INDEX IF NOT EXISTS idx_tokens_poolAddress ON tokens(poolAddress COLLATE NOCASE);`,
     );
 
     this.db.run(`
@@ -351,11 +361,30 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     return this.mapRowToToken(row);
   }
 
-  async findAll(limit = 50, offset = 0): Promise<LaunchedTokenEntity[]> {
-    const stmt = this.db.prepare(`
-      SELECT * FROM tokens ORDER BY rowid DESC LIMIT ? OFFSET ?
-    `);
-    const rows = stmt.all(limit, offset) as TokenRow[];
+  async findAll(
+    limit = 50,
+    offset = 0,
+    filters?: { version?: 'v1' | 'v2'; deployer?: string },
+  ): Promise<LaunchedTokenEntity[]> {
+    // Build a parameterized WHERE clause to push version/deployer filtering into SQLite.
+    // Doing this in JS after a full-table fetch wastes memory and breaks LIMIT+OFFSET pagination.
+    const conditions: string[] = [];
+    const params: (string | number)[] = [];
+
+    if (filters?.version) {
+      conditions.push('version = ?');
+      params.push(filters.version);
+    }
+    if (filters?.deployer) {
+      conditions.push('LOWER(deployer) = LOWER(?)');
+      params.push(filters.deployer);
+    }
+
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')} ` : '';
+    const stmt = this.db.prepare(
+      `SELECT * FROM tokens ${where}ORDER BY rowid DESC LIMIT ? OFFSET ?`,
+    );
+    const rows = stmt.all(...params, limit, offset) as TokenRow[];
     return rows.map((row) => this.mapRowToToken(row));
   }
 
@@ -496,6 +525,26 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     return row ? this.mapRowToTrade(row) : null;
   }
 
+  async findByPoolAddress(poolAddress: `0x${string}`): Promise<LaunchedTokenEntity | null> {
+    const stmt = this.db.prepare(
+      `SELECT * FROM tokens WHERE LOWER(poolAddress) = LOWER(?) LIMIT 1`,
+    );
+    const row = stmt.get(poolAddress) as TokenRow | null;
+    return row ? this.mapRowToToken(row) : null;
+  }
+
+  async getVolumeByToken(
+    sinceMs: number,
+  ): Promise<Array<{ tokenAddress: string; totalWeth: number }>> {
+    const stmt = this.db.prepare(`
+      SELECT tokenAddress, SUM(CAST(wethAmount AS REAL)) AS totalWeth
+      FROM trades
+      WHERE timestamp >= ?
+      GROUP BY tokenAddress
+    `);
+    return stmt.all(sinceMs) as Array<{ tokenAddress: string; totalWeth: number }>;
+  }
+
   async saveComment(comment: TokenCommentEntity): Promise<void> {
     const stmt = this.db.prepare(`
       INSERT INTO comments (id, token_address, author_address, content, image_url, likes_count, created_at)
@@ -556,40 +605,45 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     commentId: string,
     userAddress: string,
   ): Promise<{ liked: boolean; likesCount: number }> {
-    const checkStmt = this.db.prepare(`
-      SELECT 1 FROM comment_likes
-      WHERE comment_id = ? AND LOWER(user_address) = LOWER(?)
-      LIMIT 1
-    `);
-    const existing = checkStmt.get(commentId, userAddress);
+    // Wrap in an immediate transaction to eliminate the TOCTOU race between the
+    // SELECT-check and the DELETE/INSERT+UPDATE pair. Without this, two concurrent
+    // requests from the same user can both pass the check and double-insert the like.
+    return this.db.transaction(() => {
+      const checkStmt = this.db.prepare(`
+        SELECT 1 FROM comment_likes
+        WHERE comment_id = ? AND LOWER(user_address) = LOWER(?)
+        LIMIT 1
+      `);
+      const existing = checkStmt.get(commentId, userAddress);
 
-    if (existing) {
-      this.db
-        .prepare(
-          `DELETE FROM comment_likes WHERE comment_id = ? AND LOWER(user_address) = LOWER(?)`,
-        )
-        .run(commentId, userAddress);
-      this.db
-        .prepare(`UPDATE comments SET likes_count = MAX(0, likes_count - 1) WHERE id = ?`)
-        .run(commentId);
-      const countRow = this.db
-        .prepare(`SELECT likes_count FROM comments WHERE id = ?`)
-        .get(commentId) as { likes_count: number } | null;
-      return { liked: false, likesCount: countRow ? Number(countRow.likes_count) : 0 };
-    } else {
-      this.db
-        .prepare(
-          `INSERT OR REPLACE INTO comment_likes (comment_id, user_address, created_at) VALUES (?, ?, ?)`,
-        )
-        .run(commentId, userAddress.toLowerCase(), Date.now());
-      this.db
-        .prepare(`UPDATE comments SET likes_count = likes_count + 1 WHERE id = ?`)
-        .run(commentId);
-      const countRow = this.db
-        .prepare(`SELECT likes_count FROM comments WHERE id = ?`)
-        .get(commentId) as { likes_count: number } | null;
-      return { liked: true, likesCount: countRow ? Number(countRow.likes_count) : 1 };
-    }
+      if (existing) {
+        this.db
+          .prepare(
+            `DELETE FROM comment_likes WHERE comment_id = ? AND LOWER(user_address) = LOWER(?)`,
+          )
+          .run(commentId, userAddress);
+        this.db
+          .prepare(`UPDATE comments SET likes_count = MAX(0, likes_count - 1) WHERE id = ?`)
+          .run(commentId);
+        const countRow = this.db
+          .prepare(`SELECT likes_count FROM comments WHERE id = ?`)
+          .get(commentId) as { likes_count: number } | null;
+        return { liked: false, likesCount: countRow ? Number(countRow.likes_count) : 0 };
+      } else {
+        this.db
+          .prepare(
+            `INSERT OR REPLACE INTO comment_likes (comment_id, user_address, created_at) VALUES (?, ?, ?)`,
+          )
+          .run(commentId, userAddress.toLowerCase(), Date.now());
+        this.db
+          .prepare(`UPDATE comments SET likes_count = likes_count + 1 WHERE id = ?`)
+          .run(commentId);
+        const countRow = this.db
+          .prepare(`SELECT likes_count FROM comments WHERE id = ?`)
+          .get(commentId) as { likes_count: number } | null;
+        return { liked: true, likesCount: countRow ? Number(countRow.likes_count) : 1 };
+      }
+    })() as { liked: boolean; likesCount: number };
   }
 
   async saveVote(

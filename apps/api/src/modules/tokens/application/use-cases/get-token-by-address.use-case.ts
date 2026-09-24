@@ -137,7 +137,9 @@ export class GetTokenByAddressUseCase {
     const priceChange24h = await this.computePriceChange24h(token.address, marketData.priceUsd);
     const marketDataWithChange = { ...marketData, priceChange24h };
 
-    await this.tokenRepository.saveMarketData(marketDataWithChange);
+    // Fire-and-forget: market data write must not block the GET response path.
+    // SQLite write locks are per-connection; an awaited write here delays concurrent reads.
+    void this.tokenRepository.saveMarketData(marketDataWithChange);
 
     return { token, marketData: marketDataWithChange };
   }

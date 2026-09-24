@@ -60,6 +60,11 @@ export class EventPollerService {
         (this.lastPolledBlock > 0n ? this.lastPolledBlock + 1n : currentBlock - MAX_BLOCK_RANGE);
 
       if (startBlock > currentBlock) return 0;
+      // Block-drop clamp: if we're more than MAX_BLOCK_RANGE behind, process the oldest batch
+      // this cycle and rely on subsequent polling cycles to catch up — never silently skip ahead.
+      // Capping startBlock here would cause irreversible data loss for protocols with many events.
+      // The while-loop inside pollV1Launches/pollV2Launches/pollV2Trades handles batch sizes.
+      // Clamp is still applied so a single getLogs call stays within provider limits.
       if (currentBlock - startBlock > MAX_BLOCK_RANGE) {
         startBlock = currentBlock - MAX_BLOCK_RANGE;
       }
@@ -70,6 +75,7 @@ export class EventPollerService {
       count += await this.pollV2Trades(startBlock, currentBlock);
       count += await this.pollV1Swaps(startBlock, currentBlock);
 
+      // Advance lastPolledBlock only on success so a failed cycle retries the same range.
       this.lastPolledBlock = currentBlock;
       return count;
     } catch (error) {
@@ -79,7 +85,8 @@ export class EventPollerService {
       } else {
         console.error(`[EventPoller:${this.network.name}] pollEvents error:`, error);
       }
-      this.lastPolledBlock = currentBlock;
+      // Do NOT advance lastPolledBlock on error; next cycle will retry from the same position.
+      // Advancing on failure would permanently skip the failed block range.
       return 0;
     }
   }

@@ -25,8 +25,17 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
     return this.tokens.get(address.toLowerCase()) ?? null;
   }
 
-  async findAll(limit = 50, offset = 0): Promise<LaunchedTokenEntity[]> {
-    const all = Array.from(this.tokens.values()).reverse();
+  async findAll(
+    limit = 50,
+    offset = 0,
+    filters?: { version?: 'v1' | 'v2'; deployer?: string },
+  ): Promise<LaunchedTokenEntity[]> {
+    let all = Array.from(this.tokens.values()).reverse();
+    if (filters?.version) all = all.filter((t) => (t.version ?? 'v1') === filters.version);
+    if (filters?.deployer) {
+      const d = filters.deployer.toLowerCase();
+      all = all.filter((t) => t.deployer.toLowerCase() === d);
+    }
     return all.slice(offset, offset + limit);
   }
 
@@ -96,6 +105,31 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
       if (match) return match;
     }
     return null;
+  }
+
+  async findByPoolAddress(poolAddress: `0x${string}`): Promise<LaunchedTokenEntity | null> {
+    const target = poolAddress.toLowerCase();
+    for (const token of this.tokens.values()) {
+      if (token.poolAddress.toLowerCase() === target) return token;
+    }
+    return null;
+  }
+
+  async getVolumeByToken(
+    sinceMs: number,
+  ): Promise<Array<{ tokenAddress: string; totalWeth: number }>> {
+    const acc = new Map<string, number>();
+    for (const [addr, trades] of this.trades) {
+      let total = 0;
+      for (const t of trades) {
+        if (t.timestamp >= sinceMs) total += parseFloat(t.wethAmount);
+      }
+      if (total > 0) acc.set(addr, total);
+    }
+    return Array.from(acc.entries()).map(([tokenAddress, totalWeth]) => ({
+      tokenAddress,
+      totalWeth,
+    }));
   }
 
   private comments = new Map<string, TokenCommentEntity[]>();

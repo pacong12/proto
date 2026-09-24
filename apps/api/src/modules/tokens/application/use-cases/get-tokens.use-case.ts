@@ -17,8 +17,12 @@ export class GetTokensUseCase {
     private readonly calculatePricing?: CalculatePricingUseCase,
   ) {}
 
-  async execute(limit = 50, offset = 0): Promise<TokenWithMarketData[]> {
-    const tokens = await this.tokenRepository.findAll(limit, offset);
+  async execute(
+    limit = 50,
+    offset = 0,
+    filters?: { version?: 'v1' | 'v2'; deployer?: string },
+  ): Promise<TokenWithMarketData[]> {
+    const tokens = await this.tokenRepository.findAll(limit, offset, filters);
     const result: TokenWithMarketData[] = [];
 
     for (const token of tokens) {

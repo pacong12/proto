@@ -32,14 +32,12 @@ export class TokenController {
     deployer?: string,
   ): Promise<ApiEnvelope<TokenWithMarketData[]>> {
     try {
-      let result = await this.getTokensUseCase.execute(limit, offset);
-      if (version) {
-        result = result.filter((t) => (t.token.version ?? 'v1') === version);
-      }
-      if (deployer) {
-        const target = deployer.toLowerCase();
-        result = result.filter((t) => t.token.deployer.toLowerCase() === target);
-      }
+      // Filters are pushed into SQL via getTokensUseCase.execute so LIMIT/OFFSET applies
+      // after filtering, not before. JS post-filter was breaking pagination correctness.
+      const result = await this.getTokensUseCase.execute(limit, offset, {
+        version,
+        deployer,
+      });
       return ok(result);
     } catch (error) {
       return err('FETCH_TOKENS_FAILED', (error as Error).message);
