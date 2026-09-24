@@ -206,18 +206,22 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   const requestOrigin = req.headers.get('origin') || '';
 
   let corsOrigin = '';
+  const isLocalhost =
+    requestOrigin.startsWith('http://localhost:') ||
+    requestOrigin.startsWith('http://127.0.0.1:') ||
+    requestOrigin.startsWith('http://[::1]:');
+
   if (isPublicCrawlerPath) {
     // Public aggregator routes: open to all origins by spec requirement
     corsOrigin = '*';
+  } else if (process.env.NODE_ENV !== 'production' && isLocalhost) {
+    // Development: always permit local frontoffice instances regardless of port
+    corsOrigin = requestOrigin;
   } else if (allowedOrigins.length > 0) {
-    // Production: only reflect origin if it is in the explicit allow-list
+    // Production: reflect origin only if it is explicitly allow-listed
     corsOrigin = allowedOrigins.includes(requestOrigin) ? requestOrigin : '';
-  } else {
-    // No allow-list configured: permit localhost origins only (development)
-    corsOrigin =
-      requestOrigin.startsWith('http://localhost:') || requestOrigin.startsWith('http://127.0.0.1:')
-        ? requestOrigin
-        : '';
+  } else if (isLocalhost) {
+    corsOrigin = requestOrigin;
   }
 
   const headers = {
