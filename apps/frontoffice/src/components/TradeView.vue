@@ -26,7 +26,6 @@
     </div>
 
     <template v-else>
-      ============================================================ -->
       <div
         class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950"
       >
