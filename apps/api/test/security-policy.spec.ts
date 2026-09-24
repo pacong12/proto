@@ -44,7 +44,7 @@ describe('SecurityPolicy & Security Gate', () => {
     const evaluation = SecurityPolicy.evaluate(intent);
     expect(evaluation.allowed).toBe(false);
     expect(evaluation.suggestedAction).toBe('REJECT');
-    expect(evaluation.reason).toContain('does not match Robinhood Chain');
+    expect(evaluation.reason).toContain('is not a supported network');
   });
 
   it('rejects swap intent with excessive slippage tolerance (> 50%)', () => {

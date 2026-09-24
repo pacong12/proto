@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { LoggerPort } from '../domain/ports/logger.port';
 import { CachePort } from '../domain/ports/cache.port';
 import {
@@ -21,7 +22,13 @@ export class HttpRequestTracker {
   ) {}
 
   extractRequestId(req: Request): string {
-    return req.headers.get('x-request-id') || req.headers.get('cf-ray') || crypto.randomUUID();
+    // Validate x-request-id before reflecting to prevent header injection.
+    // Only alphanumeric, hyphens, and underscores; max 64 chars.
+    const provided = req.headers.get('x-request-id');
+    if (provided && /^[a-zA-Z0-9_-]{1,64}$/.test(provided)) {
+      return provided;
+    }
+    return req.headers.get('cf-ray') || crypto.randomUUID();
   }
 
   track(
@@ -62,7 +69,8 @@ export class HttpRequestTracker {
       query: url.search,
       status,
       durationMs,
-      ip: clientIp,
+      // Hash IP with SHA-256 truncated to 16 hex chars to avoid storing raw PII in telemetry logs.
+      ip: crypto.createHash('sha256').update(clientIp).digest('hex').slice(0, 16),
       userAgent: req.headers.get('user-agent') || 'unknown',
     };
 
@@ -79,8 +87,10 @@ export class HttpRequestTracker {
         path: url.pathname,
         status,
         message: errorPayload.message,
-        stack: errorPayload.stack,
-        ip: clientIp,
+        // Strip stack traces in production — they expose internal file paths and line numbers.
+        stack: process.env.NODE_ENV === 'production' ? undefined : errorPayload.stack,
+        // Hash IP consistently with the request log entry above.
+        ip: crypto.createHash('sha256').update(clientIp).digest('hex').slice(0, 16),
       });
       if (this.recentErrors.length > 50) {
         this.recentErrors.pop();
@@ -96,7 +106,8 @@ export class HttpRequestTracker {
       query: url.search,
       status,
       durationMs,
-      ip: clientIp,
+      // Hashed IP consistent with stored metrics entry.
+      ip: crypto.createHash('sha256').update(clientIp).digest('hex').slice(0, 16),
       userAgent: metricEntry.userAgent,
     };
 
