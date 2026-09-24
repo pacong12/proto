@@ -163,56 +163,40 @@
           <span>{{ imageError }}</span>
         </div>
 
+        <!-- X (Twitter) -->
         <div class="space-y-1.5">
-          <Label for="token-x">X profile</Label>
-          <div class="relative">
-            <span class="absolute left-3 top-2 text-xs text-zinc-400 select-none font-mono"
-              >x.com/</span
-            >
-            <Input
-              id="token-x"
-              v-model="form.twitter"
-              type="text"
-              :placeholder="t('handlePlaceholder')"
-              maxlength="15"
-              class="pl-16 font-mono text-xs"
-            />
-          </div>
+          <Label for="token-x">X (Twitter)</Label>
+          <Input
+            id="token-x"
+            v-model="form.twitter"
+            type="text"
+            placeholder="https://x.com/yourproject"
+            class="font-mono text-xs"
+          />
         </div>
 
         <!-- Telegram -->
         <div class="space-y-1.5">
           <Label for="token-tg">Telegram</Label>
-          <div class="relative">
-            <span class="absolute left-3 top-2 text-xs text-zinc-400 select-none font-mono"
-              >t.me/</span
-            >
-            <Input
-              id="token-tg"
-              v-model="form.telegram"
-              type="text"
-              :placeholder="t('communityPlaceholder')"
-              maxlength="32"
-              class="pl-14 font-mono text-xs"
-            />
-          </div>
+          <Input
+            id="token-tg"
+            v-model="form.telegram"
+            type="text"
+            placeholder="https://t.me/yourproject"
+            class="font-mono text-xs"
+          />
         </div>
 
         <!-- Website -->
         <div class="space-y-1.5">
           <Label for="token-web">Website</Label>
-          <div class="relative">
-            <span class="absolute left-3 top-2 text-xs text-zinc-400 select-none font-mono"
-              >https://</span
-            >
-            <Input
-              id="token-web"
-              v-model="form.website"
-              type="text"
-              placeholder="yourproject.com"
-              class="pl-16 font-mono text-xs"
-            />
-          </div>
+          <Input
+            id="token-web"
+            v-model="form.website"
+            type="text"
+            placeholder="https://yourproject.com"
+            class="font-mono text-xs"
+          />
         </div>
 
         <!-- Paired Asset (Tied to active network selected in navigation) -->
