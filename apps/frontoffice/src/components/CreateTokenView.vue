@@ -198,9 +198,17 @@
           </div>
         </div>
 
-        <!-- Paired asset (with Shadcn Select for Chain Switching) -->
-        <div class="space-y-1.5">
-          <Label>{{ t('pairedAsset') }}</Label>
+        <!-- Deployment Network & Trading Pair -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <Label>{{ t('pairedAsset') }}</Label>
+            <span
+              class="text-[11px] font-mono font-semibold text-emerald-600 dark:text-emerald-400"
+            >
+              Pair: ${{ form.symbol || 'TOKEN' }} / {{ currencySymbol }}
+            </span>
+          </div>
+
           <Select
             :model-value="String(activeNetwork.chainId)"
             @update:model-value="handleChainSelect"
@@ -208,58 +216,84 @@
             <SelectTrigger
               class="w-full flex items-center justify-between p-3 h-auto rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition text-black dark:text-white"
             >
-              <div class="flex items-center gap-2 text-sm font-semibold">
+              <div class="flex items-center gap-2.5 text-sm font-semibold">
                 <img
-                  :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
-                  :alt="currencySymbol"
-                  class="w-5 h-5 rounded-full object-contain shrink-0"
+                  :src="
+                    activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'
+                  "
+                  :alt="activeNetwork.name"
+                  class="w-5 h-5 rounded-md object-contain shrink-0"
                 />
-                <span>{{ currencySymbol }}</span>
+                <span class="font-bold text-black dark:text-white">{{ activeNetwork.name }}</span>
               </div>
               <div class="flex items-center gap-2">
-                <span class="text-xs text-zinc-500 font-mono"
-                  >{{ activeNetwork.name }} (Native)</span
+                <Badge
+                  variant="outline"
+                  class="text-xs font-mono font-semibold gap-1.5 py-0.5 px-2 border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                 >
+                  <img
+                    :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
+                    :alt="currencySymbol"
+                    class="w-3.5 h-3.5 rounded-full object-contain shrink-0"
+                  />
+                  <span>Pool: {{ currencySymbol }}</span>
+                </Badge>
               </div>
             </SelectTrigger>
             <SelectContent
               align="end"
-              class="w-64 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-lg"
+              class="w-72 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-lg"
             >
               <SelectLabel
                 class="text-[10px] font-mono uppercase tracking-wider text-zinc-400 px-2 py-1"
               >
-                Select Network
+                {{ t('selectNetworkTitle') }}
               </SelectLabel>
               <SelectSeparator class="border-zinc-200 dark:border-zinc-800" />
               <SelectItem
                 v-for="net in Object.values(SUPPORTED_CHAINS)"
                 :key="net.chainId"
                 :value="String(net.chainId)"
-                class="cursor-pointer text-xs font-mono py-2 px-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition"
+                class="cursor-pointer text-xs font-mono py-2.5 px-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition"
               >
-                <div class="flex items-center gap-2.5">
-                  <img
-                    :src="net.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
-                    :alt="net.name"
-                    class="w-5 h-5 rounded-md object-contain shrink-0"
-                  />
-                  <span class="font-bold text-black dark:text-white leading-tight">
-                    {{ net.name }}
-                  </span>
+                <div class="flex items-center justify-between gap-3 w-full">
+                  <div class="flex items-center gap-2.5">
+                    <img
+                      :src="net.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+                      :alt="net.name"
+                      class="w-5 h-5 rounded-md object-contain shrink-0"
+                    />
+                    <div class="flex flex-col text-left">
+                      <span class="font-bold text-black dark:text-white leading-tight">
+                        {{ net.name }}
+                      </span>
+                      <span class="text-[10px] text-zinc-400">
+                        Trading Pair: ${{ form.symbol || 'TOKEN' }} /
+                        {{ net.nativeCurrency.symbol }}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </SelectItem>
             </SelectContent>
           </Select>
-          <p class="text-[11px] text-zinc-500 dark:text-zinc-400">
-            {{
-              selectedVersion === 'v2'
-                ? activeNetwork.chainId === 5042 || activeNetwork.chainId === 5042002
-                  ? 'Graduates once the curve raises 8,000 USDC into Uniswap liquidity.'
-                  : t('v2GraduatesHint')
-                : t('v1PairsHint')
-            }}
-          </p>
+
+          <!-- Liquidity explanation note -->
+          <div
+            class="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800/80 bg-zinc-100/60 dark:bg-zinc-900/40 text-[11px] font-mono text-zinc-500 dark:text-zinc-400 space-y-1"
+          >
+            <div class="flex items-center gap-1.5 font-semibold text-black dark:text-white">
+              <Sparkles class="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <span>Liquidity Pair: ${{ form.symbol || 'TOKEN' }} / {{ currencySymbol }}</span>
+            </div>
+            <p class="leading-relaxed">
+              {{
+                selectedVersion === 'v2'
+                  ? `Curve liquidity is locked in native ${currencySymbol}. Automatically migrates to Uniswap v4 at ${graduationTargetFormatted} ${currencySymbol} raised.`
+                  : `Liquidity pairs directly into a permanently locked Uniswap V3 ${currencySymbol} pool.`
+              }}
+            </p>
+          </div>
         </div>
 
         <!-- Developer buy -->
@@ -704,6 +738,7 @@ import {
   ExternalLink,
   Clock,
   ArrowRight,
+  Sparkles,
 } from 'lucide-vue-next';
 import { SUPPORTED_CHAINS } from '@proto/shared-types';
 import { useLaunchpad } from '../composables/useLaunchpad';
@@ -799,6 +834,11 @@ const totalPairDue = computed(() => {
   const fee = parseFloat(launchFeeFormatted.value) || 0;
   const total = fee + buyAmount;
   return `${total.toFixed(currencySymbol.value === 'USDC' ? 2 : 4)} ${currencySymbol.value}`;
+});
+const graduationTargetFormatted = computed(() => {
+  const wei = activeNetwork.value.launchConfigV2?.graduationTargetWei ?? 4_200_000_000_000_000_000n;
+  const val = Number(wei / 10n ** 18n);
+  return currencySymbol.value === 'USDC' ? val.toLocaleString() : val.toString();
 });
 
 const selectedVersion = ref<'v1' | 'v2'>('v2');
