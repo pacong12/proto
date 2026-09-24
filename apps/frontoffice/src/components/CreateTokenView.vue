@@ -198,53 +198,32 @@
           </div>
         </div>
 
-        <!-- Paired Asset -->
+        <!-- Paired Asset (Tied to active network selected in navigation) -->
         <div class="space-y-1.5">
-          <Label for="paired-asset">{{ t('pairedAsset') }}</Label>
-          <Select
-            :model-value="String(activeNetwork.chainId)"
-            @update:model-value="handleChainSelect"
+          <div class="flex items-center justify-between">
+            <Label for="paired-asset">{{ t('pairedAsset') }}</Label>
+            <span class="text-[11px] font-mono text-zinc-400">
+              {{ activeNetwork.name }}
+            </span>
+          </div>
+
+          <div
+            id="paired-asset"
+            class="w-full flex items-center justify-between px-3.5 py-2.5 h-11 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/60 text-black dark:text-white"
           >
-            <SelectTrigger
-              id="paired-asset"
-              class="w-full flex items-center justify-between px-3 py-2.5 h-11 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition text-black dark:text-white"
-            >
-              <div class="flex items-center gap-2 font-mono">
-                <img
-                  :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
-                  :alt="currencySymbol"
-                  class="w-5 h-5 rounded-full object-contain shrink-0"
-                />
-                <span class="font-bold text-sm text-black dark:text-white">{{
-                  currencySymbol
-                }}</span>
-              </div>
-            </SelectTrigger>
-            <SelectContent
-              align="end"
-              class="w-48 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-lg"
-            >
-              <SelectItem
-                v-for="net in Object.values(SUPPORTED_CHAINS)"
-                :key="net.chainId"
-                :value="String(net.chainId)"
-                class="cursor-pointer text-xs font-mono py-2 px-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition"
-              >
-                <div class="flex items-center gap-2">
-                  <img
-                    :src="
-                      net.nativeCurrency.symbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'
-                    "
-                    :alt="net.nativeCurrency.symbol"
-                    class="w-4 h-4 rounded-full object-contain shrink-0"
-                  />
-                  <span class="font-bold text-sm text-black dark:text-white">
-                    {{ net.nativeCurrency.symbol }}
-                  </span>
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
+            <div class="flex items-center gap-2 font-mono">
+              <img
+                :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
+                :alt="currencySymbol"
+                class="w-5 h-5 rounded-full object-contain shrink-0"
+              />
+              <span class="font-bold text-sm text-black dark:text-white">{{ currencySymbol }}</span>
+            </div>
+            <span class="text-[11px] font-mono text-zinc-400">
+              Locked on {{ activeNetwork.name }}
+            </span>
+          </div>
+
           <p class="text-[11px] text-zinc-500 dark:text-zinc-400">
             {{
               selectedVersion === 'v2'
@@ -699,7 +678,6 @@ import {
   Clock,
   ArrowRight,
 } from 'lucide-vue-next';
-import { SUPPORTED_CHAINS } from '@proto/shared-types';
 import { useLaunchpad } from '../composables/useLaunchpad';
 import { useWallet } from '../composables/useWallet';
 import { Button } from '@/components/ui/button';
@@ -709,14 +687,6 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectLabel,
-  SelectSeparator,
-} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -774,13 +744,6 @@ function goToTrade() {
   }
 }
 
-function handleChainSelect(val: unknown) {
-  const chainId = Number(val);
-  const target = SUPPORTED_CHAINS[chainId];
-  if (target) {
-    switchOrAddNetwork(target);
-  }
-}
 const currencySymbol = computed(() => activeNetwork.value.nativeCurrency.symbol);
 const launchFeeFormatted = computed(() => {
   const feeWei = activeNetwork.value.launchConfig.launchFeeWei;
