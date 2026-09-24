@@ -198,6 +198,23 @@
           </div>
         </div>
 
+        <!-- Website -->
+        <div class="space-y-1.5">
+          <Label for="token-web">Website</Label>
+          <div class="relative">
+            <span class="absolute left-3 top-2 text-xs text-zinc-400 select-none font-mono"
+              >https://</span
+            >
+            <Input
+              id="token-web"
+              v-model="form.website"
+              type="text"
+              placeholder="yourproject.com"
+              class="pl-16 font-mono text-xs"
+            />
+          </div>
+        </div>
+
         <!-- Paired Asset (Tied to active network selected in navigation) -->
         <div class="space-y-1.5">
           <div class="flex items-center justify-between">
@@ -283,24 +300,6 @@
             v-show="advancedOpen"
             class="px-4 pb-4 pt-1 space-y-4 border-t border-zinc-200 dark:border-zinc-800/60"
           >
-            <!-- Holder fee sharing -->
-            <div class="space-y-1 pt-1">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-medium">{{ t('holderFeeSharing') }}</span>
-                <Switch v-model:checked="holderFeeSharing" />
-              </div>
-              <p class="text-[11px] text-zinc-500">
-                {{
-                  holderFeeSharing
-                    ? 'Creator fees go to token holders pro-rata.'
-                    : 'Creator fees go to the creator wallet.'
-                }}
-              </p>
-              <p class="text-[10px] text-zinc-400">
-                {{ t('creatorFeeSharingDesc') }}
-              </p>
-            </div>
-
             <!-- Connected Creator Wallet -->
             <div class="space-y-1">
               <Label class="text-xs font-medium">{{ t('creatorWallet') }}</Label>
@@ -317,30 +316,364 @@
               </p>
             </div>
 
-            <!-- Creator tax -->
-            <div class="space-y-1">
-              <Label for="creator-tax" class="text-xs font-medium">{{ t('creatorTax') }}</Label>
-              <div class="relative">
-                <Input
-                  id="creator-tax"
-                  v-model="form.buyTax"
-                  type="number"
-                  min="0"
-                  max="10"
-                  step="0.1"
-                  placeholder="1"
-                  class="font-mono text-xs pr-8"
-                />
-                <span class="absolute right-3 top-2 text-xs font-semibold text-zinc-400">%</span>
+            <!-- Trading Taxes (Buy & Sell Tax) with Quick Presets -->
+            <div class="space-y-2 pt-2 border-t border-zinc-200 dark:border-zinc-800/60">
+              <div class="flex items-center justify-between">
+                <Label class="text-xs font-semibold text-black dark:text-white"
+                  >Trading Taxes</Label
+                >
+                <span class="text-[10px] font-mono text-zinc-400">Max 10% per trade</span>
               </div>
-              <p class="text-[10px] text-zinc-400">
-                Traders pay
-                {{
-                  (parseFloat(form.buyTax || '0') + (selectedVersion === 'v2' ? 1.0 : 1.0)).toFixed(
-                    2,
-                  )
-                }}% in total, up to 10% of it yours.
-              </p>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <!-- Buy Tax -->
+                <div
+                  class="space-y-1.5 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60"
+                >
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-medium text-black dark:text-white">Buy Tax</span>
+                    <span class="text-xs font-mono font-bold text-emerald-500"
+                      >{{ form.buyTax }}%</span
+                    >
+                  </div>
+                  <div class="relative">
+                    <Input
+                      v-model="form.buyTax"
+                      type="number"
+                      min="0"
+                      max="10"
+                      step="0.1"
+                      placeholder="1"
+                      class="font-mono text-xs pr-8"
+                    />
+                    <span class="absolute right-3 top-2 text-xs font-semibold text-zinc-400"
+                      >%</span
+                    >
+                  </div>
+                  <div class="flex items-center gap-1 pt-1">
+                    <button
+                      v-for="p in [1, 2, 5, 10]"
+                      :key="p"
+                      type="button"
+                      class="flex-1 py-0.5 rounded text-[10px] font-mono border transition cursor-pointer text-center"
+                      :class="
+                        form.buyTax === String(p)
+                          ? 'bg-emerald-500 text-black font-bold border-emerald-500'
+                          : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-black dark:hover:text-white'
+                      "
+                      @click="form.buyTax = String(p)"
+                    >
+                      {{ p }}%
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Sell Tax -->
+                <div
+                  class="space-y-1.5 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60"
+                >
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-medium text-black dark:text-white">Sell Tax</span>
+                    <span class="text-xs font-mono font-bold text-rose-500"
+                      >{{ form.sellTax }}%</span
+                    >
+                  </div>
+                  <div class="relative">
+                    <Input
+                      v-model="form.sellTax"
+                      type="number"
+                      min="0"
+                      max="10"
+                      step="0.1"
+                      placeholder="1"
+                      class="font-mono text-xs pr-8"
+                    />
+                    <span class="absolute right-3 top-2 text-xs font-semibold text-zinc-400"
+                      >%</span
+                    >
+                  </div>
+                  <div class="flex items-center gap-1 pt-1">
+                    <button
+                      v-for="p in [1, 2, 5, 10]"
+                      :key="p"
+                      type="button"
+                      class="flex-1 py-0.5 rounded text-[10px] font-mono border transition cursor-pointer text-center"
+                      :class="
+                        form.sellTax === String(p)
+                          ? 'bg-rose-500 text-white font-bold border-rose-500'
+                          : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-black dark:hover:text-white'
+                      "
+                      @click="form.sellTax = String(p)"
+                    >
+                      {{ p }}%
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Revenue Split Allocation (Argus-style) -->
+            <div class="space-y-3 pt-2 border-t border-zinc-200 dark:border-zinc-800/60">
+              <div class="space-y-0.5">
+                <div class="flex items-center justify-between">
+                  <Label class="text-xs font-semibold text-black dark:text-white"
+                    >Revenue Split</Label
+                  >
+                  <span
+                    class="text-xs font-mono font-bold px-2 py-0.5 rounded-full"
+                    :class="
+                      totalSplit === 100
+                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                        : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                    "
+                  >
+                    {{ totalSplit }}% Total split
+                  </span>
+                </div>
+                <p class="text-[11px] text-zinc-500 dark:text-zinc-400 leading-normal">
+                  Each share stops where the others leave off. They must total 100% to launch.
+                </p>
+              </div>
+
+              <!-- Quick Split Presets -->
+              <div class="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  class="px-2 py-1 rounded-md text-[10px] font-mono border transition cursor-pointer"
+                  :class="
+                    revenueSplit.creator === 50 &&
+                    revenueSplit.holders === 50 &&
+                    revenueSplit.buyback === 0 &&
+                    revenueSplit.growth === 0
+                      ? 'bg-emerald-500 text-black font-bold border-emerald-500'
+                      : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-black dark:hover:text-white'
+                  "
+                  @click="applySplitPreset(50, 0, 50, 0)"
+                >
+                  50/50 Creator & Holders
+                </button>
+                <button
+                  type="button"
+                  class="px-2 py-1 rounded-md text-[10px] font-mono border transition cursor-pointer"
+                  :class="
+                    revenueSplit.creator === 100 &&
+                    revenueSplit.holders === 0 &&
+                    revenueSplit.buyback === 0 &&
+                    revenueSplit.growth === 0
+                      ? 'bg-emerald-500 text-black font-bold border-emerald-500'
+                      : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-black dark:hover:text-white'
+                  "
+                  @click="applySplitPreset(100, 0, 0, 0)"
+                >
+                  100% Creator
+                </button>
+                <button
+                  type="button"
+                  class="px-2 py-1 rounded-md text-[10px] font-mono border transition cursor-pointer"
+                  :class="
+                    revenueSplit.creator === 40 &&
+                    revenueSplit.holders === 40 &&
+                    revenueSplit.buyback === 20 &&
+                    revenueSplit.growth === 0
+                      ? 'bg-emerald-500 text-black font-bold border-emerald-500'
+                      : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-black dark:hover:text-white'
+                  "
+                  @click="applySplitPreset(40, 20, 40, 0)"
+                >
+                  40/40/20 with Buyback
+                </button>
+                <button
+                  type="button"
+                  class="px-2 py-1 rounded-md text-[10px] font-mono border transition cursor-pointer"
+                  :class="
+                    revenueSplit.creator === 25 &&
+                    revenueSplit.holders === 25 &&
+                    revenueSplit.buyback === 25 &&
+                    revenueSplit.growth === 25
+                      ? 'bg-emerald-500 text-black font-bold border-emerald-500'
+                      : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-black dark:hover:text-white'
+                  "
+                  @click="applySplitPreset(25, 25, 25, 25)"
+                >
+                  25% Equal 4-Way
+                </button>
+              </div>
+
+              <!-- Visual Stacked Bar -->
+              <div
+                class="h-2 w-full rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden flex"
+              >
+                <div
+                  class="h-full bg-emerald-500 transition-all duration-300"
+                  :style="{ width: `${revenueSplit.creator}%` }"
+                  title="Creator"
+                />
+                <div
+                  class="h-full bg-rose-500 transition-all duration-300"
+                  :style="{ width: `${revenueSplit.buyback}%` }"
+                  title="Buyback & Burn"
+                />
+                <div
+                  class="h-full bg-violet-500 transition-all duration-300"
+                  :style="{ width: `${revenueSplit.holders}%` }"
+                  title="Holder Dividends"
+                />
+                <div
+                  class="h-full bg-sky-500 transition-all duration-300"
+                  :style="{ width: `${revenueSplit.growth}%` }"
+                  title="Liquidity Growth"
+                />
+              </div>
+
+              <!-- 4 Allocation Share Cards -->
+              <div class="space-y-2">
+                <!-- Share 1: Creator Share -->
+                <div
+                  class="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 space-y-1"
+                >
+                  <div class="flex items-center justify-between gap-2">
+                    <div
+                      class="flex items-center gap-1.5 text-xs font-semibold text-black dark:text-white"
+                    >
+                      <Wallet class="w-3.5 h-3.5 text-emerald-500" />
+                      <span>Creator Share</span>
+                    </div>
+                    <div class="relative w-24">
+                      <Input
+                        :model-value="revenueSplit.creator"
+                        type="number"
+                        min="0"
+                        :max="maxCreator"
+                        class="h-7 text-xs font-mono pr-6 text-right"
+                        @update:model-value="updateShare('creator', $event, maxCreator)"
+                      />
+                      <span class="absolute right-2 top-1.5 text-xs font-semibold text-zinc-400"
+                        >%</span
+                      >
+                    </div>
+                  </div>
+                  <p class="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">
+                    max {{ maxCreator }}%: the other shares leave this much, and this share is
+                    already there
+                  </p>
+                </div>
+
+                <!-- Share 2: Buyback & Burn -->
+                <div
+                  class="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 space-y-1"
+                >
+                  <div class="flex items-center justify-between gap-2">
+                    <div
+                      class="flex items-center gap-1.5 text-xs font-semibold text-black dark:text-white"
+                    >
+                      <Flame class="w-3.5 h-3.5 text-rose-500" />
+                      <span>Buyback & Burn</span>
+                    </div>
+                    <div class="relative w-24">
+                      <Input
+                        :model-value="revenueSplit.buyback"
+                        type="number"
+                        min="0"
+                        :max="maxBuyback"
+                        class="h-7 text-xs font-mono pr-6 text-right"
+                        @update:model-value="updateShare('buyback', $event, maxBuyback)"
+                      />
+                      <span class="absolute right-2 top-1.5 text-xs font-semibold text-zinc-400"
+                        >%</span
+                      >
+                    </div>
+                  </div>
+                  <p class="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">
+                    max {{ maxBuyback }}%: the other shares leave this much, and this share is
+                    already there
+                  </p>
+                </div>
+
+                <!-- Share 3: Holder Dividends -->
+                <div
+                  class="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 space-y-1"
+                >
+                  <div class="flex items-center justify-between gap-2">
+                    <div
+                      class="flex items-center gap-1.5 text-xs font-semibold text-black dark:text-white"
+                    >
+                      <Users class="w-3.5 h-3.5 text-violet-500" />
+                      <span>Holder Dividends</span>
+                    </div>
+                    <div class="relative w-24">
+                      <Input
+                        :model-value="revenueSplit.holders"
+                        type="number"
+                        min="0"
+                        :max="maxHolders"
+                        class="h-7 text-xs font-mono pr-6 text-right"
+                        @update:model-value="updateShare('holders', $event, maxHolders)"
+                      />
+                      <span class="absolute right-2 top-1.5 text-xs font-semibold text-zinc-400"
+                        >%</span
+                      >
+                    </div>
+                  </div>
+                  <p class="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">
+                    max {{ maxHolders }}%: the other shares leave this much, and this share is
+                    already there
+                  </p>
+                </div>
+
+                <!-- Share 4: Liquidity Growth -->
+                <div
+                  class="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 space-y-1"
+                >
+                  <div class="flex items-center justify-between gap-2">
+                    <div
+                      class="flex items-center gap-1.5 text-xs font-semibold text-black dark:text-white"
+                    >
+                      <TrendingUp class="w-3.5 h-3.5 text-sky-500" />
+                      <span>Liquidity Growth</span>
+                    </div>
+                    <div class="relative w-24">
+                      <Input
+                        :model-value="revenueSplit.growth"
+                        type="number"
+                        min="0"
+                        :max="maxGrowth"
+                        class="h-7 text-xs font-mono pr-6 text-right"
+                        @update:model-value="updateShare('growth', $event, maxGrowth)"
+                      />
+                      <span class="absolute right-2 top-1.5 text-xs font-semibold text-zinc-400"
+                        >%</span
+                      >
+                    </div>
+                  </div>
+                  <p class="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">
+                    max {{ maxGrowth }}%: the other shares leave this much, and this share is
+                    already there
+                  </p>
+                </div>
+              </div>
+
+              <!-- Allocation Status Badge -->
+              <div
+                class="flex items-center justify-between p-2.5 rounded-lg text-xs font-mono font-semibold"
+                :class="
+                  totalSplit === 100
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                "
+              >
+                <div class="flex items-center gap-2">
+                  <CheckCircle v-if="totalSplit === 100" class="w-4 h-4 text-emerald-500" />
+                  <AlertCircle v-else class="w-4 h-4 text-amber-500" />
+                  <span>
+                    {{
+                      totalSplit === 100
+                        ? 'Allocation totals 100%'
+                        : `Must total 100% to launch (currently ${totalSplit}%)`
+                    }}
+                  </span>
+                </div>
+                <span>{{ totalSplit }}/100%</span>
+              </div>
             </div>
 
             <!-- Anti-Snipe Notice -->
@@ -402,8 +735,10 @@
 
           <Button
             type="submit"
-            :disabled="loading || isUploadingIpfs || !form.name || !form.symbol"
-            class="w-full font-bold py-3 text-sm h-11"
+            :disabled="
+              loading || isUploadingIpfs || !form.name || !form.symbol || totalSplit !== 100
+            "
+            class="w-full font-bold py-3 text-sm h-11 cursor-pointer"
             size="lg"
           >
             <Loader2 v-if="loading || isUploadingIpfs" class="w-4 h-4 mr-2 animate-spin" />
@@ -414,7 +749,9 @@
                   ? t('launchTokenBtn') + '...'
                   : !isConnected
                     ? t('connectWallet')
-                    : `${t('launchTokenBtn')} (${totalPairDue})`
+                    : totalSplit !== 100
+                      ? `Allocation must total 100% (${totalSplit}%)`
+                      : `${t('launchTokenBtn')} (${totalPairDue})`
             }}
           </Button>
 
@@ -677,6 +1014,10 @@ import {
   ExternalLink,
   Clock,
   ArrowRight,
+  Flame,
+  Users,
+  Wallet,
+  TrendingUp,
 } from 'lucide-vue-next';
 import { useLaunchpad } from '../composables/useLaunchpad';
 import { useWallet } from '../composables/useWallet';
@@ -757,6 +1098,70 @@ const totalPairDue = computed(() => {
   const total = fee + buyAmount;
   return `${total.toFixed(currencySymbol.value === 'USDC' ? 2 : 4)} ${currencySymbol.value}`;
 });
+
+interface RevenueSplit {
+  creator: number;
+  buyback: number;
+  holders: number;
+  growth: number;
+}
+
+const revenueSplit = ref<RevenueSplit>({
+  creator: 50,
+  buyback: 0,
+  holders: 50,
+  growth: 0,
+});
+
+const totalSplit = computed(() => {
+  return (
+    Number(revenueSplit.value.creator || 0) +
+    Number(revenueSplit.value.buyback || 0) +
+    Number(revenueSplit.value.holders || 0) +
+    Number(revenueSplit.value.growth || 0)
+  );
+});
+
+const maxCreator = computed(() => {
+  const others =
+    Number(revenueSplit.value.buyback || 0) +
+    Number(revenueSplit.value.holders || 0) +
+    Number(revenueSplit.value.growth || 0);
+  return Math.max(0, 100 - others);
+});
+
+const maxBuyback = computed(() => {
+  const others =
+    Number(revenueSplit.value.creator || 0) +
+    Number(revenueSplit.value.holders || 0) +
+    Number(revenueSplit.value.growth || 0);
+  return Math.max(0, 100 - others);
+});
+
+const maxHolders = computed(() => {
+  const others =
+    Number(revenueSplit.value.creator || 0) +
+    Number(revenueSplit.value.buyback || 0) +
+    Number(revenueSplit.value.growth || 0);
+  return Math.max(0, 100 - others);
+});
+
+const maxGrowth = computed(() => {
+  const others =
+    Number(revenueSplit.value.creator || 0) +
+    Number(revenueSplit.value.buyback || 0) +
+    Number(revenueSplit.value.holders || 0);
+  return Math.max(0, 100 - others);
+});
+
+function applySplitPreset(creator: number, buyback: number, holders: number, growth: number) {
+  revenueSplit.value = { creator, buyback, holders, growth };
+}
+
+function updateShare(key: keyof RevenueSplit, val: unknown, maxAllowed: number) {
+  const num = Math.max(0, Math.min(maxAllowed, Number(val) || 0));
+  revenueSplit.value[key] = num;
+}
 
 const selectedVersion = ref<'v1' | 'v2'>('v2');
 const fileInputRef = ref<HTMLInputElement | null>(null);
@@ -849,6 +1254,7 @@ function handleDrop(event: DragEvent) {
 }
 
 async function handleLaunch() {
+  if (totalSplit.value !== 100) return;
   isModalOpen.value = true;
   const result = await launchToken(
     {

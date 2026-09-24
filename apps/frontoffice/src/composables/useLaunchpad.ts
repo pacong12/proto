@@ -238,6 +238,7 @@ export function useLaunchpad() {
     description: string;
     socials: TokenSocials;
     initialBuyAmountEth?: string;
+    minInitialTokensOut?: bigint;
   }): Promise<{ tokenAddress: `0x${string}`; curveAddress: `0x${string}` } | null> {
     loading.value = true;
     error.value = null;
@@ -291,6 +292,7 @@ export function useLaunchpad() {
           params.socials.twitter ?? '',
           params.socials.telegram ?? '',
           params.socials.website ?? '',
+          params.minInitialTokensOut ?? 0n,
         ],
         value: totalValue,
         account,
@@ -414,6 +416,7 @@ export function useLaunchpad() {
       description: string;
       socials: TokenSocials;
       initialBuyAmountEth?: string;
+      minInitialTokensOut?: bigint;
     },
     version: 'v1' | 'v2' = 'v1',
   ) {
