@@ -116,12 +116,15 @@ export function useSwap() {
         console.warn(`[useSwap] High slippage: ${slippagePercent}%. Confirm user acknowledged.`);
       }
 
-      // Use parseEther for full precision; float arithmetic fallback is a last resort.
+      // Use parseEther for full precision; fallback parses decimal string directly without floats.
       let amountInWei: bigint;
       try {
         amountInWei = parseEther(params.amountInEth);
       } catch {
-        amountInWei = BigInt(Math.floor(parseFloat(params.amountInEth || '0') * 1e18));
+        const clean = (params.amountInEth || '0').trim();
+        const [whole, frac = ''] = clean.split('.');
+        const paddedFrac = frac.slice(0, 18).padEnd(18, '0');
+        amountInWei = BigInt(whole || '0') * 10n ** 18n + BigInt(paddedFrac);
       }
 
       if (amountInWei <= 0n) throw new Error('Swap amount must be greater than zero');
