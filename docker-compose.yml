@@ -2,17 +2,29 @@ services:
   redis:
     image: redis:7-alpine
     container_name: proto-redis
+    # Bind to loopback only; the redis password provides an additional auth layer.
+    # Port is mapped to 127.0.0.1 so it is not reachable from outside the host.
     ports:
-      - "6380:6379"
+      - "127.0.0.1:6380:6379"
     volumes:
       - redis_data:/data
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1"
 
   api:
     build:
@@ -22,20 +34,29 @@ services:
     environment:
       - PORT=3001
       - NODE_ENV=production
-      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      # SQLite data directory mounted as a named volume for persistence.
+      - DB_PATH=/app/data/proto.sqlite
+      # Redis with password — connects over the Docker network (not host-mapped port).
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
       # Robinhood Chain Mainnet (Chain ID 4663)
       - ROBINHOOD_RPC_URL=${ROBINHOOD_RPC_URL:-https://rpc.mainnet.chain.robinhood.com}
       - ROBINHOOD_FACTORY_V2=${ROBINHOOD_FACTORY_V2:-0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e}
       # Arc Network Mainnet (Chain ID 5042)
       - ARC_RPC_URL=${ARC_RPC_URL:-https://rpc.mainnet.arc.io}
       - ARC_FACTORY_ADDRESS=${ARC_FACTORY_ADDRESS:-0x48844223aBDceeb1Ce502F54d559681358E68200}
-      - ARC_LOCKER_ADDRESS=${ARC_LOCKER_ADDRESS:-0x0000000000000000000000000000000000000000}
+      - ARC_LOCKER_ADDRESS=${ARC_LOCKER_ADDRESS:-}
       # Protocol config
       - PROTOCOL_FEE_RECIPIENT=${PROTOCOL_FEE_RECIPIENT:-0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2}
       # Optional: CoinGecko API key for higher rate limits
       - COINGECKO_API_KEY=${COINGECKO_API_KEY:-}
       # Optional: Pinata for IPFS uploads
       - PINATA_JWT=${PINATA_JWT:-}
+      # Admin and DevOps tokens — must be set in production.
+      - ADMIN_SECRET=${ADMIN_SECRET:-}
+      - DEVOPS_AUTH_TOKEN=${DEVOPS_AUTH_TOKEN:-}
+    volumes:
+      - api_data:/app/data
     ports:
       - "3001:3001"
     depends_on:
@@ -48,6 +69,11 @@ services:
       retries: 3
       start_period: 10s
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1"
 
   frontoffice:
     build:
@@ -64,7 +90,18 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1"
 
   docs:
     build:
@@ -73,8 +110,22 @@ services:
     container_name: proto-docs
     ports:
       - "3002:3002"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3002/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
 
 volumes:
   redis_data:
+    driver: local
+  # Persistent SQLite database; survives container restarts and re-deploys.
+  api_data:
     driver: local
