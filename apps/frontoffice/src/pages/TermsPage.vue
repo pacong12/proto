@@ -1,7 +1,9 @@
 <template>
   <div class="max-w-4xl mx-auto py-8 px-4 sm:px-6 space-y-8">
     <div class="border-b border-zinc-200 dark:border-zinc-800 pb-4">
-      <h1 class="text-2xl font-bold tracking-tight text-black dark:text-white">Terms of Service</h1>
+      <h1 class="text-2xl font-bold tracking-tight text-black dark:text-white">
+        {{ t('termsOfService') }}
+      </h1>
       <p class="text-xs text-zinc-500 font-mono mt-1">Last Updated: September 2026</p>
     </div>
 
@@ -73,5 +75,7 @@
 </template>
 
 <script setup lang="ts">
-// Terms of Service Page
+import { useI18n } from '@/lib/i18n';
+
+const { t } = useI18n();
 </script>
