@@ -199,17 +199,22 @@ contract LiquidityLocker is ILiquidityLocker {
     }
 
     function _routeFees(address token, FeeDistribution memory dist) internal {
+        // F-04 fix: check return value of every transfer; silently-false returns lose fees.
         if (dist.protocolTokenFee > 0) {
-            ILaunchpadToken(token).transfer(protocolFeeRecipient, dist.protocolTokenFee);
+            bool ok = ILaunchpadToken(token).transfer(protocolFeeRecipient, dist.protocolTokenFee);
+            if (!ok) revert TransferFailed();
         }
         if (dist.protocolWethFee > 0) {
-            IWETH(weth).transfer(protocolFeeRecipient, dist.protocolWethFee);
+            bool ok = IWETH(weth).transfer(protocolFeeRecipient, dist.protocolWethFee);
+            if (!ok) revert TransferFailed();
         }
         if (dist.creatorTokenFee > 0) {
-            ILaunchpadToken(token).transfer(dist.creatorRecipient, dist.creatorTokenFee);
+            bool ok = ILaunchpadToken(token).transfer(dist.creatorRecipient, dist.creatorTokenFee);
+            if (!ok) revert TransferFailed();
         }
         if (dist.creatorWethFee > 0) {
-            IWETH(weth).transfer(dist.creatorRecipient, dist.creatorWethFee);
+            bool ok = IWETH(weth).transfer(dist.creatorRecipient, dist.creatorWethFee);
+            if (!ok) revert TransferFailed();
         }
     }
 }

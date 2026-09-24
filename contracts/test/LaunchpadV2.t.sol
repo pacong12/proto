@@ -25,7 +25,7 @@ contract ReentrantAttackerRecipient {
             // Attempt reentrant call to launchTokenV2
             (bool success, bytes memory returnData) = address(factory).call{value: 0.0005 ether}(
                 abi.encodeWithSelector(
-                    LaunchpadV2Factory.launchTokenV2.selector, "Reentrant", "REENT", "", "", "", "", ""
+                    LaunchpadV2Factory.launchTokenV2.selector, "Reentrant", "REENT", "", "", "", "", "", uint256(0)
                 )
             );
 
@@ -72,7 +72,8 @@ contract LaunchpadV2Test is Test {
             "Token on Bonding Curve",
             "twitter.com/curve",
             "t.me/curve",
-            "curve.io"
+            "curve.io",
+            0
         );
     }
 
@@ -141,7 +142,7 @@ contract LaunchpadV2Test is Test {
     function test_LaunchTokenV2WithInitialBuy_DirectRecipient_C02() public {
         vm.prank(creator);
         (address tokenAddress,) = factory.launchTokenV2{value: 0.0005 ether + 0.1 ether}(
-            "Initial Buy Token", "INIT", "ipfs://logo", "Testing direct initial buy", "", "", ""
+            "Initial Buy Token", "INIT", "ipfs://logo", "Testing direct initial buy", "", "", "", 0
         );
 
         LaunchpadToken token = LaunchpadToken(payable(tokenAddress));
@@ -231,7 +232,7 @@ contract LaunchpadV2Test is Test {
 
         vm.prank(creator);
         (address tokenAddress, address curveAddress) =
-            factoryWithAttacker.launchTokenV2{value: 0.0005 ether}("Safe Token", "SAFE", "", "", "", "", "");
+            factoryWithAttacker.launchTokenV2{value: 0.0005 ether}("Safe Token", "SAFE", "", "", "", "", "", 0);
 
         // CEI verification: factory already stored launch state during fee call
         assertEq(attacker.countDuringFeeTransfer(), 1);
@@ -251,7 +252,7 @@ contract LaunchpadV2Test is Test {
             new LaunchpadV2Factory(payable(address(rejecter)), mockLocker, address(0), address(0));
         vm.prank(creator);
         vm.expectRevert(LaunchpadV2Factory.TransferFailed.selector);
-        factoryReject.launchTokenV2{value: 0.0005 ether}("Fail", "FAIL", "", "", "", "", "");
+        factoryReject.launchTokenV2{value: 0.0005 ether}("Fail", "FAIL", "", "", "", "", "", 0);
     }
 
     function test_SetLaunchFee_OwnerOnlyAndCalibrateArcFee() public {
@@ -272,12 +273,12 @@ contract LaunchpadV2Test is Test {
         // Launching with less than 1.0 ether reverts
         vm.prank(creator);
         vm.expectRevert(LaunchpadV2Factory.InvalidFee.selector);
-        factory.launchTokenV2{value: 0.5 ether}("Arc Token", "ARC", "", "", "", "", "");
+        factory.launchTokenV2{value: 0.5 ether}("Arc Token", "ARC", "", "", "", "", "", 0);
 
         // Launching with 1.0 ether succeeds
         vm.prank(creator);
         (address tokenAddress,) =
-            factory.launchTokenV2{value: 1.0 ether}("Arc Token", "ARC", "", "", "", "", "");
+            factory.launchTokenV2{value: 1.0 ether}("Arc Token", "ARC", "", "", "", "", "", 0);
         assertNotEq(tokenAddress, address(0));
     }
 }

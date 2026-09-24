@@ -41,7 +41,8 @@ contract LaunchpadV2ArcTest is Test {
             "First Arc Token",
             "https://x.com/parc",
             "https://t.me/parc",
-            "https://proto.fun"
+            "https://proto.fun",
+            0
         );
 
         assertTrue(tokenAddress != address(0));
@@ -78,7 +79,7 @@ contract LaunchpadV2ArcTest is Test {
         uint256 initialBuy = 50 ether; // 50 USDC initial buy + 1 USDC fee
         vm.prank(creator);
         (address tokenAddress, address curveAddress) = factory.launchTokenV2{value: 1 ether + initialBuy}(
-            "Proto Arc Token", "PARC", "", "", "", "", ""
+            "Proto Arc Token", "PARC", "", "", "", "", "", 0
         );
 
         LaunchpadToken token = LaunchpadToken(tokenAddress);
@@ -99,7 +100,7 @@ contract LaunchpadV2ArcTest is Test {
     function test_RevertInsufficientFeeArc() public {
         vm.prank(creator);
         vm.expectRevert(LaunchpadV2FactoryArc.InvalidFee.selector);
-        factory.launchTokenV2{value: 0.5 ether}("Fail", "FAIL", "", "", "", "", "");
+        factory.launchTokenV2{value: 0.5 ether}("Fail", "FAIL", "", "", "", "", "", 0);
     }
 
     function test_UpdateLaunchFeeArc() public {
@@ -110,7 +111,7 @@ contract LaunchpadV2ArcTest is Test {
     function test_SpotPriceArc() public {
         vm.prank(creator);
         (, address curveAddress) = factory.launchTokenV2{value: 1 ether}(
-            "Proto Arc Token", "PARC", "", "", "", "", ""
+            "Proto Arc Token", "PARC", "", "", "", "", "", 0
         );
 
         BondingCurve curve = BondingCurve(payable(curveAddress));

@@ -47,7 +47,8 @@ contract SimulateV2UniswapV4Graduation is Script {
             "Community token graduating directly into Uniswap v4",
             "x.com/rpepe",
             "t.me/rpepe",
-            "rpepe.io"
+            "rpepe.io",
+            0
         );
         console.log("2. Token Launched at              :", tokenAddress);
         console.log("   Bonding Curve deployed at      :", curveAddress);

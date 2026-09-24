@@ -53,7 +53,6 @@ contract LaunchpadToken is ILaunchpadToken {
     error InsufficientAllowance();
     error ZeroAddress();
     error ExcessiveTax();
-    error TaxRecipientMustBeEOA();
 
     event TaxConfigUpdated(uint16 buyTaxBps, uint16 sellTaxBps, address indexed taxRecipient);
 
@@ -146,18 +145,18 @@ contract LaunchpadToken is ILaunchpadToken {
 
     /**
      * @notice Update the creator trading tax configuration.
-     * @dev L-02 fix: taxRecipient must be an EOA (code.length == 0). A contract
-     *      recipient that reverts or cannot receive tokens would silently break
-     *      all transfers involving this token.
+     * @dev F-08 fix: the previous code.length == 0 EOA check was bypassable from
+     *      a contract constructor (code.length is 0 during construction) and provided
+     *      false security. It is removed. The deployer is solely responsible for
+     *      supplying a taxRecipient that can receive ERC-20 transfers without reverting.
+     *      If the recipient is a broken contract, the deployer's own users suffer —
+     *      an acceptable deployer-bears-own-risk model.
      */
     function setTaxConfig(uint16 buyTaxBps, uint16 sellTaxBps, address taxRecipient) external {
         if (msg.sender != deployer) revert Unauthorized();
         if (buyTaxBps > MAX_TAX_BPS || sellTaxBps > MAX_TAX_BPS) revert ExcessiveTax();
 
         address recipient = taxRecipient != address(0) ? taxRecipient : deployer;
-
-        // L-02 fix: reject contract addresses as tax recipients.
-        if (recipient.code.length > 0) revert TaxRecipientMustBeEOA();
 
         _taxConfig = TaxConfig({
             buyTaxBps: buyTaxBps,
