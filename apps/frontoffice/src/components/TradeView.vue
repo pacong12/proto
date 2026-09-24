@@ -354,7 +354,7 @@
                 </div>
                 <div v-else class="space-y-2.5">
                   <div
-                    v-for="cmt in comments"
+                    v-for="cmt in paginatedComments"
                     :key="cmt.id"
                     class="p-3 rounded-xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/40 hover:bg-zinc-50 dark:hover:bg-zinc-900/80 transition-colors space-y-1.5"
                   >
@@ -401,6 +401,16 @@
                       </button>
                     </div>
                   </div>
+
+                  <!-- Comments Pagination -->
+                  <div v-if="comments.length > commentsPageSize" class="pt-2 flex justify-center">
+                    <Pagination
+                      :total="comments.length"
+                      :items-per-page="commentsPageSize"
+                      :page="commentsPage"
+                      @update:page="commentsPage = $event"
+                    />
+                  </div>
                 </div>
               </TabsContent>
 
@@ -433,7 +443,7 @@
                     </thead>
                     <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/60">
                       <tr
-                        v-for="trade in trades"
+                        v-for="trade in paginatedTrades"
                         :key="trade.id || trade.transactionHash"
                         class="hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors"
                       >
@@ -499,6 +509,19 @@
                       </tr>
                     </tbody>
                   </table>
+
+                  <!-- Trades Pagination -->
+                  <div
+                    v-if="trades.length > tradesPageSize"
+                    class="py-3 border-t border-zinc-200 dark:border-zinc-800 flex justify-center bg-zinc-50/50 dark:bg-zinc-900/30"
+                  >
+                    <Pagination
+                      :total="trades.length"
+                      :items-per-page="tradesPageSize"
+                      :page="tradesPage"
+                      @update:page="tradesPage = $event"
+                    />
+                  </div>
                 </div>
               </TabsContent>
 
@@ -530,11 +553,13 @@
                     </thead>
                     <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/60">
                       <tr
-                        v-for="(trader, idx) in topTraders"
+                        v-for="(trader, idx) in paginatedTopTraders"
                         :key="trader.address"
                         class="hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors"
                       >
-                        <td class="py-2 px-3 text-zinc-500 font-bold">#{{ idx + 1 }}</td>
+                        <td class="py-2 px-3 text-zinc-500 font-bold">
+                          #{{ (topTradersPage - 1) * topTradersPageSize + idx + 1 }}
+                        </td>
                         <td class="py-2 px-3">
                           <div class="flex items-center gap-1.5">
                             <Jazzicon :address="trader.address" :size="14" />
@@ -604,6 +629,19 @@
                       </tr>
                     </tbody>
                   </table>
+
+                  <!-- Top Traders Pagination -->
+                  <div
+                    v-if="topTraders.length > topTradersPageSize"
+                    class="py-3 border-t border-zinc-200 dark:border-zinc-800 flex justify-center bg-zinc-50/50 dark:bg-zinc-900/30"
+                  >
+                    <Pagination
+                      :total="topTraders.length"
+                      :items-per-page="topTradersPageSize"
+                      :page="topTradersPage"
+                      @update:page="topTradersPage = $event"
+                    />
+                  </div>
                 </div>
               </TabsContent>
 
@@ -634,11 +672,13 @@
                     </thead>
                     <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/60">
                       <tr
-                        v-for="(holder, idx) in holders"
+                        v-for="(holder, idx) in paginatedHolders"
                         :key="holder.address"
                         class="hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors"
                       >
-                        <td class="py-2 px-3 text-zinc-500 font-bold">#{{ idx + 1 }}</td>
+                        <td class="py-2 px-3 text-zinc-500 font-bold">
+                          #{{ (holdersPage - 1) * holdersPageSize + idx + 1 }}
+                        </td>
                         <td class="py-2 px-3 whitespace-nowrap">
                           <div class="flex items-center gap-1.5">
                             <Jazzicon :address="holder.address" :size="14" />
@@ -693,6 +733,19 @@
                       </tr>
                     </tbody>
                   </table>
+
+                  <!-- Holders Pagination -->
+                  <div
+                    v-if="holders.length > holdersPageSize"
+                    class="py-3 border-t border-zinc-200 dark:border-zinc-800 flex justify-center bg-zinc-50/50 dark:bg-zinc-900/30"
+                  >
+                    <Pagination
+                      :total="holders.length"
+                      :items-per-page="holdersPageSize"
+                      :page="holdersPage"
+                      @update:page="holdersPage = $event"
+                    />
+                  </div>
                 </div>
               </TabsContent>
 
@@ -1133,6 +1186,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Jazzicon } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
+import { Pagination } from '@/components/ui/pagination';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -1347,6 +1401,53 @@ const votesSummary = ref<TokenVotesSummary>({
   bearishCount: 0,
   totalVotes: 0,
   bullishPercent: 50,
+});
+
+// Pagination state for bottom tabs (Trades, Top Traders, Holders, Comments)
+const tradesPage = ref(1);
+const tradesPageSize = 10;
+const paginatedTrades = computed(() => {
+  const start = (tradesPage.value - 1) * tradesPageSize;
+  return trades.value.slice(start, start + tradesPageSize);
+});
+
+const topTradersPage = ref(1);
+const topTradersPageSize = 10;
+const paginatedTopTraders = computed(() => {
+  const start = (topTradersPage.value - 1) * topTradersPageSize;
+  return topTraders.value.slice(start, start + topTradersPageSize);
+});
+
+const holdersPage = ref(1);
+const holdersPageSize = 10;
+const paginatedHolders = computed(() => {
+  const start = (holdersPage.value - 1) * holdersPageSize;
+  return holders.value.slice(start, start + holdersPageSize);
+});
+
+const commentsPage = ref(1);
+const commentsPageSize = 10;
+const paginatedComments = computed(() => {
+  const start = (commentsPage.value - 1) * commentsPageSize;
+  return comments.value.slice(start, start + commentsPageSize);
+});
+
+// Reset current page when lists update and exceed max pages
+watch(trades, (list) => {
+  const max = Math.max(1, Math.ceil(list.length / tradesPageSize));
+  if (tradesPage.value > max) tradesPage.value = 1;
+});
+watch(topTraders, (list) => {
+  const max = Math.max(1, Math.ceil(list.length / topTradersPageSize));
+  if (topTradersPage.value > max) topTradersPage.value = 1;
+});
+watch(holders, (list) => {
+  const max = Math.max(1, Math.ceil(list.length / holdersPageSize));
+  if (holdersPage.value > max) holdersPage.value = 1;
+});
+watch(comments, (list) => {
+  const max = Math.max(1, Math.ceil(list.length / commentsPageSize));
+  if (commentsPage.value > max) commentsPage.value = 1;
 });
 
 // Resolution & candle data
