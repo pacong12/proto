@@ -37,7 +37,8 @@ contract UniswapV4GraduationTest is Test {
             "Graduates to Uniswap v4",
             "x.com/v4",
             "t.me/v4",
-            "v4.io"
+            "v4.io",
+            0
         );
         vm.stopPrank();
     }

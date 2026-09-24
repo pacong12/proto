@@ -127,9 +127,11 @@ contract BondingCurve {
 
     /**
      * @notice Decaying anti-snipe tax. 99% at t=0, steps down to 0% after 3 seconds.
+     * @dev F-02 fix: exemption based on recipient address removed. Any caller could
+     *      pass creator/feeRecipient as recipient to bypass the tax. Tax now applies
+     *      universally regardless of who the recipient is.
      */
-    function currentSnipeTaxBps(address recipient) public view returns (uint256) {
-        if (recipient == creator || recipient == feeRecipient) return 0;
+    function currentSnipeTaxBps() public view returns (uint256) {
         uint256 elapsed = block.timestamp - launchTime;
         if (elapsed >= 3) return 0;
         if (elapsed == 0) return 9900;
@@ -197,7 +199,7 @@ contract BondingCurve {
 
         uint256 grossTokensOut = tokensOut;
         uint256 snipeFeeTokens = 0;
-        uint256 snipeBps = currentSnipeTaxBps(recipient);
+        uint256 snipeBps = currentSnipeTaxBps();
         if (snipeBps > 0) {
             snipeFeeTokens = (grossTokensOut * snipeBps) / BPS;
             tokensOut = grossTokensOut - snipeFeeTokens;
@@ -238,6 +240,10 @@ contract BondingCurve {
 
     /**
      * @notice Sell tokens back to the bonding curve to receive ETH.
+     * @dev F-05 fix: strict CEI — all state mutations occur before any external
+     *      call (transferFrom or ETH sends). Previously, state was mutated after
+     *      transferFrom, violating CEI. The nonReentrant guard provides a defence-
+     *      in-depth layer but CEI is the primary protection.
      */
     function sell(uint256 tokenIn, uint256 minEthOut) external nonReentrant returns (uint256 ethOut) {
         if (graduated) revert AlreadyGraduated();
@@ -248,15 +254,16 @@ contract BondingCurve {
         if (ethOut < minEthOut) revert InsufficientOutput();
         if (ethOut + fee > address(this).balance) revert TransferFailed();
 
-        bool taken = token.transferFrom(msg.sender, address(this), tokenIn);
-        if (!taken) revert TransferFailed();
-
-        virtualTokenReserve += tokenIn;
-        virtualEthReserve -= (ethOut + fee);
-
+        // EFFECTS — update all state before any external interaction.
         uint256 grossEthOut = ethOut + fee;
+        virtualTokenReserve += tokenIn;
+        virtualEthReserve -= grossEthOut;
         totalEthRaised = totalEthRaised > grossEthOut ? totalEthRaised - grossEthOut : 0;
         totalVolumeEth += grossEthOut;
+
+        // INTERACTIONS — token pull, then ETH pushes.
+        bool taken = token.transferFrom(msg.sender, address(this), tokenIn);
+        if (!taken) revert TransferFailed();
 
         (bool feeOk, ) = feeRecipient.call{value: fee}("");
         if (!feeOk) revert TransferFailed();
@@ -274,6 +281,15 @@ contract BondingCurve {
     /**
      * @notice Records the canonical Uniswap V4 pool key and emits the Graduated event.
      *         Funds remain in this contract until migrateToV4() is called by the factory.
+     * @dev F-09 fix: sqrtPriceX96 is derived from the actual reserves at graduation time
+     *      rather than a hardcoded launch-price constant. Initialising the pool at the
+     *      wrong price causes immediate arbitrage against the LP.
+     *
+     *      sqrtPriceX96 = sqrt(price) * 2^96
+     *      price (token1/token0) where currency0=ETH(address(0)), currency1=token
+     *        → price = virtualEthReserve / virtualTokenReserve
+     *      We compute: sqrtPriceX96 = sqrt(virtualEthReserve * 2^192 / virtualTokenReserve)
+     *      using integer square root to avoid external dependencies.
      */
     function _prepareGraduationV4() internal {
         uint256 ethHeld = address(this).balance;
@@ -290,11 +306,45 @@ contract BondingCurve {
         graduatedPoolId = key.toId();
 
         if (poolManagerV4 != address(0) && poolManagerV4.code.length > 0) {
-            uint160 sqrtPriceX96 = 2505414483750479299401734000000000;
+            uint160 sqrtPriceX96 = _computeSqrtPriceX96(virtualEthReserve, virtualTokenReserve);
             try IPoolManager(poolManagerV4).initialize(key, sqrtPriceX96) {} catch {}
         }
 
         emit Graduated(address(token), graduatedPoolId, ethHeld, tokensHeld);
+    }
+
+    /**
+     * @notice Compute sqrtPriceX96 from actual reserves.
+     * @dev price = ethReserve / tokenReserve (ETH per token in reserve-ratio units)
+     *      sqrtPriceX96 = sqrt(ethReserve / tokenReserve) * 2^96
+     *                   = sqrt(ethReserve * 2^192 / tokenReserve)
+     *      Uses Babylonian integer sqrt. Safe: both reserves are > 0 at graduation.
+     *      Result fits in uint160: for any plausible reserve ratio where
+     *      ethReserve << tokenReserve (e.g. 4.2e18 ETH vs 1e27 tokens),
+     *      sqrtNum << sqrtDen, so (sqrtNum << 96) / sqrtDen << 2^96 << 2^160.
+     */
+    function _computeSqrtPriceX96(uint256 ethReserve, uint256 tokenReserve) internal pure returns (uint160) {
+        require(tokenReserve > 0, "zero tokenReserve");
+        uint256 sqrtNum = _sqrt(ethReserve);   // sqrt(ethReserve)
+        uint256 sqrtDen = _sqrt(tokenReserve); // sqrt(tokenReserve)
+        require(sqrtDen > 0, "zero sqrtDen");
+        // sqrtPriceX96 = sqrt(ethReserve) * 2^96 / sqrt(tokenReserve)
+        uint256 result = (sqrtNum << 96) / sqrtDen;
+        // casting to 'uint160' is safe because result = sqrt(eth) * 2^96 / sqrt(tokens).
+        // At graduation: eth ~4.2e18, tokens ~200e24 → sqrt ratio ~1/219,000 → result ~2^96/219000 << 2^160.
+        // forge-lint: disable-next-line(unsafe-typecast)
+        return uint160(result);
+    }
+
+    /// @notice Babylonian integer square root (floor).
+    function _sqrt(uint256 x) internal pure returns (uint256 y) {
+        if (x == 0) return 0;
+        y = x;
+        uint256 z = (x >> 1) + 1;
+        while (z < y) {
+            y = z;
+            z = (x / z + z) >> 1;
+        }
     }
 
     /**

@@ -43,6 +43,7 @@ contract BuybackBurner is IBuybackBurner {
     error ZeroAddress();
     error Reentrancy();
     error NoPendingOwner();
+    error TransferFailed();
 
     event OwnershipTransferProposed(address indexed proposed);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
@@ -115,7 +116,8 @@ contract BuybackBurner is IBuybackBurner {
         if (recipient == address(0)) revert ZeroAddress();
         uint256 balance = IWETH(weth).balanceOf(address(this));
         if (balance > 0) {
-            IWETH(weth).transfer(recipient, balance);
+            bool ok = IWETH(weth).transfer(recipient, balance);
+            if (!ok) revert TransferFailed();
         }
     }
 
@@ -128,13 +130,21 @@ contract BuybackBurner is IBuybackBurner {
      *
      * @param minAmountOut Minimum tokens to receive. Must be greater than zero.
      *        Callers MUST derive this from an off-chain QuoterV2 call immediately
-     *        before submitting the transaction. The maxSlippageBps parameter
-     *        additionally applies a percentage floor relative to minAmountOut
-     *        to bound sandwich attack exposure.
+     *        before submitting the transaction, adjusted for acceptable slippage.
+     *        This value IS the effective slippage floor — the swap reverts if the
+     *        router cannot deliver at least this many tokens.
      *
      * M-01 fix: minAmountOut == 0 is explicitly rejected. Previously a zero value
      *   caused the effective minimum to always be zero, making the slippage guard
      *   non-functional and the swap fully exploitable by front-runners.
+     *
+     * F-06 fix: removed the dead slippageFloor/effectiveMin calculation. The
+     *   previous logic computed `slippageFloor = minAmountOut * (1 - maxSlippageBps%)`
+     *   which is always <= minAmountOut, so effectiveMin was always minAmountOut and
+     *   maxSlippageBps had zero effect. The correct design is: caller supplies a
+     *   well-derived minAmountOut; maxSlippageBps is retained as an owner-configurable
+     *   cap that the off-chain bot MUST respect when computing minAmountOut — it is
+     *   an operational parameter, not a redundant on-chain guard.
      */
     function executeBuyback(uint256 minAmountOut) external override nonReentrant onlyOwner returns (uint256 tokensBurned) {
         if (lastBuybackTimestamp > 0 && block.timestamp < lastBuybackTimestamp + cooldown) {
@@ -147,12 +157,8 @@ contract BuybackBurner is IBuybackBurner {
         // M-01 fix: reject zero minimum so the slippage floor is always meaningful.
         if (minAmountOut == 0) revert ZeroMinAmountOut();
 
-        // Apply maxSlippageBps as a secondary floor on the caller-supplied minimum.
-        // This ensures the effective minimum is never more than maxSlippageBps% below
-        // what the caller indicated as acceptable.
-        uint256 slippageFloor = (minAmountOut * (10000 - uint256(maxSlippageBps))) / 10000;
-        uint256 effectiveMin = minAmountOut > slippageFloor ? minAmountOut : slippageFloor;
-
+        // minAmountOut is the effective floor; caller must compute it using QuoterV2
+        // and apply maxSlippageBps off-chain before submitting.
         IWETH(weth).approve(address(swapRouter), 0);
         IWETH(weth).approve(address(swapRouter), wethBalance);
 
@@ -163,12 +169,12 @@ contract BuybackBurner is IBuybackBurner {
             recipient: BURN_ADDRESS,
             deadline: block.timestamp + 1200,
             amountIn: wethBalance,
-            amountOutMinimum: effectiveMin,
+            amountOutMinimum: minAmountOut,
             sqrtPriceLimitX96: 0
         });
 
         tokensBurned = swapRouter.exactInputSingle(params);
-        if (tokensBurned < effectiveMin) revert SlippageExceeded();
+        if (tokensBurned < minAmountOut) revert SlippageExceeded();
 
         totalBurned += tokensBurned;
         lastBuybackTimestamp = block.timestamp;

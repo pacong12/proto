@@ -3,6 +3,7 @@ import {
   SecurityEvaluationResult,
   SecurityPolicyCheck,
   ROBINHOOD_CHAIN,
+  ARC_CHAIN,
   LaunchTokenIntentPayload,
   SwapIntentPayload,
 } from '@proto/shared-types';
@@ -11,18 +12,19 @@ export class SecurityPolicy {
   static evaluate(intent: TransactionIntent): SecurityEvaluationResult {
     const checks: SecurityPolicyCheck[] = [];
 
-    // 1. Chain ID Verification
-    if (intent.chainId !== ROBINHOOD_CHAIN.chainId) {
+    // Chain ID Verification — accept all chains that this protocol supports.
+    const SUPPORTED_CHAIN_IDS = new Set([ROBINHOOD_CHAIN.chainId, ARC_CHAIN.chainId]);
+    if (!SUPPORTED_CHAIN_IDS.has(intent.chainId)) {
       checks.push({
         code: 'INVALID_CHAIN_ID',
-        description: `Chain ID ${intent.chainId} does not match Robinhood Chain (${ROBINHOOD_CHAIN.chainId})`,
+        description: `Chain ID ${intent.chainId} is not a supported network (Robinhood Chain ${ROBINHOOD_CHAIN.chainId}, Arc ${ARC_CHAIN.chainId})`,
         passed: false,
         severity: 'CRITICAL',
       });
     } else {
       checks.push({
         code: 'VALID_CHAIN_ID',
-        description: 'Chain ID verified for Robinhood Chain',
+        description: 'Chain ID verified',
         passed: true,
         severity: 'INFO',
       });

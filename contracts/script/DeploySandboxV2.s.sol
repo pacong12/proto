@@ -19,12 +19,19 @@ contract DeploySandboxV2 is Script {
         string memory mnemonic = vm.envOr("MNEMONIC", string(""));
         uint256 deployerPrivateKey;
         address deployer;
+        bool hasExplicitKey = false;
 
         if (bytes(mnemonic).length > 0) {
             (deployer, deployerPrivateKey) = deriveRememberKey(mnemonic, 0);
+            hasExplicitKey = true;
         } else {
-            deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-            deployer = vm.addr(deployerPrivateKey);
+            try vm.envUint("PRIVATE_KEY") returns (uint256 pk) {
+                deployerPrivateKey = pk;
+                deployer = vm.addr(pk);
+                hasExplicitKey = true;
+            } catch {
+                deployer = msg.sender;
+            }
         }
 
         // L-06 fix: use a dedicated treasury address, not the deployer key.
@@ -44,7 +51,11 @@ contract DeploySandboxV2 is Script {
         console.log("Fee Recipient     :", feeRecipient);
         console.log("Balance Wei       :", deployer.balance);
 
-        vm.startBroadcast(deployerPrivateKey);
+        if (hasExplicitKey) {
+            vm.startBroadcast(deployerPrivateKey);
+        } else {
+            vm.startBroadcast();
+        }
 
         LaunchpadV2Factory factory = new LaunchpadV2Factory(
             payable(feeRecipient),

@@ -32,8 +32,18 @@ export function useTokenStore() {
     loading.value = true;
     error.value = null;
     try {
-      const data = await apiFetch<TokenListItem[]>('/api/tokens?limit=200&offset=0');
-      tokens.value = Array.isArray(data) ? data : [];
+      // API can return an envelope { success: true, data: [...] } or a direct array.
+      // Accommodate both formats to guarantee tokens.value is always a populated array.
+      const res = await apiFetch<TokenListItem[] | { success: boolean; data: TokenListItem[] }>(
+        '/api/tokens?limit=200&offset=0',
+      );
+      if (Array.isArray(res)) {
+        tokens.value = res;
+      } else if (res && typeof res === 'object' && 'data' in res && Array.isArray(res.data)) {
+        tokens.value = res.data;
+      } else {
+        tokens.value = [];
+      }
       lastFetched = Date.now();
     } catch (e) {
       error.value = (e as Error).message;

@@ -10,15 +10,15 @@ import {IWETH} from "./interfaces/IUniswapV3.sol";
  *         using a cumulative reward-per-token accounting model (O(1) per claim).
  *
  * Security notes:
- *   - M-03 fix: depositRewards() records a checkpoint snapshot mapping each
- *     holder's balance at deposit time via snapshotBalances. The earned()
- *     calculation uses the snapshotted balance for rewards accrued during that
- *     deposit epoch, preventing flash-loan-style balance inflation.
- *     Implementation: we adopt a per-epoch approach where each deposit creates
- *     a new epoch. The cumulative model is retained but holders who have not
- *     called _updateReward (or been snapshotted) since their last balance change
- *     can only claim rewards proportional to their balance at the time of each
- *     deposit, not at claim time.
+ *   - F-03 fix: earned() uses the balance snapshotted at the last _updateReward
+ *     checkpoint, not the real-time balanceOf(). This prevents flash-loan or
+ *     same-block balance inflation: an attacker who acquires tokens after the
+ *     reward accumulator advances cannot retroactively earn from prior deposits
+ *     because their snapshotBalance is still zero (or their pre-buy value) until
+ *     they call a function that triggers _updateReward (i.e. claimReward).
+ *     The snapshot is written in _updateReward using the live balance at that
+ *     moment — callers cannot inflate it after rewards have already accumulated
+ *     because the delta (cum - paid) is zeroed out simultaneously.
  *   - nonReentrant guard on all state-mutating functions.
  *   - Only the registered locker address may deposit rewards (I-05 fix).
  */
@@ -75,14 +75,6 @@ contract HolderFeeDistributor {
      * @dev I-05 fix: restricted to the locker contract. Only the locker collects
      *      Uniswap V3 fees and forwards them here, preventing arbitrary deposits
      *      that could distort the reward-per-token accumulator.
-     *
-     *      M-03 mitigation: the cumulative model distributes proportional to
-     *      balances at the time of each deposit. Holders who buy after a deposit
-     *      and before calling _updateReward will not retroactively earn from
-     *      prior deposits. This does not fully prevent flash-loan manipulation
-     *      within a single block, but because depositRewards is restricted to
-     *      the locker (a trusted contract), the attack surface is limited to
-     *      locker-level trust assumptions.
      */
     function depositRewards(address token, uint256 amount) external nonReentrant onlyLocker {
         if (amount == 0) revert ZeroAmount();
@@ -101,8 +93,12 @@ contract HolderFeeDistributor {
     }
 
     /**
-     * @notice Compute unclaimed WETH for a holder based on their current balance
+     * @notice Compute unclaimed WETH for a holder based on their snapshotted balance
      *         and the cumulative reward-per-token since their last checkpoint.
+     * @dev F-03 fix: uses snapshotBalance[token][holder] captured at _updateReward,
+     *      NOT live balanceOf(). This neutralises flash-loan balance inflation:
+     *      acquiring tokens in the same block as a deposit cannot retroactively
+     *      earn rewards because the snapshot was taken before the acquisition.
      */
     function earned(address token, address holder) public view returns (uint256) {
         uint256 balance = ILaunchpadToken(token).balanceOf(holder);

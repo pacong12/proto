@@ -26,23 +26,39 @@ export async function apiFetch<T>(endpoint: string, options?: RequestInit): Prom
 
   let res: Response;
   try {
+    // Default 15s timeout to prevent hanging connections when the network drops
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15_000);
+    const signal = options?.signal ?? controller.signal;
+
     res = await fetch(url, {
       ...options,
+      signal,
       headers: {
         'Content-Type': 'application/json',
         ...options?.headers,
       },
     });
+    clearTimeout(timeoutId);
   } catch (networkErr) {
+    if ((networkErr as Error).name === 'AbortError') {
+      throw new ApiError(408, 'Request timed out. Please try again.');
+    }
     throw new ApiError(0, `Network error: ${(networkErr as Error).message}`);
   }
 
   if (!res.ok) {
-    // Attempt to read the server error body (may be JSON or plain text).
     let detail = res.statusText;
     try {
-      const body = await res.text();
-      if (body) detail = body;
+      const text = await res.text();
+      if (text) {
+        try {
+          const parsed = JSON.parse(text);
+          detail = parsed?.error?.message || parsed?.message || text;
+        } catch {
+          detail = text;
+        }
+      }
     } catch {
       // Body unreadable; fall back to statusText.
     }

@@ -595,6 +595,12 @@ export function useLaunchpad() {
       if (!account) throw new Error('Please connect your wallet');
 
       const network = getNetworkConfig(walletChainId.value ?? undefined);
+      if (
+        !network.contracts.locker ||
+        network.contracts.locker === '0x0000000000000000000000000000000000000000'
+      ) {
+        throw new Error(`Liquidity locker not configured for ${network.name}`);
+      }
       const hash = await walletClient.writeContract({
         address: network.contracts.locker,
         abi: liquidityLockerAbi,
@@ -603,7 +609,6 @@ export function useLaunchpad() {
         account,
         chain: walletClient.chain,
       });
-
       await getPublicClient(network.chainId).waitForTransactionReceipt({ hash });
       return hash;
     } catch (err) {
@@ -635,6 +640,12 @@ export function useLaunchpad() {
       if (!account) throw new Error('Please connect your wallet');
 
       const network = getNetworkConfig(walletChainId.value ?? undefined);
+      if (
+        !network.contracts.locker ||
+        network.contracts.locker === '0x0000000000000000000000000000000000000000'
+      ) {
+        throw new Error(`Liquidity locker not configured for ${network.name}`);
+      }
       const hash = await walletClient.writeContract({
         address: network.contracts.locker,
         abi: liquidityLockerAbi,
@@ -643,7 +654,6 @@ export function useLaunchpad() {
         account,
         chain: walletClient.chain,
       });
-
       await getPublicClient(network.chainId).waitForTransactionReceipt({ hash });
       return hash;
     } catch (err) {

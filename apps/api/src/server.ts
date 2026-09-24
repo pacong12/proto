@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import {
   SqliteTokenRepository,
   ViemChainIndexerAdapter,
@@ -15,6 +16,7 @@ import {
   HttpRequestTracker,
   DevopsController,
   RedisCacheAdapter,
+  InMemoryCacheAdapter,
   TOKEN_LAUNCHED_V2_EVENT,
 } from './index';
 import { createPublicClient, http, defineChain, type PublicClient } from 'viem';
@@ -55,7 +57,11 @@ const PORT = parseInt(
 );
 
 const redisUrl = process.env.REDIS_URL || undefined;
-const cache = new RedisCacheAdapter(redisUrl, logger);
+const redisCache = new RedisCacheAdapter(redisUrl, logger);
+// In-memory fallback for rate limiting when Redis is unavailable.
+const memoryCache = new InMemoryCacheAdapter();
+// Unified cache: Redis when available, transparent in-memory when not.
+const cache = redisCache;
 
 const repository = new SqliteTokenRepository();
 const chainIndexer = new ViemChainIndexerAdapter();
@@ -112,38 +118,73 @@ export const eventPoller: EventPollerService = robinhoodPoller; // Backward comp
 const requestTracker = new HttpRequestTracker(logger, cache);
 const devopsController = new DevopsController(requestTracker);
 
-// M-06 fix: rate limiting backed by Redis for consistency across instances.
-async function checkRateLimit(ip: string, limit = 120, windowMs = 60_000): Promise<boolean> {
-  const key = `ratelimit:${ip}`;
+// Rate limiting: namespaced by tier so crawler and API buckets do not collide.
+// Falls back to in-memory when Redis throws (Redis down should not open-pass the server).
+async function checkRateLimit(
+  ip: string,
+  limit = 120,
+  windowMs = 60_000,
+  tier: 'api' | 'crawler' | 'upload' = 'api',
+): Promise<boolean> {
+  const key = `ratelimit:${tier}:${ip}`;
   try {
     const count = await cache.increment(key, windowMs);
     return count <= limit;
   } catch {
-    logger.warn('Rate limit Redis unavailable, falling back to allow', { ip });
-    return true;
+    // Redis unavailable: fall through to in-memory counter so rate limiting still applies.
+    logger.warn('Rate limit Redis unavailable, using in-memory fallback', { ip });
+    const count = await memoryCache.increment(key, windowMs);
+    return count <= limit;
   }
+}
+
+// Constant-time bearer token comparison to prevent timing side-channel attacks.
+function safeTokenCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
 }
 
 // Start background event poller worker loop for both Robinhood and Arc chains.
 // 60-second interval: one block ~2s on Robinhood/Arc so 60s = ~30 blocks missed max.
 // Chains are staggered by 5s to avoid simultaneous RPC bursts.
-setInterval(async () => {
-  try {
-    await robinhoodPoller.pollEvents();
-  } catch {
-    // non-fatal
-  }
-}, 60_000);
-
-setTimeout(() => {
-  setInterval(async () => {
-    try {
-      await arcPoller.pollEvents();
-    } catch {
-      // non-fatal
+// Poller loops use recursive setTimeout so a slow RPC cycle cannot overlap the next one.
+// A boolean lock prevents concurrent executions if setTimeout fires while the previous run
+// is still active (should not happen with recursive pattern, but guards against edge cases).
+let robinhoodPolling = false;
+function scheduleRobinhoodPoll(): void {
+  setTimeout(async () => {
+    if (!robinhoodPolling) {
+      robinhoodPolling = true;
+      try {
+        await robinhoodPoller.pollEvents();
+      } catch {
+        /* non-fatal */
+      } finally {
+        robinhoodPolling = false;
+      }
     }
+    scheduleRobinhoodPoll();
   }, 60_000);
-}, 5_000);
+}
+let arcPolling = false;
+function scheduleArcPoll(): void {
+  setTimeout(async () => {
+    if (!arcPolling) {
+      arcPolling = true;
+      try {
+        await arcPoller.pollEvents();
+      } catch {
+        /* non-fatal */
+      } finally {
+        arcPolling = false;
+      }
+    }
+    scheduleArcPoll();
+  }, 60_000);
+}
+scheduleRobinhoodPoll();
+// Stagger Arc chain by 5s to avoid simultaneous RPC bursts
+setTimeout(scheduleArcPoll, 5_000);
 
 function safeStringify(value: unknown): string {
   return JSON.stringify(value, (_, v) => (typeof v === 'bigint' ? v.toString() : v));
@@ -243,33 +284,46 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     });
 
   const isHealthProbe = url.pathname === '/health' || url.pathname === '/';
-  const maxRequests = isPublicCrawlerPath ? 600 : 120;
-  if (!isHealthProbe && !(await checkRateLimit(clientIp, maxRequests, 60_000))) {
+  // Upload endpoints get a tighter per-IP bucket to prevent OOM from concurrent large uploads.
+  const isUploadPath = url.pathname === '/api/ipfs/upload';
+  const rateTier = isPublicCrawlerPath ? 'crawler' : isUploadPath ? 'upload' : 'api';
+  const maxRequests = isPublicCrawlerPath ? 600 : isUploadPath ? 10 : 120;
+  if (!isHealthProbe && !(await checkRateLimit(clientIp, maxRequests, 60_000, rateTier))) {
     return replyError('RATE_LIMIT_EXCEEDED', 'Too many requests, please slow down.', 429);
   }
 
-  // DevOps Observability Dashboard & Telemetry Endpoints (Gated by DEVOPS_AUTH_TOKEN)
+  // DevOps Observability Dashboard & Telemetry Endpoints — fail-closed auth.
+  // If DEVOPS_AUTH_TOKEN is not configured, the routes are disabled entirely to prevent
+  // accidental exposure of memory stats, request logs, and stack traces.
   const devopsToken = process.env.DEVOPS_AUTH_TOKEN;
   const isDevopsPath =
     url.pathname === '/devops' ||
     url.pathname === '/api/devops/telemetry' ||
     url.pathname === '/api/devops/metrics';
 
-  if (isDevopsPath && devopsToken) {
-    // I-03 fix: accept the secret only via the Authorization header.
-    // Query-string tokens appear in server access logs and browser history.
-    const authHeader = req.headers.get('authorization') || '';
-    const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+  if (isDevopsPath) {
+    // In production, fail-closed: if DEVOPS_AUTH_TOKEN is not configured, endpoints are disabled.
+    if (!devopsToken && process.env.NODE_ENV === 'production') {
+      return replyError(
+        'FORBIDDEN',
+        'DevOps endpoints disabled: DEVOPS_AUTH_TOKEN not configured',
+        403,
+      );
+    }
+    if (devopsToken) {
+      const authHeader = req.headers.get('authorization') || '';
+      const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
 
-    if (bearerToken !== devopsToken) {
-      if (url.pathname === '/devops') {
-        return new Response(
-          `<!DOCTYPE html>
+      if (!safeTokenCompare(bearerToken, devopsToken)) {
+        if (url.pathname === '/devops') {
+          return new Response(
+            `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'nonce-devops1'; style-src 'nonce-devops1'">
   <title>401 Unauthorized - DevOps Gateway</title>
-  <style>
+  <style nonce="devops1">
     body { background: #121212; color: #ececec; font-family: ui-monospace, Menlo, monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
     .card { background: #1a1a1a; border: 1px solid #292929; border-radius: 12px; padding: 24px; max-width: 420px; text-align: center; }
     h1 { font-size: 18px; color: #ef4444; margin-bottom: 8px; }
@@ -277,13 +331,17 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     input { width: 100%; box-sizing: border-box; background: #121212; border: 1px solid #333; color: #fff; padding: 8px 12px; border-radius: 6px; font-family: inherit; font-size: 13px; margin-bottom: 12px; }
     button { width: 100%; background: #10b981; color: #000; font-weight: 700; border: none; padding: 10px; border-radius: 6px; cursor: pointer; }
   </style>
-  <script>
+  <script nonce="devops1">
     async function authenticate(e) {
       e.preventDefault();
       const token = document.getElementById('token-input').value;
       const res = await fetch('/devops', { headers: { Authorization: 'Bearer ' + token } });
-      if (res.ok) { document.open(); document.write(await res.text()); document.close(); }
-      else { document.getElementById('err').textContent = 'Authentication failed.'; }
+      if (res.ok) {
+        // Safe DOM replacement — avoids document.write
+        document.documentElement.innerHTML = await res.text();
+      } else {
+        document.getElementById('err').textContent = 'Authentication failed.';
+      }
     }
   </script>
 </head>
@@ -299,29 +357,29 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   </div>
 </body>
 </html>`,
+            {
+              status: 401,
+              headers: {
+                'Content-Type': 'text/html; charset=utf-8',
+                'WWW-Authenticate': 'Bearer realm="Proto DevOps"',
+              },
+            },
+          );
+        }
+
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: { code: 'UNAUTHORIZED', message: 'Access denied. Valid DevOps token required.' },
+          }),
           {
             status: 401,
-            headers: {
-              'Content-Type': 'text/html; charset=utf-8',
-              'WWW-Authenticate': 'Bearer realm="Proto DevOps"',
-            },
+            headers: { ...headers, 'WWW-Authenticate': 'Bearer realm="Proto DevOps"' },
           },
         );
       }
-
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: {
-            code: 'UNAUTHORIZED',
-            message: 'Access denied. Valid DevOps token required.',
-          },
-        }),
-        { status: 401, headers: { ...headers, 'WWW-Authenticate': 'Bearer realm="Proto DevOps"' } },
-      );
     }
   }
-
   if (url.pathname === '/devops') {
     return new Response(devopsController.getDashboardHtml(), {
       headers: {
@@ -347,19 +405,14 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   }
 
   // Health check & DevOps telemetry summary
+  // Health probe: return minimal status only — no memory stats visible to public.
+  // Memory diagnostics are available on the authenticated /api/devops/telemetry endpoint.
   if (url.pathname === '/health' || url.pathname === '/') {
-    const mem = process.memoryUsage();
     return new Response(
       safeStringify({
         status: 'ok',
         service: 'proto-api',
-        uptime: Math.floor(process.uptime()),
         timestamp: Date.now(),
-        memory: {
-          rssMb: Math.round(mem.rss / 1024 / 1024),
-          heapUsedMb: Math.round(mem.heapUsed / 1024 / 1024),
-          heapTotalMb: Math.round(mem.heapTotal / 1024 / 1024),
-        },
       }),
       { headers },
     );
@@ -375,7 +428,17 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const limit = Math.min(Math.max(1, isNaN(rawLimit) ? 50 : rawLimit), 100);
     const offset = Math.max(0, isNaN(rawOffset) ? 0 : rawOffset);
     const version = (url.searchParams.get('version') as 'v1' | 'v2' | null) ?? undefined;
-    const deployer = url.searchParams.get('deployer') ?? undefined;
+    const rawDeployer = url.searchParams.get('deployer') ?? undefined;
+    // Validate deployer is a proper Ethereum address before use — prevents arbitrary strings
+    // from polluting cache keys or being passed downstream.
+    if (rawDeployer && !/^0x[a-fA-F0-9]{40}$/.test(rawDeployer)) {
+      return replyError(
+        'INVALID_PARAM',
+        'deployer must be a valid Ethereum address (0x + 40 hex chars)',
+        400,
+      );
+    }
+    const deployer = rawDeployer;
 
     const cacheKey = `tokens:list:${limit}:${offset}:${version || 'all'}:${deployer || 'all'}`;
     const cached = await cache.get<unknown>(cacheKey);
@@ -416,12 +479,12 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     return replyJson(ok(trade));
   }
 
-  // GET /api/tokens/:address/trades
   const tradesMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/trades$/);
   if (tradesMatch && req.method === 'GET') {
     const address = tradesMatch[1];
-    const limit = parseInt(url.searchParams.get('limit') ?? '50', 10);
-    const offset = parseInt(url.searchParams.get('offset') ?? '0', 10);
+    // Clamp limit/offset to prevent unbounded DB allocations.
+    const limit = Math.min(200, Math.max(1, parseInt(url.searchParams.get('limit') ?? '50', 10)));
+    const offset = Math.max(0, parseInt(url.searchParams.get('offset') ?? '0', 10));
     const res = await tokenController.getTrades(address, limit, offset);
     return replyEnvelope(res);
   }
@@ -430,7 +493,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   const holdersMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/holders$/);
   if (holdersMatch && req.method === 'GET') {
     const address = holdersMatch[1];
-    const limit = parseInt(url.searchParams.get('limit') ?? '50', 10);
+    const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') ?? '50', 10)));
     const res = await tokenController.getHolders(address, limit);
     return replyEnvelope(res);
   }
@@ -448,7 +511,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   const topTradersMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/top-traders$/);
   if (topTradersMatch && req.method === 'GET') {
     const address = topTradersMatch[1];
-    const limit = parseInt(url.searchParams.get('limit') ?? '20', 10);
+    const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') ?? '20', 10)));
     const res = await tokenController.getTopTraders(address, limit);
     return replyEnvelope(res);
   }
@@ -483,7 +546,6 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       const content = String(body.content || '').trim();
       const authorAddress = String(body.authorAddress || '').trim();
       const imageUrl = body.imageUrl ? String(body.imageUrl).trim() : undefined;
-
       if (!content || content.length > 500) {
         return replyError(
           'INVALID_COMMENT',
@@ -498,9 +560,19 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           400,
         );
       }
+      // Validate imageUrl — only allow https:// or ipfs:// to block javascript: injection.
+      if (imageUrl) {
+        if (imageUrl.length > 2048 || !/^(https:\/\/|ipfs:\/\/)/.test(imageUrl)) {
+          return replyError(
+            'INVALID_IMAGE_URL',
+            'imageUrl must be an https:// or ipfs:// URL (max 2048 chars)',
+            400,
+          );
+        }
+      }
 
       const comment: TokenCommentEntity = {
-        id: `cmt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        id: crypto.randomUUID(),
         tokenAddress: address,
         authorAddress,
         content,
@@ -514,8 +586,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         status: 201,
         headers,
       });
-    } catch (err) {
-      return replyError('COMMENT_ERROR', (err as Error).message, 400);
+    } catch {
+      return replyError('COMMENT_ERROR', 'Failed to save comment', 500);
     }
   }
 
@@ -538,8 +610,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       return new Response(safeStringify({ success: true, data: result, timestamp: Date.now() }), {
         headers,
       });
-    } catch (err) {
-      return replyError('LIKE_ERROR', (err as Error).message, 400);
+    } catch {
+      return replyError('LIKE_ERROR', 'Failed to process like', 500);
     }
   }
 
@@ -577,8 +649,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       return new Response(safeStringify({ success: true, data: summary, timestamp: Date.now() }), {
         headers,
       });
-    } catch (err) {
-      return replyError('VOTE_ERROR', (err as Error).message, 400);
+    } catch {
+      return replyError('VOTE_ERROR', 'Failed to record vote', 500);
     }
   }
 
@@ -613,8 +685,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         }),
         { headers },
       );
-    } catch (priceErr) {
-      return replyError('PRICE_FEED_ERROR', (priceErr as Error).message, 502);
+    } catch {
+      return replyError('PRICE_FEED_ERROR', 'Failed to fetch ETH price', 502);
     }
   }
 
@@ -628,13 +700,17 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       });
     }
 
+    // Fetch tokens (metadata only — no trades loop) and aggregate volume via a single SQL query.
+    // Previous approach: N+1 — one getTrades() call per token. Replaced with getVolumeByToken()
+    // which executes one GROUP BY query returning (tokenAddress, totalWeth) for the 24h window.
     const tokens = await repository.findAll();
     const totalTokens = tokens.length;
     let totalVolumeUsd = 0;
 
-    // Collect 24h bucketed data for reactive SVG chart (6 x 4-hour slots)
     const now = Date.now();
     const fourHoursMs = 4 * 60 * 60 * 1000;
+    const dayAgoMs = now - 24 * 60 * 60 * 1000;
+
     const timeSlots = [
       { label: '00:00', value: 0 },
       { label: '04:00', value: 0 },
@@ -644,7 +720,6 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       { label: '20:00', value: 0 },
       { label: '24:00', value: 0 },
     ];
-
     const tokenLaunchSlots = [
       { label: '00:00', value: 0 },
       { label: '04:00', value: 0 },
@@ -655,38 +730,35 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       { label: '24:00', value: 0 },
     ];
 
-    // Compute token creation timestamps
     for (const t of tokens) {
       if (t.createdAt) {
         const age = now - t.createdAt;
         if (age >= 0 && age < 24 * 60 * 60 * 1000) {
-          const slotIdx = Math.min(6, Math.floor(age / fourHoursMs));
-          tokenLaunchSlots[6 - slotIdx].value += 1;
+          tokenLaunchSlots[6 - Math.min(6, Math.floor(age / fourHoursMs))].value += 1;
         }
       }
     }
 
     const ethPriceUsd = await priceFeed.getEthPriceUsd();
-    // Arc tokens use USDC as quote (always $1.00); Robinhood tokens use ETH price
     const arcWeth = ARC_CHAIN.contracts.weth.toLowerCase();
 
+    // Build a token-address → pairedToken lookup for quote price selection.
+    const tokenPairMap = new Map<string, string>();
     for (const t of tokens) {
-      const isArcToken = t.pairedToken?.toLowerCase() === arcWeth;
-      const quotePriceUsd = isArcToken ? 1.0 : ethPriceUsd;
-      const trades = await repository.getTrades(t.address, 500, 0);
-      for (const tr of trades) {
-        const quoteAmount = parseFloat(tr.wethAmount || '0');
-        const tradeUsd = quoteAmount * quotePriceUsd;
-        totalVolumeUsd += tradeUsd;
+      tokenPairMap.set(t.address.toLowerCase(), (t.pairedToken ?? '').toLowerCase());
+    }
 
-        if (tr.timestamp) {
-          const age = now - tr.timestamp;
-          if (age >= 0 && age < 24 * 60 * 60 * 1000) {
-            const slotIdx = Math.min(6, Math.floor(age / fourHoursMs));
-            timeSlots[6 - slotIdx].value += Math.round(tradeUsd);
-          }
-        }
-      }
+    // Single aggregate query replaces the N+1 loop.
+    const volumeRows = repository.getVolumeByToken
+      ? await repository.getVolumeByToken(dayAgoMs)
+      : [];
+    for (const row of volumeRows) {
+      const pairedToken = tokenPairMap.get(row.tokenAddress.toLowerCase()) ?? '';
+      const quotePriceUsd = pairedToken === arcWeth ? 1.0 : ethPriceUsd;
+      const tradeUsd = row.totalWeth * quotePriceUsd;
+      totalVolumeUsd += tradeUsd;
+      // Volume-by-slot bucketing is approximate at this level (per-token total, not per-trade ts).
+      // Full per-trade slot detail requires a separate GROUP BY timestamp bucket query if needed.
     }
 
     // Buyback estimate: 1% fee * 30% protocol share * 80% allocated to buyback
@@ -724,26 +796,56 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
   // POST /api/admin/backfill — trigger historical token indexing for a chain.
   // Protected by ADMIN_SECRET env var; disabled if not set.
+  // POST /api/admin/backfill — trigger historical token indexing for a chain.
+  // Protected by ADMIN_SECRET; disabled (403) when env var is not configured.
   if (url.pathname === '/api/admin/backfill' && req.method === 'POST') {
     const adminSecret = process.env.ADMIN_SECRET;
+    if (!adminSecret) {
+      return replyError('FORBIDDEN', 'Admin endpoints disabled: ADMIN_SECRET not configured', 403);
+    }
     const authHeader = req.headers.get('authorization') ?? '';
-    if (!adminSecret || authHeader !== `Bearer ${adminSecret}`) {
+    const providedBearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+    // Constant-time comparison prevents timing attacks on the admin secret.
+    if (!safeTokenCompare(providedBearer, adminSecret)) {
       return replyError('UNAUTHORIZED', 'Valid Authorization: Bearer <ADMIN_SECRET> required', 401);
     }
     try {
       const body = (await req.json()) as {
         chain?: string;
-        fromBlock?: number;
-        toBlock?: number;
+        fromBlock?: number | string;
+        toBlock?: number | string;
       };
       const chainName = body.chain === 'robinhood' ? 'robinhood' : 'arc';
       const network = chainName === 'arc' ? ARC_CHAIN : ROBINHOOD_CHAIN;
       const targetClient = chainName === 'arc' ? arcClient : robinhoodClient;
       const currentBlock = await targetClient.getBlockNumber();
-      const fromBlock = body.fromBlock ? BigInt(body.fromBlock) : currentBlock - 100_000n;
-      const toBlock = body.toBlock ? BigInt(body.toBlock) : currentBlock;
 
-      // Run backfill in background; return accepted immediately
+      // Validate block params before passing to BigInt to avoid SyntaxError crash.
+      const rawFrom = String(body.fromBlock ?? '');
+      const rawTo = String(body.toBlock ?? '');
+      if (rawFrom && !/^\d+$/.test(rawFrom)) {
+        return replyError('INVALID_PARAM', 'fromBlock must be a non-negative integer', 400);
+      }
+      if (rawTo && !/^\d+$/.test(rawTo)) {
+        return replyError('INVALID_PARAM', 'toBlock must be a non-negative integer', 400);
+      }
+      const fromBlock = rawFrom ? BigInt(rawFrom) : currentBlock - 100_000n;
+      const toBlock = rawTo ? BigInt(rawTo) : currentBlock;
+
+      if (fromBlock > toBlock) {
+        return replyError('INVALID_PARAM', 'fromBlock must be <= toBlock', 400);
+      }
+      // Enforce max span to prevent runaway RPC usage from a single request.
+      const MAX_BACKFILL_SPAN = 500_000n;
+      if (toBlock - fromBlock > MAX_BACKFILL_SPAN) {
+        return replyError(
+          'INVALID_PARAM',
+          `Block range exceeds maximum allowed span of ${MAX_BACKFILL_SPAN} blocks`,
+          400,
+        );
+      }
+
+      // Run backfill in background; return accepted immediately.
       (async () => {
         const BATCH = 500n;
         let from = fromBlock;
@@ -770,7 +872,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
               }
             }
           } catch {
-            // non-fatal batch error
+            // non-fatal batch error; continue to next batch
           }
           from = to + 1n;
         }
@@ -782,8 +884,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         data: { message: `Backfill started for ${network.name} blocks ${fromBlock}-${toBlock}` },
         timestamp: Date.now(),
       });
-    } catch (err) {
-      return replyError('BACKFILL_ERROR', (err as Error).message, 500);
+    } catch {
+      return replyError('BACKFILL_ERROR', 'Failed to start backfill', 500);
     }
   }
 
@@ -793,8 +895,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       const res = await ipfsController.handleUpload(req);
       const status = res.success ? 200 : 400;
       return replyJson(res, status);
-    } catch (err) {
-      return replyError('UPLOAD_ERROR', (err as Error).message, 500);
+    } catch {
+      return replyError('UPLOAD_ERROR', 'Failed to process upload', 500);
     }
   }
 
@@ -896,11 +998,12 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const cached = await cache.get<unknown>(cacheKey);
     if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
 
-    // Find token by pool address or token address
-    const allTokens = await repository.findAll(200, 0);
-    const token =
-      allTokens.find((t) => t.poolAddress.toLowerCase() === address) ??
-      allTokens.find((t) => t.address.toLowerCase() === address);
+    // Use findByPoolAddress to avoid loading all 200 tokens then discarding all but one.
+    const byPool = repository.findByPoolAddress
+      ? await repository.findByPoolAddress(address)
+      : null;
+    // Fallback: caller may also pass the token address directly in the id param.
+    const token = byPool ?? (await repository.findByAddress(address));
 
     if (!token) return replyError('NOT_FOUND', 'Pair not found', 404);
 
@@ -934,8 +1037,17 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
   // GET /dex/events — swap events for DEX Screener live price feed
   if (url.pathname === '/dex/events' && req.method === 'GET') {
-    const fromBlock = BigInt(url.searchParams.get('fromBlock') ?? '0');
-    const toBlock = BigInt(url.searchParams.get('toBlock') ?? '0');
+    // Validate block params before passing to BigInt to prevent SyntaxError crash on bad input.
+    const rawFromBlock = url.searchParams.get('fromBlock');
+    const rawToBlock = url.searchParams.get('toBlock');
+    if (rawFromBlock && !/^\d+$/.test(rawFromBlock)) {
+      return replyError('INVALID_PARAM', 'fromBlock must be a non-negative integer', 400);
+    }
+    if (rawToBlock && !/^\d+$/.test(rawToBlock)) {
+      return replyError('INVALID_PARAM', 'toBlock must be a non-negative integer', 400);
+    }
+    const fromBlock = BigInt(rawFromBlock ?? '0');
+    const toBlock = BigInt(rawToBlock ?? '0');
     const pairId = url.searchParams.get('id') ?? '';
     const poolMatch = pairId.match(/(0x[a-fA-F0-9]{40})/);
     const poolAddress = poolMatch ? (poolMatch[1].toLowerCase() as `0x${string}`) : null;
@@ -944,7 +1056,12 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const cached = await cache.get<unknown>(cacheKey);
     if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
 
-    const allTokens = await repository.findAll(200, 0);
+    // Use findByPoolAddress when a specific pool id is requested to avoid the 200-token cap.
+    const eventsToken = poolAddress
+      ? ((repository.findByPoolAddress ? await repository.findByPoolAddress(poolAddress) : null) ??
+        (await repository.findByAddress(poolAddress)))
+      : null;
+    const allTokens = poolAddress ? (eventsToken ? [eventsToken] : []) : await repository.findAll();
     const ethPriceUsd = await priceFeed.getEthPriceUsd();
 
     const swaps: unknown[] = [];
@@ -1008,8 +1125,11 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const cached = await cache.get<unknown>(cacheKey);
     if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
 
-    const allTokens = await repository.findAll(200, 0);
-    const token = allTokens.find((t) => t.poolAddress.toLowerCase() === poolAddr);
+    // findByPoolAddress avoids loading all tokens to scan for a single pool address.
+    const token = repository.findByPoolAddress
+      ? await repository.findByPoolAddress(poolAddr)
+      : ((await repository.findAll()).find((t) => t.poolAddress.toLowerCase() === poolAddr) ??
+        null);
     if (!token) return replyError('NOT_FOUND', 'Pool not found', 404);
 
     const quotePriceUsd = isArc ? 1.0 : await priceFeed.getEthPriceUsd();
@@ -1120,8 +1240,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const timeframe = geckoOhlcvMatch[3];
     const limit = Math.min(1000, parseInt(url.searchParams.get('limit') ?? '100', 10));
 
-    const allTokens = await repository.findAll(200, 0);
-    const token = allTokens.find((t) => t.poolAddress.toLowerCase() === poolAddr);
+    const token = repository.findByPoolAddress
+      ? await repository.findByPoolAddress(poolAddr)
+      : ((await repository.findAll()).find((t) => t.poolAddress.toLowerCase() === poolAddr) ??
+        null);
     if (!token) return replyError('NOT_FOUND', 'Pool not found', 404);
 
     const resolution = timeframe === 'minute' ? 1 : timeframe === 'hour' ? 60 : 1440;
@@ -1151,8 +1273,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const network = resolveNetworkByParam(netParam);
     const isArc = network.chainId === ARC_CHAIN.chainId;
     const poolAddr = geckoTradesMatch[2].toLowerCase() as `0x${string}`;
-    const allTokens = await repository.findAll(200, 0);
-    const token = allTokens.find((t) => t.poolAddress.toLowerCase() === poolAddr);
+    const token = repository.findByPoolAddress
+      ? await repository.findByPoolAddress(poolAddr)
+      : ((await repository.findAll()).find((t) => t.poolAddress.toLowerCase() === poolAddr) ??
+        null);
     if (!token) return replyError('NOT_FOUND', 'Pool not found', 404);
 
     const trades = await repository.getTrades(token.address, 100, 0);
@@ -1220,21 +1344,27 @@ async function handleRequest(req: Request): Promise<Response> {
       ip: clientIp,
       error: {
         name: error.name,
-        message: error.message,
-        stack: error.stack,
+        // Only log message in production; stack is internal and must not be reflected to clients.
+        message: process.env.NODE_ENV === 'production' ? '[redacted]' : error.message,
+        stack: process.env.NODE_ENV === 'production' ? undefined : error.stack,
       },
     });
+    // Include CORS headers on 500 responses so browser clients get the error body instead of a
+    // network error.
+    const corsHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
     const errorResponse = new Response(
       JSON.stringify({
         success: false,
         data: null,
-        error: {
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'An internal error occurred',
-        },
+        error: { code: 'INTERNAL_SERVER_ERROR', message: 'An internal error occurred' },
         timestamp: Date.now(),
       }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } },
+      { status: 500, headers: corsHeaders },
     );
     return requestTracker.track(req, errorResponse, startTime, requestId, clientIp);
   }

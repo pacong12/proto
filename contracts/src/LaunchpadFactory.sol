@@ -200,6 +200,14 @@ contract LaunchpadFactory is ILaunchpadFactory {
         uint256 tokenSupply = token.balanceOf(address(this));
         token.approve(address(positionManager), tokenSupply);
 
+        // F-10 fix: supply realistic minimum token amounts to guard against
+        // price manipulation between pool initialisation and mint. For single-sided
+        // liquidity (only the token side is non-zero), we protect the non-zero leg
+        // with a 99% floor (1% tolerance). The zero-desired leg remains at 0 because
+        // no ETH/WETH is expected to be placed at this price point.
+        uint256 amount0MinGuard = isToken0 ? (tokenSupply * 9900) / 10000 : 0;
+        uint256 amount1MinGuard = isToken0 ? 0 : (tokenSupply * 9900) / 10000;
+
         INonfungiblePositionManager.MintParams memory mintParams = INonfungiblePositionManager.MintParams({
             token0: token0,
             token1: token1,
@@ -208,8 +216,8 @@ contract LaunchpadFactory is ILaunchpadFactory {
             tickUpper: TICK_UPPER,
             amount0Desired: isToken0 ? tokenSupply : 0,
             amount1Desired: isToken0 ? 0 : tokenSupply,
-            amount0Min: 0,
-            amount1Min: 0,
+            amount0Min: amount0MinGuard,
+            amount1Min: amount1MinGuard,
             recipient: locker,
             deadline: block.timestamp + 1200
         });

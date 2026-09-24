@@ -67,6 +67,8 @@ contract LaunchpadV2FactoryArc {
     }
 
     mapping(address => V2Launch) public launches;
+    // F-11 fix: reverse lookup curve → token so migration functions can update graduated flag.
+    mapping(address => address) public curveToToken;
     address[] public allLaunches;
 
     event TokenLaunchedV2(
@@ -157,7 +159,8 @@ contract LaunchpadV2FactoryArc {
         string memory description,
         string memory twitter,
         string memory telegram,
-        string memory website
+        string memory website,
+        uint256 minInitialTokensOut
     ) external payable nonReentrant returns (address tokenAddress, address curveAddress) {
         if (msg.value < launchFee) revert InvalidFee();
 
@@ -192,7 +195,8 @@ contract LaunchpadV2FactoryArc {
         curveAddress = address(curve);
 
         // Transfer full supply to bonding curve; curve distributes on buy/sell
-        token.transfer(curveAddress, token.totalSupply());
+        bool tokenSent = token.transfer(curveAddress, token.totalSupply());
+        if (!tokenSent) revert TransferFailed();
 
         // CEI: write state before external calls
         launches[tokenAddress] = V2Launch({
@@ -202,6 +206,7 @@ contract LaunchpadV2FactoryArc {
             createdAt: block.timestamp,
             graduated: false
         });
+        curveToToken[curveAddress] = tokenAddress; // F-11: reverse mapping for flag update
         allLaunches.push(tokenAddress);
 
         emit TokenLaunchedV2(tokenAddress, curveAddress, msg.sender, name, symbol, initialBuyUsdc);
@@ -210,9 +215,9 @@ contract LaunchpadV2FactoryArc {
         (bool feeOk,) = protocolFeeRecipient.call{value: launchFee}("");
         if (!feeOk) revert TransferFailed();
 
-        // Optional creator initial buy
+        // Optional creator initial buy — protected by minInitialTokensOut (F-01 fix)
         if (initialBuyUsdc > 0) {
-            curve.buyFor{value: initialBuyUsdc}(msg.sender, 0);
+            curve.buyFor{value: initialBuyUsdc}(msg.sender, minInitialTokensOut);
         }
     }
 
@@ -222,10 +227,18 @@ contract LaunchpadV2FactoryArc {
 
     function migrateCurveToV4(address curve, address payable recipient) external onlyOwner {
         BondingCurve(payable(curve)).migrateToV4(recipient);
+        address token = curveToToken[curve];
+        if (token != address(0)) {
+            launches[token].graduated = true; // F-11 fix
+        }
     }
 
     function emergencyWithdrawFromCurve(address curve, address payable recipient) external onlyOwner {
         BondingCurve(payable(curve)).emergencyWithdraw(recipient);
+        address token = curveToToken[curve];
+        if (token != address(0)) {
+            launches[token].graduated = true; // F-11 fix
+        }
     }
 
     // ---------------------------------------------------------------------------

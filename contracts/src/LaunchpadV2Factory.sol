@@ -41,6 +41,8 @@ contract LaunchpadV2Factory {
     }
 
     mapping(address => V2Launch) public launches;
+    // F-11 fix: reverse lookup curve → token so migrateCurveToV4 can update graduated flag.
+    mapping(address => address) public curveToToken;
     address[] public allLaunches;
 
     event TokenLaunchedV2(
@@ -124,7 +126,8 @@ contract LaunchpadV2Factory {
         string memory description,
         string memory twitter,
         string memory telegram,
-        string memory website
+        string memory website,
+        uint256 minInitialTokensOut
     ) external payable nonReentrant returns (address tokenAddress, address curveAddress) {
         if (msg.value < launchFee) revert InvalidFee();
 
@@ -153,11 +156,13 @@ contract LaunchpadV2Factory {
 
         curveAddress = address(curve);
 
-        token.transfer(curveAddress, token.totalSupply());
+        bool tokenSent = token.transfer(curveAddress, token.totalSupply());
+        if (!tokenSent) revert TransferFailed();
 
         launches[tokenAddress] = V2Launch({
             token: tokenAddress, curve: curveAddress, creator: msg.sender, createdAt: block.timestamp, graduated: false
         });
+        curveToToken[curveAddress] = tokenAddress; // F-11: reverse mapping for flag update
         allLaunches.push(tokenAddress);
 
         emit TokenLaunchedV2(tokenAddress, curveAddress, msg.sender, name, symbol, initialBuyEth);
@@ -166,7 +171,7 @@ contract LaunchpadV2Factory {
         if (!feeOk) revert TransferFailed();
 
         if (initialBuyEth > 0) {
-            curve.buyFor{value: initialBuyEth}(msg.sender, 0);
+            curve.buyFor{value: initialBuyEth}(msg.sender, minInitialTokensOut);
         }
     }
 
@@ -177,17 +182,27 @@ contract LaunchpadV2Factory {
     /**
      * @notice Trigger liquidity migration for a graduated bonding curve.
      *         Delegates to BondingCurve.migrateToV4(). Only callable by owner.
+     * @dev F-11 fix: updates launches[token].graduated to true after successful migration.
      */
     function migrateCurveToV4(address curve, address payable recipient) external onlyOwner {
         BondingCurve(payable(curve)).migrateToV4(recipient);
+        address token = curveToToken[curve];
+        if (token != address(0)) {
+            launches[token].graduated = true;
+        }
     }
 
     /**
      * @notice Emergency withdrawal from a graduated bonding curve after the
      *         migration deadline has passed. Only callable by owner.
+     * @dev F-11 fix: also marks graduated = true to reflect the curve has exited.
      */
     function emergencyWithdrawFromCurve(address curve, address payable recipient) external onlyOwner {
         BondingCurve(payable(curve)).emergencyWithdraw(recipient);
+        address token = curveToToken[curve];
+        if (token != address(0)) {
+            launches[token].graduated = true;
+        }
     }
 
     // ---------------------------------------------------------------------------

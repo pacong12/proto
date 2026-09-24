@@ -18,6 +18,18 @@ export interface IpfsDirectUploadPayload {
 export class IpfsController {
   constructor(private readonly ipfsService: IpfsService = new IpfsService()) {}
 
+  // MIME type whitelist: only image formats accepted.
+  // Executable, HTML, and other dangerous types are rejected before any bytes are processed.
+  private static readonly ALLOWED_MIME_TYPES = new Set([
+    'image/png',
+    'image/jpeg',
+    'image/gif',
+    'image/webp',
+    'image/svg+xml',
+  ]);
+  // 5 MiB hard limit; reject before passing to IpfsService to prevent OOM from large uploads.
+  private static readonly MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+
   async handleUpload(req: Request): Promise<ApiEnvelope<IpfsUploadResult>> {
     try {
       const contentType = req.headers.get('content-type') || '';
@@ -30,18 +42,23 @@ export class IpfsController {
         }
 
         if (typeof file === 'string') {
-          const buf = Buffer.from(file);
-          const result = await this.ipfsService.uploadFile(
-            buf,
-            'file.bin',
-            'application/octet-stream',
-          );
-          return ok(result);
+          return err('UNSUPPORTED_FORMAT', 'String fields are not accepted; send a file part');
         }
 
         const arrayBuffer = await file.arrayBuffer();
         const fileName = (file as File).name || 'upload.bin';
-        const mimeType = file.type || 'application/octet-stream';
+        const mimeType = (file as File).type || 'application/octet-stream';
+
+        if (!IpfsController.ALLOWED_MIME_TYPES.has(mimeType)) {
+          return err(
+            'UNSUPPORTED_MIME_TYPE',
+            `Only image uploads are accepted. Received: ${mimeType}`,
+          );
+        }
+        if (arrayBuffer.byteLength > IpfsController.MAX_UPLOAD_BYTES) {
+          return err('FILE_TOO_LARGE', 'Upload exceeds 5 MiB limit');
+        }
+
         const result = await this.ipfsService.uploadFile(arrayBuffer, fileName, mimeType);
         return ok(result);
       }
@@ -73,7 +90,18 @@ export class IpfsController {
           base64Data = dataUrlMatch[2];
         }
 
+        if (!IpfsController.ALLOWED_MIME_TYPES.has(mimeType)) {
+          return err(
+            'UNSUPPORTED_MIME_TYPE',
+            `Only image uploads are accepted. Received: ${mimeType}`,
+          );
+        }
+
         const buffer = Buffer.from(base64Data, 'base64');
+        if (buffer.byteLength > IpfsController.MAX_UPLOAD_BYTES) {
+          return err('FILE_TOO_LARGE', 'Upload exceeds 5 MiB limit');
+        }
+
         const fileName =
           body.fileName ||
           (mimeType.includes('image/') ? `image.${mimeType.split('/')[1]}` : 'upload.bin');
@@ -84,8 +112,17 @@ export class IpfsController {
       // Raw binary body fallback
       const arrayBuffer = await req.arrayBuffer();
       if (arrayBuffer.byteLength > 0) {
+        const mimeType = contentType.split(';')[0].trim() || 'application/octet-stream';
+        if (!IpfsController.ALLOWED_MIME_TYPES.has(mimeType)) {
+          return err(
+            'UNSUPPORTED_MIME_TYPE',
+            `Only image uploads are accepted. Received: ${mimeType}`,
+          );
+        }
+        if (arrayBuffer.byteLength > IpfsController.MAX_UPLOAD_BYTES) {
+          return err('FILE_TOO_LARGE', 'Upload exceeds 5 MiB limit');
+        }
         const fileName = req.headers.get('x-file-name') || 'upload.bin';
-        const mimeType = contentType || 'application/octet-stream';
         const result = await this.ipfsService.uploadFile(arrayBuffer, fileName, mimeType);
         return ok(result);
       }
@@ -94,8 +131,8 @@ export class IpfsController {
         'UNSUPPORTED_MEDIA_TYPE',
         'Request must be multipart/form-data or application/json',
       );
-    } catch (error) {
-      return err('UPLOAD_FAILED', (error as Error).message);
+    } catch {
+      return err('UPLOAD_FAILED', 'Failed to process upload');
     }
   }
 

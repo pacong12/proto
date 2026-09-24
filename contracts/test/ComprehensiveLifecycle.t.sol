@@ -125,7 +125,8 @@ contract ComprehensiveLifecycleTest is Test {
             "V2 Bonding Curve Token",
             "x.com/pv2",
             "t.me/pv2",
-            "proto.family"
+            "proto.family",
+            0
         );
         vm.stopPrank();
 

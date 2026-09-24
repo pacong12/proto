@@ -124,9 +124,23 @@ export class RedisCacheAdapter implements CachePort {
     }
 
     try {
-      const keys = await this.client.keys(`${prefix}*`);
-      if (keys.length > 0) {
-        await this.client.del(...keys);
+      // Use SCAN instead of KEYS to avoid blocking the Redis event loop on large keyspaces.
+      // KEYS is O(N) and holds the Redis lock for its entire duration; SCAN iterates in batches.
+      let cursor = '0';
+      const toDelete: string[] = [];
+      do {
+        const [nextCursor, keys] = await this.client.scan(
+          cursor,
+          'MATCH',
+          `${prefix}*`,
+          'COUNT',
+          100,
+        );
+        cursor = nextCursor;
+        toDelete.push(...keys);
+      } while (cursor !== '0');
+      if (toDelete.length > 0) {
+        await this.client.del(...toDelete);
       }
     } catch {
       // Non-blocking
