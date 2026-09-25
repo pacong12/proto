@@ -22,7 +22,7 @@ proto is the premier multi-chain launchpad for fixed-supply tokens. Explore new 
 
 ## Supported Networks
 - **Robinhood Chain** (Chain ID: 4663): Native gas ETH (18 decimals)
-- **Arc Testnet** (Chain ID: 5042002): Native gas USDC (6 decimals)
+- **Arc Network** (Chain ID: 5042): Native gas USDC (18 decimals)
 - Token Supply: Fixed 1,000,000,000 (18 decimals)
 - Pool Fee: 1% (10000)
 - Launch Fee: 0.0005 ETH (Robinhood) / 1 USDC (Arc)

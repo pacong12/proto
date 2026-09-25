@@ -1,27 +1,23 @@
 <template>
-  <div class="max-w-2xl mx-auto space-y-6">
+  <div class="max-w-4xl mx-auto space-y-8 py-2 sm:py-4">
     <div>
-      <div class="flex items-center gap-2">
-        <Rocket class="w-6 h-6 text-emerald-400" />
-        <h1 class="text-3xl font-bold tracking-tight">{{ t('launchToken') }}</h1>
-      </div>
+      <h1 class="text-3xl font-bold tracking-tight">{{ t('launchToken') }}</h1>
       <p class="text-sm mt-1 text-zinc-500 dark:text-zinc-400">
         {{ selectedVersion === 'v2' ? t('v2Subtitle') : t('v1Subtitle') }}
       </p>
     </div>
 
     <!-- Form container using Shadcn Card -->
-    <Card class="p-6 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
+    <Card class="p-6 sm:p-10 border border-border bg-card shadow-sm rounded-3xl">
       <!-- Dual Launch Architecture Tabs (v2 / v1) -->
-      <div class="mb-6 p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-xl flex gap-1">
+      <div class="mb-8 p-1.5 bg-muted rounded-2xl flex gap-2 border border-border">
         <Button
           type="button"
           @click="selectedVersion = 'v2'"
           :variant="selectedVersion === 'v2' ? 'default' : 'ghost'"
           size="sm"
-          class="flex-1 text-xs font-semibold gap-2 transition-all cursor-pointer"
+          class="flex-1 text-xs font-semibold transition-all cursor-pointer"
         >
-          <Rocket class="w-3.5 h-3.5 text-emerald-500" />
           <span>{{ t('v2BondingCurveTab') }}</span>
         </Button>
         <Button
@@ -29,180 +25,174 @@
           @click="selectedVersion = 'v1'"
           :variant="selectedVersion === 'v1' ? 'default' : 'ghost'"
           size="sm"
-          class="flex-1 text-xs font-semibold gap-2 transition-all cursor-pointer"
+          class="flex-1 text-xs font-semibold transition-all cursor-pointer"
         >
-          <Lock class="w-3.5 h-3.5 text-zinc-400" />
           <span>{{ t('v1DirectPoolTab') }}</span>
         </Button>
       </div>
 
-      <form @submit.prevent="handleLaunch" class="space-y-5">
-        <!-- Name -->
-        <div class="space-y-1.5">
-          <Label for="token-name">{{ t('tokenName') }}</Label>
-          <Input
-            id="token-name"
-            v-model="form.name"
-            type="text"
-            :placeholder="t('namePlaceholder')"
-            maxlength="60"
-            required
-          />
-        </div>
-
-        <!-- Ticker -->
-        <div class="space-y-1.5">
-          <Label for="token-symbol">{{ t('ticker') }}</Label>
-          <Input
-            id="token-symbol"
-            v-model="form.symbol"
-            type="text"
-            :placeholder="t('symbolPlaceholder')"
-            maxlength="10"
-            required
-            class="font-mono uppercase"
-          />
-        </div>
-
-        <!-- Description -->
-        <div class="space-y-1.5">
-          <Label for="token-description">{{ t('description') }}</Label>
-          <Textarea
-            id="token-description"
-            v-model="form.description"
-            :placeholder="t('descriptionPlaceholder')"
-            :rows="3"
-          />
-        </div>
-
-        <!-- Token image -->
-        <div class="space-y-1.5">
-          <Label>{{ t('tokenImage') }}</Label>
-          <div
-            @dragover.prevent="dragOver = true"
-            @dragleave.prevent="dragOver = false"
-            @drop.prevent="handleDrop"
-            :class="[
-              'relative border-2 border-dashed rounded-xl p-4 transition-all flex flex-col sm:flex-row items-center gap-4 text-left cursor-pointer min-w-0 overflow-hidden',
-              dragOver
-                ? 'border-emerald-500 bg-emerald-500/10'
-                : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600',
-            ]"
-            @click="triggerFileInput"
-          >
-            <input
-              ref="fileInputRef"
-              type="file"
-              accept="image/png,image/jpeg,image/webp,image/gif"
-              class="hidden"
-              @change="handleFileChange"
-            />
-
-            <!-- Thumbnail / Icon -->
+      <form @submit.prevent="handleLaunch" class="space-y-7">
+        <!-- Top Info Section: Image on the side + Name, Ticker, Description -->
+        <div class="flex flex-col sm:flex-row gap-6 sm:gap-8 items-start">
+          <!-- Token Image Dropzone (Side Column) -->
+          <div class="space-y-2 w-full sm:w-48 shrink-0">
+            <Label>{{ t('tokenImage') }}</Label>
             <div
-              class="w-14 h-14 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center overflow-hidden shrink-0 border border-zinc-200 dark:border-zinc-700"
+              @dragover.prevent="dragOver = true"
+              @dragleave.prevent="dragOver = false"
+              @drop.prevent="handleDrop"
+              :class="[
+                'relative border-2 border-dashed rounded-2xl transition-all flex flex-col items-center justify-center text-center cursor-pointer overflow-hidden p-3 aspect-square w-full sm:w-48 h-48 group',
+                dragOver
+                  ? 'border-primary bg-primary/10'
+                  : 'border-border hover:border-primary/60 bg-muted/30',
+              ]"
+              @click="triggerFileInput"
             >
-              <img
-                v-if="imagePreview"
-                :src="imagePreview"
-                alt="Preview"
-                class="w-full h-full object-cover"
+              <input
+                ref="fileInputRef"
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                class="hidden"
+                @change="handleFileChange"
               />
-              <UploadCloud v-else class="w-6 h-6 text-zinc-400" />
-            </div>
 
-            <!-- Upload copy & status -->
-            <div class="flex-1 min-w-0 overflow-hidden space-y-1">
-              <div class="flex items-center gap-2 min-w-0">
-                <span
-                  class="text-xs font-semibold text-black dark:text-white truncate block flex-1 min-w-0"
-                  :title="selectedFileName"
+              <!-- Preview with Trash Icon Button on top right -->
+              <template v-if="imagePreview">
+                <img
+                  :src="imagePreview"
+                  alt="Preview"
+                  class="w-full h-full object-cover rounded-xl"
+                />
+
+                <!-- Trash button on top-right of image using Shadcn Button -->
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="destructive"
+                  class="absolute top-2 right-2 z-10 w-7 h-7 rounded-full shadow-md cursor-pointer border border-white/20"
+                  title="Remove image"
+                  @click.stop="clearImage"
                 >
-                  {{ selectedFileName || t('noFileChosen') }}
-                </span>
-                <Badge
-                  v-if="isUploadingIpfs"
-                  variant="outline"
-                  class="text-[10px] bg-amber-500/10 text-amber-500 border-amber-500/30 flex items-center gap-1 shrink-0"
+                  <Trash2 class="w-3.5 h-3.5" />
+                </Button>
+              </template>
+
+              <!-- Empty Upload Prompt -->
+              <div
+                v-else
+                class="flex flex-col items-center justify-center p-2 text-zinc-400 space-y-1.5"
+              >
+                <div
+                  class="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center"
                 >
-                  <Loader2 class="w-3 h-3 animate-spin" />
-                  {{ t('pinningIpfs') }}
-                </Badge>
-                <Badge
-                  v-else-if="form.logo"
-                  variant="outline"
-                  class="text-[10px] bg-emerald-500/10 text-emerald-500 border-emerald-500/30 shrink-0"
+                  <UploadCloud class="w-5 h-5 text-zinc-400" />
+                </div>
+                <span class="text-xs font-semibold text-black dark:text-white">Upload Logo</span>
+                <span class="text-[10px] text-zinc-400 leading-tight"
+                  >PNG, JPG, WEBP (Max 5MB)</span
                 >
-                  {{ t('ipfsReady') }}
-                </Badge>
               </div>
-              <p class="text-[11px] leading-normal text-zinc-500 dark:text-zinc-400 truncate">
-                {{ t('chooseImage') }}
-              </p>
             </div>
 
-            <Button
-              v-if="imagePreview"
-              type="button"
-              variant="ghost"
-              size="sm"
-              class="h-7 text-xs text-rose-500 hover:text-rose-600 dark:text-rose-400"
-              @click.stop="clearImage"
+            <!-- Minimal Uploading Spinner Indicator -->
+            <div
+              v-if="isUploadingIpfs"
+              class="flex items-center gap-1.5 text-[11px] font-mono text-amber-500 pt-0.5"
             >
-              {{ t('remove') }}
-            </Button>
+              <Loader2 class="w-3 h-3 animate-spin shrink-0" />
+              <span>{{ t('pinningIpfs') }}</span>
+            </div>
+
+            <!-- Image Error -->
+            <div
+              v-if="imageError"
+              class="text-[11px] text-rose-500 bg-rose-500/10 border border-rose-500/20 rounded-lg p-2"
+            >
+              {{ imageError }}
+            </div>
+          </div>
+
+          <!-- Name, Ticker, and Description (Main Columns) -->
+          <div class="flex-1 w-full space-y-5">
+            <!-- Name & Ticker Row -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div class="space-y-2 sm:col-span-2">
+                <Label for="token-name">{{ t('tokenName') }}</Label>
+                <Input
+                  id="token-name"
+                  v-model="form.name"
+                  type="text"
+                  :placeholder="t('namePlaceholder')"
+                  maxlength="60"
+                  required
+                />
+              </div>
+
+              <div class="space-y-2">
+                <Label for="token-symbol">{{ t('ticker') }}</Label>
+                <Input
+                  id="token-symbol"
+                  v-model="form.symbol"
+                  type="text"
+                  :placeholder="t('symbolPlaceholder')"
+                  maxlength="10"
+                  required
+                  class="font-mono uppercase"
+                />
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div class="space-y-2">
+              <Label for="token-description">{{ t('description') }}</Label>
+              <Textarea
+                id="token-description"
+                v-model="form.description"
+                :placeholder="t('descriptionPlaceholder')"
+                class="min-h-[92px] resize-none"
+                :rows="3"
+              />
+            </div>
           </div>
         </div>
 
-        <!-- Image validation error -->
-        <div
-          v-if="imageError"
-          class="flex items-start gap-2 text-xs text-rose-500 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2"
-        >
-          <AlertCircle class="w-3.5 h-3.5 shrink-0 mt-0.5" />
-          <span>{{ imageError }}</span>
-        </div>
+        <!-- Social Links (X, Telegram, Website) -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 pt-1">
+          <div class="space-y-2">
+            <Input
+              id="token-x"
+              v-model="form.twitter"
+              type="text"
+              placeholder="https://x.com/yourproject"
+              class="font-mono text-xs"
+            />
+          </div>
 
-        <!-- X (Twitter) -->
-        <div class="space-y-1.5">
-          <Label for="token-x">X (Twitter)</Label>
-          <Input
-            id="token-x"
-            v-model="form.twitter"
-            type="text"
-            placeholder="https://x.com/yourproject"
-            class="font-mono text-xs"
-          />
-        </div>
+          <div class="space-y-2">
+            <Input
+              id="token-tg"
+              v-model="form.telegram"
+              type="text"
+              placeholder="https://t.me/yourproject"
+              class="font-mono text-xs"
+            />
+          </div>
 
-        <!-- Telegram -->
-        <div class="space-y-1.5">
-          <Label for="token-tg">Telegram</Label>
-          <Input
-            id="token-tg"
-            v-model="form.telegram"
-            type="text"
-            placeholder="https://t.me/yourproject"
-            class="font-mono text-xs"
-          />
-        </div>
-
-        <!-- Website -->
-        <div class="space-y-1.5">
-          <Label for="token-web">Website</Label>
-          <Input
-            id="token-web"
-            v-model="form.website"
-            type="text"
-            placeholder="https://yourproject.com"
-            class="font-mono text-xs"
-          />
+          <div class="space-y-2">
+            <Input
+              id="token-web"
+              v-model="form.website"
+              type="text"
+              placeholder="https://yourproject.com"
+              class="font-mono text-xs"
+            />
+          </div>
         </div>
 
         <!-- Paired Asset (Tied to active network selected in navigation) -->
-        <div class="space-y-1.5">
+        <div class="space-y-2 pt-1">
           <div class="flex items-center justify-between">
-            <Label for="paired-asset">{{ t('pairedAsset') }}</Label>
             <span class="text-[11px] font-mono text-zinc-400">
               {{ activeNetwork.name }}
             </span>
@@ -210,7 +200,7 @@
 
           <div
             id="paired-asset"
-            class="w-full flex items-center justify-between px-3.5 py-2.5 h-11 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/60 text-black dark:text-white"
+            class="w-full flex items-center justify-between px-4 py-3 h-12 rounded-xl border border-border bg-card text-foreground"
           >
             <div class="flex items-center gap-2 font-mono">
               <img
@@ -228,7 +218,7 @@
           <p class="text-[11px] text-zinc-500 dark:text-zinc-400">
             {{
               selectedVersion === 'v2'
-                ? activeNetwork.chainId === 5042 || activeNetwork.chainId === 5042002
+                ? activeNetwork.chainId === 5042
                   ? 'Graduates once the curve raises 69,000 USDC into Uniswap liquidity.'
                   : t('v2GraduatesHint')
                 : t('v1PairsHint')
@@ -237,9 +227,8 @@
         </div>
 
         <!-- Developer buy -->
-        <div class="space-y-1.5">
+        <div class="space-y-2 pt-1">
           <div class="flex justify-between items-center">
-            <Label for="developer-buy">{{ t('developerBuy') }}</Label>
             <span class="text-[11px] text-zinc-500 font-mono">
               {{ t('boughtInLaunchNotice') }}
             </span>
@@ -261,34 +250,31 @@
         </div>
 
         <!-- Advanced Accordion -->
-        <Card
-          class="rounded-xl border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/40 dark:bg-zinc-950/30 overflow-hidden p-0"
-        >
+        <Card class="rounded-2xl border border-border bg-card overflow-hidden p-0 shadow-xs">
           <Button
             type="button"
             variant="ghost"
             @click="advancedOpen = !advancedOpen"
-            class="w-full flex items-center justify-between px-4 py-3 h-auto text-xs font-semibold transition hover:bg-zinc-100 dark:hover:bg-zinc-900/50 cursor-pointer rounded-none"
+            class="w-full flex items-center justify-between px-5 py-4 h-auto text-xs font-semibold transition hover:bg-muted/40 cursor-pointer rounded-none"
           >
-            <span class="flex items-center gap-2">
-              <SlidersHorizontal class="w-3.5 h-3.5 text-zinc-400" />
-              {{ t('advanced') }}
-            </span>
+            <span>{{ t('advanced') }}</span>
             <ChevronDown
               class="w-3.5 h-3.5 transition-transform duration-200 opacity-60"
               :class="advancedOpen ? 'rotate-180' : ''"
             />
           </Button>
 
-          <div
-            v-show="advancedOpen"
-            class="px-4 pb-4 pt-1 space-y-4 border-t border-zinc-200 dark:border-zinc-800/60"
-          >
+          <div v-show="advancedOpen" class="p-6 sm:p-7 space-y-7 border-t border-border">
             <!-- Connected Creator Wallet -->
-            <div class="space-y-1">
-              <Label class="text-xs font-medium">{{ t('creatorWallet') }}</Label>
+            <div class="space-y-2">
+              <div class="flex items-center gap-1.5">
+                <Label class="text-xs font-semibold">{{ t('creatorWallet') }}</Label>
+                <InfoTooltip
+                  text="Receives creator fees, initial token supply allocations, and governance permissions. Defaults to the deployer wallet if left blank."
+                />
+              </div>
               <div
-                class="flex items-center justify-between p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-100/60 dark:bg-zinc-900 font-mono text-xs"
+                class="flex items-center justify-between p-3.5 sm:p-4 rounded-xl border border-border bg-muted/30 font-mono text-xs"
               >
                 <span class="truncate">{{ account || t('connectWallet') }}</span>
                 <Badge variant="secondary" class="text-[10px] shrink-0"
@@ -301,374 +287,437 @@
             </div>
 
             <!-- Trading Taxes (Buy & Sell Tax) with Quick Presets -->
-            <div class="space-y-2 pt-2 border-t border-zinc-200 dark:border-zinc-800/60">
+            <div class="space-y-3.5 pt-4 border-t border-border">
               <div class="flex items-center justify-between">
-                <Label class="text-xs font-semibold text-black dark:text-white"
-                  >Trading Taxes</Label
-                >
+                <div class="flex items-center gap-1.5">
+                  <Label class="text-xs font-semibold text-black dark:text-white"
+                    >Trading Taxes</Label
+                  >
+                  <InfoTooltip
+                    text="Taxes collected on automated market maker (DEX) swaps (max 10% per trade). Funds project development, liquidity deepening, and holder dividends."
+                  />
+                </div>
                 <span class="text-[10px] font-mono text-zinc-400">Max 10% per trade</span>
               </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <!-- Buy Tax -->
-                <div
-                  class="space-y-1.5 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60"
-                >
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                <!-- Buy Tax with Slider -->
+                <div class="space-y-3.5 p-4 sm:p-5 rounded-2xl border border-border bg-card">
                   <div class="flex items-center justify-between">
-                    <span class="text-xs font-medium text-black dark:text-white">Buy Tax</span>
-                    <span class="text-xs font-mono font-bold text-emerald-500"
+                    <div class="flex items-center gap-1">
+                      <span class="text-xs font-medium text-black dark:text-white">Buy Tax</span>
+                      <InfoTooltip
+                        text="Fee deducted when users purchase tokens. Recommended: 1% - 5%."
+                      />
+                    </div>
+                    <span class="text-xs font-mono font-bold text-[#34C759]"
                       >{{ form.buyTax }}%</span
                     >
                   </div>
-                  <div class="relative">
-                    <Input
-                      v-model="form.buyTax"
-                      type="number"
-                      min="0"
-                      max="10"
-                      step="0.1"
-                      placeholder="1"
-                      class="font-mono text-xs pr-8"
-                    />
-                    <span class="absolute right-3 top-2 text-xs font-semibold text-zinc-400"
-                      >%</span
-                    >
-                  </div>
-                  <div class="flex items-center gap-1 pt-1">
-                    <button
+                  <Slider
+                    :model-value="[parseFloat(form.buyTax || '0')]"
+                    :max="10"
+                    :min="0"
+                    :step="0.5"
+                    range-class="bg-[#34C759]"
+                    thumb-class="border-[#34C759] focus-visible:ring-[#34C759]"
+                    class="py-1"
+                    @update:model-value="form.buyTax = String($event ? $event[0] : 0)"
+                  />
+                  <div class="flex items-center gap-1.5 pt-1">
+                    <Button
                       v-for="p in [1, 2, 5, 10]"
                       :key="p"
                       type="button"
-                      class="flex-1 py-0.5 rounded text-[10px] font-mono border transition cursor-pointer text-center"
-                      :class="
-                        form.buyTax === String(p)
-                          ? 'bg-emerald-500 text-black font-bold border-emerald-500'
-                          : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-black dark:hover:text-white'
-                      "
+                      size="sm"
+                      :variant="form.buyTax === String(p) ? 'default' : 'outline'"
+                      class="flex-1 h-7 text-xs font-mono p-0 cursor-pointer"
                       @click="form.buyTax = String(p)"
                     >
                       {{ p }}%
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
-                <!-- Sell Tax -->
-                <div
-                  class="space-y-1.5 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60"
-                >
+                <!-- Sell Tax with Slider -->
+                <div class="space-y-3.5 p-4 sm:p-5 rounded-2xl border border-border bg-card">
                   <div class="flex items-center justify-between">
-                    <span class="text-xs font-medium text-black dark:text-white">Sell Tax</span>
-                    <span class="text-xs font-mono font-bold text-rose-500"
+                    <div class="flex items-center gap-1">
+                      <span class="text-xs font-medium text-black dark:text-white">Sell Tax</span>
+                      <InfoTooltip
+                        text="Fee deducted when users sell tokens back into the pool. Discourages immediate dumping."
+                      />
+                    </div>
+                    <span class="text-xs font-mono font-bold text-[#FF3B30]"
                       >{{ form.sellTax }}%</span
                     >
                   </div>
-                  <div class="relative">
-                    <Input
-                      v-model="form.sellTax"
-                      type="number"
-                      min="0"
-                      max="10"
-                      step="0.1"
-                      placeholder="1"
-                      class="font-mono text-xs pr-8"
-                    />
-                    <span class="absolute right-3 top-2 text-xs font-semibold text-zinc-400"
-                      >%</span
-                    >
-                  </div>
-                  <div class="flex items-center gap-1 pt-1">
-                    <button
+                  <Slider
+                    :model-value="[parseFloat(form.sellTax || '0')]"
+                    :max="10"
+                    :min="0"
+                    :step="0.5"
+                    range-class="bg-[#FF3B30]"
+                    thumb-class="border-[#FF3B30] focus-visible:ring-[#FF3B30]"
+                    class="py-1"
+                    @update:model-value="form.sellTax = String($event ? $event[0] : 0)"
+                  />
+                  <div class="flex items-center gap-1.5 pt-1">
+                    <Button
                       v-for="p in [1, 2, 5, 10]"
                       :key="p"
                       type="button"
-                      class="flex-1 py-0.5 rounded text-[10px] font-mono border transition cursor-pointer text-center"
-                      :class="
-                        form.sellTax === String(p)
-                          ? 'bg-rose-500 text-white font-bold border-rose-500'
-                          : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-black dark:hover:text-white'
-                      "
+                      size="sm"
+                      :variant="form.sellTax === String(p) ? 'destructive' : 'outline'"
+                      class="flex-1 h-7 text-xs font-mono p-0 cursor-pointer"
                       @click="form.sellTax = String(p)"
                     >
                       {{ p }}%
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Revenue Split Allocation (Argus-style) -->
-            <div class="space-y-3 pt-2 border-t border-zinc-200 dark:border-zinc-800/60">
-              <div class="space-y-0.5">
-                <div class="flex items-center justify-between">
-                  <Label class="text-xs font-semibold text-black dark:text-white"
-                    >Revenue Split</Label
-                  >
-                  <span
-                    class="text-xs font-mono font-bold px-2 py-0.5 rounded-full"
-                    :class="
-                      totalSplit === 100
-                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
-                        : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
-                    "
-                  >
-                    {{ totalSplit }}% Total split
-                  </span>
+            <!-- Revenue Split Allocation -->
+            <div class="space-y-4 pt-4 border-t border-border">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <Label class="text-xs font-semibold text-black dark:text-white"
+                      >Revenue Split</Label
+                    >
+                    <InfoTooltip
+                      text="Specifies how collected trading taxes are distributed on-chain. Allocations must sum to exactly 100% to launch."
+                    />
+                  </div>
+                  <p class="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    Fee allocation (must total 100%)
+                  </p>
                 </div>
-                <p class="text-[11px] text-zinc-500 dark:text-zinc-400 leading-normal">
-                  Each share stops where the others leave off. They must total 100% to launch.
-                </p>
+                <Badge
+                  :variant="totalSplit === 100 ? 'default' : 'outline'"
+                  class="font-mono text-xs"
+                  :class="totalSplit !== 100 ? 'border-amber-500 text-amber-500' : ''"
+                >
+                  {{ totalSplit }}/100%
+                </Badge>
               </div>
 
-              <!-- Quick Split Presets -->
-              <div class="flex flex-wrap gap-1.5">
-                <button
+              <!-- Quick Presets with Shadcn Button -->
+              <div class="flex flex-wrap gap-2">
+                <Button
                   type="button"
-                  class="px-2 py-1 rounded-md text-[10px] font-mono border transition cursor-pointer"
-                  :class="
+                  size="sm"
+                  :variant="
                     revenueSplit.creator === 50 &&
                     revenueSplit.holders === 50 &&
                     revenueSplit.buyback === 0 &&
                     revenueSplit.growth === 0
-                      ? 'bg-emerald-500 text-black font-bold border-emerald-500'
-                      : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-black dark:hover:text-white'
+                      ? 'default'
+                      : 'outline'
                   "
+                  class="h-7 text-xs font-mono cursor-pointer"
                   @click="applySplitPreset(50, 0, 50, 0)"
                 >
                   50/50 Creator & Holders
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  class="px-2 py-1 rounded-md text-[10px] font-mono border transition cursor-pointer"
-                  :class="
+                  size="sm"
+                  :variant="
                     revenueSplit.creator === 100 &&
                     revenueSplit.holders === 0 &&
                     revenueSplit.buyback === 0 &&
                     revenueSplit.growth === 0
-                      ? 'bg-emerald-500 text-black font-bold border-emerald-500'
-                      : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-black dark:hover:text-white'
+                      ? 'default'
+                      : 'outline'
                   "
+                  class="h-7 text-xs font-mono cursor-pointer"
                   @click="applySplitPreset(100, 0, 0, 0)"
                 >
                   100% Creator
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  class="px-2 py-1 rounded-md text-[10px] font-mono border transition cursor-pointer"
-                  :class="
+                  size="sm"
+                  :variant="
                     revenueSplit.creator === 40 &&
                     revenueSplit.holders === 40 &&
                     revenueSplit.buyback === 20 &&
                     revenueSplit.growth === 0
-                      ? 'bg-emerald-500 text-black font-bold border-emerald-500'
-                      : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-black dark:hover:text-white'
+                      ? 'default'
+                      : 'outline'
                   "
+                  class="h-7 text-xs font-mono cursor-pointer"
                   @click="applySplitPreset(40, 20, 40, 0)"
                 >
-                  40/40/20 with Buyback
-                </button>
-                <button
+                  40/40/20 Buyback
+                </Button>
+                <Button
                   type="button"
-                  class="px-2 py-1 rounded-md text-[10px] font-mono border transition cursor-pointer"
-                  :class="
+                  size="sm"
+                  :variant="
                     revenueSplit.creator === 25 &&
                     revenueSplit.holders === 25 &&
                     revenueSplit.buyback === 25 &&
                     revenueSplit.growth === 25
-                      ? 'bg-emerald-500 text-black font-bold border-emerald-500'
-                      : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-black dark:hover:text-white'
+                      ? 'default'
+                      : 'outline'
                   "
+                  class="h-7 text-xs font-mono cursor-pointer"
                   @click="applySplitPreset(25, 25, 25, 25)"
                 >
-                  25% Equal 4-Way
-                </button>
+                  25% Equal
+                </Button>
               </div>
 
-              <!-- Visual Stacked Bar -->
+              <!-- Donut Chart & Sliders Section -->
               <div
-                class="h-2 w-full rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden flex"
+                class="flex flex-col lg:flex-row gap-8 items-center lg:items-start p-6 sm:p-7 rounded-2xl border border-border bg-card"
               >
-                <div
-                  class="h-full bg-emerald-500 transition-all duration-300"
-                  :style="{ width: `${revenueSplit.creator}%` }"
-                  title="Creator"
-                />
-                <div
-                  class="h-full bg-rose-500 transition-all duration-300"
-                  :style="{ width: `${revenueSplit.buyback}%` }"
-                  title="Buyback & Burn"
-                />
-                <div
-                  class="h-full bg-violet-500 transition-all duration-300"
-                  :style="{ width: `${revenueSplit.holders}%` }"
-                  title="Holder Dividends"
-                />
-                <div
-                  class="h-full bg-sky-500 transition-all duration-300"
-                  :style="{ width: `${revenueSplit.growth}%` }"
-                  title="Liquidity Growth"
-                />
-              </div>
+                <!-- Circular Donut Chart -->
+                <div class="relative w-36 h-36 shrink-0 flex items-center justify-center">
+                  <svg class="w-full h-full -rotate-90 transform" viewBox="0 0 100 100">
+                    <!-- Background ring -->
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="38"
+                      stroke="currentColor"
+                      stroke-width="12"
+                      fill="transparent"
+                      class="text-zinc-100 dark:text-zinc-800"
+                    />
+                    <!-- Creator segment (Emerald) -->
+                    <circle
+                      v-if="revenueSplit.creator > 0"
+                      cx="50"
+                      cy="50"
+                      r="38"
+                      stroke="#34C759"
+                      stroke-width="12"
+                      fill="transparent"
+                      :stroke-dasharray="`${creatorStroke} ${donutCircumference}`"
+                      :stroke-dashoffset="creatorOffset"
+                      class="transition-all duration-300"
+                    />
+                    <!-- Buyback segment (Rose) -->
+                    <circle
+                      v-if="revenueSplit.buyback > 0"
+                      cx="50"
+                      cy="50"
+                      r="38"
+                      stroke="#FF3B30"
+                      stroke-width="12"
+                      fill="transparent"
+                      :stroke-dasharray="`${buybackStroke} ${donutCircumference}`"
+                      :stroke-dashoffset="buybackOffset"
+                      class="transition-all duration-300"
+                    />
+                    <!-- Holders segment (Violet) -->
+                    <circle
+                      v-if="revenueSplit.holders > 0"
+                      cx="50"
+                      cy="50"
+                      r="38"
+                      stroke="#5856D6"
+                      stroke-width="12"
+                      fill="transparent"
+                      :stroke-dasharray="`${holdersStroke} ${donutCircumference}`"
+                      :stroke-dashoffset="holdersOffset"
+                      class="transition-all duration-300"
+                    />
+                    <!-- Growth segment (Sky) -->
+                    <circle
+                      v-if="revenueSplit.growth > 0"
+                      cx="50"
+                      cy="50"
+                      r="38"
+                      stroke="#5AC8FA"
+                      stroke-width="12"
+                      fill="transparent"
+                      :stroke-dasharray="`${growthStroke} ${donutCircumference}`"
+                      :stroke-dashoffset="growthOffset"
+                      class="transition-all duration-300"
+                    />
+                  </svg>
 
-              <!-- 4 Allocation Share Cards -->
-              <div class="space-y-2">
-                <!-- Share 1: Creator Share -->
-                <div
-                  class="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 space-y-1"
-                >
-                  <div class="flex items-center justify-between gap-2">
-                    <div
-                      class="flex items-center gap-1.5 text-xs font-semibold text-black dark:text-white"
+                  <!-- Center Text inside Donut -->
+                  <div
+                    class="absolute inset-0 flex flex-col items-center justify-center text-center select-none"
+                  >
+                    <span
+                      class="text-lg font-mono font-bold leading-tight"
+                      :class="totalSplit === 100 ? 'text-emerald-500' : 'text-amber-500'"
                     >
-                      <Wallet class="w-3.5 h-3.5 text-emerald-500" />
-                      <span>Creator Share</span>
+                      {{ totalSplit }}%
+                    </span>
+                    <span class="text-[9px] font-mono text-zinc-400 uppercase tracking-wider"
+                      >Split</span
+                    >
+                  </div>
+                </div>
+
+                <!-- 4 Allocation Share Sliders -->
+                <div class="flex-1 w-full space-y-5">
+                  <!-- Creator Share Slider -->
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between text-xs">
+                      <div class="flex items-center gap-2 font-semibold text-foreground">
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#34C759] shrink-0" />
+                        <span>Creator</span>
+                        <InfoTooltip
+                          text="Portion of swap taxes sent directly to the creator wallet."
+                        />
+                      </div>
+                      <span class="font-mono font-bold text-[#34C759]">
+                        {{ revenueSplit.creator }}%
+                      </span>
                     </div>
-                    <div class="relative w-24">
-                      <Input
-                        :model-value="revenueSplit.creator"
-                        type="number"
-                        min="0"
-                        :max="maxCreator"
-                        class="h-7 text-xs font-mono pr-6 text-right"
-                        @update:model-value="updateShare('creator', $event, maxCreator)"
-                      />
-                      <span class="absolute right-2 top-1.5 text-xs font-semibold text-zinc-400"
-                        >%</span
-                      >
+                    <Slider
+                      :model-value="[revenueSplit.creator]"
+                      :max="100"
+                      :min="0"
+                      :step="1"
+                      range-class="bg-[#34C759]"
+                      thumb-class="border-[#34C759] focus-visible:ring-[#34C759]"
+                      @update:model-value="updateShare('creator', $event ? $event[0] : 0)"
+                    />
+                    <div
+                      class="flex items-center justify-between text-[10px] text-zinc-400 font-mono"
+                    >
+                      <span>max {{ maxCreator }}%: the other shares leave this much</span>
+                      <span>{{ revenueSplit.creator }}/{{ maxCreator }}%</span>
                     </div>
                   </div>
-                  <p class="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">
-                    max {{ maxCreator }}%: the other shares leave this much, and this share is
-                    already there
-                  </p>
-                </div>
 
-                <!-- Share 2: Buyback & Burn -->
-                <div
-                  class="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 space-y-1"
-                >
-                  <div class="flex items-center justify-between gap-2">
-                    <div
-                      class="flex items-center gap-1.5 text-xs font-semibold text-black dark:text-white"
-                    >
-                      <Flame class="w-3.5 h-3.5 text-rose-500" />
-                      <span>Buyback & Burn</span>
+                  <!-- Buyback & Burn Slider -->
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between text-xs">
+                      <div class="flex items-center gap-2 font-semibold text-foreground">
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#FF3B30] shrink-0" />
+                        <span>Buyback & Burn</span>
+                        <InfoTooltip
+                          text="Automatically buys tokens off the pool and permanently burns them to reduce supply."
+                        />
+                      </div>
+                      <span class="font-mono font-bold text-[#FF3B30]">
+                        {{ revenueSplit.buyback }}%
+                      </span>
                     </div>
-                    <div class="relative w-24">
-                      <Input
-                        :model-value="revenueSplit.buyback"
-                        type="number"
-                        min="0"
-                        :max="maxBuyback"
-                        class="h-7 text-xs font-mono pr-6 text-right"
-                        @update:model-value="updateShare('buyback', $event, maxBuyback)"
-                      />
-                      <span class="absolute right-2 top-1.5 text-xs font-semibold text-zinc-400"
-                        >%</span
-                      >
+                    <Slider
+                      :model-value="[revenueSplit.buyback]"
+                      :max="100"
+                      :min="0"
+                      :step="1"
+                      range-class="bg-[#FF3B30]"
+                      thumb-class="border-[#FF3B30] focus-visible:ring-[#FF3B30]"
+                      @update:model-value="updateShare('buyback', $event ? $event[0] : 0)"
+                    />
+                    <div
+                      class="flex items-center justify-between text-[10px] text-zinc-400 font-mono"
+                    >
+                      <span>max {{ maxBuyback }}%: the other shares leave this much</span>
+                      <span>{{ revenueSplit.buyback }}/{{ maxBuyback }}%</span>
                     </div>
                   </div>
-                  <p class="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">
-                    max {{ maxBuyback }}%: the other shares leave this much, and this share is
-                    already there
-                  </p>
-                </div>
 
-                <!-- Share 3: Holder Dividends -->
-                <div
-                  class="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 space-y-1"
-                >
-                  <div class="flex items-center justify-between gap-2">
-                    <div
-                      class="flex items-center gap-1.5 text-xs font-semibold text-black dark:text-white"
-                    >
-                      <Users class="w-3.5 h-3.5 text-violet-500" />
-                      <span>Holder Dividends</span>
+                  <!-- Holder Dividends Slider -->
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between text-xs">
+                      <div class="flex items-center gap-2 font-semibold text-foreground">
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#5856D6] shrink-0" />
+                        <span>Holder Dividends</span>
+                        <InfoTooltip
+                          text="Distributed proportionally in native currency to all token holders as passive yield."
+                        />
+                      </div>
+                      <span class="font-mono font-bold text-[#5856D6]">
+                        {{ revenueSplit.holders }}%
+                      </span>
                     </div>
-                    <div class="relative w-24">
-                      <Input
-                        :model-value="revenueSplit.holders"
-                        type="number"
-                        min="0"
-                        :max="maxHolders"
-                        class="h-7 text-xs font-mono pr-6 text-right"
-                        @update:model-value="updateShare('holders', $event, maxHolders)"
-                      />
-                      <span class="absolute right-2 top-1.5 text-xs font-semibold text-zinc-400"
-                        >%</span
-                      >
+                    <Slider
+                      :model-value="[revenueSplit.holders]"
+                      :max="100"
+                      :min="0"
+                      :step="1"
+                      range-class="bg-[#5856D6]"
+                      thumb-class="border-[#5856D6] focus-visible:ring-[#5856D6]"
+                      @update:model-value="updateShare('holders', $event ? $event[0] : 0)"
+                    />
+                    <div
+                      class="flex items-center justify-between text-[10px] text-zinc-400 font-mono"
+                    >
+                      <span>max {{ maxHolders }}%: the other shares leave this much</span>
+                      <span>{{ revenueSplit.holders }}/{{ maxHolders }}%</span>
                     </div>
                   </div>
-                  <p class="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">
-                    max {{ maxHolders }}%: the other shares leave this much, and this share is
-                    already there
-                  </p>
-                </div>
 
-                <!-- Share 4: Liquidity Growth -->
-                <div
-                  class="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 space-y-1"
-                >
-                  <div class="flex items-center justify-between gap-2">
-                    <div
-                      class="flex items-center gap-1.5 text-xs font-semibold text-black dark:text-white"
-                    >
-                      <TrendingUp class="w-3.5 h-3.5 text-sky-500" />
-                      <span>Liquidity Growth</span>
+                  <!-- Liquidity Growth Slider -->
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between text-xs">
+                      <div class="flex items-center gap-2 font-semibold text-foreground">
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#5AC8FA] shrink-0" />
+                        <span>Liquidity Growth</span>
+                        <InfoTooltip
+                          text="Permanently injected into the liquidity pool to deepen market depth and reduce slippage."
+                        />
+                      </div>
+                      <span class="font-mono font-bold text-[#5AC8FA]">
+                        {{ revenueSplit.growth }}%
+                      </span>
                     </div>
-                    <div class="relative w-24">
-                      <Input
-                        :model-value="revenueSplit.growth"
-                        type="number"
-                        min="0"
-                        :max="maxGrowth"
-                        class="h-7 text-xs font-mono pr-6 text-right"
-                        @update:model-value="updateShare('growth', $event, maxGrowth)"
-                      />
-                      <span class="absolute right-2 top-1.5 text-xs font-semibold text-zinc-400"
-                        >%</span
-                      >
+                    <Slider
+                      :model-value="[revenueSplit.growth]"
+                      :max="100"
+                      :min="0"
+                      :step="1"
+                      range-class="bg-[#5AC8FA]"
+                      thumb-class="border-[#5AC8FA] focus-visible:ring-[#5AC8FA]"
+                      @update:model-value="updateShare('growth', $event ? $event[0] : 0)"
+                    />
+                    <div
+                      class="flex items-center justify-between text-[10px] text-zinc-400 font-mono"
+                    >
+                      <span>max {{ maxGrowth }}%: the other shares leave this much</span>
+                      <span>{{ revenueSplit.growth }}/{{ maxGrowth }}%</span>
                     </div>
                   </div>
-                  <p class="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">
-                    max {{ maxGrowth }}%: the other shares leave this much, and this share is
-                    already there
-                  </p>
-                </div>
-              </div>
 
-              <!-- Allocation Status Badge -->
-              <div
-                class="flex items-center justify-between p-2.5 rounded-lg text-xs font-mono font-semibold"
-                :class="
-                  totalSplit === 100
-                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
-                "
-              >
-                <div class="flex items-center gap-2">
-                  <CheckCircle v-if="totalSplit === 100" class="w-4 h-4 text-emerald-500" />
-                  <AlertCircle v-else class="w-4 h-4 text-amber-500" />
-                  <span>
-                    {{
-                      totalSplit === 100
-                        ? 'Allocation totals 100%'
-                        : `Must total 100% to launch (currently ${totalSplit}%)`
-                    }}
-                  </span>
+                  <!-- Bottom summary info matching Argus -->
+                  <div
+                    class="pt-4 mt-2 border-t border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+                  >
+                    <span class="text-zinc-500 dark:text-zinc-400">
+                      Each share stops where the others leave off. They must total 100% to launch.
+                    </span>
+                    <span
+                      class="font-mono font-semibold shrink-0"
+                      :class="totalSplit === 100 ? 'text-emerald-500' : 'text-amber-500'"
+                    >
+                      {{
+                        totalSplit === 100
+                          ? 'Allocation totals 100%'
+                          : `${100 - totalSplit}% remaining`
+                      }}
+                    </span>
+                  </div>
                 </div>
-                <span>{{ totalSplit }}/100%</span>
               </div>
             </div>
 
             <!-- Anti-Snipe Notice -->
             <div
-              class="p-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 text-[11px] text-zinc-400 space-y-0.5"
+              class="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-xs text-zinc-600 dark:text-zinc-400 space-y-1.5"
             >
               <div
                 class="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1"
               >
-                <Lock class="w-3 h-3" />
                 <span>Fair Launch Anti-Snipe Safeguard</span>
+                <InfoTooltip
+                  text="Applies a decaying 99% snipe tax on block 0 that drops smoothly to 0% in 3 seconds to defend against MEV bots."
+                />
               </div>
               <p>
                 Connected creator wallet is automatically exempt from the initial 99% snipe tax.
@@ -679,11 +728,9 @@
         </Card>
 
         <!-- Form Footer Rate & Submit Button -->
-        <div class="pt-4 border-t border-zinc-200 dark:border-zinc-800 space-y-3">
+        <div class="pt-6 border-t border-border space-y-4">
           <!-- Launch Cost Summary Breakdown -->
-          <div
-            class="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/50 p-3 space-y-2 text-xs font-mono"
-          >
+          <div class="rounded-2xl border border-border bg-muted/40 p-4 space-y-3 text-xs font-mono">
             <div class="flex items-center justify-between text-zinc-500 dark:text-zinc-400">
               <span>{{ t('platformCreationFee') }}</span>
               <span class="font-bold text-black dark:text-white">
@@ -703,9 +750,7 @@
               </span>
             </div>
 
-            <div
-              class="pt-1.5 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between"
-            >
+            <div class="pt-3 border-t border-border flex items-center justify-between">
               <span
                 class="font-bold text-black dark:text-white uppercase tracking-wider text-[11px]"
               >
@@ -722,7 +767,7 @@
             :disabled="
               loading || isUploadingIpfs || !form.name || !form.symbol || totalSplit !== 100
             "
-            class="w-full font-bold py-3 text-sm h-11 cursor-pointer"
+            class="w-full font-bold py-3.5 text-base h-12 rounded-xl shadow-md cursor-pointer transition active:scale-[0.99]"
             size="lg"
           >
             <Loader2 v-if="loading || isUploadingIpfs" class="w-4 h-4 mr-2 animate-spin" />
@@ -986,22 +1031,16 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import {
-  Rocket,
-  Lock,
   AlertCircle,
   UploadCloud,
   ChevronDown,
-  SlidersHorizontal,
   Loader2,
   Check,
   CheckCircle,
   ExternalLink,
   Clock,
   ArrowRight,
-  Flame,
-  Users,
-  Wallet,
-  TrendingUp,
+  Trash2,
 } from 'lucide-vue-next';
 import { useLaunchpad } from '../composables/useLaunchpad';
 import { useWallet } from '../composables/useWallet';
@@ -1012,6 +1051,8 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
+import { InfoTooltip } from '@/components/ui/tooltip';
 import {
   Dialog,
   DialogContent,
@@ -1106,6 +1147,29 @@ const totalSplit = computed(() => {
   );
 });
 
+const donutRadius = 38;
+const donutCircumference = 2 * Math.PI * donutRadius; // 238.761
+
+const creatorStroke = computed(
+  () => (Number(revenueSplit.value.creator || 0) / 100) * donutCircumference,
+);
+const buybackStroke = computed(
+  () => (Number(revenueSplit.value.buyback || 0) / 100) * donutCircumference,
+);
+const holdersStroke = computed(
+  () => (Number(revenueSplit.value.holders || 0) / 100) * donutCircumference,
+);
+const growthStroke = computed(
+  () => (Number(revenueSplit.value.growth || 0) / 100) * donutCircumference,
+);
+
+const creatorOffset = 0;
+const buybackOffset = computed(() => -creatorStroke.value);
+const holdersOffset = computed(() => -(creatorStroke.value + buybackStroke.value));
+const growthOffset = computed(
+  () => -(creatorStroke.value + buybackStroke.value + holdersStroke.value),
+);
+
 const maxCreator = computed(() => {
   const others =
     Number(revenueSplit.value.buyback || 0) +
@@ -1142,9 +1206,15 @@ function applySplitPreset(creator: number, buyback: number, holders: number, gro
   revenueSplit.value = { creator, buyback, holders, growth };
 }
 
-function updateShare(key: keyof RevenueSplit, val: unknown, maxAllowed: number) {
-  const num = Math.max(0, Math.min(maxAllowed, Number(val) || 0));
-  revenueSplit.value[key] = num;
+function updateShare(key: keyof RevenueSplit, val: unknown): void {
+  const allKeys: (keyof RevenueSplit)[] = ['creator', 'buyback', 'holders', 'growth'];
+  const otherKeys = allKeys.filter((k) => k !== key);
+  const others = otherKeys.reduce((sum, k) => sum + Number(revenueSplit.value[k] || 0), 0);
+  const maxAllowed = Math.max(0, 100 - others);
+  const requested = Math.max(0, Math.round(Number(val) || 0));
+
+  // Each share stops where the others leave off; no ghost slider movement
+  revenueSplit.value[key] = Math.min(requested, maxAllowed);
 }
 
 const selectedVersion = ref<'v1' | 'v2'>('v2');

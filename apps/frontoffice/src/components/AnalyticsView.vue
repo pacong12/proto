@@ -12,8 +12,8 @@
     </div>
 
     <!-- Stats Grid with Shadcn Card -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <Card class="p-5">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
+      <Card class="p-6 sm:p-7 rounded-2xl border border-border bg-card shadow-xs space-y-2">
         <p class="text-xs uppercase font-semibold font-mono">
           {{ t('totalTradingVolume') }}
         </p>
@@ -23,7 +23,7 @@
         </p>
       </Card>
 
-      <Card class="p-5">
+      <Card class="p-6 sm:p-7 rounded-2xl border border-border bg-card shadow-xs space-y-2">
         <p class="text-xs uppercase font-semibold font-mono">
           {{ t('totalTokensLaunched') }}
         </p>
@@ -35,7 +35,7 @@
         </p>
       </Card>
 
-      <Card class="p-5">
+      <Card class="p-6 sm:p-7 rounded-2xl border border-border bg-card shadow-xs space-y-2">
         <p class="text-xs uppercase font-semibold font-mono">
           {{ t('protocolBuybackAndBurn') }}
         </p>
@@ -49,8 +49,8 @@
     </div>
 
     <!-- Analytics Chart Section -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Card class="p-6 space-y-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+      <Card class="p-6 sm:p-7 rounded-2xl border border-border bg-card space-y-5 shadow-xs">
         <div class="flex items-center justify-between">
           <div>
             <h2 class="text-base font-bold">

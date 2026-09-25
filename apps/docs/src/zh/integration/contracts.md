@@ -18,16 +18,16 @@
 
 ---
 
-## 2. Arc Testnet (Chain ID: 5042002)
+## 2. Arc Network (主网, Chain ID: 5042)
 
 | 合约名称                            | 合约地址                                     | 核心功能                             |
 | :---------------------------------- | :------------------------------------------- | :----------------------------------- |
-| **Launchpad Factory (v1 直接池)**   | `0x92cB206557907e4955faEeBd387D9602872d52cA` | 部署代币并注入 Uniswap V3 流动性     |
-| **Launchpad Factory (v2 联合曲线)** | `0x9C7Ff544aAc9f4A4ECAE3ca8c110740888fF70E3` | 部署代币并开启链上联合曲线           |
-| **Liquidity Locker**                | `0x561723e55C27929f8C5317532c331c2a26060782` | 永久锁定 Uniswap V3 LP NFT 仓位      |
-| **Uniswap V3 Factory**              | `0x867E249D61cb0951433FAfd72b15Acc63646D266` | 官方去中心化交易池注册表             |
-| **Position Manager**                | `0x7bD82CA0E7fd5F4EfFFd69cb413CBf8E954c3660` | 集中流动性头寸管理合约               |
-| **Swap Router**                     | `0x5b8953eFc63F70377fa8C23FBEE0EAD632B277Cd` | 去中心化交易精确输入路由合约         |
+| **Launchpad Factory (v1 直接池)**   | `0xED31e7ec603651803784196003903aCa05550552` | 部署代币并注入 Uniswap V3 流动性     |
+| **Launchpad Factory (v2 联合曲线)** | `0x2ae8BE8C8F19665396b362859d51bdec09e59AEa` | 部署代币并开启链上联合曲线           |
+| **Liquidity Locker**                | `0x9909ac8759dB233f546b644EF2CBDE1b3Af1dCE0` | 永久锁定 Uniswap V3 LP NFT 仓位      |
+| **Uniswap V3 Factory**              | `0xf0db7b58379503491d857dB50AC9ece64c653918` | 官方去中心化交易池注册表             |
+| **Position Manager**                | `0x39654A85A4C05127f5Fd6ED22CAeC077A0fB1377` | 集中流动性头寸管理合约               |
+| **Swap Router**                     | `0x53BF6B0684Ec7eF91e1387Da3D1a1769bC5A6F77` | 去中心化交易精确输入路由合约         |
 | **Native Payment Token (USDC)**     | `0x3600000000000000000000000000000000000000` | 原生 Gas 与基准交易对货币 (6 位精度) |
 
 ---

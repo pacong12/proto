@@ -5,12 +5,12 @@ export const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-emerald-500 text-black shadow hover:bg-emerald-600',
-        secondary: 'border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-800',
-        destructive: 'border-transparent bg-rose-500 text-white shadow hover:bg-rose-600',
-        outline: 'border-zinc-300 dark:border-zinc-800 bg-transparent',
-        graduated:
-          'border-emerald-600 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 font-semibold',
+        default: 'border-transparent bg-primary text-primary-foreground shadow hover:opacity-90',
+        secondary: 'border-border bg-muted text-foreground',
+        destructive:
+          'border-transparent bg-destructive text-destructive-foreground shadow hover:opacity-90',
+        outline: 'border-border bg-transparent text-foreground',
+        graduated: 'border-primary/40 bg-primary/10 text-primary font-semibold',
       },
     },
     defaultVariants: {

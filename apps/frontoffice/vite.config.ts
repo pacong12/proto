@@ -5,6 +5,7 @@ import path from 'node:path';
 
 export default defineConfig({
   plugins: [vue(), tailwindcss()],
+  envDir: path.resolve(__dirname, '../../'),
   build: {
     outDir: 'dist',
     emptyOutDir: true,

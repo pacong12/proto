@@ -1,6 +1,6 @@
 # What is Proto?
 
-**Proto** is a community-first, non-custodial crypto launchpad built on **Robinhood Chain (Chain ID: 4663)** and **Arc Network (Chain ID: 5042002)**.
+**Proto** is a community-first, non-custodial crypto launchpad built on **Robinhood Chain (Chain ID: 4663)** and **Arc Network (Chain ID: 5042)**.
 
 It provides an accessible, fair, and safe platform for anyone to create, trade, and discover digital tokens without complex financial barriers, hidden pre-sales, or risk of sudden liquidity drains (_rug pulls_).
 

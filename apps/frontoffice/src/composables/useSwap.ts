@@ -1,14 +1,8 @@
 import { ref } from 'vue';
-import { parseAbi, erc20Abi, parseEther } from 'viem';
-import { getNetworkConfig, swapRouterAbi } from '@proto/shared-types';
+import { erc20Abi, parseEther } from 'viem';
+import { getNetworkConfig, swapRouterAbi, bondingCurveAbi } from '@proto/shared-types';
 import { getPublicClient, getWalletClient } from '../lib/viem-client';
 import { walletChainId } from '../lib/wallet-store';
-
-const bondingCurveAbi = parseAbi([
-  'function buy(uint256 minTokensOut) external payable returns (uint256 tokensOut)',
-  'function sell(uint256 tokenIn, uint256 minEthOut) external returns (uint256 ethOut)',
-  'function graduated() external view returns (bool)',
-]);
 
 /**
  * Slippage threshold above which the UI should display a high-slippage warning.

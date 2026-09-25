@@ -1,10 +1,10 @@
 <template>
   <div class="space-y-6 max-w-7xl mx-auto">
     <!-- 1. OKX-Style Quick Market Highlights Ticker Bar -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5">
       <!-- Hot / Trending -->
       <div
-        class="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800/90 bg-white dark:bg-zinc-950/80 shadow-xs flex items-center justify-between cursor-pointer hover:border-emerald-500/40 transition"
+        class="p-4 sm:p-5 rounded-2xl border border-border bg-card shadow-xs flex items-center justify-between cursor-pointer hover:border-primary/50 transition"
         @click="selectTabFilter('trending')"
       >
         <div class="space-y-0.5">
@@ -20,7 +20,7 @@
 
       <!-- New Launches -->
       <div
-        class="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800/90 bg-white dark:bg-zinc-950/80 shadow-xs flex items-center justify-between cursor-pointer hover:border-emerald-500/40 transition"
+        class="p-4 sm:p-5 rounded-2xl border border-border bg-card shadow-xs flex items-center justify-between cursor-pointer hover:border-primary/50 transition"
         @click="selectTabFilter('newest')"
       >
         <div class="space-y-0.5">
@@ -36,7 +36,7 @@
 
       <!-- Top Gainers -->
       <div
-        class="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800/90 bg-white dark:bg-zinc-950/80 shadow-xs flex items-center justify-between cursor-pointer hover:border-emerald-500/40 transition"
+        class="p-4 sm:p-5 rounded-2xl border border-border bg-card shadow-xs flex items-center justify-between cursor-pointer hover:border-primary/50 transition"
         @click="selectTabFilter('gainers')"
       >
         <div class="space-y-0.5">
@@ -52,7 +52,7 @@
 
       <!-- 24h Aggregated Volume -->
       <div
-        class="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800/90 bg-white dark:bg-zinc-950/80 shadow-xs flex items-center justify-between"
+        class="p-4 sm:p-5 rounded-2xl border border-border bg-card shadow-xs flex items-center justify-between"
       >
         <div class="space-y-0.5">
           <span class="text-[11px] font-mono text-zinc-400">
@@ -68,7 +68,7 @@
 
     <!-- 2. OKX-Style Primary Market Navigation & Actions Header -->
     <div
-      class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-zinc-200 dark:border-zinc-800"
+      class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-border"
     >
       <!-- Market Tabs Navigation -->
       <div class="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar">
@@ -91,7 +91,7 @@
           @click="$emit('selectTab', 'create')"
           variant="default"
           size="sm"
-          class="h-9 px-4 gap-1.5 font-bold bg-emerald-500 hover:bg-emerald-600 text-black shadow-sm transition active:scale-95 cursor-pointer"
+          class="h-9 px-4 gap-1.5 font-bold shadow-sm transition active:scale-95 cursor-pointer"
         >
           <Plus class="w-4 h-4 stroke-[3]" />
           {{ t('create') }}
@@ -101,7 +101,7 @@
 
     <!-- 3. OKX-Style Filter & Search Control Bar -->
     <div
-      class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-2 bg-zinc-50/90 dark:bg-zinc-950/60 rounded-xl border border-zinc-200/80 dark:border-zinc-800/80"
+      class="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 p-3.5 sm:p-4 bg-card rounded-2xl border border-border"
     >
       <!-- Left Controls: Search Bar + Lifecycle Filter Buttons -->
       <div class="flex flex-wrap items-center gap-2 flex-1 min-w-0">
@@ -560,11 +560,11 @@
 
     <!-- 7B. OKX-Style Card Grid View Mode -->
     <div v-else-if="viewMode === 'grid'" class="space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
         <Card
           v-for="item in paginatedTokens"
           :key="item.token.address"
-          class="group hover:border-emerald-500/50 transition-all p-4 cursor-pointer rounded-xl bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 flex flex-col justify-between"
+          class="group hover:border-primary/50 transition-all p-5 sm:p-6 cursor-pointer rounded-2xl bg-card border border-border flex flex-col justify-between shadow-xs space-y-4"
           @click="$emit('selectToken', item.token.address)"
         >
           <div class="space-y-3">

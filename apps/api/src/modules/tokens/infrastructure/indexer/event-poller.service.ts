@@ -16,7 +16,7 @@ const SWAP_EVENT = parseAbiItem(
 
 /** V2 — BondingCurve Trade event */
 const TRADE_EVENT = parseAbiItem(
-  'event Trade(address indexed trader, bool isBuy, uint256 ethAmount, uint256 tokenAmount, uint256 feeEth)',
+  'event Trade(address indexed trader, bool indexed isBuy, uint256 ethAmount, uint256 tokenAmount, uint256 feeEth)',
 );
 
 /** V2 BondingCurve - TokenLaunched from factory (same event name as V1 but different signature).
@@ -25,6 +25,9 @@ const TRADE_EVENT = parseAbiItem(
  */
 export const TOKEN_LAUNCHED_V2_EVENT = parseAbiItem(
   'event TokenLaunched(address indexed token, address indexed curve, address indexed creator, address pairedToken, uint256 positionId, uint256 initialBuyAmount)',
+);
+export const TOKEN_LAUNCHED_V2_STANDARD_EVENT = parseAbiItem(
+  'event TokenLaunchedV2(address indexed token, address indexed curve, address indexed creator, string name, string symbol, uint256 initialBuy)',
 );
 
 /** V1 — TokenLaunched from factory */
@@ -139,13 +142,25 @@ export class EventPollerService {
     if (!factoryV2 || factoryV2 === '0x0000000000000000000000000000000000000000') return 0;
 
     try {
-      const logs = await this.client.getLogs({
-        address: factoryV2 as Address,
-        event: TOKEN_LAUNCHED_V2_EVENT,
-        fromBlock: from,
-        toBlock: to,
-      });
-
+      const [logs1, logs2] = await Promise.all([
+        this.client
+          .getLogs({
+            address: factoryV2 as Address,
+            event: TOKEN_LAUNCHED_V2_EVENT,
+            fromBlock: from,
+            toBlock: to,
+          })
+          .catch(() => []),
+        this.client
+          .getLogs({
+            address: factoryV2 as Address,
+            event: TOKEN_LAUNCHED_V2_STANDARD_EVENT,
+            fromBlock: from,
+            toBlock: to,
+          })
+          .catch(() => []),
+      ]);
+      const logs = [...logs1, ...logs2];
       for (const log of logs) {
         const tokenAddress = log.args.token as Address;
         const curveAddress = log.args.curve as Address;

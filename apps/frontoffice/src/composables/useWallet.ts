@@ -37,7 +37,8 @@ import { shortenAddress } from '../lib/utils';
 const balanceWei = ref<bigint>(0n);
 const error = ref<string | null>(null);
 const isConnecting = ref(false);
-
+let syncBalancePromise: Promise<void> | null = null;
+let lastSyncTime = 0;
 function parseChainId(raw: unknown): number | null {
   if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
   if (typeof raw === 'string') {
@@ -53,8 +54,22 @@ export function useWallet() {
   const providerState = useAppKitProvider<EIP1193Provider>('eip155');
   const network = useAppKitNetwork();
 
+  const resolvedAddress = computed<`0x${string}` | null>(() => {
+    if (walletAddress.value) return walletAddress.value;
+    if (appKitConfigured && account.value?.address && isStoredConnectionActive()) {
+      return account.value.address as `0x${string}`;
+    }
+    if (isStoredConnectionActive() && typeof window !== 'undefined' && 'localStorage' in window) {
+      const stored = localStorage.getItem(STORAGE_ADDRESS_KEY);
+      if (stored && stored.startsWith('0x') && stored.length === 42) {
+        return stored as `0x${string}`;
+      }
+    }
+    return null;
+  });
+
   const formattedAddress = computed(() => {
-    return shortenAddress(walletAddress.value);
+    return shortenAddress(resolvedAddress.value);
   });
 
   const formattedBalance = computed(() => {
@@ -64,7 +79,7 @@ export function useWallet() {
     return `${val.toFixed(4)} ${activeNetwork.value.nativeCurrency.symbol}`;
   });
 
-  const isConnected = computed(() => walletAddress.value !== null);
+  const isConnected = computed(() => resolvedAddress.value !== null);
 
   const isCorrectNetwork = computed(() => {
     return Boolean(walletChainId.value && SUPPORTED_CHAINS[walletChainId.value]);
@@ -75,18 +90,26 @@ export function useWallet() {
   });
 
   async function syncBalance(addressValue?: `0x${string}`) {
-    const target = addressValue ?? walletAddress.value;
+    const target = addressValue ?? resolvedAddress.value ?? walletAddress.value;
     if (!target) {
       balanceWei.value = 0n;
       return;
     }
-    try {
-      // Use getPublicClient() so balance is fetched from the wallet's active chain,
-      // not always from mainnet (fix MED-01 and MED-03).
-      balanceWei.value = await getPublicClient().getBalance({ address: target });
-    } catch {
-      balanceWei.value = 0n;
-    }
+    const now = Date.now();
+    if (syncBalancePromise) return syncBalancePromise;
+    if (now - lastSyncTime < 2000) return;
+    lastSyncTime = now;
+
+    syncBalancePromise = (async () => {
+      try {
+        balanceWei.value = await getPublicClient().getBalance({ address: target });
+      } catch {
+        // Keep current balance on transient error, avoid flickering to 0
+      } finally {
+        syncBalancePromise = null;
+      }
+    })();
+    return syncBalancePromise;
   }
 
   function getInjectedProvider(preferredId?: string | null): WalletProviderLike | null {
@@ -311,7 +334,10 @@ export function useWallet() {
 
   function setupCrossTabSync() {
     if (typeof window === 'undefined') return;
-
+    if (crossTabSyncCleanup) {
+      crossTabSyncCleanup();
+      crossTabSyncCleanup = null;
+    }
     // 1. BroadcastChannel for instant messaging across open tabs
     const channel = getWalletSyncChannel();
     const handleBroadcast = async (event: MessageEvent<WalletSyncMessage>) => {
@@ -411,17 +437,9 @@ export function useWallet() {
     setupCrossTabSync();
   }
 
-  watch(walletAddress, (next, prev) => {
-    if (next && next !== prev) {
-      syncBalance(next);
-    } else if (!next) {
-      balanceWei.value = 0n;
-    }
-  });
-
   if (appKitConfigured) {
     watch(
-      () => account.value.address,
+      () => account.value?.address,
       (next, prev) => {
         if (next && next !== prev) {
           const address = next as `0x${string}`;
@@ -447,6 +465,7 @@ export function useWallet() {
           clearWalletState();
         }
       },
+      { immediate: true },
     );
 
     watch(
@@ -481,7 +500,7 @@ export function useWallet() {
   }
 
   return {
-    account: walletAddress,
+    account: resolvedAddress,
     chainId: walletChainId,
     balanceWei,
     isConnecting,

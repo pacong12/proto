@@ -54,7 +54,6 @@ let volumeSeries: ISeriesApi<'Histogram'> | null = null;
 let resizeObserver: ResizeObserver | null = null;
 let themeObserver: MutationObserver | null = null;
 
-const chartMode = ref<'curve' | 'tradingview'>('curve');
 const chartType = ref<'candles' | 'area'>('candles');
 const isLogScale = ref(false);
 const hoveredBar = ref<CandlePoint | null>(null);
@@ -79,24 +78,6 @@ function isDataFlat(data: ReturnType<typeof formatData>): boolean {
     (d) => d.open === first && d.high === first && d.low === first && d.close === first,
   );
 }
-
-const tradingViewUrl = computed(() => {
-  const isDark = checkDark();
-  const theme = isDark ? 'dark' : 'light';
-  const sym = props.tokenSymbol?.toUpperCase() ?? '';
-  let tvSym = 'BINANCE:ETHUSDT';
-  if (sym === 'BTC' || sym === 'WBTC') tvSym = 'BINANCE:BTCUSDT';
-  else if (sym === 'BNB') tvSym = 'BINANCE:BNBUSDT';
-  return (
-    `https://s.tradingview.com/widgetembed/?frameElementId=tv_embed` +
-    `&symbol=${encodeURIComponent(tvSym)}` +
-    `&interval=15` +
-    `&hidesidetoolbar=0&symboledit=1&saveimage=1` +
-    `&toolbarbg=${isDark ? '09090b' : 'ffffff'}` +
-    `&studies=[]&theme=${theme}&style=1&timezone=Etc%2FUTC` +
-    `&withdateranges=1&hideideas=1`
-  );
-});
 
 // ---------------------------------------------------------------------------
 // Theme configuration
@@ -230,9 +211,22 @@ function makeAutoscaleProvider(flatPrice: number | null) {
 
 function formatPrice(val: number): string {
   if (isNaN(val) || val === 0) return '0.00';
+  if (val < 0.00000001) return val.toFixed(11);
   if (val < 0.0001) return val.toFixed(8);
   if (val < 1) return val.toFixed(6);
   return val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+}
+
+function getPriceFormatOptions(data: Array<{ close: number }>) {
+  const nonZero = data.map((d) => d.close).filter((c) => c > 0);
+  const minVal = nonZero.length > 0 ? Math.min(...nonZero) : 0;
+  if (minVal > 0 && minVal < 0.00001) {
+    return { type: 'price' as const, precision: 11, minMove: 0.00000000001 };
+  }
+  if (minVal > 0 && minVal < 1) {
+    return { type: 'price' as const, precision: 8, minMove: 0.00000001 };
+  }
+  return { type: 'price' as const, precision: 4, minMove: 0.0001 };
 }
 
 function formatVolume(val: number): string {
@@ -294,7 +288,7 @@ function destroyChart() {
 }
 
 function initChart() {
-  if (!chartContainer.value || chartMode.value !== 'curve') return;
+  if (!chartContainer.value) return;
   destroyChart();
 
   const isDark = checkDark();
@@ -338,7 +332,7 @@ function initChart() {
       wickVisible: true,
       wickUpColor: '#10b981',
       wickDownColor: '#f43f5e',
-      priceFormat: { type: 'price', precision: 8, minMove: 0.00000001 },
+      priceFormat: getPriceFormatOptions(formatted),
       autoscaleInfoProvider: autoscaleProvider,
     });
     candleSeries.setData(formatted);
@@ -348,7 +342,7 @@ function initChart() {
       bottomColor: 'rgba(16,185,129,0.02)',
       lineColor: '#10b981',
       lineWidth: 2,
-      priceFormat: { type: 'price', precision: 8, minMove: 0.00000001 },
+      priceFormat: getPriceFormatOptions(formatted),
       autoscaleInfoProvider: autoscaleProvider,
     });
     areaSeries.setData(formatted.map((d) => ({ time: d.time, value: d.close })));
@@ -427,11 +421,6 @@ function initChart() {
 // Controls
 // ---------------------------------------------------------------------------
 
-function setChartMode(mode: 'curve' | 'tradingview') {
-  chartMode.value = mode;
-  if (mode === 'curve') setTimeout(() => initChart(), 50);
-}
-
 function toggleChartType(type: 'candles' | 'area') {
   if (chartType.value === type) return;
   chartType.value = type;
@@ -468,10 +457,16 @@ watch(
 
     if (candleSeries) {
       // Re-apply autoscaleInfoProvider with updated flat-price if needed
-      candleSeries.applyOptions({ autoscaleInfoProvider: makeAutoscaleProvider(flatPrice) });
+      candleSeries.applyOptions({
+        priceFormat: getPriceFormatOptions(formatted),
+        autoscaleInfoProvider: makeAutoscaleProvider(flatPrice),
+      });
       candleSeries.setData(formatted);
     } else if (areaSeries) {
-      areaSeries.applyOptions({ autoscaleInfoProvider: makeAutoscaleProvider(flatPrice) });
+      areaSeries.applyOptions({
+        priceFormat: getPriceFormatOptions(formatted),
+        autoscaleInfoProvider: makeAutoscaleProvider(flatPrice),
+      });
       areaSeries.setData(formatted.map((d) => ({ time: d.time, value: d.close })));
     }
 
@@ -560,122 +555,76 @@ onUnmounted(() => destroyChart());
           </span>
         </div>
 
-        <!-- Flat-data informational label -->
         <span
-          v-if="chartMode === 'curve' && dataIsFlat && (data?.length ?? 0) > 1"
-          class="text-[10px] font-mono text-zinc-400 dark:text-zinc-600 ml-1 italic"
+          v-if="dataIsFlat && (data?.length ?? 0) > 1"
+          class="text-[10px] font-mono text-muted-foreground ml-1 italic"
         >
           no price movement yet
         </span>
       </div>
 
-      <!-- Right: Mode selector + chart controls -->
+      <!-- Right: Chart controls -->
       <div class="flex items-center gap-1.5 shrink-0 ml-auto flex-wrap">
-        <!-- Bonding Curve vs TradingView toggle -->
-        <div
-          class="flex items-center rounded-lg border border-zinc-200 dark:border-zinc-800 p-0.5 text-[10px] font-bold bg-zinc-100 dark:bg-zinc-950"
+        <span
+          class="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-muted text-muted-foreground border border-border"
         >
-          <button
-            type="button"
-            class="px-2 py-0.5 rounded transition cursor-pointer"
-            :class="
-              chartMode === 'curve'
-                ? 'bg-emerald-500 text-black'
-                : 'text-zinc-500 hover:text-black dark:hover:text-white'
-            "
-            @click="setChartMode('curve')"
-          >
-            Bonding Curve
-          </button>
-          <button
-            type="button"
-            class="px-2 py-0.5 rounded transition cursor-pointer"
-            :class="
-              chartMode === 'tradingview'
-                ? 'bg-emerald-500 text-black'
-                : 'text-zinc-500 hover:text-black dark:hover:text-white'
-            "
-            @click="setChartMode('tradingview')"
-          >
-            TradingView
-          </button>
-        </div>
+          TradingView Engine
+        </span>
+        <button
+          type="button"
+          class="p-1 rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
+          :class="
+            chartType === 'candles' ? 'bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white' : ''
+          "
+          title="Candlestick chart"
+          @click="toggleChartType('candles')"
+        >
+          <CandlestickChart class="w-3.5 h-3.5" />
+        </button>
 
-        <template v-if="chartMode === 'curve'">
-          <!-- Candles toggle -->
-          <button
-            type="button"
-            class="p-1 rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
-            :class="
-              chartType === 'candles'
-                ? 'bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white'
-                : ''
-            "
-            title="Candlestick chart"
-            @click="toggleChartType('candles')"
-          >
-            <CandlestickChart class="w-3.5 h-3.5" />
-          </button>
+        <!-- Area toggle -->
+        <button
+          type="button"
+          class="p-1 rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
+          :class="
+            chartType === 'area' ? 'bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white' : ''
+          "
+          title="Area chart"
+          @click="toggleChartType('area')"
+        >
+          <TrendingUp class="w-3.5 h-3.5" />
+        </button>
 
-          <!-- Area toggle -->
-          <button
-            type="button"
-            class="p-1 rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
-            :class="
-              chartType === 'area' ? 'bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white' : ''
-            "
-            title="Area chart"
-            @click="toggleChartType('area')"
-          >
-            <TrendingUp class="w-3.5 h-3.5" />
-          </button>
+        <span class="w-px h-3.5 bg-zinc-300 dark:bg-zinc-700 mx-0.5" />
 
-          <span class="w-px h-3.5 bg-zinc-300 dark:bg-zinc-700 mx-0.5" />
+        <!-- LOG / LIN -->
+        <button
+          type="button"
+          class="px-1.5 py-0.5 text-[10px] font-bold rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
+          :class="isLogScale ? 'bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white' : ''"
+          title="Toggle log / linear scale"
+          @click="toggleLogScale"
+        >
+          {{ isLogScale ? 'LOG' : 'LIN' }}
+        </button>
 
-          <!-- LOG / LIN -->
-          <button
-            type="button"
-            class="px-1.5 py-0.5 text-[10px] font-bold rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
-            :class="isLogScale ? 'bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white' : ''"
-            title="Toggle log / linear scale"
-            @click="toggleLogScale"
-          >
-            {{ isLogScale ? 'LOG' : 'LIN' }}
-          </button>
-
-          <!-- Fit content -->
-          <button
-            type="button"
-            class="p-1 rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
-            title="Fit chart to content"
-            @click="fitContent"
-          >
-            <Maximize2 class="w-3.5 h-3.5" />
-          </button>
-        </template>
+        <!-- Fit content -->
+        <button
+          type="button"
+          class="p-1 rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
+          title="Fit chart to content"
+          @click="fitContent"
+        >
+          <Maximize2 class="w-3.5 h-3.5" />
+        </button>
       </div>
     </div>
 
-    <!-- Bonding Curve chart canvas (lightweight-charts) -->
+    <!-- Token Candlestick Chart Canvas (TradingView Lightweight Charts) -->
     <div
-      v-show="chartMode === 'curve'"
       ref="chartContainer"
-      class="w-full rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#09090b] shadow-xs"
+      class="w-full rounded-2xl overflow-hidden border border-border bg-card shadow-xs"
       :style="{ minHeight: `${props.height}px` }"
     />
-
-    <!-- TradingView iframe embed -->
-    <div
-      v-if="chartMode === 'tradingview'"
-      class="w-full rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#09090b] shadow-xs"
-      :style="{ height: `${props.height}px` }"
-    >
-      <iframe
-        :src="tradingViewUrl"
-        class="w-full h-full border-0"
-        allowtransparency="true"
-        scrolling="no"
-      />
-    </div>
   </div>
 </template>

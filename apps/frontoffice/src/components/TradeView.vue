@@ -1,6 +1,6 @@
 <template>
   <!-- Full-width terminal layout, no outer max-width constraints -->
-  <div class="w-full">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
     <!-- Loading state -->
     <div
       v-if="tokenLoading"
@@ -26,8 +26,9 @@
     </div>
 
     <template v-else>
+      <!-- Top Token Info Header Card -->
       <div
-        class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950"
+        class="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs flex flex-wrap items-center justify-between gap-4"
       >
         <!-- Logo + Name + Ticker -->
         <div class="flex items-center gap-3 min-w-0">
@@ -154,87 +155,85 @@
       <!-- ============================================================
            ROW 2: Main Trading Layout - Chart (left) + Swap Panel (right)
            ============================================================ -->
-      <div class="flex flex-col lg:flex-row gap-0 min-h-[600px]">
-        <!-- ============================================================
-             LEFT: Chart column (flex-1)
-             ============================================================ -->
-        <div class="flex-1 min-w-0 flex flex-col border-r border-zinc-200 dark:border-zinc-800">
-          <!-- Timeframe switcher bar -->
-          <div
-            class="flex items-center gap-0 px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950"
-          >
-            <span
-              class="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mr-3 font-semibold"
-              >Interval</span
+      <!-- Main Trading Grid: Chart & Tabs (left) + Swap Panel (right: fixed 360px) -->
+      <div class="flex flex-col xl:flex-row gap-6 items-start">
+        <!-- LEFT: Chart Card + Bottom Tabs Card -->
+        <div class="flex-1 min-w-0 space-y-6 w-full">
+          <!-- Chart Card -->
+          <div class="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
+            <!-- Timeframe switcher bar -->
+            <div
+              class="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30 flex-wrap"
             >
-            <div class="flex items-center gap-0.5">
-              <button
-                v-for="res in resolutions"
-                :key="res.label"
-                type="button"
-                class="px-2.5 py-1 text-xs font-mono font-semibold rounded transition-all cursor-pointer"
-                :class="
-                  selectedResolution === res.seconds
-                    ? 'bg-zinc-900 text-white dark:bg-white dark:text-black'
-                    : 'text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                "
-                @click="changeResolution(res.seconds)"
+              <span
+                class="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mr-3 font-semibold"
+                >Interval</span
               >
-                {{ res.label }}
-              </button>
+              <div class="flex items-center gap-0.5">
+                <button
+                  v-for="res in resolutions"
+                  :key="res.label"
+                  type="button"
+                  class="px-2.5 py-1 text-xs font-mono font-semibold rounded transition-all cursor-pointer"
+                  :class="
+                    selectedResolution === res.seconds
+                      ? 'bg-zinc-900 text-white dark:bg-white dark:text-black'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                  "
+                  @click="changeResolution(res.seconds)"
+                >
+                  {{ res.label }}
+                </button>
+              </div>
+
+              <!-- Security badges inline, right-aligned -->
+              <div class="ml-auto flex items-center gap-1.5 flex-wrap">
+                <span
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                >
+                  <ShieldCheck class="w-3 h-3" />
+                  No Mint
+                </span>
+                <span
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold border"
+                  :class="
+                    devHoldingPercent === 0
+                      ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
+                  "
+                >
+                  Dev {{ devHoldingPercent === 0 ? '0%' : `${devHoldingPercent.toFixed(1)}%` }}
+                </span>
+                <span
+                  class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700"
+                >
+                  Top10: {{ top10HoldingPercent.toFixed(1) }}%
+                </span>
+                <span
+                  class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700"
+                >
+                  Anti-Snipe
+                </span>
+              </div>
             </div>
 
-            <!-- Security badges inline, right-aligned -->
-            <div class="ml-auto flex items-center gap-1.5 flex-wrap">
-              <span
-                class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-              >
-                <ShieldCheck class="w-3 h-3" />
-                No Mint
-              </span>
-              <span
-                class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold border"
-                :class="
-                  devHoldingPercent === 0
-                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
-                "
-              >
-                Dev {{ devHoldingPercent === 0 ? '0%' : `${devHoldingPercent.toFixed(1)}%` }}
-              </span>
-              <span
-                class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700"
-              >
-                Top10: {{ top10HoldingPercent.toFixed(1) }}%
-              </span>
-              <span
-                class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700"
-              >
-                Anti-Snipe
-              </span>
+            <!-- TradingChart wrapper -->
+            <div class="p-4 sm:p-5 bg-card">
+              <TradingChart
+                :data="candlestickData"
+                :token-symbol="currentToken.symbol"
+                :token-address="currentToken.address"
+                :height="420"
+              />
             </div>
           </div>
 
-          <!-- TradingChart (full width, continuous timeline from launch to now) -->
-          <div class="flex-1 px-3 py-3 bg-white dark:bg-zinc-950">
-            <TradingChart
-              :data="candlestickData"
-              :token-symbol="currentToken.symbol"
-              :token-address="currentToken.address"
-              :height="420"
-            />
-          </div>
-
-          <!-- ============================================================
-               Bottom Tabs: Thread | Trades | Top Traders | Holders | About
-               ============================================================ -->
-          <div class="border-t border-zinc-200 dark:border-zinc-800">
+          <!-- Bottom Tabs Card -->
+          <div class="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
             <Tabs v-model="activeBottomTab" class="w-full">
               <!-- Tab headers -->
-              <div
-                class="flex items-center border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 px-3"
-              >
-                <TabsList class="flex gap-0 bg-transparent border-0 rounded-none h-auto p-0">
+              <div class="flex items-center border-b border-border bg-muted/30 px-4 py-2">
+                <TabsList class="flex gap-1 bg-transparent border-0 rounded-none h-auto p-0">
                   <TabsTrigger
                     v-for="tab in [
                       { value: 'thread', label: 'Thread' },
@@ -245,7 +244,7 @@
                     ]"
                     :key="tab.value"
                     :value="tab.value"
-                    class="px-4 py-2.5 text-xs font-semibold rounded-none border-b-2 border-transparent data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 dark:data-[state=active]:text-emerald-400 text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white bg-transparent transition-all"
+                    class="px-4 py-2 text-xs font-semibold rounded-lg border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary text-muted-foreground hover:text-foreground bg-transparent transition-all cursor-pointer"
                   >
                     {{ tab.label }}
                     <span
@@ -278,11 +277,12 @@
               </div>
 
               <!-- Tab: Discussion Thread & Comments -->
-              <TabsContent value="thread" class="mt-0 max-h-[380px] overflow-y-auto p-4 space-y-4">
+              <TabsContent
+                value="thread"
+                class="mt-0 max-h-[420px] overflow-y-auto p-5 sm:p-6 space-y-5"
+              >
                 <!-- Post Comment Form -->
-                <div
-                  class="p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 space-y-2.5"
-                >
+                <div class="p-4 sm:p-5 rounded-2xl border border-border bg-muted/30 space-y-3">
                   <div
                     class="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 font-mono"
                   >
@@ -857,299 +857,291 @@
           </div>
         </div>
 
-        <!-- ============================================================
-             RIGHT: Swap Panel (fixed width 340px)
-             ============================================================ -->
-        <div
-          class="w-full lg:w-[340px] shrink-0 flex flex-col border-t lg:border-t-0 border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950"
-        >
-          <!-- Graduation progress card -->
-          <div class="p-4 border-b border-zinc-200 dark:border-zinc-800">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-xs font-semibold text-black dark:text-white">
-                {{ currentToken.version === 'v2' ? 'Bonding Curve' : 'Uniswap V3 Liquidity' }}
-              </span>
-              <span class="text-xs font-mono font-bold text-emerald-500">
-                {{ (currentMarketData.graduationProgress * 100).toFixed(1) }}%
-              </span>
-            </div>
-            <Progress
-              :model-value="currentMarketData.graduationProgress * 100"
-              class="h-1.5 mb-2"
-            />
-            <div
-              class="flex justify-between text-[10px] font-mono text-zinc-500 dark:text-zinc-400"
-            >
-              <span
-                >{{ currentMarketData.pairedPrincipalWeth }} /
-                {{ currentMarketData.graduationThresholdWeth }} {{ currencySymbol }}</span
-              >
-              <span>{{
-                currentMarketData.isGraduated
-                  ? 'Graduated'
-                  : `Need ${remainingToGraduate} ${currencySymbol}`
-              }}</span>
-            </div>
-            <!-- Graduation call-to-action banner -->
-            <div
-              v-if="currentToken.version === 'v2' && !currentMarketData.isGraduated"
-              class="mt-2 px-2.5 py-1.5 rounded-lg bg-emerald-500/8 border border-emerald-500/20 text-[10px] font-mono flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400"
-            >
-              <Sparkles class="w-3 h-3 shrink-0" />
-              <span>Graduates to Uniswap v4 at 100%</span>
-            </div>
-            <div
-              v-else-if="currentMarketData.isGraduated"
-              class="mt-2 px-2.5 py-1.5 rounded-lg bg-violet-500/8 border border-violet-500/20 text-[10px] font-mono flex items-center gap-1.5 text-violet-500"
-            >
-              <Check class="w-3 h-3 shrink-0" />
-              <span>Liquidity locked in Uniswap DEX</span>
-            </div>
-          </div>
-
-          <!-- Swap panel -->
-          <div class="flex-1 p-4 space-y-4">
-            <!-- Wrong network warning banner -->
-            <div
-              v-if="isConnected && activeNetwork.chainId !== tokenNetwork.chainId"
-              class="px-3 py-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-2"
-            >
-              <AlertCircle class="w-3.5 h-3.5 shrink-0" />
-              <span>Switch to {{ tokenNetwork.name }} to trade.</span>
-            </div>
-
-            <!-- Buy / Sell tabs + Slippage gear -->
-            <div class="flex items-center justify-between">
+        <!-- RIGHT: Swap Panel Column (fixed 360px, never stretches) -->
+        <div class="w-full xl:w-[360px] shrink-0 space-y-6">
+          <div class="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
+            <!-- Graduation progress card -->
+            <div class="p-5 sm:p-6 border-b border-border space-y-2.5">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-semibold text-foreground">
+                  {{ currentToken.version === 'v2' ? 'Bonding Curve' : 'Uniswap V3 Liquidity' }}
+                </span>
+                <span class="text-xs font-mono font-bold text-primary">
+                  {{ (currentMarketData.graduationProgress * 100).toFixed(1) }}%
+                </span>
+              </div>
+              <Progress
+                :model-value="currentMarketData.graduationProgress * 100"
+                class="h-1.5 mb-2"
+              />
+              <div class="flex justify-between text-[11px] font-mono text-muted-foreground">
+                <span>
+                  {{ currentMarketData.pairedPrincipalWeth }} /
+                  {{ currentMarketData.graduationThresholdWeth }} {{ currencySymbol }}
+                </span>
+                <span>{{
+                  currentMarketData.isGraduated
+                    ? 'Graduated'
+                    : `Need ${remainingToGraduate} ${currencySymbol}`
+                }}</span>
+              </div>
+              <!-- Graduation call-to-action banner -->
               <div
-                class="flex rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden"
+                v-if="currentToken.version === 'v2' && !currentMarketData.isGraduated"
+                class="mt-2 px-2.5 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-[11px] font-mono flex items-center gap-1.5 text-primary"
               >
-                <button
-                  type="button"
-                  class="px-4 py-1.5 text-xs font-bold transition cursor-pointer"
-                  :class="
-                    isBuy
-                      ? 'bg-emerald-500 text-black'
-                      : 'bg-transparent text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white'
-                  "
-                  @click="tradeTab = 'buy'"
-                >
-                  {{ t('buy') }}
-                </button>
-                <button
-                  type="button"
-                  class="px-4 py-1.5 text-xs font-bold transition cursor-pointer"
-                  :class="
-                    !isBuy
-                      ? 'bg-rose-500 text-white'
-                      : 'bg-transparent text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white'
-                  "
-                  @click="tradeTab = 'sell'"
-                >
-                  {{ t('sell') }}
-                </button>
+                <Sparkles class="w-3.5 h-3.5 shrink-0" />
+                <span>Graduates to Uniswap v4 at 100%</span>
+              </div>
+              <div
+                v-else-if="currentMarketData.isGraduated"
+                class="mt-2 px-2.5 py-1.5 rounded-lg bg-secondary/10 border border-secondary/20 text-[11px] font-mono flex items-center gap-1.5 text-secondary"
+              >
+                <Check class="w-3.5 h-3.5 shrink-0" />
+                <span>Liquidity locked in Uniswap DEX</span>
+              </div>
+            </div>
+
+            <!-- Swap panel form wrapper -->
+            <div class="p-5 sm:p-6 space-y-4">
+              <!-- Wrong network warning banner -->
+              <div
+                v-if="isConnected && activeNetwork.chainId !== tokenNetwork.chainId"
+                class="px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-2"
+              >
+                <AlertCircle class="w-3.5 h-3.5 shrink-0" />
+                <span>Switch to {{ tokenNetwork.name }} to trade.</span>
               </div>
 
-              <!-- Slippage Popover -->
-              <Popover>
-                <PopoverTrigger as-child>
+              <!-- Buy / Sell tabs + Slippage gear in ONE row -->
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex rounded-xl border border-border bg-muted p-1 w-44 shrink-0">
                   <button
                     type="button"
-                    class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-mono font-semibold border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:border-zinc-400 dark:hover:border-zinc-600 transition cursor-pointer bg-white dark:bg-zinc-900"
+                    class="flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer text-center"
+                    :class="
+                      isBuy
+                        ? 'bg-primary text-primary-foreground shadow-xs'
+                        : 'text-muted-foreground hover:text-foreground'
+                    "
+                    @click="tradeTab = 'buy'"
                   >
-                    <Settings class="w-3.5 h-3.5" />
-                    <span>{{ slippage }}%</span>
+                    {{ t('buy') }}
                   </button>
-                </PopoverTrigger>
-                <PopoverContent
-                  class="w-60 p-3 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl space-y-3"
-                >
-                  <div class="flex items-center justify-between">
-                    <span class="text-xs font-bold text-black dark:text-white"
-                      >Slippage Tolerance</span
+                  <button
+                    type="button"
+                    class="flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer text-center"
+                    :class="
+                      !isBuy
+                        ? 'bg-destructive text-destructive-foreground shadow-xs'
+                        : 'text-muted-foreground hover:text-foreground'
+                    "
+                    @click="tradeTab = 'sell'"
+                  >
+                    {{ t('sell') }}
+                  </button>
+                </div>
+
+                <!-- Slippage Popover -->
+                <Popover>
+                  <PopoverTrigger as-child>
+                    <button
+                      type="button"
+                      class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-mono font-semibold border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition cursor-pointer bg-card"
                     >
-                    <span class="text-xs font-mono font-bold text-emerald-500"
-                      >{{ slippage }}%</span
-                    >
-                  </div>
-                  <div class="grid grid-cols-4 gap-1">
-                    <Button
-                      v-for="preset in [0.5, 1.0, 2.0]"
-                      :key="preset"
-                      size="sm"
-                      :variant="slippage === preset && !isCustomSlippage ? 'default' : 'outline'"
-                      class="h-7 px-1 text-xs font-mono text-black dark:text-white border-zinc-200 dark:border-zinc-800"
-                      @click="selectSlippagePreset(preset)"
-                    >
-                      {{ preset }}%
-                    </Button>
-                    <Button
-                      size="sm"
-                      :variant="isCustomSlippage ? 'default' : 'outline'"
-                      class="h-7 px-1 text-xs font-mono text-black dark:text-white border-zinc-200 dark:border-zinc-800"
-                      @click="isCustomSlippage = true"
-                    >
-                      Custom
-                    </Button>
-                  </div>
-                  <div v-if="isCustomSlippage" class="space-y-1">
-                    <div class="relative">
-                      <Input
-                        v-model="customSlippageInput"
-                        type="number"
-                        step="0.1"
-                        min="0.1"
-                        max="49"
-                        placeholder="1.0"
-                        class="h-8 text-xs font-mono pr-7 text-black dark:text-white bg-transparent border-zinc-200 dark:border-zinc-800"
-                        @input="handleCustomSlippageInput"
-                      />
-                      <span
-                        class="absolute right-2.5 top-2 text-xs font-mono font-bold text-zinc-500"
-                        >%</span
+                      <Settings class="w-3.5 h-3.5" />
+                      <span>{{ slippage }}%</span>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    class="w-64 p-3 bg-card border border-border rounded-2xl shadow-2xl space-y-3"
+                  >
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs font-bold text-foreground">Slippage Tolerance</span>
+                      <span class="text-xs font-mono font-bold text-primary">{{ slippage }}%</span>
+                    </div>
+                    <div class="grid grid-cols-4 gap-1.5">
+                      <Button
+                        v-for="preset in [0.5, 1.0, 2.0]"
+                        :key="preset"
+                        size="sm"
+                        :variant="slippage === preset && !isCustomSlippage ? 'default' : 'outline'"
+                        class="h-7 px-1 text-xs font-mono"
+                        @click="selectSlippagePreset(preset)"
                       >
+                        {{ preset }}%
+                      </Button>
+                      <Button
+                        size="sm"
+                        :variant="isCustomSlippage ? 'default' : 'outline'"
+                        class="h-7 px-1 text-xs font-mono"
+                        @click="isCustomSlippage = true"
+                      >
+                        Custom
+                      </Button>
                     </div>
-                    <div
-                      v-if="slippage > SLIPPAGE_WARN_THRESHOLD"
-                      class="text-[10px] font-mono text-amber-500 flex items-center gap-1"
+                    <div v-if="isCustomSlippage" class="space-y-1">
+                      <div class="relative">
+                        <Input
+                          v-model="customSlippageInput"
+                          type="number"
+                          step="0.1"
+                          min="0.1"
+                          max="49"
+                          placeholder="1.0"
+                          class="h-8 text-xs font-mono pr-7 bg-muted/40"
+                          @input="handleCustomSlippageInput"
+                        />
+                        <span
+                          class="absolute right-2.5 top-2 text-xs font-mono font-bold text-muted-foreground"
+                          >%</span
+                        >
+                      </div>
+                      <div
+                        v-if="slippage > SLIPPAGE_WARN_THRESHOLD"
+                        class="text-[10px] font-mono text-amber-500 flex items-center gap-1"
+                      >
+                        <AlertCircle class="w-3 h-3 shrink-0" />
+                        High slippage - sandwich attack risk.
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <!-- You Pay input -->
+              <div class="space-y-2">
+                <div class="flex justify-between text-xs text-muted-foreground">
+                  <span>You pay</span>
+                  <span
+                    class="font-mono flex items-center gap-1 cursor-pointer select-none hover:opacity-80 transition"
+                    :title="
+                      isBuy
+                        ? 'Click to fill max ' + currencySymbol
+                        : 'Click to fill max ' + currentToken.symbol
+                    "
+                    @click="applyPercentage(100)"
+                  >
+                    <span>Bal:</span>
+                    <span
+                      v-if="!isBuy && isTokenBalanceLoading"
+                      class="animate-pulse font-bold text-foreground"
+                      >...</span
                     >
-                      <AlertCircle class="w-3 h-3 shrink-0" />
-                      High slippage - sandwich attack risk.
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
+                    <span v-else class="font-bold text-foreground">{{
+                      isBuy ? formatEthBalance(balanceWei) : formatTokenBalance(userTokenBalance)
+                    }}</span>
+                    <span>{{ isBuy ? currencySymbol : currentToken.symbol }}</span>
+                  </span>
+                </div>
+                <div class="relative">
+                  <Input
+                    v-model="amountIn"
+                    type="number"
+                    step="any"
+                    placeholder="0.0"
+                    class="text-lg font-mono font-bold text-foreground bg-muted/40 border-input h-12 pr-16 rounded-xl"
+                  />
+                  <span
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono font-semibold text-muted-foreground select-none"
+                  >
+                    {{ isBuy ? currencySymbol : currentToken.symbol }}
+                  </span>
+                </div>
 
-            <!-- You Pay input -->
-            <div class="space-y-2">
-              <div class="flex justify-between text-xs text-zinc-500 dark:text-zinc-400">
-                <span>You pay</span>
-                <span class="font-mono">
-                  Bal:
-                  <span class="font-bold text-black dark:text-white">{{
-                    isBuy ? formatEthBalance(balanceWei) : formatTokenBalance(userTokenBalance)
-                  }}</span>
-                  {{ isBuy ? currencySymbol : currentToken.symbol }}
-                </span>
+                <!-- Quick buy presets (buy mode only) -->
+                <div v-if="isBuy" class="grid grid-cols-4 gap-1.5 pt-0.5">
+                  <button
+                    v-for="ethVal in buyPresets"
+                    :key="ethVal"
+                    type="button"
+                    class="h-7 text-xs font-mono font-medium rounded-lg border border-border bg-muted/50 hover:bg-muted text-foreground transition cursor-pointer"
+                    @click="applyQuickBuy(ethVal)"
+                  >
+                    {{ ethVal }}
+                  </button>
+                </div>
+
+                <!-- Percentage buttons -->
+                <div class="grid grid-cols-4 gap-1.5 pt-0.5">
+                  <button
+                    v-for="percent in [25, 50, 75, 100]"
+                    :key="percent"
+                    type="button"
+                    class="h-7 text-xs font-mono font-medium rounded-lg border border-border bg-muted/50 hover:bg-muted text-foreground transition cursor-pointer"
+                    @click="applyPercentage(percent)"
+                  >
+                    {{ percent === 100 ? 'Max' : `${percent}%` }}
+                  </button>
+                </div>
               </div>
-              <div class="relative">
-                <Input
-                  v-model="amountIn"
-                  type="number"
-                  step="0.001"
-                  placeholder="0.0"
-                  class="text-xl font-mono font-bold text-black dark:text-white bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 h-14 pr-20"
-                />
-                <span
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono font-semibold text-zinc-500 dark:text-zinc-400 select-none"
+
+              <!-- You receive output -->
+              <div class="space-y-1.5">
+                <div class="flex justify-between text-xs text-muted-foreground">
+                  <span>You receive (est.)</span>
+                  <span class="font-mono">{{ isBuy ? currentToken.symbol : currencySymbol }}</span>
+                </div>
+                <div
+                  class="w-full rounded-xl border border-border bg-muted/30 px-3.5 py-2.5 text-sm font-mono font-bold text-foreground min-h-[46px] flex items-center justify-between"
                 >
-                  {{ isBuy ? currencySymbol : currentToken.symbol }}
-                </span>
+                  <span>{{ estimatedOutput }}</span>
+                </div>
               </div>
 
-              <!-- Quick buy presets (buy mode only) -->
-              <div v-if="isBuy" class="grid grid-cols-4 gap-1">
-                <button
-                  v-for="ethVal in buyPresets"
-                  :key="ethVal"
-                  type="button"
-                  class="py-1.5 text-xs font-mono font-semibold rounded-lg border transition cursor-pointer text-emerald-600 dark:text-emerald-400 bg-emerald-500/8 border-emerald-500/25 hover:bg-emerald-500/15"
-                  @click="applyQuickBuy(ethVal)"
+              <!-- CTA Swap button -->
+              <Button
+                v-if="!isConnected"
+                class="w-full font-bold h-11 cursor-pointer rounded-xl text-sm shadow-md"
+                @click="openWallet"
+              >
+                {{ t('connectWallet') }}
+              </Button>
+              <Button
+                v-else-if="activeNetwork.chainId !== tokenNetwork.chainId"
+                variant="outline"
+                class="w-full font-bold h-11 cursor-pointer rounded-xl text-sm border-amber-500 text-amber-500"
+                @click="switchOrAddNetwork(tokenNetwork)"
+              >
+                Switch to {{ tokenNetwork.name }}
+              </Button>
+              <Button
+                v-else
+                :disabled="isSwapDisabled"
+                class="w-full font-bold h-11 cursor-pointer rounded-xl text-sm transition shadow-md"
+                :variant="isBuy ? 'default' : 'destructive'"
+                @click="handleSwap"
+              >
+                <Loader2 v-if="isSwapping" class="w-4 h-4 mr-2 animate-spin" />
+                <ArrowUpDown v-else class="w-4 h-4 mr-2" />
+                {{ swapButtonText }}
+              </Button>
+
+              <!-- Status messages -->
+              <div
+                v-if="swapSuccessTx"
+                class="px-3 py-2.5 rounded-xl bg-primary/10 border border-primary/30 text-xs space-y-1.5"
+              >
+                <div class="flex items-center gap-1.5 text-primary font-bold">
+                  <Check class="w-3.5 h-3.5" />
+                  Swap Confirmed
+                </div>
+                <a
+                  :href="`${explorerUrl}/tx/${swapSuccessTx}`"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="font-mono text-[10px] text-muted-foreground hover:text-primary transition underline flex items-center gap-1"
                 >
-                  {{ ethVal }}
-                </button>
-              </div>
-
-              <!-- Percentage buttons -->
-              <div class="grid grid-cols-4 gap-1">
-                <button
-                  v-for="percent in [25, 50, 75, 100]"
-                  :key="percent"
-                  type="button"
-                  class="py-1.5 text-xs font-mono font-semibold rounded-lg border transition cursor-pointer text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700"
-                  @click="applyPercentage(percent)"
-                >
-                  {{ percent === 100 ? 'Max' : `${percent}%` }}
-                </button>
-              </div>
-            </div>
-
-            <!-- You receive output -->
-            <div class="space-y-1.5">
-              <div class="flex justify-between text-xs text-zinc-500 dark:text-zinc-400">
-                <span>You receive (est.)</span>
-                <span class="font-mono">{{ isBuy ? currentToken.symbol : currencySymbol }}</span>
+                  View on Explorer <ExternalLink class="w-3 h-3" />
+                </a>
               </div>
               <div
-                class="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-900 px-4 py-3.5 text-base font-mono font-bold text-black dark:text-white min-h-[52px] flex items-center"
+                v-if="swapError"
+                class="px-3 py-2.5 rounded-xl bg-destructive/10 border border-destructive/30 text-xs text-destructive flex items-start gap-2"
               >
-                {{ estimatedOutput }}
+                <AlertCircle class="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                <span>{{ swapError }}</span>
               </div>
-            </div>
-
-            <!-- CTA Swap button -->
-            <Button
-              v-if="!isConnected"
-              class="w-full font-bold h-12 bg-emerald-500 hover:bg-emerald-400 text-black cursor-pointer rounded-xl text-sm"
-              @click="openWallet"
-            >
-              Connect Wallet to Trade
-            </Button>
-            <Button
-              v-else-if="activeNetwork.chainId !== tokenNetwork.chainId"
-              class="w-full font-bold h-12 bg-amber-500 hover:bg-amber-400 text-black cursor-pointer rounded-xl text-sm"
-              @click="switchOrAddNetwork(tokenNetwork)"
-            >
-              Switch to {{ tokenNetwork.name }}
-            </Button>
-            <Button
-              v-else
-              :disabled="isSwapping || !amountIn || parseFloat(amountIn) <= 0"
-              class="w-full font-bold h-12 cursor-pointer rounded-xl text-sm transition"
-              :class="
-                isBuy
-                  ? 'bg-emerald-500 hover:bg-emerald-400 text-black disabled:opacity-50'
-                  : 'bg-rose-500 hover:bg-rose-400 text-white disabled:opacity-50'
-              "
-              @click="handleSwap"
-            >
-              <Loader2 v-if="isSwapping" class="w-4 h-4 mr-2 animate-spin" />
-              <ArrowUpDown v-else class="w-4 h-4 mr-2" />
-              {{
-                isSwapping
-                  ? 'Executing...'
-                  : isBuy
-                    ? `Buy ${currentToken.symbol}`
-                    : `Sell ${currentToken.symbol}`
-              }}
-            </Button>
-
-            <!-- Status messages -->
-            <div
-              v-if="swapSuccessTx"
-              class="px-3 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs space-y-1.5"
-            >
-              <div
-                class="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold"
-              >
-                <Check class="w-3.5 h-3.5" />
-                Swap Confirmed
-              </div>
-              <a
-                :href="`${explorerUrl}/tx/${swapSuccessTx}`"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="font-mono text-[10px] text-zinc-500 hover:text-emerald-500 transition underline flex items-center gap-1"
-              >
-                View on Explorer <ExternalLink class="w-3 h-3" />
-              </a>
-            </div>
-            <div
-              v-if="swapError"
-              class="px-3 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-500 flex items-start gap-2"
-            >
-              <AlertCircle class="w-3.5 h-3.5 shrink-0 mt-0.5" />
-              <span>{{ swapError }}</span>
             </div>
           </div>
         </div>
@@ -1160,7 +1152,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
-import { parseAbi } from 'viem';
+import { parseAbi, parseEther, erc20Abi } from 'viem';
 import { useI18n } from '@/lib/i18n';
 import {
   ArrowUpDown,
@@ -1238,8 +1230,15 @@ interface TokenHolder {
 }
 
 const { executeSwap, isSwapping, swapError, slippage } = useSwap();
-const { isConnected, account, balanceWei, activeNetwork, switchOrAddNetwork, openWallet } =
-  useWallet();
+const {
+  isConnected,
+  account,
+  balanceWei,
+  activeNetwork,
+  switchOrAddNetwork,
+  openWallet,
+  updateBalance,
+} = useWallet();
 
 const currentToken = ref<LaunchedTokenEntity>({
   address: (props.tokenAddress as `0x${string}`) || '0x0000000000000000000000000000000000000000',
@@ -1370,7 +1369,7 @@ const remainingToGraduate = computed(() => {
 // Trade state
 const tradeTab = ref<'buy' | 'sell'>('buy');
 const isBuy = computed(() => tradeTab.value === 'buy');
-const amountIn = ref('0.05');
+const amountIn = ref('10');
 const tokenNotFound = ref(false);
 const swapSuccessTx = ref<string | null>(null);
 const copied = ref(false);
@@ -1382,6 +1381,7 @@ const activeBottomTab = ref<'thread' | 'trades' | 'top-traders' | 'holders' | 'a
 const trades = ref<LiveTrade[]>([]);
 const tradesLoading = ref(false);
 const userTokenBalance = ref<bigint>(0n);
+const isTokenBalanceLoading = ref(false);
 
 // Slippage
 const isCustomSlippage = ref(false);
@@ -1468,29 +1468,43 @@ let liveCandleTimer: ReturnType<typeof setInterval> | null = null;
 // -----------------------------------------------------------------------
 // Bonding curve AMM preview math
 // -----------------------------------------------------------------------
-function computeCurveBuyOutput(ethIn: number): number {
-  if (ethIn <= 0) return 0;
-  const netEth = ethIn * 0.99;
+function getVirtualReserves() {
+  const vEthRaw = currentToken.value.virtualEthReserve;
+  const vTokenRaw = currentToken.value.virtualTokenReserve;
+  if (vEthRaw && vTokenRaw) {
+    const vEth = Number(BigInt(vEthRaw)) / 1e18;
+    const vToken = Number(BigInt(vTokenRaw)) / 10 ** (currentToken.value.decimals || 18);
+    if (vEth > 0 && vToken > 0) {
+      return { vEth, vToken };
+    }
+  }
   const currentRaised = parseFloat(currentMarketData.value.pairedPrincipalWeth) || 0;
   const isArc = currencySymbol.value === 'USDC';
-  const virtualEth = (isArc ? 4200.0 : 3.0) + currentRaised;
-  const virtualTokens = 1_000_000_000;
-  const k = virtualEth * virtualTokens;
-  const newEthReserve = virtualEth + netEth;
+  const baseVirtualEth = isArc ? 3.0 : 3.0;
+  return {
+    vEth: baseVirtualEth + currentRaised,
+    vToken: 1_000_000_000,
+  };
+}
+
+function computeCurveBuyOutput(ethIn: number): number {
+  if (ethIn <= 0) return 0;
+  const { vEth, vToken } = getVirtualReserves();
+  const netEth = ethIn * 0.99;
+  const k = vEth * vToken;
+  const newEthReserve = vEth + netEth;
   const newTokenReserve = k / newEthReserve;
-  return Math.max(0, virtualTokens - newTokenReserve);
+  return Math.max(0, vToken - newTokenReserve);
 }
 
 function computeCurveSellOutput(tokensIn: number): number {
   if (tokensIn <= 0) return 0;
-  const currentRaised = parseFloat(currentMarketData.value.pairedPrincipalWeth) || 0;
-  const isArc = currencySymbol.value === 'USDC';
-  const virtualEth = (isArc ? 4200.0 : 3.0) + currentRaised;
-  const virtualTokens = 1_000_000_000;
-  const k = virtualEth * virtualTokens;
-  const newTokenReserve = virtualTokens + tokensIn;
+  const { vEth, vToken } = getVirtualReserves();
+  const k = vEth * vToken;
+  const newTokenReserve = vToken + tokensIn;
   const newEthReserve = k / newTokenReserve;
-  return Math.max(0, virtualEth - newEthReserve) * 0.99;
+  const grossEth = Math.max(0, vEth - newEthReserve);
+  return grossEth * 0.99;
 }
 
 const estimatedOutput = computed(() => {
@@ -1513,6 +1527,45 @@ const estimatedOutput = computed(() => {
   }
 });
 
+const swapButtonText = computed(() => {
+  if (isSwapping.value) return 'Executing...';
+  if (!isConnected.value) return t('connectWallet');
+  if (activeNetwork.value.chainId !== tokenNetwork.value.chainId) {
+    return `Switch to ${tokenNetwork.value.name}`;
+  }
+  const input = parseFloat(amountIn.value) || 0;
+  if (!amountIn.value || input <= 0) return 'Enter an amount';
+
+  if (!isBuy.value) {
+    const tokenBal = Number(userTokenBalance.value) / 10 ** (currentToken.value.decimals || 18);
+    if (tokenBal <= 0 || input > tokenBal) {
+      return `Insufficient ${currentToken.value.symbol} balance`;
+    }
+    return `Sell ${currentToken.value.symbol}`;
+  } else {
+    const ethBalance = Number(balanceWei.value) / 1e18;
+    if (ethBalance > 0 && input > ethBalance) {
+      return `Insufficient ${currencySymbol.value} balance`;
+    }
+    return `Buy ${currentToken.value.symbol}`;
+  }
+});
+
+const isSwapDisabled = computed(() => {
+  if (isSwapping.value) return true;
+  if (!isConnected.value) return false;
+  if (activeNetwork.value.chainId !== tokenNetwork.value.chainId) return false;
+  const input = parseFloat(amountIn.value) || 0;
+  if (!amountIn.value || input <= 0) return true;
+  if (!isBuy.value) {
+    const tokenBal = Number(userTokenBalance.value) / 10 ** (currentToken.value.decimals || 18);
+    return tokenBal <= 0 || input > tokenBal;
+  }
+  const ethBalance = Number(balanceWei.value) / 1e18;
+  if (ethBalance > 0 && input > ethBalance) return true;
+  return false;
+});
+
 // -----------------------------------------------------------------------
 // UI Helpers
 // -----------------------------------------------------------------------
@@ -1522,24 +1575,35 @@ function applyQuickBuy(val: string) {
 
 function applyPercentage(percent: number) {
   if (isBuy.value) {
+    const isArc = currencySymbol.value === 'USDC';
     const ethBalance = Number(balanceWei.value) / 1e18;
     if (ethBalance <= 0) {
-      amountIn.value = '0.0';
+      amountIn.value = '0';
       return;
     }
     if (percent === 100) {
-      const maxEth = Math.max(0, ethBalance - 0.005);
-      amountIn.value = (maxEth > 0 ? maxEth : ethBalance).toFixed(4);
+      const reserveGas = isArc ? 0.05 : 0.005;
+      const maxEth = Math.max(0, ethBalance - reserveGas);
+      amountIn.value = (maxEth > 0 ? maxEth : ethBalance).toFixed(isArc ? 2 : 4);
     } else {
-      amountIn.value = (ethBalance * (percent / 100)).toFixed(4);
+      amountIn.value = (ethBalance * (percent / 100)).toFixed(isArc ? 2 : 4);
     }
   } else {
-    const tokenBal = Number(userTokenBalance.value) / 10 ** (currentToken.value.decimals || 18);
+    const decimals = currentToken.value.decimals || 18;
+    const tokenBal = Number(userTokenBalance.value) / 10 ** decimals;
     if (tokenBal <= 0) {
-      amountIn.value = '0.0';
+      amountIn.value = '0';
       return;
     }
-    amountIn.value = (tokenBal * (percent / 100)).toFixed(2);
+    if (percent === 100) {
+      const whole = userTokenBalance.value / 10n ** BigInt(decimals);
+      const frac = userTokenBalance.value % 10n ** BigInt(decimals);
+      const fracStr = frac.toString().padStart(decimals, '0').replace(/0+$/, '');
+      amountIn.value = fracStr ? `${whole}.${fracStr}` : whole.toString();
+    } else {
+      const calculated = tokenBal * (percent / 100);
+      amountIn.value = calculated < 1 ? calculated.toFixed(6) : calculated.toFixed(2);
+    }
   }
 }
 
@@ -1560,17 +1624,23 @@ function handleCustomSlippageInput() {
 }
 
 function formatEthBalance(wei: bigint): string {
-  const eth = Number(wei) / 1e18;
-  return eth < 0.0001 ? eth.toFixed(6) : eth.toFixed(4);
+  const isArc = currencySymbol.value === 'USDC';
+  const val = Number(wei) / 1e18;
+  if (val === 0) return isArc ? '0.00' : '0.0000';
+  if (isArc) return val < 0.01 ? val.toFixed(4) : val.toFixed(2);
+  return val < 0.0001 ? val.toFixed(6) : val.toFixed(4);
 }
 
 function formatTokenBalance(wei: bigint): string {
-  const val = Number(wei) / 10 ** (currentToken.value.decimals || 18);
+  const decimals = currentToken.value.decimals || 18;
+  const val = Number(wei) / 10 ** decimals;
+  if (val === 0) return '0.00';
   if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(2)}M`;
   if (val >= 1_000) return `${(val / 1_000).toFixed(2)}K`;
-  return val.toFixed(2);
+  if (val >= 1) return val.toFixed(2);
+  if (val >= 0.0001) return val.toFixed(4);
+  return val.toFixed(6);
 }
-
 function truncateAddress(addr: string): string {
   return shortenAddress(addr);
 }
@@ -1602,22 +1672,65 @@ function copyAddress() {
 // -----------------------------------------------------------------------
 // Data Fetching
 // -----------------------------------------------------------------------
-async function fetchUserTokenBalance() {
-  if (!account.value || !currentToken.value.address) {
+let balanceFetchPromise: Promise<void> | null = null;
+let lastBalanceFetchTime = 0;
+
+async function fetchUserTokenBalance(force = false) {
+  const currentAcc = account.value;
+  const tokenAddr = currentToken.value.address;
+  if (!currentAcc || !tokenAddr || tokenAddr === '0x0000000000000000000000000000000000000000') {
     userTokenBalance.value = 0n;
     return;
   }
-  try {
-    const bal = await getPublicClient().readContract({
-      address: currentToken.value.address as `0x${string}`,
-      abi: launchpadTokenAbi,
-      functionName: 'balanceOf',
-      args: [account.value as `0x${string}`],
-    });
-    userTokenBalance.value = bal as bigint;
-  } catch {
-    userTokenBalance.value = 0n;
+  const now = Date.now();
+  if (balanceFetchPromise) return balanceFetchPromise;
+  if (!force && now - lastBalanceFetchTime < 2500) return;
+  lastBalanceFetchTime = now;
+
+  // Never flicker if balance is already loaded
+  if (userTokenBalance.value === 0n) {
+    isTokenBalanceLoading.value = true;
   }
+
+  balanceFetchPromise = (async () => {
+    try {
+      const [onChainResult, backendResult] = await Promise.allSettled([
+        getPublicClient(tokenNetwork.value.chainId).readContract({
+          address: tokenAddr as `0x${string}`,
+          abi: erc20Abi,
+          functionName: 'balanceOf',
+          args: [currentAcc as `0x${string}`],
+        }) as Promise<bigint>,
+        fetch(`/api/tokens/${tokenAddr}/balance?account=${currentAcc}`)
+          .then((r) => r.json())
+          .catch(() => null),
+      ]);
+
+      let resolvedBal: bigint | null = null;
+      if (onChainResult.status === 'fulfilled' && onChainResult.value > 0n) {
+        resolvedBal = onChainResult.value;
+      } else if (
+        backendResult.status === 'fulfilled' &&
+        backendResult.value?.success &&
+        backendResult.value?.data?.balanceWei
+      ) {
+        resolvedBal = BigInt(backendResult.value.data.balanceWei);
+      } else if (onChainResult.status === 'fulfilled') {
+        resolvedBal = onChainResult.value;
+      }
+
+      if (resolvedBal !== null) {
+        userTokenBalance.value = resolvedBal;
+      }
+    } catch {
+      // Non-blocking
+    } finally {
+      isTokenBalanceLoading.value = false;
+      balanceFetchPromise = null;
+    }
+  })();
+
+  return balanceFetchPromise;
 }
 
 async function fetchTrades(address: string) {
@@ -1896,12 +2009,12 @@ async function handleSwap() {
       const estimatedTokens = isV2OnCurve
         ? computeCurveBuyOutput(input)
         : input / (currentMarketData.value.priceInWeth || 0.000001);
-      expectedAmountOut = BigInt(Math.floor(estimatedTokens * 1e18));
+      expectedAmountOut = parseEther(Math.max(0, estimatedTokens).toFixed(6));
     } else {
       const estimatedEth = isV2OnCurve
         ? computeCurveSellOutput(input)
         : input * (currentMarketData.value.priceInWeth || 0);
-      expectedAmountOut = BigInt(Math.floor(estimatedEth * 1e18));
+      expectedAmountOut = parseEther(Math.max(0, estimatedEth).toFixed(6));
     }
   }
 
@@ -1919,9 +2032,24 @@ async function handleSwap() {
 
   if (hash) {
     swapSuccessTx.value = hash;
-    await fetchUserTokenBalance();
-    await fetchTrades(currentToken.value.address);
-    await fetchCandlesticks(currentToken.value.address, selectedResolution.value);
+    try {
+      await fetch(`/api/tokens/${currentToken.value.address}/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ txHash: hash }),
+      });
+    } catch {
+      // non-blocking
+    }
+    await Promise.allSettled([
+      updateBalance(),
+      fetchUserTokenBalance(),
+      loadTokenData(currentToken.value.address),
+      fetchTrades(currentToken.value.address),
+      fetchCandlesticks(currentToken.value.address, selectedResolution.value),
+      fetchHolders(currentToken.value.address),
+      fetchTopTraders(currentToken.value.address),
+    ]);
   }
 }
 
@@ -1948,7 +2076,6 @@ async function loadTokenData(address: `0x${string}`) {
       fetchHolders(address),
       fetchComments(address),
       fetchVotes(address),
-      fetchUserTokenBalance(),
     ]);
     tokenLoading.value = false;
   }
@@ -1956,9 +2083,12 @@ async function loadTokenData(address: `0x${string}`) {
 
 // Reset amount and success state when switching between buy and sell tabs
 // to avoid unit confusion (ETH vs token amount).
-watch(tradeTab, () => {
+watch(tradeTab, (newTab) => {
   amountIn.value = '';
   swapSuccessTx.value = null;
+  if (newTab === 'sell' && userTokenBalance.value === 0n) {
+    fetchUserTokenBalance();
+  }
 });
 
 watch(
@@ -1967,18 +2097,23 @@ watch(
     if (newAddress && newAddress !== currentToken.value.address) {
       currentToken.value.address = newAddress as `0x${string}`;
       await loadTokenData(newAddress as `0x${string}`);
+      await fetchUserTokenBalance(true);
     }
   },
 );
 
 watch(
   () => account.value,
-  async () => {
-    await Promise.allSettled([
-      fetchUserTokenBalance(),
-      fetchComments(currentToken.value.address),
-      fetchVotes(currentToken.value.address),
-    ]);
+  (newAcc, oldAcc) => {
+    if (newAcc && newAcc !== oldAcc) {
+      Promise.allSettled([
+        fetchUserTokenBalance(true),
+        fetchComments(currentToken.value.address),
+        fetchVotes(currentToken.value.address),
+      ]);
+    } else if (!newAcc) {
+      userTokenBalance.value = 0n;
+    }
   },
 );
 
@@ -1987,6 +2122,7 @@ onMounted(async () => {
   if (addr && addr !== '0x0000000000000000000000000000000000000000') {
     currentToken.value.address = addr;
     await loadTokenData(addr);
+    await fetchUserTokenBalance();
   }
 
   // Real-time chart & data poller: refreshes every 10 seconds to keep timeframe advancing to current second

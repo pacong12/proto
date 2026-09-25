@@ -332,21 +332,24 @@ export function useLaunchpad() {
 
       launchStep.value = 'indexing';
 
-      // 1. Primary: decode via viem parseEventLogs
-      // The V2 factory emits 'TokenLaunched' (not 'TokenLaunchedV2') with
-      // 3 indexed address params: token, curve, creator.
+      // 1. Primary: decode via viem parseEventLogs (supports TokenLaunched and TokenLaunchedV2)
       const v2Events = parseEventLogs({
         abi: launchpadV2FactoryAbi,
         logs: receipt.logs,
-        eventName: 'TokenLaunched',
       });
 
-      if (v2Events.length > 0) {
+      const launchEv = v2Events.find(
+        (e) => e.eventName === 'TokenLaunched' || e.eventName === 'TokenLaunchedV2',
+      );
+
+      if (launchEv && 'token' in launchEv.args && 'curve' in launchEv.args) {
+        const tokenAddr = launchEv.args.token as `0x${string}`;
+        const curveAddr = launchEv.args.curve as `0x${string}`;
         launchStep.value = 'success';
-        launchTokenAddress.value = v2Events[0].args.token;
+        launchTokenAddress.value = tokenAddr;
         return {
-          tokenAddress: v2Events[0].args.token,
-          curveAddress: v2Events[0].args.curve,
+          tokenAddress: tokenAddr,
+          curveAddress: curveAddr,
         };
       }
 
@@ -355,16 +358,23 @@ export function useLaunchpad() {
         try {
           const decoded = decodeEventLog({
             abi: launchpadV2FactoryAbi,
-            eventName: 'TokenLaunched',
             topics: log.topics,
             data: log.data,
           });
-          if (decoded?.args?.token) {
+          if (
+            decoded &&
+            (decoded.eventName === 'TokenLaunched' || decoded.eventName === 'TokenLaunchedV2') &&
+            decoded.args &&
+            'token' in decoded.args &&
+            'curve' in decoded.args
+          ) {
+            const tokenAddr = decoded.args.token as `0x${string}`;
+            const curveAddr = decoded.args.curve as `0x${string}`;
             launchStep.value = 'success';
-            launchTokenAddress.value = decoded.args.token;
+            launchTokenAddress.value = tokenAddr;
             return {
-              tokenAddress: decoded.args.token,
-              curveAddress: decoded.args.curve,
+              tokenAddress: tokenAddr,
+              curveAddress: curveAddr,
             };
           }
         } catch {

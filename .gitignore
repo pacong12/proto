@@ -51,3 +51,6 @@ apps/docs/.vitepress/cache/
 # Local experiment scratchpads
 /index.html
 /server.py
+
+# Personal reports & spreadsheets
+*.xlsx

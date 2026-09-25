@@ -67,7 +67,7 @@ Kreator secara otomatis mengakumulasi **70% dari fee transaksi sebesar 1%** yang
 
 ### Jaringan apa saja yang didukung oleh Proto?
 
-Proto beroperasi secara multi-chain pada **Robinhood Chain** (Chain ID: `4663`) dan **Arc Testnet** (Chain ID: `5042002`).
+Proto beroperasi secara multi-chain pada **Robinhood Chain** (Chain ID: `4663`) dan **Arc Network** (Chain ID: `5042`).
 
 ### Di mana saya bisa mendapatkan bantuan lebih lanjut?
 
