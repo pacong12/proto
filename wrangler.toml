@@ -10,6 +10,11 @@ directory = "apps/frontoffice/dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
 
+[observability.logs]
+enabled = true
+invocation_logs = true
+persist = true
+
 # Staging environment: CSP in Report-Only mode to catch violations safely.
 # Switch CSP_REPORT_ONLY to "false" (or remove) when ready for production enforcement.
 [env.staging]

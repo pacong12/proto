@@ -3,7 +3,7 @@ import { createAppKit } from '@reown/appkit/vue';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 import { ROBINHOOD_CHAIN, ARC_CHAIN } from '@proto/shared-types';
 
-const projectId = import.meta.env.VITE_REOWN_PROJECT_ID;
+const projectId = import.meta.env.VITE_REOWN_PROJECT_ID as string | undefined;
 
 export const appKitConfigured = Boolean(projectId);
 
