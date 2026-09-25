@@ -18,7 +18,7 @@
           {{ t('totalTradingVolume') }}
         </p>
         <p class="text-2xl font-bold font-mono mt-2">${{ totalVolume.toLocaleString() }}</p>
-        <p class="text-xs text-emerald-500 dark:text-emerald-400 mt-2 font-medium">
+        <p class="text-xs text-muted-foreground mt-2 font-medium">
           {{ t('fromYesterday') }}
         </p>
       </Card>
@@ -30,7 +30,7 @@
         <p class="text-2xl font-bold font-mono mt-2">
           {{ totalTokens }}
         </p>
-        <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-2 font-medium">
+        <p class="text-xs text-muted-foreground mt-2 font-medium">
           {{ t('permanentlyLocked') }}
         </p>
       </Card>
@@ -39,10 +39,8 @@
         <p class="text-xs uppercase font-semibold font-mono">
           {{ t('protocolBuybackAndBurn') }}
         </p>
-        <p class="text-2xl font-bold font-mono text-emerald-500 dark:text-emerald-400 mt-2">
-          {{ totalBuyback }} ETH
-        </p>
-        <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-2 font-medium">
+        <p class="text-2xl font-bold font-mono text-foreground mt-2">{{ totalBuyback }} ETH</p>
+        <p class="text-xs text-muted-foreground mt-2 font-medium">
           {{ t('protocolFeesBurned') }}
         </p>
       </Card>
@@ -92,7 +90,7 @@
         >
           <span class="text-foreground font-medium sm:font-normal">{{ c.name }}</span>
           <span
-            class="text-emerald-600 dark:text-emerald-400 font-semibold select-all break-all sm:break-normal text-[11px] sm:text-xs"
+            class="text-foreground font-semibold select-all break-all sm:break-normal text-[11px] sm:text-xs"
             >{{ c.address }}</span
           >
         </div>

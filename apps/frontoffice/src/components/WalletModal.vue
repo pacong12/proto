@@ -68,9 +68,7 @@
                 <span class="font-mono text-xs font-bold block truncate text-black dark:text-white">
                   {{ account }}
                 </span>
-                <span
-                  class="font-mono text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold"
-                >
+                <span class="font-mono text-[11px] text-foreground font-semibold">
                   {{ formattedBalance }}
                 </span>
               </div>
@@ -80,11 +78,11 @@
             <Button
               variant="outline"
               size="sm"
-              class="h-7 px-2 text-xs gap-1 border-zinc-300 dark:border-zinc-700 shrink-0 cursor-pointer"
+              class="h-7 px-2 text-xs gap-1 border-border shrink-0 cursor-pointer"
               @click="copyAddress"
               :title="copied ? t('addressCopied') : t('copyAddress')"
             >
-              <Check v-if="copied" class="w-3 h-3 text-emerald-500" />
+              <Check v-if="copied" class="w-3 h-3 text-foreground" />
               <Copy v-else class="w-3 h-3" />
               <span class="text-[10px] font-mono">{{ copied ? 'Copied' : 'Copy' }}</span>
             </Button>
@@ -180,9 +178,9 @@
             </span>
             <span
               v-if="scanning"
-              class="text-[10px] font-mono text-zinc-400 flex items-center gap-1"
+              class="text-[10px] font-mono text-muted-foreground flex items-center gap-1"
             >
-              <Loader2 class="w-3 h-3 animate-spin text-emerald-500" />
+              <Loader2 class="w-3 h-3 animate-spin text-foreground" />
               <span>{{ t('scanningForWallets') }}</span>
             </span>
           </div>
@@ -191,28 +189,24 @@
             <li v-for="wallet in wallets" :key="wallet.id">
               <Button
                 variant="outline"
-                class="w-full justify-between h-auto px-3.5 py-2.5 rounded-xl border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/50 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all cursor-pointer"
+                class="w-full justify-between h-auto px-3.5 py-2.5 rounded-xl border-border hover:border-foreground/40 hover:bg-muted transition-all cursor-pointer"
                 :disabled="connectingId === wallet.id"
                 :aria-label="`Connect with ${wallet.name}`"
                 @click="connect(wallet)"
               >
                 <div class="flex items-center gap-3 min-w-0">
-                  <Avatar
-                    class="w-8 h-8 rounded-lg shrink-0 border border-zinc-200 dark:border-zinc-800"
-                  >
+                  <Avatar class="w-8 h-8 rounded-lg shrink-0 border border-border">
                     <AvatarImage v-if="wallet.icon" :src="wallet.icon" :alt="wallet.name" />
-                    <AvatarFallback
-                      class="bg-zinc-100 dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 font-bold text-xs"
-                    >
+                    <AvatarFallback class="bg-muted text-foreground font-bold text-xs">
                       {{ wallet.name.slice(0, 2).toUpperCase() }}
                     </AvatarFallback>
                   </Avatar>
 
                   <div class="text-left truncate">
-                    <span class="text-xs font-semibold block truncate text-black dark:text-white">
+                    <span class="text-xs font-semibold block truncate text-foreground">
                       {{ wallet.name }}
                     </span>
-                    <span class="block text-[10px] font-mono text-zinc-400 truncate">
+                    <span class="block text-[10px] font-mono text-muted-foreground truncate">
                       {{ wallet.rdns ?? 'Browser extension' }}
                     </span>
                   </div>
@@ -221,14 +215,14 @@
                 <div class="shrink-0 flex items-center gap-2">
                   <span
                     v-if="isWalletActive(wallet)"
-                    class="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 px-2 py-0.5 rounded-full"
+                    class="text-[10px] font-mono font-bold text-foreground bg-muted border border-border px-2 py-0.5 rounded-full"
                   >
                     Active
                   </span>
 
                   <span
                     v-else-if="connectingId === wallet.id"
-                    class="text-xs text-emerald-500 font-mono flex items-center gap-1"
+                    class="text-xs text-foreground font-mono flex items-center gap-1"
                   >
                     <Loader2 class="w-3 h-3 animate-spin" />
                     <span>{{ t('connecting') }}</span>
@@ -247,16 +241,13 @@
         </div>
 
         <!-- Social & Email Login (Reown AppKit) -->
-        <div
-          v-if="appKitConfigured"
-          class="space-y-2 pt-2 border-t border-zinc-200 dark:border-zinc-800"
-        >
+        <div v-if="appKitConfigured" class="space-y-2 pt-2 border-t border-border">
           <Button
             variant="outline"
-            class="w-full justify-center h-10 px-3.5 text-xs font-semibold rounded-xl border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/50 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all cursor-pointer gap-2"
+            class="w-full justify-center h-10 px-3.5 text-xs font-semibold rounded-xl border-border hover:border-foreground/40 hover:bg-muted transition-all cursor-pointer gap-2"
             @click="openAppKitSocial"
           >
-            <Mail class="w-4 h-4 text-emerald-500" />
+            <Mail class="w-4 h-4 text-foreground" />
             <span>Social & Email Login (Google, X, Apple)</span>
           </Button>
         </div>

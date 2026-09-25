@@ -65,7 +65,7 @@
           @click="$emit('selectTab', 'create')"
           variant="default"
           size="default"
-          class="font-bold gap-2 bg-emerald-500 hover:bg-emerald-600 text-black shadow-md"
+          class="font-bold gap-2 shadow-md"
         >
           <Plus class="w-4 h-4" />
           {{ t('launchNow') }}
@@ -91,32 +91,32 @@
                   :fallback-text="item.token.symbol"
                   :width="48"
                   :height="48"
-                  class="rounded-xl border border-zinc-700 group-hover:border-emerald-500/50 transition shrink-0"
+                  class="rounded-xl border border-border group-hover:border-foreground/40 transition shrink-0"
                 />
                 <div class="min-w-0 truncate">
-                  <h3 class="font-bold text-base group-hover:text-emerald-400 transition truncate">
+                  <h3 class="font-bold text-base group-hover:text-foreground transition truncate">
                     {{ item.token.name }}
                   </h3>
-                  <p class="text-xs font-mono">${{ item.token.symbol }}</p>
+                  <p class="text-xs font-mono text-muted-foreground">${{ item.token.symbol }}</p>
                 </div>
               </div>
 
-              <Badge v-if="item.marketData.isGraduated" variant="graduated" class="text-[10px]">
+              <Badge v-if="item.marketData.isGraduated" variant="outline" class="text-[10px]">
                 {{ t('graduated') }}
               </Badge>
             </div>
 
-            <p class="text-xs leading-relaxed line-clamp-2">
+            <p class="text-xs leading-relaxed text-muted-foreground line-clamp-2">
               {{
                 item.token.description ||
                 `Community-backed fixed-supply memestock on ${activeNetwork.name}.`
               }}
             </p>
 
-            <div class="flex items-center gap-2 text-[11px] font-mono">
+            <div class="flex items-center gap-2 text-[11px] font-mono text-muted-foreground">
               <span>Pool Fee: 1%</span>
               <span>•</span>
-              <span class="text-emerald-400 font-semibold">70% Creator Fees</span>
+              <span class="text-foreground font-semibold">70% Creator Fees</span>
             </div>
           </div>
 

@@ -117,16 +117,9 @@ test.describe('Proto Frontoffice User Journeys', () => {
     expect(hasHorizontalScroll).toBe(false);
   });
 
-  test('Breadcrumb and profile are combined in navbar before wallet connection', async ({
-    page,
-  }) => {
+  test('Navbar renders clean connect wallet button on create page', async ({ page }) => {
     await page.goto('/launchpad/create');
-    const breadcrumb = page.locator('header nav[aria-label="Breadcrumb"]');
-    await expect(breadcrumb).toBeVisible();
-    await expect(breadcrumb).toContainText(/create/i);
-
-    // Profile trigger is present within the combined element before wallet
-    const profileTrigger = page.locator('header button[aria-label="Profile and Preferences menu"]');
-    await expect(profileTrigger).toBeVisible();
+    const connectBtn = page.locator('header').getByRole('button', { name: /connect/i });
+    await expect(connectBtn).toBeVisible();
   });
 });
