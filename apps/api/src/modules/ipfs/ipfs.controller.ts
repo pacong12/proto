@@ -30,8 +30,29 @@ export class IpfsController {
   // 5 MiB hard limit; reject before passing to IpfsService to prevent OOM from large uploads.
   private static readonly MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
+  /**
+   * Scan SVG byte stream for executable scripts, inline event handlers, or dangerous foreignObjects.
+   * Prevents SVG-based Stored Cross-Site Scripting (XSS).
+   */
+  private static isMaliciousSvg(buffer: ArrayBuffer | Buffer): boolean {
+    const buf = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
+    const text = buf.toString('utf8').toLowerCase();
+    return (
+      text.includes('<script') ||
+      text.includes('javascript:') ||
+      text.includes('data:text/html') ||
+      text.includes('<foreignobject') ||
+      /<[a-z0-9]+\s+[^>]*\bon[a-z]+\s*=/i.test(text)
+    );
+  }
+
   async handleUpload(req: Request): Promise<ApiEnvelope<IpfsUploadResult>> {
     try {
+      const cl = req.headers.get('content-length');
+      if (cl && parseInt(cl, 10) > IpfsController.MAX_UPLOAD_BYTES) {
+        return err('FILE_TOO_LARGE', 'Upload exceeds 5 MiB limit');
+      }
+
       const contentType = req.headers.get('content-type') || '';
 
       if (contentType.includes('multipart/form-data')) {
@@ -57,6 +78,12 @@ export class IpfsController {
         }
         if (arrayBuffer.byteLength > IpfsController.MAX_UPLOAD_BYTES) {
           return err('FILE_TOO_LARGE', 'Upload exceeds 5 MiB limit');
+        }
+        if (mimeType === 'image/svg+xml' && IpfsController.isMaliciousSvg(arrayBuffer)) {
+          return err(
+            'MALICIOUS_PAYLOAD',
+            'SVG contains disallowed executable scripts or event handlers',
+          );
         }
 
         const result = await this.ipfsService.uploadFile(arrayBuffer, fileName, mimeType);
@@ -101,6 +128,12 @@ export class IpfsController {
         if (buffer.byteLength > IpfsController.MAX_UPLOAD_BYTES) {
           return err('FILE_TOO_LARGE', 'Upload exceeds 5 MiB limit');
         }
+        if (mimeType === 'image/svg+xml' && IpfsController.isMaliciousSvg(buffer)) {
+          return err(
+            'MALICIOUS_PAYLOAD',
+            'SVG contains disallowed executable scripts or event handlers',
+          );
+        }
 
         const fileName =
           body.fileName ||
@@ -121,6 +154,12 @@ export class IpfsController {
         }
         if (arrayBuffer.byteLength > IpfsController.MAX_UPLOAD_BYTES) {
           return err('FILE_TOO_LARGE', 'Upload exceeds 5 MiB limit');
+        }
+        if (mimeType === 'image/svg+xml' && IpfsController.isMaliciousSvg(arrayBuffer)) {
+          return err(
+            'MALICIOUS_PAYLOAD',
+            'SVG contains disallowed executable scripts or event handlers',
+          );
         }
         const fileName = req.headers.get('x-file-name') || 'upload.bin';
         const result = await this.ipfsService.uploadFile(arrayBuffer, fileName, mimeType);
@@ -175,6 +214,12 @@ export class IpfsController {
     mimeType = 'application/octet-stream',
   ): Promise<ApiEnvelope<IpfsUploadResult>> {
     try {
+      if (mimeType === 'image/svg+xml' && IpfsController.isMaliciousSvg(fileBuffer)) {
+        return err(
+          'MALICIOUS_PAYLOAD',
+          'SVG contains disallowed executable scripts or event handlers',
+        );
+      }
       const result = await this.ipfsService.uploadFile(fileBuffer, fileName, mimeType);
       return ok(result);
     } catch (error) {

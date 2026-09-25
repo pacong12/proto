@@ -12,10 +12,33 @@ export default defineConfig({
     sourcemap: false,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vue: ['vue', 'vue-router'],
-          wagmi: ['@wagmi/vue', 'viem'],
-          ui: ['radix-vue', 'class-variance-authority', 'clsx', 'tailwind-merge'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (
+              id.includes('@reown') ||
+              id.includes('@walletconnect') ||
+              id.includes('@wagmi') ||
+              id.includes('viem')
+            ) {
+              return 'web3-wallet';
+            }
+            if (id.includes('lightweight-charts')) {
+              return 'charts';
+            }
+            if (
+              id.includes('radix-vue') ||
+              id.includes('reka-ui') ||
+              id.includes('components/ui/select')
+            ) {
+              return 'ui-radix';
+            }
+            if (id.includes('vue') || id.includes('vue-router') || id.includes('@vueuse')) {
+              return 'vue-core';
+            }
+            if (id.includes('lucide-vue-next')) {
+              return 'lucide-icons';
+            }
+          }
         },
       },
     },

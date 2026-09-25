@@ -88,12 +88,13 @@
         <div
           v-for="c in contractEntries"
           :key="c.name"
-          class="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800/80"
+          class="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800/80 gap-1.5"
         >
-          <span>{{ c.name }}</span>
-          <span class="text-emerald-600 dark:text-emerald-400 font-semibold select-all">{{
-            c.address
-          }}</span>
+          <span class="text-foreground font-medium sm:font-normal">{{ c.name }}</span>
+          <span
+            class="text-emerald-600 dark:text-emerald-400 font-semibold select-all break-all sm:break-normal text-[11px] sm:text-xs"
+            >{{ c.address }}</span
+          >
         </div>
       </div>
     </Card>

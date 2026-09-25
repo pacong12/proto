@@ -182,6 +182,7 @@
             :variant="viewMode === 'table' ? 'secondary' : 'ghost'"
             @click="viewMode = 'table'"
             :title="t('tableMode')"
+            :aria-label="t('tableMode')"
             class="h-7 w-7 p-0 rounded cursor-pointer"
           >
             <List class="w-3.5 h-3.5" :class="viewMode === 'table' ? 'text-emerald-500' : ''" />
@@ -192,6 +193,7 @@
             :variant="viewMode === 'grid' ? 'secondary' : 'ghost'"
             @click="viewMode = 'grid'"
             :title="t('gridMode')"
+            :aria-label="t('gridMode')"
             class="h-7 w-7 p-0 rounded cursor-pointer"
           >
             <LayoutGrid
@@ -205,6 +207,7 @@
             :variant="viewMode === 'trenches' ? 'secondary' : 'ghost'"
             @click="viewMode = 'trenches'"
             :title="t('trenchesMode')"
+            :aria-label="t('trenchesMode')"
             class="h-7 w-7 p-0 rounded cursor-pointer"
           >
             <Columns3
@@ -285,6 +288,7 @@
           rel="noopener noreferrer"
           class="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:text-emerald-400 text-zinc-500 transition"
           title="View on Explorer"
+          aria-label="View on Explorer"
         >
           <ExternalLink class="w-3.5 h-3.5" />
         </a>
@@ -399,6 +403,7 @@
                   rel="noopener noreferrer"
                   class="p-1 rounded hover:text-emerald-400 text-zinc-400 transition inline-flex items-center"
                   title="View on Explorer"
+                  aria-label="View on Explorer"
                 >
                   <ExternalLink class="w-3.5 h-3.5" />
                 </a>
@@ -439,7 +444,11 @@
             <tr
               class="border-b border-zinc-200 dark:border-zinc-800/90 text-zinc-400 uppercase tracking-wider text-[11px] bg-zinc-50/70 dark:bg-zinc-900/40"
             >
-              <th class="py-3 px-4 font-semibold">{{ t('tokenCol') }}</th>
+              <th
+                class="py-3 px-4 font-semibold sticky left-0 z-20 bg-zinc-50 dark:bg-zinc-900 shadow-[1px_0_0_0_var(--border)]"
+              >
+                {{ t('tokenCol') }}
+              </th>
               <th class="py-3 px-4 font-semibold text-right">{{ t('lastPriceCol') }}</th>
               <th class="py-3 px-4 font-semibold text-right">{{ t('change24hCol') }}</th>
               <th class="py-3 px-4 font-semibold text-right">{{ t('volume24hCol') }}</th>
@@ -456,7 +465,9 @@
               @click="$emit('selectToken', item.token.address)"
             >
               <!-- Token Name, Symbol, & Version Badge -->
-              <td class="py-3 px-4">
+              <td
+                class="py-3 px-4 sticky left-0 z-10 bg-white dark:bg-zinc-950 group-hover:bg-zinc-50 dark:group-hover:bg-zinc-900 transition-colors shadow-[1px_0_0_0_var(--border)]"
+              >
                 <div class="flex items-center gap-3">
                   <OptimizedImage
                     :src="item.token.logo"
@@ -1258,6 +1269,9 @@ const paginatedTokens = computed(() => {
 });
 
 onMounted(async () => {
+  if (typeof window !== 'undefined' && window.innerWidth < 768) {
+    viewMode.value = 'grid';
+  }
   try {
     await tokenStore.fetchTokens();
     if (tokenStore.error.value) {

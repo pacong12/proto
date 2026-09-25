@@ -32,9 +32,9 @@ function handleAccept() {
 
 <template>
   <Dialog v-model:open="open">
-    <DialogContent class="max-w-md">
+    <DialogContent class="max-w-md w-[calc(100vw-2rem)]">
       <DialogHeader>
-        <div class="flex items-center gap-2 text-emerald-400 mb-1">
+        <div class="flex items-center gap-2 text-primary mb-1">
           <ShieldCheck class="w-5 h-5" />
           <DialogTitle>{{ t('privacyAgreementTitle') }}</DialogTitle>
         </div>
@@ -44,22 +44,22 @@ function handleAccept() {
       </DialogHeader>
 
       <div
-        class="space-y-3 py-2 text-xs text-zinc-400 max-h-48 overflow-y-auto pr-2 border-y border-zinc-800"
+        class="space-y-3 py-2 text-xs text-muted-foreground max-h-48 overflow-y-auto pr-2 border-y border-border"
       >
         <p>
-          1. <strong class="text-zinc-200">Non-Custodial:</strong> Proto Labs does not custody user
-          assets, private keys, or control liquidity after deployment.
+          1. <strong class="text-foreground">Non-Custodial:</strong> Proto Labs does not custody
+          user assets, private keys, or control liquidity after deployment.
         </p>
         <p>
-          2. <strong class="text-zinc-200">Irreversible Transactions:</strong> All swaps and token
+          2. <strong class="text-foreground">Irreversible Transactions:</strong> All swaps and token
           launches submitted through your connected Web3 wallet execute directly on the blockchain.
         </p>
         <p>
-          3. <strong class="text-zinc-200">Market Volatility:</strong> Fixed-supply memecoins and
+          3. <strong class="text-foreground">Market Volatility:</strong> Fixed-supply memecoins and
           newly deployed tokens may experience extreme volatility or total capital loss.
         </p>
         <p>
-          4. <strong class="text-zinc-200">Privacy:</strong> We do not sell personal data. Public
+          4. <strong class="text-foreground">Privacy:</strong> We do not sell personal data. Public
           onchain wallet addresses and transactions are recorded on the public ledger.
         </p>
       </div>
@@ -68,13 +68,13 @@ function handleAccept() {
         <Switch id="privacy-terms" :checked="agreed" @update:checked="agreed = $event" />
         <Label
           for="privacy-terms"
-          class="text-xs font-normal text-zinc-300 normal-case cursor-pointer select-none"
+          class="text-xs font-normal text-foreground normal-case cursor-pointer select-none"
         >
           <a
             href="/terms-of-service"
             target="_blank"
             rel="noopener noreferrer"
-            class="text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition"
+            class="text-primary hover:underline underline-offset-2 transition"
             @click.stop
           >
             {{ t('termsOfService') }}
@@ -84,7 +84,7 @@ function handleAccept() {
             href="/privacy-policy"
             target="_blank"
             rel="noopener noreferrer"
-            class="text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition"
+            class="text-primary hover:underline underline-offset-2 transition"
             @click.stop
           >
             {{ t('privacyPolicy') }}
