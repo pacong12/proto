@@ -3,7 +3,11 @@ main = "worker.ts"
 compatibility_date = "2026-09-16"
 
 [build]
-command = "bun run --filter @proto/frontoffice build"
+command = "VITE_REOWN_PROJECT_ID=4832fd788725bf7c34d6bc2ca2d54a85 bun run --filter @proto/frontoffice build"
+
+[vars]
+VITE_REOWN_PROJECT_ID = "4832fd788725bf7c34d6bc2ca2d54a85"
+BACKEND_API_URL = "https://api.robinmood.xyz"
 
 [assets]
 directory = "apps/frontoffice/dist"
@@ -30,3 +34,5 @@ name = "proto-production"
 
 [env.production.vars]
 CSP_REPORT_ONLY = "false"
+VITE_REOWN_PROJECT_ID = "4832fd788725bf7c34d6bc2ca2d54a85"
+BACKEND_API_URL = "https://api.robinmood.xyz"
