@@ -127,8 +127,8 @@ function copyAddress() {
           <span>proto</span>
         </RouterLink>
 
-        <!-- Desktop Navigation Routes: visible on md and up -->
-        <nav class="hidden md:flex items-center gap-1 text-sm font-medium">
+        <!-- Desktop Navigation Routes: visible on lg and up -->
+        <nav class="hidden lg:flex items-center gap-1 text-sm font-medium">
           <RouterLink
             to="/launchpad"
             :class="[
@@ -180,13 +180,15 @@ function copyAddress() {
       </div>
 
       <!-- Right Actions -->
-      <div class="flex items-center gap-2.5 sm:gap-3.5">
+      <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
         <!-- Search Trigger Button -->
         <Button
           variant="outline"
           size="sm"
           @click="$emit('openSearch')"
-          class="h-9 px-3 text-xs text-muted-foreground gap-2 font-normal border-border bg-card hover:bg-muted hover:text-foreground rounded-xl"
+          class="h-9 w-9 p-0 sm:w-auto sm:px-3 text-xs text-muted-foreground gap-2 font-normal border-border bg-card hover:bg-muted hover:text-foreground rounded-xl shrink-0"
+          title="Search (⌘K)"
+          aria-label="Search"
         >
           <Search class="w-3.5 h-3.5" />
           <span class="hidden sm:inline font-mono">{{
@@ -205,19 +207,16 @@ function copyAddress() {
           @update:model-value="handleChainSelect"
         >
           <SelectTrigger
-            class="h-9 px-3 gap-2 w-auto text-xs font-mono border-border bg-card hover:bg-muted cursor-pointer text-foreground rounded-xl"
+            class="h-9 px-2 sm:px-3 gap-1.5 sm:gap-2 w-auto text-xs font-mono border-border bg-card hover:bg-muted cursor-pointer text-foreground rounded-xl shrink-0"
           >
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5 sm:gap-2">
               <img
                 :src="activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
                 :alt="activeNetwork.name"
-                class="w-4 h-4 rounded-xs object-contain"
+                class="w-4 h-4 rounded-xs object-contain shrink-0"
               />
               <span class="font-semibold text-foreground hidden sm:inline">
                 {{ activeNetwork.name }}
-              </span>
-              <span class="font-semibold text-foreground sm:hidden">
-                {{ activeNetwork.chainId === 5042 ? 'Arc' : 'Robinhood' }}
               </span>
             </div>
           </SelectTrigger>
@@ -364,16 +363,18 @@ function copyAddress() {
         </div>
 
         <!-- Connected Wallet / Profile Dropdown Menu -->
-        <div v-else class="flex items-center gap-2.5">
+        <div v-else class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
               <Button
                 variant="outline"
                 size="sm"
-                class="h-9 px-3 gap-2.5 text-xs font-mono border-border bg-card hover:bg-muted cursor-pointer rounded-xl"
+                class="h-9 px-2 sm:px-3 gap-1.5 sm:gap-2 text-xs font-mono border-border bg-card hover:bg-muted cursor-pointer rounded-xl shrink-0"
               >
-                <Jazzicon :address="account" :size="18" class="rounded-full" />
-                <span class="font-bold text-foreground">{{ formattedAddress }}</span>
+                <Jazzicon :address="account" :size="16" class="rounded-full shrink-0" />
+                <span class="font-bold text-foreground text-[11px] sm:text-xs">{{
+                  formattedAddress
+                }}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -501,11 +502,11 @@ function copyAddress() {
           </DropdownMenu>
         </div>
 
-        <!-- Mobile Hamburger Button: visible on small screens -->
+        <!-- Mobile Hamburger Button: visible on screens below lg -->
         <Button
           variant="ghost"
           size="sm"
-          class="md:hidden h-8 w-8 p-0 text-black dark:text-white"
+          class="lg:hidden h-9 w-9 p-0 text-black dark:text-white shrink-0 cursor-pointer"
           @click="mobileMenuOpen = !mobileMenuOpen"
           aria-label="Toggle navigation menu"
         >
@@ -518,7 +519,7 @@ function copyAddress() {
     <!-- Mobile Drawer Menu: displayed when mobileMenuOpen is true -->
     <div
       v-if="mobileMenuOpen"
-      class="md:hidden border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-4 py-3 space-y-1"
+      class="lg:hidden border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-4 py-3 space-y-1"
     >
       <RouterLink
         to="/launchpad"
