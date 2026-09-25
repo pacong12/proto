@@ -1,77 +1,83 @@
 <template>
   <div class="space-y-6 max-w-7xl mx-auto">
     <!-- 1. OKX-Style Quick Market Highlights Ticker Bar -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 w-full min-w-0">
       <!-- Hot / Trending -->
       <div
-        class="p-4 sm:p-5 rounded-2xl border border-border bg-card shadow-xs flex items-center justify-between cursor-pointer hover:border-primary/50 transition"
+        class="p-3.5 sm:p-4 md:p-5 rounded-2xl border border-border bg-card shadow-xs flex items-center justify-between cursor-pointer hover:border-primary/50 transition min-w-0"
         @click="selectTabFilter('trending')"
       >
-        <div class="space-y-0.5">
-          <span class="text-[11px] font-mono text-zinc-400">
+        <div class="space-y-0.5 min-w-0 truncate">
+          <span class="text-[10px] sm:text-[11px] font-mono text-zinc-400 block truncate">
             {{ t('trendingTokens') }}
           </span>
-          <p class="text-sm font-bold font-mono text-black dark:text-white">
+          <p class="text-xs sm:text-sm font-bold font-mono text-black dark:text-white truncate">
             {{ topTrendingSymbol }}
           </p>
         </div>
-        <span class="text-xs font-mono font-bold text-emerald-500">{{ topTrendingChange }}</span>
+        <span class="text-xs font-mono font-bold text-emerald-500 shrink-0 ml-1">{{
+          topTrendingChange
+        }}</span>
       </div>
 
       <!-- New Launches -->
       <div
-        class="p-4 sm:p-5 rounded-2xl border border-border bg-card shadow-xs flex items-center justify-between cursor-pointer hover:border-primary/50 transition"
+        class="p-3.5 sm:p-4 md:p-5 rounded-2xl border border-border bg-card shadow-xs flex items-center justify-between cursor-pointer hover:border-primary/50 transition min-w-0"
         @click="selectTabFilter('newest')"
       >
-        <div class="space-y-0.5">
-          <span class="text-[11px] font-mono text-zinc-400">
+        <div class="space-y-0.5 min-w-0 truncate">
+          <span class="text-[10px] sm:text-[11px] font-mono text-zinc-400 block truncate">
             {{ t('newLaunches') }}
           </span>
-          <p class="text-sm font-bold font-mono text-black dark:text-white">
+          <p class="text-xs sm:text-sm font-bold font-mono text-black dark:text-white truncate">
             {{ totalTokensCount }} Tokens
           </p>
         </div>
-        <span class="text-xs font-mono text-zinc-400">{{ activeNetwork.name }}</span>
+        <span class="text-xs font-mono text-zinc-400 shrink-0 ml-1">{{ activeNetwork.name }}</span>
       </div>
 
       <!-- Top Gainers -->
       <div
-        class="p-4 sm:p-5 rounded-2xl border border-border bg-card shadow-xs flex items-center justify-between cursor-pointer hover:border-primary/50 transition"
+        class="p-3.5 sm:p-4 md:p-5 rounded-2xl border border-border bg-card shadow-xs flex items-center justify-between cursor-pointer hover:border-primary/50 transition min-w-0"
         @click="selectTabFilter('gainers')"
       >
-        <div class="space-y-0.5">
-          <span class="text-[11px] font-mono text-zinc-400">
+        <div class="space-y-0.5 min-w-0 truncate">
+          <span class="text-[10px] sm:text-[11px] font-mono text-zinc-400 block truncate">
             {{ t('topGainers') }}
           </span>
-          <p class="text-sm font-bold font-mono text-black dark:text-white">
+          <p class="text-xs sm:text-sm font-bold font-mono text-black dark:text-white truncate">
             {{ topGainerSymbol }}
           </p>
         </div>
-        <span class="text-xs font-mono font-bold text-emerald-500">{{ topGainerChange }}</span>
+        <span class="text-xs font-mono font-bold text-emerald-500 shrink-0 ml-1">{{
+          topGainerChange
+        }}</span>
       </div>
 
       <!-- 24h Aggregated Volume -->
       <div
-        class="p-4 sm:p-5 rounded-2xl border border-border bg-card shadow-xs flex items-center justify-between"
+        class="p-3.5 sm:p-4 md:p-5 rounded-2xl border border-border bg-card shadow-xs flex items-center justify-between min-w-0"
       >
-        <div class="space-y-0.5">
-          <span class="text-[11px] font-mono text-zinc-400">
+        <div class="space-y-0.5 min-w-0 truncate">
+          <span class="text-[10px] sm:text-[11px] font-mono text-zinc-400 block truncate">
             {{ t('volume24hCol') }}
           </span>
-          <p class="text-sm font-bold font-mono text-black dark:text-white">
+          <p class="text-xs sm:text-sm font-bold font-mono text-black dark:text-white truncate">
             ${{ totalVolume24hUsd.toLocaleString() }}
           </p>
         </div>
-        <span class="text-[10px] font-mono text-zinc-400">Uniswap V3/v4</span>
+        <span class="text-[10px] font-mono text-zinc-400 shrink-0 ml-1">Uniswap V3/v4</span>
       </div>
     </div>
 
     <!-- 2. OKX-Style Primary Market Navigation & Actions Header -->
     <div
-      class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-border"
+      class="flex items-center justify-between gap-2.5 sm:gap-4 pb-3 border-b border-border w-full min-w-0"
     >
       <!-- Market Tabs Navigation -->
-      <div class="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar">
+      <div
+        class="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-1 flex-1 min-w-0"
+      >
         <Button
           type="button"
           v-for="tab in marketTabs"
@@ -79,22 +85,22 @@
           @click="activeMarketTab = tab.value"
           :variant="activeMarketTab === tab.value ? 'secondary' : 'ghost'"
           size="sm"
-          class="h-8 px-3.5 text-xs font-bold rounded-lg transition whitespace-nowrap cursor-pointer"
+          class="h-8 px-2.5 sm:px-3.5 text-xs font-bold rounded-lg transition whitespace-nowrap cursor-pointer shrink-0"
         >
           {{ tab.label }}
         </Button>
       </div>
 
       <!-- Right Action: Launch Token Primary Button -->
-      <div class="flex items-center gap-3 shrink-0">
+      <div class="flex items-center gap-2 shrink-0">
         <Button
           @click="$emit('selectTab', 'create')"
           variant="default"
           size="sm"
-          class="h-9 px-4 gap-1.5 font-bold shadow-sm transition active:scale-95 cursor-pointer"
+          class="h-8 sm:h-9 px-2.5 sm:px-4 gap-1.5 font-bold shadow-sm transition active:scale-95 cursor-pointer text-xs"
         >
-          <Plus class="w-4 h-4 stroke-[3]" />
-          {{ t('create') }}
+          <Plus class="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
+          <span>{{ t('create') }}</span>
         </Button>
       </div>
     </div>
@@ -427,8 +433,8 @@
       v-else-if="viewMode === 'table'"
       class="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 overflow-hidden shadow-xs"
     >
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs font-mono">
+      <div class="overflow-x-auto w-full">
+        <table class="w-full text-left text-xs font-mono min-w-[680px]">
           <thead>
             <tr
               class="border-b border-zinc-200 dark:border-zinc-800/90 text-zinc-400 uppercase tracking-wider text-[11px] bg-zinc-50/70 dark:bg-zinc-900/40"
