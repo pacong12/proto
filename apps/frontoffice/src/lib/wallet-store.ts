@@ -1,5 +1,5 @@
 import { shallowRef } from 'vue';
-import { ARC_CHAIN } from '@proto/shared-types';
+import { ROBINHOOD_CHAIN, ARC_CHAIN } from '@proto/shared-types';
 
 export interface WalletRequestArgs {
   method: string;
@@ -42,7 +42,7 @@ export function getInitialChainId(): number {
         const parsed = Number.parseInt(stored, 10);
         if (
           Number.isFinite(parsed) &&
-          (parsed === 4663 || parsed === 5042 || parsed === 46630 || parsed === 5042002)
+          (parsed === ROBINHOOD_CHAIN.chainId || parsed === ARC_CHAIN.chainId)
         ) {
           return parsed;
         }

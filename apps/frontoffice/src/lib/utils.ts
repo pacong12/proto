@@ -59,7 +59,8 @@ export function formatPriceUsd(price: number | string | undefined | null): strin
   if (num >= 1) return `$${num.toFixed(2)}`;
   if (num >= 0.01) return `$${num.toFixed(4)}`;
   if (num >= 0.0001) return `$${num.toFixed(6)}`;
-  return `$${num.toFixed(8)}`;
+  if (num >= 0.00000001) return `$${num.toFixed(8)}`;
+  return `$${num.toFixed(11)}`;
 }
 
 /**

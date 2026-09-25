@@ -19,13 +19,23 @@ import {
   InMemoryCacheAdapter,
   TOKEN_LAUNCHED_V2_EVENT,
 } from './index';
-import { createPublicClient, http, defineChain, type PublicClient } from 'viem';
+import {
+  createPublicClient,
+  http,
+  defineChain,
+  decodeEventLog,
+  parseAbiItem,
+  type PublicClient,
+  type Address,
+} from 'viem';
 import {
   ROBINHOOD_CHAIN,
   ARC_CHAIN,
+  ARC_PROTO_CURVE_ADDRESS,
   type NetworkConfig,
   TransactionIntent,
   type TokenCommentEntity,
+  type TradeEventEntity,
   ok,
   err,
 } from '@proto/shared-types';
@@ -189,6 +199,95 @@ setTimeout(scheduleArcPoll, 5_000);
 function safeStringify(value: unknown): string {
   return JSON.stringify(value, (_, v) => (typeof v === 'bigint' ? v.toString() : v));
 }
+const TRADE_EVENT = parseAbiItem(
+  'event Trade(address indexed trader, bool indexed isBuy, uint256 ethAmount, uint256 tokenAmount, uint256 feeEth)',
+);
+
+function resolveNetworkForToken(token: {
+  pairedToken?: string;
+  poolAddress?: string;
+  curveAddress?: string;
+}): NetworkConfig {
+  if (
+    token.pairedToken?.toLowerCase() === ARC_CHAIN.contracts.weth.toLowerCase() ||
+    token.poolAddress?.toLowerCase() === ARC_CHAIN.contracts.factory.toLowerCase() ||
+    token.curveAddress?.toLowerCase() === ARC_CHAIN.contracts.factory.toLowerCase() ||
+    token.curveAddress?.toLowerCase() === ARC_PROTO_CURVE_ADDRESS.toLowerCase()
+  ) {
+    return ARC_CHAIN;
+  }
+  return ROBINHOOD_CHAIN;
+}
+
+function resolveNetworkByParam(param?: string | null): NetworkConfig {
+  const p = (param || '').toLowerCase();
+  if (p === 'arc' || p === '5042') return ARC_CHAIN;
+  return ROBINHOOD_CHAIN;
+}
+
+async function indexTradeFromReceipt(
+  txHash: `0x${string}`,
+  tokenAddress: `0x${string}`,
+): Promise<void> {
+  const token = await repository.findByAddress(tokenAddress);
+  if (!token) return;
+
+  const network = resolveNetworkForToken(token);
+  const isArc = network.chainId === ARC_CHAIN.chainId;
+  const client = isArc ? arcClient : robinhoodClient;
+  const quotePriceUsd = isArc ? 1.0 : await priceFeed.getEthPriceUsd();
+
+  const receipt = await client.getTransactionReceipt({ hash: txHash });
+  if (!receipt || receipt.status !== 'success') return;
+
+  for (const log of receipt.logs) {
+    try {
+      const decoded = decodeEventLog({
+        abi: [TRADE_EVENT],
+        data: log.data,
+        topics: log.topics,
+      });
+      const { trader, isBuy, ethAmount, tokenAmount } = decoded.args as {
+        trader: Address;
+        isBuy: boolean;
+        ethAmount: bigint;
+        tokenAmount: bigint;
+      };
+      if (ethAmount === undefined || tokenAmount === undefined) continue;
+
+      const ethAmountNum = Number(ethAmount) / 1e18;
+      const tokenAmountNum = Number(tokenAmount) / 1e18;
+      const priceNative = tokenAmountNum > 0 ? ethAmountNum / tokenAmountNum : 0;
+      const priceUsd = priceNative * quotePriceUsd;
+
+      let timestamp = Date.now();
+      try {
+        const block = await client.getBlock({ blockNumber: receipt.blockNumber });
+        timestamp = Number(block.timestamp) * 1000;
+      } catch {
+        timestamp = Date.now();
+      }
+
+      const trade: TradeEventEntity = {
+        id: `${receipt.transactionHash}-${log.logIndex}`,
+        tokenAddress: token.address,
+        poolAddress: token.poolAddress,
+        trader,
+        isBuy,
+        tokenAmount: tokenAmountNum.toFixed(4),
+        wethAmount: ethAmountNum.toFixed(6),
+        priceUsd,
+        blockNumber: receipt.blockNumber,
+        transactionHash: receipt.transactionHash,
+        timestamp,
+      };
+
+      await repository.saveTrade(trade);
+    } catch {
+      // not a trade event
+    }
+  }
+}
 
 async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   const url = new URL(req.url);
@@ -206,18 +305,22 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   const requestOrigin = req.headers.get('origin') || '';
 
   let corsOrigin = '';
+  const isLocalhost =
+    requestOrigin.startsWith('http://localhost:') ||
+    requestOrigin.startsWith('http://127.0.0.1:') ||
+    requestOrigin.startsWith('http://[::1]:');
+
   if (isPublicCrawlerPath) {
     // Public aggregator routes: open to all origins by spec requirement
     corsOrigin = '*';
+  } else if (process.env.NODE_ENV !== 'production' && isLocalhost) {
+    // Development: always permit local frontoffice instances regardless of port
+    corsOrigin = requestOrigin;
   } else if (allowedOrigins.length > 0) {
-    // Production: only reflect origin if it is in the explicit allow-list
+    // Production: reflect origin only if it is explicitly allow-listed
     corsOrigin = allowedOrigins.includes(requestOrigin) ? requestOrigin : '';
-  } else {
-    // No allow-list configured: permit localhost origins only (development)
-    corsOrigin =
-      requestOrigin.startsWith('http://localhost:') || requestOrigin.startsWith('http://127.0.0.1:')
-        ? requestOrigin
-        : '';
+  } else if (isLocalhost) {
+    corsOrigin = requestOrigin;
   }
 
   const headers = {
@@ -487,6 +590,82 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const offset = Math.max(0, parseInt(url.searchParams.get('offset') ?? '0', 10));
     const res = await tokenController.getTrades(address, limit, offset);
     return replyEnvelope(res);
+  }
+
+  // POST /api/tokens/:address/sync — trigger immediate on-demand blockchain event polling & receipt indexing
+  const syncMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/sync$/);
+  if (syncMatch && req.method === 'POST') {
+    const address = syncMatch[1] as `0x${string}`;
+    try {
+      let body: { txHash?: string } = {};
+      try {
+        body = (await req.json()) as { txHash?: string };
+      } catch {
+        // optional body
+      }
+
+      if (body.txHash && body.txHash.startsWith('0x') && body.txHash.length === 66) {
+        await indexTradeFromReceipt(body.txHash as `0x${string}`, address);
+      }
+
+      Promise.allSettled([robinhoodPoller.pollEvents(), arcPoller.pollEvents()]);
+      return replyEnvelope(ok({ synced: true, address, txHash: body.txHash ?? null }));
+    } catch (e) {
+      return replyEnvelope(err('SYNC_ERROR', (e as Error).message));
+    }
+  }
+
+  // GET /api/tokens/:address/balance?account=0x... — on-chain balance query endpoint with native RPC resilience
+  const balanceMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/balance$/);
+  if (balanceMatch && req.method === 'GET') {
+    const tokenAddress = balanceMatch[1] as `0x${string}`;
+    const accountParam = url.searchParams.get('account') as `0x${string}` | null;
+    if (!accountParam || !accountParam.startsWith('0x') || accountParam.length !== 42) {
+      return replyEnvelope(err('INVALID_ACCOUNT', 'A valid 0x account address is required'));
+    }
+
+    try {
+      const token = await repository.findByAddress(tokenAddress);
+      const network = token
+        ? resolveNetworkForToken(token)
+        : resolveNetworkByParam(url.searchParams.get('chain'));
+      const client = network.chainId === ARC_CHAIN.chainId ? arcClient : robinhoodClient;
+
+      const [balWei, nativeGasWei] = await Promise.all([
+        client.readContract({
+          address: tokenAddress,
+          abi: [
+            {
+              name: 'balanceOf',
+              type: 'function',
+              stateMutability: 'view',
+              inputs: [{ name: 'account', type: 'address' }],
+              outputs: [{ name: '', type: 'uint256' }],
+            },
+          ],
+          functionName: 'balanceOf',
+          args: [accountParam],
+        }) as Promise<bigint>,
+        client.getBalance({ address: accountParam }).catch(() => 0n),
+      ]);
+
+      const decimals = token?.decimals ?? 18;
+      const formatted = Number(balWei) / 10 ** decimals;
+
+      return replyEnvelope(
+        ok({
+          tokenAddress,
+          account: accountParam,
+          chainId: network.chainId,
+          balanceWei: balWei.toString(),
+          nativeGasWei: nativeGasWei.toString(),
+          decimals,
+          formatted,
+        }),
+      );
+    } catch (e) {
+      return replyEnvelope(err('RPC_ERROR', (e as Error).message));
+    }
   }
 
   // GET /api/tokens/:address/holders
@@ -904,25 +1083,6 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   // DEX Screener Partner API (https://docs.dexscreener.com/api/partner)
   // Required endpoints for chain listing & token indexing
   // ---------------------------------------------------------------------------
-
-  function resolveNetworkForToken(token: {
-    pairedToken?: string;
-    poolAddress?: string;
-  }): NetworkConfig {
-    if (
-      token.pairedToken?.toLowerCase() === ARC_CHAIN.contracts.weth.toLowerCase() ||
-      token.poolAddress?.toLowerCase() === ARC_CHAIN.contracts.factory.toLowerCase()
-    ) {
-      return ARC_CHAIN;
-    }
-    return ROBINHOOD_CHAIN;
-  }
-
-  function resolveNetworkByParam(param?: string | null): NetworkConfig {
-    const p = (param || '').toLowerCase();
-    if (p === 'arc' || p === '5042') return ARC_CHAIN;
-    return ROBINHOOD_CHAIN;
-  }
 
   // GET /dex/latest-block  — most recent indexed block
   if (url.pathname === '/dex/latest-block' && req.method === 'GET') {

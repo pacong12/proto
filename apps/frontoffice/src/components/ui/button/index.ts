@@ -5,15 +5,16 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-emerald-500 font-semibold shadow hover:bg-emerald-400 active:bg-emerald-600',
-        destructive: 'bg-rose-500 shadow-sm hover:bg-rose-600 active:bg-rose-700',
+        default:
+          'bg-primary text-primary-foreground font-semibold shadow hover:opacity-90 active:opacity-100',
+        destructive:
+          'bg-destructive text-destructive-foreground shadow-sm hover:opacity-90 active:opacity-100',
         outline:
-          'border border-zinc-300 dark:border-zinc-800 bg-transparent shadow-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 active:bg-zinc-200 dark:active:bg-zinc-700',
+          'border border-border bg-card text-foreground shadow-sm hover:bg-muted active:bg-muted/80',
         secondary:
-          'bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-sm hover:bg-zinc-200 dark:hover:bg-zinc-700 active:bg-zinc-300 dark:active:bg-zinc-600',
-        ghost:
-          'hover:bg-zinc-100 dark:hover:bg-zinc-800 active:bg-zinc-200 dark:active:bg-zinc-700',
-        link: 'underline-offset-4 hover:underline',
+          'bg-secondary text-secondary-foreground shadow-sm hover:opacity-90 active:opacity-100',
+        ghost: 'text-foreground hover:bg-muted active:bg-muted/80',
+        link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {
         default: 'h-9 px-4 py-2',

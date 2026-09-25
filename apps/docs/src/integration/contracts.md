@@ -30,15 +30,6 @@ For transparency and safety, all Proto launchpad contracts across supported netw
 | **Swap Router**                          | `0x53BF6B0684Ec7eF91e1387Da3D1a1769bC5A6F77` | Direct trade and exact-input swap routing    |
 | **Native Payment Token (USDC)**          | `0x3600000000000000000000000000000000000000` | Native gas and base pair currency (6 dec)    |
 
----
-
-## 3. Testnet Deployments
-
-- **Robinhood Chain Testnet**: Factory `0x3de11A992Ed6F9d6FA289f9A779a22eFFc1E27e8`
-- **Arc Testnet**: Factory `0x92cB206557907e4955faEeBd387D9602872d52cA`, Curve `0x9C7Ff544aAc9f4A4ECAE3ca8c110740888fF70E3`
-
----
-
 ## Security Audits
 
 All smart contract logic has been rigorously tested through static analysis (Slither), formal lifecycle tests (Foundry), and monorepo regression suites. Liquidity positions are permanently locked without admin keys, mint backdoors, or withdrawal permissions.

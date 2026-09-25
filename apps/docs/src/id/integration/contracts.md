@@ -18,16 +18,16 @@ Untuk menjaga transparansi dan keamanan, seluruh smart contract launchpad Proto 
 
 ---
 
-## 2. Arc Testnet (Chain ID: 5042002)
+## 2. Arc Network (Mainnet, Chain ID: 5042)
 
 | Nama Kontrak                             | Alamat                                       | Fungsi                                               |
 | :--------------------------------------- | :------------------------------------------- | :--------------------------------------------------- |
-| **Launchpad Factory (v1 Direct Pool)**   | `0x92cB206557907e4955faEeBd387D9602872d52cA` | Meluncurkan token & menginisialisasi pool Uniswap V3 |
-| **Launchpad Factory (v2 Bonding Curve)** | `0x9C7Ff544aAc9f4A4ECAE3ca8c110740888fF70E3` | Meluncurkan token & mengelola kurva bonding aktif    |
-| **Liquidity Locker**                     | `0x561723e55C27929f8C5317532c331c2a26060782` | Mengunci NFT posisi LP secara permanen               |
-| **Uniswap V3 Factory**                   | `0x867E249D61cb0951433FAfd72b15Acc63646D266` | Registri pool terdesentralisasi kanonikal            |
-| **Position Manager**                     | `0x7bD82CA0E7fd5F4EfFFd69cb413CBf8E954c3660` | Pengelola posisi likuiditas terkonsentrasi           |
-| **Swap Router**                          | `0x5b8953eFc63F70377fa8C23FBEE0EAD632B277Cd` | Rute pertukaran transaksi exact-input                |
+| **Launchpad Factory (v1 Direct Pool)**   | `0xED31e7ec603651803784196003903aCa05550552` | Meluncurkan token & menginisialisasi pool Uniswap V3 |
+| **Launchpad Factory (v2 Bonding Curve)** | `0x2ae8BE8C8F19665396b362859d51bdec09e59AEa` | Meluncurkan token & mengelola kurva bonding aktif    |
+| **Liquidity Locker**                     | `0x9909ac8759dB233f546b644EF2CBDE1b3Af1dCE0` | Mengunci NFT posisi LP secara permanen               |
+| **Uniswap V3 Factory**                   | `0xf0db7b58379503491d857dB50AC9ece64c653918` | Registri pool terdesentralisasi kanonikal            |
+| **Position Manager**                     | `0x39654A85A4C05127f5Fd6ED22CAeC077A0fB1377` | Pengelola posisi likuiditas terkonsentrasi           |
+| **Swap Router**                          | `0x53BF6B0684Ec7eF91e1387Da3D1a1769bC5A6F77` | Rute pertukaran transaksi exact-input                |
 | **Native Payment Token (USDC)**          | `0x3600000000000000000000000000000000000000` | Gas asli & mata uang pasangan dasar (6 desimal)      |
 
 ---

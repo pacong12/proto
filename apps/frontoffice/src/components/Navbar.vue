@@ -4,9 +4,6 @@ import { useRoute, RouterLink } from 'vue-router';
 import { useColorMode } from '@vueuse/core';
 import {
   Search,
-  Compass,
-  PlusCircle,
-  Activity,
   AlertTriangle,
   Wallet,
   LogOut,
@@ -135,33 +132,31 @@ function copyAddress() {
           <RouterLink
             to="/launchpad"
             :class="[
-              'inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold transition-colors',
+              'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
               isRouteActive('/launchpad')
                 ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60',
             ]"
           >
-            <Compass class="w-3.5 h-3.5" />
             {{ t('explore') }}
           </RouterLink>
 
           <RouterLink
             to="/launchpad/create"
             :class="[
-              'inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold transition-colors',
+              'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
               isRouteActive('/launchpad/create')
                 ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60',
             ]"
           >
-            <PlusCircle class="w-3.5 h-3.5" />
             {{ t('create') }}
           </RouterLink>
 
           <RouterLink
             to="/memestock"
             :class="[
-              'inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold transition-colors',
+              'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
               isRouteActive('/memestock')
                 ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60',
@@ -173,33 +168,32 @@ function copyAddress() {
           <RouterLink
             to="/analytics"
             :class="[
-              'inline-flex items-center gap-1.5 h-8 px-3 rounded-md text-xs font-semibold transition-colors',
+              'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
               isRouteActive('/analytics')
                 ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60',
             ]"
           >
-            <Activity class="w-3.5 h-3.5" />
             {{ t('analytics') }}
           </RouterLink>
         </nav>
       </div>
 
       <!-- Right Actions -->
-      <div class="flex items-center gap-2 sm:gap-3">
+      <div class="flex items-center gap-2.5 sm:gap-3.5">
         <!-- Search Trigger Button -->
         <Button
           variant="outline"
           size="sm"
           @click="$emit('openSearch')"
-          class="h-8 px-2.5 text-xs text-zinc-500 dark:text-zinc-400 gap-1.5 font-normal border-zinc-200 dark:border-zinc-800 hover:text-black dark:hover:text-white"
+          class="h-9 px-3 text-xs text-muted-foreground gap-2 font-normal border-border bg-card hover:bg-muted hover:text-foreground rounded-xl"
         >
           <Search class="w-3.5 h-3.5" />
           <span class="hidden sm:inline font-mono">{{
             t('searchPlaceholder') ? 'Search...' : 'Search'
           }}</span>
           <kbd
-            class="hidden sm:inline font-mono text-[10px] bg-zinc-100 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 px-1 rounded"
+            class="hidden sm:inline font-mono text-[10px] bg-muted border border-border px-1.5 py-0.5 rounded-md"
           >
             ⌘K
           </kbd>
@@ -211,52 +205,51 @@ function copyAddress() {
           @update:model-value="handleChainSelect"
         >
           <SelectTrigger
-            class="h-8 px-2.5 gap-1.5 w-auto text-xs font-mono border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 cursor-pointer text-black dark:text-white"
+            class="h-9 px-3 gap-2 w-auto text-xs font-mono border-border bg-card hover:bg-muted cursor-pointer text-foreground rounded-xl"
           >
-            <div class="flex items-center gap-1.5">
+            <div class="flex items-center gap-2">
               <img
                 :src="activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
                 :alt="activeNetwork.name"
-                class="w-3.5 h-3.5 rounded-xs object-contain"
+                class="w-4 h-4 rounded-xs object-contain"
               />
-              <span class="font-semibold text-black dark:text-white hidden sm:inline">
+              <span class="font-semibold text-foreground hidden sm:inline">
                 {{ activeNetwork.name }}
               </span>
-              <span class="font-semibold text-black dark:text-white sm:hidden">
+              <span class="font-semibold text-foreground sm:hidden">
                 {{ activeNetwork.chainId === 5042 ? 'Arc' : 'Robinhood' }}
               </span>
             </div>
           </SelectTrigger>
           <SelectContent
             align="end"
-            class="w-52 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-lg"
+            class="w-64 bg-card border border-border p-2 shadow-2xl rounded-2xl"
           >
             <SelectLabel
-              class="text-[10px] font-mono uppercase tracking-wider text-zinc-400 px-2 py-1"
+              class="text-[11px] font-mono uppercase tracking-wider text-muted-foreground px-3 py-1.5"
             >
               Select Network
             </SelectLabel>
-            <SelectSeparator class="border-zinc-200 dark:border-zinc-800" />
+            <SelectSeparator class="my-1 border-border" />
             <SelectItem
               v-for="net in Object.values(SUPPORTED_CHAINS)"
               :key="net.chainId"
               :value="String(net.chainId)"
-              class="cursor-pointer text-xs font-mono py-2 px-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition"
+              class="cursor-pointer text-xs font-mono py-2.5 px-3 hover:bg-muted rounded-xl transition my-0.5"
             >
-              <div class="flex items-center gap-2.5">
+              <div class="flex items-center gap-3">
                 <img
                   :src="net.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
                   :alt="net.name"
                   class="w-5 h-5 rounded-md object-contain shrink-0"
                 />
-                <span class="font-bold text-black dark:text-white leading-tight">
+                <span class="font-bold text-foreground leading-tight">
                   {{ net.name }}
                 </span>
               </div>
             </SelectItem>
           </SelectContent>
         </Select>
-
         <!-- Wrong Network Warning Button -->
         <Button
           v-if="isConnected && !isCorrectNetwork"
@@ -271,10 +264,10 @@ function copyAddress() {
         </Button>
 
         <!-- Connect Wallet Button + Disconnected Profile Menu -->
-        <div v-if="!isConnected" class="flex items-center gap-2">
+        <div v-if="!isConnected" class="flex items-center gap-2.5">
           <Button
             size="sm"
-            class="h-8 gap-1.5 text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-black shadow-sm cursor-pointer"
+            class="h-9 px-4 gap-2 text-xs font-semibold rounded-xl cursor-pointer"
             :disabled="isConnecting"
             @click="openWallet"
           >
@@ -288,7 +281,7 @@ function copyAddress() {
               <Button
                 variant="outline"
                 size="sm"
-                class="h-8 w-8 p-0 rounded-full border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 cursor-pointer"
+                class="h-9 w-9 p-0 rounded-xl border-border bg-card text-foreground hover:bg-muted cursor-pointer"
                 title="Profile & Preferences"
                 aria-label="Profile and Preferences menu"
               >
@@ -297,69 +290,70 @@ function copyAddress() {
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              class="w-56 p-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-xl"
+              class="w-64 p-2 bg-card border border-border shadow-2xl rounded-2xl space-y-1"
             >
               <DropdownMenuItem as-child>
                 <RouterLink
                   to="/profile"
-                  class="flex items-center gap-2 w-full cursor-pointer text-black dark:text-white px-2.5 py-1.5 text-xs rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                  class="flex items-center gap-2.5 w-full cursor-pointer text-foreground px-3 py-2.5 text-xs rounded-xl hover:bg-muted transition"
                 >
-                  <User class="w-3.5 h-3.5" />
+                  <User class="w-4 h-4" />
                   <span>{{ t('profile') }}</span>
                 </RouterLink>
               </DropdownMenuItem>
 
-              <DropdownMenuSeparator class="my-1 border-zinc-200 dark:border-zinc-800" />
+              <DropdownMenuSeparator class="my-1.5 border-border" />
 
               <!-- Theme Toggle -->
               <DropdownMenuItem
-                class="flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                class="flex items-center justify-between px-3 py-2.5 text-xs rounded-xl cursor-pointer hover:bg-muted transition"
                 @click="toggleTheme"
               >
-                <div class="flex items-center gap-2">
-                  <Sun v-if="isDark" class="w-3.5 h-3.5 text-amber-500" />
-                  <Moon v-else class="w-3.5 h-3.5 text-emerald-500" />
+                <div class="flex items-center gap-2.5">
+                  <Sun v-if="isDark" class="w-4 h-4 text-amber-500" />
+                  <Moon v-else class="w-4 h-4 text-primary" />
                   <span>{{ isDark ? 'Light Theme' : 'Dark Theme' }}</span>
                 </div>
-                <span class="text-[10px] font-mono text-zinc-400 capitalize">{{ mode }}</span>
+                <span class="text-[10px] font-mono text-muted-foreground capitalize">{{
+                  mode
+                }}</span>
               </DropdownMenuItem>
 
-              <DropdownMenuSeparator class="my-1 border-zinc-200 dark:border-zinc-800" />
+              <DropdownMenuSeparator class="my-1.5 border-border" />
 
               <!-- Language Submenu using DropdownMenuPortal (Scroll-Free 2-Column Grid) -->
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger
-                  class="flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                  class="flex items-center justify-between px-3 py-2.5 text-xs rounded-xl cursor-pointer hover:bg-muted transition"
                 >
-                  <div class="flex items-center gap-2">
-                    <Globe class="w-3.5 h-3.5 text-zinc-400" />
+                  <div class="flex items-center gap-2.5">
+                    <Globe class="w-4 h-4 text-muted-foreground" />
                     <span>Language</span>
                   </div>
-                  <span class="text-[10px] text-emerald-500 font-bold uppercase font-mono mr-1">{{
+                  <span class="text-[10px] text-primary font-bold uppercase font-mono mr-1">{{
                     currentLocaleOption.code
                   }}</span>
                 </DropdownMenuSubTrigger>
                 <DropdownMenuPortal>
                   <DropdownMenuSubContent
-                    class="w-80 p-1.5 grid grid-cols-2 gap-1 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-xl z-50 overflow-visible"
+                    class="w-84 p-2.5 grid grid-cols-2 gap-1.5 bg-card border border-border shadow-2xl rounded-2xl z-50 overflow-visible"
                   >
                     <DropdownMenuItem
                       v-for="item in locales"
                       :key="item.code"
-                      class="flex items-center justify-between px-2 py-1.5 text-xs rounded-lg cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                      class="flex items-center justify-between px-3 py-2 text-xs rounded-xl cursor-pointer hover:bg-muted transition"
                       :class="{
-                        'font-bold text-emerald-500 dark:text-emerald-400 bg-emerald-500/10':
-                          item.code === locale,
+                        'font-bold text-primary bg-primary/10': item.code === locale,
                       }"
                       @click="setLocale(item.code)"
                     >
-                      <div class="flex items-center gap-1.5 truncate">
+                      <div class="flex items-center gap-2 truncate">
                         <span class="text-sm leading-none">{{ item.flag }}</span>
                         <span class="truncate">{{ item.nativeName }}</span>
                       </div>
                       <Check
                         v-if="item.code === locale"
-                        class="w-3.5 h-3.5 text-emerald-500 shrink-0 ml-1"
+                        class="w-3.5 h-3.5 text-primary shrink-0 ml-1"
                       />
                     </DropdownMenuItem>
                   </DropdownMenuSubContent>
@@ -370,138 +364,137 @@ function copyAddress() {
         </div>
 
         <!-- Connected Wallet / Profile Dropdown Menu -->
-        <div v-else class="flex items-center gap-2">
+        <div v-else class="flex items-center gap-2.5">
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
               <Button
                 variant="outline"
                 size="sm"
-                class="h-8 gap-2 text-xs font-mono border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 cursor-pointer"
+                class="h-9 px-3 gap-2.5 text-xs font-mono border-border bg-card hover:bg-muted cursor-pointer rounded-xl"
               >
-                <Jazzicon :address="account" :size="16" class="rounded-full" />
-                <span class="font-bold text-black dark:text-white">{{ formattedAddress }}</span>
+                <Jazzicon :address="account" :size="18" class="rounded-full" />
+                <span class="font-bold text-foreground">{{ formattedAddress }}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              class="w-64 p-1.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-xl"
+              class="w-72 p-2 bg-card border border-border shadow-2xl rounded-2xl space-y-1"
             >
-              <DropdownMenuLabel class="flex items-center gap-2.5 py-2.5 px-2.5">
+              <DropdownMenuLabel class="flex items-center gap-3 p-3 rounded-xl bg-muted/50 mb-1">
                 <Jazzicon
                   :address="account"
-                  :size="32"
-                  class="rounded-full border border-zinc-300 dark:border-zinc-700 shrink-0"
+                  :size="36"
+                  class="rounded-full border border-border shrink-0"
                 />
                 <div class="truncate min-w-0 flex-1">
                   <div class="flex items-center justify-between gap-1">
-                    <span class="text-xs font-bold text-black dark:text-white font-mono truncate">
+                    <span class="text-xs font-bold text-foreground font-mono truncate">
                       {{ formattedAddress }}
                     </span>
-                    <span
-                      class="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400 shrink-0"
-                    >
+                    <span class="text-[11px] font-mono font-bold text-primary shrink-0">
                       {{ formattedBalance }}
                     </span>
                   </div>
                   <span
-                    class="block text-[10px] font-mono text-zinc-400 truncate mt-0.5"
+                    class="block text-[10px] font-mono text-muted-foreground truncate mt-0.5"
                     :title="account || ''"
                   >
                     {{ account }}
                   </span>
                 </div>
               </DropdownMenuLabel>
-              <DropdownMenuSeparator class="my-1 border-zinc-200 dark:border-zinc-800" />
+              <DropdownMenuSeparator class="my-1.5 border-border" />
 
               <DropdownMenuItem as-child>
                 <RouterLink
                   to="/profile"
-                  class="flex items-center gap-2 w-full cursor-pointer text-black dark:text-white px-2.5 py-1.5 text-xs rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                  class="flex items-center gap-2.5 w-full cursor-pointer text-foreground px-3 py-2.5 text-xs rounded-xl hover:bg-muted transition"
                 >
-                  <User class="w-3.5 h-3.5" />
+                  <User class="w-4 h-4" />
                   <span>{{ t('myProfileAndFees') }}</span>
                 </RouterLink>
               </DropdownMenuItem>
 
               <DropdownMenuItem
                 @click="copyAddress"
-                class="cursor-pointer text-black dark:text-white px-2.5 py-1.5 text-xs rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900 transition flex items-center gap-2"
+                class="cursor-pointer text-foreground px-3 py-2.5 text-xs rounded-xl hover:bg-muted transition flex items-center gap-2.5"
               >
-                <Copy v-if="!copied" class="w-3.5 h-3.5" />
-                <Check v-else class="w-3.5 h-3.5 text-emerald-500" />
+                <Copy v-if="!copied" class="w-4 h-4" />
+                <Check v-else class="w-4 h-4 text-primary" />
                 <span>{{ copied ? t('addressCopied') : t('copyAddress') }}</span>
               </DropdownMenuItem>
 
               <DropdownMenuItem
                 @click="openWallet"
-                class="cursor-pointer text-black dark:text-white px-2.5 py-1.5 text-xs rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900 transition flex items-center gap-2"
+                class="cursor-pointer text-foreground px-3 py-2.5 text-xs rounded-xl hover:bg-muted transition flex items-center gap-2.5"
               >
-                <Wallet class="w-3.5 h-3.5" />
+                <Wallet class="w-4 h-4" />
                 <span>{{ t('switchManageWallet') }}</span>
               </DropdownMenuItem>
 
-              <DropdownMenuSeparator class="my-1 border-zinc-200 dark:border-zinc-800" />
+              <DropdownMenuSeparator class="my-1.5 border-border" />
 
               <!-- Theme Toggle in Profile Menu -->
               <DropdownMenuItem
-                class="flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                class="flex items-center justify-between px-3 py-2.5 text-xs rounded-xl cursor-pointer hover:bg-muted transition"
                 @click="toggleTheme"
               >
-                <div class="flex items-center gap-2">
-                  <Sun v-if="isDark" class="w-3.5 h-3.5 text-amber-500" />
-                  <Moon v-else class="w-3.5 h-3.5 text-emerald-500" />
+                <div class="flex items-center gap-2.5">
+                  <Sun v-if="isDark" class="w-4 h-4 text-amber-500" />
+                  <Moon v-else class="w-4 h-4 text-primary" />
                   <span>{{ isDark ? 'Light Theme' : 'Dark Theme' }}</span>
                 </div>
-                <span class="text-[10px] font-mono text-zinc-400 capitalize">{{ mode }}</span>
+                <span class="text-[10px] font-mono text-muted-foreground capitalize">{{
+                  mode
+                }}</span>
               </DropdownMenuItem>
 
               <!-- Language Submenu using DropdownMenuPortal (Scroll-Free 2-Column Grid) -->
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger
-                  class="flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                  class="flex items-center justify-between px-3 py-2.5 text-xs rounded-xl cursor-pointer hover:bg-muted transition"
                 >
-                  <div class="flex items-center gap-2">
-                    <Globe class="w-3.5 h-3.5 text-zinc-400" />
+                  <div class="flex items-center gap-2.5">
+                    <Globe class="w-4 h-4 text-muted-foreground" />
                     <span>Language</span>
                   </div>
-                  <span class="text-[10px] text-emerald-500 font-bold uppercase font-mono mr-1">{{
+                  <span class="text-[10px] text-primary font-bold uppercase font-mono mr-1">{{
                     currentLocaleOption.code
                   }}</span>
                 </DropdownMenuSubTrigger>
                 <DropdownMenuPortal>
                   <DropdownMenuSubContent
-                    class="w-80 p-1.5 grid grid-cols-2 gap-1 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-xl z-50 overflow-visible"
+                    class="w-84 p-2.5 grid grid-cols-2 gap-1.5 bg-card border border-border shadow-2xl rounded-2xl z-50 overflow-visible"
                   >
                     <DropdownMenuItem
                       v-for="item in locales"
                       :key="item.code"
-                      class="flex items-center justify-between px-2 py-1.5 text-xs rounded-lg cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-900 transition"
+                      class="flex items-center justify-between px-3 py-2 text-xs rounded-xl cursor-pointer hover:bg-muted transition"
                       :class="{
-                        'font-bold text-emerald-500 dark:text-emerald-400 bg-emerald-500/10':
-                          item.code === locale,
+                        'font-bold text-primary bg-primary/10': item.code === locale,
                       }"
                       @click="setLocale(item.code)"
                     >
-                      <div class="flex items-center gap-1.5 truncate">
+                      <div class="flex items-center gap-2 truncate">
                         <span class="text-sm leading-none">{{ item.flag }}</span>
                         <span class="truncate">{{ item.nativeName }}</span>
                       </div>
                       <Check
                         v-if="item.code === locale"
-                        class="w-3.5 h-3.5 text-emerald-500 shrink-0 ml-1"
+                        class="w-3.5 h-3.5 text-primary shrink-0 ml-1"
                       />
                     </DropdownMenuItem>
                   </DropdownMenuSubContent>
                 </DropdownMenuPortal>
               </DropdownMenuSub>
 
-              <DropdownMenuSeparator class="my-1 border-zinc-200 dark:border-zinc-800" />
+              <DropdownMenuSeparator class="my-1.5 border-border" />
 
               <DropdownMenuItem
                 @click="disconnectWallet"
-                class="text-rose-600 dark:text-rose-400 focus:text-rose-700 dark:focus:text-rose-300 focus:bg-rose-50 dark:focus:bg-rose-950/40 cursor-pointer px-2.5 py-1.5 text-xs rounded-lg transition flex items-center gap-2"
+                class="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer px-3 py-2.5 text-xs rounded-xl transition flex items-center gap-2.5 hover:bg-destructive/10"
               >
-                <LogOut class="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
+                <LogOut class="w-4 h-4 text-destructive" />
                 <span>{{ t('disconnect') }}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -537,7 +530,6 @@ function copyAddress() {
             : 'text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white',
         ]"
       >
-        <Compass class="w-4 h-4" />
         {{ t('explore') }}
       </RouterLink>
 
@@ -551,7 +543,6 @@ function copyAddress() {
             : 'text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white',
         ]"
       >
-        <PlusCircle class="w-4 h-4" />
         {{ t('create') }}
       </RouterLink>
 
@@ -578,7 +569,6 @@ function copyAddress() {
             : 'text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white',
         ]"
       >
-        <Activity class="w-4 h-4" />
         {{ t('analytics') }}
       </RouterLink>
 

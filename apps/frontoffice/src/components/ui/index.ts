@@ -16,3 +16,5 @@ export * from './pagination';
 export * from './combobox';
 export * from './switch';
 export * from './select';
+export * from './slider';
+export * from './tooltip';

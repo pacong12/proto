@@ -9,5 +9,11 @@ paths = [
   '''contracts/test/.*'''
 ]
 regexes = [
-  '''proto_privacy_policy_accepted_v1'''
+  '''proto_privacy_policy_accepted_v1''',
+  '''(?i)0x6c1c1a77771bf8961e27ea5b21f575eb17a7626e''',
+  '''(?i)generic-api-key'''
+]
+stopwords = [
+  "0x6c1c1a77771bf8961e27ea5b21f575eb17a7626e",
+  "0x6C1c1A77771bf8961E27Ea5B21F575EB17a7626E"
 ]

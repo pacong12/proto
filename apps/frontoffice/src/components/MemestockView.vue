@@ -30,7 +30,7 @@
           @click="$emit('selectTab', 'create')"
           variant="default"
           size="sm"
-          class="h-8 gap-1.5 font-semibold text-xs bg-emerald-500 hover:bg-emerald-600 text-black shadow-sm"
+          class="h-9 px-4 gap-1.5 font-bold text-xs shadow-sm transition active:scale-95 cursor-pointer"
         >
           <Plus class="w-4 h-4" />
           {{ t('create') }}
@@ -73,14 +73,14 @@
 
     <!-- Meme Feed Cards with 100% Shadcn Card & Badge -->
     <div v-else class="space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
         <Card
           v-for="item in paginatedItems"
           :key="item.token.address"
           @click="$emit('selectToken', item.token.address)"
-          class="group hover:border-zinc-700 cursor-pointer hover:-translate-y-1 transition-all flex flex-col justify-between p-5"
+          class="group hover:border-primary/50 cursor-pointer transition-all flex flex-col justify-between p-5 sm:p-6 rounded-2xl border border-border bg-card shadow-xs space-y-4"
         >
-          <div class="space-y-3">
+          <div class="space-y-3.5">
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-3 min-w-0">
                 <OptimizedImage

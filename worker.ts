@@ -4,6 +4,10 @@ interface Env {
   };
   // Set to 'true' in wrangler.toml [vars] to send CSP as Report-Only.
   // Use this in staging before enforcing in production.
+  // Backend API URL on VPS (e.g. http://31.97.189.81:3011 or https://api.proto.family)
+  BACKEND_API_URL?: string;
+  // Set to 'true' in wrangler.toml [vars] to send CSP as Report-Only.
+  // Use this in staging before enforcing in production.
   CSP_REPORT_ONLY?: string;
   // Optional endpoint for CSP violation reports.
   CSP_REPORT_URI?: string;
@@ -47,7 +51,7 @@ function buildCsp(reportUri?: string): string {
     [
       "connect-src 'self' https: wss:",
       'https://rpc.mainnet.chain.robinhood.com',
-      'https://rpc.testnet.chain.robinhood.com',
+      'https://rpc.mainnet.arc.io',
       'wss://relay.walletconnect.com',
       'wss://relay.walletconnect.org',
       'https://*.walletconnect.com',
@@ -83,6 +87,49 @@ export default {
       url.pathname.startsWith('/server-info')
     ) {
       return new Response('Not Found', { status: 404 });
+    }
+
+    // Proxy API, DEX Screener, and health check endpoints directly to the VPS backend
+    if (
+      url.pathname.startsWith('/api/') ||
+      url.pathname.startsWith('/dex/') ||
+      url.pathname.startsWith('/api/v1/') ||
+      url.pathname === '/health'
+    ) {
+      const backendBase = env.BACKEND_API_URL || 'http://31.97.189.81:3011';
+      const targetUrl = new URL(url.pathname + url.search, backendBase);
+      const forwardHeaders = new Headers(request.headers);
+      forwardHeaders.set('x-forwarded-host', url.host);
+      forwardHeaders.set('x-forwarded-proto', url.protocol.replace(':', ''));
+      const rawClientIp = request.headers.get('cf-connecting-ip') ?? '';
+      if (rawClientIp) {
+        forwardHeaders.set('x-real-ip', rawClientIp);
+        forwardHeaders.set('cf-connecting-ip', rawClientIp);
+      }
+
+      try {
+        return await fetch(targetUrl.toString(), {
+          method: request.method,
+          headers: forwardHeaders,
+          body: request.body,
+          redirect: 'follow',
+        });
+      } catch (err) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: {
+              code: 'GATEWAY_ERROR',
+              message: 'VPS Backend service unreachable: ' + (err as Error).message,
+            },
+            timestamp: Date.now(),
+          }),
+          {
+            status: 502,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        );
+      }
     }
 
     const response = await env.ASSETS.fetch(request);

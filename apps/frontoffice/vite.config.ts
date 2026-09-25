@@ -5,6 +5,7 @@ import path from 'node:path';
 
 export default defineConfig({
   plugins: [vue(), tailwindcss()],
+  envDir: path.resolve(__dirname, '../../'),
   build: {
     outDir: 'dist',
     emptyOutDir: true,
@@ -20,11 +21,12 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
+    port: Number(process.env.VITE_PORT ?? 3010),
+    strictPort: true,
     host: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:3011',
         changeOrigin: true,
       },
     },

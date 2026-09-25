@@ -30,13 +30,6 @@ Untuk berinteraksi dengan Proto, tambahkan jaringan yang diinginkan ke dompet We
 
 ---
 
-## 3. Jaringan Uji Coba (Testnet)
-
-- **Robinhood Chain Testnet**: Chain ID `46630`, RPC `https://rpc.testnet.chain.robinhood.com`
-- **Arc Testnet**: Chain ID `5042002`, RPC `https://rpc.testnet.arc.io`, Explorer `https://explorer.testnet.arc.io`
-
----
-
 ## Koneksi Satu Klik & Pergantian Jaringan
 
 Saat membuka [proto.family](https://proto.family), sistem secara otomatis mendeteksi jaringan dompet Anda dan menyediakan opsi perpindahan instan antara **Robinhood Chain** dan **Arc Network** melalui menu pilihan jaringan di bilah navigasi atas.

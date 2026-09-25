@@ -354,7 +354,7 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     ipfsReady: 'IPFS Siap',
     chooseImage: 'Pilih gambar (PNG, JPG, WEBP, GIF maks 5MB).',
     remove: 'Hapus',
-    pairedAsset: 'Aset Pasangan',
+    pairedAsset: 'Pasangan Aset',
     advanced: 'Lanjutan',
     holderFeeSharing: 'Bagi Hasil Biaya Pemegang',
     creatorFeeSharingDesc:

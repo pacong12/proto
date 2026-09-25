@@ -2,7 +2,7 @@
   <div class="max-w-5xl mx-auto space-y-8">
     <!-- Profile Hero & Identity Card -->
     <Card
-      class="p-6 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/80 backdrop-blur space-y-6"
+      class="p-6 sm:p-8 rounded-3xl border border-border bg-card shadow-sm space-y-6 sm:space-y-8"
     >
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div class="flex items-center gap-4">
@@ -112,8 +112,8 @@
 
     <template v-else>
       <!-- Stats Summary Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card class="p-5 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
           <p
             class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono text-zinc-400"
           >
@@ -126,7 +126,7 @@
           <p class="text-xs text-zinc-500 mt-1">70% creator share</p>
         </Card>
 
-        <Card class="p-5 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800">
+        <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
           <p
             class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono text-zinc-400"
           >
@@ -139,7 +139,7 @@
           <p class="text-xs text-zinc-500 mt-1">Deployed by your wallet</p>
         </Card>
 
-        <Card class="p-5 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800">
+        <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
           <p
             class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono text-zinc-400"
           >
@@ -152,7 +152,7 @@
           <p class="text-xs text-zinc-500 mt-1">Tokens currently held</p>
         </Card>
 
-        <Card class="p-5 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800">
+        <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
           <p
             class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono text-zinc-400"
           >
@@ -177,7 +177,7 @@
 
       <!-- Main Profile Tabs: Created Tokens, Portfolio, Activity -->
       <Card
-        class="p-4 sm:p-6 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/90 space-y-6"
+        class="p-6 sm:p-8 border border-border bg-card rounded-3xl shadow-sm space-y-6 sm:space-y-8"
       >
         <Tabs v-model="activeTab" class="w-full">
           <div
@@ -810,6 +810,9 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
+import { erc20Abi } from 'viem';
+import { ARC_CHAIN, ROBINHOOD_CHAIN, ARC_PROTO_CURVE_ADDRESS } from '@proto/shared-types';
+import { getPublicClient } from '@/lib/viem-client';
 
 const { claimFees, setFeeRedirect, loading } = useLaunchpad();
 
@@ -1078,10 +1081,10 @@ async function fetchUserPositionsAndActivity() {
                   isBuy: tr.isBuy,
                   tokenSymbol: t.token.symbol,
                   ethAmount: tr.wethAmount,
-                  tokenAmount: (Number(BigInt(tr.tokenAmount || '0')) / 1e18).toFixed(2),
+                  tokenAmount: parseFloat(tr.tokenAmount || '0').toFixed(2),
                   timestamp: tr.timestamp,
                 });
-                const tokNum = Number(BigInt(tr.tokenAmount || '0')) / 1e18;
+                const tokNum = parseFloat(tr.tokenAmount || '0');
                 if (tr.isBuy) {
                   userTokenBal += tokNum;
                 } else {
@@ -1090,16 +1093,37 @@ async function fetchUserPositionsAndActivity() {
               }
             }
 
-            if (userTokenBal > 0) {
+            // Query on-chain balance to guarantee tokens held in wallet are always accurately reflected
+            let finalBalNum = userTokenBal;
+            try {
+              const isArc =
+                t.token.pairedToken?.toLowerCase() === ARC_CHAIN.contracts.weth.toLowerCase() ||
+                t.token.poolAddress?.toLowerCase() === ARC_CHAIN.contracts.factory.toLowerCase() ||
+                t.token.curveAddress?.toLowerCase() === ARC_PROTO_CURVE_ADDRESS.toLowerCase();
+              const client = getPublicClient(isArc ? ARC_CHAIN.chainId : ROBINHOOD_CHAIN.chainId);
+              const onChainWei = (await client.readContract({
+                address: t.token.address,
+                abi: erc20Abi,
+                functionName: 'balanceOf',
+                args: [userAddress.value as `0x${string}`],
+              })) as bigint;
+              if (onChainWei > 0n) {
+                finalBalNum = Number(onChainWei) / 10 ** (t.token.decimals || 18);
+              }
+            } catch {
+              // Fallback to trade-derived balance
+            }
+
+            if (finalBalNum > 0) {
               positions.push({
                 tokenAddress: t.token.address,
                 name: t.token.name,
                 symbol: t.token.symbol,
-                balanceFormatted: userTokenBal.toLocaleString(undefined, {
+                balanceFormatted: finalBalNum.toLocaleString(undefined, {
                   maximumFractionDigits: 2,
                 }),
                 priceUsd: t.marketData.priceUsd,
-                valueUsd: userTokenBal * t.marketData.priceUsd,
+                valueUsd: finalBalNum * t.marketData.priceUsd,
               });
             }
           }
@@ -1111,6 +1135,9 @@ async function fetchUserPositionsAndActivity() {
       portfolioPositions.value = positions;
       activities.sort((a, b) => b.timestamp - a.timestamp);
       userActivities.value = activities;
+      if (myLaunches.value.length === 0 && positions.length > 0) {
+        activeTab.value = 'portfolio';
+      }
     }
   } catch {
     // Non-blocking
