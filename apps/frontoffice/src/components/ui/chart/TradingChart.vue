@@ -324,25 +324,28 @@ function initChart() {
   const autoscaleProvider = makeAutoscaleProvider(flatPrice);
 
   // 2. Main price series
+  const upColor = isDark ? '#ffffff' : '#09090b';
+  const downColor = isDark ? '#71717a' : '#a1a1aa';
+
   if (chartType.value === 'candles') {
     candleSeries = chart.addSeries(CandlestickSeries, {
-      upColor: '#10b981',
-      downColor: '#f43f5e',
+      upColor,
+      downColor,
       borderVisible: true,
-      borderUpColor: '#10b981',
-      borderDownColor: '#f43f5e',
+      borderUpColor: upColor,
+      borderDownColor: downColor,
       wickVisible: true,
-      wickUpColor: '#10b981',
-      wickDownColor: '#f43f5e',
+      wickUpColor: upColor,
+      wickDownColor: downColor,
       priceFormat: getPriceFormatOptions(formatted),
       autoscaleInfoProvider: autoscaleProvider,
     });
     candleSeries.setData(formatted);
   } else {
     areaSeries = chart.addSeries(AreaSeries, {
-      topColor: 'rgba(16,185,129,0.28)',
-      bottomColor: 'rgba(16,185,129,0.02)',
-      lineColor: '#10b981',
+      topColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(9,9,11,0.12)',
+      bottomColor: isDark ? 'rgba(255,255,255,0.01)' : 'rgba(9,9,11,0.01)',
+      lineColor: isDark ? '#ffffff' : '#09090b',
       lineWidth: 2,
       priceFormat: getPriceFormatOptions(formatted),
       autoscaleInfoProvider: autoscaleProvider,
@@ -350,11 +353,18 @@ function initChart() {
     areaSeries.setData(formatted.map((d) => ({ time: d.time, value: d.close })));
   }
 
-  // 3. Volume data
+  // 3. Volume data (Monochrome: light/dark contrasting bars)
   const volData = formatted.map((d) => ({
     time: d.time,
     value: d.volume,
-    color: d.close >= d.open ? 'rgba(16,185,129,0.45)' : 'rgba(244,63,94,0.45)',
+    color:
+      d.close >= d.open
+        ? isDark
+          ? 'rgba(255,255,255,0.35)'
+          : 'rgba(9,9,11,0.35)'
+        : isDark
+          ? 'rgba(113,113,122,0.3)'
+          : 'rgba(161,161,170,0.3)',
   }));
   volumeSeries.setData(volData);
 
@@ -477,11 +487,19 @@ watch(
     }
 
     if (volumeSeries) {
+      const isDark = checkDark();
       volumeSeries.setData(
         formatted.map((d) => ({
           time: d.time,
           value: d.volume,
-          color: d.close >= d.open ? 'rgba(16,185,129,0.45)' : 'rgba(244,63,94,0.45)',
+          color:
+            d.close >= d.open
+              ? isDark
+                ? 'rgba(255,255,255,0.35)'
+                : 'rgba(9,9,11,0.35)'
+              : isDark
+                ? 'rgba(113,113,122,0.3)'
+                : 'rgba(161,161,170,0.3)',
         })),
       );
     }
@@ -536,20 +554,12 @@ onUnmounted(() => destroyChart());
           </span>
           <span class="text-zinc-500 dark:text-zinc-400">
             C:
-            <span
-              class="font-bold"
-              :class="activeBar.close >= activeBar.open ? 'text-emerald-500' : 'text-rose-500'"
-            >
+            <span class="font-bold text-foreground">
               {{ formatPrice(activeBar.close) }}
             </span>
           </span>
           <span
-            class="px-1.5 rounded font-bold text-[10px]"
-            :class="
-              barChangePercent >= 0
-                ? 'bg-emerald-500/15 text-emerald-500'
-                : 'bg-rose-500/15 text-rose-500'
-            "
+            class="px-1.5 rounded font-bold text-[10px] bg-muted border border-border text-foreground"
           >
             {{ barChangePercent >= 0 ? '+' : '' }}{{ barChangePercent.toFixed(2) }}%
           </span>

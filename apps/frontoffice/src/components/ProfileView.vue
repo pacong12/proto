@@ -8,7 +8,7 @@
         <div class="flex items-center gap-4">
           <div class="relative group cursor-pointer" @click="editModalOpen = true">
             <Avatar
-              class="w-16 h-16 rounded-full border-2 border-emerald-500/40 overflow-hidden shadow-lg transition group-hover:opacity-85"
+              class="w-16 h-16 rounded-full border-2 border-border overflow-hidden shadow-lg transition group-hover:opacity-85"
             >
               <img
                 v-if="resolvedAvatarUrl"
@@ -48,13 +48,13 @@
               }}
             </p>
 
-            <div class="flex items-center gap-4 pt-1 text-xs text-zinc-400">
+            <div class="flex items-center gap-4 pt-1 text-xs text-muted-foreground">
               <a
                 v-if="profileData.twitter"
                 :href="`https://x.com/${profileData.twitter}`"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="hover:text-emerald-400 transition flex items-center gap-1 font-mono"
+                class="hover:text-foreground transition flex items-center gap-1 font-mono"
               >
                 <span>@{{ profileData.twitter }}</span>
               </a>
@@ -63,11 +63,11 @@
                 :href="`https://t.me/${profileData.telegram}`"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="hover:text-emerald-400 transition flex items-center gap-1 font-mono"
+                class="hover:text-foreground transition flex items-center gap-1 font-mono"
               >
                 <span>t.me/{{ profileData.telegram }}</span>
               </a>
-              <span class="font-mono text-zinc-500">
+              <span class="font-mono text-muted-foreground">
                 {{ userAddress ? shortenAddress(userAddress) : 'Not Connected' }}
               </span>
             </div>
@@ -90,7 +90,7 @@
             @click="shareProfile"
             variant="default"
             size="sm"
-            class="h-8 text-xs font-semibold gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-black font-bold"
+            class="h-8 text-xs font-semibold gap-1.5 font-bold"
           >
             <Share2 class="w-3.5 h-3.5" />
             {{ copiedShare ? 'Copied Link!' : 'Share Profile' }}
@@ -115,54 +115,54 @@
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
           <p
-            class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono text-zinc-400"
+            class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono text-muted-foreground"
           >
-            <Coins class="w-4 h-4 text-emerald-400" />
+            <Coins class="w-4 h-4 text-foreground" />
             {{ t('claimableFees') }}
           </p>
-          <p class="text-2xl font-bold font-mono text-emerald-400 mt-2">
+          <p class="text-2xl font-bold font-mono text-foreground mt-2">
             {{ totalClaimableWeth }} {{ activeNetwork.nativeCurrency.symbol }}
           </p>
-          <p class="text-xs text-zinc-500 mt-1">70% creator share</p>
+          <p class="text-xs text-muted-foreground mt-1">70% creator share</p>
         </Card>
 
         <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
           <p
-            class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono text-zinc-400"
+            class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono text-muted-foreground"
           >
-            <Rocket class="w-4 h-4 text-emerald-400" />
+            <Rocket class="w-4 h-4 text-foreground" />
             {{ t('createdTokens') }}
           </p>
-          <p class="text-2xl font-bold font-mono text-black dark:text-white mt-2">
+          <p class="text-2xl font-bold font-mono text-foreground mt-2">
             {{ myLaunches.length }}
           </p>
-          <p class="text-xs text-zinc-500 mt-1">Deployed by your wallet</p>
+          <p class="text-xs text-muted-foreground mt-1">Deployed by your wallet</p>
         </Card>
 
         <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
           <p
-            class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono text-zinc-400"
+            class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono text-muted-foreground"
           >
-            <PieChart class="w-4 h-4 text-emerald-400" />
+            <PieChart class="w-4 h-4 text-foreground" />
             Active Positions
           </p>
-          <p class="text-2xl font-bold font-mono text-black dark:text-white mt-2">
+          <p class="text-2xl font-bold font-mono text-foreground mt-2">
             {{ portfolioPositions.length }}
           </p>
-          <p class="text-xs text-zinc-500 mt-1">Tokens currently held</p>
+          <p class="text-xs text-muted-foreground mt-1">Tokens currently held</p>
         </Card>
 
         <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
           <p
-            class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono text-zinc-400"
+            class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono text-muted-foreground"
           >
-            <Activity class="w-4 h-4 text-emerald-400" />
+            <Activity class="w-4 h-4 text-foreground" />
             Total Trades
           </p>
-          <p class="text-2xl font-bold font-mono text-emerald-400 mt-2">
+          <p class="text-2xl font-bold font-mono text-foreground mt-2">
             {{ userActivities.length }}
           </p>
-          <p class="text-xs text-zinc-500 mt-1">Buys & Sells executed</p>
+          <p class="text-xs text-muted-foreground mt-1">Buys & Sells executed</p>
         </Card>
       </div>
 

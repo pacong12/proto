@@ -61,12 +61,8 @@
             {{ currentToken.version === 'v2' ? 'V2 Curve' : 'V1 Pool' }}
           </Badge>
           <Badge
-            class="text-[10px] font-mono h-5 px-2"
-            :class="
-              currentMarketData.isGraduated
-                ? 'bg-violet-500/15 text-violet-500 border border-violet-500/30'
-                : 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/30'
-            "
+            variant="outline"
+            class="text-[10px] font-mono h-5 px-2 border-border text-foreground bg-muted/40"
           >
             {{ currentMarketData.isGraduated ? 'Graduated' : 'Bonding Curve' }}
           </Badge>
@@ -75,17 +71,17 @@
           </Badge>
         </div>
 
-        <!-- Sentiment Voting (Bullish / Bearish) -->
+        <!-- Sentiment Voting (Bullish / Bearish) - Clean Monochrome -->
         <div
-          class="flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-900 px-2 py-1 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-mono"
+          class="flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded-lg border border-border text-xs font-mono"
         >
           <button
             type="button"
             class="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold transition cursor-pointer"
             :class="
               votesSummary.viewerVote === 'bullish'
-                ? 'bg-emerald-500 text-black'
-                : 'text-emerald-500 hover:bg-emerald-500/15'
+                ? 'bg-foreground text-background shadow-xs'
+                : 'text-muted-foreground hover:text-foreground'
             "
             title="Vote Bullish"
             aria-label="Vote Bullish"
@@ -95,7 +91,7 @@
             <span>{{ votesSummary.bullishCount }}</span>
           </button>
 
-          <span class="text-zinc-400 text-[10px] font-bold"
+          <span class="text-muted-foreground text-[10px] font-bold"
             >{{ votesSummary.bullishPercent }}%</span
           >
 
@@ -104,8 +100,8 @@
             class="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold transition cursor-pointer"
             :class="
               votesSummary.viewerVote === 'bearish'
-                ? 'bg-rose-500 text-white'
-                : 'text-rose-500 hover:bg-rose-500/15'
+                ? 'bg-foreground text-background shadow-xs'
+                : 'text-muted-foreground hover:text-foreground'
             "
             title="Vote Bearish"
             aria-label="Vote Bearish"
@@ -204,28 +200,23 @@
               <!-- Security badges inline, right-aligned -->
               <div class="ml-auto flex items-center gap-1.5 flex-wrap">
                 <span
-                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-muted text-foreground border border-border"
                 >
                   <ShieldCheck class="w-3 h-3" />
                   No Mint
                 </span>
                 <span
-                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold border"
-                  :class="
-                    devHoldingPercent === 0
-                      ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700'
-                  "
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-muted text-foreground border border-border"
                 >
                   Dev {{ devHoldingPercent === 0 ? '0%' : `${devHoldingPercent.toFixed(1)}%` }}
                 </span>
                 <span
-                  class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700"
+                  class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-muted text-muted-foreground border border-border"
                 >
                   Top10: {{ top10HoldingPercent.toFixed(1) }}%
                 </span>
                 <span
-                  class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700"
+                  class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-muted text-muted-foreground border border-border"
                 >
                   Anti-Snipe
                 </span>
@@ -275,14 +266,14 @@
               <!-- Graduation call-to-action banner -->
               <div
                 v-if="currentToken.version === 'v2' && !currentMarketData.isGraduated"
-                class="mt-2 px-2.5 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-[11px] font-mono flex items-center gap-1.5 text-primary"
+                class="mt-2 px-2.5 py-1.5 rounded-lg bg-muted border border-border text-[11px] font-mono flex items-center gap-1.5 text-foreground"
               >
                 <Sparkles class="w-3.5 h-3.5 shrink-0" />
                 <span>Graduates to Uniswap v4 at 100%</span>
               </div>
               <div
                 v-else-if="currentMarketData.isGraduated"
-                class="mt-2 px-2.5 py-1.5 rounded-lg bg-secondary/10 border border-secondary/20 text-[11px] font-mono flex items-center gap-1.5 text-secondary"
+                class="mt-2 px-2.5 py-1.5 rounded-lg bg-muted border border-border text-[11px] font-mono flex items-center gap-1.5 text-foreground"
               >
                 <Check class="w-3.5 h-3.5 shrink-0" />
                 <span>Liquidity locked in Uniswap DEX</span>
@@ -294,7 +285,7 @@
               <!-- Wrong network warning banner -->
               <div
                 v-if="isConnected && activeNetwork.chainId !== tokenNetwork.chainId"
-                class="px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-2"
+                class="px-3 py-2.5 rounded-xl bg-muted border border-border text-xs text-foreground flex items-center gap-2"
               >
                 <AlertCircle class="w-3.5 h-3.5 shrink-0" />
                 <span>Switch to {{ tokenNetwork.name }} to trade.</span>
@@ -320,7 +311,7 @@
                     class="flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer text-center"
                     :class="
                       !isBuy
-                        ? 'bg-destructive text-destructive-foreground shadow-xs'
+                        ? 'bg-primary text-primary-foreground shadow-xs'
                         : 'text-muted-foreground hover:text-foreground'
                     "
                     @click="tradeTab = 'sell'"
@@ -763,11 +754,11 @@
                       >
                         <td class="py-2 px-3 whitespace-nowrap">
                           <span
-                            class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider"
+                            class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider border border-border"
                             :class="
                               trade.isBuy
-                                ? 'bg-emerald-500/10 text-emerald-500'
-                                : 'bg-rose-500/10 text-rose-500'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted text-muted-foreground'
                             "
                           >
                             {{ trade.isBuy ? 'BUY' : 'SELL' }}

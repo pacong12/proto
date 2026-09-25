@@ -15,7 +15,7 @@
             {{ topTrendingSymbol }}
           </p>
         </div>
-        <span class="text-xs font-mono font-bold text-emerald-500 shrink-0 ml-1">{{
+        <span class="text-xs font-mono font-bold text-foreground shrink-0 ml-1">{{
           topTrendingChange
         }}</span>
       </div>
@@ -49,7 +49,7 @@
             {{ topGainerSymbol }}
           </p>
         </div>
-        <span class="text-xs font-mono font-bold text-emerald-500 shrink-0 ml-1">{{
+        <span class="text-xs font-mono font-bold text-foreground shrink-0 ml-1">{{
           topGainerChange
         }}</span>
       </div>
@@ -141,7 +141,7 @@
             size="sm"
             :variant="selectedLifecycle === 'curve' ? 'secondary' : 'ghost'"
             @click="selectedLifecycle = 'curve'"
-            class="h-7 px-2.5 text-xs font-semibold rounded-md cursor-pointer text-emerald-500"
+            class="h-7 px-2.5 text-xs font-semibold rounded-md cursor-pointer text-foreground"
           >
             {{ t('onCurve') }}
           </Button>
@@ -150,7 +150,7 @@
             size="sm"
             :variant="selectedLifecycle === 'graduated' ? 'secondary' : 'ghost'"
             @click="selectedLifecycle = 'graduated'"
-            class="h-7 px-2.5 text-xs font-semibold rounded-md cursor-pointer text-indigo-400"
+            class="h-7 px-2.5 text-xs font-semibold rounded-md cursor-pointer text-foreground"
           >
             {{ t('graduated') }}
           </Button>
@@ -185,7 +185,7 @@
             :aria-label="t('tableMode')"
             class="h-7 w-7 p-0 rounded cursor-pointer"
           >
-            <List class="w-3.5 h-3.5" :class="viewMode === 'table' ? 'text-emerald-500' : ''" />
+            <List class="w-3.5 h-3.5" :class="viewMode === 'table' ? 'text-foreground' : ''" />
           </Button>
           <Button
             type="button"
@@ -196,10 +196,7 @@
             :aria-label="t('gridMode')"
             class="h-7 w-7 p-0 rounded cursor-pointer"
           >
-            <LayoutGrid
-              class="w-3.5 h-3.5"
-              :class="viewMode === 'grid' ? 'text-emerald-500' : ''"
-            />
+            <LayoutGrid class="w-3.5 h-3.5" :class="viewMode === 'grid' ? 'text-foreground' : ''" />
           </Button>
           <Button
             type="button"
@@ -212,7 +209,7 @@
           >
             <Columns3
               class="w-3.5 h-3.5"
-              :class="viewMode === 'trenches' ? 'text-emerald-500' : ''"
+              :class="viewMode === 'trenches' ? 'text-foreground' : ''"
             />
           </Button>
         </div>
@@ -226,8 +223,11 @@
         />
       </div>
 
-      <div v-else class="flex items-center gap-2 px-2 text-xs font-mono text-zinc-500 shrink-0">
-        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+      <div
+        v-else
+        class="flex items-center gap-2 px-2 text-xs font-mono text-muted-foreground shrink-0"
+      >
+        <span class="w-2 h-2 rounded-full bg-foreground animate-pulse" />
         <span>Live Stream ({{ filteredTrades.length }} trades)</span>
       </div>
     </div>
@@ -512,7 +512,7 @@
               </td>
 
               <!-- 24h Change -->
-              <td class="py-3 px-4 text-right font-bold text-emerald-500 dark:text-emerald-400">
+              <td class="py-3 px-4 text-right font-bold text-foreground">
                 {{ (item.marketData?.priceChange24h ?? 0) >= 0 ? '+' : ''
                 }}{{ (item.marketData?.priceChange24h ?? 0).toFixed(2) }}%
               </td>

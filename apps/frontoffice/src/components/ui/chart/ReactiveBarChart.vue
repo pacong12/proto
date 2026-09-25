@@ -181,8 +181,8 @@ function formatValue(val: number): string {
               :class="[
                 'transition-all duration-150',
                 i === activeIndex
-                  ? 'fill-emerald-500 dark:fill-emerald-400 opacity-100'
-                  : 'fill-zinc-800 dark:fill-zinc-300 opacity-70 hover:opacity-100',
+                  ? 'fill-foreground opacity-100'
+                  : 'fill-muted-foreground opacity-50 hover:opacity-90',
               ]"
             />
           </g>

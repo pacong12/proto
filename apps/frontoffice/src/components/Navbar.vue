@@ -10,7 +10,6 @@ import {
   Copy,
   Check,
   ChevronDown,
-  ChevronRight,
   User,
   Menu,
   X,
@@ -81,45 +80,6 @@ function isRouteActive(path: string) {
   return route.path.startsWith(path);
 }
 
-interface BreadcrumbItem {
-  label: string;
-  to?: string;
-  isCurrent: boolean;
-}
-
-// Declarative route-to-breadcrumb dictionary (O(1) lookup without imperative if-else / push mutation)
-const breadcrumbTrail = computed<BreadcrumbItem[]>(() => {
-  const exploreLabel = t('explore') || 'Explore';
-  const routeName = String(route.name || '');
-
-  const configs: Record<string, () => BreadcrumbItem[]> = {
-    create: () => [
-      { label: exploreLabel, to: '/launchpad', isCurrent: false },
-      { label: t('create') || 'Create', isCurrent: true },
-    ],
-    trade: () => {
-      const raw = String(route.params.address || '');
-      const short =
-        raw.startsWith('0x') && raw.length === 42
-          ? `${raw.slice(0, 4)}...${raw.slice(-3)}`
-          : 'Trade';
-      return [
-        { label: exploreLabel, to: '/launchpad', isCurrent: false },
-        { label: short, isCurrent: true },
-      ];
-    },
-    memestock: () => [{ label: t('memestock') || 'Memestock', isCurrent: true }],
-    analytics: () => [{ label: t('analytics') || 'Analytics', isCurrent: true }],
-    profile: () => [{ label: t('profile') || 'Profile', isCurrent: true }],
-    terms: () => [{ label: 'Terms', isCurrent: true }],
-    privacy: () => [{ label: 'Privacy', isCurrent: true }],
-    'cookie-policy': () => [{ label: 'Cookies', isCurrent: true }],
-  };
-
-  const resolver = configs[routeName];
-  return resolver ? resolver() : [{ label: exploreLabel, isCurrent: true }];
-});
-
 const {
   account,
   isConnected,
@@ -162,7 +122,7 @@ function copyAddress() {
       <div class="flex items-center gap-6">
         <RouterLink
           to="/launchpad"
-          class="flex items-center text-xl font-extrabold tracking-tight text-black dark:text-white hover:text-emerald-500 dark:hover:text-emerald-400 transition"
+          class="flex items-center text-xl font-extrabold tracking-tight text-foreground hover:opacity-80 transition"
         >
           <span>proto</span>
         </RouterLink>
@@ -301,134 +261,6 @@ function copyAddress() {
           <span class="hidden sm:inline">Switch Network</span>
           <span class="sm:hidden">Network</span>
         </Button>
-
-        <!-- Combined Breadcrumb & Profile Component (Before Wallet Connection) -->
-        <div
-          class="hidden sm:flex items-center gap-1.5 px-2.5 h-9 rounded-xl border border-border bg-card text-xs font-mono shrink-0 shadow-2xs"
-        >
-          <!-- Breadcrumb Trail -->
-          <nav
-            aria-label="Breadcrumb"
-            class="flex items-center gap-1 text-muted-foreground text-[11px]"
-          >
-            <template v-for="(crumb, idx) in breadcrumbTrail" :key="crumb.label">
-              <ChevronRight v-if="idx > 0" class="w-3 h-3 text-muted-foreground/50 shrink-0" />
-              <RouterLink
-                v-if="crumb.to && !crumb.isCurrent"
-                :to="crumb.to"
-                class="hover:text-foreground transition-colors truncate max-w-[80px]"
-              >
-                {{ crumb.label }}
-              </RouterLink>
-              <span
-                v-else
-                class="truncate max-w-[90px]"
-                :class="crumb.isCurrent ? 'font-semibold text-foreground' : ''"
-              >
-                {{ crumb.label }}
-              </span>
-            </template>
-          </nav>
-
-          <span class="w-px h-3.5 bg-border mx-0.5 shrink-0" />
-
-          <!-- Profile Access & Preferences Menu -->
-          <DropdownMenu>
-            <DropdownMenuTrigger as-child>
-              <button
-                type="button"
-                class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-xs font-medium transition cursor-pointer hover:bg-muted"
-                :class="
-                  isRouteActive('/profile')
-                    ? 'text-primary font-bold bg-primary/10'
-                    : 'text-muted-foreground hover:text-foreground'
-                "
-                title="Profile & Preferences"
-                aria-label="Profile and Preferences menu"
-              >
-                <User class="w-3.5 h-3.5" />
-                <span class="hidden md:inline text-[11px]">{{ t('profile') }}</span>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              class="w-64 p-2 bg-card border border-border shadow-2xl rounded-2xl space-y-1 z-50"
-            >
-              <DropdownMenuItem as-child>
-                <RouterLink
-                  to="/profile"
-                  class="flex items-center gap-2.5 w-full cursor-pointer text-foreground px-3 py-2.5 text-xs rounded-xl hover:bg-muted transition"
-                >
-                  <User class="w-4 h-4 text-primary" />
-                  <div class="flex flex-col">
-                    <span class="font-bold">{{ t('profile') }}</span>
-                    <span class="text-[10px] text-muted-foreground"
-                      >View portfolio & creator fees</span
-                    >
-                  </div>
-                </RouterLink>
-              </DropdownMenuItem>
-
-              <DropdownMenuSeparator class="my-1.5 border-border" />
-
-              <!-- Theme Toggle -->
-              <DropdownMenuItem
-                class="flex items-center justify-between px-3 py-2.5 text-xs rounded-xl cursor-pointer hover:bg-muted transition"
-                @click="toggleTheme"
-              >
-                <div class="flex items-center gap-2.5">
-                  <Sun v-if="isDark" class="w-4 h-4 text-amber-500" />
-                  <Moon v-else class="w-4 h-4 text-primary" />
-                  <span>{{ isDark ? 'Light Theme' : 'Dark Theme' }}</span>
-                </div>
-                <span class="text-[10px] font-mono text-muted-foreground capitalize">{{
-                  mode
-                }}</span>
-              </DropdownMenuItem>
-
-              <DropdownMenuSeparator class="my-1.5 border-border" />
-
-              <!-- Language Submenu using DropdownMenuPortal (Scroll-Free 2-Column Grid) -->
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger
-                  class="flex items-center justify-between px-3 py-2.5 text-xs rounded-xl cursor-pointer hover:bg-muted transition"
-                >
-                  <div class="flex items-center gap-2.5">
-                    <Globe class="w-4 h-4 text-muted-foreground" />
-                    <span>Language</span>
-                  </div>
-                  <span class="text-[10px] text-primary font-bold uppercase font-mono mr-1">{{
-                    currentLocaleOption.code
-                  }}</span>
-                </DropdownMenuSubTrigger>
-                <DropdownMenuPortal>
-                  <DropdownMenuSubContent
-                    class="w-84 p-2.5 grid grid-cols-2 gap-1.5 bg-card border border-border shadow-2xl rounded-2xl z-50 overflow-visible"
-                  >
-                    <DropdownMenuItem
-                      v-for="item in locales"
-                      :key="item.code"
-                      class="flex items-center justify-between px-3 py-2 text-xs rounded-xl cursor-pointer hover:bg-muted transition"
-                      :class="{
-                        'font-bold text-primary bg-primary/10': item.code === locale,
-                      }"
-                      @click="setLocale(item.code)"
-                    >
-                      <div class="flex items-center gap-2 truncate">
-                        <span class="text-sm leading-none">{{ item.flag }}</span>
-                        <span class="truncate">{{ item.nativeName }}</span>
-                      </div>
-                      <Check
-                        v-if="item.code === locale"
-                        class="w-3.5 h-3.5 text-primary shrink-0 ml-1"
-                      />
-                    </DropdownMenuItem>
-                  </DropdownMenuSubContent>
-                </DropdownMenuPortal>
-              </DropdownMenuSub>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
 
         <!-- Connect Wallet Button -->
         <div v-if="!isConnected" class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
@@ -727,8 +559,8 @@ function copyAddress() {
             class="flex items-center justify-between p-2.5 rounded-xl border border-border bg-card"
           >
             <div class="flex items-center gap-2 text-xs font-semibold text-foreground">
-              <Sun v-if="isDark" class="w-4 h-4 text-amber-500" />
-              <Moon v-else class="w-4 h-4 text-primary" />
+              <Sun v-if="isDark" class="w-4 h-4 text-foreground" />
+              <Moon v-else class="w-4 h-4 text-foreground" />
               <span>{{ isDark ? 'Dark Theme' : 'Light Theme' }}</span>
             </div>
             <Button

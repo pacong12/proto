@@ -1,6 +1,6 @@
 <template>
   <div
-    class="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-emerald-500 selection:text-black"
+    class="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-foreground selection:text-background"
   >
     <Navbar @open-search="searchOpen = true" />
 
