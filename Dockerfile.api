@@ -24,11 +24,10 @@ ENV NODE_ENV=production
 HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://localhost:3001/health || exit 1
 
-# Create non-root user and transfer ownership before switching
-RUN addgroup -S protoapi \
-  && adduser -S protoapi -G protoapi \
-  && chown -R protoapi:protoapi /app
+COPY apps/api/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh \
+  && mkdir -p /app/data \
+  && chmod 777 /app/data
 
-USER protoapi
-
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["bun", "run", "apps/api/src/server.ts"]
