@@ -293,12 +293,14 @@ function initChart() {
 
   const isDark = checkDark();
   const width = chartContainer.value.clientWidth || 700;
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+  const responsiveHeight = isMobile ? Math.min(props.height, 320) : props.height;
   const formatted = formatData(props.data);
   const flatPrice = dataIsFlat.value && formatted.length > 0 ? formatted[0].close : null;
 
   chart = createChart(chartContainer.value, {
     width,
-    height: props.height,
+    height: responsiveHeight,
     ...getThemeConfig(isDark),
     // Disable built-in kinetic scroll so the series autoscale can breathe
     handleScroll: {
@@ -397,10 +399,14 @@ function initChart() {
     }
   });
 
-  // 5. ResizeObserver — responsive width
+  // 5. ResizeObserver — responsive width and height
   resizeObserver = new ResizeObserver((entries) => {
     const w = entries[0]?.contentRect.width;
-    if (w && w > 0 && chart) chart.applyOptions({ width: w });
+    if (w && w > 0 && chart) {
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+      const h = isMobile ? Math.min(props.height, 320) : props.height;
+      chart.applyOptions({ width: w, height: h });
+    }
   });
   resizeObserver.observe(chartContainer.value);
 
@@ -566,7 +572,7 @@ onUnmounted(() => destroyChart());
       <!-- Right: Chart controls -->
       <div class="flex items-center gap-1.5 shrink-0 ml-auto flex-wrap">
         <span
-          class="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-muted text-muted-foreground border border-border"
+          class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-muted text-muted-foreground border border-border"
         >
           TradingView Engine
         </span>
@@ -577,6 +583,7 @@ onUnmounted(() => destroyChart());
             chartType === 'candles' ? 'bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white' : ''
           "
           title="Candlestick chart"
+          aria-label="Candlestick chart"
           @click="toggleChartType('candles')"
         >
           <CandlestickChart class="w-3.5 h-3.5" />
@@ -590,6 +597,7 @@ onUnmounted(() => destroyChart());
             chartType === 'area' ? 'bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white' : ''
           "
           title="Area chart"
+          aria-label="Area chart"
           @click="toggleChartType('area')"
         >
           <TrendingUp class="w-3.5 h-3.5" />
@@ -603,6 +611,7 @@ onUnmounted(() => destroyChart());
           class="px-1.5 py-0.5 text-[10px] font-bold rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
           :class="isLogScale ? 'bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white' : ''"
           title="Toggle log / linear scale"
+          aria-label="Toggle log / linear scale"
           @click="toggleLogScale"
         >
           {{ isLogScale ? 'LOG' : 'LIN' }}
@@ -613,6 +622,7 @@ onUnmounted(() => destroyChart());
           type="button"
           class="p-1 rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
           title="Fit chart to content"
+          aria-label="Fit chart to content"
           @click="fitContent"
         >
           <Maximize2 class="w-3.5 h-3.5" />

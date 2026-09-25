@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import ExplorePage from '@/pages/ExplorePage.vue';
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -18,7 +17,7 @@ export const router = createRouter({
     {
       path: '/launchpad',
       name: 'explore',
-      component: ExplorePage,
+      component: () => import('@/pages/ExplorePage.vue'),
     },
     {
       path: '/launchpad/create',

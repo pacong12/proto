@@ -289,6 +289,22 @@ async function indexTradeFromReceipt(
   }
 }
 
+/**
+ * Strict bounded JSON body parser. Enforces content-length limits before and after
+ * buffering to prevent JSON bombing / Memory Exhaustion (DoS) attacks.
+ */
+async function parseJsonBody<T>(req: Request, maxBytes = 65_536): Promise<T> {
+  const cl = req.headers.get('content-length');
+  if (cl && parseInt(cl, 10) > maxBytes) {
+    throw new Error('PAYLOAD_TOO_LARGE');
+  }
+  const text = await req.text();
+  if (text.length > maxBytes) {
+    throw new Error('PAYLOAD_TOO_LARGE');
+  }
+  return JSON.parse(text) as T;
+}
+
 async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   const url = new URL(req.url);
 
@@ -599,7 +615,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     try {
       let body: { txHash?: string } = {};
       try {
-        body = (await req.json()) as { txHash?: string };
+        body = await parseJsonBody<{ txHash?: string }>(req, 4096);
       } catch {
         // optional body
       }
@@ -717,11 +733,11 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   if (commentsMatch && req.method === 'POST') {
     const address = commentsMatch[1];
     try {
-      const body = (await req.json()) as {
+      const body = await parseJsonBody<{
         content?: string;
         authorAddress?: string;
         imageUrl?: string;
-      };
+      }>(req, 32_768);
       const content = String(body.content || '').trim();
       const authorAddress = String(body.authorAddress || '').trim();
       const imageUrl = body.imageUrl ? String(body.imageUrl).trim() : undefined;
@@ -765,8 +781,11 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         status: 201,
         headers,
       });
-    } catch {
-      return replyError('COMMENT_ERROR', 'Failed to save comment', 500);
+    } catch (e) {
+      if ((e as Error)?.message === 'PAYLOAD_TOO_LARGE') {
+        return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
+      }
+      return replyError('COMMENT_ERROR', 'Failed to save comment', 400);
     }
   }
 
@@ -777,7 +796,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   if (commentLikeMatch && req.method === 'POST') {
     const commentId = commentLikeMatch[2];
     try {
-      const body = (await req.json()) as { userAddress?: string };
+      const body = await parseJsonBody<{ userAddress?: string }>(req, 2048);
       const userAddress = String(body.userAddress || '').trim();
       if (!userAddress || !/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
         return replyError('INVALID_ADDRESS', 'Valid Ethereum address required to like', 400);
@@ -789,8 +808,11 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       return new Response(safeStringify({ success: true, data: result, timestamp: Date.now() }), {
         headers,
       });
-    } catch {
-      return replyError('LIKE_ERROR', 'Failed to process like', 500);
+    } catch (e) {
+      if ((e as Error)?.message === 'PAYLOAD_TOO_LARGE') {
+        return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
+      }
+      return replyError('LIKE_ERROR', 'Failed to process like', 400);
     }
   }
 
@@ -814,7 +836,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   if (votesMatch && req.method === 'POST') {
     const address = votesMatch[1];
     try {
-      const body = (await req.json()) as { userAddress?: string; voteType?: string };
+      const body = await parseJsonBody<{ userAddress?: string; voteType?: string }>(req, 2048);
       const userAddress = String(body.userAddress || '').trim();
       const voteType = String(body.voteType || '').toLowerCase();
       if (!userAddress || !/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
@@ -828,8 +850,11 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       return new Response(safeStringify({ success: true, data: summary, timestamp: Date.now() }), {
         headers,
       });
-    } catch {
-      return replyError('VOTE_ERROR', 'Failed to record vote', 500);
+    } catch (e) {
+      if ((e as Error)?.message === 'PAYLOAD_TOO_LARGE') {
+        return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
+      }
+      return replyError('VOTE_ERROR', 'Failed to record vote', 400);
     }
   }
 
@@ -965,16 +990,17 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
   if (url.pathname === '/api/security/evaluate' && req.method === 'POST') {
     try {
-      const body = (await req.json()) as TransactionIntent;
+      const body = await parseJsonBody<TransactionIntent>(req, 65_536);
       const res = securityController.evaluateIntent(body);
       return replyEnvelope(res);
-    } catch {
+    } catch (e) {
+      if ((e as Error)?.message === 'PAYLOAD_TOO_LARGE') {
+        return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
+      }
       return replyError('BAD_REQUEST', 'Malformed JSON payload', 400);
     }
   }
 
-  // POST /api/admin/backfill — trigger historical token indexing for a chain.
-  // Protected by ADMIN_SECRET env var; disabled if not set.
   // POST /api/admin/backfill — trigger historical token indexing for a chain.
   // Protected by ADMIN_SECRET; disabled (403) when env var is not configured.
   if (url.pathname === '/api/admin/backfill' && req.method === 'POST') {
@@ -989,11 +1015,11 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       return replyError('UNAUTHORIZED', 'Valid Authorization: Bearer <ADMIN_SECRET> required', 401);
     }
     try {
-      const body = (await req.json()) as {
+      const body = await parseJsonBody<{
         chain?: string;
         fromBlock?: number | string;
         toBlock?: number | string;
-      };
+      }>(req, 8192);
       const chainName = body.chain === 'robinhood' ? 'robinhood' : 'arc';
       const network = chainName === 'arc' ? ARC_CHAIN : ROBINHOOD_CHAIN;
       const targetClient = chainName === 'arc' ? arcClient : robinhoodClient;

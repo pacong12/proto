@@ -112,7 +112,7 @@
 
     <template v-else>
       <!-- Stats Summary Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
           <p
             class="text-xs uppercase font-semibold flex items-center gap-1.5 font-mono text-zinc-400"
@@ -184,29 +184,29 @@
             class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-3"
           >
             <TabsList
-              class="flex flex-wrap sm:inline-flex w-full sm:w-auto bg-zinc-100 dark:bg-zinc-900 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800 gap-1 h-auto"
+              class="flex sm:inline-flex w-full sm:w-auto overflow-x-auto no-scrollbar bg-zinc-100 dark:bg-zinc-900 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800 gap-1 h-auto shrink-0"
             >
               <TabsTrigger
                 value="created"
-                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-black dark:text-white"
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-black dark:text-white whitespace-nowrap shrink-0"
               >
                 {{ t('createdTokens') }} ({{ myLaunches.length }})
               </TabsTrigger>
               <TabsTrigger
                 value="portfolio"
-                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-black dark:text-white"
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-black dark:text-white whitespace-nowrap shrink-0"
               >
                 {{ t('portfolio') }} ({{ portfolioPositions.length }})
               </TabsTrigger>
               <TabsTrigger
                 value="dividends"
-                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-black dark:text-white"
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-black dark:text-white whitespace-nowrap shrink-0"
               >
                 {{ t('dividendsAndVesting') }}
               </TabsTrigger>
               <TabsTrigger
                 value="activity"
-                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-black dark:text-white"
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-black dark:text-white whitespace-nowrap shrink-0"
               >
                 {{ t('activity') }} ({{ userActivities.length }})
               </TabsTrigger>
@@ -915,22 +915,38 @@ const editForm = ref<ProfileStorageData>({
   telegram: '',
 });
 
+function isSafeImageUrl(url: string): boolean {
+  if (!url) return false;
+  const trimmed = url.trim().toLowerCase();
+  return (
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('ipfs://') ||
+    trimmed.startsWith('data:image/') ||
+    trimmed.startsWith('blob:')
+  );
+}
+
 const resolvedAvatarUrl = computed(() => {
   if (!profileData.value.avatarUrl) return '';
-  if (profileData.value.avatarUrl.startsWith('ipfs://')) {
-    const hash = profileData.value.avatarUrl.replace('ipfs://', '');
+  const url = profileData.value.avatarUrl.trim();
+  if (!isSafeImageUrl(url)) return '';
+  if (url.startsWith('ipfs://')) {
+    const hash = url.replace('ipfs://', '');
     return `https://ipfs.io/ipfs/${hash}`;
   }
-  return profileData.value.avatarUrl;
+  return url;
 });
 
 const editResolvedAvatar = computed(() => {
   if (!editForm.value.avatarUrl) return '';
-  if (editForm.value.avatarUrl.startsWith('ipfs://')) {
-    const hash = editForm.value.avatarUrl.replace('ipfs://', '');
+  const url = editForm.value.avatarUrl.trim();
+  if (!isSafeImageUrl(url)) return '';
+  if (url.startsWith('ipfs://')) {
+    const hash = url.replace('ipfs://', '');
     return `https://ipfs.io/ipfs/${hash}`;
   }
-  return editForm.value.avatarUrl;
+  return url;
 });
 
 interface MyLaunchItem {

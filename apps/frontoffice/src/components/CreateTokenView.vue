@@ -8,7 +8,7 @@
     </div>
 
     <!-- Form container using Shadcn Card -->
-    <Card class="p-6 sm:p-10 border border-border bg-card shadow-sm rounded-3xl">
+    <Card class="p-4 sm:p-8 lg:p-10 border border-border bg-card shadow-sm rounded-3xl">
       <!-- Dual Launch Architecture Tabs (v2 / v1) -->
       <div class="mb-8 p-1.5 bg-muted rounded-2xl flex gap-2 border border-border">
         <Button
@@ -420,7 +420,8 @@
                   class="h-7 text-xs font-mono cursor-pointer"
                   @click="applySplitPreset(50, 0, 50, 0)"
                 >
-                  50/50 Creator & Holders
+                  <span class="hidden sm:inline">50/50 Creator & Holders</span>
+                  <span class="sm:hidden">50/50 Split</span>
                 </Button>
                 <Button
                   type="button"
@@ -452,7 +453,8 @@
                   class="h-7 text-xs font-mono cursor-pointer"
                   @click="applySplitPreset(40, 20, 40, 0)"
                 >
-                  40/40/20 Buyback
+                  <span class="hidden sm:inline">40/40/20 Buyback</span>
+                  <span class="sm:hidden">40/40/20</span>
                 </Button>
                 <Button
                   type="button"

@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 
 @theme {
+  --breakpoint-xs: 30rem;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -144,41 +145,40 @@ td {
 
 /* ==========================================================================
    BODY TEXT SCALE & LEGIBILITY ENHANCEMENT:
-   - Scales text-xs (12px) to minimum 14px - 15px (text-sm / text-base)
-   - Relaxed line-height 1.6 for comfortable editorial reading experience
+   - Preserves compact financial indicators, badges, and ticker alignment
    ========================================================================== */
 
 .text-xs {
-  font-size: 0.875rem !important; /* 14px */
-  line-height: 1.6 !important;
+  font-size: 0.75rem; /* 12px */
+  line-height: 1.35;
 }
 
 .text-sm {
-  font-size: 0.9375rem !important; /* 15px */
-  line-height: 1.6 !important;
+  font-size: 0.875rem; /* 14px */
+  line-height: 1.45;
 }
 
 .text-base {
-  font-size: 1rem !important; /* 16px */
-  line-height: 1.6 !important;
+  font-size: 1rem; /* 16px */
+  line-height: 1.5;
 }
 
 .text-\[9px\],
 [class*='text-[9px]'] {
-  font-size: 12px !important;
-  line-height: 1.5 !important;
+  font-size: 9px;
+  line-height: 1.2;
 }
 
 .text-\[10px\],
 [class*='text-[10px]'] {
-  font-size: 12.5px !important;
-  line-height: 1.5 !important;
+  font-size: 10px;
+  line-height: 1.25;
 }
 
 .text-\[11px\],
 [class*='text-[11px]'] {
-  font-size: 13.5px !important;
-  line-height: 1.55 !important;
+  font-size: 11px;
+  line-height: 1.3;
 }
 
 /* ==========================================================================

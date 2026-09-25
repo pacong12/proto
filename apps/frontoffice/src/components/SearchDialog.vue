@@ -23,13 +23,19 @@
           @keydown.esc="$emit('close')"
           @keydown="handleKeydown"
         />
-        <Badge
-          variant="outline"
-          class="font-mono text-[10px] cursor-pointer border-zinc-300 dark:border-zinc-700 text-zinc-500 hover:text-black dark:hover:text-white"
+        <button
+          type="button"
+          class="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition cursor-pointer flex items-center justify-center shrink-0"
           @click="$emit('close')"
+          aria-label="Close search"
         >
-          ESC
-        </Badge>
+          <span
+            class="hidden sm:inline-block font-mono text-[10px] px-1.5 py-0.5 rounded border border-border bg-muted/60"
+          >
+            ESC
+          </span>
+          <X class="w-4 h-4 sm:hidden" />
+        </button>
       </div>
 
       <!-- Search Results List -->
@@ -157,15 +163,14 @@
                 </div>
               </div>
 
-              <div class="text-right shrink-0 font-mono text-xs ml-4 space-y-0.5">
+              <div class="text-right shrink-0 font-mono text-xs ml-2 sm:ml-4 space-y-0.5">
                 <span class="font-bold block text-black dark:text-white">
                   {{ formatPriceUsd(item.marketData?.priceUsd) }}
                 </span>
-                <div class="flex items-center justify-end gap-2 text-[11px]">
-                  <span class="text-zinc-500 dark:text-zinc-400">
-                    MCap: {{ formatCompactUsd(item.marketData?.marketCapUsd) }}
+                <div class="flex items-center justify-end gap-1.5 text-[11px]">
+                  <span class="text-zinc-500 dark:text-zinc-400 hidden sm:inline">
+                    MCap: {{ formatCompactUsd(item.marketData?.marketCapUsd) }} •
                   </span>
-                  <span>•</span>
                   <span
                     :class="
                       item.marketData?.isGraduated
@@ -215,7 +220,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import { Search, Loader2, ExternalLink } from 'lucide-vue-next';
+import { Search, Loader2, ExternalLink, X } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { useWallet } from '@/composables/useWallet';
 import { useTokenStore } from '@/composables/useTokenStore';

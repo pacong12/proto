@@ -99,12 +99,16 @@ function handleError() {
         v-if="chainBadge"
         :src="chainBadge"
         alt="Chain"
+        width="14"
+        height="14"
         class="w-3.5 h-3.5 rounded-full object-contain"
       />
       <img
         v-if="currencyBadge"
         :src="currencyBadge"
         alt="Currency"
+        width="14"
+        height="14"
         class="w-3.5 h-3.5 rounded-full object-contain -ml-1 border-l border-zinc-200 dark:border-zinc-800"
       />
     </div>

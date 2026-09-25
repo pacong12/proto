@@ -4,19 +4,17 @@
     @click.self="close"
   >
     <Card
-      class="w-[calc(100vw-2rem)] sm:w-full max-w-md max-h-[90vh] shadow-2xl overflow-hidden p-0 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-black dark:text-white rounded-2xl flex flex-col transition-all duration-200"
+      class="w-[calc(100vw-2rem)] sm:w-full max-w-md max-h-[90vh] shadow-2xl overflow-hidden p-0 border-border bg-card text-foreground rounded-2xl flex flex-col transition-all duration-200"
     >
       <!-- Header with Dynamic Title & Clean X Button -->
-      <div
-        class="flex items-center justify-between px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800"
-      >
+      <div class="flex items-center justify-between px-5 py-3.5 border-b border-border">
         <h2 class="text-sm font-bold font-heading">
           {{ isConnected ? t('switchManageWallet') : t('connectWallet') }}
         </h2>
         <Button
           variant="ghost"
           size="sm"
-          class="h-7 w-7 p-0 rounded-lg text-zinc-400 hover:text-black dark:hover:text-white cursor-pointer"
+          class="h-7 w-7 p-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
           @click="close"
           title="Close"
           aria-label="Close modal"
@@ -287,14 +285,12 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage, Jazzicon } from '@/components/ui/avatar';
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectLabel,
-  SelectSeparator,
-} from '@/components/ui/select';
+import Select from '@/components/ui/select/Select.vue';
+import SelectTrigger from '@/components/ui/select/SelectTrigger.vue';
+import SelectContent from '@/components/ui/select/SelectContent.vue';
+import SelectItem from '@/components/ui/select/SelectItem.vue';
+import SelectLabel from '@/components/ui/select/SelectLabel.vue';
+import SelectSeparator from '@/components/ui/select/SelectSeparator.vue';
 import {
   setConnectedWallet,
   walletModalOpen,

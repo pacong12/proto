@@ -11,10 +11,12 @@
         </p>
       </div>
 
-      <div class="flex items-center gap-3">
+      <div
+        class="flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-end gap-2.5 w-full sm:w-auto"
+      >
         <!-- Shadcn Tabs for Filtering -->
-        <Tabs v-model="selectedSort" class="flex-row">
-          <TabsList>
+        <Tabs v-model="selectedSort" class="overflow-x-auto no-scrollbar flex-1 sm:flex-initial">
+          <TabsList class="overflow-x-auto no-scrollbar shrink-0">
             <TabsTrigger value="Trending">
               {{ t('trending') }}
             </TabsTrigger>
@@ -30,7 +32,7 @@
           @click="$emit('selectTab', 'create')"
           variant="default"
           size="sm"
-          class="h-9 px-4 gap-1.5 font-bold text-xs shadow-sm transition active:scale-95 cursor-pointer"
+          class="h-9 px-3 sm:px-4 gap-1.5 font-bold text-xs shadow-sm transition active:scale-95 cursor-pointer shrink-0"
         >
           <Plus class="w-4 h-4" />
           {{ t('create') }}

@@ -88,6 +88,7 @@
                 : 'text-emerald-500 hover:bg-emerald-500/15'
             "
             title="Vote Bullish"
+            aria-label="Vote Bullish"
             @click="castVote('bullish')"
           >
             <Rocket class="w-3 h-3" />
@@ -107,6 +108,7 @@
                 : 'text-rose-500 hover:bg-rose-500/15'
             "
             title="Vote Bearish"
+            aria-label="Vote Bearish"
             @click="castVote('bearish')"
           >
             <Flame class="w-3 h-3" />
@@ -115,36 +117,50 @@
         </div>
 
         <!-- Live market stats pill row -->
-        <div class="flex items-center gap-4 ml-auto font-mono text-xs flex-wrap">
-          <div class="flex flex-col items-end">
-            <span class="text-zinc-500 dark:text-zinc-400 text-[10px] uppercase tracking-wider"
+        <div
+          class="grid grid-cols-2 sm:flex sm:items-center gap-2.5 sm:gap-4 w-full sm:w-auto sm:ml-auto font-mono text-xs pt-3 sm:pt-0 border-t sm:border-t-0 border-border"
+        >
+          <div
+            class="flex flex-col sm:items-end p-2 sm:p-0 rounded-xl bg-muted/40 sm:bg-transparent"
+          >
+            <span
+              class="text-zinc-500 dark:text-zinc-400 text-[10px] uppercase tracking-wider font-semibold"
               >Price</span
             >
             <span class="font-bold text-black dark:text-white">{{
               formatPriceUsd(currentMarketData.priceUsd)
             }}</span>
           </div>
-          <div class="flex flex-col items-end">
-            <span class="text-zinc-500 dark:text-zinc-400 text-[10px] uppercase tracking-wider"
+          <div
+            class="flex flex-col sm:items-end p-2 sm:p-0 rounded-xl bg-muted/40 sm:bg-transparent"
+          >
+            <span
+              class="text-zinc-500 dark:text-zinc-400 text-[10px] uppercase tracking-wider font-semibold"
               >Mkt Cap</span
             >
             <span class="font-bold text-black dark:text-white">{{
               formatCompactUsd(currentMarketData.marketCapUsd)
             }}</span>
           </div>
-          <div class="flex flex-col items-end">
-            <span class="text-zinc-500 dark:text-zinc-400 text-[10px] uppercase tracking-wider"
+          <div
+            class="flex flex-col sm:items-end p-2 sm:p-0 rounded-xl bg-muted/40 sm:bg-transparent"
+          >
+            <span
+              class="text-zinc-500 dark:text-zinc-400 text-[10px] uppercase tracking-wider font-semibold"
               >24h Vol</span
             >
             <span class="font-bold text-black dark:text-white">{{
               formatCompactUsd(currentMarketData.volume24hUsd)
             }}</span>
           </div>
-          <div class="flex flex-col items-end">
-            <span class="text-zinc-500 dark:text-zinc-400 text-[10px] uppercase tracking-wider"
+          <div
+            class="flex flex-col sm:items-end p-2 sm:p-0 rounded-xl bg-muted/40 sm:bg-transparent"
+          >
+            <span
+              class="text-zinc-500 dark:text-zinc-400 text-[10px] uppercase tracking-wider font-semibold"
               >Raised</span
             >
-            <span class="font-bold text-black dark:text-white">
+            <span class="font-bold text-black dark:text-white truncate">
               {{ currentMarketData.pairedPrincipalWeth }} /
               {{ currentMarketData.graduationThresholdWeth }} {{ currencySymbol }}
             </span>
@@ -153,13 +169,12 @@
       </div>
 
       <!-- ============================================================
-           ROW 2: Main Trading Layout - Chart (left) + Swap Panel (right)
+           ROW 2: Main Trading Layout - Chart, Swap, & Tabs
            ============================================================ -->
-      <!-- Main Trading Grid: Chart & Tabs (left) + Swap Panel (right: fixed 360px) -->
-      <div class="flex flex-col xl:flex-row gap-6 items-start">
-        <!-- LEFT: Chart Card + Bottom Tabs Card -->
-        <div class="flex-1 min-w-0 space-y-6 w-full">
-          <!-- Chart Card -->
+      <!-- Main Trading Grid: Responsive Order (Chart -> Swap -> Tabs on mobile; Chart+Tabs (left) & Swap (right) on desktop) -->
+      <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start">
+        <!-- 1. Chart Card (Col 1, Row 1 on xl) -->
+        <div class="xl:col-start-1 xl:row-start-1 min-w-0 w-full space-y-6">
           <div class="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
             <!-- Timeframe switcher bar -->
             <div
@@ -227,638 +242,10 @@
               />
             </div>
           </div>
-
-          <!-- Bottom Tabs Card -->
-          <div class="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
-            <Tabs v-model="activeBottomTab" class="w-full">
-              <!-- Tab headers -->
-              <div class="flex items-center border-b border-border bg-muted/30 px-4 py-2">
-                <TabsList class="flex gap-1 bg-transparent border-0 rounded-none h-auto p-0">
-                  <TabsTrigger
-                    v-for="tab in [
-                      { value: 'thread', label: 'Thread' },
-                      { value: 'trades', label: t('trades') },
-                      { value: 'top-traders', label: t('topTraders') },
-                      { value: 'holders', label: t('holders') },
-                      { value: 'about', label: t('about') },
-                    ]"
-                    :key="tab.value"
-                    :value="tab.value"
-                    class="px-4 py-2 text-xs font-semibold rounded-lg border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary text-muted-foreground hover:text-foreground bg-transparent transition-all cursor-pointer"
-                  >
-                    {{ tab.label }}
-                    <span
-                      v-if="tab.value === 'thread' && comments.length > 0"
-                      class="ml-1 px-1 py-0.2 rounded-full bg-zinc-200 dark:bg-zinc-800 text-[10px]"
-                    >
-                      {{ comments.length }}
-                    </span>
-                  </TabsTrigger>
-                </TabsList>
-
-                <Button
-                  v-if="activeBottomTab === 'trades'"
-                  variant="ghost"
-                  size="sm"
-                  class="ml-auto h-7 text-xs font-mono text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white cursor-pointer"
-                  @click="fetchTrades(currentToken.address)"
-                >
-                  Refresh
-                </Button>
-                <Button
-                  v-if="activeBottomTab === 'thread'"
-                  variant="ghost"
-                  size="sm"
-                  class="ml-auto h-7 text-xs font-mono text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white cursor-pointer"
-                  @click="fetchComments(currentToken.address)"
-                >
-                  Refresh
-                </Button>
-              </div>
-
-              <!-- Tab: Discussion Thread & Comments -->
-              <TabsContent
-                value="thread"
-                class="mt-0 max-h-[420px] overflow-y-auto p-5 sm:p-6 space-y-5"
-              >
-                <!-- Post Comment Form -->
-                <div class="p-4 sm:p-5 rounded-2xl border border-border bg-muted/30 space-y-3">
-                  <div
-                    class="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 font-mono"
-                  >
-                    <span
-                      class="flex items-center gap-1.5 font-semibold text-black dark:text-white"
-                    >
-                      <MessageSquare class="w-3.5 h-3.5 text-emerald-500" />
-                      Share your take on ${{ currentToken.symbol }}
-                    </span>
-                    <span v-if="account" class="text-[10px]">
-                      Posting as
-                      <span class="font-bold text-black dark:text-white">{{
-                        truncateAddress(account)
-                      }}</span>
-                    </span>
-                  </div>
-
-                  <div class="relative">
-                    <textarea
-                      v-model="newCommentText"
-                      rows="2"
-                      maxlength="500"
-                      placeholder="What is your price target or reaction?..."
-                      class="w-full text-xs font-sans p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-black dark:text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-none"
-                    />
-                  </div>
-
-                  <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-mono text-zinc-400"
-                      >{{ newCommentText.length }}/500</span
-                    >
-                    <Button
-                      size="sm"
-                      class="h-7 px-3 text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-black cursor-pointer rounded-lg flex items-center gap-1"
-                      :disabled="isPostingComment || !newCommentText.trim()"
-                      @click="postComment"
-                    >
-                      <Loader2 v-if="isPostingComment" class="w-3 h-3 animate-spin" />
-                      <Send v-else class="w-3 h-3" />
-                      <span>Post Comment</span>
-                    </Button>
-                  </div>
-                  <div
-                    v-if="commentError"
-                    class="text-[10px] font-mono text-rose-500 flex items-center gap-1 mt-1"
-                  >
-                    <AlertCircle class="w-3 h-3 shrink-0" />
-                    <span>{{ commentError }}</span>
-                  </div>
-                </div>
-
-                <!-- Comments Feed -->
-                <div
-                  v-if="commentsLoading && comments.length === 0"
-                  class="py-12 text-center text-zinc-500"
-                >
-                  <Loader2 class="w-4 h-4 animate-spin mx-auto mb-2 text-emerald-500" />
-                  <span class="text-xs">Loading comments...</span>
-                </div>
-                <div
-                  v-else-if="comments.length === 0"
-                  class="py-12 text-center text-zinc-500 space-y-1"
-                >
-                  <MessageSquare class="w-6 h-6 mx-auto mb-1.5 text-zinc-400 opacity-60" />
-                  <p class="text-xs font-mono font-medium">No comments yet.</p>
-                  <p class="text-[11px] text-zinc-400">
-                    Be the first to share your thoughts on ${{ currentToken.symbol }}!
-                  </p>
-                </div>
-                <div v-else class="space-y-2.5">
-                  <div
-                    v-for="cmt in paginatedComments"
-                    :key="cmt.id"
-                    class="p-3 rounded-xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/40 hover:bg-zinc-50 dark:hover:bg-zinc-900/80 transition-colors space-y-1.5"
-                  >
-                    <div class="flex items-center justify-between gap-2">
-                      <div class="flex items-center gap-2">
-                        <Jazzicon :address="cmt.authorAddress" :size="16" />
-                        <span class="text-xs font-mono font-semibold text-black dark:text-white">
-                          {{ truncateAddress(cmt.authorAddress) }}
-                        </span>
-                        <Badge
-                          v-if="
-                            cmt.authorAddress.toLowerCase() === currentToken.deployer?.toLowerCase()
-                          "
-                          class="text-[9px] px-1.5 py-0 h-4 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
-                        >
-                          Creator
-                        </Badge>
-                      </div>
-                      <span class="text-[10px] font-mono text-zinc-400">
-                        {{ formatRelativeTime(cmt.createdAt) }}
-                      </span>
-                    </div>
-
-                    <p
-                      class="text-xs leading-relaxed text-zinc-800 dark:text-zinc-200 font-sans break-words whitespace-pre-wrap"
-                    >
-                      {{ cmt.content }}
-                    </p>
-
-                    <div
-                      class="flex items-center justify-end gap-2 pt-1 border-t border-zinc-100 dark:border-zinc-800/40"
-                    >
-                      <button
-                        type="button"
-                        class="flex items-center gap-1 text-[11px] font-mono text-zinc-400 hover:text-rose-500 transition cursor-pointer"
-                        :class="cmt.isLikedByViewer ? 'text-rose-500 font-bold' : ''"
-                        @click="toggleLike(cmt.id)"
-                      >
-                        <Heart
-                          class="w-3.5 h-3.5"
-                          :class="cmt.isLikedByViewer ? 'fill-rose-500 text-rose-500' : ''"
-                        />
-                        <span>{{ cmt.likesCount }}</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- Comments Pagination -->
-                  <div v-if="comments.length > commentsPageSize" class="pt-2 flex justify-center">
-                    <Pagination
-                      :total="comments.length"
-                      :items-per-page="commentsPageSize"
-                      :page="commentsPage"
-                      @update:page="commentsPage = $event"
-                    />
-                  </div>
-                </div>
-              </TabsContent>
-
-              <!-- Tab: Live Trades -->
-              <TabsContent value="trades" class="mt-0 max-h-[340px] overflow-y-auto">
-                <div
-                  v-if="tradesLoading && trades.length === 0"
-                  class="py-16 text-center text-zinc-500"
-                >
-                  <Loader2 class="w-4 h-4 animate-spin mx-auto mb-2 text-emerald-500" />
-                  <span class="text-xs">Loading trades...</span>
-                </div>
-                <div v-else-if="trades.length === 0" class="py-16 text-center text-zinc-500">
-                  <p class="text-xs font-mono">No trades recorded yet.</p>
-                </div>
-                <div v-else class="overflow-x-auto">
-                  <table class="w-full text-left text-xs font-mono">
-                    <thead class="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-900">
-                      <tr
-                        class="border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400"
-                      >
-                        <th class="py-2 px-3 font-semibold">Type</th>
-                        <th class="py-2 px-3 font-semibold">Price</th>
-                        <th class="py-2 px-3 font-semibold">{{ currencySymbol }}</th>
-                        <th class="py-2 px-3 font-semibold">{{ currentToken.symbol }}</th>
-                        <th class="py-2 px-3 font-semibold">Trader</th>
-                        <th class="py-2 px-3 font-semibold">Age</th>
-                        <th class="py-2 px-3 font-semibold text-right">Tx</th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/60">
-                      <tr
-                        v-for="trade in paginatedTrades"
-                        :key="trade.id || trade.transactionHash"
-                        class="hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors"
-                      >
-                        <td class="py-2 px-3 whitespace-nowrap">
-                          <span
-                            class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider"
-                            :class="
-                              trade.isBuy
-                                ? 'bg-emerald-500/10 text-emerald-500'
-                                : 'bg-rose-500/10 text-rose-500'
-                            "
-                          >
-                            {{ trade.isBuy ? 'BUY' : 'SELL' }}
-                          </span>
-                        </td>
-                        <td
-                          class="py-2 px-3 whitespace-nowrap text-black dark:text-white font-medium"
-                        >
-                          ${{
-                            trade.priceUsd < 0.0001
-                              ? trade.priceUsd.toFixed(8)
-                              : trade.priceUsd.toFixed(4)
-                          }}
-                        </td>
-                        <td class="py-2 px-3 whitespace-nowrap text-black dark:text-white">
-                          {{ parseFloat(trade.wethAmount).toFixed(4) }}
-                        </td>
-                        <td
-                          class="py-2 px-3 whitespace-nowrap text-black dark:text-white font-medium"
-                        >
-                          {{ formatTokenNumber(trade.tokenAmount) }}
-                        </td>
-                        <td class="py-2 px-3 whitespace-nowrap">
-                          <div class="flex items-center gap-1.5 text-black dark:text-white">
-                            <Jazzicon :address="trade.trader" :size="14" />
-                            <span>{{ truncateAddress(trade.trader) }}</span>
-                            <button
-                              type="button"
-                              class="text-zinc-400 hover:text-emerald-400 transition cursor-pointer"
-                              @click="copyText(trade.trader, trade.id + '-trader')"
-                            >
-                              <Check
-                                v-if="copiedId === trade.id + '-trader'"
-                                class="w-3 h-3 text-emerald-400"
-                              />
-                              <Copy v-else class="w-3 h-3" />
-                            </button>
-                          </div>
-                        </td>
-                        <td class="py-2 px-3 whitespace-nowrap text-zinc-500 dark:text-zinc-400">
-                          {{ formatRelativeTime(trade.timestamp) }}
-                        </td>
-                        <td class="py-2 px-3 whitespace-nowrap text-right">
-                          <a
-                            :href="`${explorerUrl}/tx/${trade.transactionHash}`"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="text-zinc-400 hover:text-emerald-400 transition-colors inline-flex items-center"
-                          >
-                            <ExternalLink class="w-3 h-3" />
-                          </a>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-
-                  <!-- Trades Pagination -->
-                  <div
-                    v-if="trades.length > tradesPageSize"
-                    class="py-3 border-t border-zinc-200 dark:border-zinc-800 flex justify-center bg-zinc-50/50 dark:bg-zinc-900/30"
-                  >
-                    <Pagination
-                      :total="trades.length"
-                      :items-per-page="tradesPageSize"
-                      :page="tradesPage"
-                      @update:page="tradesPage = $event"
-                    />
-                  </div>
-                </div>
-              </TabsContent>
-
-              <!-- Tab: Top Traders -->
-              <TabsContent value="top-traders" class="mt-0 max-h-[340px] overflow-y-auto">
-                <div
-                  v-if="topTradersLoading && topTraders.length === 0"
-                  class="py-16 text-center text-zinc-500"
-                >
-                  <Loader2 class="w-4 h-4 animate-spin mx-auto mb-2 text-emerald-500" />
-                  <span class="text-xs">Loading traders...</span>
-                </div>
-                <div v-else-if="topTraders.length === 0" class="py-16 text-center text-zinc-500">
-                  <p class="text-xs font-mono">No trading activity recorded yet.</p>
-                </div>
-                <div v-else class="overflow-x-auto">
-                  <table class="w-full text-left text-xs font-mono">
-                    <thead class="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-900">
-                      <tr
-                        class="border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400"
-                      >
-                        <th class="py-2 px-3 font-semibold w-10">#</th>
-                        <th class="py-2 px-3 font-semibold">Trader</th>
-                        <th class="py-2 px-3 font-semibold">Tag</th>
-                        <th class="py-2 px-3 font-semibold text-right">Buy / Sell</th>
-                        <th class="py-2 px-3 font-semibold text-center">Position</th>
-                        <th class="py-2 px-3 font-semibold text-right">Est. PnL</th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/60">
-                      <tr
-                        v-for="(trader, idx) in paginatedTopTraders"
-                        :key="trader.address"
-                        class="hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors"
-                      >
-                        <td class="py-2 px-3 text-zinc-500 font-bold">
-                          #{{ (topTradersPage - 1) * topTradersPageSize + idx + 1 }}
-                        </td>
-                        <td class="py-2 px-3">
-                          <div class="flex items-center gap-1.5">
-                            <Jazzicon :address="trader.address" :size="14" />
-                            <span class="text-black dark:text-white font-medium">{{
-                              truncateAddress(trader.address)
-                            }}</span>
-                            <button
-                              type="button"
-                              class="text-zinc-400 hover:text-emerald-400 transition cursor-pointer"
-                              @click="copyText(trader.address, `trader-${trader.address}`)"
-                            >
-                              <Copy class="w-3 h-3" />
-                            </button>
-                          </div>
-                        </td>
-                        <td class="py-2 px-3">
-                          <Badge
-                            :variant="
-                              trader.isDev
-                                ? 'default'
-                                : trader.walletTag === 'smart_degen'
-                                  ? 'outline'
-                                  : 'secondary'
-                            "
-                            class="text-[9px] px-1.5 py-0 uppercase h-4"
-                          >
-                            {{ trader.isDev ? 'Dev' : trader.walletTag }}
-                          </Badge>
-                        </td>
-                        <td class="py-2 px-3 text-right">
-                          <span class="text-emerald-500 font-medium"
-                            >${{ trader.buyVolumeUsd.toLocaleString() }}</span
-                          >
-                          <span class="text-zinc-400 mx-1">/</span>
-                          <span class="text-rose-500 font-medium"
-                            >${{ trader.sellVolumeUsd.toLocaleString() }}</span
-                          >
-                        </td>
-                        <td class="py-2 px-3 text-center">
-                          <Badge
-                            :variant="
-                              trader.positionStatus === 'holding'
-                                ? 'default'
-                                : trader.positionStatus === 'clean_all'
-                                  ? 'destructive'
-                                  : 'outline'
-                            "
-                            class="text-[9px] px-1.5 py-0 uppercase h-4"
-                          >
-                            {{
-                              trader.positionStatus === 'holding'
-                                ? 'Holding'
-                                : trader.positionStatus === 'clean_all'
-                                  ? 'Exited'
-                                  : 'Partial'
-                            }}
-                          </Badge>
-                        </td>
-                        <td
-                          class="py-2 px-3 text-right font-bold"
-                          :class="trader.profitUsd >= 0 ? 'text-emerald-500' : 'text-rose-500'"
-                        >
-                          {{ trader.profitUsd >= 0 ? '+' : '-' }}${{
-                            Math.abs(trader.profitUsd).toLocaleString()
-                          }}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-
-                  <!-- Top Traders Pagination -->
-                  <div
-                    v-if="topTraders.length > topTradersPageSize"
-                    class="py-3 border-t border-zinc-200 dark:border-zinc-800 flex justify-center bg-zinc-50/50 dark:bg-zinc-900/30"
-                  >
-                    <Pagination
-                      :total="topTraders.length"
-                      :items-per-page="topTradersPageSize"
-                      :page="topTradersPage"
-                      @update:page="topTradersPage = $event"
-                    />
-                  </div>
-                </div>
-              </TabsContent>
-
-              <!-- Tab: Holders -->
-              <TabsContent value="holders" class="mt-0 max-h-[340px] overflow-y-auto">
-                <div
-                  v-if="holdersLoading && holders.length === 0"
-                  class="py-16 text-center text-zinc-500"
-                >
-                  <Loader2 class="w-4 h-4 animate-spin mx-auto mb-2 text-emerald-500" />
-                  <span class="text-xs">Loading holders...</span>
-                </div>
-                <div v-else-if="holders.length === 0" class="py-16 text-center text-zinc-500">
-                  <p class="text-xs font-mono">No holder data available.</p>
-                </div>
-                <div v-else class="overflow-x-auto">
-                  <table class="w-full text-left text-xs font-mono">
-                    <thead class="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-900">
-                      <tr
-                        class="border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400"
-                      >
-                        <th class="py-2 px-3 font-semibold w-10">#</th>
-                        <th class="py-2 px-3 font-semibold">Holder</th>
-                        <th class="py-2 px-3 font-semibold w-44">Share</th>
-                        <th class="py-2 px-3 font-semibold text-right">Balance</th>
-                        <th class="py-2 px-3 font-semibold text-right w-8"></th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/60">
-                      <tr
-                        v-for="(holder, idx) in paginatedHolders"
-                        :key="holder.address"
-                        class="hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors"
-                      >
-                        <td class="py-2 px-3 text-zinc-500 font-bold">
-                          #{{ (holdersPage - 1) * holdersPageSize + idx + 1 }}
-                        </td>
-                        <td class="py-2 px-3 whitespace-nowrap">
-                          <div class="flex items-center gap-1.5">
-                            <Jazzicon :address="holder.address" :size="14" />
-                            <span class="text-black dark:text-white font-medium">{{
-                              truncateAddress(holder.address)
-                            }}</span>
-                            <button
-                              type="button"
-                              class="text-zinc-400 hover:text-emerald-400 transition cursor-pointer"
-                              @click="copyText(holder.address, 'holder-' + idx)"
-                            >
-                              <Check
-                                v-if="copiedId === 'holder-' + idx"
-                                class="w-3 h-3 text-emerald-400"
-                              />
-                              <Copy v-else class="w-3 h-3" />
-                            </button>
-                            <Badge
-                              v-if="getHolderBadge(holder.address)"
-                              variant="outline"
-                              class="text-[9px] px-1.5 py-0 h-4 border-zinc-300 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400"
-                            >
-                              {{ getHolderBadge(holder.address) }}
-                            </Badge>
-                          </div>
-                        </td>
-                        <td class="py-2 px-3 whitespace-nowrap">
-                          <div class="flex items-center gap-2">
-                            <span
-                              class="text-black dark:text-white font-semibold w-12 text-right shrink-0"
-                            >
-                              {{ holder.percent.toFixed(2) }}%
-                            </span>
-                            <Progress :model-value="holder.percent" class="h-1.5 w-28" />
-                          </div>
-                        </td>
-                        <td
-                          class="py-2 px-3 whitespace-nowrap text-right text-black dark:text-white"
-                        >
-                          {{ formatTokenNumber(holder.balance) }}
-                        </td>
-                        <td class="py-2 px-3 whitespace-nowrap text-right">
-                          <a
-                            :href="`${explorerUrl}/address/${holder.address}`"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="text-zinc-400 hover:text-emerald-400 transition-colors inline-flex items-center"
-                          >
-                            <ExternalLink class="w-3 h-3" />
-                          </a>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-
-                  <!-- Holders Pagination -->
-                  <div
-                    v-if="holders.length > holdersPageSize"
-                    class="py-3 border-t border-zinc-200 dark:border-zinc-800 flex justify-center bg-zinc-50/50 dark:bg-zinc-900/30"
-                  >
-                    <Pagination
-                      :total="holders.length"
-                      :items-per-page="holdersPageSize"
-                      :page="holdersPage"
-                      @update:page="holdersPage = $event"
-                    />
-                  </div>
-                </div>
-              </TabsContent>
-
-              <!-- Tab: About -->
-              <TabsContent value="about" class="mt-0 p-4 space-y-5 max-h-[340px] overflow-y-auto">
-                <!-- Description -->
-                <p class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                  {{
-                    currentToken.description ||
-                    `Fixed-supply launchpad token on ${activeNetwork.name}.`
-                  }}
-                </p>
-
-                <!-- Contract addresses -->
-                <div class="space-y-2">
-                  <p
-                    class="text-[10px] uppercase tracking-wider font-semibold text-zinc-500 dark:text-zinc-400"
-                  >
-                    Contract Addresses
-                  </p>
-                  <div class="space-y-1.5">
-                    <div class="flex items-center justify-between gap-3">
-                      <span class="text-xs text-zinc-500 dark:text-zinc-400 font-mono shrink-0"
-                        >Token</span
-                      >
-                      <div class="flex items-center gap-1.5 min-w-0">
-                        <span class="text-xs font-mono text-black dark:text-white truncate">{{
-                          currentToken.address
-                        }}</span>
-                        <button
-                          type="button"
-                          class="text-zinc-400 hover:text-emerald-400 shrink-0 cursor-pointer"
-                          @click="copyAddress"
-                        >
-                          <Check v-if="copied" class="w-3 h-3 text-emerald-400" />
-                          <Copy v-else class="w-3 h-3" />
-                        </button>
-                        <a
-                          :href="`${explorerUrl}/address/${currentToken.address}`"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="text-zinc-400 hover:text-emerald-400 shrink-0"
-                        >
-                          <ExternalLink class="w-3 h-3" />
-                        </a>
-                      </div>
-                    </div>
-                    <div
-                      v-if="currentToken.poolAddress"
-                      class="flex items-center justify-between gap-3"
-                    >
-                      <span class="text-xs text-zinc-500 dark:text-zinc-400 font-mono shrink-0"
-                        >Pool</span
-                      >
-                      <div class="flex items-center gap-1.5 min-w-0">
-                        <span class="text-xs font-mono text-black dark:text-white truncate">{{
-                          currentToken.poolAddress
-                        }}</span>
-                        <a
-                          :href="`${explorerUrl}/address/${currentToken.poolAddress}`"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="text-zinc-400 hover:text-emerald-400 shrink-0"
-                        >
-                          <ExternalLink class="w-3 h-3" />
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Market data grid -->
-                <div
-                  class="grid grid-cols-3 gap-4 pt-3 border-t border-zinc-200 dark:border-zinc-800"
-                >
-                  <div>
-                    <p
-                      class="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
-                    >
-                      Price
-                    </p>
-                    <p class="text-sm font-bold font-mono mt-0.5 text-black dark:text-white">
-                      {{ formatPriceUsd(currentMarketData.priceUsd) }}
-                    </p>
-                  </div>
-                  <div>
-                    <p
-                      class="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
-                    >
-                      Mkt Cap
-                    </p>
-                    <p class="text-sm font-bold font-mono mt-0.5 text-black dark:text-white">
-                      {{ formatCompactUsd(currentMarketData.marketCapUsd) }}
-                    </p>
-                  </div>
-                  <div>
-                    <p
-                      class="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
-                    >
-                      24h Vol
-                    </p>
-                    <p class="text-sm font-bold font-mono mt-0.5 text-black dark:text-white">
-                      {{ formatCompactUsd(currentMarketData.volume24hUsd) }}
-                    </p>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
         </div>
 
-        <!-- RIGHT: Swap Panel Column (fixed 360px, never stretches) -->
-        <div class="w-full xl:w-[360px] shrink-0 space-y-6">
+        <!-- 2. Swap Panel Column (Mobile: 2nd right under Chart! Desktop: Col 2, Row 1-2) -->
+        <div class="xl:col-start-2 xl:row-start-1 xl:row-span-2 w-full shrink-0 space-y-6">
           <div class="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
             <!-- Graduation progress card -->
             <div class="p-5 sm:p-6 border-b border-border space-y-2.5">
@@ -947,6 +334,7 @@
                   <PopoverTrigger as-child>
                     <button
                       type="button"
+                      aria-label="Slippage settings"
                       class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-mono font-semibold border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition cursor-pointer bg-card"
                     >
                       <Settings class="w-3.5 h-3.5" />
@@ -1145,6 +533,650 @@
             </div>
           </div>
         </div>
+
+        <!-- 3. Bottom Tabs Card (Mobile: 3rd after Swap; Desktop: Col 1, Row 2) -->
+        <div class="xl:col-start-1 xl:row-start-2 min-w-0 w-full space-y-6">
+          <div class="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
+            <Tabs v-model="activeBottomTab" class="w-full">
+              <!-- Tab headers -->
+              <div
+                class="flex items-center justify-between border-b border-border bg-muted/30 px-3 sm:px-4 py-2 overflow-x-auto no-scrollbar gap-2"
+              >
+                <TabsList
+                  class="flex gap-1 bg-transparent border-0 rounded-none h-auto p-0 shrink-0"
+                >
+                  <TabsTrigger
+                    v-for="tab in [
+                      { value: 'thread', label: 'Thread' },
+                      { value: 'trades', label: t('trades') },
+                      { value: 'top-traders', label: t('topTraders') },
+                      { value: 'holders', label: t('holders') },
+                      { value: 'about', label: t('about') },
+                    ]"
+                    :key="tab.value"
+                    :value="tab.value"
+                    class="px-3 sm:px-4 py-2 text-xs font-semibold rounded-lg border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary text-muted-foreground hover:text-foreground bg-transparent transition-all cursor-pointer whitespace-nowrap shrink-0"
+                  >
+                    {{ tab.label }}
+                    <span
+                      v-if="tab.value === 'thread' && comments.length > 0"
+                      class="ml-1 px-1.5 py-0.2 rounded-full bg-zinc-200 dark:bg-zinc-800 text-[10px]"
+                    >
+                      {{ comments.length }}
+                    </span>
+                  </TabsTrigger>
+                </TabsList>
+
+                <Button
+                  v-if="activeBottomTab === 'trades'"
+                  variant="ghost"
+                  size="sm"
+                  class="ml-auto h-7 px-2 text-xs font-mono text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white cursor-pointer shrink-0"
+                  @click="fetchTrades(currentToken.address)"
+                >
+                  <RefreshCw class="w-3.5 h-3.5 sm:mr-1" />
+                  <span class="hidden sm:inline">Refresh</span>
+                </Button>
+                <Button
+                  v-if="activeBottomTab === 'thread'"
+                  variant="ghost"
+                  size="sm"
+                  class="ml-auto h-7 px-2 text-xs font-mono text-zinc-500 dark:text-zinc-400 hover:text-black dark:hover:text-white cursor-pointer shrink-0"
+                  @click="fetchComments(currentToken.address)"
+                >
+                  <RefreshCw class="w-3.5 h-3.5 sm:mr-1" />
+                  <span class="hidden sm:inline">Refresh</span>
+                </Button>
+              </div>
+
+              <!-- Tab: Discussion Thread & Comments -->
+              <TabsContent
+                value="thread"
+                class="mt-0 max-h-[420px] overflow-y-auto p-5 sm:p-6 space-y-5"
+              >
+                <!-- Post Comment Form -->
+                <div class="p-4 sm:p-5 rounded-2xl border border-border bg-muted/30 space-y-3">
+                  <div
+                    class="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 font-mono"
+                  >
+                    <span
+                      class="flex items-center gap-1.5 font-semibold text-black dark:text-white"
+                    >
+                      <MessageSquare class="w-3.5 h-3.5 text-emerald-500" />
+                      Share your take on ${{ currentToken.symbol }}
+                    </span>
+                    <span v-if="account" class="text-[10px]">
+                      Posting as
+                      <span class="font-bold text-black dark:text-white">{{
+                        truncateAddress(account)
+                      }}</span>
+                    </span>
+                  </div>
+
+                  <div class="relative">
+                    <textarea
+                      v-model="newCommentText"
+                      rows="2"
+                      maxlength="500"
+                      placeholder="What is your price target or reaction?..."
+                      class="w-full text-xs font-sans p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-black dark:text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-none"
+                    />
+                  </div>
+
+                  <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-mono text-zinc-400"
+                      >{{ newCommentText.length }}/500</span
+                    >
+                    <Button
+                      size="sm"
+                      class="h-7 px-3 text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-black cursor-pointer rounded-lg flex items-center gap-1"
+                      :disabled="isPostingComment || !newCommentText.trim()"
+                      @click="postComment"
+                    >
+                      <Loader2 v-if="isPostingComment" class="w-3 h-3 animate-spin" />
+                      <Send v-else class="w-3 h-3" />
+                      <span>Post Comment</span>
+                    </Button>
+                  </div>
+                  <div
+                    v-if="commentError"
+                    class="text-[10px] font-mono text-rose-500 flex items-center gap-1 mt-1"
+                  >
+                    <AlertCircle class="w-3 h-3 shrink-0" />
+                    <span>{{ commentError }}</span>
+                  </div>
+                </div>
+
+                <!-- Comments Feed -->
+                <div
+                  v-if="commentsLoading && comments.length === 0"
+                  class="py-12 text-center text-zinc-500"
+                >
+                  <Loader2 class="w-4 h-4 animate-spin mx-auto mb-2 text-emerald-500" />
+                  <span class="text-xs">Loading comments...</span>
+                </div>
+                <div
+                  v-else-if="comments.length === 0"
+                  class="py-12 text-center text-zinc-500 space-y-1"
+                >
+                  <MessageSquare class="w-6 h-6 mx-auto mb-1.5 text-zinc-400 opacity-60" />
+                  <p class="text-xs font-mono font-medium">No comments yet.</p>
+                  <p class="text-[11px] text-zinc-400">
+                    Be the first to share your thoughts on ${{ currentToken.symbol }}!
+                  </p>
+                </div>
+                <div v-else class="space-y-2.5">
+                  <div
+                    v-for="cmt in paginatedComments"
+                    :key="cmt.id"
+                    class="p-3 rounded-xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/40 hover:bg-zinc-50 dark:hover:bg-zinc-900/80 transition-colors space-y-1.5"
+                  >
+                    <div class="flex items-center justify-between gap-2">
+                      <div class="flex items-center gap-2">
+                        <Jazzicon :address="cmt.authorAddress" :size="16" />
+                        <span class="text-xs font-mono font-semibold text-black dark:text-white">
+                          {{ truncateAddress(cmt.authorAddress) }}
+                        </span>
+                        <Badge
+                          v-if="
+                            cmt.authorAddress.toLowerCase() === currentToken.deployer?.toLowerCase()
+                          "
+                          class="text-[9px] px-1.5 py-0 h-4 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                        >
+                          Creator
+                        </Badge>
+                      </div>
+                      <span class="text-[10px] font-mono text-zinc-400">
+                        {{ formatRelativeTime(cmt.createdAt) }}
+                      </span>
+                    </div>
+
+                    <p
+                      class="text-xs leading-relaxed text-zinc-800 dark:text-zinc-200 font-sans break-words whitespace-pre-wrap"
+                    >
+                      {{ cmt.content }}
+                    </p>
+
+                    <div
+                      class="flex items-center justify-end gap-2 pt-1 border-t border-zinc-100 dark:border-zinc-800/40"
+                    >
+                      <button
+                        type="button"
+                        aria-label="Like comment"
+                        class="flex items-center gap-1 text-[11px] font-mono text-zinc-400 hover:text-rose-500 transition cursor-pointer"
+                        :class="cmt.isLikedByViewer ? 'text-rose-500 font-bold' : ''"
+                        @click="toggleLike(cmt.id)"
+                      >
+                        <Heart
+                          class="w-3.5 h-3.5"
+                          :class="cmt.isLikedByViewer ? 'fill-rose-500 text-rose-500' : ''"
+                        />
+                        <span>{{ cmt.likesCount }}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Comments Pagination -->
+                  <div v-if="comments.length > commentsPageSize" class="pt-2 flex justify-center">
+                    <Pagination
+                      :total="comments.length"
+                      :items-per-page="commentsPageSize"
+                      :page="commentsPage"
+                      @update:page="commentsPage = $event"
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+
+              <!-- Tab: Live Trades -->
+              <TabsContent value="trades" class="mt-0 max-h-[340px] overflow-y-auto">
+                <div
+                  v-if="tradesLoading && trades.length === 0"
+                  class="py-16 text-center text-zinc-500"
+                >
+                  <Loader2 class="w-4 h-4 animate-spin mx-auto mb-2 text-emerald-500" />
+                  <span class="text-xs">Loading trades...</span>
+                </div>
+                <div v-else-if="trades.length === 0" class="py-16 text-center text-zinc-500">
+                  <p class="text-xs font-mono">No trades recorded yet.</p>
+                </div>
+                <div v-else class="overflow-x-auto">
+                  <table class="w-full text-left text-xs font-mono min-w-[540px]">
+                    <thead class="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-900">
+                      <tr
+                        class="border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400"
+                      >
+                        <th class="py-2 px-3 font-semibold">Type</th>
+                        <th class="py-2 px-3 font-semibold">Price</th>
+                        <th class="py-2 px-3 font-semibold">{{ currencySymbol }}</th>
+                        <th class="py-2 px-3 font-semibold">{{ currentToken.symbol }}</th>
+                        <th class="py-2 px-3 font-semibold">Trader</th>
+                        <th class="py-2 px-3 font-semibold">Age</th>
+                        <th class="py-2 px-3 font-semibold text-right">Tx</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                      <tr
+                        v-for="trade in paginatedTrades"
+                        :key="trade.id || trade.transactionHash"
+                        class="hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors"
+                      >
+                        <td class="py-2 px-3 whitespace-nowrap">
+                          <span
+                            class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider"
+                            :class="
+                              trade.isBuy
+                                ? 'bg-emerald-500/10 text-emerald-500'
+                                : 'bg-rose-500/10 text-rose-500'
+                            "
+                          >
+                            {{ trade.isBuy ? 'BUY' : 'SELL' }}
+                          </span>
+                        </td>
+                        <td
+                          class="py-2 px-3 whitespace-nowrap text-black dark:text-white font-medium"
+                        >
+                          ${{
+                            trade.priceUsd < 0.0001
+                              ? trade.priceUsd.toFixed(8)
+                              : trade.priceUsd.toFixed(4)
+                          }}
+                        </td>
+                        <td class="py-2 px-3 whitespace-nowrap text-black dark:text-white">
+                          {{ parseFloat(trade.wethAmount).toFixed(4) }}
+                        </td>
+                        <td
+                          class="py-2 px-3 whitespace-nowrap text-black dark:text-white font-medium"
+                        >
+                          {{ formatTokenNumber(trade.tokenAmount) }}
+                        </td>
+                        <td class="py-2 px-3 whitespace-nowrap">
+                          <div class="flex items-center gap-1.5 text-black dark:text-white">
+                            <Jazzicon :address="trade.trader" :size="14" />
+                            <span>{{ truncateAddress(trade.trader) }}</span>
+                            <button
+                              type="button"
+                              aria-label="Copy trader address"
+                              class="text-zinc-400 hover:text-emerald-400 transition cursor-pointer"
+                              @click="copyText(trade.trader, trade.id + '-trader')"
+                            >
+                              <Check
+                                v-if="copiedId === trade.id + '-trader'"
+                                class="w-3 h-3 text-emerald-400"
+                              />
+                              <Copy v-else class="w-3 h-3" />
+                            </button>
+                          </div>
+                        </td>
+                        <td class="py-2 px-3 whitespace-nowrap text-zinc-500 dark:text-zinc-400">
+                          {{ formatRelativeTime(trade.timestamp) }}
+                        </td>
+                        <td class="py-2 px-3 whitespace-nowrap text-right">
+                          <a
+                            :href="`${explorerUrl}/tx/${trade.transactionHash}`"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="View transaction on explorer"
+                            class="text-zinc-400 hover:text-emerald-400 transition-colors inline-flex items-center"
+                          >
+                            <ExternalLink class="w-3 h-3" />
+                          </a>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <!-- Trades Pagination -->
+                  <div
+                    v-if="trades.length > tradesPageSize"
+                    class="py-3 border-t border-zinc-200 dark:border-zinc-800 flex justify-center bg-zinc-50/50 dark:bg-zinc-900/30"
+                  >
+                    <Pagination
+                      :total="trades.length"
+                      :items-per-page="tradesPageSize"
+                      :page="tradesPage"
+                      @update:page="tradesPage = $event"
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+
+              <!-- Tab: Top Traders -->
+              <TabsContent value="top-traders" class="mt-0 max-h-[340px] overflow-y-auto">
+                <div
+                  v-if="topTradersLoading && topTraders.length === 0"
+                  class="py-16 text-center text-zinc-500"
+                >
+                  <Loader2 class="w-4 h-4 animate-spin mx-auto mb-2 text-emerald-500" />
+                  <span class="text-xs">Loading traders...</span>
+                </div>
+                <div v-else-if="topTraders.length === 0" class="py-16 text-center text-zinc-500">
+                  <p class="text-xs font-mono">No trading activity recorded yet.</p>
+                </div>
+                <div v-else class="overflow-x-auto">
+                  <table class="w-full text-left text-xs font-mono min-w-[520px]">
+                    <thead class="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-900">
+                      <tr
+                        class="border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400"
+                      >
+                        <th class="py-2 px-3 font-semibold w-10">#</th>
+                        <th class="py-2 px-3 font-semibold">Trader</th>
+                        <th class="py-2 px-3 font-semibold">Tag</th>
+                        <th class="py-2 px-3 font-semibold text-right">Buy / Sell</th>
+                        <th class="py-2 px-3 font-semibold text-center">Position</th>
+                        <th class="py-2 px-3 font-semibold text-right">Est. PnL</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                      <tr
+                        v-for="(trader, idx) in paginatedTopTraders"
+                        :key="trader.address"
+                        class="hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors"
+                      >
+                        <td class="py-2 px-3 text-zinc-500 font-bold">
+                          #{{ (topTradersPage - 1) * topTradersPageSize + idx + 1 }}
+                        </td>
+                        <td class="py-2 px-3">
+                          <div class="flex items-center gap-1.5">
+                            <Jazzicon :address="trader.address" :size="14" />
+                            <span class="text-black dark:text-white font-medium">{{
+                              truncateAddress(trader.address)
+                            }}</span>
+                            <button
+                              type="button"
+                              aria-label="Copy trader address"
+                              class="text-zinc-400 hover:text-emerald-400 transition cursor-pointer"
+                              @click="copyText(trader.address, `trader-${trader.address}`)"
+                            >
+                              <Copy class="w-3 h-3" />
+                            </button>
+                          </div>
+                        </td>
+                        <td class="py-2 px-3">
+                          <Badge
+                            :variant="
+                              trader.isDev
+                                ? 'default'
+                                : trader.walletTag === 'smart_degen'
+                                  ? 'outline'
+                                  : 'secondary'
+                            "
+                            class="text-[9px] px-1.5 py-0 uppercase h-4"
+                          >
+                            {{ trader.isDev ? 'Dev' : trader.walletTag }}
+                          </Badge>
+                        </td>
+                        <td class="py-2 px-3 text-right">
+                          <span class="text-emerald-500 font-medium"
+                            >${{ trader.buyVolumeUsd.toLocaleString() }}</span
+                          >
+                          <span class="text-zinc-400 mx-1">/</span>
+                          <span class="text-rose-500 font-medium"
+                            >${{ trader.sellVolumeUsd.toLocaleString() }}</span
+                          >
+                        </td>
+                        <td class="py-2 px-3 text-center">
+                          <Badge
+                            :variant="
+                              trader.positionStatus === 'holding'
+                                ? 'default'
+                                : trader.positionStatus === 'clean_all'
+                                  ? 'destructive'
+                                  : 'outline'
+                            "
+                            class="text-[9px] px-1.5 py-0 uppercase h-4"
+                          >
+                            {{
+                              trader.positionStatus === 'holding'
+                                ? 'Holding'
+                                : trader.positionStatus === 'clean_all'
+                                  ? 'Exited'
+                                  : 'Partial'
+                            }}
+                          </Badge>
+                        </td>
+                        <td
+                          class="py-2 px-3 text-right font-bold"
+                          :class="trader.profitUsd >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                        >
+                          {{ trader.profitUsd >= 0 ? '+' : '-' }}${{
+                            Math.abs(trader.profitUsd).toLocaleString()
+                          }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <!-- Top Traders Pagination -->
+                  <div
+                    v-if="topTraders.length > topTradersPageSize"
+                    class="py-3 border-t border-zinc-200 dark:border-zinc-800 flex justify-center bg-zinc-50/50 dark:bg-zinc-900/30"
+                  >
+                    <Pagination
+                      :total="topTraders.length"
+                      :items-per-page="topTradersPageSize"
+                      :page="topTradersPage"
+                      @update:page="topTradersPage = $event"
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+
+              <!-- Tab: Holders -->
+              <TabsContent value="holders" class="mt-0 max-h-[340px] overflow-y-auto">
+                <div
+                  v-if="holdersLoading && holders.length === 0"
+                  class="py-16 text-center text-zinc-500"
+                >
+                  <Loader2 class="w-4 h-4 animate-spin mx-auto mb-2 text-emerald-500" />
+                  <span class="text-xs">Loading holders...</span>
+                </div>
+                <div v-else-if="holders.length === 0" class="py-16 text-center text-zinc-500">
+                  <p class="text-xs font-mono">No holder data available.</p>
+                </div>
+                <div v-else class="overflow-x-auto">
+                  <table class="w-full text-left text-xs font-mono min-w-[500px]">
+                    <thead class="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-900">
+                      <tr
+                        class="border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400"
+                      >
+                        <th class="py-2 px-3 font-semibold w-10">#</th>
+                        <th class="py-2 px-3 font-semibold">Holder</th>
+                        <th class="py-2 px-3 font-semibold w-44">Share</th>
+                        <th class="py-2 px-3 font-semibold text-right">Balance</th>
+                        <th class="py-2 px-3 font-semibold text-right w-8"></th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                      <tr
+                        v-for="(holder, idx) in paginatedHolders"
+                        :key="holder.address"
+                        class="hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors"
+                      >
+                        <td class="py-2 px-3 text-zinc-500 font-bold">
+                          #{{ (holdersPage - 1) * holdersPageSize + idx + 1 }}
+                        </td>
+                        <td class="py-2 px-3 whitespace-nowrap">
+                          <div class="flex items-center gap-1.5">
+                            <Jazzicon :address="holder.address" :size="14" />
+                            <span class="text-black dark:text-white font-medium">{{
+                              truncateAddress(holder.address)
+                            }}</span>
+                            <button
+                              type="button"
+                              aria-label="Copy holder address"
+                              class="text-zinc-400 hover:text-emerald-400 transition cursor-pointer"
+                              @click="copyText(holder.address, 'holder-' + idx)"
+                            >
+                              <Check
+                                v-if="copiedId === 'holder-' + idx"
+                                class="w-3 h-3 text-emerald-400"
+                              />
+                              <Copy v-else class="w-3 h-3" />
+                            </button>
+                            <Badge
+                              v-if="getHolderBadge(holder.address)"
+                              variant="outline"
+                              class="text-[9px] px-1.5 py-0 h-4 border-zinc-300 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400"
+                            >
+                              {{ getHolderBadge(holder.address) }}
+                            </Badge>
+                          </div>
+                        </td>
+                        <td class="py-2 px-3 whitespace-nowrap">
+                          <div class="flex items-center gap-2">
+                            <span
+                              class="text-black dark:text-white font-semibold w-12 text-right shrink-0"
+                            >
+                              {{ holder.percent.toFixed(2) }}%
+                            </span>
+                            <Progress :model-value="holder.percent" class="h-1.5 w-28" />
+                          </div>
+                        </td>
+                        <td
+                          class="py-2 px-3 whitespace-nowrap text-right text-black dark:text-white"
+                        >
+                          {{ formatTokenNumber(holder.balance) }}
+                        </td>
+                        <td class="py-2 px-3 whitespace-nowrap text-right">
+                          <a
+                            :href="`${explorerUrl}/address/${holder.address}`"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="text-zinc-400 hover:text-emerald-400 transition-colors inline-flex items-center"
+                          >
+                            <ExternalLink class="w-3 h-3" />
+                          </a>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <!-- Holders Pagination -->
+                  <div
+                    v-if="holders.length > holdersPageSize"
+                    class="py-3 border-t border-zinc-200 dark:border-zinc-800 flex justify-center bg-zinc-50/50 dark:bg-zinc-900/30"
+                  >
+                    <Pagination
+                      :total="holders.length"
+                      :items-per-page="holdersPageSize"
+                      :page="holdersPage"
+                      @update:page="holdersPage = $event"
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+
+              <!-- Tab: About -->
+              <TabsContent value="about" class="mt-0 p-4 space-y-5 max-h-[340px] overflow-y-auto">
+                <!-- Description -->
+                <p class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+                  {{
+                    currentToken.description ||
+                    `Fixed-supply launchpad token on ${activeNetwork.name}.`
+                  }}
+                </p>
+
+                <!-- Contract addresses -->
+                <div class="space-y-2">
+                  <p
+                    class="text-[10px] uppercase tracking-wider font-semibold text-zinc-500 dark:text-zinc-400"
+                  >
+                    Contract Addresses
+                  </p>
+                  <div class="space-y-1.5">
+                    <div class="flex items-center justify-between gap-3">
+                      <span class="text-xs text-zinc-500 dark:text-zinc-400 font-mono shrink-0"
+                        >Token</span
+                      >
+                      <div class="flex items-center gap-1.5 min-w-0">
+                        <span class="text-xs font-mono text-black dark:text-white truncate">{{
+                          currentToken.address
+                        }}</span>
+                        <button
+                          type="button"
+                          aria-label="Copy token address"
+                          class="text-zinc-400 hover:text-emerald-400 shrink-0 cursor-pointer"
+                          @click="copyAddress"
+                        >
+                          <Check v-if="copied" class="w-3 h-3 text-emerald-400" />
+                          <Copy v-else class="w-3 h-3" />
+                        </button>
+                        <a
+                          :href="`${explorerUrl}/address/${currentToken.address}`"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="View token on explorer"
+                          class="text-zinc-400 hover:text-emerald-400 shrink-0"
+                        >
+                          <ExternalLink class="w-3 h-3" />
+                        </a>
+                      </div>
+                    </div>
+                    <div
+                      v-if="currentToken.poolAddress"
+                      class="flex items-center justify-between gap-3"
+                    >
+                      <span class="text-xs text-zinc-500 dark:text-zinc-400 font-mono shrink-0"
+                        >Pool</span
+                      >
+                      <div class="flex items-center gap-1.5 min-w-0">
+                        <span class="text-xs font-mono text-black dark:text-white truncate">{{
+                          currentToken.poolAddress
+                        }}</span>
+                        <a
+                          :href="`${explorerUrl}/address/${currentToken.poolAddress}`"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="View pool on explorer"
+                          class="text-zinc-400 hover:text-emerald-400 shrink-0"
+                        >
+                          <ExternalLink class="w-3 h-3" />
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Market data grid -->
+                <div
+                  class="grid grid-cols-3 gap-4 pt-3 border-t border-zinc-200 dark:border-zinc-800"
+                >
+                  <div>
+                    <p
+                      class="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
+                    >
+                      Price
+                    </p>
+                    <p class="text-sm font-bold font-mono mt-0.5 text-black dark:text-white">
+                      {{ formatPriceUsd(currentMarketData.priceUsd) }}
+                    </p>
+                  </div>
+                  <div>
+                    <p
+                      class="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
+                    >
+                      Mkt Cap
+                    </p>
+                    <p class="text-sm font-bold font-mono mt-0.5 text-black dark:text-white">
+                      {{ formatCompactUsd(currentMarketData.marketCapUsd) }}
+                    </p>
+                  </div>
+                  <div>
+                    <p
+                      class="text-[10px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
+                    >
+                      24h Vol
+                    </p>
+                    <p class="text-sm font-bold font-mono mt-0.5 text-black dark:text-white">
+                      {{ formatCompactUsd(currentMarketData.volume24hUsd) }}
+                    </p>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
       </div>
     </template>
   </div>
@@ -1169,6 +1201,7 @@ import {
   MessageSquare,
   Send,
   Heart,
+  RefreshCw,
 } from 'lucide-vue-next';
 import { useSwap, SLIPPAGE_WARN_THRESHOLD } from '../composables/useSwap';
 import { useWallet } from '../composables/useWallet';
