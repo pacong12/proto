@@ -131,6 +131,8 @@ export const ARC_CHAIN: NetworkConfig = {
   },
 };
 
+export const ARC_PROTO_CURVE_ADDRESS = '0x6c1c1a77771bf8961e27ea5b21f575eb17a7626e' as const;
+
 export const SUPPORTED_CHAINS: Record<number, NetworkConfig> = {
   [ROBINHOOD_CHAIN.chainId]: ROBINHOOD_CHAIN,
   [ARC_CHAIN.chainId]: ARC_CHAIN,

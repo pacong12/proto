@@ -811,7 +811,7 @@ import {
 } from '@/components/ui/dialog';
 import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
 import { erc20Abi } from 'viem';
-import { ARC_CHAIN, ROBINHOOD_CHAIN } from '@proto/shared-types';
+import { ARC_CHAIN, ROBINHOOD_CHAIN, ARC_PROTO_CURVE_ADDRESS } from '@proto/shared-types';
 import { getPublicClient } from '@/lib/viem-client';
 
 const { claimFees, setFeeRedirect, loading } = useLaunchpad();
@@ -1099,7 +1099,7 @@ async function fetchUserPositionsAndActivity() {
               const isArc =
                 t.token.pairedToken?.toLowerCase() === ARC_CHAIN.contracts.weth.toLowerCase() ||
                 t.token.poolAddress?.toLowerCase() === ARC_CHAIN.contracts.factory.toLowerCase() ||
-                t.token.curveAddress === '0x6c1c1a77771bf8961e27ea5b21f575eb17a7626e';
+                t.token.curveAddress?.toLowerCase() === ARC_PROTO_CURVE_ADDRESS.toLowerCase();
               const client = getPublicClient(isArc ? ARC_CHAIN.chainId : ROBINHOOD_CHAIN.chainId);
               const onChainWei = (await client.readContract({
                 address: t.token.address,

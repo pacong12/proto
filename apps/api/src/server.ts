@@ -31,6 +31,7 @@ import {
 import {
   ROBINHOOD_CHAIN,
   ARC_CHAIN,
+  ARC_PROTO_CURVE_ADDRESS,
   type NetworkConfig,
   TransactionIntent,
   type TokenCommentEntity,
@@ -211,7 +212,7 @@ function resolveNetworkForToken(token: {
     token.pairedToken?.toLowerCase() === ARC_CHAIN.contracts.weth.toLowerCase() ||
     token.poolAddress?.toLowerCase() === ARC_CHAIN.contracts.factory.toLowerCase() ||
     token.curveAddress?.toLowerCase() === ARC_CHAIN.contracts.factory.toLowerCase() ||
-    token.curveAddress === '0x6c1c1a77771bf8961e27ea5b21f575eb17a7626e'
+    token.curveAddress?.toLowerCase() === ARC_PROTO_CURVE_ADDRESS.toLowerCase()
   ) {
     return ARC_CHAIN;
   }

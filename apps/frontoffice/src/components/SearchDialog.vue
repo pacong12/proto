@@ -227,7 +227,7 @@ import { Badge } from '@/components/ui/badge';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { Empty } from '@/components/ui/empty';
 import type { LaunchedTokenEntity, TokenMarketData, TradeEventEntity } from '@proto/shared-types';
-import { ARC_CHAIN } from '@proto/shared-types';
+import { ARC_CHAIN, ARC_PROTO_CURVE_ADDRESS } from '@proto/shared-types';
 
 const { t } = useI18n();
 const { activeNetwork } = useWallet();
@@ -313,9 +313,7 @@ const filteredTokens = computed(() => {
     const pool = item.token.poolAddress?.toLowerCase();
     const curve = item.token.curveAddress?.toLowerCase();
     const isTokenArc =
-      paired === arcWeth ||
-      pool === arcFactory ||
-      curve === '0x6c1c1a77771bf8961e27ea5b21f575eb17a7626e';
+      paired === arcWeth || pool === arcFactory || curve === ARC_PROTO_CURVE_ADDRESS.toLowerCase();
 
     return isArc ? isTokenArc : !isTokenArc;
   });

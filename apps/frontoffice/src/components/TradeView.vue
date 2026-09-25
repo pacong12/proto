@@ -1193,6 +1193,7 @@ import {
 import {
   ROBINHOOD_CHAIN,
   ARC_CHAIN,
+  ARC_PROTO_CURVE_ADDRESS,
   launchpadTokenAbi,
   type LaunchedTokenEntity,
   type TokenMarketData,
@@ -1283,7 +1284,7 @@ const isArcToken = computed(() => {
   return (
     paired === arcWeth ||
     pool === arcFactory ||
-    curve === '0x6c1c1a77771bf8961e27ea5b21f575eb17a7626e' ||
+    curve === ARC_PROTO_CURVE_ADDRESS.toLowerCase() ||
     (currentToken.value.version === 'v2' && activeNetwork.value.chainId === ARC_CHAIN.chainId)
   );
 });
