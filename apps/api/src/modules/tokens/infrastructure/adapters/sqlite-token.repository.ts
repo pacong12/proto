@@ -1,5 +1,6 @@
 import { Database } from 'bun:sqlite';
 import path from 'node:path';
+import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
   LaunchedTokenEntity,
@@ -79,6 +80,18 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
 
   constructor(dbPath?: string) {
     const resolvedPath = dbPath ?? defaultDbPath;
+    if (resolvedPath !== ':memory:') {
+      const dir = path.dirname(resolvedPath);
+      try {
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
+        }
+      } catch (err) {
+        console.warn(
+          `[SqliteTokenRepository] Could not create directory ${dir}: ${(err as Error).message}`,
+        );
+      }
+    }
     this.db = new Database(resolvedPath);
     try {
       this.db.run('PRAGMA journal_mode = WAL;');
