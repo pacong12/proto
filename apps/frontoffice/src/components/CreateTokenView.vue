@@ -478,7 +478,7 @@
               <div
                 class="flex flex-col lg:flex-row gap-8 items-center lg:items-start p-6 sm:p-7 rounded-2xl border border-border bg-card"
               >
-                <!-- Circular Donut Chart (Monochrome Grayscale Hierarchy) -->
+                <!-- Circular Donut Chart (Distinct 4-Color Breakdown) -->
                 <div class="relative w-36 h-36 shrink-0 flex items-center justify-center">
                   <svg class="w-full h-full -rotate-90 transform" viewBox="0 0 100 100">
                     <!-- Background ring -->
@@ -491,57 +491,57 @@
                       fill="transparent"
                       class="text-muted/60"
                     />
-                    <!-- Creator segment (Primary White/Black) -->
+                    <!-- 1. Creator segment (Emerald #10B981) -->
                     <circle
                       v-if="revenueSplit.creator > 0"
                       cx="50"
                       cy="50"
                       r="38"
-                      stroke="currentColor"
+                      stroke="#10b981"
                       stroke-width="12"
                       fill="transparent"
                       :stroke-dasharray="`${creatorStroke} ${donutCircumference}`"
                       :stroke-dashoffset="creatorOffset"
-                      class="text-foreground transition-all duration-300"
+                      class="transition-all duration-300"
                     />
-                    <!-- Buyback segment (Muted text gray) -->
+                    <!-- 2. Buyback & Burn segment (Rose #F43F5E) -->
                     <circle
                       v-if="revenueSplit.buyback > 0"
                       cx="50"
                       cy="50"
                       r="38"
-                      stroke="currentColor"
+                      stroke="#f43f5e"
                       stroke-width="12"
                       fill="transparent"
                       :stroke-dasharray="`${buybackStroke} ${donutCircumference}`"
                       :stroke-dashoffset="buybackOffset"
-                      class="text-muted-foreground transition-all duration-300"
+                      class="transition-all duration-300"
                     />
-                    <!-- Holders segment (Subtle mid-gray) -->
+                    <!-- 3. Holders segment (Violet #8B5CF6) -->
                     <circle
                       v-if="revenueSplit.holders > 0"
                       cx="50"
                       cy="50"
                       r="38"
-                      stroke="currentColor"
+                      stroke="#8b5cf6"
                       stroke-width="12"
                       fill="transparent"
                       :stroke-dasharray="`${holdersStroke} ${donutCircumference}`"
                       :stroke-dashoffset="holdersOffset"
-                      class="text-zinc-500 transition-all duration-300"
+                      class="transition-all duration-300"
                     />
-                    <!-- Growth segment (Hairline border gray) -->
+                    <!-- 4. Growth segment (Sky #0EA5E9) -->
                     <circle
                       v-if="revenueSplit.growth > 0"
                       cx="50"
                       cy="50"
                       r="38"
-                      stroke="currentColor"
+                      stroke="#0ea5e9"
                       stroke-width="12"
                       fill="transparent"
                       :stroke-dasharray="`${growthStroke} ${donutCircumference}`"
                       :stroke-dashoffset="growthOffset"
-                      class="text-zinc-400 dark:text-zinc-700 transition-all duration-300"
+                      class="transition-all duration-300"
                     />
                   </svg>
 
@@ -551,9 +551,7 @@
                   >
                     <span
                       class="text-lg font-mono font-bold leading-tight"
-                      :class="
-                        totalSplit === 100 ? 'text-foreground' : 'text-muted-foreground underline'
-                      "
+                      :class="totalSplit === 100 ? 'text-foreground' : 'text-amber-500'"
                     >
                       {{ totalSplit }}%
                     </span>
@@ -570,13 +568,13 @@
                   <div class="space-y-2">
                     <div class="flex items-center justify-between text-xs">
                       <div class="flex items-center gap-2 font-semibold text-foreground">
-                        <span class="w-2.5 h-2.5 rounded-full bg-foreground shrink-0" />
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#10b981] shrink-0" />
                         <span>Creator</span>
                         <InfoTooltip
                           text="Portion of swap taxes sent directly to the creator wallet."
                         />
                       </div>
-                      <span class="font-mono font-bold text-foreground">
+                      <span class="font-mono font-bold text-[#10b981]">
                         {{ revenueSplit.creator }}%
                       </span>
                     </div>
@@ -585,8 +583,8 @@
                       :max="100"
                       :min="0"
                       :step="1"
-                      range-class="bg-foreground"
-                      thumb-class="border-foreground focus-visible:ring-foreground"
+                      range-class="bg-[#10b981]"
+                      thumb-class="border-[#10b981] focus-visible:ring-[#10b981]"
                       @update:model-value="updateShare('creator', $event ? $event[0] : 0)"
                     />
                     <div
@@ -601,13 +599,13 @@
                   <div class="space-y-2">
                     <div class="flex items-center justify-between text-xs">
                       <div class="flex items-center gap-2 font-semibold text-foreground">
-                        <span class="w-2.5 h-2.5 rounded-full bg-muted-foreground shrink-0" />
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#f43f5e] shrink-0" />
                         <span>Buyback & Burn</span>
                         <InfoTooltip
                           text="Automatically buys tokens off the pool and permanently burns them to reduce supply."
                         />
                       </div>
-                      <span class="font-mono font-bold text-foreground">
+                      <span class="font-mono font-bold text-[#f43f5e]">
                         {{ revenueSplit.buyback }}%
                       </span>
                     </div>
@@ -616,8 +614,8 @@
                       :max="100"
                       :min="0"
                       :step="1"
-                      range-class="bg-foreground"
-                      thumb-class="border-foreground focus-visible:ring-foreground"
+                      range-class="bg-[#f43f5e]"
+                      thumb-class="border-[#f43f5e] focus-visible:ring-[#f43f5e]"
                       @update:model-value="updateShare('buyback', $event ? $event[0] : 0)"
                     />
                     <div
@@ -632,13 +630,13 @@
                   <div class="space-y-2">
                     <div class="flex items-center justify-between text-xs">
                       <div class="flex items-center gap-2 font-semibold text-foreground">
-                        <span class="w-2.5 h-2.5 rounded-full bg-zinc-500 shrink-0" />
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#8b5cf6] shrink-0" />
                         <span>Holder Dividends</span>
                         <InfoTooltip
                           text="Distributed proportionally in native currency to all token holders as passive yield."
                         />
                       </div>
-                      <span class="font-mono font-bold text-foreground">
+                      <span class="font-mono font-bold text-[#8b5cf6]">
                         {{ revenueSplit.holders }}%
                       </span>
                     </div>
@@ -647,8 +645,8 @@
                       :max="100"
                       :min="0"
                       :step="1"
-                      range-class="bg-foreground"
-                      thumb-class="border-foreground focus-visible:ring-foreground"
+                      range-class="bg-[#8b5cf6]"
+                      thumb-class="border-[#8b5cf6] focus-visible:ring-[#8b5cf6]"
                       @update:model-value="updateShare('holders', $event ? $event[0] : 0)"
                     />
                     <div
@@ -663,15 +661,13 @@
                   <div class="space-y-2">
                     <div class="flex items-center justify-between text-xs">
                       <div class="flex items-center gap-2 font-semibold text-foreground">
-                        <span
-                          class="w-2.5 h-2.5 rounded-full bg-zinc-400 dark:bg-zinc-700 shrink-0"
-                        />
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#0ea5e9] shrink-0" />
                         <span>Liquidity Growth</span>
                         <InfoTooltip
                           text="Permanently injected into the liquidity pool to deepen market depth and reduce slippage."
                         />
                       </div>
-                      <span class="font-mono font-bold text-foreground">
+                      <span class="font-mono font-bold text-[#0ea5e9]">
                         {{ revenueSplit.growth }}%
                       </span>
                     </div>
@@ -680,8 +676,8 @@
                       :max="100"
                       :min="0"
                       :step="1"
-                      range-class="bg-foreground"
-                      thumb-class="border-foreground focus-visible:ring-foreground"
+                      range-class="bg-[#0ea5e9]"
+                      thumb-class="border-[#0ea5e9] focus-visible:ring-[#0ea5e9]"
                       @update:model-value="updateShare('growth', $event ? $event[0] : 0)"
                     />
                     <div
@@ -701,7 +697,7 @@
                     </span>
                     <span
                       class="font-mono font-semibold shrink-0"
-                      :class="totalSplit === 100 ? 'text-emerald-500' : 'text-amber-500'"
+                      :class="totalSplit === 100 ? 'text-[#10b981]' : 'text-amber-500'"
                     >
                       {{
                         totalSplit === 100
