@@ -33,6 +33,7 @@ export class IpfsController {
   /**
    * Scan SVG byte stream for executable scripts, inline event handlers, or dangerous foreignObjects.
    * Prevents SVG-based Stored Cross-Site Scripting (XSS).
+   * Uses linear non-backtracking patterns to prevent polynomial ReDoS.
    */
   private static isMaliciousSvg(buffer: ArrayBuffer | Buffer): boolean {
     const buf = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
@@ -42,7 +43,7 @@ export class IpfsController {
       text.includes('javascript:') ||
       text.includes('data:text/html') ||
       text.includes('<foreignobject') ||
-      /<[a-z0-9]+\s+[^>]*\bon[a-z]+\s*=/i.test(text)
+      /\bon[a-z]+\s*=/i.test(text)
     );
   }
 
