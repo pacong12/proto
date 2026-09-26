@@ -171,7 +171,8 @@ contract LaunchpadV2Factory {
         if (!feeOk) revert TransferFailed();
 
         if (initialBuyEth > 0) {
-            curve.buyFor{value: initialBuyEth}(msg.sender, minInitialTokensOut);
+            uint256 tokensBought = curve.buyFor{value: initialBuyEth}(msg.sender, minInitialTokensOut);
+            require(tokensBought >= minInitialTokensOut, "Slippage");
         }
     }
 

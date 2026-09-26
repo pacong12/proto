@@ -217,7 +217,8 @@ contract LaunchpadV2FactoryArc {
 
         // Optional creator initial buy — protected by minInitialTokensOut (F-01 fix)
         if (initialBuyUsdc > 0) {
-            curve.buyFor{value: initialBuyUsdc}(msg.sender, minInitialTokensOut);
+            uint256 tokensBought = curve.buyFor{value: initialBuyUsdc}(msg.sender, minInitialTokensOut);
+            require(tokensBought >= minInitialTokensOut, "Slippage");
         }
     }
 

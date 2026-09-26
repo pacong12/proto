@@ -176,11 +176,19 @@ contract LiquidityLocker is ILiquidityLocker {
             })
         );
 
+        // slither-disable-next-line unused-return
         (, , address token0, , , , , , , , , ) = positionManager.positions(positionId);
+        require(token0 != address(0), "Invalid position");
 
-        FeeDistribution memory dist;
-        dist.totalTokenFee = token == token0 ? amount0 : amount1;
-        dist.totalWethFee = token == token0 ? amount1 : amount0;
+        FeeDistribution memory dist = FeeDistribution({
+            totalTokenFee: token == token0 ? amount0 : amount1,
+            totalWethFee: token == token0 ? amount1 : amount0,
+            protocolTokenFee: 0,
+            protocolWethFee: 0,
+            creatorTokenFee: 0,
+            creatorWethFee: 0,
+            creatorRecipient: address(0)
+        });
 
         uint256 protocolSharePercent = tokenProtocolFeeShares[token];
         dist.protocolTokenFee = (dist.totalTokenFee * protocolSharePercent) / 100;

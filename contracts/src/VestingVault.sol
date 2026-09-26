@@ -83,9 +83,6 @@ contract VestingVault {
         if (amount == 0 || duration == 0) revert ZeroAmount();
         if (vestingSchedules[token][beneficiary].exists) revert ScheduleExists();
 
-        bool success = ILaunchpadToken(token).transferFrom(msg.sender, address(this), amount);
-        if (!success) revert TransferFailed();
-
         vestingSchedules[token][beneficiary] = Schedule({
             creator: msg.sender,
             totalAmount: amount,
@@ -95,6 +92,9 @@ contract VestingVault {
             exists: true,
             revoked: false
         });
+
+        bool success = ILaunchpadToken(token).transferFrom(msg.sender, address(this), amount);
+        if (!success) revert TransferFailed();
 
         emit VestingCreated(token, beneficiary, msg.sender, amount, block.timestamp, duration);
     }
