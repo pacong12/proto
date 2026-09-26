@@ -442,6 +442,35 @@ button:active:not(:disabled),
   background-color: var(--muted) !important;
 }
 
+/* Distinct 4-Color Palette for Donut Chart & Allocation Breakdown */
+.split-creator {
+  color: #10b981 !important;
+}
+.split-creator-bg {
+  background-color: #10b981 !important;
+}
+
+.split-buyback {
+  color: #f43f5e !important;
+}
+.split-buyback-bg {
+  background-color: #f43f5e !important;
+}
+
+.split-holders {
+  color: #8b5cf6 !important;
+}
+.split-holders-bg {
+  background-color: #8b5cf6 !important;
+}
+
+.split-growth {
+  color: #0ea5e9 !important;
+}
+.split-growth-bg {
+  background-color: #0ea5e9 !important;
+}
+
 /* Hide scrollbars while preserving scroll functionality (used on overflow-x-auto nav strips) */
 .no-scrollbar {
   scrollbar-width: none; /* Firefox */
