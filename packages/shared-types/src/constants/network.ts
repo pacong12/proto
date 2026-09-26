@@ -121,7 +121,7 @@ export const ARC_CHAIN: NetworkConfig = {
   launchConfig: {
     supply: 1_000_000_000n * 10n ** 18n,
     poolFee: 10000,
-    launchFeeWei: 1n * 10n ** 18n, // 1.00 USDC (18 decimals native)
+    launchFeeWei: 500_000_000_000_000n, // 0.0005 USDC (matches LAUNCH_FEE on 0x4884... factory)
     graduationThresholdWei: 69_000n * 10n ** 18n, // 69,000 USDC
     antiSnipeBlocks: 2,
     maxHoldPercent: 5.0,

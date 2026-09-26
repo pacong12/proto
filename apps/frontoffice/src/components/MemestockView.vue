@@ -120,7 +120,7 @@
             </div>
           </div>
 
-          <div class="mt-5 pt-4 border-t border-zinc-800 space-y-2">
+          <div class="mt-5 pt-4 border-t border-border space-y-2">
             <div class="flex justify-between text-xs font-mono">
               <span>Market Cap</span>
               <span class="font-semibold">{{
@@ -133,7 +133,7 @@
                   activeNetwork.nativeCurrency.symbol === 'USDC' ? '8.4K USDC' : '4.2 ETH'
                 }})</span
               >
-              <span class="text-emerald-400 font-semibold">
+              <span class="text-foreground font-semibold">
                 {{ (item.marketData.graduationProgress * 100).toFixed(1) }}%
               </span>
             </div>

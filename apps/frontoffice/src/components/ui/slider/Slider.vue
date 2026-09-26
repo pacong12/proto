@@ -30,17 +30,15 @@ const forwarded = useForwardPropsEmits(props, emits);
       cn('relative flex w-full touch-none select-none items-center cursor-pointer', props.class)
     "
   >
-    <SliderTrack
-      class="relative h-2 w-full grow overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800"
-    >
-      <SliderRange :class="cn('absolute h-full bg-emerald-500', props.rangeClass)" />
+    <SliderTrack class="relative h-2 w-full grow overflow-hidden rounded-full bg-muted">
+      <SliderRange :class="cn('absolute h-full bg-foreground', props.rangeClass)" />
     </SliderTrack>
     <SliderThumb
       v-for="(_, key) in props.modelValue ?? props.defaultValue ?? [0]"
       :key="key"
       :class="
         cn(
-          'block h-4 w-4 rounded-full border-2 border-emerald-500 bg-white dark:bg-zinc-950 ring-offset-white dark:ring-offset-zinc-950 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 shadow-sm',
+          'block h-4 w-4 rounded-full border-2 border-foreground bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 shadow-sm',
           props.thumbClass,
         )
       "

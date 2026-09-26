@@ -49,12 +49,12 @@ function dismissBanner() {
   >
     <div
       v-if="visible"
-      class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-50 bg-white/95 dark:bg-zinc-950/95 border border-zinc-200 dark:border-zinc-800 backdrop-blur-md rounded-2xl p-4 shadow-2xl space-y-3 transition-colors"
+      class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-50 bg-card/95 border border-border backdrop-blur-md rounded-2xl p-4 shadow-2xl space-y-3 transition-colors"
       role="dialog"
       aria-label="Cookie consent banner"
     >
       <div class="flex items-start justify-between gap-3">
-        <h3 class="text-xs font-bold text-black dark:text-white uppercase tracking-wider">
+        <h3 class="text-xs font-bold text-foreground uppercase tracking-wider">
           {{ t('cookieBannerTitle') }}
         </h3>
         <Button
@@ -62,14 +62,14 @@ function dismissBanner() {
           variant="ghost"
           size="sm"
           @click="dismissBanner"
-          class="h-6 w-6 p-0 text-zinc-400 hover:text-black dark:hover:text-white rounded-lg transition cursor-pointer"
+          class="h-6 w-6 p-0 text-muted-foreground hover:text-foreground rounded-lg transition cursor-pointer"
           aria-label="Dismiss cookie notice"
         >
           <X class="w-3.5 h-3.5" />
         </Button>
       </div>
 
-      <p class="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+      <p class="text-xs text-muted-foreground leading-relaxed">
         {{ t('cookieBannerDesc') }}
       </p>
 
@@ -78,7 +78,7 @@ function dismissBanner() {
           href="/cookie-policy"
           target="_blank"
           rel="noopener noreferrer"
-          class="text-zinc-500 hover:text-emerald-600 dark:hover:text-emerald-400 underline underline-offset-2 transition"
+          class="text-muted-foreground hover:text-foreground underline underline-offset-2 transition"
         >
           {{ t('cookiePolicy') }}
         </a>
@@ -88,7 +88,7 @@ function dismissBanner() {
             type="button"
             variant="ghost"
             size="sm"
-            class="h-7 text-xs text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white cursor-pointer"
+            class="h-7 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
             @click="dismissBanner"
           >
             {{ t('decline') }}
@@ -97,7 +97,7 @@ function dismissBanner() {
             type="button"
             variant="default"
             size="sm"
-            class="h-7 text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-black px-3.5 shadow-sm cursor-pointer"
+            class="h-7 text-xs font-bold px-3.5 shadow-sm cursor-pointer"
             @click="acceptCookies"
           >
             {{ t('accept') }}

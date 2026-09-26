@@ -12,7 +12,7 @@
 
     <!-- Footer with real router navigation -->
     <footer
-      class="border-t border-border bg-card/60 dark:bg-zinc-950/60 text-muted-foreground py-10 sm:py-12 px-4 mt-12 transition-colors"
+      class="border-t border-border bg-card text-muted-foreground py-10 sm:py-12 px-4 mt-12 transition-colors"
     >
       <div
         class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8 text-sm"

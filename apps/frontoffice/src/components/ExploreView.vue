@@ -8,10 +8,10 @@
         @click="selectTabFilter('trending')"
       >
         <div class="space-y-0.5 min-w-0 truncate">
-          <span class="text-[10px] sm:text-[11px] font-mono text-zinc-400 block truncate">
+          <span class="text-[10px] sm:text-[11px] font-mono text-muted-foreground block truncate">
             {{ t('trendingTokens') }}
           </span>
-          <p class="text-xs sm:text-sm font-bold font-mono text-black dark:text-white truncate">
+          <p class="text-xs sm:text-sm font-bold font-mono text-foreground truncate">
             {{ topTrendingSymbol }}
           </p>
         </div>
@@ -26,14 +26,16 @@
         @click="selectTabFilter('newest')"
       >
         <div class="space-y-0.5 min-w-0 truncate">
-          <span class="text-[10px] sm:text-[11px] font-mono text-zinc-400 block truncate">
+          <span class="text-[10px] sm:text-[11px] font-mono text-muted-foreground block truncate">
             {{ t('newLaunches') }}
           </span>
-          <p class="text-xs sm:text-sm font-bold font-mono text-black dark:text-white truncate">
+          <p class="text-xs sm:text-sm font-bold font-mono text-foreground truncate">
             {{ totalTokensCount }} Tokens
           </p>
         </div>
-        <span class="text-xs font-mono text-zinc-400 shrink-0 ml-1">{{ activeNetwork.name }}</span>
+        <span class="text-xs font-mono text-muted-foreground shrink-0 ml-1">{{
+          activeNetwork.name
+        }}</span>
       </div>
 
       <!-- Top Gainers -->
@@ -42,10 +44,10 @@
         @click="selectTabFilter('gainers')"
       >
         <div class="space-y-0.5 min-w-0 truncate">
-          <span class="text-[10px] sm:text-[11px] font-mono text-zinc-400 block truncate">
+          <span class="text-[10px] sm:text-[11px] font-mono text-muted-foreground block truncate">
             {{ t('topGainers') }}
           </span>
-          <p class="text-xs sm:text-sm font-bold font-mono text-black dark:text-white truncate">
+          <p class="text-xs sm:text-sm font-bold font-mono text-foreground truncate">
             {{ topGainerSymbol }}
           </p>
         </div>
@@ -59,14 +61,14 @@
         class="p-3.5 sm:p-4 md:p-5 rounded-2xl border border-border bg-card shadow-xs flex items-center justify-between min-w-0"
       >
         <div class="space-y-0.5 min-w-0 truncate">
-          <span class="text-[10px] sm:text-[11px] font-mono text-zinc-400 block truncate">
+          <span class="text-[10px] sm:text-[11px] font-mono text-muted-foreground block truncate">
             {{ t('volume24hCol') }}
           </span>
-          <p class="text-xs sm:text-sm font-bold font-mono text-black dark:text-white truncate">
+          <p class="text-xs sm:text-sm font-bold font-mono text-foreground truncate">
             ${{ totalVolume24hUsd.toLocaleString() }}
           </p>
         </div>
-        <span class="text-[10px] font-mono text-zinc-400 shrink-0 ml-1">Uniswap V3/v4</span>
+        <span class="text-[10px] font-mono text-muted-foreground shrink-0 ml-1">Uniswap V3/v4</span>
       </div>
     </div>
 
@@ -113,19 +115,19 @@
       <div class="flex flex-wrap items-center gap-2 flex-1 min-w-0">
         <!-- Live Search Input -->
         <div class="relative w-full sm:w-64">
-          <Search class="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-2.5" />
+          <Search class="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-2.5" />
           <Input
             v-model="searchQuery"
             type="text"
             :placeholder="t('searchTokenPlaceholder')"
-            class="h-8 pl-8 pr-3 text-xs bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 rounded-lg font-mono text-black dark:text-white focus-visible:ring-emerald-500"
+            class="h-8 pl-8 pr-3 text-xs bg-card border-border rounded-lg font-mono text-foreground focus-visible:ring-foreground"
           />
         </div>
 
         <!-- Lifecycle Status Filter: All / Curve / Graduated -->
         <div
           v-if="activeMarketTab !== 'trades'"
-          class="inline-flex items-center p-0.5 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium gap-0.5"
+          class="inline-flex items-center p-0.5 bg-card rounded-lg border border-border text-xs font-medium gap-0.5"
         >
           <Button
             type="button"
@@ -162,7 +164,7 @@
           type="button"
           size="sm"
           :variant="filterHasSocials ? 'default' : 'outline'"
-          class="h-8 px-2.5 gap-1.5 text-xs font-medium rounded-lg border-zinc-200 dark:border-zinc-800 cursor-pointer"
+          class="h-8 px-2.5 gap-1.5 text-xs font-medium rounded-lg border-border cursor-pointer"
           @click="filterHasSocials = !filterHasSocials"
         >
           <Share2 class="w-3 h-3" />
@@ -173,9 +175,7 @@
       <!-- Right Controls: View Mode Toggle (Table / Grid) + Sort Combobox -->
       <div v-if="activeMarketTab !== 'trades'" class="flex items-center gap-2 shrink-0">
         <!-- View Mode Toggle: Table vs Grid vs Trenches -->
-        <div
-          class="inline-flex items-center p-0.5 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 gap-0.5"
-        >
+        <div class="inline-flex items-center p-0.5 bg-card rounded-lg border border-border gap-0.5">
           <Button
             type="button"
             size="sm"
@@ -235,9 +235,10 @@
     <!-- 4. Loading State -->
     <div v-if="loading" class="flex flex-col items-center justify-center py-20 space-y-3">
       <Loader2 class="w-7 h-7 text-emerald-500 animate-spin" />
-      <span class="text-xs font-medium text-zinc-500 dark:text-zinc-400 font-mono">{{
-        t('loadingTokens')
-      }}</span>
+      <span
+        class="text-xs font-medium text-muted-foreground dark:text-muted-foreground font-mono"
+        >{{ t('loadingTokens') }}</span
+      >
     </div>
 
     <!-- 5. API Error State -->
@@ -262,10 +263,12 @@
           {{ matchedSearchTx.isBuy ? 'BUY' : 'SELL' }}
         </Badge>
         <div class="truncate">
-          <span class="font-mono font-bold text-black dark:text-white truncate block">
+          <span class="font-mono font-bold text-foreground truncate block">
             Tx: {{ shortenAddress(matchedSearchTx.transactionHash, 10, 8) }}
           </span>
-          <p class="text-[11px] font-mono text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
+          <p
+            class="text-[11px] font-mono text-muted-foreground dark:text-muted-foreground truncate mt-0.5"
+          >
             Token: {{ shortenAddress(matchedSearchTx.tokenAddress) }} • Volume:
             {{ matchedSearchTx.wethAmount }} {{ activeNetwork.nativeCurrency.symbol }} • Trader:
             {{ shortenAddress(matchedSearchTx.trader) }}
@@ -286,7 +289,7 @@
           :href="`${activeNetwork.blockExplorer}/tx/${matchedSearchTx.transactionHash}`"
           target="_blank"
           rel="noopener noreferrer"
-          class="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:text-emerald-400 text-zinc-500 transition"
+          class="p-1.5 rounded-lg border border-border hover:text-foreground text-muted-foreground transition"
           title="View on Explorer"
           aria-label="View on Explorer"
         >
@@ -298,20 +301,20 @@
     <!-- 6. Live Protocol Trades Tab Feed -->
     <div
       v-if="activeMarketTab === 'trades'"
-      class="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 overflow-hidden shadow-xs"
+      class="rounded-xl border border-border bg-card overflow-hidden shadow-xs"
     >
       <div
         v-if="tradesLoading && recentTrades.length === 0"
         class="flex flex-col items-center justify-center py-20 space-y-3"
       >
         <Loader2 class="w-7 h-7 text-emerald-500 animate-spin" />
-        <span class="text-xs font-medium text-zinc-500 font-mono"
+        <span class="text-xs font-medium text-muted-foreground font-mono"
           >Loading live protocol trades...</span
         >
       </div>
       <div
         v-else-if="filteredTrades.length === 0"
-        class="py-12 text-center text-xs text-zinc-500 font-mono"
+        class="py-12 text-center text-xs text-muted-foreground font-mono"
       >
         No recent trades recorded yet on {{ activeNetwork.name }}.
       </div>
@@ -319,7 +322,7 @@
         <table class="w-full text-left text-xs font-mono">
           <thead>
             <tr
-              class="border-b border-zinc-200 dark:border-zinc-800/90 text-zinc-400 uppercase tracking-wider text-[11px] bg-zinc-50/70 dark:bg-zinc-900/40"
+              class="border-b border-border text-muted-foreground uppercase tracking-wider text-[11px] bg-muted/40"
             >
               <th class="py-3 px-4 font-semibold">Token</th>
               <th class="py-3 px-4 font-semibold">Type</th>
@@ -331,11 +334,11 @@
               <th class="py-3 px-4 font-semibold text-right">Tx</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-zinc-100 dark:divide-zinc-900">
+          <tbody class="divide-y divide-border">
             <tr
               v-for="trade in filteredTrades"
               :key="trade.id"
-              class="hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors cursor-pointer group"
+              class="hover:bg-muted/50 transition-colors cursor-pointer group"
               @click="$emit('selectToken', trade.tokenAddress)"
             >
               <td class="py-3 px-4">
@@ -346,17 +349,17 @@
                     :fallback-text="getTokenInfo(trade.tokenAddress)?.symbol || 'TOK'"
                     :width="28"
                     :height="28"
-                    class="rounded-lg border border-zinc-200 dark:border-zinc-800 shrink-0"
+                    class="rounded-lg border border-border shrink-0"
                   />
                   <div class="truncate">
                     <span
-                      class="font-bold text-black dark:text-white group-hover:text-emerald-500 transition truncate block"
+                      class="font-bold text-foreground group-hover:opacity-80 transition truncate block"
                     >
                       {{
                         getTokenInfo(trade.tokenAddress)?.name || shortenAddress(trade.tokenAddress)
                       }}
                     </span>
-                    <span class="text-[11px] text-zinc-400">
+                    <span class="text-[11px] text-muted-foreground">
                       ${{ getTokenInfo(trade.tokenAddress)?.symbol || 'TOK' }}
                     </span>
                   </div>
@@ -370,14 +373,12 @@
                   {{ trade.isBuy ? 'BUY' : 'SELL' }}
                 </Badge>
               </td>
-              <td
-                class="py-3 px-4 whitespace-nowrap text-right font-semibold text-black dark:text-white"
-              >
+              <td class="py-3 px-4 whitespace-nowrap text-right font-semibold text-foreground">
                 ${{
                   trade.priceUsd < 0.0001 ? trade.priceUsd.toFixed(8) : trade.priceUsd.toFixed(4)
                 }}
               </td>
-              <td class="py-3 px-4 whitespace-nowrap text-right text-zinc-700 dark:text-zinc-300">
+              <td class="py-3 px-4 whitespace-nowrap text-right text-muted-foreground">
                 {{ formatTokenNumber(trade.tokenAmount) }}
               </td>
               <td
@@ -387,12 +388,12 @@
                 {{ activeNetwork.nativeCurrency.symbol }}
               </td>
               <td class="py-3 px-4 whitespace-nowrap">
-                <div class="flex items-center gap-1.5 text-zinc-500">
+                <div class="flex items-center gap-1.5 text-muted-foreground">
                   <Jazzicon :address="trade.trader" :size="16" class="rounded-full shrink-0" />
                   <span>{{ shortenAddress(trade.trader) }}</span>
                 </div>
               </td>
-              <td class="py-3 px-4 whitespace-nowrap text-right text-zinc-400 text-[11px]">
+              <td class="py-3 px-4 whitespace-nowrap text-right text-muted-foreground text-[11px]">
                 {{ formatRelativeTime(trade.timestamp) }}
               </td>
               <td class="py-3 px-4 whitespace-nowrap text-right" @click.stop>
@@ -401,7 +402,7 @@
                   :href="`${activeNetwork.blockExplorer}/tx/${trade.transactionHash}`"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="p-1 rounded hover:text-emerald-400 text-zinc-400 transition inline-flex items-center"
+                  class="p-1 rounded hover:text-foreground text-muted-foreground transition inline-flex items-center"
                   title="View on Explorer"
                   aria-label="View on Explorer"
                 >
@@ -419,13 +420,13 @@
       v-else-if="filteredTokens.length === 0"
       :title="t('noTokensFound')"
       :description="t('noTokensDesc')"
-      class="border border-zinc-200 dark:border-zinc-800 rounded-2xl p-10 bg-white dark:bg-zinc-950"
+      class="border border-border rounded-2xl p-10 bg-card"
     >
       <template #action>
         <Button
           @click="$emit('selectTab', 'create')"
           size="default"
-          class="gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-black font-bold shadow-md rounded-xl cursor-pointer"
+          class="gap-1.5 font-bold shadow-md rounded-xl cursor-pointer"
         >
           <Plus class="w-4 h-4 stroke-[3]" />
           {{ t('createToken') }}
@@ -436,16 +437,16 @@
     <!-- 7A. OKX-Style Professional Table View Mode -->
     <div
       v-else-if="viewMode === 'table'"
-      class="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 overflow-hidden shadow-xs"
+      class="rounded-xl border border-border bg-card overflow-hidden shadow-xs"
     >
       <div class="overflow-x-auto w-full">
         <table class="w-full text-left text-xs font-mono min-w-[680px]">
           <thead>
             <tr
-              class="border-b border-zinc-200 dark:border-zinc-800/90 text-zinc-400 uppercase tracking-wider text-[11px] bg-zinc-50/70 dark:bg-zinc-900/40"
+              class="border-b border-border text-muted-foreground uppercase tracking-wider text-[11px] bg-muted/40"
             >
               <th
-                class="py-3 px-4 font-semibold sticky left-0 z-20 bg-zinc-50 dark:bg-zinc-900 shadow-[1px_0_0_0_var(--border)]"
+                class="py-3 px-4 font-semibold sticky left-0 z-20 bg-muted shadow-[1px_0_0_0_var(--border)]"
               >
                 {{ t('tokenCol') }}
               </th>
@@ -457,16 +458,16 @@
               <th class="py-3 px-4 font-semibold text-right">{{ t('actionCol') }}</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-zinc-100 dark:divide-zinc-900">
+          <tbody class="divide-y divide-border">
             <tr
               v-for="item in paginatedTokens"
               :key="item.token.address"
-              class="hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors cursor-pointer group"
+              class="hover:bg-muted/50 transition-colors cursor-pointer group"
               @click="$emit('selectToken', item.token.address)"
             >
               <!-- Token Name, Symbol, & Version Badge -->
               <td
-                class="py-3 px-4 sticky left-0 z-10 bg-white dark:bg-zinc-950 group-hover:bg-zinc-50 dark:group-hover:bg-zinc-900 transition-colors shadow-[1px_0_0_0_var(--border)]"
+                class="py-3 px-4 sticky left-0 z-10 bg-card group-hover:bg-muted/50 transition-colors shadow-[1px_0_0_0_var(--border)]"
               >
                 <div class="flex items-center gap-3">
                   <OptimizedImage
@@ -483,13 +484,11 @@
                         ? '/tokens/usdc.svg'
                         : '/tokens/eth.svg'
                     "
-                    class="rounded-lg border border-zinc-200 dark:border-zinc-800"
+                    class="rounded-lg border border-border"
                   />
                   <div class="truncate">
                     <div class="flex items-center gap-1.5">
-                      <span
-                        class="font-bold text-black dark:text-white group-hover:text-emerald-500 transition"
-                      >
+                      <span class="font-bold text-foreground group-hover:opacity-80 transition">
                         {{ item.token.name }}
                       </span>
                       <Badge
@@ -499,7 +498,7 @@
                         {{ item.token.version === 'v2' ? 'v2' : 'v1' }}
                       </Badge>
                     </div>
-                    <span class="text-[11px] text-zinc-400 font-mono"
+                    <span class="text-[11px] text-muted-foreground font-mono"
                       >${{ item.token.symbol }}</span
                     >
                   </div>
@@ -507,7 +506,7 @@
               </td>
 
               <!-- Last Price -->
-              <td class="py-3 px-4 text-right font-bold text-black dark:text-white">
+              <td class="py-3 px-4 text-right font-bold text-foreground">
                 {{ formatPriceUsd(item.marketData?.priceUsd) }}
               </td>
 
@@ -518,12 +517,12 @@
               </td>
 
               <!-- 24h Volume -->
-              <td class="py-3 px-4 text-right text-zinc-600 dark:text-zinc-300">
+              <td class="py-3 px-4 text-right text-muted-foreground">
                 {{ formatCompactUsd(item.marketData?.volume24hUsd) }}
               </td>
 
               <!-- Market Cap -->
-              <td class="py-3 px-4 text-right text-zinc-600 dark:text-zinc-300 font-semibold">
+              <td class="py-3 px-4 text-right text-muted-foreground font-semibold">
                 {{ formatCompactUsd(item.marketData?.marketCapUsd) }}
               </td>
 
@@ -531,7 +530,7 @@
               <td class="py-3 px-4">
                 <div class="space-y-1 max-w-[160px] mx-auto">
                   <div class="flex justify-between text-[10px]">
-                    <span class="text-zinc-400">
+                    <span class="text-muted-foreground">
                       {{ item.marketData?.isGraduated ? 'DEX Pool' : 'Curve' }}
                     </span>
                     <span class="font-bold text-emerald-500 dark:text-emerald-400">
@@ -550,7 +549,7 @@
                 <Button
                   size="sm"
                   variant="outline"
-                  class="h-7 px-3 text-xs font-semibold rounded-lg border-zinc-200 dark:border-zinc-800 group-hover:border-emerald-500 group-hover:text-emerald-500 transition cursor-pointer"
+                  class="h-7 px-3 text-xs font-semibold rounded-lg border-border group-hover:border-emerald-500 group-hover:opacity-80 transition cursor-pointer"
                   @click.stop="$emit('selectToken', item.token.address)"
                 >
                   {{ t('tradeNow') }}
@@ -564,7 +563,7 @@
       <!-- Pagination in Table Footer -->
       <div
         v-if="filteredTokens.length > pageSize"
-        class="flex justify-center p-3 border-t border-zinc-200 dark:border-zinc-800"
+        class="flex justify-center p-3 border-t border-border"
       >
         <Pagination
           :current-page="currentPage"
@@ -601,15 +600,17 @@
                       ? '/tokens/usdc.svg'
                       : '/tokens/eth.svg'
                   "
-                  class="rounded-lg border border-zinc-200 dark:border-zinc-800"
+                  class="rounded-lg border border-border"
                 />
                 <div class="truncate">
                   <h3
-                    class="font-bold text-sm text-black dark:text-white group-hover:text-emerald-500 transition truncate"
+                    class="font-bold text-sm text-foreground group-hover:opacity-80 transition truncate"
                   >
                     {{ item.token.name }}
                   </h3>
-                  <div class="flex items-center gap-1.5 font-mono text-[11px] text-zinc-400">
+                  <div
+                    class="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground"
+                  >
                     <span>${{ item.token.symbol }}</span>
                     <Badge variant="outline" class="text-[9px] px-1 py-0 h-3.5 uppercase">
                       {{ item.token.version === 'v2' ? 'v2' : 'v1' }}
@@ -625,18 +626,16 @@
             </div>
 
             <!-- Price & Cap -->
-            <div
-              class="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-900 font-mono text-xs"
-            >
+            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-border font-mono text-xs">
               <div>
-                <span class="text-[10px] text-zinc-400 block">{{ t('lastPriceCol') }}</span>
-                <span class="font-bold text-black dark:text-white">{{
+                <span class="text-[10px] text-muted-foreground block">{{ t('lastPriceCol') }}</span>
+                <span class="font-bold text-foreground">{{
                   formatPriceUsd(item.marketData?.priceUsd)
                 }}</span>
               </div>
               <div class="text-right">
-                <span class="text-[10px] text-zinc-400 block">{{ t('marketCapCol') }}</span>
-                <span class="font-semibold text-zinc-600 dark:text-zinc-300">{{
+                <span class="text-[10px] text-muted-foreground block">{{ t('marketCapCol') }}</span>
+                <span class="font-semibold text-muted-foreground">{{
                   formatCompactUsd(item.marketData?.marketCapUsd)
                 }}</span>
               </div>
@@ -645,7 +644,7 @@
             <!-- Progress -->
             <div class="space-y-1">
               <div class="flex justify-between text-[10px] font-mono">
-                <span class="text-zinc-400">{{
+                <span class="text-muted-foreground">{{
                   item.marketData?.isGraduated ? 'Graduated' : 'Curve'
                 }}</span>
                 <span class="font-bold text-emerald-500"
@@ -675,15 +674,11 @@
     <!-- 7C. GMGN-Style 3-Column Trenches Mode -->
     <div v-else-if="viewMode === 'trenches'" class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <!-- Col 1: New Creations (< 20% progress) -->
-      <div
-        class="space-y-3 bg-zinc-50/50 dark:bg-zinc-900/30 p-3.5 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 flex flex-col"
-      >
+      <div class="space-y-3 bg-muted/30 p-3.5 rounded-2xl border border-border flex flex-col">
         <div class="flex items-center justify-between px-1">
           <div class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-blue-500" />
-            <h3
-              class="text-xs font-bold font-mono uppercase tracking-wider text-black dark:text-white"
-            >
+            <h3 class="text-xs font-bold font-mono uppercase tracking-wider text-foreground">
               {{ t('newCreations') }}
             </h3>
           </div>
@@ -694,7 +689,7 @@
 
         <div
           v-if="trenchesNewCreations.length === 0"
-          class="py-12 text-center text-zinc-400 text-xs font-mono"
+          class="py-12 text-center text-muted-foreground text-xs font-mono"
         >
           No new creations
         </div>
@@ -703,7 +698,7 @@
           <Card
             v-for="item in trenchesNewCreations"
             :key="item.token.address"
-            class="p-3 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/50 transition cursor-pointer group"
+            class="p-3 bg-card border-border hover:border-foreground/40 transition cursor-pointer group"
             @click="$emit('selectToken', item.token.address)"
           >
             <div class="flex items-start justify-between gap-2">
@@ -722,15 +717,15 @@
                       ? '/tokens/usdc.svg'
                       : '/tokens/eth.svg'
                   "
-                  class="rounded-lg border border-zinc-200 dark:border-zinc-800 shrink-0"
+                  class="rounded-lg border border-border shrink-0"
                 />
                 <div class="truncate">
                   <span
-                    class="font-bold text-xs text-black dark:text-white group-hover:text-emerald-500 transition block truncate"
+                    class="font-bold text-xs text-foreground group-hover:opacity-80 transition block truncate"
                   >
                     {{ item.token.name }}
                   </span>
-                  <span class="text-[10px] font-mono text-zinc-400 block truncate">
+                  <span class="text-[10px] font-mono text-muted-foreground block truncate">
                     ${{ item.token.symbol }}
                   </span>
                 </div>
@@ -744,19 +739,19 @@
             </div>
 
             <div
-              class="mt-2.5 flex items-center justify-between font-mono text-[11px] pt-2 border-t border-zinc-100 dark:border-zinc-900"
+              class="mt-2.5 flex items-center justify-between font-mono text-[11px] pt-2 border-t border-border"
             >
-              <span class="text-zinc-400"
+              <span class="text-muted-foreground"
                 >MCap: {{ formatCompactUsd(item.marketData?.marketCapUsd) }}</span
               >
-              <span class="font-bold text-black dark:text-white">{{
+              <span class="font-bold text-foreground">{{
                 formatPriceUsd(item.marketData?.priceUsd)
               }}</span>
             </div>
 
             <div class="mt-2 space-y-1">
               <div class="flex justify-between text-[10px] font-mono">
-                <span class="text-zinc-400">Curve Progress</span>
+                <span class="text-muted-foreground">Curve Progress</span>
                 <span class="font-bold text-emerald-500"
                   >{{ ((item.marketData?.graduationProgress ?? 0) * 100).toFixed(1) }}%</span
                 >
@@ -771,15 +766,11 @@
       </div>
 
       <!-- Col 2: Completing (20% - 99%) -->
-      <div
-        class="space-y-3 bg-zinc-50/50 dark:bg-zinc-900/30 p-3.5 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 flex flex-col"
-      >
+      <div class="space-y-3 bg-muted/30 p-3.5 rounded-2xl border border-border flex flex-col">
         <div class="flex items-center justify-between px-1">
           <div class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            <h3
-              class="text-xs font-bold font-mono uppercase tracking-wider text-black dark:text-white"
-            >
+            <h3 class="text-xs font-bold font-mono uppercase tracking-wider text-foreground">
               {{ t('completing') }}
             </h3>
           </div>
@@ -790,7 +781,7 @@
 
         <div
           v-if="trenchesCompleting.length === 0"
-          class="py-12 text-center text-zinc-400 text-xs font-mono"
+          class="py-12 text-center text-muted-foreground text-xs font-mono"
         >
           No tokens nearing graduation
         </div>
@@ -799,7 +790,7 @@
           <Card
             v-for="item in trenchesCompleting"
             :key="item.token.address"
-            class="p-3 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 transition cursor-pointer group"
+            class="p-3 bg-card border-border hover:border-foreground/40 transition cursor-pointer group"
             @click="$emit('selectToken', item.token.address)"
           >
             <div class="flex items-start justify-between gap-2">
@@ -818,15 +809,15 @@
                       ? '/tokens/usdc.svg'
                       : '/tokens/eth.svg'
                   "
-                  class="rounded-lg border border-zinc-200 dark:border-zinc-800 shrink-0"
+                  class="rounded-lg border border-border shrink-0"
                 />
                 <div class="truncate">
                   <span
-                    class="font-bold text-xs text-black dark:text-white group-hover:text-amber-500 transition block truncate"
+                    class="font-bold text-xs text-foreground group-hover:opacity-80 transition block truncate"
                   >
                     {{ item.token.name }}
                   </span>
-                  <span class="text-[10px] font-mono text-zinc-400 block truncate">
+                  <span class="text-[10px] font-mono text-muted-foreground block truncate">
                     ${{ item.token.symbol }}
                   </span>
                 </div>
@@ -840,19 +831,19 @@
             </div>
 
             <div
-              class="mt-2.5 flex items-center justify-between font-mono text-[11px] pt-2 border-t border-zinc-100 dark:border-zinc-900"
+              class="mt-2.5 flex items-center justify-between font-mono text-[11px] pt-2 border-t border-border"
             >
-              <span class="text-zinc-400"
+              <span class="text-muted-foreground"
                 >MCap: {{ formatCompactUsd(item.marketData?.marketCapUsd) }}</span
               >
-              <span class="font-bold text-black dark:text-white">{{
+              <span class="font-bold text-foreground">{{
                 formatPriceUsd(item.marketData?.priceUsd)
               }}</span>
             </div>
 
             <div class="mt-2 space-y-1">
               <div class="flex justify-between text-[10px] font-mono">
-                <span class="text-zinc-400">Nearing DEX</span>
+                <span class="text-muted-foreground">Nearing DEX</span>
                 <span class="font-bold text-amber-500"
                   >{{ ((item.marketData?.graduationProgress ?? 0) * 100).toFixed(1) }}%</span
                 >
@@ -867,15 +858,11 @@
       </div>
 
       <!-- Col 3: Graduated (100% / Uniswap DEX Pool) -->
-      <div
-        class="space-y-3 bg-zinc-50/50 dark:bg-zinc-900/30 p-3.5 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 flex flex-col"
-      >
+      <div class="space-y-3 bg-muted/30 p-3.5 rounded-2xl border border-border flex flex-col">
         <div class="flex items-center justify-between px-1">
           <div class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-emerald-500" />
-            <h3
-              class="text-xs font-bold font-mono uppercase tracking-wider text-black dark:text-white"
-            >
+            <h3 class="text-xs font-bold font-mono uppercase tracking-wider text-foreground">
               {{ t('graduated') }}
             </h3>
           </div>
@@ -886,7 +873,7 @@
 
         <div
           v-if="trenchesGraduated.length === 0"
-          class="py-12 text-center text-zinc-400 text-xs font-mono"
+          class="py-12 text-center text-muted-foreground text-xs font-mono"
         >
           No graduated tokens yet
         </div>
@@ -895,7 +882,7 @@
           <Card
             v-for="item in trenchesGraduated"
             :key="item.token.address"
-            class="p-3 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/50 transition cursor-pointer group"
+            class="p-3 bg-card border-border hover:border-foreground/40 transition cursor-pointer group"
             @click="$emit('selectToken', item.token.address)"
           >
             <div class="flex items-start justify-between gap-2">
@@ -914,15 +901,15 @@
                       ? '/tokens/usdc.svg'
                       : '/tokens/eth.svg'
                   "
-                  class="rounded-lg border border-zinc-200 dark:border-zinc-800 shrink-0"
+                  class="rounded-lg border border-border shrink-0"
                 />
                 <div class="truncate">
                   <span
-                    class="font-bold text-xs text-black dark:text-white group-hover:text-emerald-500 transition block truncate"
+                    class="font-bold text-xs text-foreground group-hover:opacity-80 transition block truncate"
                   >
                     {{ item.token.name }}
                   </span>
-                  <span class="text-[10px] font-mono text-zinc-400 block truncate">
+                  <span class="text-[10px] font-mono text-muted-foreground block truncate">
                     ${{ item.token.symbol }}
                   </span>
                 </div>
@@ -936,12 +923,12 @@
             </div>
 
             <div
-              class="mt-2.5 flex items-center justify-between font-mono text-[11px] pt-2 border-t border-zinc-100 dark:border-zinc-900"
+              class="mt-2.5 flex items-center justify-between font-mono text-[11px] pt-2 border-t border-border"
             >
-              <span class="text-zinc-400"
+              <span class="text-muted-foreground"
                 >MCap: {{ formatCompactUsd(item.marketData?.marketCapUsd) }}</span
               >
-              <span class="font-bold text-black dark:text-white">{{
+              <span class="font-bold text-foreground">{{
                 formatPriceUsd(item.marketData?.priceUsd)
               }}</span>
             </div>
@@ -953,7 +940,7 @@
                 <Check class="w-3 h-3" />
                 Uniswap Locked
               </span>
-              <span class="text-zinc-400">100%</span>
+              <span class="text-muted-foreground">100%</span>
             </div>
           </Card>
         </div>

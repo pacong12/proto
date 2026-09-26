@@ -128,10 +128,10 @@ function formatValue(val: number): string {
 <template>
   <div class="analytics-chart-container w-full select-none">
     <div
-      class="analytics-chart-stage relative rounded-2xl p-4 overflow-hidden border border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-950/50 backdrop-blur-sm"
+      class="analytics-chart-stage relative rounded-2xl p-4 overflow-hidden border border-border bg-card backdrop-blur-sm"
     >
       <div v-if="data.length === 0" class="flex items-center justify-center h-48">
-        <p class="text-xs font-serif text-zinc-500 italic">No historical data available.</p>
+        <p class="text-xs font-serif text-muted-foreground italic">No historical data available.</p>
       </div>
 
       <div v-else class="relative w-full">
@@ -152,7 +152,7 @@ function formatValue(val: number): string {
             :x2="viewWidth - paddingX"
             :y1="topPadding + chartHeight"
             :y2="topPadding + chartHeight"
-            class="stroke-zinc-300 dark:stroke-zinc-800"
+            class="stroke-border"
             stroke-width="1"
           />
 
@@ -163,7 +163,7 @@ function formatValue(val: number): string {
             :x2="cursorX"
             :y1="topPadding"
             :y2="topPadding + chartHeight"
-            class="stroke-zinc-400 dark:stroke-zinc-600"
+            class="stroke-muted-foreground"
             stroke-width="1"
             stroke-dasharray="4 4"
           />
@@ -191,14 +191,14 @@ function formatValue(val: number): string {
         <!-- Floating Tooltip -->
         <div
           v-if="activePoint !== null && cursorX !== null"
-          class="analytics-chart-tooltip pointer-events-none absolute top-2 rounded-lg bg-zinc-900/95 dark:bg-zinc-100/95 px-3 py-1.5 shadow-xl text-white dark:text-zinc-900 border border-zinc-700 dark:border-zinc-300 backdrop-blur-md z-10 transition-all duration-75"
+          class="analytics-chart-tooltip pointer-events-none absolute top-2 rounded-lg bg-popover text-popover-foreground border border-border shadow-xl px-3 py-1.5 backdrop-blur-md z-10 transition-all duration-75"
           :style="{
             left: `clamp(60px, ${(cursorX / viewWidth) * 100}%, calc(100% - 60px))`,
             transform: 'translateX(-50%)',
           }"
         >
           <div class="flex flex-col gap-0.5 text-center">
-            <span class="text-[11px] font-mono tracking-tight text-zinc-400 dark:text-zinc-600">
+            <span class="text-[11px] font-mono tracking-tight text-muted-foreground">
               {{ activePoint.label }}
             </span>
             <strong class="text-xs font-serif font-bold tabular-nums">
@@ -209,7 +209,7 @@ function formatValue(val: number): string {
 
         <!-- Horizontal X-Axis Ticks -->
         <div
-          class="flex justify-between px-2 pt-2 text-[10px] font-mono tabular-nums text-zinc-500 dark:text-zinc-400"
+          class="flex justify-between px-2 pt-2 text-[10px] font-mono tabular-nums text-muted-foreground"
         >
           <span>{{ data[0]?.label }}</span>
           <span v-if="data.length > 2">{{ data[Math.floor(data.length / 2)]?.label }}</span>

@@ -4,7 +4,7 @@
     @click.self="$emit('close')"
   >
     <Card
-      class="w-[calc(100vw-2rem)] sm:w-full max-w-2xl sm:max-w-3xl shadow-2xl overflow-hidden p-0 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 rounded-2xl flex flex-col transition-all duration-200"
+      class="w-[calc(100vw-2rem)] sm:w-full max-w-2xl sm:max-w-3xl shadow-2xl overflow-hidden p-0 border border-border bg-card rounded-2xl flex flex-col transition-all duration-200"
     >
       <!-- Search Input Header -->
       <div class="flex items-center gap-3 px-5 py-3.5 border-b border-border">
@@ -189,23 +189,22 @@
 
       <!-- Quick Actions Footer with Light & Dark contrast -->
       <div
-        class="px-4 py-2.5 bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-200 dark:border-zinc-800/80 flex items-center justify-between text-[11px] font-mono text-zinc-500 dark:text-zinc-400"
+        class="px-4 py-2.5 bg-muted/40 border-t border-border flex items-center justify-between text-[11px] font-mono text-muted-foreground"
       >
         <span>
           {{ t('navigateHint') }}:
-          <kbd
-            class="bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-1 py-0.5 rounded text-[10px]"
+          <kbd class="bg-muted text-foreground border border-border px-1 py-0.5 rounded text-[10px]"
             >↑</kbd
           >
           <kbd
-            class="bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-1 py-0.5 rounded text-[10px] ml-0.5"
+            class="bg-muted text-foreground border border-border px-1 py-0.5 rounded text-[10px] ml-0.5"
             >↓</kbd
           >
         </span>
         <span>
           {{ t('selectHint') }}:
           <kbd
-            class="bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-1.5 py-0.5 rounded text-[10px]"
+            class="bg-muted text-foreground border border-border px-1.5 py-0.5 rounded text-[10px]"
             >ENTER</kbd
           >
         </span>

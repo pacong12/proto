@@ -54,7 +54,7 @@
             <h2 class="text-base font-bold">
               {{ t('volumeAndLiquidity') }}
             </h2>
-            <p class="text-xs text-zinc-500 dark:text-zinc-400">
+            <p class="text-xs text-muted-foreground">
               {{ t('hourlyAggregatedVolume') }}
             </p>
           </div>
@@ -67,10 +67,10 @@
       <Card class="p-6 space-y-4">
         <div class="flex items-center justify-between">
           <div>
-            <h2 class="text-base font-bold">
+            <h2 class="text-base font-bold text-foreground">
               {{ t('totalTokensLaunched') }}
             </h2>
-            <p class="text-xs text-zinc-500 dark:text-zinc-400">Token deployments over 24h</p>
+            <p class="text-xs text-muted-foreground">Token deployments over 24h</p>
           </div>
           <Badge variant="graduated">{{ activeNetwork.name }}</Badge>
         </div>
@@ -81,12 +81,12 @@
 
     <!-- Contracts Table -->
     <Card class="p-6 space-y-4">
-      <h2 class="text-base font-bold text-black dark:text-white">{{ t('deployedContracts') }}</h2>
+      <h2 class="text-base font-bold text-foreground">{{ t('deployedContracts') }}</h2>
       <div class="space-y-3 font-mono text-xs">
         <div
           v-for="c in contractEntries"
           :key="c.name"
-          class="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800/80 gap-1.5"
+          class="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-muted/30 rounded-xl border border-border gap-1.5"
         >
           <span class="text-foreground font-medium sm:font-normal">{{ c.name }}</span>
           <span
