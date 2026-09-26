@@ -1,15 +1,15 @@
 <template>
   <div class="max-w-4xl mx-auto py-8 px-4 sm:px-6 space-y-8">
-    <div class="border-b border-zinc-200 dark:border-zinc-800 pb-4">
-      <h1 class="text-2xl font-bold tracking-tight text-black dark:text-white">
+    <div class="border-b border-border pb-4">
+      <h1 class="text-2xl font-bold tracking-tight text-foreground">
         {{ t('termsOfService') }}
       </h1>
-      <p class="text-xs text-zinc-500 font-mono mt-1">Last Updated: September 2026</p>
+      <p class="text-xs text-muted-foreground font-mono mt-1">Last Updated: September 2026</p>
     </div>
 
-    <div class="space-y-6 text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+    <div class="space-y-6 text-sm text-muted-foreground leading-relaxed">
       <section class="space-y-2">
-        <h2 class="text-base font-bold text-black dark:text-white">1. Non-Custodial Protocol</h2>
+        <h2 class="text-base font-bold text-foreground">1. Non-Custodial Protocol</h2>
         <p>
           Proto is a decentralized, non-custodial software protocol deployed on Robinhood Chain
           (Chain ID: 4663). Proto Labs does not take custody of user assets, tokens, or private keys
@@ -19,9 +19,7 @@
       </section>
 
       <section class="space-y-2">
-        <h2 class="text-base font-bold text-black dark:text-white">
-          2. Token Creation & Risk Disclosures
-        </h2>
+        <h2 class="text-base font-bold text-foreground">2. Token Creation & Risk Disclosures</h2>
         <ul class="list-disc pl-5 space-y-1">
           <li>
             <strong>User-Generated Assets:</strong> Tokens created through Proto are experimental,
@@ -40,9 +38,7 @@
       </section>
 
       <section class="space-y-2">
-        <h2 class="text-base font-bold text-black dark:text-white">
-          3. Fee Structure & Protocol Rules
-        </h2>
+        <h2 class="text-base font-bold text-foreground">3. Fee Structure & Protocol Rules</h2>
         <ul class="list-disc pl-5 space-y-1">
           <li>
             <strong>Launch Fee:</strong> A fixed protocol fee of 0.0005 ETH is required upon
@@ -62,7 +58,7 @@
       </section>
 
       <section class="space-y-2">
-        <h2 class="text-base font-bold text-black dark:text-white">4. Limitation of Liability</h2>
+        <h2 class="text-base font-bold text-foreground">4. Limitation of Liability</h2>
         <p>
           To the maximum extent permitted by law, Proto Labs, its contributors, and developers shall
           not be liable for any direct, indirect, incidental, or consequential damages resulting

@@ -278,26 +278,53 @@ export function useLaunchpad() {
           : 0n;
       const totalValue = network.launchConfig.launchFeeWei + initialBuyWei;
 
+      // On Arc Network (Chain ID 5042) or factory 0x4884..., the contract implements
+      // launchTokenV2(string,string,string,string,string,string,string) without minInitialTokensOut (selector 0x43a90f1e).
+      const is7ArgFactory =
+        targetFactory.toLowerCase() === '0x48844223abdceeb1ce502f54d559681358e68200' ||
+        network.chainId === 5042;
+
       launchStep.value = 'awaiting_signature';
 
-      const hash = await walletClient.writeContract({
-        address: targetFactory,
-        abi: launchpadV2FactoryAbi,
-        functionName: 'launchTokenV2',
-        args: [
-          params.name,
-          params.symbol,
-          params.logo,
-          params.description,
-          params.socials.twitter ?? '',
-          params.socials.telegram ?? '',
-          params.socials.website ?? '',
-          params.minInitialTokensOut ?? 0n,
-        ],
-        value: totalValue,
-        account,
-        chain: walletClient.chain,
-      });
+      let hash: `0x${string}`;
+      if (is7ArgFactory) {
+        hash = await walletClient.writeContract({
+          address: targetFactory,
+          abi: launchpadV2FactoryAbi,
+          functionName: 'launchTokenV2',
+          args: [
+            params.name,
+            params.symbol,
+            params.logo,
+            params.description,
+            params.socials.twitter ?? '',
+            params.socials.telegram ?? '',
+            params.socials.website ?? '',
+          ],
+          value: totalValue,
+          account,
+          chain: walletClient.chain,
+        });
+      } else {
+        hash = await walletClient.writeContract({
+          address: targetFactory,
+          abi: launchpadV2FactoryAbi,
+          functionName: 'launchTokenV2',
+          args: [
+            params.name,
+            params.symbol,
+            params.logo,
+            params.description,
+            params.socials.twitter ?? '',
+            params.socials.telegram ?? '',
+            params.socials.website ?? '',
+            params.minInitialTokensOut ?? 0n,
+          ],
+          value: totalValue,
+          account,
+          chain: walletClient.chain,
+        });
+      }
 
       launchTxHash.value = hash;
       launchStep.value = 'confirming';

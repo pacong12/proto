@@ -33,7 +33,7 @@
 
           <div class="space-y-1">
             <div class="flex items-center gap-2">
-              <h1 class="text-2xl font-bold tracking-tight text-black dark:text-white">
+              <h1 class="text-2xl font-bold tracking-tight text-foreground">
                 {{
                   profileData.displayName ||
                   (userAddress ? shortenAddress(userAddress) : 'Anonymous Creator')
@@ -41,7 +41,7 @@
               </h1>
             </div>
 
-            <p class="text-xs text-zinc-400 max-w-md">
+            <p class="text-xs text-muted-foreground max-w-md">
               {{
                 profileData.bio ||
                 'Non-custodial creator and trader on Proto multi-chain launchpad.'
@@ -80,7 +80,7 @@
             @click="editModalOpen = true"
             variant="outline"
             size="sm"
-            class="h-8 text-xs font-semibold gap-1.5 border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-black dark:text-white"
+            class="h-8 text-xs font-semibold gap-1.5 border-border hover:bg-muted text-foreground"
           >
             <Edit3 class="w-3.5 h-3.5" />
             Edit Profile
@@ -169,9 +169,9 @@
       <!-- Success Notification -->
       <div
         v-if="successTx"
-        class="text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-800 rounded-xl p-4 flex items-start gap-2 break-all"
+        class="text-xs text-foreground bg-emerald-950/40 border border-emerald-800 rounded-xl p-4 flex items-start gap-2 break-all"
       >
-        <Check class="w-4 h-4 shrink-0 mt-0.5 text-emerald-400" />
+        <Check class="w-4 h-4 shrink-0 mt-0.5 text-foreground" />
         <span>Transaction Successful! Tx Hash: {{ successTx }}</span>
       </div>
 
@@ -181,32 +181,32 @@
       >
         <Tabs v-model="activeTab" class="w-full">
           <div
-            class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-3"
+            class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3"
           >
             <TabsList
-              class="flex sm:inline-flex w-full sm:w-auto overflow-x-auto no-scrollbar bg-zinc-100 dark:bg-zinc-900 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800 gap-1 h-auto shrink-0"
+              class="flex sm:inline-flex w-full sm:w-auto overflow-x-auto no-scrollbar bg-muted p-1 rounded-xl border border-border gap-1 h-auto shrink-0"
             >
               <TabsTrigger
                 value="created"
-                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-black dark:text-white whitespace-nowrap shrink-0"
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-foreground whitespace-nowrap shrink-0"
               >
                 {{ t('createdTokens') }} ({{ myLaunches.length }})
               </TabsTrigger>
               <TabsTrigger
                 value="portfolio"
-                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-black dark:text-white whitespace-nowrap shrink-0"
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-foreground whitespace-nowrap shrink-0"
               >
                 {{ t('portfolio') }} ({{ portfolioPositions.length }})
               </TabsTrigger>
               <TabsTrigger
                 value="dividends"
-                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-black dark:text-white whitespace-nowrap shrink-0"
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-foreground whitespace-nowrap shrink-0"
               >
                 {{ t('dividendsAndVesting') }}
               </TabsTrigger>
               <TabsTrigger
                 value="activity"
-                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-black dark:text-white whitespace-nowrap shrink-0"
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-foreground whitespace-nowrap shrink-0"
               >
                 {{ t('activity') }} ({{ userActivities.length }})
               </TabsTrigger>
@@ -215,7 +215,7 @@
             <Button
               variant="ghost"
               size="sm"
-              class="h-8 text-xs text-zinc-500 hover:text-black dark:text-zinc-400 dark:hover:text-white self-end sm:self-auto border border-zinc-200 dark:border-zinc-800"
+              class="h-8 text-xs text-muted-foreground hover:text-foreground self-end sm:self-auto border border-border"
               @click="refreshAllData"
             >
               <RefreshCw class="w-3.5 h-3.5 mr-1" :class="{ 'animate-spin': loadingLaunches }" />
@@ -225,13 +225,13 @@
 
           <!-- TAB 1: CREATED TOKENS -->
           <TabsContent value="created" class="mt-4 space-y-4">
-            <div v-if="loadingLaunches" class="py-12 text-center text-xs text-zinc-400">
-              <Loader2 class="w-5 h-5 text-emerald-400 animate-spin mx-auto mb-2" />
+            <div v-if="loadingLaunches" class="py-12 text-center text-xs text-muted-foreground">
+              <Loader2 class="w-5 h-5 text-foreground animate-spin mx-auto mb-2" />
               Loading created tokens...
             </div>
             <div
               v-else-if="myLaunches.length === 0"
-              class="py-12 text-center text-xs text-zinc-500"
+              class="py-12 text-center text-xs text-muted-foreground"
             >
               No tokens launched from this address yet.
             </div>
@@ -239,7 +239,7 @@
               <Card
                 v-for="token in myLaunches"
                 :key="token.address"
-                class="bg-zinc-50/60 dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800/80 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                class="bg-card border-border p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 <div class="flex items-start gap-3.5">
                   <OptimizedImage
@@ -248,15 +248,17 @@
                     :fallback-text="token.symbol"
                     :width="48"
                     :height="48"
-                    class="rounded-lg border border-zinc-700"
+                    class="rounded-lg border border-border"
                   />
 
                   <div>
                     <div class="flex items-center gap-2">
-                      <h3 class="font-bold text-base text-black dark:text-white">
+                      <h3 class="font-bold text-base text-foreground">
                         {{ token.name }}
                       </h3>
-                      <span class="text-xs font-mono text-zinc-400">${{ token.symbol }}</span>
+                      <span class="text-xs font-mono text-muted-foreground"
+                        >${{ token.symbol }}</span
+                      >
                       <Badge
                         :variant="token.version === 'v2' ? 'outline' : 'secondary'"
                         class="text-[9px] px-1.5 py-0 h-4 font-mono uppercase"
@@ -264,11 +266,13 @@
                         {{ token.version === 'v2' ? 'v2 Curve' : 'v1 Direct' }}
                       </Badge>
                     </div>
-                    <p class="text-xs font-mono text-zinc-500 mt-0.5">{{ token.address }}</p>
-                    <div class="flex items-center gap-3 mt-2 text-xs text-zinc-400">
+                    <p class="text-xs font-mono text-muted-foreground mt-0.5">
+                      {{ token.address }}
+                    </p>
+                    <div class="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                       <span>
                         Accrued:
-                        <strong class="text-emerald-400 font-mono"
+                        <strong class="text-foreground font-mono"
                           >{{ token.unclaimedWeth }}
                           {{ activeNetwork.nativeCurrency.symbol }}</strong
                         >
@@ -276,7 +280,7 @@
                       <span>•</span>
                       <span>
                         Redirect:
-                        <strong class="font-mono text-zinc-300">
+                        <strong class="font-mono text-foreground">
                           {{ token.redirect ? `${token.redirect.slice(0, 6)}...` : 'None (Self)' }}
                         </strong>
                       </span>
@@ -307,14 +311,14 @@
           <TabsContent value="portfolio" class="mt-4 space-y-4">
             <div
               v-if="portfolioPositions.length === 0"
-              class="py-12 text-center text-xs text-zinc-500"
+              class="py-12 text-center text-xs text-muted-foreground"
             >
               No active token holdings found for this wallet.
             </div>
             <div v-else class="overflow-x-auto">
               <table class="w-full text-left text-xs font-mono">
                 <thead>
-                  <tr class="border-b border-zinc-800 text-zinc-400">
+                  <tr class="border-b border-border text-muted-foreground">
                     <th class="py-2.5 px-3 font-semibold">Asset</th>
                     <th class="py-2.5 px-3 font-semibold text-right">Balance</th>
                     <th class="py-2.5 px-3 font-semibold text-right">Price (USD)</th>
@@ -322,30 +326,30 @@
                     <th class="py-2.5 px-3 font-semibold text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-zinc-800">
+                <tbody class="divide-y divide-border">
                   <tr
                     v-for="pos in portfolioPositions"
                     :key="pos.tokenAddress"
-                    class="hover:bg-zinc-100/40 dark:hover:bg-zinc-900/40 transition-colors"
+                    class="hover:bg-muted/40 transition-colors"
                   >
                     <td class="py-2.5 px-3">
                       <div class="flex items-center gap-2">
-                        <Avatar class="w-6 h-6 rounded border border-zinc-700 overflow-hidden">
-                          <AvatarFallback class="text-[9px] bg-zinc-800 text-emerald-400">
+                        <Avatar class="w-6 h-6 rounded border border-border overflow-hidden">
+                          <AvatarFallback class="text-[9px] bg-muted text-foreground">
                             {{ pos.symbol.slice(0, 3) }}
                           </AvatarFallback>
                         </Avatar>
-                        <span class="font-bold text-black dark:text-white">{{ pos.name }}</span>
-                        <span class="text-zinc-500">${{ pos.symbol }}</span>
+                        <span class="font-bold text-foreground">{{ pos.name }}</span>
+                        <span class="text-muted-foreground">${{ pos.symbol }}</span>
                       </div>
                     </td>
-                    <td class="py-2.5 px-3 text-right text-black dark:text-white font-medium">
+                    <td class="py-2.5 px-3 text-right text-foreground font-medium">
                       {{ pos.balanceFormatted }}
                     </td>
-                    <td class="py-2.5 px-3 text-right text-zinc-400">
+                    <td class="py-2.5 px-3 text-right text-muted-foreground">
                       ${{ pos.priceUsd.toFixed(8) }}
                     </td>
-                    <td class="py-2.5 px-3 text-right text-emerald-400 font-bold">
+                    <td class="py-2.5 px-3 text-right text-foreground font-bold">
                       ${{
                         pos.valueUsd.toLocaleString(undefined, {
                           minimumFractionDigits: 2,
@@ -358,7 +362,7 @@
                         as-child
                         variant="outline"
                         size="sm"
-                        class="h-7 px-2.5 text-xs font-semibold gap-1 border-zinc-200 dark:border-zinc-800"
+                        class="h-7 px-2.5 text-xs font-semibold gap-1 border-border"
                       >
                         <RouterLink :to="`/launchpad/${pos.tokenAddress}`">
                           Trade
@@ -374,13 +378,16 @@
 
           <!-- TAB 3: ACTIVITY HISTORY -->
           <TabsContent value="activity" class="mt-4 space-y-4">
-            <div v-if="userActivities.length === 0" class="py-12 text-center text-xs text-zinc-500">
+            <div
+              v-if="userActivities.length === 0"
+              class="py-12 text-center text-xs text-muted-foreground"
+            >
               No recent transactions recorded for this wallet.
             </div>
             <div v-else class="overflow-x-auto">
               <table class="w-full text-left text-xs font-mono">
                 <thead>
-                  <tr class="border-b border-zinc-800 text-zinc-400">
+                  <tr class="border-b border-border text-muted-foreground">
                     <th class="py-2.5 px-3 font-semibold">Action</th>
                     <th class="py-2.5 px-3 font-semibold">Token</th>
                     <th class="py-2.5 px-3 font-semibold text-right">Amount ETH</th>
@@ -389,11 +396,11 @@
                     <th class="py-2.5 px-3 font-semibold text-right">Explorer</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-zinc-800">
+                <tbody class="divide-y divide-border">
                   <tr
                     v-for="act in userActivities"
                     :key="act.txHash"
-                    class="hover:bg-zinc-100/40 dark:hover:bg-zinc-900/40 transition-colors"
+                    class="hover:bg-muted/40 transition-colors"
                   >
                     <td class="py-2.5 px-3">
                       <Badge
@@ -403,16 +410,14 @@
                         {{ act.isBuy ? 'Buy' : 'Sell' }}
                       </Badge>
                     </td>
-                    <td class="py-2.5 px-3 text-black dark:text-white font-medium">
-                      ${{ act.tokenSymbol }}
-                    </td>
-                    <td class="py-2.5 px-3 text-right text-emerald-400 font-medium">
+                    <td class="py-2.5 px-3 text-foreground font-medium">${{ act.tokenSymbol }}</td>
+                    <td class="py-2.5 px-3 text-right text-foreground font-medium">
                       {{ act.ethAmount }} {{ activeNetwork.nativeCurrency.symbol }}
                     </td>
-                    <td class="py-2.5 px-3 text-right text-zinc-300">
+                    <td class="py-2.5 px-3 text-right text-foreground">
                       {{ act.tokenAmount }}
                     </td>
-                    <td class="py-2.5 px-3 text-right text-zinc-500">
+                    <td class="py-2.5 px-3 text-right text-muted-foreground">
                       {{ formatTimeAgo(act.timestamp) }}
                     </td>
                     <td class="py-2.5 px-3 text-right">
@@ -420,7 +425,7 @@
                         :href="`${activeNetwork.blockExplorer}/tx/${act.txHash}`"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="text-zinc-500 hover:text-emerald-400 inline-flex items-center"
+                        class="text-muted-foreground hover:text-foreground inline-flex items-center"
                       >
                         <ExternalLink class="w-3.5 h-3.5" />
                       </a>
@@ -435,35 +440,29 @@
           <TabsContent value="dividends" class="mt-4 space-y-4">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <!-- Holder Fee Dividends Card -->
-              <Card
-                class="p-5 bg-zinc-50/60 dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 space-y-3"
-              >
+              <Card class="p-5 bg-card border-border space-y-3">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2">
-                    <Coins class="w-4 h-4 text-emerald-400" />
-                    <h3 class="text-sm font-bold text-black dark:text-white">
-                      Holder Fee Sharing Dividends
-                    </h3>
+                    <Coins class="w-4 h-4 text-foreground" />
+                    <h3 class="text-sm font-bold text-foreground">Holder Fee Sharing Dividends</h3>
                   </div>
                   <Badge
                     variant="outline"
-                    class="text-[10px] font-mono text-emerald-400 border-emerald-500/30"
+                    class="text-[10px] font-mono text-foreground border-emerald-500/30"
                   >
                     70% Split
                   </Badge>
                 </div>
-                <p class="text-xs text-zinc-400">
+                <p class="text-xs text-muted-foreground">
                   Pro-rata trading fee rewards accrued from tokens you hold that enabled Holder Fee
                   Sharing.
                 </p>
-                <div
-                  class="flex items-end justify-between pt-2 border-t border-zinc-200 dark:border-zinc-800"
-                >
+                <div class="flex items-end justify-between pt-2 border-t border-border">
                   <div>
-                    <span class="text-[10px] text-zinc-500 uppercase font-mono"
+                    <span class="text-[10px] text-muted-foreground uppercase font-mono"
                       >Claimable Reward</span
                     >
-                    <p class="text-lg font-bold font-mono text-emerald-400">0.0000 WETH</p>
+                    <p class="text-lg font-bold font-mono text-foreground">0.0000 WETH</p>
                   </div>
                   <Button
                     size="sm"
@@ -478,32 +477,26 @@
               </Card>
 
               <!-- Linear Vesting Schedule Card -->
-              <Card
-                class="p-5 bg-zinc-50/60 dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 space-y-3"
-              >
+              <Card class="p-5 bg-card border-border space-y-3">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2">
-                    <Lock class="w-4 h-4 text-emerald-400" />
-                    <h3 class="text-sm font-bold text-black dark:text-white">
-                      Linear Vesting Vault
-                    </h3>
+                    <Lock class="w-4 h-4 text-foreground" />
+                    <h3 class="text-sm font-bold text-foreground">Linear Vesting Vault</h3>
                   </div>
-                  <Badge variant="outline" class="text-[10px] font-mono text-zinc-400">
+                  <Badge variant="outline" class="text-[10px] font-mono text-muted-foreground">
                     Continuous Release
                   </Badge>
                 </div>
-                <p class="text-xs text-zinc-400">
+                <p class="text-xs text-muted-foreground">
                   Tokens locked in linear vesting schedules (buybacks, team allocations, migration
                   claims).
                 </p>
-                <div
-                  class="flex items-end justify-between pt-2 border-t border-zinc-200 dark:border-zinc-800"
-                >
+                <div class="flex items-end justify-between pt-2 border-t border-border">
                   <div>
-                    <span class="text-[10px] text-zinc-500 uppercase font-mono"
+                    <span class="text-[10px] text-muted-foreground uppercase font-mono"
                       >Unlocked Tokens</span
                     >
-                    <p class="text-lg font-bold font-mono text-black dark:text-white">0 DIV</p>
+                    <p class="text-lg font-bold font-mono text-foreground">0 DIV</p>
                   </div>
                   <Button
                     size="sm"
@@ -523,20 +516,20 @@
       <!-- Edit Profile Modal -->
       <Dialog v-model:open="editModalOpen">
         <DialogContent
-          class="w-[calc(100vw-2rem)] sm:max-w-lg bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-black dark:text-white transition-all duration-200"
+          class="w-[calc(100vw-2rem)] sm:max-w-lg bg-card border-border text-foreground transition-all duration-200"
         >
           <DialogHeader>
-            <div class="flex items-center gap-2 text-emerald-400 mb-1">
+            <div class="flex items-center gap-2 text-foreground mb-1">
               <Edit3 class="w-5 h-5" />
               <DialogTitle>Edit Creator Profile</DialogTitle>
             </div>
-            <DialogDescription class="text-xs text-zinc-400">
+            <DialogDescription class="text-xs text-muted-foreground">
               Customize your public creator identity, social handles, and bio.
             </DialogDescription>
           </DialogHeader>
 
           <div
-            class="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-[11px] text-zinc-500"
+            class="p-2.5 rounded-lg border border-border bg-muted/40 text-[11px] text-muted-foreground"
           >
             Profile metadata is stored in your local browser session for this wallet address.
           </div>
@@ -575,7 +568,7 @@
                   'relative border-2 border-dashed rounded-xl p-3.5 transition-all flex items-center gap-3.5 text-left cursor-pointer min-w-0 overflow-hidden',
                   dragOverAvatar
                     ? 'border-emerald-500 bg-emerald-500/10'
-                    : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-700',
+                    : 'border-border hover:border-foreground/50',
                 ]"
                 @click="triggerAvatarUpload"
               >
@@ -589,7 +582,7 @@
 
                 <!-- Circular Avatar Preview -->
                 <Avatar
-                  class="w-14 h-14 rounded-full border border-zinc-200 dark:border-zinc-700 overflow-hidden shrink-0 shadow-xs"
+                  class="w-14 h-14 rounded-full border border-border overflow-hidden shrink-0 shadow-xs"
                 >
                   <img
                     v-if="editResolvedAvatar"
@@ -599,7 +592,7 @@
                   />
                   <div
                     v-else-if="isUploadingAvatar"
-                    class="w-full h-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800"
+                    class="w-full h-full flex items-center justify-center bg-muted"
                   >
                     <Loader2 class="w-5 h-5 text-emerald-500 animate-spin" />
                   </div>
@@ -615,7 +608,7 @@
                 <div class="flex-1 min-w-0 space-y-0.5">
                   <div class="flex items-center gap-1.5 min-w-0">
                     <span
-                      class="text-xs font-bold text-black dark:text-white truncate block flex-1 min-w-0"
+                      class="text-xs font-bold text-foreground truncate block flex-1 min-w-0"
                       :title="
                         avatarFileName ||
                         (editForm.avatarUrl ? 'Custom Photo' : 'Upload from device')
@@ -642,7 +635,7 @@
                       Active
                     </Badge>
                   </div>
-                  <p class="text-[11px] text-zinc-400 truncate">
+                  <p class="text-[11px] text-muted-foreground truncate">
                     Click or drag image (PNG, JPG, WEBP max 5MB).
                   </p>
                 </div>
@@ -653,7 +646,7 @@
                   type="button"
                   variant="ghost"
                   size="sm"
-                  class="h-7 w-7 p-0 text-zinc-400 hover:text-rose-500 rounded cursor-pointer"
+                  class="h-7 w-7 p-0 text-muted-foreground hover:text-destructive rounded cursor-pointer"
                   title="Remove photo"
                   @click.stop="removeAvatar"
                 >
@@ -666,7 +659,8 @@
               <div class="space-y-1.5">
                 <Label for="edit-x" class="text-xs font-medium">X (Twitter)</Label>
                 <div class="relative">
-                  <span class="absolute left-2.5 top-2 text-xs font-mono text-zinc-400 select-none"
+                  <span
+                    class="absolute left-2.5 top-2 text-xs font-mono text-muted-foreground select-none"
                     >@</span
                   >
                   <Input
@@ -681,7 +675,8 @@
               <div class="space-y-1.5">
                 <Label for="edit-tg" class="text-xs font-medium">Telegram</Label>
                 <div class="relative">
-                  <span class="absolute left-2.5 top-2 text-xs font-mono text-zinc-400 select-none"
+                  <span
+                    class="absolute left-2.5 top-2 text-xs font-mono text-muted-foreground select-none"
                     >t.me/</span
                   >
                   <Input
@@ -707,14 +702,14 @@
       <!-- CTO Modal -->
       <Dialog v-model:open="ctoModalOpen">
         <DialogContent
-          class="w-[calc(100vw-2rem)] sm:max-w-lg bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-black dark:text-white transition-all duration-200"
+          class="w-[calc(100vw-2rem)] sm:max-w-lg bg-card border-border text-foreground transition-all duration-200"
         >
           <DialogHeader>
-            <div class="flex items-center gap-2 text-emerald-400 mb-1">
+            <div class="flex items-center gap-2 text-foreground mb-1">
               <ShieldAlert class="w-5 h-5" />
               <DialogTitle>Community Takeover (CTO) Redirect</DialogTitle>
             </div>
-            <DialogDescription class="text-xs text-zinc-400">
+            <DialogDescription class="text-xs text-muted-foreground">
               Permanently route all future 70% creator fees for this token to a community treasury
               wallet.
             </DialogDescription>
@@ -728,7 +723,7 @@
                 :model-value="selectedCtoToken"
                 readonly
                 disabled
-                class="font-mono text-xs text-zinc-500"
+                class="font-mono text-xs text-muted-foreground"
               />
             </div>
 

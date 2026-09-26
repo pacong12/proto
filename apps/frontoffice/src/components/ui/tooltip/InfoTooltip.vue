@@ -11,7 +11,7 @@ defineProps<{
     <HoverCardTrigger as-child>
       <button
         type="button"
-        class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-zinc-200/80 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:text-black dark:hover:text-white hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors text-[10px] font-mono font-bold cursor-help shrink-0 select-none border border-zinc-300 dark:border-zinc-700"
+        class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors text-[10px] font-mono font-bold cursor-help shrink-0 select-none border border-border"
         aria-label="Info"
       >
         <span>!</span>

@@ -53,7 +53,7 @@ function handleError() {
 <template>
   <div class="relative inline-block shrink-0" :class="props.class">
     <div
-      class="relative flex items-center justify-center overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 select-none"
+      class="relative flex items-center justify-center overflow-hidden rounded-lg bg-muted text-muted-foreground select-none"
       :style="{
         width: typeof width === 'number' ? `${width}px` : width,
         height: typeof height === 'number' ? `${height}px` : height,
@@ -63,7 +63,7 @@ function handleError() {
       <!-- Placeholder / Blur skeleton while loading -->
       <div
         v-if="!isLoaded && !hasError && resolvedSrc"
-        class="absolute inset-0 bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded-lg"
+        class="absolute inset-0 bg-muted animate-pulse rounded-lg"
         aria-hidden="true"
       />
 
@@ -84,7 +84,7 @@ function handleError() {
       <!-- Fallback avatar when image fails or is empty -->
       <span
         v-if="!resolvedSrc || hasError"
-        class="font-mono font-bold text-xs uppercase tracking-wider text-emerald-600 dark:text-emerald-400"
+        class="font-mono font-bold text-xs uppercase tracking-wider text-foreground"
       >
         {{ fallbackText ? fallbackText.slice(0, 3) : 'TOK' }}
       </span>
@@ -93,7 +93,7 @@ function handleError() {
     <!-- GMGN-style Sub-Badge at Bottom-Right (Chain and/or Currency Logo) -->
     <div
       v-if="chainBadge || currencyBadge"
-      class="absolute -bottom-1 -right-1 flex items-center bg-white dark:bg-zinc-950 rounded-full p-0.5 shadow-xs border border-zinc-200 dark:border-zinc-800 z-10"
+      class="absolute -bottom-1 -right-1 flex items-center bg-card rounded-full p-0.5 shadow-xs border border-border z-10"
     >
       <img
         v-if="chainBadge"
@@ -109,7 +109,7 @@ function handleError() {
         alt="Currency"
         width="14"
         height="14"
-        class="w-3.5 h-3.5 rounded-full object-contain -ml-1 border-l border-zinc-200 dark:border-zinc-800"
+        class="w-3.5 h-3.5 rounded-full object-contain -ml-1 border-l border-border"
       />
     </div>
   </div>

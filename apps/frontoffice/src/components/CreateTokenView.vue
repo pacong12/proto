@@ -1,8 +1,8 @@
 <template>
   <div class="max-w-4xl mx-auto space-y-8 py-2 sm:py-4">
     <div>
-      <h1 class="text-3xl font-bold tracking-tight">{{ t('launchToken') }}</h1>
-      <p class="text-sm mt-1 text-zinc-500 dark:text-zinc-400">
+      <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t('launchToken') }}</h1>
+      <p class="text-sm mt-1 text-muted-foreground">
         {{ selectedVersion === 'v2' ? t('v2Subtitle') : t('v1Subtitle') }}
       </p>
     </div>
@@ -81,15 +81,13 @@
               <!-- Empty Upload Prompt -->
               <div
                 v-else
-                class="flex flex-col items-center justify-center p-2 text-zinc-400 space-y-1.5"
+                class="flex flex-col items-center justify-center p-2 text-muted-foreground space-y-1.5"
               >
-                <div
-                  class="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center"
-                >
-                  <UploadCloud class="w-5 h-5 text-zinc-400" />
+                <div class="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                  <UploadCloud class="w-5 h-5 text-muted-foreground" />
                 </div>
-                <span class="text-xs font-semibold text-black dark:text-white">Upload Logo</span>
-                <span class="text-[10px] text-zinc-400 leading-tight"
+                <span class="text-xs font-semibold text-foreground">Upload Logo</span>
+                <span class="text-[10px] text-muted-foreground leading-tight"
                   >PNG, JPG, WEBP (Max 5MB)</span
                 >
               </div>
@@ -107,7 +105,7 @@
             <!-- Image Error -->
             <div
               v-if="imageError"
-              class="text-[11px] text-rose-500 bg-rose-500/10 border border-rose-500/20 rounded-lg p-2"
+              class="text-[11px] text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2"
             >
               {{ imageError }}
             </div>
@@ -193,7 +191,7 @@
         <!-- Paired Asset (Tied to active network selected in navigation) -->
         <div class="space-y-2 pt-1">
           <div class="flex items-center justify-between">
-            <span class="text-[11px] font-mono text-zinc-400">
+            <span class="text-[11px] font-mono text-muted-foreground">
               {{ activeNetwork.name }}
             </span>
           </div>
@@ -202,20 +200,22 @@
             id="paired-asset"
             class="w-full flex items-center justify-between px-4 py-3 h-12 rounded-xl border border-border bg-card text-foreground"
           >
-            <div class="flex items-center gap-2 font-mono">
+            <div class="flex items-center gap-2.5 font-mono">
               <img
                 :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
                 :alt="currencySymbol"
-                class="w-5 h-5 rounded-full object-contain shrink-0"
+                width="22"
+                height="22"
+                class="w-5.5 h-5.5 rounded-full object-contain shrink-0"
               />
-              <span class="font-bold text-sm text-black dark:text-white">{{ currencySymbol }}</span>
+              <span class="font-bold text-sm text-foreground">{{ currencySymbol }}</span>
             </div>
-            <span class="text-[11px] font-mono text-zinc-400">
+            <span class="text-[11px] font-mono text-muted-foreground">
               Locked on {{ activeNetwork.name }}
             </span>
           </div>
 
-          <p class="text-[11px] text-zinc-500 dark:text-zinc-400">
+          <p class="text-[11px] text-muted-foreground">
             {{
               selectedVersion === 'v2'
                 ? activeNetwork.chainId === 5042
@@ -229,7 +229,7 @@
         <!-- Developer buy -->
         <div class="space-y-2 pt-1">
           <div class="flex justify-between items-center">
-            <span class="text-[11px] text-zinc-500 font-mono">
+            <span class="text-[11px] text-muted-foreground font-mono">
               {{ t('boughtInLaunchNotice') }}
             </span>
           </div>
@@ -241,11 +241,22 @@
               step="0.001"
               min="0"
               placeholder="0.00"
-              class="font-mono text-sm pr-16"
+              class="font-mono text-sm pr-20"
             />
-            <span class="absolute right-3 top-2.5 text-xs font-semibold text-zinc-400">
-              {{ currencySymbol }}
-            </span>
+            <div
+              class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none select-none"
+            >
+              <img
+                :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
+                :alt="currencySymbol"
+                width="16"
+                height="16"
+                class="w-4 h-4 rounded-full object-contain shrink-0"
+              />
+              <span class="text-xs font-semibold font-mono text-muted-foreground">
+                {{ currencySymbol }}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -281,7 +292,7 @@
                   >Deployer (msg.sender)</Badge
                 >
               </div>
-              <p class="text-[10px] text-zinc-400">
+              <p class="text-[10px] text-muted-foreground">
                 {{ t('creatorWalletDesc') }}
               </p>
             </div>
@@ -290,14 +301,12 @@
             <div class="space-y-3.5 pt-4 border-t border-border">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-1.5">
-                  <Label class="text-xs font-semibold text-black dark:text-white"
-                    >Trading Taxes</Label
-                  >
+                  <Label class="text-xs font-semibold text-foreground">Trading Taxes</Label>
                   <InfoTooltip
                     text="Taxes collected on automated market maker (DEX) swaps (max 10% per trade). Funds project development, liquidity deepening, and holder dividends."
                   />
                 </div>
-                <span class="text-[10px] font-mono text-zinc-400">Max 10% per trade</span>
+                <span class="text-[10px] font-mono text-muted-foreground">Max 10% per trade</span>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
@@ -305,7 +314,7 @@
                 <div class="space-y-3.5 p-4 sm:p-5 rounded-2xl border border-border bg-card">
                   <div class="flex items-center justify-between">
                     <div class="flex items-center gap-1">
-                      <span class="text-xs font-medium text-black dark:text-white">Buy Tax</span>
+                      <span class="text-xs font-medium text-foreground">Buy Tax</span>
                       <InfoTooltip
                         text="Fee deducted when users purchase tokens. Recommended: 1% - 5%."
                       />
@@ -343,7 +352,7 @@
                 <div class="space-y-3.5 p-4 sm:p-5 rounded-2xl border border-border bg-card">
                   <div class="flex items-center justify-between">
                     <div class="flex items-center gap-1">
-                      <span class="text-xs font-medium text-black dark:text-white">Sell Tax</span>
+                      <span class="text-xs font-medium text-foreground">Sell Tax</span>
                       <InfoTooltip
                         text="Fee deducted when users sell tokens back into the pool. Discourages immediate dumping."
                       />
@@ -384,16 +393,12 @@
               <div class="flex items-center justify-between">
                 <div>
                   <div class="flex items-center gap-1.5">
-                    <Label class="text-xs font-semibold text-black dark:text-white"
-                      >Revenue Split</Label
-                    >
+                    <Label class="text-xs font-semibold text-foreground">Revenue Split</Label>
                     <InfoTooltip
                       text="Specifies how collected trading taxes are distributed on-chain. Allocations must sum to exactly 100% to launch."
                     />
                   </div>
-                  <p class="text-[11px] text-zinc-500 dark:text-zinc-400">
-                    Fee allocation (must total 100%)
-                  </p>
+                  <p class="text-[11px] text-muted-foreground">Fee allocation (must total 100%)</p>
                 </div>
                 <Badge
                   :variant="totalSplit === 100 ? 'default' : 'outline'"
@@ -587,7 +592,7 @@
                       @update:model-value="updateShare('creator', $event ? $event[0] : 0)"
                     />
                     <div
-                      class="flex items-center justify-between text-[10px] text-zinc-400 font-mono"
+                      class="flex items-center justify-between text-[10px] text-muted-foreground font-mono"
                     >
                       <span>max {{ maxCreator }}%: the other shares leave this much</span>
                       <span>{{ revenueSplit.creator }}/{{ maxCreator }}%</span>
@@ -617,7 +622,7 @@
                       @update:model-value="updateShare('buyback', $event ? $event[0] : 0)"
                     />
                     <div
-                      class="flex items-center justify-between text-[10px] text-zinc-400 font-mono"
+                      class="flex items-center justify-between text-[10px] text-muted-foreground font-mono"
                     >
                       <span>max {{ maxBuyback }}%: the other shares leave this much</span>
                       <span>{{ revenueSplit.buyback }}/{{ maxBuyback }}%</span>
@@ -647,7 +652,7 @@
                       @update:model-value="updateShare('holders', $event ? $event[0] : 0)"
                     />
                     <div
-                      class="flex items-center justify-between text-[10px] text-zinc-400 font-mono"
+                      class="flex items-center justify-between text-[10px] text-muted-foreground font-mono"
                     >
                       <span>max {{ maxHolders }}%: the other shares leave this much</span>
                       <span>{{ revenueSplit.holders }}/{{ maxHolders }}%</span>
@@ -677,7 +682,7 @@
                       @update:model-value="updateShare('growth', $event ? $event[0] : 0)"
                     />
                     <div
-                      class="flex items-center justify-between text-[10px] text-zinc-400 font-mono"
+                      class="flex items-center justify-between text-[10px] text-muted-foreground font-mono"
                     >
                       <span>max {{ maxGrowth }}%: the other shares leave this much</span>
                       <span>{{ revenueSplit.growth }}/{{ maxGrowth }}%</span>
@@ -688,7 +693,7 @@
                   <div
                     class="pt-4 mt-2 border-t border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
                   >
-                    <span class="text-zinc-500 dark:text-zinc-400">
+                    <span class="text-muted-foreground">
                       Each share stops where the others leave off. They must total 100% to launch.
                     </span>
                     <span
@@ -728,16 +733,30 @@
         <div class="pt-6 border-t border-border space-y-4">
           <!-- Launch Cost Summary Breakdown -->
           <div class="rounded-2xl border border-border bg-muted/40 p-4 space-y-3 text-xs font-mono">
-            <div class="flex items-center justify-between text-zinc-500 dark:text-zinc-400">
+            <div class="flex items-center justify-between text-muted-foreground">
               <span>{{ t('platformCreationFee') }}</span>
-              <span class="font-bold text-black dark:text-white">
+              <span class="font-bold text-foreground flex items-center gap-1.5">
+                <img
+                  :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
+                  :alt="currencySymbol"
+                  width="16"
+                  height="16"
+                  class="w-4 h-4 rounded-full object-contain shrink-0"
+                />
                 {{ launchFeeFormatted }} {{ currencySymbol }}
               </span>
             </div>
 
-            <div class="flex items-center justify-between text-zinc-500 dark:text-zinc-400">
+            <div class="flex items-center justify-between text-muted-foreground">
               <span>{{ t('developerBuy') }}</span>
-              <span class="font-semibold text-black dark:text-white">
+              <span class="font-semibold text-foreground flex items-center gap-1.5">
+                <img
+                  :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
+                  :alt="currencySymbol"
+                  width="16"
+                  height="16"
+                  class="w-4 h-4 rounded-full object-contain shrink-0"
+                />
                 {{
                   form.initialBuyEth
                     ? Number(form.initialBuyEth).toFixed(currencySymbol === 'USDC' ? 2 : 4)
@@ -748,12 +767,17 @@
             </div>
 
             <div class="pt-3 border-t border-border flex items-center justify-between">
-              <span
-                class="font-bold text-black dark:text-white uppercase tracking-wider text-[11px]"
-              >
+              <span class="font-bold text-foreground uppercase tracking-wider text-[11px]">
                 {{ t('totalDue') }}
               </span>
-              <span class="text-sm font-bold text-emerald-500 dark:text-emerald-400">
+              <span class="text-sm font-bold text-foreground flex items-center gap-1.5 font-mono">
+                <img
+                  :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
+                  :alt="currencySymbol"
+                  width="18"
+                  height="18"
+                  class="w-4.5 h-4.5 rounded-full object-contain shrink-0"
+                />
                 {{ totalPairDue }}
               </span>
             </div>
@@ -762,7 +786,11 @@
           <Button
             type="submit"
             :disabled="
-              loading || isUploadingIpfs || !form.name || !form.symbol || totalSplit !== 100
+              loading ||
+              isUploadingIpfs ||
+              (isConnected &&
+                isCorrectNetwork &&
+                (!form.name.trim() || !form.symbol.trim() || totalSplit !== 100))
             "
             class="w-full font-bold py-3.5 text-base h-12 rounded-xl shadow-md cursor-pointer transition active:scale-[0.99]"
             size="lg"
@@ -775,15 +803,17 @@
                   ? t('launchTokenBtn') + '...'
                   : !isConnected
                     ? t('connectWallet')
-                    : totalSplit !== 100
-                      ? `Allocation must total 100% (${totalSplit}%)`
-                      : `${t('launchTokenBtn')} (${totalPairDue})`
+                    : !isCorrectNetwork
+                      ? `Switch to ${activeNetwork.name}`
+                      : totalSplit !== 100
+                        ? `Allocation must total 100% (${totalSplit}%)`
+                        : `${t('launchTokenBtn')} (${totalPairDue})`
             }}
           </Button>
 
           <div
             v-if="error"
-            class="text-xs text-rose-500 bg-rose-500/10 border border-rose-500/20 rounded-lg p-3 flex items-start gap-2"
+            class="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex items-start gap-2"
           >
             <AlertCircle class="w-4 h-4 shrink-0 mt-0.5" />
             <span>{{ error }}</span>
@@ -802,16 +832,14 @@
       "
     >
       <DialogContent
-        class="w-[calc(100vw-2rem)] sm:max-w-lg p-6 bg-white dark:bg-[#181818] border border-stone-200 dark:border-stone-800 rounded-2xl shadow-2xl"
+        class="w-[calc(100vw-2rem)] sm:max-w-lg p-6 bg-card border border-border rounded-2xl shadow-2xl"
       >
         <DialogHeader class="mb-4">
-          <DialogTitle
-            class="text-lg font-bold text-stone-900 dark:text-white flex items-center gap-2"
-          >
-            <Rocket class="w-5 h-5 text-emerald-500" />
+          <DialogTitle class="text-lg font-bold text-foreground flex items-center gap-2">
+            <Rocket class="w-5 h-5 text-foreground" />
             <span>{{ t('launchingModalTitle') }}</span>
           </DialogTitle>
-          <DialogDescription class="text-xs text-stone-500 dark:text-stone-400">
+          <DialogDescription class="text-xs text-muted-foreground">
             {{ form.name || 'Token' }} ({{ form.symbol || 'SYMBOL' }}) &middot;
             {{ activeNetwork.name }}
           </DialogDescription>
@@ -824,37 +852,35 @@
             class="flex items-start gap-3 p-3 rounded-xl transition-colors"
             :class="
               launchStep === 'awaiting_signature'
-                ? 'bg-emerald-500/10 border border-emerald-500/30'
-                : 'bg-stone-50 dark:bg-stone-900/50 border border-transparent'
+                ? 'bg-muted border border-border'
+                : 'bg-muted/40 border border-transparent'
             "
           >
             <div class="mt-0.5 shrink-0">
               <Loader2
                 v-if="launchStep === 'awaiting_signature'"
-                class="w-5 h-5 text-emerald-500 animate-spin"
+                class="w-5 h-5 text-foreground animate-spin"
               />
               <CheckCircle
                 v-else-if="
                   ['broadcasting', 'confirming', 'indexing', 'success'].includes(launchStep)
                 "
-                class="w-5 h-5 text-emerald-500"
+                class="w-5 h-5 text-foreground"
               />
-              <Clock v-else class="w-5 h-5 text-stone-400" />
+              <Clock v-else class="w-5 h-5 text-muted-foreground" />
             </div>
             <div class="flex-1 min-w-0">
-              <div
-                class="text-sm font-semibold text-stone-900 dark:text-white flex items-center justify-between"
-              >
+              <div class="text-sm font-semibold text-foreground flex items-center justify-between">
                 <span>{{ t('launchStepSign') }}</span>
                 <Badge
                   v-if="launchStep === 'awaiting_signature'"
                   variant="secondary"
-                  class="text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 animate-pulse"
+                  class="text-[10px] bg-foreground text-background animate-pulse"
                 >
                   Action Required
                 </Badge>
               </div>
-              <p class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+              <p class="text-xs text-muted-foreground mt-0.5">
                 {{ t('launchStepSignDesc') }}
               </p>
             </div>
@@ -865,38 +891,36 @@
             class="flex items-start gap-3 p-3 rounded-xl transition-colors"
             :class="
               ['broadcasting', 'confirming'].includes(launchStep)
-                ? 'bg-emerald-500/10 border border-emerald-500/30'
-                : 'bg-stone-50 dark:bg-stone-900/50 border border-transparent'
+                ? 'bg-muted border border-border'
+                : 'bg-muted/40 border border-transparent'
             "
           >
             <div class="mt-0.5 shrink-0">
               <Loader2
                 v-if="['broadcasting', 'confirming'].includes(launchStep)"
-                class="w-5 h-5 text-emerald-500 animate-spin"
+                class="w-5 h-5 text-foreground animate-spin"
               />
               <CheckCircle
                 v-else-if="['indexing', 'success'].includes(launchStep)"
-                class="w-5 h-5 text-emerald-500"
+                class="w-5 h-5 text-foreground"
               />
               <AlertCircle
                 v-else-if="launchStep === 'error' && launchTxHash"
-                class="w-5 h-5 text-rose-500"
+                class="w-5 h-5 text-destructive"
               />
-              <Clock v-else class="w-5 h-5 text-stone-400" />
+              <Clock v-else class="w-5 h-5 text-muted-foreground" />
             </div>
             <div class="flex-1 min-w-0">
-              <div
-                class="text-sm font-semibold text-stone-900 dark:text-white flex items-center justify-between"
-              >
+              <div class="text-sm font-semibold text-foreground flex items-center justify-between">
                 <span>{{ t('launchStepConfirm') }}</span>
                 <span
                   v-if="['broadcasting', 'confirming'].includes(launchStep)"
-                  class="text-[10px] text-emerald-500 animate-pulse font-mono"
+                  class="text-[10px] text-foreground animate-pulse font-mono"
                 >
                   Confirming...
                 </span>
               </div>
-              <p class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+              <p class="text-xs text-muted-foreground mt-0.5">
                 {{ t('launchStepConfirmDesc') }}
               </p>
               <!-- Tx Hash link -->
@@ -905,7 +929,7 @@
                   :href="txExplorerUrl"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:text-emerald-500 text-xs font-mono transition-colors"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted text-foreground hover:opacity-80 text-xs font-mono transition-colors"
                 >
                   <span>Tx: {{ formatHash(launchTxHash) }}</span>
                   <ExternalLink class="w-3 h-3" />
@@ -919,23 +943,23 @@
             class="flex items-start gap-3 p-3 rounded-xl transition-colors"
             :class="
               launchStep === 'indexing'
-                ? 'bg-emerald-500/10 border border-emerald-500/30'
-                : 'bg-stone-50 dark:bg-stone-900/50 border border-transparent'
+                ? 'bg-muted border border-border'
+                : 'bg-muted/40 border border-transparent'
             "
           >
             <div class="mt-0.5 shrink-0">
               <Loader2
                 v-if="launchStep === 'indexing'"
-                class="w-5 h-5 text-emerald-500 animate-spin"
+                class="w-5 h-5 text-foreground animate-spin"
               />
-              <CheckCircle v-else-if="launchStep === 'success'" class="w-5 h-5 text-emerald-500" />
-              <Clock v-else class="w-5 h-5 text-stone-400" />
+              <CheckCircle v-else-if="launchStep === 'success'" class="w-5 h-5 text-foreground" />
+              <Clock v-else class="w-5 h-5 text-muted-foreground" />
             </div>
             <div class="flex-1 min-w-0">
-              <div class="text-sm font-semibold text-stone-900 dark:text-white">
+              <div class="text-sm font-semibold text-foreground">
                 {{ t('launchStepIndexing') }}
               </div>
-              <p class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+              <p class="text-xs text-muted-foreground mt-0.5">
                 {{ t('launchStepIndexingDesc') }}
               </p>
             </div>
@@ -945,18 +969,18 @@
         <!-- Success State Details -->
         <div
           v-if="launchStep === 'success'"
-          class="mt-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center"
+          class="mt-4 p-4 rounded-xl bg-muted border border-border text-center"
         >
-          <CheckCircle class="w-10 h-10 text-emerald-500 mx-auto mb-2" />
-          <h4 class="text-sm font-bold text-stone-900 dark:text-white">
+          <CheckCircle class="w-10 h-10 text-foreground mx-auto mb-2" />
+          <h4 class="text-sm font-bold text-foreground">
             {{ t('launchSuccessTitle') }}
           </h4>
-          <p class="text-xs text-stone-500 dark:text-stone-400 mt-1">
+          <p class="text-xs text-muted-foreground mt-1">
             {{ t('launchSuccessDesc') }}
           </p>
           <div v-if="launchTokenAddress" class="mt-3 flex items-center justify-center gap-2">
             <span
-              class="text-xs font-mono text-stone-600 dark:text-stone-300 bg-white/50 dark:bg-stone-800/50 px-2 py-1 rounded"
+              class="text-xs font-mono text-foreground bg-muted px-2 py-1 rounded border border-border"
             >
               {{ formatHash(launchTokenAddress) }}
             </span>
@@ -964,7 +988,7 @@
               :href="tokenExplorerUrl"
               target="_blank"
               rel="noopener noreferrer"
-              class="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
+              class="inline-flex items-center gap-1 text-xs text-foreground hover:underline font-mono"
             >
               <span>{{ t('viewOnExplorer') }}</span>
               <ExternalLink class="w-3 h-3" />
@@ -975,13 +999,13 @@
         <!-- Error State Details -->
         <div
           v-if="launchStep === 'error'"
-          class="mt-4 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20"
+          class="mt-4 p-4 rounded-xl bg-muted border border-border"
         >
           <div class="flex items-start gap-2.5">
-            <AlertCircle class="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+            <AlertCircle class="w-5 h-5 text-destructive shrink-0 mt-0.5" />
             <div class="flex-1 min-w-0 text-xs">
-              <h5 class="font-bold text-rose-500">{{ t('launchFailedTitle') }}</h5>
-              <p class="text-stone-600 dark:text-stone-300 mt-1 break-words leading-relaxed">
+              <h5 class="font-bold text-foreground">{{ t('launchFailedTitle') }}</h5>
+              <p class="text-muted-foreground mt-1 break-words leading-relaxed">
                 {{ error || t('launchFailedDesc') }}
               </p>
               <div v-if="launchTxHash" class="mt-2.5">
@@ -989,7 +1013,7 @@
                   :href="txExplorerUrl"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-600 dark:text-rose-400 font-medium transition-colors"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted text-foreground font-medium transition-colors border border-border"
                 >
                   <span>{{ t('viewOnExplorer') }}</span>
                   <ExternalLink class="w-3 h-3" />
@@ -1014,7 +1038,7 @@
             v-if="launchStep === 'success'"
             size="sm"
             @click="goToTrade"
-            class="h-9 px-4 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5"
+            class="h-9 px-4 text-xs font-bold bg-primary text-primary-foreground hover:opacity-90 flex items-center gap-1.5"
           >
             <span>{{ t('tradeToken') }}</span>
             <ArrowRight class="w-3.5 h-3.5" />
@@ -1074,7 +1098,8 @@ const {
   launchTokenAddress,
   resetLaunchState,
 } = useLaunchpad();
-const { isConnected, account, activeNetwork, switchOrAddNetwork } = useWallet();
+const { isConnected, account, activeNetwork, switchOrAddNetwork, isCorrectNetwork, openWallet } =
+  useWallet();
 
 const isModalOpen = ref(false);
 
@@ -1305,6 +1330,14 @@ function handleDrop(event: DragEvent) {
 }
 
 async function handleLaunch() {
+  if (!isConnected.value) {
+    openWallet();
+    return;
+  }
+  if (!isCorrectNetwork.value) {
+    await switchOrAddNetwork(activeNetwork.value);
+    return;
+  }
   if (totalSplit.value !== 100) return;
   isModalOpen.value = true;
   const result = await launchToken(

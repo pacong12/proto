@@ -115,7 +115,7 @@ function copyAddress() {
 
 <template>
   <header
-    class="border-b border-zinc-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur sticky top-0 z-50 transition-colors shadow-sm dark:shadow-none"
+    class="border-b border-border bg-card/95 backdrop-blur sticky top-0 z-50 transition-colors shadow-xs"
   >
     <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
       <!-- Left: Brand & Desktop Nav -->
@@ -134,8 +134,8 @@ function copyAddress() {
             :class="[
               'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
               isRouteActive('/launchpad')
-                ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60',
+                ? 'bg-muted text-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
             ]"
           >
             {{ t('explore') }}
@@ -146,8 +146,8 @@ function copyAddress() {
             :class="[
               'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
               isRouteActive('/launchpad/create')
-                ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60',
+                ? 'bg-muted text-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
             ]"
           >
             {{ t('create') }}
@@ -158,8 +158,8 @@ function copyAddress() {
             :class="[
               'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
               isRouteActive('/memestock')
-                ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60',
+                ? 'bg-muted text-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
             ]"
           >
             {{ t('memestock') }}
@@ -170,8 +170,8 @@ function copyAddress() {
             :class="[
               'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
               isRouteActive('/analytics')
-                ? 'bg-zinc-100 dark:bg-zinc-800 text-black dark:text-white'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100/60 dark:hover:bg-zinc-800/60',
+                ? 'bg-muted text-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
             ]"
           >
             {{ t('analytics') }}

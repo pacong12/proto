@@ -44,11 +44,11 @@
         <!-- 1. Active Connected Wallet Details (Shown when Connected) -->
         <div
           v-if="isConnected && account"
-          class="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 space-y-3"
+          class="p-4 rounded-xl bg-muted/30 border border-border space-y-3"
         >
           <div class="flex items-center justify-between">
             <span
-              class="text-[11px] font-mono text-zinc-400 uppercase tracking-wider font-semibold"
+              class="text-[11px] font-mono text-muted-foreground uppercase tracking-wider font-semibold"
             >
               {{ t('connectedAccount') }}
             </span>
@@ -65,7 +65,7 @@
             <div class="flex items-center gap-2.5 min-w-0">
               <Jazzicon :address="account" :size="24" class="rounded-full shrink-0" />
               <div class="truncate">
-                <span class="font-mono text-xs font-bold block truncate text-black dark:text-white">
+                <span class="font-mono text-xs font-bold block truncate text-foreground">
                   {{ account }}
                 </span>
                 <span class="font-mono text-[11px] text-foreground font-semibold">
@@ -89,9 +89,7 @@
           </div>
 
           <!-- Action Buttons: Switch Network / Disconnect -->
-          <div
-            class="flex items-center justify-between pt-2 border-t border-zinc-200 dark:border-zinc-800 gap-2"
-          >
+          <div class="flex items-center justify-between pt-2 border-t border-border gap-2">
             <Button
               v-if="!isCorrectNetwork"
               variant="destructive"
@@ -105,7 +103,7 @@
             <Button
               variant="ghost"
               size="sm"
-              class="h-7 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 gap-1.5 ml-auto cursor-pointer"
+              class="h-7 text-xs text-destructive hover:bg-destructive/10 gap-1.5 ml-auto cursor-pointer"
               @click="handleDisconnect"
             >
               <LogOut class="w-3.5 h-3.5" />
@@ -114,8 +112,10 @@
           </div>
 
           <!-- Multi-Chain Network Selector (Robinhood & Arc) with Shadcn Select -->
-          <div class="space-y-1.5 pt-2 border-t border-zinc-200 dark:border-zinc-800">
-            <span class="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">
+          <div class="space-y-1.5 pt-2 border-t border-border">
+            <span
+              class="text-[10px] font-mono text-muted-foreground uppercase tracking-wider block"
+            >
               Active Network
             </span>
             <Select
@@ -123,7 +123,7 @@
               @update:model-value="handleChainSelect"
             >
               <SelectTrigger
-                class="w-full h-10 px-3 justify-between font-mono text-xs border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 cursor-pointer"
+                class="w-full h-10 px-3 justify-between font-mono text-xs border-border hover:bg-muted cursor-pointer"
               >
                 <div class="flex items-center gap-2.5 truncate">
                   <img
@@ -133,24 +133,24 @@
                     :alt="activeNetwork.name"
                     class="w-4 h-4 rounded-xs object-contain shrink-0"
                   />
-                  <span class="font-bold text-black dark:text-white">{{ activeNetwork.name }}</span>
+                  <span class="font-bold text-foreground">{{ activeNetwork.name }}</span>
                 </div>
               </SelectTrigger>
               <SelectContent
                 align="start"
-                class="w-[--radix-select-trigger-width] min-w-[280px] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-1.5 shadow-lg"
+                class="w-[--radix-select-trigger-width] min-w-[280px] bg-card border border-border p-1.5 shadow-lg"
               >
                 <SelectLabel
-                  class="text-[10px] font-mono uppercase tracking-wider text-zinc-400 px-2 py-1"
+                  class="text-[10px] font-mono uppercase tracking-wider text-muted-foreground px-2 py-1"
                 >
                   Select Network
                 </SelectLabel>
-                <SelectSeparator class="border-zinc-200 dark:border-zinc-800" />
+                <SelectSeparator class="border-border" />
                 <SelectItem
                   v-for="net in Object.values(SUPPORTED_CHAINS)"
                   :key="net.chainId"
                   :value="String(net.chainId)"
-                  class="cursor-pointer text-xs font-mono py-2.5 px-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition"
+                  class="cursor-pointer text-xs font-mono py-2.5 px-2.5 hover:bg-muted rounded-lg transition"
                 >
                   <div class="flex items-center gap-2.5">
                     <img
@@ -158,7 +158,7 @@
                       :alt="net.name"
                       class="w-5 h-5 rounded-md object-contain shrink-0"
                     />
-                    <span class="font-bold text-black dark:text-white leading-tight">
+                    <span class="font-bold text-foreground leading-tight">
                       {{ net.name }}
                     </span>
                   </div>
@@ -172,7 +172,7 @@
         <div class="space-y-2">
           <div class="flex items-center justify-between px-1">
             <span
-              class="text-[11px] font-mono text-zinc-400 uppercase tracking-wider font-semibold"
+              class="text-[11px] font-mono text-muted-foreground uppercase tracking-wider font-semibold"
             >
               {{ isConnected ? 'Switch Provider' : 'Available Wallets' }}
             </span>
@@ -233,7 +233,7 @@
 
             <li
               v-if="wallets.length === 0 && !scanning"
-              class="px-4 py-6 text-center text-xs text-zinc-500 font-mono bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border border-dashed border-zinc-300 dark:border-zinc-800"
+              class="px-4 py-6 text-center text-xs text-muted-foreground font-mono bg-muted/30 rounded-xl border border-dashed border-border"
             >
               No browser wallets detected. Please install MetaMask, Rabby, or Coinbase Wallet.
             </li>
@@ -256,7 +256,7 @@
       <!-- AppKit Notice Footer -->
       <div
         v-if="!appKitConfigured"
-        class="px-5 py-2.5 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 text-[11px] text-zinc-500 leading-relaxed font-mono"
+        class="px-5 py-2.5 border-t border-border bg-muted/30 text-[11px] text-muted-foreground leading-relaxed font-mono"
       >
         <span>EIP-6963 multi-wallet discovery active.</span>
       </div>

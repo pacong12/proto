@@ -522,37 +522,31 @@ onUnmounted(() => destroyChart());
   <div class="w-full flex flex-col gap-2">
     <!-- OHLCV Professional Toolbar -->
     <div
-      class="flex flex-wrap items-center justify-between gap-2 text-xs font-mono px-2 py-1.5 rounded-lg bg-zinc-50/80 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800"
+      class="flex flex-wrap items-center justify-between gap-2 text-xs font-mono px-2 py-1.5 rounded-lg bg-muted/40 border border-border"
     >
       <!-- Left: Symbol + OHLCV live bar -->
       <div class="flex items-center gap-3 flex-wrap min-w-0">
         <span
           v-if="tokenSymbol"
-          class="font-extrabold tracking-wider text-black dark:text-white px-1.5 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-[11px]"
+          class="font-extrabold tracking-wider text-foreground px-1.5 py-0.5 rounded bg-muted text-[11px]"
         >
           {{ tokenSymbol }}/USD
         </span>
 
         <div v-if="activeBar" class="flex items-center gap-2.5 text-[11px] flex-wrap">
-          <span class="text-zinc-500 dark:text-zinc-400">
+          <span class="text-muted-foreground">
             O:
-            <span class="font-bold text-black dark:text-white">{{
-              formatPrice(activeBar.open)
-            }}</span>
+            <span class="font-bold text-foreground">{{ formatPrice(activeBar.open) }}</span>
           </span>
-          <span class="text-zinc-500 dark:text-zinc-400">
+          <span class="text-muted-foreground">
             H:
-            <span class="font-bold text-black dark:text-white">{{
-              formatPrice(activeBar.high)
-            }}</span>
+            <span class="font-bold text-foreground">{{ formatPrice(activeBar.high) }}</span>
           </span>
-          <span class="text-zinc-500 dark:text-zinc-400">
+          <span class="text-muted-foreground">
             L:
-            <span class="font-bold text-black dark:text-white">{{
-              formatPrice(activeBar.low)
-            }}</span>
+            <span class="font-bold text-foreground">{{ formatPrice(activeBar.low) }}</span>
           </span>
-          <span class="text-zinc-500 dark:text-zinc-400">
+          <span class="text-muted-foreground">
             C:
             <span class="font-bold text-foreground">
               {{ formatPrice(activeBar.close) }}
@@ -563,11 +557,9 @@ onUnmounted(() => destroyChart());
           >
             {{ barChangePercent >= 0 ? '+' : '' }}{{ barChangePercent.toFixed(2) }}%
           </span>
-          <span v-if="activeBar.volume !== undefined" class="text-zinc-500 dark:text-zinc-400">
+          <span v-if="activeBar.volume !== undefined" class="text-muted-foreground">
             Vol:
-            <span class="font-bold text-black dark:text-white"
-              >${{ formatVolume(activeBar.volume) }}</span
-            >
+            <span class="font-bold text-foreground">${{ formatVolume(activeBar.volume) }}</span>
           </span>
         </div>
 
@@ -588,10 +580,8 @@ onUnmounted(() => destroyChart());
         </span>
         <button
           type="button"
-          class="p-1 rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
-          :class="
-            chartType === 'candles' ? 'bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white' : ''
-          "
+          class="p-1 rounded text-muted-foreground hover:text-foreground transition cursor-pointer"
+          :class="chartType === 'candles' ? 'bg-muted text-foreground' : ''"
           title="Candlestick chart"
           aria-label="Candlestick chart"
           @click="toggleChartType('candles')"
@@ -602,10 +592,8 @@ onUnmounted(() => destroyChart());
         <!-- Area toggle -->
         <button
           type="button"
-          class="p-1 rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
-          :class="
-            chartType === 'area' ? 'bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white' : ''
-          "
+          class="p-1 rounded text-muted-foreground hover:text-foreground transition cursor-pointer"
+          :class="chartType === 'area' ? 'bg-muted text-foreground' : ''"
           title="Area chart"
           aria-label="Area chart"
           @click="toggleChartType('area')"
@@ -613,13 +601,13 @@ onUnmounted(() => destroyChart());
           <TrendingUp class="w-3.5 h-3.5" />
         </button>
 
-        <span class="w-px h-3.5 bg-zinc-300 dark:bg-zinc-700 mx-0.5" />
+        <span class="w-px h-3.5 bg-border mx-0.5" />
 
         <!-- LOG / LIN -->
         <button
           type="button"
-          class="px-1.5 py-0.5 text-[10px] font-bold rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
-          :class="isLogScale ? 'bg-zinc-200 dark:bg-zinc-800 text-black dark:text-white' : ''"
+          class="px-1.5 py-0.5 text-[10px] font-bold rounded text-muted-foreground hover:text-foreground transition cursor-pointer"
+          :class="isLogScale ? 'bg-muted text-foreground' : ''"
           title="Toggle log / linear scale"
           aria-label="Toggle log / linear scale"
           @click="toggleLogScale"
@@ -630,7 +618,7 @@ onUnmounted(() => destroyChart());
         <!-- Fit content -->
         <button
           type="button"
-          class="p-1 rounded text-zinc-500 hover:text-black dark:hover:text-white transition cursor-pointer"
+          class="p-1 rounded text-muted-foreground hover:text-foreground transition cursor-pointer"
           title="Fit chart to content"
           aria-label="Fit chart to content"
           @click="fitContent"
