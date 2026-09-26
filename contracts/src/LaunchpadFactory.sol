@@ -151,6 +151,7 @@ contract LaunchpadFactory is ILaunchpadFactory {
     // Core launch
     // ---------------------------------------------------------------------------
 
+    // slither-disable-next-line reentrancy-balance
     function launchToken(
         string memory name,
         string memory symbol,
@@ -198,7 +199,8 @@ contract LaunchpadFactory is ILaunchpadFactory {
 
         // 4. Provide full token supply as single-sided liquidity.
         uint256 tokenSupply = token.balanceOf(address(this));
-        token.approve(address(positionManager), tokenSupply);
+        bool approved = token.approve(address(positionManager), tokenSupply);
+        if (!approved) revert TransferFailed();
 
         // F-10 fix: supply realistic minimum token amounts to guard against
         // price manipulation between pool initialisation and mint. For single-sided
@@ -222,7 +224,9 @@ contract LaunchpadFactory is ILaunchpadFactory {
             deadline: block.timestamp + 1200
         });
 
-        (uint256 positionId, , , ) = positionManager.mint(mintParams);
+        // slither-disable-next-line unused-return,reentrancy-balance
+        (uint256 positionId, uint128 mintedLiquidity, , ) = positionManager.mint(mintParams);
+        require(mintedLiquidity > 0, "No liquidity");
 
         // 5. Permanently lock the LP position.
         ILiquidityLocker(locker).lockPosition(
@@ -238,7 +242,8 @@ contract LaunchpadFactory is ILaunchpadFactory {
         // 7. Execute optional creator initial buy.
         if (initialBuyAmount > 0) {
             IWETH(weth).deposit{value: initialBuyAmount}();
-            IWETH(weth).approve(address(swapRouter), initialBuyAmount);
+            bool wethOk = IWETH(weth).approve(address(swapRouter), initialBuyAmount);
+            if (!wethOk) revert TransferFailed();
 
             ISwapRouter.ExactInputSingleParams memory swapParams = ISwapRouter.ExactInputSingleParams({
                 tokenIn: weth,
@@ -251,7 +256,8 @@ contract LaunchpadFactory is ILaunchpadFactory {
                 sqrtPriceLimitX96: 0
             });
 
-            swapRouter.exactInputSingle(swapParams);
+            uint256 tokensBought = swapRouter.exactInputSingle(swapParams);
+            require(tokensBought > 0, "Zero buy");
         }
 
         // 8. Record state.

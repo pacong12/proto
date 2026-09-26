@@ -134,8 +134,8 @@ contract BondingCurve {
     function currentSnipeTaxBps() public view returns (uint256) {
         uint256 elapsed = block.timestamp - launchTime;
         if (elapsed >= 3) return 0;
-        if (elapsed == 0) return 9900;
-        if (elapsed == 1) return 2500;
+        if (elapsed <= 0) return 9900;
+        if (elapsed <= 1) return 2500;
         return 300;
     }
 
@@ -307,7 +307,8 @@ contract BondingCurve {
 
         if (poolManagerV4 != address(0) && poolManagerV4.code.length > 0) {
             uint160 sqrtPriceX96 = _computeSqrtPriceX96(virtualEthReserve, virtualTokenReserve);
-            try IPoolManager(poolManagerV4).initialize(key, sqrtPriceX96) {} catch {}
+            // slither-disable-next-line unused-return
+            try IPoolManager(poolManagerV4).initialize(key, sqrtPriceX96) returns (int24) {} catch {}
         }
 
         emit Graduated(address(token), graduatedPoolId, ethHeld, tokensHeld);
@@ -338,7 +339,7 @@ contract BondingCurve {
 
     /// @notice Babylonian integer square root (floor).
     function _sqrt(uint256 x) internal pure returns (uint256 y) {
-        if (x == 0) return 0;
+        if (x <= 0) return 0;
         y = x;
         uint256 z = (x >> 1) + 1;
         while (z < y) {

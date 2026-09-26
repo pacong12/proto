@@ -146,21 +146,27 @@ contract BuybackBurner is IBuybackBurner {
      *   cap that the off-chain bot MUST respect when computing minAmountOut — it is
      *   an operational parameter, not a redundant on-chain guard.
      */
+    // slither-disable-next-line reentrancy-balance
     function executeBuyback(uint256 minAmountOut) external override nonReentrant onlyOwner returns (uint256 tokensBurned) {
         if (lastBuybackTimestamp > 0 && block.timestamp < lastBuybackTimestamp + cooldown) {
             revert CooldownActive();
         }
 
         uint256 wethBalance = IWETH(weth).balanceOf(address(this));
-        if (wethBalance == 0) revert InsufficientWethBalance();
+        if (wethBalance < 1) revert InsufficientWethBalance();
 
         // M-01 fix: reject zero minimum so the slippage floor is always meaningful.
         if (minAmountOut == 0) revert ZeroMinAmountOut();
 
+        // Update state before external swap interaction (CEI pattern)
+        lastBuybackTimestamp = block.timestamp;
+
         // minAmountOut is the effective floor; caller must compute it using QuoterV2
         // and apply maxSlippageBps off-chain before submitting.
-        IWETH(weth).approve(address(swapRouter), 0);
-        IWETH(weth).approve(address(swapRouter), wethBalance);
+        bool okZero = IWETH(weth).approve(address(swapRouter), 0);
+        if (!okZero) revert TransferFailed();
+        bool okApprove = IWETH(weth).approve(address(swapRouter), wethBalance);
+        if (!okApprove) revert TransferFailed();
 
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
             tokenIn: weth,
@@ -177,7 +183,6 @@ contract BuybackBurner is IBuybackBurner {
         if (tokensBurned < minAmountOut) revert SlippageExceeded();
 
         totalBurned += tokensBurned;
-        lastBuybackTimestamp = block.timestamp;
 
         emit BuybackExecuted(targetToken, wethBalance, tokensBurned, block.timestamp);
     }

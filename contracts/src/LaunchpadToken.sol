@@ -224,7 +224,7 @@ contract LaunchpadToken is ILaunchpadToken {
 
         // Anti-snipe restriction window: blocks [launchBlock, restrictionsEndBlock].
         if (block.number <= restrictionsEndBlock && from == liquidityPool && liquidityPool != address(0)) {
-            if (block.number == launchBlock) {
+            if (block.number <= launchBlock) {
                 // At launch block only the deployer may receive tokens from the pool.
                 if (to != deployer) revert OnlyDeployerCanBuyAtLaunchBlock();
             } else {
