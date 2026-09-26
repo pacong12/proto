@@ -26,6 +26,7 @@ import {
   getNetworkConfig,
   launchpadFactoryAbi,
   launchpadV2FactoryAbi,
+  robinhoodLaunchpadV2Abi,
   launchpadTokenAbi,
   liquidityLockerAbi,
   type LaunchedTokenEntity,
@@ -287,7 +288,43 @@ export function useLaunchpad() {
       launchStep.value = 'awaiting_signature';
 
       let hash: `0x${string}`;
-      if (is7ArgFactory) {
+      if (
+        network.chainId === 4663 ||
+        targetFactory.toLowerCase() === '0x7ed598bcef8bd9edd8c97a195c6d13f40801ec7e'
+      ) {
+        // Robinhood Chain LaunchpadV2Factory (0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e)
+        // Uses launchToken(params, initialBuyAmount, referral) with launchFee (0.0005 ETH)
+        hash = await walletClient.writeContract({
+          address: targetFactory,
+          abi: robinhoodLaunchpadV2Abi,
+          functionName: 'launchToken',
+          args: [
+            {
+              name: params.name,
+              symbol: params.symbol,
+              logo: params.logo,
+              description: params.description,
+              socials: {
+                twitter: params.socials.twitter ?? '',
+                telegram: params.socials.telegram ?? '',
+                discord: params.socials.discord ?? '',
+                website: params.socials.website ?? '',
+                farcaster: params.socials.farcaster ?? '',
+              },
+              creatorFeeRecipient: account,
+              feeConfig: 0,
+              isFair: false,
+              b1: '0x0000000000000000000000000000000000000000000000000000000000000000',
+              b2: '0x0000000000000000000000000000000000000000000000000000000000000000',
+            },
+            0n,
+            '0x0000000000000000000000000000000000000000',
+          ],
+          value: network.launchConfig.launchFeeWei,
+          account,
+          chain: walletClient.chain,
+        });
+      } else if (is7ArgFactory) {
         hash = await walletClient.writeContract({
           address: targetFactory,
           abi: launchpadV2FactoryAbi,
@@ -361,7 +398,7 @@ export function useLaunchpad() {
 
       // 1. Primary: decode via viem parseEventLogs (supports TokenLaunched and TokenLaunchedV2)
       const v2Events = parseEventLogs({
-        abi: launchpadV2FactoryAbi,
+        abi: [...launchpadV2FactoryAbi, ...robinhoodLaunchpadV2Abi],
         logs: receipt.logs,
       });
 
