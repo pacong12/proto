@@ -13,6 +13,9 @@ concurrency:
   group: deploy-frontoffice-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   build-and-deploy:
     name: Build & Deploy Frontoffice

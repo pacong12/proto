@@ -16,6 +16,8 @@ concurrency:
   group: deploy-vps-${{ github.ref }}
   cancel-in-progress: true
 
+permissions: {}
+
 jobs:
   deploy:
     name: Deploy API & Services to VPS via SSH

@@ -12,6 +12,9 @@ on:
       - 'contracts/**'
       - '.github/workflows/contracts-guard.yml'
 
+permissions:
+  contents: read
+
 jobs:
   contract-invariants:
     name: Bytecode Size, Gas Snapshot & Invariant Tests
