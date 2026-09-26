@@ -20,11 +20,13 @@ jobs:
   deploy:
     name: Deploy API & Services to VPS via SSH
     runs-on: ubuntu-latest
-    if: ${{ secrets.VPS_SSH_KEY != '' || secrets.DEPLOY != '' }}
 
     steps:
       - name: Deploy via SSH
+        if: env.SSH_KEY != ''
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY || secrets.DEPLOY }}
         with:
           host: ${{ secrets.VPS_HOST || '31.97.189.81' }}
           username: ${{ secrets.VPS_USER || 'deploy' }}
@@ -54,3 +56,9 @@ jobs:
             curl -s http://127.0.0.1:3011/health || true
 
             echo "[Deploy] VPS backend deployment completed successfully."
+
+      - name: Skip VPS deployment (secrets not configured)
+        if: env.SSH_KEY == ''
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY || secrets.DEPLOY }}
+        run: echo "VPS_SSH_KEY or DEPLOY secret not configured. Skipping deployment."
