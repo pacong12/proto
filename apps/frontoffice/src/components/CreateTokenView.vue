@@ -567,14 +567,13 @@
                   <!-- Creator Share Slider -->
                   <div class="space-y-2">
                     <div class="flex items-center justify-between text-xs">
-                      <div class="flex items-center gap-2 font-semibold text-foreground">
-                        <span class="w-2.5 h-2.5 rounded-full bg-[#10b981] shrink-0" />
+                      <div class="flex items-center gap-1.5 font-semibold text-foreground">
                         <span>Creator</span>
                         <InfoTooltip
                           text="Portion of swap taxes sent directly to the creator wallet."
                         />
                       </div>
-                      <span class="font-mono font-bold text-[#10b981]">
+                      <span class="font-mono font-bold text-foreground">
                         {{ revenueSplit.creator }}%
                       </span>
                     </div>
@@ -583,8 +582,8 @@
                       :max="100"
                       :min="0"
                       :step="1"
-                      range-class="bg-[#10b981]"
-                      thumb-class="border-[#10b981] focus-visible:ring-[#10b981]"
+                      range-class="bg-foreground"
+                      thumb-class="border-foreground focus-visible:ring-foreground"
                       @update:model-value="updateShare('creator', $event ? $event[0] : 0)"
                     />
                     <div
@@ -598,14 +597,13 @@
                   <!-- Buyback & Burn Slider -->
                   <div class="space-y-2">
                     <div class="flex items-center justify-between text-xs">
-                      <div class="flex items-center gap-2 font-semibold text-foreground">
-                        <span class="w-2.5 h-2.5 rounded-full bg-[#f43f5e] shrink-0" />
+                      <div class="flex items-center gap-1.5 font-semibold text-foreground">
                         <span>Buyback & Burn</span>
                         <InfoTooltip
                           text="Automatically buys tokens off the pool and permanently burns them to reduce supply."
                         />
                       </div>
-                      <span class="font-mono font-bold text-[#f43f5e]">
+                      <span class="font-mono font-bold text-foreground">
                         {{ revenueSplit.buyback }}%
                       </span>
                     </div>
@@ -614,8 +612,8 @@
                       :max="100"
                       :min="0"
                       :step="1"
-                      range-class="bg-[#f43f5e]"
-                      thumb-class="border-[#f43f5e] focus-visible:ring-[#f43f5e]"
+                      range-class="bg-foreground"
+                      thumb-class="border-foreground focus-visible:ring-foreground"
                       @update:model-value="updateShare('buyback', $event ? $event[0] : 0)"
                     />
                     <div
@@ -629,14 +627,13 @@
                   <!-- Holder Dividends Slider -->
                   <div class="space-y-2">
                     <div class="flex items-center justify-between text-xs">
-                      <div class="flex items-center gap-2 font-semibold text-foreground">
-                        <span class="w-2.5 h-2.5 rounded-full bg-[#8b5cf6] shrink-0" />
+                      <div class="flex items-center gap-1.5 font-semibold text-foreground">
                         <span>Holder Dividends</span>
                         <InfoTooltip
                           text="Distributed proportionally in native currency to all token holders as passive yield."
                         />
                       </div>
-                      <span class="font-mono font-bold text-[#8b5cf6]">
+                      <span class="font-mono font-bold text-foreground">
                         {{ revenueSplit.holders }}%
                       </span>
                     </div>
@@ -645,8 +642,8 @@
                       :max="100"
                       :min="0"
                       :step="1"
-                      range-class="bg-[#8b5cf6]"
-                      thumb-class="border-[#8b5cf6] focus-visible:ring-[#8b5cf6]"
+                      range-class="bg-foreground"
+                      thumb-class="border-foreground focus-visible:ring-foreground"
                       @update:model-value="updateShare('holders', $event ? $event[0] : 0)"
                     />
                     <div
@@ -660,14 +657,13 @@
                   <!-- Liquidity Growth Slider -->
                   <div class="space-y-2">
                     <div class="flex items-center justify-between text-xs">
-                      <div class="flex items-center gap-2 font-semibold text-foreground">
-                        <span class="w-2.5 h-2.5 rounded-full bg-[#0ea5e9] shrink-0" />
+                      <div class="flex items-center gap-1.5 font-semibold text-foreground">
                         <span>Liquidity Growth</span>
                         <InfoTooltip
                           text="Permanently injected into the liquidity pool to deepen market depth and reduce slippage."
                         />
                       </div>
-                      <span class="font-mono font-bold text-[#0ea5e9]">
+                      <span class="font-mono font-bold text-foreground">
                         {{ revenueSplit.growth }}%
                       </span>
                     </div>
@@ -676,8 +672,8 @@
                       :max="100"
                       :min="0"
                       :step="1"
-                      range-class="bg-[#0ea5e9]"
-                      thumb-class="border-[#0ea5e9] focus-visible:ring-[#0ea5e9]"
+                      range-class="bg-foreground"
+                      thumb-class="border-foreground focus-visible:ring-foreground"
                       @update:model-value="updateShare('growth', $event ? $event[0] : 0)"
                     />
                     <div
@@ -697,7 +693,7 @@
                     </span>
                     <span
                       class="font-mono font-semibold shrink-0"
-                      :class="totalSplit === 100 ? 'text-[#10b981]' : 'text-amber-500'"
+                      :class="totalSplit === 100 ? 'text-foreground' : 'text-amber-500'"
                     >
                       {{
                         totalSplit === 100
