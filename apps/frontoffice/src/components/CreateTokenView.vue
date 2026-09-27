@@ -203,7 +203,8 @@
             <div class="flex items-center gap-2.5 font-mono">
               <img
                 :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
-                :alt="currencySymbol"
+                alt=""
+                aria-hidden="true"
                 width="22"
                 height="22"
                 class="w-5.5 h-5.5 rounded-full object-contain shrink-0"
@@ -248,7 +249,8 @@
             >
               <img
                 :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
-                :alt="currencySymbol"
+                alt=""
+                aria-hidden="true"
                 width="16"
                 height="16"
                 class="w-4 h-4 rounded-full object-contain shrink-0"
@@ -738,7 +740,8 @@
               <span class="font-bold text-foreground flex items-center gap-1.5">
                 <img
                   :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
-                  :alt="currencySymbol"
+                  alt=""
+                  aria-hidden="true"
                   width="16"
                   height="16"
                   class="w-4 h-4 rounded-full object-contain shrink-0"
@@ -752,7 +755,8 @@
               <span class="font-semibold text-foreground flex items-center gap-1.5">
                 <img
                   :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
-                  :alt="currencySymbol"
+                  alt=""
+                  aria-hidden="true"
                   width="16"
                   height="16"
                   class="w-4 h-4 rounded-full object-contain shrink-0"
@@ -773,7 +777,8 @@
               <span class="text-sm font-bold text-foreground flex items-center gap-1.5 font-mono">
                 <img
                   :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
-                  :alt="currencySymbol"
+                  alt=""
+                  aria-hidden="true"
                   width="18"
                   height="18"
                   class="w-4.5 h-4.5 rounded-full object-contain shrink-0"
@@ -1351,7 +1356,7 @@ async function handleLaunch() {
         twitter: form.value.twitter.trim(),
         telegram: form.value.telegram.trim(),
       },
-      initialBuyAmountEth: form.value.initialBuyEth || '0',
+      initialBuyAmountEth: String(form.value.initialBuyEth || '0').trim(),
     },
     selectedVersion.value,
   );
