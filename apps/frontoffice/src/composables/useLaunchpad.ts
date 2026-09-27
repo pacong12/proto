@@ -22,6 +22,25 @@ function isUserRejection(err: unknown): boolean {
     msg.includes('request rejected')
   );
 }
+
+/**
+ * Safely parse developer initial buy amount into 18-decimal wei.
+ * Accepts string, number, null, or undefined and avoids calling parseEther on non-strings,
+ * preventing 'value.split is not a function' TypeError.
+ */
+function parseInitialBuyWei(val: string | number | undefined | null): bigint {
+  if (!val) return 0n;
+  const str = String(val).trim();
+  if (!str || str === '0' || isNaN(Number(str))) return 0n;
+  const num = parseFloat(str);
+  if (num <= 0) return 0n;
+  try {
+    return parseEther(str);
+  } catch {
+    const formatted = num.toFixed(18).replace(/\.?0+$/, '');
+    return parseEther(formatted || '0');
+  }
+}
 import {
   getNetworkConfig,
   launchpadFactoryAbi,
@@ -109,10 +128,7 @@ export function useLaunchpad() {
 
       // On all EVM chains (including Arc Network), native msg.value uses 18 decimals
       // (1e18 native wei = 1.0 token / 1.0 USDC) per Circle Arc EVM differences specification.
-      const initialBuyWei =
-        params.initialBuyAmountEth && params.initialBuyAmountEth !== '0'
-          ? parseEther(params.initialBuyAmountEth)
-          : 0n;
+      const initialBuyWei = parseInitialBuyWei(params.initialBuyAmountEth);
       const totalValue = network.launchConfig.launchFeeWei + initialBuyWei;
 
       launchStep.value = 'awaiting_signature';
@@ -273,10 +289,7 @@ export function useLaunchpad() {
 
       // On all EVM chains (including Arc Network), native msg.value uses 18 decimals
       // (1e18 native wei = 1.0 token / 1.0 USDC) per Circle Arc EVM differences specification.
-      const initialBuyWei =
-        params.initialBuyAmountEth && params.initialBuyAmountEth !== '0'
-          ? parseEther(params.initialBuyAmountEth)
-          : 0n;
+      const initialBuyWei = parseInitialBuyWei(params.initialBuyAmountEth);
       const totalValue = network.launchConfig.launchFeeWei + initialBuyWei;
 
       // On Arc Network (Chain ID 5042) or factory 0x4884..., the contract implements

@@ -52,7 +52,7 @@ const forwarded = useForwardPropsEmits(props, emits);
         <span
           v-else
           :key="page.type"
-          class="flex h-8 w-8 items-center justify-center text-xs text-zinc-600"
+          class="flex h-8 w-8 items-center justify-center text-xs text-muted-foreground"
         >
           &#8230;
         </span>
