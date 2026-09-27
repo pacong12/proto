@@ -980,8 +980,19 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       const quotePriceUsd = pairedToken === arcWeth ? 1.0 : ethPriceUsd;
       const tradeUsd = row.totalWeth * quotePriceUsd;
       totalVolumeUsd += tradeUsd;
-      // Volume-by-slot bucketing is approximate at this level (per-token total, not per-trade ts).
-      // Full per-trade slot detail requires a separate GROUP BY timestamp bucket query if needed.
+    }
+
+    // Populate 24h volume history time slots with real trade volume
+    const trades24h = repository.getTradesSince ? await repository.getTradesSince(dayAgoMs) : [];
+    for (const tr of trades24h) {
+      const age = now - tr.timestamp;
+      if (age >= 0 && age < 24 * 60 * 60 * 1000) {
+        const slotIdx = 6 - Math.min(6, Math.floor(age / fourHoursMs));
+        const pairedToken = tokenPairMap.get(tr.tokenAddress.toLowerCase()) ?? '';
+        const quotePriceUsd = pairedToken === arcWeth ? 1.0 : ethPriceUsd;
+        const tradeUsd = parseFloat(tr.wethAmount || '0') * quotePriceUsd;
+        timeSlots[slotIdx].value += Math.round(tradeUsd);
+      }
     }
 
     // Buyback estimate: 1% fee * 30% protocol share * 80% allocated to buyback

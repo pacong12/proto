@@ -38,6 +38,7 @@ export interface TokenRepositoryPort {
   ): Promise<Array<{ address: string; balance: string; percent: number }>>;
   getRecentTrades?(limit?: number): Promise<TradeEventEntity[]>;
   getTradesByTrader?(trader: string, limit?: number): Promise<TradeEventEntity[]>;
+  getTradesSince?(sinceMs: number): Promise<TradeEventEntity[]>;
   findTradeByHash?(txHash: string): Promise<TradeEventEntity | null>;
 
   // Discussion comments & sentiment voting
