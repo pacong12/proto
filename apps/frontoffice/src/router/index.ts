@@ -45,7 +45,7 @@ export const router = createRouter({
       component: () => import('@/pages/AnalyticsPage.vue'),
     },
     {
-      path: '/profile',
+      path: '/profile/:address?',
       name: 'profile',
       component: () => import('@/pages/ProfilePage.vue'),
     },

@@ -6,9 +6,14 @@
     >
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div class="flex items-center gap-4">
-          <div class="relative group cursor-pointer" @click="editModalOpen = true">
+          <div
+            class="relative group"
+            :class="isOwnProfile ? 'cursor-pointer' : ''"
+            @click="isOwnProfile && (editModalOpen = true)"
+          >
             <Avatar
-              class="w-16 h-16 rounded-full border-2 border-border overflow-hidden shadow-lg transition group-hover:opacity-85"
+              class="w-16 h-16 rounded-full border-2 border-border overflow-hidden shadow-lg transition"
+              :class="isOwnProfile ? 'group-hover:opacity-85' : ''"
             >
               <img
                 v-if="resolvedAvatarUrl"
@@ -18,12 +23,13 @@
               />
               <Jazzicon
                 v-else
-                :address="userAddress"
+                :address="profileAddress || '0x0000000000000000000000000000000000000000'"
                 :size="64"
                 class="w-full h-full rounded-full"
               />
             </Avatar>
             <div
+              v-if="isOwnProfile"
               class="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
               title="Update profile photo"
             >
@@ -36,7 +42,7 @@
               <h1 class="text-2xl font-bold tracking-tight text-foreground">
                 {{
                   profileData.displayName ||
-                  (userAddress ? shortenAddress(userAddress) : 'Anonymous Creator')
+                  (profileAddress ? shortenAddress(profileAddress) : 'Anonymous Creator')
                 }}
               </h1>
             </div>
@@ -48,7 +54,7 @@
               }}
             </p>
 
-            <div class="flex items-center gap-4 pt-1 text-xs text-muted-foreground">
+            <div class="flex items-center gap-4 pt-1 text-xs text-muted-foreground flex-wrap">
               <a
                 v-if="profileData.twitter"
                 :href="`https://x.com/${profileData.twitter}`"
@@ -68,7 +74,7 @@
                 <span>t.me/{{ profileData.telegram }}</span>
               </a>
               <span class="font-mono text-muted-foreground">
-                {{ userAddress ? shortenAddress(userAddress) : 'Not Connected' }}
+                {{ profileAddress ? shortenAddress(profileAddress) : 'Not Connected' }}
               </span>
             </div>
           </div>
@@ -77,10 +83,11 @@
         <!-- Action Buttons: Edit Profile & Share Profile -->
         <div class="flex items-center gap-2.5 self-start sm:self-center">
           <Button
+            v-if="isOwnProfile"
             @click="editModalOpen = true"
             variant="outline"
             size="sm"
-            class="h-8 text-xs font-semibold gap-1.5 border-border hover:bg-muted text-foreground"
+            class="h-8 text-xs font-semibold gap-1.5 border-border hover:bg-muted text-foreground cursor-pointer"
           >
             <Edit3 class="w-3.5 h-3.5" />
             Edit Profile
@@ -90,7 +97,7 @@
             @click="shareProfile"
             variant="default"
             size="sm"
-            class="h-8 text-xs font-semibold gap-1.5 font-bold"
+            class="h-8 text-xs font-semibold gap-1.5 font-bold cursor-pointer"
           >
             <Share2 class="w-3.5 h-3.5" />
             {{ copiedShare ? 'Copied Link!' : 'Share Profile' }}
@@ -101,13 +108,27 @@
 
     <!-- Disconnected Warning Banner -->
     <Card
-      v-if="!userAddress"
-      class="border-amber-800 bg-amber-950/40 p-4 text-sm text-amber-400 flex items-start gap-3"
+      v-if="!profileAddress"
+      class="border-border bg-muted/40 p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4"
     >
-      <AlertCircle class="w-5 h-5 shrink-0 mt-0.5" />
-      <span
-        >Connect your wallet to view your token launches, portfolio positions, and activity.</span
+      <div class="flex items-start gap-3">
+        <AlertCircle class="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+        <div class="space-y-0.5 text-xs text-muted-foreground">
+          <p class="font-semibold text-foreground text-sm">Wallet Not Connected</p>
+          <p>
+            Connect your wallet to view your token launches, portfolio positions, and activity
+            history.
+          </p>
+        </div>
+      </div>
+      <Button
+        size="sm"
+        variant="default"
+        class="h-9 px-4 font-bold text-xs shrink-0 cursor-pointer"
+        @click="openWallet"
       >
+        Connect Wallet
+      </Button>
     </Card>
 
     <template v-else>
@@ -136,7 +157,9 @@
           <p class="text-2xl font-bold font-mono text-foreground mt-2">
             {{ myLaunches.length }}
           </p>
-          <p class="text-xs text-muted-foreground mt-1">Deployed by your wallet</p>
+          <p class="text-xs text-muted-foreground mt-1">
+            {{ isOwnProfile ? 'Deployed by your wallet' : 'Deployed by this creator' }}
+          </p>
         </Card>
 
         <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
@@ -162,17 +185,46 @@
           <p class="text-2xl font-bold font-mono text-foreground mt-2">
             {{ userActivities.length }}
           </p>
-          <p class="text-xs text-muted-foreground mt-1">Buys & Sells executed</p>
+          <p class="text-xs text-muted-foreground mt-1">Buys & Sells recorded</p>
         </Card>
       </div>
 
       <!-- Success Notification -->
       <div
         v-if="successTx"
-        class="text-xs text-foreground bg-emerald-950/40 border border-emerald-800 rounded-xl p-4 flex items-start gap-2 break-all"
+        class="text-xs text-foreground bg-muted/60 border border-border rounded-xl p-4 flex items-start justify-between gap-2 break-all"
       >
-        <Check class="w-4 h-4 shrink-0 mt-0.5 text-foreground" />
-        <span>Transaction Successful! Tx Hash: {{ successTx }}</span>
+        <div class="flex items-start gap-2">
+          <Check class="w-4 h-4 shrink-0 mt-0.5 text-foreground" />
+          <span>Transaction Successful! Tx Hash: {{ successTx }}</span>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          class="h-5 w-5 p-0 shrink-0 text-muted-foreground hover:text-foreground cursor-pointer"
+          @click="successTx = null"
+        >
+          <X class="w-3.5 h-3.5" />
+        </Button>
+      </div>
+
+      <!-- Action Error Notification -->
+      <div
+        v-if="actionError"
+        class="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-4 flex items-start justify-between gap-2 break-words"
+      >
+        <div class="flex items-start gap-2">
+          <AlertCircle class="w-4 h-4 shrink-0 mt-0.5 text-destructive" />
+          <span>{{ actionError }}</span>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          class="h-5 w-5 p-0 shrink-0 text-muted-foreground hover:text-foreground cursor-pointer"
+          @click="actionError = null"
+        >
+          <X class="w-3.5 h-3.5" />
+        </Button>
       </div>
 
       <!-- Main Profile Tabs: Created Tokens, Portfolio, Activity -->
@@ -215,7 +267,7 @@
             <Button
               variant="ghost"
               size="sm"
-              class="h-8 text-xs text-muted-foreground hover:text-foreground self-end sm:self-auto border border-border"
+              class="h-8 text-xs text-muted-foreground hover:text-foreground self-end sm:self-auto border border-border cursor-pointer"
               @click="refreshAllData"
             >
               <RefreshCw class="w-3.5 h-3.5 mr-1" :class="{ 'animate-spin': loadingLaunches }" />
@@ -252,7 +304,7 @@
                   />
 
                   <div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 flex-wrap">
                       <h3 class="font-bold text-base text-foreground">
                         {{ token.name }}
                       </h3>
@@ -266,10 +318,14 @@
                         {{ token.version === 'v2' ? 'v2 Curve' : 'v1 Direct' }}
                       </Badge>
                     </div>
-                    <p class="text-xs font-mono text-muted-foreground mt-0.5">
+                    <p
+                      class="text-xs font-mono text-muted-foreground mt-0.5 break-all sm:break-normal"
+                    >
                       {{ token.address }}
                     </p>
-                    <div class="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                    <div
+                      class="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap"
+                    >
                       <span>
                         Accrued:
                         <strong class="text-foreground font-mono"
@@ -288,17 +344,27 @@
                   </div>
                 </div>
 
-                <div class="flex items-center gap-2 self-end sm:self-center">
+                <div v-if="isOwnProfile" class="flex items-center gap-2 self-end sm:self-center">
                   <Button
                     @click="handleClaim(token.address)"
-                    :disabled="loading"
+                    :disabled="loading || claimingToken === token.address"
                     variant="default"
                     size="sm"
+                    class="cursor-pointer"
                   >
-                    <ArrowDownToLine class="w-3.5 h-3.5 mr-1" />
+                    <Loader2
+                      v-if="claimingToken === token.address"
+                      class="w-3.5 h-3.5 mr-1 animate-spin"
+                    />
+                    <ArrowDownToLine v-else class="w-3.5 h-3.5 mr-1" />
                     Claim Fees
                   </Button>
-                  <Button @click="openCtoModal(token.address)" variant="outline" size="sm">
+                  <Button
+                    @click="openCtoModal(token.address)"
+                    variant="outline"
+                    size="sm"
+                    class="cursor-pointer"
+                  >
                     <Share2 class="w-3.5 h-3.5 mr-1" />
                     CTO Redirect
                   </Button>
@@ -362,7 +428,7 @@
                         as-child
                         variant="outline"
                         size="sm"
-                        class="h-7 px-2.5 text-xs font-semibold gap-1 border-border"
+                        class="h-7 px-2.5 text-xs font-semibold gap-1 border-border cursor-pointer"
                       >
                         <RouterLink :to="`/launchpad/${pos.tokenAddress}`">
                           Trade
@@ -446,10 +512,7 @@
                     <Coins class="w-4 h-4 text-foreground" />
                     <h3 class="text-sm font-bold text-foreground">Holder Fee Sharing Dividends</h3>
                   </div>
-                  <Badge
-                    variant="outline"
-                    class="text-[10px] font-mono text-foreground border-emerald-500/30"
-                  >
+                  <Badge variant="outline" class="text-[10px] font-mono text-muted-foreground">
                     70% Split
                   </Badge>
                 </div>
@@ -462,13 +525,15 @@
                     <span class="text-[10px] text-muted-foreground uppercase font-mono"
                       >Claimable Reward</span
                     >
-                    <p class="text-lg font-bold font-mono text-foreground">0.0000 WETH</p>
+                    <p class="text-lg font-bold font-mono text-foreground">
+                      0.0000 {{ activeNetwork.nativeCurrency.symbol }}
+                    </p>
                   </div>
                   <Button
                     size="sm"
                     variant="default"
                     :disabled="true"
-                    class="h-8 text-xs font-semibold"
+                    class="h-8 text-xs font-semibold opacity-50 cursor-not-allowed"
                   >
                     <ArrowDownToLine class="w-3.5 h-3.5 mr-1" />
                     Claim Dividends
@@ -488,21 +553,22 @@
                   </Badge>
                 </div>
                 <p class="text-xs text-muted-foreground">
-                  Tokens locked in linear vesting schedules (buybacks, team allocations, migration
-                  claims).
+                  View and claim your non-custodial locked founder and team allocations.
                 </p>
                 <div class="flex items-end justify-between pt-2 border-t border-border">
                   <div>
                     <span class="text-[10px] text-muted-foreground uppercase font-mono"
-                      >Unlocked Tokens</span
+                      >Vested Balance</span
                     >
-                    <p class="text-lg font-bold font-mono text-foreground">0 DIV</p>
+                    <p class="text-lg font-bold font-mono text-foreground">
+                      0.00 {{ activeNetwork.nativeCurrency.symbol }}
+                    </p>
                   </div>
                   <Button
                     size="sm"
                     variant="outline"
                     :disabled="true"
-                    class="h-8 text-xs font-semibold"
+                    class="h-8 text-xs font-semibold opacity-50 cursor-not-allowed"
                   >
                     Claim Unlocked
                   </Button>
@@ -567,7 +633,7 @@
                 :class="[
                   'relative border-2 border-dashed rounded-xl p-3.5 transition-all flex items-center gap-3.5 text-left cursor-pointer min-w-0 overflow-hidden',
                   dragOverAvatar
-                    ? 'border-emerald-500 bg-emerald-500/10'
+                    ? 'border-primary bg-primary/10'
                     : 'border-border hover:border-foreground/50',
                 ]"
                 @click="triggerAvatarUpload"
@@ -594,11 +660,11 @@
                     v-else-if="isUploadingAvatar"
                     class="w-full h-full flex items-center justify-center bg-muted"
                   >
-                    <Loader2 class="w-5 h-5 text-emerald-500 animate-spin" />
+                    <Loader2 class="w-5 h-5 text-foreground animate-spin" />
                   </div>
                   <Jazzicon
                     v-else
-                    :address="userAddress"
+                    :address="profileAddress || '0x0000000000000000000000000000000000000000'"
                     :size="56"
                     class="w-full h-full rounded-full"
                   />
@@ -622,7 +688,7 @@
                     <Badge
                       v-if="isUploadingAvatar"
                       variant="outline"
-                      class="text-[9px] px-1 py-0 bg-amber-500/10 text-amber-500 border-amber-500/30 flex items-center gap-1 shrink-0"
+                      class="text-[9px] px-1 py-0 bg-muted text-foreground border-border flex items-center gap-1 shrink-0"
                     >
                       <Loader2 class="w-2.5 h-2.5 animate-spin" />
                       Optimizing...
@@ -630,7 +696,7 @@
                     <Badge
                       v-else-if="editForm.avatarUrl"
                       variant="outline"
-                      class="text-[9px] px-1 py-0 bg-emerald-500/10 text-emerald-500 border-emerald-500/30 shrink-0"
+                      class="text-[9px] px-1 py-0 bg-muted text-foreground border-border shrink-0"
                     >
                       Active
                     </Badge>
@@ -652,6 +718,15 @@
                 >
                   <Trash2 class="w-3.5 h-3.5" />
                 </Button>
+              </div>
+
+              <!-- Inline Avatar Error Banner -->
+              <div
+                v-if="avatarError"
+                class="text-[11px] text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2 flex items-start gap-1.5"
+              >
+                <AlertCircle class="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                <span>{{ avatarError }}</span>
               </div>
             </div>
 
@@ -690,10 +765,18 @@
             </div>
 
             <DialogFooter class="pt-3 gap-2">
-              <Button type="button" variant="outline" size="sm" @click="editModalOpen = false">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                @click="editModalOpen = false"
+                class="cursor-pointer"
+              >
                 Cancel
               </Button>
-              <Button type="submit" variant="default" size="sm">Save Profile</Button>
+              <Button type="submit" variant="default" size="sm" class="cursor-pointer"
+                >Save Profile</Button
+              >
             </DialogFooter>
           </form>
         </DialogContent>
@@ -706,7 +789,7 @@
         >
           <DialogHeader>
             <div class="flex items-center gap-2 text-foreground mb-1">
-              <ShieldAlert class="w-5 h-5" />
+              <ShieldAlert class="w-5 h-5 text-foreground" />
               <DialogTitle>Community Takeover (CTO) Redirect</DialogTitle>
             </div>
             <DialogDescription class="text-xs text-muted-foreground">
@@ -736,16 +819,29 @@
                 class="font-mono text-xs"
               />
             </div>
+
+            <!-- Inline CTO Error -->
+            <div
+              v-if="ctoError"
+              class="text-[11px] text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2.5 flex items-start gap-1.5"
+            >
+              <AlertCircle class="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{{ ctoError }}</span>
+            </div>
           </div>
 
           <DialogFooter class="gap-2">
-            <Button variant="outline" size="sm" @click="ctoModalOpen = false">Cancel</Button>
+            <Button variant="outline" size="sm" @click="ctoModalOpen = false" class="cursor-pointer"
+              >Cancel</Button
+            >
             <Button
               variant="default"
               size="sm"
-              :disabled="loading || !newRecipientAddress.startsWith('0x')"
+              :disabled="loading || !isAddressValid(newRecipientAddress)"
+              class="cursor-pointer"
               @click="handleSetRedirect"
             >
+              <Loader2 v-if="loading" class="w-3.5 h-3.5 mr-1 animate-spin" />
               Confirm CTO Redirect
             </Button>
           </DialogFooter>
@@ -757,13 +853,11 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import {
-  User,
   Coins,
   Rocket,
   Lock,
-  ShieldCheck,
-  Flame,
   Share2,
   ShieldAlert,
   Check,
@@ -776,7 +870,8 @@ import {
   ExternalLink,
   Camera,
   Trash2,
-  UploadCloud,
+  ArrowDownToLine,
+  X,
 } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { useLaunchpad } from '../composables/useLaunchpad';
@@ -786,7 +881,7 @@ import { shortenAddress } from '@/lib/utils';
 import { compressAndConvertToWebp } from '@/lib/image-optimizer';
 
 const { t } = useI18n();
-const { activeNetwork } = useWallet();
+const { activeNetwork, openWallet } = useWallet();
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -806,19 +901,42 @@ import {
 } from '@/components/ui/dialog';
 import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
 import { erc20Abi } from 'viem';
-import { ARC_CHAIN, ROBINHOOD_CHAIN, ARC_PROTO_CURVE_ADDRESS } from '@proto/shared-types';
 import { getPublicClient } from '@/lib/viem-client';
+import { liquidityLockerAbi } from '@proto/shared-types';
 
-const { claimFees, setFeeRedirect, loading } = useLaunchpad();
+const route = useRoute();
 
-const userAddress = walletAddress;
+function isAddressValid(addr: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/.test(addr.trim());
+}
+
+// Support viewing either a specific address via route parameter or the currently connected wallet
+const profileAddress = computed(() => {
+  const param = route.params.address as string | undefined;
+  if (param && isAddressValid(param)) {
+    return param.toLowerCase();
+  }
+  return walletAddress.value ? walletAddress.value.toLowerCase() : null;
+});
+
+const isOwnProfile = computed(() => {
+  if (!walletAddress.value || !profileAddress.value) return false;
+  return walletAddress.value.toLowerCase() === profileAddress.value.toLowerCase();
+});
+
+const { claimFees, setFeeRedirect, loading, error: launchpadError } = useLaunchpad();
+
 const activeTab = ref('created');
 const editModalOpen = ref(false);
 const ctoModalOpen = ref(false);
 const selectedCtoToken = ref<string>('');
 const newRecipientAddress = ref<string>('');
 const successTx = ref<string | null>(null);
+const actionError = ref<string | null>(null);
+const ctoError = ref<string | null>(null);
+const avatarError = ref<string | null>(null);
 const loadingLaunches = ref(false);
+const claimingToken = ref<string | null>(null);
 const copiedShare = ref(false);
 
 const avatarFileRef = ref<HTMLInputElement | null>(null);
@@ -845,12 +963,13 @@ async function handleAvatarDrop(e: DragEvent) {
 }
 
 async function processAvatarFile(file: File) {
+  avatarError.value = null;
   if (!file.type.startsWith('image/')) {
-    alert('Please select a valid image file (PNG, JPG, WEBP, GIF).');
+    avatarError.value = 'Please select a valid image file (PNG, JPG, WEBP, GIF).';
     return;
   }
   if (file.size > 5 * 1024 * 1024) {
-    alert('Image file size must be less than 5MB.');
+    avatarError.value = 'Image file size must be less than 5MB.';
     return;
   }
 
@@ -883,6 +1002,7 @@ async function processAvatarFile(file: File) {
 function removeAvatar() {
   editForm.value.avatarUrl = '';
   avatarFileName.value = '';
+  avatarError.value = null;
   if (avatarFileRef.value) avatarFileRef.value.value = '';
 }
 
@@ -985,9 +1105,10 @@ const totalClaimableWeth = computed(() => {
 });
 
 function loadLocalProfile() {
-  if (typeof window === 'undefined' || !userAddress.value) return;
+  const target = profileAddress.value;
+  if (typeof window === 'undefined' || !target) return;
   try {
-    const raw = localStorage.getItem(`proto_profile_${userAddress.value.toLowerCase()}`);
+    const raw = localStorage.getItem(`proto_profile_${target.toLowerCase()}`);
     if (raw) {
       const parsed = JSON.parse(raw);
       profileData.value = parsed;
@@ -1002,11 +1123,12 @@ function loadLocalProfile() {
 }
 
 function saveProfile() {
-  if (typeof window === 'undefined' || !userAddress.value) return;
+  const target = profileAddress.value;
+  if (typeof window === 'undefined' || !target) return;
   profileData.value = { ...editForm.value };
   try {
     localStorage.setItem(
-      `proto_profile_${userAddress.value.toLowerCase()}`,
+      `proto_profile_${target.toLowerCase()}`,
       JSON.stringify(profileData.value),
     );
   } catch {
@@ -1016,9 +1138,9 @@ function saveProfile() {
 }
 
 function shareProfile() {
-  if (typeof window === 'undefined') return;
-  const url = window.location.href;
-  navigator.clipboard.writeText(url);
+  if (typeof window === 'undefined' || !profileAddress.value) return;
+  const url = `${window.location.origin}/profile/${profileAddress.value}`;
+  navigator.clipboard.writeText(url).catch(() => {});
   copiedShare.value = true;
   setTimeout(() => {
     copiedShare.value = false;
@@ -1034,122 +1156,158 @@ function formatTimeAgo(ts: number): string {
 }
 
 async function fetchMyLaunches() {
-  if (!userAddress.value) {
+  const target = profileAddress.value;
+  if (!target) {
     myLaunches.value = [];
     return;
   }
 
   loadingLaunches.value = true;
   try {
-    const res = await fetch(`/api/tokens?deployer=${userAddress.value}`);
+    const res = await fetch(`/api/tokens?deployer=${target}`);
     const envelope = (await res.json()) as {
       success: boolean;
       data: Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }>;
     };
     if (envelope.success && Array.isArray(envelope.data)) {
-      myLaunches.value = envelope.data.map((item) => ({
-        address: item.token.address,
-        name: item.token.name,
-        symbol: item.token.symbol,
-        logo: item.token.logo,
-        version: item.token.version ?? 'v1',
-        unclaimedWeth: '0.0000',
-        redirect: null,
-      }));
+      const publicClient = getPublicClient(activeNetwork.value.chainId);
+      const lockerAddr = activeNetwork.value.contracts.locker;
+      const hasLocker = lockerAddr && lockerAddr !== '0x0000000000000000000000000000000000000000';
+
+      const launches = await Promise.all(
+        envelope.data.map(async (item) => {
+          let redirect: string | null = null;
+          if (hasLocker) {
+            try {
+              const r = (await publicClient.readContract({
+                address: lockerAddr,
+                abi: liquidityLockerAbi,
+                functionName: 'feeRedirects',
+                args: [item.token.address as `0x${string}`],
+              })) as string;
+              if (r && r !== '0x0000000000000000000000000000000000000000') {
+                redirect = r;
+              }
+            } catch {
+              // Non-blocking
+            }
+          }
+          return {
+            address: item.token.address,
+            name: item.token.name,
+            symbol: item.token.symbol,
+            logo: item.token.logo,
+            version: item.token.version ?? 'v1',
+            unclaimedWeth: '0.0000',
+            redirect,
+          };
+        }),
+      );
+      myLaunches.value = launches;
+    } else {
+      myLaunches.value = [];
     }
   } catch {
-    // Keep empty
+    myLaunches.value = [];
   } finally {
     loadingLaunches.value = false;
   }
 }
 
 async function fetchUserPositionsAndActivity() {
-  if (!userAddress.value) {
+  const target = profileAddress.value;
+  if (!target) {
     portfolioPositions.value = [];
     userActivities.value = [];
     return;
   }
 
   try {
-    const res = await fetch('/api/tokens');
-    const envelope = await res.json();
-    if (envelope.success && Array.isArray(envelope.data)) {
-      const allTokens = envelope.data;
-      const positions: PortfolioPosition[] = [];
-      const activities: UserActivity[] = [];
+    // 1. Fetch user trades in ONE single fast request from the API
+    const [tradesRes, tokensRes] = await Promise.all([
+      fetch(`/api/trades?trader=${target}&limit=100`).catch(() => null),
+      fetch('/api/tokens?limit=100').catch(() => null),
+    ]);
 
-      for (const t of allTokens) {
-        try {
-          const tradesRes = await fetch(`/api/tokens/${t.token.address}/trades`);
-          const tradesEnv = await tradesRes.json();
-          if (tradesEnv.success && Array.isArray(tradesEnv.data)) {
-            let userTokenBal = 0;
-            for (const tr of tradesEnv.data) {
-              if (tr.trader.toLowerCase() === userAddress.value.toLowerCase()) {
-                activities.push({
-                  txHash: tr.transactionHash,
-                  isBuy: tr.isBuy,
-                  tokenSymbol: t.token.symbol,
-                  ethAmount: tr.wethAmount,
-                  tokenAmount: parseFloat(tr.tokenAmount || '0').toFixed(2),
-                  timestamp: tr.timestamp,
-                });
-                const tokNum = parseFloat(tr.tokenAmount || '0');
-                if (tr.isBuy) {
-                  userTokenBal += tokNum;
-                } else {
-                  userTokenBal = Math.max(0, userTokenBal - tokNum);
-                }
-              }
-            }
+    const tradesJson = tradesRes?.ok ? await tradesRes.json().catch(() => null) : null;
+    const tokensJson = tokensRes?.ok ? await tokensRes.json().catch(() => null) : null;
 
-            // Query on-chain balance to guarantee tokens held in wallet are always accurately reflected
-            let finalBalNum = userTokenBal;
-            try {
-              const isArc =
-                t.token.pairedToken?.toLowerCase() === ARC_CHAIN.contracts.weth.toLowerCase() ||
-                t.token.poolAddress?.toLowerCase() === ARC_CHAIN.contracts.factory.toLowerCase() ||
-                t.token.curveAddress?.toLowerCase() === ARC_PROTO_CURVE_ADDRESS.toLowerCase();
-              const client = getPublicClient(isArc ? ARC_CHAIN.chainId : ROBINHOOD_CHAIN.chainId);
-              const onChainWei = (await client.readContract({
-                address: t.token.address,
-                abi: erc20Abi,
-                functionName: 'balanceOf',
-                args: [userAddress.value as `0x${string}`],
-              })) as bigint;
-              if (onChainWei > 0n) {
-                finalBalNum = Number(onChainWei) / 10 ** (t.token.decimals || 18);
-              }
-            } catch {
-              // Fallback to trade-derived balance
-            }
+    const allTokens: Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }> =
+      tokensJson?.success && Array.isArray(tokensJson.data) ? tokensJson.data : [];
 
-            if (finalBalNum > 0) {
-              positions.push({
-                tokenAddress: t.token.address,
-                name: t.token.name,
-                symbol: t.token.symbol,
-                balanceFormatted: finalBalNum.toLocaleString(undefined, {
-                  maximumFractionDigits: 2,
-                }),
-                priceUsd: t.marketData.priceUsd,
-                valueUsd: finalBalNum * t.marketData.priceUsd,
-              });
-            }
-          }
-        } catch {
-          // Continue
-        }
-      }
+    const tokenMap = new Map<string, { token: LaunchedTokenEntity; marketData: TokenMarketData }>();
+    for (const item of allTokens) {
+      tokenMap.set(item.token.address.toLowerCase(), item);
+    }
 
-      portfolioPositions.value = positions;
-      activities.sort((a, b) => b.timestamp - a.timestamp);
-      userActivities.value = activities;
-      if (myLaunches.value.length === 0 && positions.length > 0) {
-        activeTab.value = 'portfolio';
+    const activities: UserActivity[] = [];
+    const candidateAddresses = new Set<string>();
+
+    if (tradesJson?.success && Array.isArray(tradesJson.data)) {
+      for (const tr of tradesJson.data) {
+        const tMeta = tokenMap.get(tr.tokenAddress.toLowerCase());
+        const sym = tMeta ? tMeta.token.symbol : 'TOKEN';
+        candidateAddresses.add(tr.tokenAddress.toLowerCase());
+        activities.push({
+          txHash: tr.transactionHash,
+          isBuy: tr.isBuy,
+          tokenSymbol: sym,
+          ethAmount: tr.wethAmount,
+          tokenAmount: parseFloat(tr.tokenAmount || '0').toFixed(2),
+          timestamp: tr.timestamp,
+        });
       }
     }
+
+    // Also include any tokens created by this user as candidates for portfolio
+    for (const launch of myLaunches.value) {
+      candidateAddresses.add(launch.address.toLowerCase());
+    }
+
+    userActivities.value = activities;
+
+    // 2. Query on-chain balances concurrently for candidate tokens
+    const client = getPublicClient(activeNetwork.value.chainId);
+    const candidateList = Array.from(candidateAddresses);
+    const balancePromises = candidateList.map(async (addr) => {
+      const meta = tokenMap.get(addr);
+      if (!meta) return null;
+      try {
+        const bal = (await client.readContract({
+          address: meta.token.address as `0x${string}`,
+          abi: erc20Abi,
+          functionName: 'balanceOf',
+          args: [target as `0x${string}`],
+        })) as bigint;
+        if (bal > 0n) {
+          const decimals = meta.token.decimals || 18;
+          const num = Number(bal) / 10 ** decimals;
+          return {
+            tokenAddress: meta.token.address,
+            name: meta.token.name,
+            symbol: meta.token.symbol,
+            balanceFormatted: num.toLocaleString(undefined, {
+              maximumFractionDigits: 2,
+            }),
+            priceUsd: meta.marketData.priceUsd,
+            valueUsd: num * meta.marketData.priceUsd,
+          };
+        }
+      } catch {
+        // Non-blocking
+      }
+      return null;
+    });
+
+    const settled = await Promise.allSettled(balancePromises);
+    const validPositions: PortfolioPosition[] = [];
+    for (const res of settled) {
+      if (res.status === 'fulfilled' && res.value) {
+        validPositions.push(res.value);
+      }
+    }
+
+    portfolioPositions.value = validPositions;
   } catch {
     // Non-blocking
   }
@@ -1159,10 +1317,18 @@ async function refreshAllData() {
   await Promise.all([fetchMyLaunches(), fetchUserPositionsAndActivity()]);
 }
 
-watch(userAddress, () => {
+watch(profileAddress, () => {
   loadLocalProfile();
   refreshAllData();
 });
+
+watch(
+  () => route.params.address,
+  () => {
+    loadLocalProfile();
+    refreshAllData();
+  },
+);
 
 onMounted(() => {
   loadLocalProfile();
@@ -1172,27 +1338,52 @@ onMounted(() => {
 function openCtoModal(tokenAddress: string) {
   selectedCtoToken.value = tokenAddress;
   newRecipientAddress.value = '';
+  ctoError.value = null;
   ctoModalOpen.value = true;
 }
 
 async function handleClaim(tokenAddress: string) {
   successTx.value = null;
-  const hash = await claimFees(tokenAddress as `0x${string}`);
-  if (hash) {
-    successTx.value = hash;
+  actionError.value = null;
+  claimingToken.value = tokenAddress;
+  try {
+    const hash = await claimFees(tokenAddress as `0x${string}`);
+    if (hash) {
+      successTx.value = hash;
+      await refreshAllData();
+    } else if (launchpadError.value) {
+      actionError.value = launchpadError.value;
+    }
+  } catch (err) {
+    actionError.value = (err as Error).message || 'Failed to claim fees';
+  } finally {
+    claimingToken.value = null;
   }
 }
 
 async function handleSetRedirect() {
   if (!selectedCtoToken.value || !newRecipientAddress.value) return;
+  if (!isAddressValid(newRecipientAddress.value)) {
+    ctoError.value = 'Please enter a valid 20-byte address (0x followed by 40 hex characters).';
+    return;
+  }
   successTx.value = null;
-  const hash = await setFeeRedirect(
-    selectedCtoToken.value as `0x${string}`,
-    newRecipientAddress.value as `0x${string}`,
-  );
-  if (hash) {
-    successTx.value = hash;
-    ctoModalOpen.value = false;
+  actionError.value = null;
+  ctoError.value = null;
+  try {
+    const hash = await setFeeRedirect(
+      selectedCtoToken.value as `0x${string}`,
+      newRecipientAddress.value as `0x${string}`,
+    );
+    if (hash) {
+      successTx.value = hash;
+      ctoModalOpen.value = false;
+      await refreshAllData();
+    } else if (launchpadError.value) {
+      ctoError.value = launchpadError.value;
+    }
+  } catch (err) {
+    ctoError.value = (err as Error).message || 'Failed to set fee redirect';
   }
 }
 </script>

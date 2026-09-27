@@ -83,6 +83,27 @@ describe('Tokens HTTP Endpoints Integration', () => {
     expect(Array.isArray(json.data)).toBe(true);
   });
 
+  it('GET /api/trades?trader= returns 200 with filtered trades by trader', async () => {
+    const traderAddr = '0x1111111111111111111111111111111111111111';
+    const req = new Request(`http://localhost:3001/api/trades?trader=${traderAddr}&limit=10`);
+    const res = await server.fetch(req);
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    expect(Array.isArray(json.data)).toBe(true);
+  });
+
+  it('GET /api/trades?trader= returns 400 for invalid address', async () => {
+    const req = new Request('http://localhost:3001/api/trades?trader=invalid-addr');
+    const res = await server.fetch(req);
+
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.success).toBe(false);
+    expect(json.error.code).toBe('INVALID_PARAM');
+  });
+
   it('GET /api/trades/:txHash returns 404 for non-existent transaction hash', async () => {
     const nonExistentHash = '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef';
     const req = new Request(`http://localhost:3001/api/trades/${nonExistentHash}`);
