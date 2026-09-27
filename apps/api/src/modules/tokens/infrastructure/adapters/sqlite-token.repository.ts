@@ -528,6 +528,17 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     return rows.map((row) => this.mapRowToTrade(row));
   }
 
+  async getTradesByTrader(trader: string, limit = 50): Promise<TradeEventEntity[]> {
+    const stmt = this.db.prepare(`
+      SELECT * FROM trades
+      WHERE LOWER(trader) = LOWER(?)
+      ORDER BY timestamp DESC, rowid DESC
+      LIMIT ?
+    `);
+    const rows = stmt.all(trader, limit) as TradeRow[];
+    return rows.map((row) => this.mapRowToTrade(row));
+  }
+
   async findTradeByHash(txHash: string): Promise<TradeEventEntity | null> {
     const stmt = this.db.prepare(`
       SELECT * FROM trades

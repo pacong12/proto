@@ -572,9 +572,28 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     return replyJson(res, 200, { 'x-cache': 'MISS' });
   }
 
-  // GET /api/trades (global recent protocol trades)
+  // GET /api/trades (global recent protocol trades or trades by trader)
   if (url.pathname === '/api/trades' && req.method === 'GET') {
     const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') ?? '30', 10)));
+    const trader = url.searchParams.get('trader');
+    if (trader) {
+      if (!/^0x[a-fA-F0-9]{40}$/.test(trader)) {
+        return replyError('INVALID_PARAM', 'trader must be a valid 20-byte hex address', 400);
+      }
+      const cacheKey = `protocol:trades:trader:${trader.toLowerCase()}:${limit}`;
+      const cached = await cache.get<unknown>(cacheKey);
+      if (cached) {
+        return replyJson(cached, 200, { 'x-cache': 'HIT' });
+      }
+
+      const trades = repository.getTradesByTrader
+        ? await repository.getTradesByTrader(trader, limit)
+        : [];
+      const payload = ok(trades);
+      await cache.set(cacheKey, payload, 5); // 5s cache
+      return replyJson(payload, 200, { 'x-cache': 'MISS' });
+    }
+
     const cacheKey = `protocol:trades:recent:${limit}`;
     const cached = await cache.get<unknown>(cacheKey);
     if (cached) {
