@@ -159,6 +159,7 @@
     <SearchDialog v-if="searchOpen" @close="searchOpen = false" @select-token="handleSelectToken" />
     <PrivacyDialog v-model:open="privacyOpen" @accept="handlePrivacyAccepted" />
     <CookieConsentBanner />
+    <Toaster />
   </div>
 </template>
 
@@ -168,6 +169,7 @@ import { useRouter, useRoute, RouterLink, RouterView } from 'vue-router';
 import { ExternalLink, BookOpen } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import Navbar from './components/Navbar.vue';
+import { Toaster } from '@/components/ui/sonner';
 import { walletAddress, walletModalOpen } from './lib/wallet-store';
 import { useWallet } from './composables/useWallet';
 

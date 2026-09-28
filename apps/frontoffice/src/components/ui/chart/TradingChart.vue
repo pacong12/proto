@@ -34,12 +34,14 @@ interface Props {
   tokenSymbol?: string;
   tokenAddress?: string;
   height?: number;
+  resolution?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   tokenSymbol: '',
   tokenAddress: '',
   height: 420,
+  resolution: 60,
 });
 
 // ---------------------------------------------------------------------------
@@ -121,9 +123,9 @@ function getThemeConfig(isDark: boolean) {
       borderColor: isDark ? '#27272a' : '#e4e4e7',
       timeVisible: true,
       secondsVisible: false,
-      rightOffset: 6,
-      barSpacing: 8,
-      minBarSpacing: 1,
+      rightOffset: 12,
+      barSpacing: 22,
+      minBarSpacing: 6,
     },
   };
 }
@@ -266,6 +268,13 @@ const barChangePercent = computed(() => {
 const dataIsFlat = computed(() => isDataFlat(formatData(props.data)));
 
 // ---------------------------------------------------------------------------
+// Standard Financial Chart Colors (Green = Bullish, Red = Bearish)
+// ---------------------------------------------------------------------------
+
+const BULLISH_GREEN = '#22c55e';
+const BEARISH_RED = '#ef4444';
+
+// ---------------------------------------------------------------------------
 // Chart initialisation
 // ---------------------------------------------------------------------------
 
@@ -324,8 +333,8 @@ function initChart() {
   const autoscaleProvider = makeAutoscaleProvider(flatPrice);
 
   // 2. Main price series
-  const upColor = isDark ? '#ffffff' : '#09090b';
-  const downColor = isDark ? '#71717a' : '#a1a1aa';
+  const upColor = BULLISH_GREEN;
+  const downColor = BEARISH_RED;
 
   if (chartType.value === 'candles') {
     candleSeries = chart.addSeries(CandlestickSeries, {
@@ -343,9 +352,9 @@ function initChart() {
     candleSeries.setData(formatted);
   } else {
     areaSeries = chart.addSeries(AreaSeries, {
-      topColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(9,9,11,0.12)',
-      bottomColor: isDark ? 'rgba(255,255,255,0.01)' : 'rgba(9,9,11,0.01)',
-      lineColor: isDark ? '#ffffff' : '#09090b',
+      topColor: 'rgba(34, 197, 94, 0.25)',
+      bottomColor: 'rgba(34, 197, 94, 0.01)',
+      lineColor: BULLISH_GREEN,
       lineWidth: 2,
       priceFormat: getPriceFormatOptions(formatted),
       autoscaleInfoProvider: autoscaleProvider,
@@ -353,23 +362,16 @@ function initChart() {
     areaSeries.setData(formatted.map((d) => ({ time: d.time, value: d.close })));
   }
 
-  // 3. Volume data (Monochrome: light/dark contrasting bars)
+  // 3. Volume data (Green for bullish bars, Red for bearish bars)
   const volData = formatted.map((d) => ({
     time: d.time,
     value: d.volume,
-    color:
-      d.close >= d.open
-        ? isDark
-          ? 'rgba(255,255,255,0.35)'
-          : 'rgba(9,9,11,0.35)'
-        : isDark
-          ? 'rgba(113,113,122,0.3)'
-          : 'rgba(161,161,170,0.3)',
+    color: d.close >= d.open ? 'rgba(34, 197, 94, 0.55)' : 'rgba(239, 68, 68, 0.55)',
   }));
   volumeSeries.setData(volData);
 
   if (formatted.length > 0) {
-    chart.timeScale().fitContent();
+    applyOptimalVisibleRange(formatted.length);
   }
 
   // 4. Crosshair move — update toolbar
@@ -452,8 +454,32 @@ function toggleLogScale() {
   }
 }
 
+function applyOptimalVisibleRange(totalBars: number) {
+  if (!chart || totalBars <= 0) return;
+  if (totalBars <= 20) {
+    chart.timeScale().fitContent();
+    chart.timeScale().applyOptions({ barSpacing: 22, rightOffset: 12 });
+  } else {
+    chart.timeScale().setVisibleLogicalRange({
+      from: Math.max(0, totalBars - 35),
+      to: totalBars + 6,
+    });
+  }
+}
+
 function fitContent() {
-  if (chart) chart.timeScale().fitContent();
+  if (chart) {
+    const formatted = formatData(props.data);
+    if (formatted.length > 35) {
+      chart.timeScale().setVisibleLogicalRange({
+        from: Math.max(0, formatted.length - 35),
+        to: formatted.length + 6,
+      });
+    } else {
+      chart.timeScale().fitContent();
+      chart.timeScale().applyOptions({ barSpacing: 22, rightOffset: 12 });
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -487,27 +513,31 @@ watch(
     }
 
     if (volumeSeries) {
-      const isDark = checkDark();
       volumeSeries.setData(
         formatted.map((d) => ({
           time: d.time,
           value: d.volume,
-          color:
-            d.close >= d.open
-              ? isDark
-                ? 'rgba(255,255,255,0.35)'
-                : 'rgba(9,9,11,0.35)'
-              : isDark
-                ? 'rgba(113,113,122,0.3)'
-                : 'rgba(161,161,170,0.3)',
+          color: d.close >= d.open ? 'rgba(34, 197, 94, 0.55)' : 'rgba(239, 68, 68, 0.55)',
         })),
       );
     }
 
-    const isMajorUpdate = !oldData || Math.abs(newData.length - oldData.length) > 3;
-    if (isMajorUpdate && formatted.length > 0) chart.timeScale().fitContent();
+    if (formatted.length > 0) {
+      applyOptimalVisibleRange(formatted.length);
+    }
   },
   { deep: true },
+);
+
+watch(
+  () => props.resolution,
+  () => {
+    if (chart) {
+      chart.timeScale().resetTimeScale();
+      const formatted = formatData(props.data);
+      applyOptimalVisibleRange(formatted.length);
+    }
+  },
 );
 
 // ---------------------------------------------------------------------------
@@ -553,7 +583,12 @@ onUnmounted(() => destroyChart());
             </span>
           </span>
           <span
-            class="px-1.5 rounded font-bold text-[10px] bg-muted border border-border text-foreground"
+            :class="[
+              'px-1.5 py-0.5 rounded font-bold text-[10px] border transition-colors',
+              barChangePercent >= 0
+                ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/30'
+                : 'text-rose-500 bg-rose-500/10 border-rose-500/30',
+            ]"
           >
             {{ barChangePercent >= 0 ? '+' : '' }}{{ barChangePercent.toFixed(2) }}%
           </span>

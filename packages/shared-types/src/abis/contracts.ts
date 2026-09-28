@@ -118,6 +118,8 @@ export const bondingCurveAbi = parseAbi([
   'function totalEthRaised() external view returns (uint256)',
   'function graduationTarget() external view returns (uint256)',
   'function creator() external view returns (address)',
+  'function getAmountOutBuy(uint256 ethIn) external view returns (uint256 tokenOut, uint256 feeEth)',
+  'function getAmountOutSell(uint256 tokenIn) external view returns (uint256 ethOut, uint256 feeEth)',
   'function getAmountOut(uint256 amountIn, bool isBuy) external view returns (uint256 amountOut, uint256 fee)',
   'event Trade(address indexed trader, bool indexed isBuy, uint256 ethAmount, uint256 tokenAmount, uint256 feeEth)',
   'event Graduated(address indexed token, bytes32 indexed poolId, uint256 ethGraduated, uint256 tokensGraduated)',

@@ -14,7 +14,12 @@ export const robinhoodAppKitChain = defineChain({
   name: ROBINHOOD_CHAIN.name,
   nativeCurrency: ROBINHOOD_CHAIN.nativeCurrency,
   rpcUrls: {
-    default: { http: [ROBINHOOD_CHAIN.rpcUrl] },
+    default: {
+      http:
+        ROBINHOOD_CHAIN.rpcUrls && ROBINHOOD_CHAIN.rpcUrls.length > 0
+          ? ROBINHOOD_CHAIN.rpcUrls
+          : [ROBINHOOD_CHAIN.rpcUrl],
+    },
   },
   blockExplorers: {
     default: {
@@ -31,7 +36,10 @@ export const arcAppKitChain = defineChain({
   name: ARC_CHAIN.name,
   nativeCurrency: ARC_CHAIN.nativeCurrency,
   rpcUrls: {
-    default: { http: [ARC_CHAIN.rpcUrl] },
+    default: {
+      http:
+        ARC_CHAIN.rpcUrls && ARC_CHAIN.rpcUrls.length > 0 ? ARC_CHAIN.rpcUrls : [ARC_CHAIN.rpcUrl],
+    },
   },
   blockExplorers: {
     default: {

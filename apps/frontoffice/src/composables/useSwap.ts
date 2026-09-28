@@ -1,55 +1,39 @@
 import { ref } from 'vue';
-import { erc20Abi, parseEther } from 'viem';
-import { getNetworkConfig, swapRouterAbi, bondingCurveAbi } from '@proto/shared-types';
+import { erc20Abi, parseUnits } from 'viem';
 import { getPublicClient, getWalletClient } from '../lib/viem-client';
 import { walletChainId } from '../lib/wallet-store';
+import { getChainAdapter } from '../chains';
 
 /**
- * Slippage threshold above which the UI should display a high-slippage warning.
+ * Robustly parses any string, number, or bigint input into wei/base units.
+ * Handles scientific notation, commas, and trailing decimals without throwing.
  */
-export const SLIPPAGE_WARN_THRESHOLD = 5.0; // percent
+export function parseAmountToWei(rawAmount: unknown, decimals = 18): bigint {
+  if (typeof rawAmount === 'bigint') return rawAmount;
+  if (rawAmount === null || rawAmount === undefined) return 0n;
 
-/**
- * Maximum slippage value accepted. Values above this are clamped to prevent
- * extreme sandwich attack exposure.
- */
-export const SLIPPAGE_MAX = 49.0; // percent
+  const str = typeof rawAmount === 'string' ? rawAmount.trim() : String(rawAmount).trim();
+  if (!str || str === '0') return 0n;
 
-/**
- * Resolve the minimum acceptable output amount for a swap.
- *
- * Priority:
- *   1. An explicit minimum supplied by the caller (already final).
- *   2. Derived from expectedAmountOut and slippagePercent.
- *   3. Neither available: throw to prevent a zero-minimum swap.
- */
-function resolveAmountOutMinimum(
-  explicitMin: bigint | undefined,
-  expectedAmountOut: bigint | undefined,
-  slippagePercent: number,
-): bigint {
-  if (explicitMin !== undefined && explicitMin > 0n) return explicitMin;
-
-  if (expectedAmountOut && expectedAmountOut > 0n) {
-    const clampedSlippage = Math.min(Math.max(slippagePercent, 0), SLIPPAGE_MAX);
-    // factor = (100 - slippage) * 100 expressed in basis-points-times-100
-    const factor = BigInt(Math.floor((100 - clampedSlippage) * 100));
-    return (expectedAmountOut * factor) / 10_000n;
+  try {
+    return parseUnits(str, decimals);
+  } catch {
+    if (str.includes('e') || str.includes('E')) {
+      const num = Number(str);
+      if (!Number.isFinite(num) || num <= 0) return 0n;
+      const fixed = num.toFixed(decimals);
+      return parseUnits(fixed, decimals);
+    }
+    const clean = str.replace(/[^0-9.]/g, '');
+    const [whole = '0', frac = ''] = clean.split('.');
+    const paddedFrac = frac.slice(0, decimals).padEnd(decimals, '0');
+    return BigInt(whole || '0') * 10n ** BigInt(decimals) + BigInt(paddedFrac || '0');
   }
-
-  throw new Error(
-    'Swap output estimate unavailable. Please retry in a few seconds or refresh the page.',
-  );
 }
 
-/**
- * Return true when the error originates from the user explicitly rejecting
- * the transaction in their wallet. These errors must not be shown as red
- * error banners because they are intentional user actions, not failures.
- *
- * Covers EIP-1193 code 4001, Viem ACTION_REJECTED, MetaMask, WalletConnect,
- * Coinbase Wallet, OKX, Bitget, and generic "cancel" messages.
- */
+export const SLIPPAGE_WARN_THRESHOLD = 5.0; // percent
+export const SLIPPAGE_MAX = 49.0; // percent
+
 function isUserRejection(err: unknown): boolean {
   const msg = ((err as Error)?.message ?? '').toLowerCase();
   const code = (err as { code?: number })?.code;
@@ -72,19 +56,10 @@ export function useSwap() {
   const swapError = ref<string | null>(null);
   const slippage = ref(1.0); // default 1.0%
 
-  /**
-   * Execute a swap through the V2 BondingCurve (when token is on curve)
-   * or through the Uniswap V3 SwapRouter (V1 direct pool or graduated token).
-   *
-   * Fixes:
-   *   BUG-04 - correct routing for V2 bonding curve tokens
-   *   HIGH-01 - amountOutMinimum is never silently 0
-   *   C-03    - allowance is checked before approve to avoid redundant transactions
-   */
   async function executeSwap(params: {
     tokenAddress: `0x${string}`;
     isBuy: boolean;
-    amountInEth: string;
+    amountInEth: string | number | bigint;
     slippagePercent?: number;
     amountOutMinimum?: bigint;
     expectedAmountOut?: bigint;
@@ -92,6 +67,9 @@ export function useSwap() {
     curveAddress?: `0x${string}`;
     isGraduated?: boolean;
     chainId?: number;
+    tokenDecimals?: number;
+    onSubmitted?: (txHash: `0x${string}`) => void;
+    onApproveSubmitted?: (approveHash: `0x${string}`) => void;
   }): Promise<string | null> {
     isSwapping.value = true;
     swapError.value = null;
@@ -110,151 +88,53 @@ export function useSwap() {
         console.warn(`[useSwap] High slippage: ${slippagePercent}%. Confirm user acknowledged.`);
       }
 
-      // Use parseEther for full precision; fallback parses decimal string directly without floats.
-      let amountInWei: bigint;
-      try {
-        amountInWei = parseEther(params.amountInEth);
-      } catch {
-        const clean = (params.amountInEth || '0').trim();
-        const [whole, frac = ''] = clean.split('.');
-        const paddedFrac = frac.slice(0, 18).padEnd(18, '0');
-        amountInWei = BigInt(whole || '0') * 10n ** 18n + BigInt(paddedFrac);
-      }
+      const decimals = params.isBuy ? 18 : params.tokenDecimals || 18;
+      let amountInWei = parseAmountToWei(params.amountInEth, decimals);
 
       if (amountInWei <= 0n) throw new Error('Swap amount must be greater than zero');
 
-      const isV2Curve =
-        params.version === 'v2' &&
-        !params.isGraduated &&
-        params.curveAddress &&
-        params.curveAddress !== '0x0000000000000000000000000000000000000000';
-
-      if (isV2Curve) {
-        if (params.isBuy) {
-          // V2 bonding curve buy: send ETH directly to buy().
-          const minTokensOut = resolveAmountOutMinimum(
-            params.amountOutMinimum,
-            params.expectedAmountOut,
-            slippagePercent,
-          );
-
-          const txHash = await walletClient.writeContract({
-            address: params.curveAddress!,
-            abi: bondingCurveAbi,
-            functionName: 'buy',
-            args: [minTokensOut],
-            value: amountInWei,
-            account,
-            chain: walletClient.chain,
-          });
-
-          await publicClient.waitForTransactionReceipt({ hash: txHash });
-          return txHash;
-        } else {
-          // V2 bonding curve sell: approve then call sell().
-          // Check existing allowance before approving to avoid unnecessary transactions (fix C-03).
-          const currentAllowance = await publicClient.readContract({
-            address: params.tokenAddress,
-            abi: erc20Abi,
-            functionName: 'allowance',
-            args: [account, params.curveAddress!],
-          });
-
-          if (currentAllowance < amountInWei) {
-            const approveHash = await walletClient.writeContract({
-              address: params.tokenAddress,
-              abi: erc20Abi,
-              functionName: 'approve',
-              args: [params.curveAddress!, amountInWei],
-              account,
-              chain: walletClient.chain,
-            });
-            await publicClient.waitForTransactionReceipt({ hash: approveHash });
-          }
-
-          const minEthOut = resolveAmountOutMinimum(
-            params.amountOutMinimum,
-            params.expectedAmountOut,
-            slippagePercent,
-          );
-
-          const txHash = await walletClient.writeContract({
-            address: params.curveAddress!,
-            abi: bondingCurveAbi,
-            functionName: 'sell',
-            args: [amountInWei, minEthOut],
-            account,
-            chain: walletClient.chain,
-          });
-
-          await publicClient.waitForTransactionReceipt({ hash: txHash });
-          return txHash;
-        }
-      }
-
-      const network = getNetworkConfig(walletChainId.value ?? undefined);
-
-      // Default path: Uniswap V3 SwapRouter.
-      const tokenIn = params.isBuy ? network.contracts.weth : params.tokenAddress;
-      const tokenOut = params.isBuy ? params.tokenAddress : network.contracts.weth;
-
       if (!params.isBuy) {
-        // Check existing allowance before approving (fix C-03).
-        const currentAllowance = await publicClient.readContract({
-          address: params.tokenAddress,
-          abi: erc20Abi,
-          functionName: 'allowance',
-          args: [account, network.contracts.swapRouter],
-        });
-
-        if (currentAllowance < amountInWei) {
-          const approveHash = await walletClient.writeContract({
+        try {
+          const userBalance = await publicClient.readContract({
             address: params.tokenAddress,
             abi: erc20Abi,
-            functionName: 'approve',
-            args: [network.contracts.swapRouter, amountInWei],
-            account,
-            chain: walletClient.chain,
+            functionName: 'balanceOf',
+            args: [account],
           });
-          await publicClient.waitForTransactionReceipt({ hash: approveHash });
+          if (userBalance > 0n && amountInWei > userBalance) {
+            amountInWei = userBalance;
+          }
+        } catch {
+          // non-blocking
         }
       }
 
-      const amountOutMinimum = resolveAmountOutMinimum(
-        params.amountOutMinimum,
-        params.expectedAmountOut,
-        slippagePercent,
-      );
+      // Clean Architecture: Delegate swap execution to dedicated chain adapter (Strategy Pattern)
+      const targetChainId = params.chainId ?? walletChainId.value ?? undefined;
+      const chainAdapter = getChainAdapter(targetChainId);
 
-      const swapHash = await walletClient.writeContract({
-        address: network.contracts.swapRouter,
-        abi: swapRouterAbi,
-        functionName: 'exactInputSingle',
-        args: [
-          {
-            tokenIn,
-            tokenOut,
-            fee: network.launchConfig.poolFee,
-            recipient: account,
-            deadline: BigInt(Math.floor(Date.now() / 1000) + 1200),
-            amountIn: amountInWei,
-            amountOutMinimum,
-            sqrtPriceLimitX96: 0n,
-          },
-        ],
-        value: params.isBuy ? amountInWei : 0n,
+      return await chainAdapter.executeSwap(
+        {
+          tokenAddress: params.tokenAddress,
+          isBuy: params.isBuy,
+          amountInWei,
+          slippagePercent,
+          expectedAmountOut: params.expectedAmountOut,
+          amountOutMinimum: params.amountOutMinimum,
+          curveAddress: params.curveAddress,
+          isGraduated: params.isGraduated,
+          onSubmitted: params.onSubmitted,
+          onApproveSubmitted: params.onApproveSubmitted,
+        },
+        walletClient,
+        publicClient,
         account,
-        chain: walletClient.chain,
-      });
-
-      await publicClient.waitForTransactionReceipt({ hash: swapHash });
-      return swapHash;
+      );
     } catch (err) {
       if (isUserRejection(err)) {
-        // User cancelled in wallet - not an error, clear any previous error.
         swapError.value = null;
       } else {
-        swapError.value = (err as Error).message;
+        swapError.value = (err as Error).message || 'Swap execution failed';
       }
       return null;
     } finally {
@@ -265,7 +145,6 @@ export function useSwap() {
   return {
     isSwapping,
     swapError,
-    isUserRejection,
     slippage,
     executeSwap,
   };

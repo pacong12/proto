@@ -228,6 +228,7 @@
                 :token-symbol="currentToken.symbol"
                 :token-address="currentToken.address"
                 :height="420"
+                :resolution="selectedResolution"
               />
             </div>
           </div>
@@ -493,32 +494,6 @@
                 <ArrowUpDown v-else class="w-4 h-4 mr-2" />
                 {{ swapButtonText }}
               </Button>
-
-              <!-- Status messages -->
-              <div
-                v-if="swapSuccessTx"
-                class="px-3 py-2.5 rounded-xl bg-primary/10 border border-primary/30 text-xs space-y-1.5"
-              >
-                <div class="flex items-center gap-1.5 text-primary font-bold">
-                  <Check class="w-3.5 h-3.5" />
-                  Swap Confirmed
-                </div>
-                <a
-                  :href="`${explorerUrl}/tx/${swapSuccessTx}`"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="font-mono text-[10px] text-muted-foreground hover:text-primary transition underline flex items-center gap-1"
-                >
-                  View on Explorer <ExternalLink class="w-3 h-3" />
-                </a>
-              </div>
-              <div
-                v-if="swapError"
-                class="px-3 py-2.5 rounded-xl bg-destructive/10 border border-destructive/30 text-xs text-destructive flex items-start gap-2"
-              >
-                <AlertCircle class="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                <span>{{ swapError }}</span>
-              </div>
             </div>
           </div>
         </div>
@@ -1167,9 +1142,10 @@ import {
   Heart,
   RefreshCw,
 } from 'lucide-vue-next';
-import { useSwap, SLIPPAGE_WARN_THRESHOLD } from '../composables/useSwap';
+import { useSwap, SLIPPAGE_WARN_THRESHOLD, parseAmountToWei } from '../composables/useSwap';
 import { useWallet } from '../composables/useWallet';
 import { getPublicClient } from '../lib/viem-client';
+import { toast } from '@/components/ui/sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1191,6 +1167,7 @@ import {
   ROBINHOOD_CHAIN,
   ARC_CHAIN,
   ARC_PROTO_CURVE_ADDRESS,
+  resolveTokenNetwork,
   launchpadTokenAbi,
   type LaunchedTokenEntity,
   type TokenMarketData,
@@ -1271,25 +1248,11 @@ const currentMarketData = ref<TokenMarketData>({
   volume24hUsd: 0,
 });
 
-const isArcToken = computed(() => {
-  const paired = currentToken.value.pairedToken?.toLowerCase();
-  const pool = currentToken.value.poolAddress?.toLowerCase();
-  const curve = currentToken.value.curveAddress?.toLowerCase();
-  const arcFactory = ARC_CHAIN.contracts.factory.toLowerCase();
-  const arcWeth = ARC_CHAIN.contracts.weth.toLowerCase();
+const tokenNetwork = computed(() =>
+  resolveTokenNetwork(currentToken.value, activeNetwork.value.chainId),
+);
 
-  return (
-    paired === arcWeth ||
-    pool === arcFactory ||
-    curve === ARC_PROTO_CURVE_ADDRESS.toLowerCase() ||
-    (currentToken.value.version === 'v2' && activeNetwork.value.chainId === ARC_CHAIN.chainId)
-  );
-});
-
-const tokenNetwork = computed(() => {
-  if (isArcToken.value) return ARC_CHAIN;
-  return ROBINHOOD_CHAIN;
-});
+const isArcToken = computed(() => tokenNetwork.value.chainId === ARC_CHAIN.chainId);
 
 const currencySymbol = computed(() => tokenNetwork.value.nativeCurrency.symbol);
 const explorerUrl = computed(() => tokenNetwork.value.blockExplorer);
@@ -1380,6 +1343,7 @@ const trades = ref<LiveTrade[]>([]);
 const tradesLoading = ref(false);
 const userTokenBalance = ref<bigint>(0n);
 const isTokenBalanceLoading = ref(false);
+const isMaxSell = ref(false);
 
 // Slippage
 const isCustomSlippage = ref(false);
@@ -1535,9 +1499,15 @@ const swapButtonText = computed(() => {
   if (!amountIn.value || input <= 0) return 'Enter an amount';
 
   if (!isBuy.value) {
-    const tokenBal = Number(userTokenBalance.value) / 10 ** (currentToken.value.decimals || 18);
-    if (tokenBal <= 0 || input > tokenBal) {
+    if (userTokenBalance.value <= 0n) {
       return `Insufficient ${currentToken.value.symbol} balance`;
+    }
+    if (!isMaxSell.value) {
+      const decimals = currentToken.value.decimals || 18;
+      const inputWei = parseAmountToWei(amountIn.value, decimals);
+      if (inputWei > userTokenBalance.value) {
+        return `Insufficient ${currentToken.value.symbol} balance`;
+      }
     }
     return `Sell ${currentToken.value.symbol}`;
   } else {
@@ -1556,8 +1526,13 @@ const isSwapDisabled = computed(() => {
   const input = parseFloat(amountIn.value) || 0;
   if (!amountIn.value || input <= 0) return true;
   if (!isBuy.value) {
-    const tokenBal = Number(userTokenBalance.value) / 10 ** (currentToken.value.decimals || 18);
-    return tokenBal <= 0 || input > tokenBal;
+    if (userTokenBalance.value <= 0n) return true;
+    if (!isMaxSell.value) {
+      const decimals = currentToken.value.decimals || 18;
+      const inputWei = parseAmountToWei(amountIn.value, decimals);
+      return inputWei > userTokenBalance.value;
+    }
+    return false;
   }
   const ethBalance = Number(balanceWei.value) / 1e18;
   if (ethBalance > 0 && input > ethBalance) return true;
@@ -1573,6 +1548,7 @@ function applyQuickBuy(val: string) {
 
 function applyPercentage(percent: number) {
   if (isBuy.value) {
+    isMaxSell.value = false;
     const isArc = currencySymbol.value === 'USDC';
     const ethBalance = Number(balanceWei.value) / 1e18;
     if (ethBalance <= 0) {
@@ -1588,17 +1564,20 @@ function applyPercentage(percent: number) {
     }
   } else {
     const decimals = currentToken.value.decimals || 18;
-    const tokenBal = Number(userTokenBalance.value) / 10 ** decimals;
-    if (tokenBal <= 0) {
+    if (userTokenBalance.value <= 0n) {
       amountIn.value = '0';
+      isMaxSell.value = false;
       return;
     }
     if (percent === 100) {
+      isMaxSell.value = true;
       const whole = userTokenBalance.value / 10n ** BigInt(decimals);
       const frac = userTokenBalance.value % 10n ** BigInt(decimals);
       const fracStr = frac.toString().padStart(decimals, '0').replace(/0+$/, '');
       amountIn.value = fracStr ? `${whole}.${fracStr}` : whole.toString();
     } else {
+      isMaxSell.value = false;
+      const tokenBal = Number(userTokenBalance.value) / 10 ** decimals;
       const calculated = tokenBal * (percent / 100);
       amountIn.value = calculated < 1 ? calculated.toFixed(6) : calculated.toFixed(2);
     }
@@ -1925,21 +1904,27 @@ async function fetchCandlesticks(address: string, resolutionSeconds = 60) {
         }),
       );
 
-      // If only 1 candle returned (e.g. token just launched), append current candle
-      if (parsed.length === 1 && currentMarketData.value.priceUsd > 0) {
+      if (parsed.length > 0 && currentMarketData.value.priceUsd > 0) {
+        const last = parsed[parsed.length - 1];
         const nowSec = Math.floor(Date.now() / 1000);
-        if (nowSec > parsed[0].time) {
+        const currentBucket = Math.floor(nowSec / resolutionSeconds) * resolutionSeconds;
+
+        if (last.time === currentBucket) {
+          last.close = currentMarketData.value.priceUsd;
+          last.high = Math.max(last.high, currentMarketData.value.priceUsd);
+          last.low = Math.min(last.low, currentMarketData.value.priceUsd);
+        } else if (currentBucket > last.time) {
           parsed.push({
-            time: nowSec,
-            open: parsed[0].close,
-            high: Math.max(parsed[0].close, currentMarketData.value.priceUsd),
-            low: Math.min(parsed[0].close, currentMarketData.value.priceUsd),
+            time: currentBucket,
+            open: last.close,
+            high: Math.max(last.close, currentMarketData.value.priceUsd),
+            low: Math.min(last.close, currentMarketData.value.priceUsd),
             close: currentMarketData.value.priceUsd,
             volume: 0,
           });
         }
       }
-      candlestickData.value = parsed;
+      candlestickData.value = [...parsed];
       return;
     }
 
@@ -1960,8 +1945,11 @@ async function fetchCandlesticks(address: string, resolutionSeconds = 60) {
         close: number;
         volume: number;
       }> = [];
-      const start = Math.floor(tokenCreatedSec / step) * step;
+      let start = Math.floor(tokenCreatedSec / step) * step;
       const end = Math.floor(nowSec / step) * step;
+      if ((end - start) / step < 30) {
+        start = Math.max(0, end - 30 * step);
+      }
       for (let t = start; t <= end; t += step) {
         synthetic.push({
           time: t,
@@ -2016,20 +2004,83 @@ async function handleSwap() {
     }
   }
 
+  let loadingToastId: string | number | undefined;
+
   const hash = await executeSwap({
     tokenAddress: currentToken.value.address,
     isBuy: isBuy.value,
-    amountInEth: amountIn.value,
+    amountInEth: !isBuy.value && isMaxSell.value ? userTokenBalance.value : amountIn.value,
     slippagePercent: slippage.value,
     expectedAmountOut,
     version: currentToken.value.version,
     curveAddress: currentToken.value.curveAddress,
     isGraduated: currentMarketData.value.isGraduated,
     chainId: tokenNetwork.value.chainId,
+    tokenDecimals: currentToken.value.decimals || 18,
+    onApproveSubmitted: (approveHash) => {
+      toast.info('Approval Submitted', {
+        description: 'Approving tokens for trading...',
+        action: {
+          label: 'View on Explorer',
+          onClick: () => {
+            if (typeof window !== 'undefined') {
+              window.open(
+                `${explorerUrl.value}/tx/${approveHash}`,
+                '_blank',
+                'noopener,noreferrer',
+              );
+            }
+          },
+        },
+        duration: 5000,
+      });
+    },
+    onSubmitted: (txHash) => {
+      loadingToastId = toast.loading(
+        isBuy.value ? 'Processing Buy Order...' : 'Processing Sell Order...',
+        {
+          description: 'Transaction broadcasted. Waiting for block confirmation...',
+          action: {
+            label: 'View on Explorer',
+            onClick: () => {
+              if (typeof window !== 'undefined') {
+                window.open(`${explorerUrl.value}/tx/${txHash}`, '_blank', 'noopener,noreferrer');
+              }
+            },
+          },
+        },
+      );
+
+      // Trigger immediate background sync
+      fetch(`/api/tokens/${currentToken.value.address}/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ txHash }),
+      }).catch(() => {});
+    },
   });
 
   if (hash) {
     swapSuccessTx.value = hash;
+    isMaxSell.value = false;
+
+    const txExplorerLink = `${explorerUrl.value}/tx/${hash}`;
+    toast.success('Swap Confirmed', {
+      id: loadingToastId,
+      description: isBuy.value
+        ? `Successfully bought ${currentToken.value.symbol || 'tokens'}!`
+        : `Successfully sold ${currentToken.value.symbol || 'tokens'}!`,
+      action: {
+        label: 'View on Explorer',
+        onClick: () => {
+          if (typeof window !== 'undefined') {
+            window.open(txExplorerLink, '_blank', 'noopener,noreferrer');
+          }
+        },
+      },
+      duration: 8000,
+    });
+
     try {
       await fetch(`/api/tokens/${currentToken.value.address}/sync`, {
         method: 'POST',
@@ -2039,15 +2090,33 @@ async function handleSwap() {
     } catch {
       // non-blocking
     }
+    await loadTokenData(currentToken.value.address);
     await Promise.allSettled([
       updateBalance(),
-      fetchUserTokenBalance(),
-      loadTokenData(currentToken.value.address),
+      fetchUserTokenBalance(true),
       fetchTrades(currentToken.value.address),
       fetchCandlesticks(currentToken.value.address, selectedResolution.value),
       fetchHolders(currentToken.value.address),
       fetchTopTraders(currentToken.value.address),
     ]);
+
+    // Fast realtime sync poll for 6s in background
+    for (let i = 1; i <= 3; i++) {
+      setTimeout(async () => {
+        await Promise.allSettled([
+          updateBalance(),
+          fetchUserTokenBalance(true),
+          fetchTrades(currentToken.value.address),
+          fetchCandlesticks(currentToken.value.address, selectedResolution.value),
+        ]);
+      }, i * 2000);
+    }
+  } else if (swapError.value) {
+    toast.error('Swap Failed', {
+      id: loadingToastId,
+      description: swapError.value,
+      duration: 6000,
+    });
   }
 }
 
@@ -2083,9 +2152,10 @@ async function loadTokenData(address: `0x${string}`) {
 // to avoid unit confusion (ETH vs token amount).
 watch(tradeTab, (newTab) => {
   amountIn.value = '';
+  isMaxSell.value = false;
   swapSuccessTx.value = null;
-  if (newTab === 'sell' && userTokenBalance.value === 0n) {
-    fetchUserTokenBalance();
+  if (newTab === 'sell') {
+    fetchUserTokenBalance(true);
   }
 });
 

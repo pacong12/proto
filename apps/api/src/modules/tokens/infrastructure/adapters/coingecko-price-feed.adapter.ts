@@ -93,4 +93,11 @@ export class CoinGeckoPriceFeedAdapter implements PriceFeedPort {
       );
     }
   }
+
+  async getQuoteAssetPriceUsd(chainId: number): Promise<number> {
+    if (chainId === 5042) {
+      return 1.0;
+    }
+    return this.getEthPriceUsd();
+  }
 }

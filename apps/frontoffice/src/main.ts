@@ -2,6 +2,7 @@ import { createApp } from 'vue';
 import App from './App.vue';
 import { router } from './router';
 import './style.css';
+import 'vue-sonner/style.css';
 import './lib/appkit';
 
 const app = createApp(App);

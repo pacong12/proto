@@ -67,8 +67,13 @@ export function aggregateCandlesticks(
   const endBucket = Math.floor(rawEnd / bucketDurationMs) * bucketDurationMs;
 
   const maxBars = options.maxCandles ?? 1000;
+  const minBars = Math.min(30, maxBars);
   if (startBucket > endBucket) {
     startBucket = endBucket;
+  }
+  // Ensure we have at least 30 bars of visual context so higher timeframes (1h, 4h, 1d) don't appear as a single lonely dot
+  if ((endBucket - startBucket) / bucketDurationMs < minBars) {
+    startBucket = Math.max(0, endBucket - minBars * bucketDurationMs);
   }
   if ((endBucket - startBucket) / bucketDurationMs > maxBars) {
     startBucket = endBucket - maxBars * bucketDurationMs;
@@ -91,10 +96,10 @@ export function aggregateCandlesticks(
     if (bucketTrades && bucketTrades.length > 0) {
       const sorted = [...bucketTrades].sort((a, b) => a.timestamp - b.timestamp);
       const prices = sorted.map((item) => Number(item.priceUsd));
-      const open = prices[0] ?? currentPrice;
-      const high = Math.max(...prices);
-      const low = Math.min(...prices);
-      const close = prices[prices.length - 1] ?? currentPrice;
+      const open = currentPrice > 0 ? currentPrice : (prices[0] ?? 0);
+      const high = Math.max(open, ...prices);
+      const low = Math.min(open, ...prices);
+      const close = prices[prices.length - 1] ?? open;
       const volume = sorted.reduce((sum, item) => sum + parseFloat(item.wethAmount || '0'), 0);
 
       currentPrice = close;

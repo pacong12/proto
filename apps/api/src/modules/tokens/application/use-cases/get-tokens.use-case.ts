@@ -41,10 +41,9 @@ export class GetTokensUseCase {
               network ?? ARC_CHAIN,
             );
             const quoteUsd = isArc ? 1.0 : await this.priceFeed.getEthPriceUsd();
-            const effectiveReserve =
-              Number(curveState.virtualEthReserve + curveState.totalEthRaised) / 1e18;
+            const vEthNum = Number(curveState.virtualEthReserve) / 1e18;
             const virtualTokensNum = Number(curveState.virtualTokenReserve) / 1e18;
-            const spotPriceNative = virtualTokensNum > 0 ? effectiveReserve / virtualTokensNum : 0;
+            const spotPriceNative = virtualTokensNum > 0 ? vEthNum / virtualTokensNum : 0;
 
             marketData = this.calculatePricing.execute({
               address: token.address,
