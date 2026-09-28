@@ -1,11 +1,13 @@
 import {
   createPublicClient,
   http,
+  fallback,
   custom,
   createWalletClient,
   defineChain,
   type PublicClient,
   type WalletClient,
+  type TransactionReceipt,
 } from 'viem';
 import { getWalletClient as getWagmiWalletClient } from '@wagmi/core';
 import { wagmiAdapter } from './appkit';
@@ -22,12 +24,13 @@ import { walletProvider, walletChainId, STORAGE_PROVIDER_ID_KEY } from './wallet
 // ---------------------------------------------------------------------------
 
 function toViemChain(cfg: NetworkConfig) {
+  const rpcList = cfg.rpcUrls && cfg.rpcUrls.length > 0 ? cfg.rpcUrls : [cfg.rpcUrl];
   return defineChain({
     id: cfg.chainId,
     name: cfg.name,
     nativeCurrency: cfg.nativeCurrency,
     rpcUrls: {
-      default: { http: [cfg.rpcUrl] },
+      default: { http: rpcList },
     },
     blockExplorers: {
       default: {
@@ -41,18 +44,29 @@ function toViemChain(cfg: NetworkConfig) {
 const mainnetChain = toViemChain(ROBINHOOD_CHAIN);
 const arcMainnetChain = toViemChain(ARC_CHAIN);
 
+function createPublicTransport(cfg: NetworkConfig) {
+  const urls = cfg.rpcUrls && cfg.rpcUrls.length > 0 ? cfg.rpcUrls : [cfg.rpcUrl];
+  if (urls.length === 1) {
+    return http(urls[0], { retryCount: 3, retryDelay: 500, timeout: 10_000 });
+  }
+  return fallback(
+    urls.map((url) => http(url, { retryCount: 2, retryDelay: 500, timeout: 8_000 })),
+    { rank: false },
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Public clients - one instance per supported chain (fix MED-03)
 // ---------------------------------------------------------------------------
 
 const publicClientMainnet: PublicClient = createPublicClient({
   chain: mainnetChain,
-  transport: http(ROBINHOOD_CHAIN.rpcUrl),
+  transport: createPublicTransport(ROBINHOOD_CHAIN),
 });
 
 const publicClientArcMainnet: PublicClient = createPublicClient({
   chain: arcMainnetChain,
-  transport: http(ARC_CHAIN.rpcUrl),
+  transport: createPublicTransport(ARC_CHAIN),
 });
 
 /**
@@ -137,4 +151,55 @@ export async function getWalletClient(): Promise<WalletClient | null> {
 
   if (!provider) return null;
   return createWalletClientFromProvider(provider, walletChainId.value ?? undefined);
+}
+
+// ---------------------------------------------------------------------------
+// Transaction receipt helpers
+// ---------------------------------------------------------------------------
+
+export async function waitForReceiptWithFallback(
+  client: PublicClient,
+  hash: `0x${string}`,
+  walletClient?: WalletClient | null,
+): Promise<TransactionReceipt | null> {
+  // 1. Immediate direct receipt check (often resolves in <150ms if already mined)
+  try {
+    const immediate = await client.getTransactionReceipt({ hash });
+    if (immediate) return immediate;
+  } catch {
+    // Non-blocking
+  }
+
+  // 2. Fallback check from wallet client connector
+  if (walletClient) {
+    try {
+      const rawRcpt = (await walletClient.request({
+        method: 'eth_getTransactionReceipt' as never,
+        params: [hash] as never,
+      })) as unknown as {
+        status?: string | number;
+        blockNumber?: string | number | bigint;
+      } | null;
+
+      if (rawRcpt && rawRcpt.blockNumber) {
+        const rcpt = await client.getTransactionReceipt({ hash }).catch(() => null);
+        if (rcpt) return rcpt;
+      }
+    } catch {
+      // Non-blocking
+    }
+  }
+
+  // 3. Fast realtime polling (up to 5 checks every 500ms = 2.5s total)
+  for (let i = 0; i < 5; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    try {
+      const rcpt = await client.getTransactionReceipt({ hash });
+      if (rcpt) return rcpt;
+    } catch {
+      // Non-blocking
+    }
+  }
+
+  return null;
 }

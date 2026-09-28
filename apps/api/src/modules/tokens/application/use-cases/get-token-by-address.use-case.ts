@@ -3,6 +3,7 @@ import {
   TokenMarketData,
   ARC_CHAIN,
   ROBINHOOD_CHAIN,
+  resolveTokenNetwork,
 } from '@proto/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import { ViemChainIndexerAdapter } from '../../infrastructure/adapters/viem-chain-indexer.adapter';
@@ -58,17 +59,10 @@ export class GetTokenByAddressUseCase {
     if (!token) return null;
 
     // ------------------------------------------------------------------
-    // Determine network
+    // Clean Architecture: Resolve network and quote asset price per chain
     // ------------------------------------------------------------------
-    const isArc =
-      token.pairedToken?.toLowerCase() === ARC_CHAIN.contracts.weth.toLowerCase() ||
-      token.curveAddress?.toLowerCase() === ARC_CHAIN.contracts.factory.toLowerCase() ||
-      token.curveAddress?.toLowerCase() ===
-        (ARC_CHAIN.contracts.factoryV2 ?? ARC_CHAIN.contracts.factory).toLowerCase();
-
-    const network = isArc ? ARC_CHAIN : ROBINHOOD_CHAIN;
-    // USDC is always $1.00 on Arc; ETH needs oracle price on Robinhood
-    const quoteAssetPriceUsd = isArc ? 1.0 : await this.priceFeed.getEthPriceUsd();
+    const network = resolveTokenNetwork(token);
+    const quoteAssetPriceUsd = await this.priceFeed.getQuoteAssetPriceUsd(network.chainId);
 
     // ------------------------------------------------------------------
     // V2 Bonding Curve pricing path
@@ -79,11 +73,10 @@ export class GetTokenByAddressUseCase {
       // Fetch live on-chain curve state — never use DB snapshot for pricing
       const curveState = await this.chainIndexer.fetchV2CurveState(curveAddr, network);
 
-      // Effective reserve = virtual base + actual ETH raised to date
-      const effectiveReserve =
-        Number(curveState.virtualEthReserve + curveState.totalEthRaised) / 1e18;
+      // On-chain virtualEthReserve already includes all net ETH raised on the curve
+      const vEthNum = Number(curveState.virtualEthReserve) / 1e18;
       const virtualTokensNum = Number(curveState.virtualTokenReserve) / 1e18;
-      const spotPriceNative = virtualTokensNum > 0 ? effectiveReserve / virtualTokensNum : 0;
+      const spotPriceNative = virtualTokensNum > 0 ? vEthNum / virtualTokensNum : 0;
 
       const marketData = this.calculatePricing.execute({
         address: token.address,

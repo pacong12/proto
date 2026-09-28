@@ -251,8 +251,17 @@ contract BondingCurve {
 
         uint256 fee;
         (ethOut, fee) = getAmountOutSell(tokenIn);
+        uint256 availableEth = address(this).balance;
+        if (ethOut + fee > availableEth) {
+            // Tolerate minor rounding discrepancies (<= 100 wei) from integer division truncation
+            if (ethOut + fee - availableEth <= 100) {
+                uint256 diff = ethOut + fee - availableEth;
+                ethOut = ethOut >= diff ? ethOut - diff : 0;
+            } else {
+                revert TransferFailed();
+            }
+        }
         if (ethOut < minEthOut) revert InsufficientOutput();
-        if (ethOut + fee > address(this).balance) revert TransferFailed();
 
         // EFFECTS — update all state before any external interaction.
         uint256 grossEthOut = ethOut + fee;

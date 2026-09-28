@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { decodeEventLog, parseEventLogs, parseEther } from 'viem';
+import { decodeEventLog, parseEventLogs, parseEther, type TransactionReceipt } from 'viem';
 
 /**
  * Return true when the error originates from the user explicitly rejecting
@@ -292,11 +292,10 @@ export function useLaunchpad() {
       const initialBuyWei = parseInitialBuyWei(params.initialBuyAmountEth);
       const totalValue = network.launchConfig.launchFeeWei + initialBuyWei;
 
-      // On Arc Network (Chain ID 5042) or factory 0x4884..., the contract implements
-      // launchTokenV2(string,string,string,string,string,string,string) without minInitialTokensOut (selector 0x43a90f1e).
+      // Only old factory 0x4884... uses legacy 7-arg signature (selector 0x43a90f1e).
+      // Canonical V2 factory (LaunchpadV2FactoryArc) uses 8 args including minInitialTokensOut (selector 0x0a16b906).
       const is7ArgFactory =
-        targetFactory.toLowerCase() === '0x48844223abdceeb1ce502f54d559681358e68200' ||
-        network.chainId === 5042;
+        targetFactory.toLowerCase() === '0x48844223abdceeb1ce502f54d559681358e68200';
 
       launchStep.value = 'awaiting_signature';
 
@@ -756,6 +755,128 @@ export function useLaunchpad() {
     }
   }
 
+function extractLaunchData(receipt: TransactionReceipt): {
+  tokenAddress: `0x${string}`;
+  poolAddress?: `0x${string}`;
+  curveAddress?: `0x${string}`;
+} | null {
+  try {
+    const v2Events = parseEventLogs({
+      abi: launchpadV2FactoryAbi,
+      logs: receipt.logs,
+      eventName: 'TokenLaunchedV2',
+    });
+    if (v2Events.length > 0) {
+      return {
+        tokenAddress: v2Events[0].args.token,
+        curveAddress: v2Events[0].args.curve,
+        poolAddress: v2Events[0].args.curve,
+      };
+    }
+  } catch {
+    // fallback
+  }
+
+  try {
+    const v1Events = parseEventLogs({
+      abi: launchpadFactoryAbi,
+      logs: receipt.logs,
+      eventName: 'TokenLaunched',
+    });
+    if (v1Events.length > 0) {
+      return {
+        tokenAddress: v1Events[0].args.token,
+        poolAddress: v1Events[0].args.pool,
+      };
+    }
+  } catch {
+    // fallback
+  }
+
+  for (const log of receipt.logs) {
+    try {
+      const decodedV2 = decodeEventLog({
+        abi: launchpadV2FactoryAbi,
+        topics: log.topics,
+        data: log.data,
+      });
+      if (decodedV2?.args && 'token' in decodedV2.args) {
+        return {
+          tokenAddress: decodedV2.args.token as `0x${string}`,
+          curveAddress: (decodedV2.args as { curve?: `0x${string}` }).curve,
+          poolAddress: (decodedV2.args as { curve?: `0x${string}` }).curve,
+        };
+      }
+    } catch {
+      // continue
+    }
+
+    try {
+      const decodedV1 = decodeEventLog({
+        abi: launchpadFactoryAbi,
+        eventName: 'TokenLaunched',
+        topics: log.topics,
+        data: log.data,
+      });
+      if (decodedV1?.args?.token) {
+        return {
+          tokenAddress: decodedV1.args.token,
+          poolAddress: decodedV1.args.pool,
+        };
+      }
+    } catch {
+      // continue
+    }
+  }
+  return null;
+}
+
+  async function checkPendingTransaction(
+    hashOverride?: `0x${string}`,
+  ): Promise<{ tokenAddress: `0x${string}`; poolAddress?: `0x${string}` } | null> {
+    const hash = hashOverride ?? launchTxHash.value;
+    if (!hash) return null;
+
+    try {
+      let activeChainId = walletChainId.value ?? undefined;
+      try {
+        const walletClient = await getWalletClient();
+        if (walletClient) {
+          const clientChainId = await walletClient.getChainId();
+          if (clientChainId) activeChainId = clientChainId;
+        }
+      } catch {
+        // Fall back
+      }
+      const network = getNetworkConfig(activeChainId);
+      const publicClient = getPublicClient(network.chainId);
+      const receipt = await publicClient.getTransactionReceipt({ hash }).catch(() => null);
+      if (!receipt) return null;
+
+      if (receipt.status === 'reverted') {
+        launchStep.value = 'error';
+        error.value = `Transaction reverted on-chain (status: reverted). Hash: ${hash}. Block: ${receipt.blockNumber}.`;
+        return null;
+      }
+
+      launchStep.value = 'indexing';
+
+      const launchData = extractLaunchData(receipt);
+      if (launchData) {
+        launchStep.value = 'success';
+        launchTokenAddress.value = launchData.tokenAddress;
+        error.value = null;
+        return {
+          tokenAddress: launchData.tokenAddress,
+          poolAddress: launchData.curveAddress ?? launchData.poolAddress,
+        };
+      }
+    } catch (err) {
+      console.warn('[checkPendingTransaction] Error querying receipt:', err);
+    }
+    return null;
+  }
+
   return {
     loading,
     error,
@@ -768,5 +889,6 @@ export function useLaunchpad() {
     fetchTokenDetails,
     claimFees,
     setFeeRedirect,
+    checkPendingTransaction,
   };
 }

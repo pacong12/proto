@@ -1,5 +1,5 @@
 import { PublicClient, parseAbiItem, type Address } from 'viem';
-import { ROBINHOOD_CHAIN, type NetworkConfig, type TradeEventEntity } from '@proto/shared-types';
+import { ROBINHOOD_CHAIN, bondingCurveAbi, type NetworkConfig, type TradeEventEntity } from '@proto/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import { ViemChainIndexerAdapter } from '../adapters/viem-chain-indexer.adapter';
 import { PriceFeedPort } from '../../domain/ports/price-feed.port';
@@ -248,9 +248,31 @@ export class EventPollerService {
         const ethAmountNum = Number(ethAmount) / 1e18;
         const tokenAmountNum = Number(tokenAmount) / 1e18;
 
-        // spot price = ethAmount / tokenAmount (in quote asset per token)
-        const priceNative = tokenAmountNum > 0 ? ethAmountNum / tokenAmountNum : 0;
-        const priceUsd = priceNative * quotePriceUsd;
+        let priceUsd = 0;
+        try {
+          const [vEth, vToken] = await Promise.all([
+            this.client.readContract({
+              address: log.address,
+              abi: bondingCurveAbi,
+              functionName: 'virtualEthReserve',
+            }) as Promise<bigint>,
+            this.client.readContract({
+              address: log.address,
+              abi: bondingCurveAbi,
+              functionName: 'virtualTokenReserve',
+            }) as Promise<bigint>,
+          ]);
+          if (vToken > 0n) {
+            priceUsd = (Number(vEth) / Number(vToken)) * quotePriceUsd;
+          }
+        } catch {
+          // fallback
+        }
+
+        if (priceUsd <= 0) {
+          const priceNative = tokenAmountNum > 0 ? ethAmountNum / tokenAmountNum : 0;
+          priceUsd = priceNative * quotePriceUsd;
+        }
 
         const blockNumber = log.blockNumber ?? 0n;
         let timestamp = blockTimestamps.get(blockNumber);
@@ -280,6 +302,18 @@ export class EventPollerService {
         };
 
         await this.tokenRepository.saveTrade(trade);
+        if (priceUsd > 0) {
+          const mkt = await this.tokenRepository.getMarketData(token.address);
+          if (mkt) {
+            await this.tokenRepository.saveMarketData({
+              ...mkt,
+              priceUsd,
+              priceInWeth: priceUsd / quotePriceUsd,
+              marketCapUsd: priceUsd * 1_000_000_000,
+              fdvUsd: priceUsd * 1_000_000_000,
+            });
+          }
+        }
         count++;
       }
       return count;

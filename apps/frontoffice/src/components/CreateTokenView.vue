@@ -1001,6 +1001,47 @@
           </div>
         </div>
 
+        <!-- Confirming State Details (shows Check Status button if confirmation takes time) -->
+        <div
+          v-if="launchStep === 'confirming' && launchTxHash"
+          class="mt-4 p-4 rounded-xl bg-muted border border-border"
+        >
+          <div class="flex items-start gap-2.5">
+            <Loader2 class="w-5 h-5 text-primary shrink-0 mt-0.5 animate-spin" />
+            <div class="flex-1 min-w-0 text-xs">
+              <h5 class="font-bold text-foreground">Confirming Transaction on Chain</h5>
+              <p class="text-muted-foreground mt-1 break-words leading-relaxed">
+                Transaction broadcasted to network. Waiting for block inclusion...
+              </p>
+              <div class="mt-3 flex items-center gap-2 flex-wrap">
+                <Button
+                  size="sm"
+                  variant="default"
+                  class="h-8 text-xs font-semibold gap-1.5 cursor-pointer"
+                  :disabled="isCheckingStatus"
+                  @click="handleCheckStatus"
+                >
+                  <Loader2 v-if="isCheckingStatus" class="w-3.5 h-3.5 animate-spin" />
+                  <RefreshCw v-else class="w-3.5 h-3.5" />
+                  <span>{{
+                    isCheckingStatus ? 'Checking confirmation...' : 'Check Confirmation'
+                  }}</span>
+                </Button>
+
+                <a
+                  :href="txExplorerUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted text-foreground font-medium transition-colors border border-border h-8 text-xs"
+                >
+                  <span>{{ t('viewOnExplorer') }}</span>
+                  <ExternalLink class="w-3 h-3" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Error State Details -->
         <div
           v-if="launchStep === 'error'"
@@ -1013,12 +1054,26 @@
               <p class="text-muted-foreground mt-1 break-words leading-relaxed">
                 {{ error || t('launchFailedDesc') }}
               </p>
-              <div v-if="launchTxHash" class="mt-2.5">
+              <div v-if="launchTxHash" class="mt-3 flex items-center gap-2 flex-wrap">
+                <Button
+                  size="sm"
+                  variant="default"
+                  class="h-8 text-xs font-semibold gap-1.5 cursor-pointer"
+                  :disabled="isCheckingStatus"
+                  @click="handleCheckStatus"
+                >
+                  <Loader2 v-if="isCheckingStatus" class="w-3.5 h-3.5 animate-spin" />
+                  <RefreshCw v-else class="w-3.5 h-3.5" />
+                  <span>{{
+                    isCheckingStatus ? 'Checking confirmation...' : 'Check Confirmation Again'
+                  }}</span>
+                </Button>
+
                 <a
                   :href="txExplorerUrl"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted text-foreground font-medium transition-colors border border-border"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted text-foreground font-medium transition-colors border border-border h-8 text-xs"
                 >
                   <span>{{ t('viewOnExplorer') }}</span>
                   <ExternalLink class="w-3 h-3" />
@@ -1031,11 +1086,11 @@
         <!-- Action Footer -->
         <div class="mt-6 flex items-center justify-end gap-3">
           <Button
-            v-if="launchStep === 'error'"
+            v-if="launchStep === 'error' || launchStep === 'confirming'"
             variant="outline"
             size="sm"
             @click="closeModal"
-            class="h-9 px-4 text-xs font-medium"
+            class="h-9 px-4 text-xs font-medium cursor-pointer"
           >
             {{ t('closeModal') }}
           </Button>
@@ -1055,7 +1110,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import {
   AlertCircle,
   UploadCloud,
@@ -1067,6 +1122,7 @@ import {
   Clock,
   ArrowRight,
   Trash2,
+  RefreshCw,
 } from 'lucide-vue-next';
 import { useLaunchpad } from '../composables/useLaunchpad';
 import { useWallet } from '../composables/useWallet';
@@ -1102,6 +1158,7 @@ const {
   launchTxHash,
   launchTokenAddress,
   resetLaunchState,
+  checkPendingTransaction,
 } = useLaunchpad();
 const { isConnected, account, activeNetwork, switchOrAddNetwork, isCorrectNetwork, openWallet } =
   useWallet();
@@ -1124,6 +1181,47 @@ function formatHash(hash: string | null) {
   if (!hash) return '';
   return `${hash.slice(0, 8)}...${hash.slice(-6)}`;
 }
+
+const isCheckingStatus = ref(false);
+
+async function handleCheckStatus() {
+  if (!launchTxHash.value) return;
+  isCheckingStatus.value = true;
+  try {
+    const res = await checkPendingTransaction();
+    if (res) {
+      emit('tokenCreated', res.tokenAddress);
+    }
+  } finally {
+    isCheckingStatus.value = false;
+  }
+}
+
+let autoCheckTimer: ReturnType<typeof setInterval> | null = null;
+
+watch(launchStep, (newStep) => {
+  if (autoCheckTimer) {
+    clearInterval(autoCheckTimer);
+    autoCheckTimer = null;
+  }
+
+  // If stuck in confirming or error with a valid transaction hash, poll in background
+  if ((newStep === 'confirming' || newStep === 'error') && launchTxHash.value) {
+    let attempts = 0;
+    autoCheckTimer = setInterval(async () => {
+      attempts++;
+      if (attempts >= 12 || launchStep.value === 'success') {
+        if (autoCheckTimer) clearInterval(autoCheckTimer);
+        autoCheckTimer = null;
+        return;
+      }
+      const res = await checkPendingTransaction();
+      if (res) {
+        emit('tokenCreated', res.tokenAddress);
+      }
+    }, 2500);
+  }
+});
 
 function closeModal() {
   isModalOpen.value = false;

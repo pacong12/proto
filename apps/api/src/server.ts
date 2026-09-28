@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { ChainRegistry } from './modules/chains';
 import {
   SqliteTokenRepository,
   ViemChainIndexerAdapter,
@@ -32,6 +33,7 @@ import {
   ROBINHOOD_CHAIN,
   ARC_CHAIN,
   ARC_PROTO_CURVE_ADDRESS,
+  bondingCurveAbi,
   type NetworkConfig,
   TransactionIntent,
   type TokenCommentEntity,
@@ -104,6 +106,8 @@ const securityController = new SecurityController(securityGateService);
 const ipfsService = new IpfsService();
 const ipfsController = new IpfsController(ipfsService);
 
+export const chainRegistry = new ChainRegistry(robinhoodClient, arcClient, priceFeed);
+
 // Dedicated pollers for each supported chain (Robinhood Chain & Arc Network)
 const robinhoodPoller = new EventPollerService(
   robinhoodClient,
@@ -174,7 +178,7 @@ function scheduleRobinhoodPoll(): void {
       }
     }
     scheduleRobinhoodPoll();
-  }, 60_000);
+  }, 5_000);
 }
 let arcPolling = false;
 function scheduleArcPoll(): void {
@@ -190,11 +194,11 @@ function scheduleArcPoll(): void {
       }
     }
     scheduleArcPoll();
-  }, 60_000);
+  }, 5_000);
 }
 scheduleRobinhoodPoll();
-// Stagger Arc chain by 5s to avoid simultaneous RPC bursts
-setTimeout(scheduleArcPoll, 5_000);
+// Stagger Arc chain by 2.5s to avoid simultaneous RPC bursts
+setTimeout(scheduleArcPoll, 2_500);
 
 function safeStringify(value: unknown): string {
   return JSON.stringify(value, (_, v) => (typeof v === 'bigint' ? v.toString() : v));
@@ -232,10 +236,9 @@ async function indexTradeFromReceipt(
   const token = await repository.findByAddress(tokenAddress);
   if (!token) return;
 
-  const network = resolveNetworkForToken(token);
-  const isArc = network.chainId === ARC_CHAIN.chainId;
-  const client = isArc ? arcClient : robinhoodClient;
-  const quotePriceUsd = isArc ? 1.0 : await priceFeed.getEthPriceUsd();
+  const chain = chainRegistry.resolveForToken(token);
+  const client = chain.client;
+  const quotePriceUsd = await chain.getQuotePriceUsd();
 
   const receipt = await client.getTransactionReceipt({ hash: txHash });
   if (!receipt || receipt.status !== 'success') return;
@@ -257,8 +260,35 @@ async function indexTradeFromReceipt(
 
       const ethAmountNum = Number(ethAmount) / 1e18;
       const tokenAmountNum = Number(tokenAmount) / 1e18;
-      const priceNative = tokenAmountNum > 0 ? ethAmountNum / tokenAmountNum : 0;
-      const priceUsd = priceNative * quotePriceUsd;
+
+      let priceUsd = 0;
+      if (token.version === 'v2') {
+        const curveTarget = (token.curveAddress || log.address) as Address;
+        try {
+          const [vEth, vToken] = await Promise.all([
+            client.readContract({
+              address: curveTarget,
+              abi: bondingCurveAbi,
+              functionName: 'virtualEthReserve',
+            }) as Promise<bigint>,
+            client.readContract({
+              address: curveTarget,
+              abi: bondingCurveAbi,
+              functionName: 'virtualTokenReserve',
+            }) as Promise<bigint>,
+          ]);
+          if (vToken > 0n) {
+            priceUsd = (Number(vEth) / Number(vToken)) * quotePriceUsd;
+          }
+        } catch {
+          // fallback
+        }
+      }
+
+      if (priceUsd <= 0) {
+        const priceNative = tokenAmountNum > 0 ? ethAmountNum / tokenAmountNum : 0;
+        priceUsd = priceNative * quotePriceUsd;
+      }
 
       let timestamp = Date.now();
       try {
@@ -283,6 +313,18 @@ async function indexTradeFromReceipt(
       };
 
       await repository.saveTrade(trade);
+      if (token.version === 'v2' && priceUsd > 0) {
+        const mkt = await repository.getMarketData(token.address);
+        if (mkt) {
+          await repository.saveMarketData({
+            ...mkt,
+            priceUsd,
+            priceInWeth: priceUsd / quotePriceUsd,
+            marketCapUsd: priceUsd * 1_000_000_000,
+            fdvUsd: priceUsd * 1_000_000_000,
+          });
+        }
+      }
     } catch {
       // not a trade event
     }
@@ -661,10 +703,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
     try {
       const token = await repository.findByAddress(tokenAddress);
-      const network = token
-        ? resolveNetworkForToken(token)
-        : resolveNetworkByParam(url.searchParams.get('chain'));
-      const client = network.chainId === ARC_CHAIN.chainId ? arcClient : robinhoodClient;
+      const chain = token
+        ? chainRegistry.resolveForToken(token)
+        : chainRegistry.getChainByParam(url.searchParams.get('chain'));
+      const client = chain.client;
 
       const [balWei, nativeGasWei] = await Promise.all([
         client.readContract({
@@ -691,7 +733,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         ok({
           tokenAddress,
           account: accountParam,
-          chainId: network.chainId,
+          chainId: chain.chainId,
           balanceWei: balWei.toString(),
           nativeGasWei: nativeGasWei.toString(),
           decimals,

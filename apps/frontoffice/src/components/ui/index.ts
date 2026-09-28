@@ -18,3 +18,4 @@ export * from './switch';
 export * from './select';
 export * from './slider';
 export * from './tooltip';
+export * from './sonner';
