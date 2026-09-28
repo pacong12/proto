@@ -136,7 +136,9 @@ export class RobinhoodChainAdapter implements ChainAdapter {
     onHashEmitted?: (hash: `0x${string}`) => void,
   ): Promise<ChainLaunchResult | null> {
     const targetFactory = this.network.contracts.factoryV2;
-    const isV2 = Boolean(targetFactory && targetFactory !== '0x0000000000000000000000000000000000000000');
+    const isV2 = Boolean(
+      targetFactory && targetFactory !== '0x0000000000000000000000000000000000000000',
+    );
 
     if (isV2) {
       // Robinhood V2 Launch
@@ -175,7 +177,9 @@ export class RobinhoodChainAdapter implements ChainAdapter {
       const receipt = await waitForReceiptWithFallback(publicClient, hash, walletClient);
       if (!receipt) return null;
       if (receipt.status === 'reverted') {
-        throw new Error(`Transaction reverted on-chain. Hash: ${hash}. Block: ${receipt.blockNumber}.`);
+        throw new Error(
+          `Transaction reverted on-chain. Hash: ${hash}. Block: ${receipt.blockNumber}.`,
+        );
       }
       return extractRobinhoodV2LaunchData(receipt);
     } else {
@@ -210,7 +214,9 @@ export class RobinhoodChainAdapter implements ChainAdapter {
       const receipt = await waitForReceiptWithFallback(publicClient, hash, walletClient);
       if (!receipt) return null;
       if (receipt.status === 'reverted') {
-        throw new Error(`Transaction reverted on-chain. Hash: ${hash}. Block: ${receipt.blockNumber}.`);
+        throw new Error(
+          `Transaction reverted on-chain. Hash: ${hash}. Block: ${receipt.blockNumber}.`,
+        );
       }
       return extractRobinhoodV1LaunchData(receipt);
     }
@@ -276,7 +282,11 @@ export class RobinhoodChainAdapter implements ChainAdapter {
               args: [sellTokenAmount],
             });
             let it = 0;
-            while (quoteEth + quoteFee > curveBalance && it < 5 && sellTokenAmount > 1_000_000_000n) {
+            while (
+              quoteEth + quoteFee > curveBalance &&
+              it < 5 &&
+              sellTokenAmount > 1_000_000_000n
+            ) {
               const step = 1_000_000_000n * BigInt(10 ** it);
               sellTokenAmount = sellTokenAmount > step ? sellTokenAmount - step : 0n;
               [quoteEth, quoteFee] = await publicClient.readContract({

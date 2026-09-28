@@ -57,10 +57,7 @@ export const ARC_NETWORK: NetworkConfig = {
       'ARC_QUOTER_V2',
       '0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7',
     ) as `0x${string}`,
-    weth: getEnv(
-      'ARC_WETH_ADDRESS',
-      '0x3600000000000000000000000000000000000000',
-    ) as `0x${string}`, // Native USDC standard on Arc
+    weth: getEnv('ARC_WETH_ADDRESS', '0x3600000000000000000000000000000000000000') as `0x${string}`, // Native USDC standard on Arc
   },
   launchConfigV2: {
     supply: 1_000_000_000n * 10n ** 18n,

@@ -150,7 +150,9 @@ export class ArcChainAdapter implements ChainAdapter {
       return null;
     }
     if (receipt.status === 'reverted') {
-      throw new Error(`Transaction reverted on-chain. Hash: ${hash}. Block: ${receipt.blockNumber}.`);
+      throw new Error(
+        `Transaction reverted on-chain. Hash: ${hash}. Block: ${receipt.blockNumber}.`,
+      );
     }
 
     return extractArcLaunchData(receipt);

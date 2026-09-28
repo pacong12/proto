@@ -88,7 +88,7 @@ export function useSwap() {
         console.warn(`[useSwap] High slippage: ${slippagePercent}%. Confirm user acknowledged.`);
       }
 
-      const decimals = params.isBuy ? 18 : (params.tokenDecimals || 18);
+      const decimals = params.isBuy ? 18 : params.tokenDecimals || 18;
       let amountInWei = parseAmountToWei(params.amountInEth, decimals);
 
       if (amountInWei <= 0n) throw new Error('Swap amount must be greater than zero');

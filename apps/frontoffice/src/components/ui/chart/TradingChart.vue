@@ -366,10 +366,7 @@ function initChart() {
   const volData = formatted.map((d) => ({
     time: d.time,
     value: d.volume,
-    color:
-      d.close >= d.open
-        ? 'rgba(34, 197, 94, 0.55)'
-        : 'rgba(239, 68, 68, 0.55)',
+    color: d.close >= d.open ? 'rgba(34, 197, 94, 0.55)' : 'rgba(239, 68, 68, 0.55)',
   }));
   volumeSeries.setData(volData);
 
@@ -520,10 +517,7 @@ watch(
         formatted.map((d) => ({
           time: d.time,
           value: d.volume,
-          color:
-            d.close >= d.open
-              ? 'rgba(34, 197, 94, 0.55)'
-              : 'rgba(239, 68, 68, 0.55)',
+          color: d.close >= d.open ? 'rgba(34, 197, 94, 0.55)' : 'rgba(239, 68, 68, 0.55)',
         })),
       );
     }

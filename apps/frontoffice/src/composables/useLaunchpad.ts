@@ -755,81 +755,81 @@ export function useLaunchpad() {
     }
   }
 
-function extractLaunchData(receipt: TransactionReceipt): {
-  tokenAddress: `0x${string}`;
-  poolAddress?: `0x${string}`;
-  curveAddress?: `0x${string}`;
-} | null {
-  try {
-    const v2Events = parseEventLogs({
-      abi: launchpadV2FactoryAbi,
-      logs: receipt.logs,
-      eventName: 'TokenLaunchedV2',
-    });
-    if (v2Events.length > 0) {
-      return {
-        tokenAddress: v2Events[0].args.token,
-        curveAddress: v2Events[0].args.curve,
-        poolAddress: v2Events[0].args.curve,
-      };
-    }
-  } catch {
-    // fallback
-  }
-
-  try {
-    const v1Events = parseEventLogs({
-      abi: launchpadFactoryAbi,
-      logs: receipt.logs,
-      eventName: 'TokenLaunched',
-    });
-    if (v1Events.length > 0) {
-      return {
-        tokenAddress: v1Events[0].args.token,
-        poolAddress: v1Events[0].args.pool,
-      };
-    }
-  } catch {
-    // fallback
-  }
-
-  for (const log of receipt.logs) {
+  function extractLaunchData(receipt: TransactionReceipt): {
+    tokenAddress: `0x${string}`;
+    poolAddress?: `0x${string}`;
+    curveAddress?: `0x${string}`;
+  } | null {
     try {
-      const decodedV2 = decodeEventLog({
+      const v2Events = parseEventLogs({
         abi: launchpadV2FactoryAbi,
-        topics: log.topics,
-        data: log.data,
+        logs: receipt.logs,
+        eventName: 'TokenLaunchedV2',
       });
-      if (decodedV2?.args && 'token' in decodedV2.args) {
+      if (v2Events.length > 0) {
         return {
-          tokenAddress: decodedV2.args.token as `0x${string}`,
-          curveAddress: (decodedV2.args as { curve?: `0x${string}` }).curve,
-          poolAddress: (decodedV2.args as { curve?: `0x${string}` }).curve,
+          tokenAddress: v2Events[0].args.token,
+          curveAddress: v2Events[0].args.curve,
+          poolAddress: v2Events[0].args.curve,
         };
       }
     } catch {
-      // continue
+      // fallback
     }
 
     try {
-      const decodedV1 = decodeEventLog({
+      const v1Events = parseEventLogs({
         abi: launchpadFactoryAbi,
+        logs: receipt.logs,
         eventName: 'TokenLaunched',
-        topics: log.topics,
-        data: log.data,
       });
-      if (decodedV1?.args?.token) {
+      if (v1Events.length > 0) {
         return {
-          tokenAddress: decodedV1.args.token,
-          poolAddress: decodedV1.args.pool,
+          tokenAddress: v1Events[0].args.token,
+          poolAddress: v1Events[0].args.pool,
         };
       }
     } catch {
-      // continue
+      // fallback
     }
+
+    for (const log of receipt.logs) {
+      try {
+        const decodedV2 = decodeEventLog({
+          abi: launchpadV2FactoryAbi,
+          topics: log.topics,
+          data: log.data,
+        });
+        if (decodedV2?.args && 'token' in decodedV2.args) {
+          return {
+            tokenAddress: decodedV2.args.token as `0x${string}`,
+            curveAddress: (decodedV2.args as { curve?: `0x${string}` }).curve,
+            poolAddress: (decodedV2.args as { curve?: `0x${string}` }).curve,
+          };
+        }
+      } catch {
+        // continue
+      }
+
+      try {
+        const decodedV1 = decodeEventLog({
+          abi: launchpadFactoryAbi,
+          eventName: 'TokenLaunched',
+          topics: log.topics,
+          data: log.data,
+        });
+        if (decodedV1?.args?.token) {
+          return {
+            tokenAddress: decodedV1.args.token,
+            poolAddress: decodedV1.args.pool,
+          };
+        }
+      } catch {
+        // continue
+      }
+    }
+    return null;
   }
-  return null;
-}
 
   async function checkPendingTransaction(
     hashOverride?: `0x${string}`,

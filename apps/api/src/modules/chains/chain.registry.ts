@@ -45,11 +45,7 @@ export class ChainRegistry {
   private readonly robinhood: RobinhoodChainService;
   private readonly arc: ArcChainService;
 
-  constructor(
-    robinhoodClient: PublicClient,
-    arcClient: PublicClient,
-    priceFeed: PriceFeedPort,
-  ) {
+  constructor(robinhoodClient: PublicClient, arcClient: PublicClient, priceFeed: PriceFeedPort) {
     this.robinhood = new RobinhoodChainService(robinhoodClient, priceFeed);
     this.arc = new ArcChainService(arcClient, priceFeed);
   }
