@@ -5,6 +5,7 @@ import {
   ROBINHOOD_CHAIN,
   ARC_CHAIN,
   launchpadFactoryAbi,
+  launchpadV2FactoryAbi,
   launchpadTokenAbi,
   uniswapV3PoolAbi,
   type NetworkConfig,
@@ -314,6 +315,44 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
       console.error(`[ChainIndexer] fetchV2LaunchedToken failed for ${tokenAddress}:`, err);
       return null;
     }
+  }
+
+  // -------------------------------------------------------------------------
+  // V2 on-demand factory resolver (hydrates newly created tokens even before event indexing)
+  // -------------------------------------------------------------------------
+  async fetchV2LaunchedTokenFromFactory(
+    tokenAddress: Address,
+    networkConfig?: NetworkConfig,
+  ): Promise<LaunchedTokenEntity | null> {
+    const cfg = networkConfig ?? ARC_CHAIN;
+    const client = cfg.chainId === ARC_CHAIN.chainId ? this.arcClient : this.robinhoodClient;
+    const factories = [
+      cfg.contracts.factoryV2,
+      cfg.contracts.factory,
+      cfg.chainId === ARC_CHAIN.chainId
+        ? ('0x48844223aBDceeb1Ce502F54d559681358E68200' as Address)
+        : undefined,
+    ].filter((f): f is Address => Boolean(f && f !== '0x0000000000000000000000000000000000000000'));
+
+    for (const factory of factories) {
+      try {
+        const launch = (await client.readContract({
+          address: factory,
+          abi: launchpadV2FactoryAbi,
+          functionName: 'launches',
+          args: [tokenAddress],
+        })) as [Address, Address, Address, bigint, boolean];
+
+        const curveAddress = launch[1];
+        if (curveAddress && curveAddress !== '0x0000000000000000000000000000000000000000') {
+          const entity = await this.fetchV2LaunchedToken(tokenAddress, curveAddress, cfg);
+          if (entity) return entity;
+        }
+      } catch {
+        // continue to next factory
+      }
+    }
+    return null;
   }
 
   // -------------------------------------------------------------------------

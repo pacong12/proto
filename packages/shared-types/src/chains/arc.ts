@@ -20,12 +20,12 @@ export const ARC_NETWORK: NetworkConfig = {
     symbol: 'USDC',
     decimals: 18, // Arc EVM native USDC uses 18 decimals in msg.value (1 ether = 1.00 USDC)
   },
-  rpcUrl: getEnv('ARC_RPC_URL', 'https://arc.drpc.org'),
+  rpcUrl: getEnv('ARC_RPC_URL', 'https://rpc.mainnet.arc.io'),
   rpcUrls: [
-    getEnv('ARC_RPC_URL', 'https://arc.drpc.org'),
-    'https://rpc.mainnet.arc.io',
+    getEnv('ARC_RPC_URL', 'https://rpc.mainnet.arc.io'),
     'https://rpc.blockdaemon.mainnet.arc.io',
     'https://rpc.drpc.mainnet.arc.io',
+    'https://arc.drpc.org',
   ],
   blockExplorer: getEnv('ARC_BLOCK_EXPLORER_URL', 'https://explorer.arc.io'),
   contracts: {
