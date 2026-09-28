@@ -1169,6 +1169,8 @@ import {
   ARC_PROTO_CURVE_ADDRESS,
   resolveTokenNetwork,
   launchpadTokenAbi,
+  launchpadV2FactoryAbi,
+  bondingCurveAbi,
   type LaunchedTokenEntity,
   type TokenMarketData,
   type TokenCommentEntity,
@@ -2123,29 +2125,158 @@ async function handleSwap() {
 async function loadTokenData(address: `0x${string}`) {
   tokenLoading.value = true;
   tokenNotFound.value = false;
+  let loaded = false;
+
   try {
     const res = await fetch(`/api/tokens/${address}`);
     const envelope = await res.json();
     if (envelope.success && envelope.data) {
       currentToken.value = envelope.data.token;
       currentMarketData.value = envelope.data.marketData;
-    } else if (res.status === 404) {
-      tokenNotFound.value = true;
+      loaded = true;
     }
   } catch {
     // non-blocking fallback
-  } finally {
-    await Promise.allSettled([
-      fetchCandlesticks(address, selectedResolution.value),
-      fetchTrades(address),
-      fetchTopTraders(address),
-      fetchDevActivity(address),
-      fetchHolders(address),
-      fetchComments(address),
-      fetchVotes(address),
-    ]);
-    tokenLoading.value = false;
   }
+
+  // Direct On-Chain Hydration Fallback:
+  // If backend is catching up or returns 404, hydrate token & bonding curve directly from chain
+  if (!loaded) {
+    try {
+      const activeChainId = tokenNetwork.value.chainId;
+      const client = getPublicClient(activeChainId);
+      const network = tokenNetwork.value;
+      const factories = [
+        network.contracts.factoryV2,
+        network.contracts.factory,
+        activeChainId === 5042
+          ? ('0xf94d16c9E90fCd55b75D318d0104269146612abF' as `0x${string}`)
+          : undefined,
+        activeChainId === 5042
+          ? ('0x48844223aBDceeb1Ce502F54d559681358E68200' as `0x${string}`)
+          : undefined,
+      ].filter((f): f is `0x${string}` =>
+        Boolean(f && f !== '0x0000000000000000000000000000000000000000'),
+      );
+
+      for (const factory of factories) {
+        try {
+          const launch = (await client.readContract({
+            address: factory,
+            abi: launchpadV2FactoryAbi,
+            functionName: 'launches',
+            args: [address],
+          })) as [`0x${string}`, `0x${string}`, `0x${string}`, bigint, boolean];
+
+          const curveAddress = launch[1];
+          if (curveAddress && curveAddress !== '0x0000000000000000000000000000000000000000') {
+            const [name, symbol, decimals, totalSupply, vEth, vToken, raised, target, grad] =
+              await Promise.all([
+                client.readContract({ address, abi: erc20Abi, functionName: 'name' }),
+                client.readContract({ address, abi: erc20Abi, functionName: 'symbol' }),
+                client.readContract({ address, abi: erc20Abi, functionName: 'decimals' }),
+                client.readContract({ address, abi: erc20Abi, functionName: 'totalSupply' }),
+                client.readContract({
+                  address: curveAddress,
+                  abi: bondingCurveAbi,
+                  functionName: 'virtualEthReserve',
+                }),
+                client.readContract({
+                  address: curveAddress,
+                  abi: bondingCurveAbi,
+                  functionName: 'virtualTokenReserve',
+                }),
+                client.readContract({
+                  address: curveAddress,
+                  abi: bondingCurveAbi,
+                  functionName: 'totalEthRaised',
+                }),
+                client.readContract({
+                  address: curveAddress,
+                  abi: bondingCurveAbi,
+                  functionName: 'graduationTarget',
+                }),
+                client.readContract({
+                  address: curveAddress,
+                  abi: bondingCurveAbi,
+                  functionName: 'graduated',
+                }),
+              ]);
+
+            const vEthNum = Number(vEth) / 1e18;
+            const vTokenNum = Number(vToken) / 10 ** (decimals || 18);
+            const spotPrice = vTokenNum > 0 ? vEthNum / vTokenNum : 0;
+            const isArc = network.chainId === 5042;
+            const quoteUsd = isArc ? 1.0 : 2500;
+            const priceUsd = spotPrice * quoteUsd;
+
+            currentToken.value = {
+              address,
+              name: name as string,
+              symbol: symbol as string,
+              decimals: decimals || 18,
+              totalSupply: totalSupply.toString(),
+              logo: '',
+              description: '',
+              socials: {},
+              deployer: launch[2],
+              pairedToken: network.contracts.weth,
+              poolAddress: curveAddress,
+              isToken0: false,
+              poolFee: 10000,
+              positionId: 0n,
+              restrictionsEndBlock: 0n,
+              launchBlock: 0n,
+              createdAt: Number(launch[3]) * 1000,
+              version: 'v2',
+              curveAddress,
+              virtualEthReserve: vEth.toString(),
+              virtualTokenReserve: vToken.toString(),
+              graduationTarget: target.toString(),
+              initialBuyAmount: raised.toString(),
+              isGraduated: grad as boolean,
+            };
+
+            const raisedEth = Number(raised) / 1e18;
+            const targetEth = Number(target) / 1e18;
+            currentMarketData.value = {
+              address,
+              priceInWeth: spotPrice,
+              priceUsd,
+              marketCapUsd: priceUsd * 1_000_000_000,
+              fdvUsd: priceUsd * 1_000_000_000,
+              pairedPrincipalWeth: raisedEth.toFixed(4),
+              graduationThresholdWeth: targetEth.toFixed(2),
+              graduationProgress: targetEth > 0 ? (raisedEth / targetEth) * 100 : 0,
+              isGraduated: grad as boolean,
+              volume24hUsd: 0,
+            };
+            loaded = true;
+            break;
+          }
+        } catch {
+          // continue checking next factory
+        }
+      }
+    } catch {
+      // fallback
+    }
+
+    if (!loaded) {
+      tokenNotFound.value = true;
+    }
+  }
+
+  await Promise.allSettled([
+    fetchCandlesticks(address, selectedResolution.value),
+    fetchTrades(address),
+    fetchTopTraders(address),
+    fetchDevActivity(address),
+    fetchHolders(address),
+    fetchComments(address),
+    fetchVotes(address),
+  ]);
+  tokenLoading.value = false;
 }
 
 // Reset amount and success state when switching between buy and sell tabs

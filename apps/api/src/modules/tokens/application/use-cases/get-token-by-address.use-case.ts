@@ -48,10 +48,25 @@ export class GetTokenByAddressUseCase {
 
     // Try to hydrate from chain if not in DB yet
     if (!token) {
-      // Try Robinhood V1 first, then Arc V1
-      token = await this.chainIndexer.fetchLaunchedTokenFromChain(address, ROBINHOOD_CHAIN);
-      if (!token) {
-        token = await this.chainIndexer.fetchLaunchedTokenFromChain(address, ARC_CHAIN);
+      if (typeof this.chainIndexer.fetchV2LaunchedTokenFromFactory === 'function') {
+        token = await this.chainIndexer
+          .fetchV2LaunchedTokenFromFactory(address, ARC_CHAIN)
+          .catch(() => null);
+        if (!token) {
+          token = await this.chainIndexer
+            .fetchV2LaunchedTokenFromFactory(address, ROBINHOOD_CHAIN)
+            .catch(() => null);
+        }
+      }
+      if (!token && typeof this.chainIndexer.fetchLaunchedTokenFromChain === 'function') {
+        token = await this.chainIndexer
+          .fetchLaunchedTokenFromChain(address, ROBINHOOD_CHAIN)
+          .catch(() => null);
+        if (!token) {
+          token = await this.chainIndexer
+            .fetchLaunchedTokenFromChain(address, ARC_CHAIN)
+            .catch(() => null);
+        }
       }
       if (token) await this.tokenRepository.save(token);
     }

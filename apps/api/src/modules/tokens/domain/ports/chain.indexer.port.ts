@@ -10,6 +10,11 @@ export interface ChainIndexerPort {
     networkConfig?: NetworkConfig,
   ): Promise<LaunchedTokenEntity | null>;
 
+  fetchV2LaunchedTokenFromFactory?(
+    tokenAddress: `0x${string}`,
+    networkConfig?: NetworkConfig,
+  ): Promise<LaunchedTokenEntity | null>;
+
   fetchGraduationStatus(
     tokenAddress: `0x${string}`,
     networkConfig?: NetworkConfig,
