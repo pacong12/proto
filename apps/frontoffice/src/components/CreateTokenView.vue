@@ -22,12 +22,21 @@
         </Button>
         <Button
           type="button"
-          @click="selectedVersion = 'v1'"
+          @click="!isArcNetwork && (selectedVersion = 'v1')"
           :variant="selectedVersion === 'v1' ? 'default' : 'ghost'"
+          :disabled="isArcNetwork"
+          :title="isArcNetwork ? 'Arc Network uses V2 Bonding Curve architecture' : ''"
           size="sm"
-          class="flex-1 text-xs font-semibold transition-all cursor-pointer"
+          class="flex-1 text-xs font-semibold transition-all"
+          :class="isArcNetwork ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'"
         >
           <span>{{ t('v1DirectPoolTab') }}</span>
+          <span
+            v-if="isArcNetwork"
+            class="ml-2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border"
+          >
+            V2 Only
+          </span>
         </Button>
       </div>
 
@@ -1144,6 +1153,7 @@ import {
 } from '@/components/ui/dialog';
 import { useI18n } from '@/lib/i18n';
 import { compressAndConvertToWebp } from '@/lib/image-optimizer';
+import { ARC_CHAIN } from '@proto/shared-types';
 
 const { t } = useI18n();
 const emit = defineEmits<{
@@ -1343,6 +1353,17 @@ function updateShare(key: keyof RevenueSplit, val: unknown): void {
 }
 
 const selectedVersion = ref<'v1' | 'v2'>('v2');
+const isArcNetwork = computed(() => activeNetwork.value.chainId === ARC_CHAIN.chainId);
+
+watch(
+  () => activeNetwork.value.chainId,
+  (chainId) => {
+    if (chainId === ARC_CHAIN.chainId) {
+      selectedVersion.value = 'v2';
+    }
+  },
+  { immediate: true },
+);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const selectedFileName = ref('');
 const imagePreview = ref('');
