@@ -42,6 +42,7 @@ function parseInitialBuyWei(val: string | number | undefined | null): bigint {
   }
 }
 import {
+  ARC_CHAIN,
   getNetworkConfig,
   launchpadFactoryAbi,
   launchpadV2FactoryAbi,
@@ -504,9 +505,22 @@ export function useLaunchpad() {
       initialBuyAmountEth?: string;
       minInitialTokensOut?: bigint;
     },
-    version: 'v1' | 'v2' = 'v1',
+    version: 'v1' | 'v2' = 'v2',
   ) {
-    if (version === 'v2') {
+    let activeChainId = walletChainId.value ?? undefined;
+    try {
+      const walletClient = await getWalletClient();
+      if (walletClient) {
+        const clientChainId = await walletClient.getChainId();
+        if (clientChainId) activeChainId = clientChainId;
+      }
+    } catch {
+      // Non-blocking
+    }
+
+    const network = getNetworkConfig(activeChainId);
+    // Arc Network only supports V2 Bonding Curve
+    if (network.chainId === ARC_CHAIN.chainId || version === 'v2') {
       const res = await launchTokenV2(params);
       return res ? { tokenAddress: res.tokenAddress, poolAddress: res.curveAddress } : null;
     }
