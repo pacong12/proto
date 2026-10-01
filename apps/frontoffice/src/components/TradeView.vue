@@ -26,137 +26,236 @@
     </div>
 
     <template v-else>
-      <!-- Top Token Info Header Card -->
-      <div
-        class="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xs flex flex-wrap items-center justify-between gap-4"
-      >
-        <!-- Logo + Name + Ticker -->
-        <div class="flex items-center gap-3 min-w-0">
-          <OptimizedImage
-            :src="currentToken.logo"
-            :alt="currentToken.name"
-            :fallback-text="currentToken.symbol"
-            :width="36"
-            :height="36"
-            :chain-badge="
-              tokenNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'
-            "
-            :currency-badge="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
-            class="rounded-lg border border-border shrink-0"
-          />
-          <div class="flex items-center gap-2 min-w-0">
-            <h1 class="text-base font-bold tracking-tight text-foreground truncate">
-              {{ currentToken.name }}
-            </h1>
-            <span class="font-mono text-xs text-muted-foreground shrink-0"
-              >${{ currentToken.symbol }}</span
+      <!-- Breadcrumb Navigation (ubi.fun style) -->
+      <div class="flex items-center gap-2 text-xs font-mono text-muted-foreground">
+        <RouterLink to="/launchpad" class="hover:text-foreground transition font-medium">
+          Markets
+        </RouterLink>
+        <span>/</span>
+        <span class="text-foreground font-bold">{{ currentToken.name }}</span>
+      </div>
+
+      <!-- ============================================================
+           ROW 1: UBI.FUN TOKEN HEADER & 4-METRIC STAT STRIP
+           ============================================================ -->
+      <div class="space-y-4">
+        <!-- Main Token Identity Row -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="flex items-center gap-3.5 min-w-0">
+            <OptimizedImage
+              :src="currentToken.logo"
+              :alt="currentToken.name"
+              :fallback-text="currentToken.symbol"
+              :width="48"
+              :height="48"
+              :chain-badge="
+                tokenNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'
+              "
+              :currency-badge="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
+              class="rounded-full border border-border object-cover ring-2 ring-border shadow-xs shrink-0"
+            />
+            <div class="min-w-0">
+              <div class="flex items-center gap-2.5 flex-wrap">
+                <h1 class="text-xl sm:text-2xl font-black tracking-tight text-foreground truncate">
+                  {{ currentToken.name }}
+                </h1>
+                <span class="text-xs sm:text-sm font-bold font-mono text-muted-foreground">
+                  ${{ currentToken.symbol }}
+                </span>
+                <span class="text-xs font-mono text-muted-foreground">
+                  · {{ formatRelativeTime(currentToken.createdAt) }}
+                </span>
+                <Badge
+                  variant="outline"
+                  class="text-[9px] font-mono h-4 px-1.5 border-border text-foreground bg-muted/40 uppercase"
+                >
+                  {{ currentMarketData.isGraduated ? 'Graduated' : 'Curve' }}
+                </Badge>
+              </div>
+
+              <!-- Contract Address Pill & Socials -->
+              <div class="flex items-center gap-2.5 mt-1.5 flex-wrap text-xs font-mono">
+                <button
+                  type="button"
+                  class="flex items-center gap-1 bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground px-2 py-0.5 rounded-lg border border-border transition cursor-pointer text-[11px]"
+                  title="Copy Contract Address"
+                  @click="copyAddress(currentToken.address)"
+                >
+                  <span>{{ shortenAddress(currentToken.address, 6, 4) }}</span>
+                  <Check v-if="copied" class="w-3 h-3 text-emerald-500" />
+                  <Copy v-else class="w-3 h-3" />
+                </button>
+
+                <a
+                  :href="`${explorerUrl}/token/${currentToken.address}`"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-muted-foreground hover:text-foreground p-0.5 transition"
+                  title="View on Explorer"
+                >
+                  <ExternalLink class="w-3.5 h-3.5" />
+                </a>
+
+                <!-- Socials -->
+                <a
+                  v-if="currentToken.socials?.twitter"
+                  :href="currentToken.socials.twitter"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-muted-foreground hover:text-foreground transition p-0.5"
+                  title="Twitter / X"
+                >
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                      d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+                    />
+                  </svg>
+                </a>
+                <a
+                  v-if="currentToken.socials?.telegram"
+                  :href="currentToken.socials.telegram"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-muted-foreground hover:text-foreground transition p-0.5"
+                  title="Telegram"
+                >
+                  <Send class="w-3.5 h-3.5" />
+                </a>
+                <a
+                  v-if="currentToken.socials?.website"
+                  :href="currentToken.socials.website"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-muted-foreground hover:text-foreground transition p-0.5"
+                  title="Website"
+                >
+                  <Globe class="w-3.5 h-3.5" />
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Action Controls (Share, Copy, Sentiment Vote) -->
+          <div class="flex items-center gap-2 shrink-0 flex-wrap">
+            <!-- Sentiment Voting -->
+            <div
+              class="flex items-center gap-1 bg-muted/60 px-2 py-1 rounded-xl border border-border text-xs font-mono"
             >
+              <button
+                type="button"
+                class="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-bold transition cursor-pointer"
+                :class="
+                  votesSummary.viewerVote === 'bullish'
+                    ? 'bg-foreground text-background shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                "
+                title="Vote Bullish"
+                @click="castVote('bullish')"
+              >
+                <Rocket class="w-3 h-3" />
+                <span>{{ votesSummary.bullishCount }}</span>
+              </button>
+              <span class="text-muted-foreground text-[10px] font-bold"
+                >{{ votesSummary.bullishPercent }}%</span
+              >
+              <button
+                type="button"
+                class="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-bold transition cursor-pointer"
+                :class="
+                  votesSummary.viewerVote === 'bearish'
+                    ? 'bg-foreground text-background shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                "
+                title="Vote Bearish"
+                @click="castVote('bearish')"
+              >
+                <Flame class="w-3 h-3" />
+                <span>{{ votesSummary.bearishCount }}</span>
+              </button>
+            </div>
+
+            <!-- Share to X Button -->
+            <Button
+              variant="outline"
+              size="sm"
+              class="h-8 px-3 text-xs font-bold gap-1.5 rounded-xl border-border cursor-pointer"
+              @click="shareToX"
+            >
+              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+                />
+              </svg>
+              <span>Share</span>
+            </Button>
+
+            <!-- Copy Link Button -->
+            <Button
+              variant="outline"
+              size="sm"
+              class="h-8 px-3 text-xs font-bold gap-1.5 rounded-xl border-border cursor-pointer"
+              @click="copyTokenLink"
+            >
+              <Check v-if="linkCopied" class="w-3.5 h-3.5 text-emerald-500" />
+              <Copy v-else class="w-3.5 h-3.5" />
+              <span>{{ linkCopied ? 'Copied' : 'Copy link' }}</span>
+            </Button>
           </div>
         </div>
 
-        <!-- Status badges -->
-        <div class="flex items-center gap-1.5 flex-wrap">
-          <Badge
-            variant="outline"
-            class="text-[10px] font-mono h-5 px-2 text-foreground border-border"
-          >
-            {{ currentToken.version === 'v2' ? 'V2 Curve' : 'V1 Pool' }}
-          </Badge>
-          <Badge
-            variant="outline"
-            class="text-[10px] font-mono h-5 px-2 border-border text-foreground bg-muted/40"
-          >
-            {{ currentMarketData.isGraduated ? 'Graduated' : 'Bonding Curve' }}
-          </Badge>
-          <Badge :variant="devBadgeVariant" class="text-[10px] font-mono h-5 px-2">
-            {{ devBadgeText }}
-          </Badge>
-        </div>
-
-        <!-- Sentiment Voting (Bullish / Bearish) - Clean Monochrome -->
-        <div
-          class="flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded-lg border border-border text-xs font-mono"
-        >
-          <button
-            type="button"
-            class="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold transition cursor-pointer"
-            :class="
-              votesSummary.viewerVote === 'bullish'
-                ? 'bg-foreground text-background shadow-xs'
-                : 'text-muted-foreground hover:text-foreground'
-            "
-            title="Vote Bullish"
-            aria-label="Vote Bullish"
-            @click="castVote('bullish')"
-          >
-            <Rocket class="w-3 h-3" />
-            <span>{{ votesSummary.bullishCount }}</span>
-          </button>
-
-          <span class="text-muted-foreground text-[10px] font-bold"
-            >{{ votesSummary.bullishPercent }}%</span
-          >
-
-          <button
-            type="button"
-            class="flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold transition cursor-pointer"
-            :class="
-              votesSummary.viewerVote === 'bearish'
-                ? 'bg-foreground text-background shadow-xs'
-                : 'text-muted-foreground hover:text-foreground'
-            "
-            title="Vote Bearish"
-            aria-label="Vote Bearish"
-            @click="castVote('bearish')"
-          >
-            <Flame class="w-3 h-3" />
-            <span>{{ votesSummary.bearishCount }}</span>
-          </button>
-        </div>
-
-        <!-- Live market stats pill row -->
-        <div
-          class="grid grid-cols-2 sm:flex sm:items-center gap-2.5 sm:gap-4 w-full sm:w-auto sm:ml-auto font-mono text-xs pt-3 sm:pt-0 border-t sm:border-t-0 border-border"
-        >
-          <div
-            class="flex flex-col sm:items-end p-2 sm:p-0 rounded-xl bg-muted/40 sm:bg-transparent"
-          >
-            <span class="text-muted-foreground text-[10px] uppercase tracking-wider font-semibold"
-              >Price</span
+        <!-- 4-Stat Metrics Cards Grid (ubi.fun exact style) -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 font-mono text-xs">
+          <div class="p-3.5 sm:p-4 rounded-2xl bg-card border border-border shadow-xs">
+            <span
+              class="text-muted-foreground text-[10px] uppercase tracking-wider block font-semibold"
             >
-            <span class="font-bold text-foreground">{{
-              formatPriceUsd(currentMarketData.priceUsd)
-            }}</span>
+              Market cap
+            </span>
+            <span class="font-black text-lg sm:text-xl text-foreground block mt-1">
+              ${{ formatNumberCap(currentMarketData.marketCapUsd ?? 4200) }}
+            </span>
           </div>
-          <div
-            class="flex flex-col sm:items-end p-2 sm:p-0 rounded-xl bg-muted/40 sm:bg-transparent"
-          >
-            <span class="text-muted-foreground text-[10px] uppercase tracking-wider font-semibold"
-              >Mkt Cap</span
+
+          <div class="p-3.5 sm:p-4 rounded-2xl bg-card border border-border shadow-xs">
+            <span
+              class="text-muted-foreground text-[10px] uppercase tracking-wider block font-semibold"
             >
-            <span class="font-bold text-foreground">{{
-              formatCompactUsd(currentMarketData.marketCapUsd)
-            }}</span>
+              Token price
+            </span>
+            <span class="font-black text-lg sm:text-xl text-foreground block mt-1 truncate">
+              {{ formatPriceUsd(currentMarketData.priceUsd) }}
+            </span>
           </div>
-          <div
-            class="flex flex-col sm:items-end p-2 sm:p-0 rounded-xl bg-muted/40 sm:bg-transparent"
-          >
-            <span class="text-muted-foreground text-[10px] uppercase tracking-wider font-semibold"
-              >24h Vol</span
+
+          <div class="p-3.5 sm:p-4 rounded-2xl bg-card border border-border shadow-xs">
+            <span
+              class="text-muted-foreground text-[10px] uppercase tracking-wider block font-semibold"
             >
-            <span class="font-bold text-foreground">{{
-              formatCompactUsd(currentMarketData.volume24hUsd)
-            }}</span>
+              Volume · 24h
+            </span>
+            <span class="font-black text-lg sm:text-xl text-foreground block mt-1">
+              {{
+                (currentMarketData.volume24hUsd ?? 0) > 0
+                  ? formatCompactUsd(currentMarketData.volume24hUsd)
+                  : '—'
+              }}
+            </span>
           </div>
-          <div
-            class="flex flex-col sm:items-end p-2 sm:p-0 rounded-xl bg-muted/40 sm:bg-transparent"
-          >
-            <span class="text-muted-foreground text-[10px] uppercase tracking-wider font-semibold"
-              >Raised</span
+
+          <div class="p-3.5 sm:p-4 rounded-2xl bg-card border border-border shadow-xs">
+            <span
+              class="text-muted-foreground text-[10px] uppercase tracking-wider block font-semibold"
             >
-            <span class="font-bold text-foreground truncate">
-              {{ currentMarketData.pairedPrincipalWeth }} /
-              {{ currentMarketData.graduationThresholdWeth }} {{ currencySymbol }}
+              Change · 24h
+            </span>
+            <span
+              class="font-black text-lg sm:text-xl block mt-1"
+              :class="
+                (currentMarketData.priceChange24h ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'
+              "
+            >
+              {{ (currentMarketData.priceChange24h ?? 0) >= 0 ? '+' : ''
+              }}{{ (currentMarketData.priceChange24h ?? 0).toFixed(2) }}%
             </span>
           </div>
         </div>
@@ -170,54 +269,45 @@
         <!-- 1. Chart Card (Col 1, Row 1 on xl) -->
         <div class="xl:col-start-1 xl:row-start-1 min-w-0 w-full space-y-6">
           <div class="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
-            <!-- Timeframe switcher bar -->
+            <!-- Chart Header with Live Price + Timeframes (ubi.fun style) -->
             <div
-              class="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30 flex-wrap"
+              class="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-border bg-card"
             >
-              <span
-                class="text-[10px] uppercase tracking-wider text-muted-foreground mr-3 font-semibold"
-                >Interval</span
-              >
-              <div class="flex items-center gap-0.5">
+              <div class="flex items-baseline gap-2.5">
+                <span
+                  class="text-2xl sm:text-3xl font-black tracking-tight text-foreground font-mono"
+                >
+                  {{ formatPriceUsd(currentMarketData.priceUsd) }}
+                </span>
+                <span
+                  class="text-xs font-mono font-bold px-2 py-0.5 rounded-full"
+                  :class="
+                    (currentMarketData.priceChange24h ?? 0) >= 0
+                      ? 'text-emerald-500 bg-emerald-500/10 border border-emerald-500/20'
+                      : 'text-rose-500 bg-rose-500/10 border border-rose-500/20'
+                  "
+                >
+                  {{ (currentMarketData.priceChange24h ?? 0) >= 0 ? '+' : ''
+                  }}{{ (currentMarketData.priceChange24h ?? 0).toFixed(2) }}%
+                </span>
+              </div>
+
+              <!-- Timeframe switcher pills -->
+              <div class="flex items-center gap-1 bg-muted p-1 rounded-xl border border-border">
                 <button
                   v-for="res in resolutions"
                   :key="res.label"
                   type="button"
-                  class="px-2.5 py-1 text-xs font-mono font-semibold rounded transition-all cursor-pointer"
+                  class="px-2.5 py-1 text-xs font-mono font-bold rounded-lg transition-all cursor-pointer"
                   :class="
                     selectedResolution === res.seconds
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      ? 'bg-card text-foreground shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground'
                   "
                   @click="changeResolution(res.seconds)"
                 >
                   {{ res.label }}
                 </button>
-              </div>
-
-              <!-- Security badges inline, right-aligned -->
-              <div class="ml-auto flex items-center gap-1.5 flex-wrap">
-                <span
-                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-muted text-foreground border border-border"
-                >
-                  <ShieldCheck class="w-3 h-3" />
-                  No Mint
-                </span>
-                <span
-                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-muted text-foreground border border-border"
-                >
-                  Dev {{ devHoldingPercent === 0 ? '0%' : `${devHoldingPercent.toFixed(1)}%` }}
-                </span>
-                <span
-                  class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-muted text-muted-foreground border border-border"
-                >
-                  Top10: {{ top10HoldingPercent.toFixed(1) }}%
-                </span>
-                <span
-                  class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-muted text-muted-foreground border border-border"
-                >
-                  Anti-Snipe
-                </span>
               </div>
             </div>
 
@@ -1141,6 +1231,8 @@ import {
   Send,
   Heart,
   RefreshCw,
+  Globe,
+  ArrowRight,
 } from 'lucide-vue-next';
 import { useSwap, SLIPPAGE_WARN_THRESHOLD, parseAmountToWei } from '../composables/useSwap';
 import { useWallet } from '../composables/useWallet';
@@ -1640,12 +1732,42 @@ function copyText(text: string, id: string) {
   }, 2000);
 }
 
-function copyAddress() {
-  navigator.clipboard.writeText(currentToken.value.address);
-  copied.value = true;
-  setTimeout(() => {
-    copied.value = false;
-  }, 2000);
+function copyAddress(addr?: string | Event) {
+  if (typeof navigator !== 'undefined') {
+    const textToCopy = typeof addr === 'string' && addr ? addr : currentToken.value.address;
+    navigator.clipboard.writeText(textToCopy);
+    copied.value = true;
+    setTimeout(() => {
+      copied.value = false;
+    }, 2000);
+  }
+}
+
+const linkCopied = ref(false);
+function copyTokenLink() {
+  if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
+    navigator.clipboard.writeText(window.location.href);
+    linkCopied.value = true;
+    toast.success('Link copied to clipboard');
+    setTimeout(() => {
+      linkCopied.value = false;
+    }, 2000);
+  }
+}
+
+function shareToX() {
+  if (typeof window !== 'undefined') {
+    const text = encodeURIComponent(
+      `Trading $${currentToken.value.symbol} on @proto_protocol on ${tokenNetwork.value.name}! 🚀\n${window.location.href}`,
+    );
+    window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank', 'noopener,noreferrer');
+  }
+}
+
+function formatNumberCap(val: number): string {
+  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
+  if (val >= 1_000) return `${(val / 1_000).toFixed(1)}K`;
+  return val.toFixed(0);
 }
 
 // -----------------------------------------------------------------------
