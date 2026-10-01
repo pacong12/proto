@@ -1,540 +1,343 @@
 <template>
-  <div class="space-y-6 max-w-7xl mx-auto">
-    <!-- 1. OKX-Style Quick Market Highlights Ticker Bar -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 lg:gap-5 w-full min-w-0">
-      <!-- Hot / Trending -->
-      <div
-        class="p-3.5 sm:p-4 md:p-5 rounded-2xl border border-border bg-card shadow-xs flex items-center justify-between cursor-pointer hover:border-primary/50 transition min-w-0"
-        @click="selectTabFilter('trending')"
-      >
-        <div class="space-y-0.5 min-w-0 truncate">
-          <span class="text-[10px] sm:text-[11px] font-mono text-muted-foreground block truncate">
-            {{ t('trendingTokens') }}
-          </span>
-          <p class="text-xs sm:text-sm font-bold font-mono text-foreground truncate">
-            {{ topTrendingSymbol }}
-          </p>
+  <div class="space-y-7 max-w-7xl mx-auto">
+    <!-- ============================================================
+         1. UBI.FUN-STYLE LATEST LAUNCHES / NEW ON NETWORK
+         ============================================================ -->
+    <div v-if="latestLaunches.length > 0" class="space-y-3">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xs uppercase tracking-widest font-mono font-bold text-muted-foreground">
+            New on {{ activeNetwork.name }}
+          </h2>
+          <p class="text-xs text-muted-foreground/80 mt-0.5">Latest launches</p>
         </div>
-        <span class="text-xs font-mono font-bold text-foreground shrink-0 ml-1">{{
-          topTrendingChange
-        }}</span>
+        <div class="flex items-center gap-2">
+          <span
+            class="hidden sm:inline-flex text-[11px] font-mono text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full border border-border"
+          >
+            0% launch fee · Just gas
+          </span>
+          <Button
+            @click="$emit('selectTab', 'create')"
+            size="sm"
+            variant="default"
+            class="h-7 text-xs font-bold gap-1 rounded-lg cursor-pointer"
+          >
+            <Plus class="w-3.5 h-3.5 stroke-[3]" />
+            <span>{{ t('create') }}</span>
+          </Button>
+        </div>
       </div>
 
-      <!-- New Launches -->
-      <div
-        class="p-3.5 sm:p-4 md:p-5 rounded-2xl border border-border bg-card shadow-xs flex items-center justify-between cursor-pointer hover:border-primary/50 transition min-w-0"
-        @click="selectTabFilter('newest')"
-      >
-        <div class="space-y-0.5 min-w-0 truncate">
-          <span class="text-[10px] sm:text-[11px] font-mono text-muted-foreground block truncate">
-            {{ t('newLaunches') }}
-          </span>
-          <p class="text-xs sm:text-sm font-bold font-mono text-foreground truncate">
-            {{ totalTokensCount }} Tokens
-          </p>
-        </div>
-        <span class="text-xs font-mono text-muted-foreground shrink-0 ml-1">{{
-          activeNetwork.name
-        }}</span>
-      </div>
+      <!-- Horizontal Cards Grid (ubi.fun style) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div
+          v-for="item in latestLaunches"
+          :key="item.token.address"
+          @click="$emit('selectToken', item.token.address)"
+          class="p-3.5 rounded-2xl bg-card border border-border hover:border-primary/60 transition-all cursor-pointer flex items-center justify-between gap-3 group shadow-xs hover:shadow-md"
+        >
+          <div class="flex items-center gap-3 min-w-0">
+            <OptimizedImage
+              :src="item.token.logo"
+              :alt="item.token.name"
+              :fallback-text="item.token.symbol"
+              :width="42"
+              :height="42"
+              class="rounded-full border border-border object-cover shrink-0 ring-1 ring-border group-hover:ring-primary/40 transition"
+            />
+            <div class="min-w-0 truncate">
+              <h4
+                class="font-bold text-xs sm:text-sm text-foreground truncate group-hover:text-primary transition"
+              >
+                {{ item.token.name }}
+              </h4>
+              <p class="text-[11px] font-mono font-semibold text-muted-foreground truncate">
+                ${{ item.token.symbol }}
+              </p>
+            </div>
+          </div>
 
-      <!-- Top Gainers -->
-      <div
-        class="p-3.5 sm:p-4 md:p-5 rounded-2xl border border-border bg-card shadow-xs flex items-center justify-between cursor-pointer hover:border-primary/50 transition min-w-0"
-        @click="selectTabFilter('gainers')"
-      >
-        <div class="space-y-0.5 min-w-0 truncate">
-          <span class="text-[10px] sm:text-[11px] font-mono text-muted-foreground block truncate">
-            {{ t('topGainers') }}
-          </span>
-          <p class="text-xs sm:text-sm font-bold font-mono text-foreground truncate">
-            {{ topGainerSymbol }}
-          </p>
+          <div class="flex items-center gap-2 shrink-0">
+            <span
+              class="text-[11px] font-mono font-semibold text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md"
+            >
+              {{ formatRelativeTime(item.token.createdAt) }}
+            </span>
+            <div
+              class="w-7 h-7 rounded-full bg-muted/70 group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center transition-colors text-muted-foreground"
+            >
+              <ArrowRight class="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </div>
         </div>
-        <span class="text-xs font-mono font-bold text-foreground shrink-0 ml-1">{{
-          topGainerChange
-        }}</span>
-      </div>
-
-      <!-- 24h Aggregated Volume -->
-      <div
-        class="p-3.5 sm:p-4 md:p-5 rounded-2xl border border-border bg-card shadow-xs flex items-center justify-between min-w-0"
-      >
-        <div class="space-y-0.5 min-w-0 truncate">
-          <span class="text-[10px] sm:text-[11px] font-mono text-muted-foreground block truncate">
-            {{ t('volume24hCol') }}
-          </span>
-          <p class="text-xs sm:text-sm font-bold font-mono text-foreground truncate">
-            ${{ totalVolume24hUsd.toLocaleString() }}
-          </p>
-        </div>
-        <span class="text-[10px] font-mono text-muted-foreground shrink-0 ml-1">Uniswap V3/v4</span>
       </div>
     </div>
 
-    <!-- 2. OKX-Style Primary Market Navigation & Actions Header -->
+    <!-- ============================================================
+         2. PROTOCOL HIGHLIGHTS HERO STRIP (ubi.fun style)
+         ============================================================ -->
     <div
-      class="flex items-center justify-between gap-2.5 sm:gap-4 pb-3 border-b border-border w-full min-w-0"
+      class="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-card via-card to-muted/40 border border-border flex flex-col md:flex-row items-start md:items-center justify-between gap-5 shadow-xs"
     >
-      <!-- Market Tabs Navigation -->
-      <div
-        class="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-1 flex-1 min-w-0"
-      >
-        <Button
-          type="button"
-          v-for="tab in marketTabs"
-          :key="tab.value"
-          @click="activeMarketTab = tab.value"
-          :variant="activeMarketTab === tab.value ? 'secondary' : 'ghost'"
-          size="sm"
-          class="h-8 px-2.5 sm:px-3.5 text-xs font-bold rounded-lg transition whitespace-nowrap cursor-pointer shrink-0"
+      <div class="space-y-1.5 max-w-xl">
+        <div
+          class="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-emerald-500 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20"
         >
-          {{ tab.label }}
-        </Button>
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Fair Launch Protocol</span>
+        </div>
+        <h1 class="text-xl sm:text-2xl font-black tracking-tight text-foreground">
+          The launch floor for {{ activeNetwork.name }}.
+        </h1>
+        <p class="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+          Launch a coin with locked liquidity. Find your community. Every trade shares fees in
+          {{ activeNetwork.nativeCurrency.symbol }}.
+        </p>
       </div>
 
-      <!-- Right Action: Launch Token Primary Button -->
-      <div class="flex items-center gap-2 shrink-0">
-        <Button
-          @click="$emit('selectTab', 'create')"
-          variant="default"
-          size="sm"
-          class="h-8 sm:h-9 px-2.5 sm:px-4 gap-1.5 font-bold shadow-sm transition active:scale-95 cursor-pointer text-xs"
-        >
-          <Plus class="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
-          <span>{{ t('create') }}</span>
-        </Button>
+      <div
+        class="grid grid-cols-2 sm:flex sm:items-center gap-4 sm:gap-6 font-mono text-xs w-full md:w-auto"
+      >
+        <div class="p-3 sm:p-0 rounded-xl bg-muted/40 sm:bg-transparent">
+          <span
+            class="text-muted-foreground text-[10px] uppercase tracking-wider block font-semibold"
+          >
+            24h Volume
+          </span>
+          <span class="font-extrabold text-sm sm:text-base text-foreground">
+            ${{ totalVolume24hUsd.toLocaleString(undefined, { maximumFractionDigits: 0 }) }}
+          </span>
+        </div>
+        <div class="p-3 sm:p-0 rounded-xl bg-muted/40 sm:bg-transparent">
+          <span
+            class="text-muted-foreground text-[10px] uppercase tracking-wider block font-semibold"
+          >
+            Total Coins
+          </span>
+          <span class="font-extrabold text-sm sm:text-base text-foreground">
+            {{ totalTokensCount }}
+          </span>
+        </div>
+        <div class="p-3 sm:p-0 rounded-xl bg-muted/40 sm:bg-transparent col-span-2 sm:col-span-1">
+          <span
+            class="text-muted-foreground text-[10px] uppercase tracking-wider block font-semibold"
+          >
+            Chain Standard
+          </span>
+          <span class="font-bold text-xs text-foreground">
+            {{ activeNetwork.nativeCurrency.symbol }} Native Gas
+          </span>
+        </div>
       </div>
     </div>
 
-    <!-- 3. OKX-Style Filter & Search Control Bar -->
-    <div
-      class="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 p-3.5 sm:p-4 bg-card rounded-2xl border border-border"
-    >
-      <!-- Left Controls: Search Bar + Lifecycle Filter Buttons -->
-      <div class="flex flex-wrap items-center gap-2 flex-1 min-w-0">
-        <!-- Live Search Input -->
-        <div class="relative w-full sm:w-64">
+    <!-- ============================================================
+         3. EXPLORE COINS / MARKETS FILTER HEADER
+         ============================================================ -->
+    <div class="space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-xl font-bold tracking-tight text-foreground">Explore coins</h2>
+          <p class="text-xs font-mono text-muted-foreground">
+            Markets in {{ activeNetwork.nativeCurrency.symbol }}
+          </p>
+        </div>
+
+        <!-- Right Controls: View Mode Switcher -->
+        <div class="flex items-center gap-2 self-end sm:self-auto">
+          <div class="inline-flex items-center p-0.5 bg-muted rounded-lg border border-border">
+            <button
+              type="button"
+              @click="viewMode = 'table'"
+              class="px-2.5 py-1 text-xs font-semibold rounded-md transition cursor-pointer flex items-center gap-1.5"
+              :class="
+                viewMode === 'table'
+                  ? 'bg-card text-foreground shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              "
+            >
+              <List class="w-3.5 h-3.5" />
+              <span>List</span>
+            </button>
+            <button
+              type="button"
+              @click="viewMode = 'grid'"
+              class="px-2.5 py-1 text-xs font-semibold rounded-md transition cursor-pointer flex items-center gap-1.5"
+              :class="
+                viewMode === 'grid'
+                  ? 'bg-card text-foreground shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              "
+            >
+              <LayoutGrid class="w-3.5 h-3.5" />
+              <span>Grid</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Filter Pills (ubi.fun exact categories) + Search Bar -->
+      <div
+        class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-border"
+      >
+        <!-- Filter Tabs -->
+        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+          <Button
+            type="button"
+            v-for="tab in marketTabs"
+            :key="tab.value"
+            @click="activeMarketTab = tab.value"
+            :variant="activeMarketTab === tab.value ? 'default' : 'secondary'"
+            size="sm"
+            class="h-8 px-3.5 text-xs font-bold rounded-xl transition whitespace-nowrap cursor-pointer shrink-0"
+          >
+            {{ tab.label }}
+          </Button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="relative w-full md:w-64 shrink-0">
           <Search class="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-2.5" />
           <Input
             v-model="searchQuery"
             type="text"
-            :placeholder="t('searchTokenPlaceholder')"
-            class="h-8 pl-8 pr-3 text-xs bg-card border-border rounded-lg font-mono text-foreground focus-visible:ring-foreground"
+            placeholder="Search coins / address..."
+            class="h-8 pl-8 pr-3 text-xs bg-card border-border rounded-xl font-mono text-foreground focus-visible:ring-foreground"
           />
         </div>
-
-        <!-- Lifecycle Status Filter: All / Curve / Graduated -->
-        <div
-          v-if="activeMarketTab !== 'trades'"
-          class="inline-flex items-center p-0.5 bg-card rounded-lg border border-border text-xs font-medium gap-0.5"
-        >
-          <Button
-            type="button"
-            size="sm"
-            :variant="selectedLifecycle === 'all' ? 'secondary' : 'ghost'"
-            @click="selectedLifecycle = 'all'"
-            class="h-7 px-2.5 text-xs font-semibold rounded-md cursor-pointer"
-          >
-            {{ t('all') }}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            :variant="selectedLifecycle === 'curve' ? 'secondary' : 'ghost'"
-            @click="selectedLifecycle = 'curve'"
-            class="h-7 px-2.5 text-xs font-semibold rounded-md cursor-pointer text-foreground"
-          >
-            {{ t('onCurve') }}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            :variant="selectedLifecycle === 'graduated' ? 'secondary' : 'ghost'"
-            @click="selectedLifecycle = 'graduated'"
-            class="h-7 px-2.5 text-xs font-semibold rounded-md cursor-pointer text-foreground"
-          >
-            {{ t('graduated') }}
-          </Button>
-        </div>
-
-        <!-- Socials Only Filter Toggle -->
-        <Button
-          v-if="activeMarketTab !== 'trades'"
-          type="button"
-          size="sm"
-          :variant="filterHasSocials ? 'default' : 'outline'"
-          class="h-8 px-2.5 gap-1.5 text-xs font-medium rounded-lg border-border cursor-pointer"
-          @click="filterHasSocials = !filterHasSocials"
-        >
-          <Share2 class="w-3 h-3" />
-          <span>{{ t('hasSocials') }}</span>
-        </Button>
-      </div>
-
-      <!-- Right Controls: View Mode Toggle (Table / Grid) + Sort Combobox -->
-      <div v-if="activeMarketTab !== 'trades'" class="flex items-center gap-2 shrink-0">
-        <!-- View Mode Toggle: Table vs Grid vs Trenches -->
-        <div class="inline-flex items-center p-0.5 bg-card rounded-lg border border-border gap-0.5">
-          <Button
-            type="button"
-            size="sm"
-            :variant="viewMode === 'table' ? 'secondary' : 'ghost'"
-            @click="viewMode = 'table'"
-            :title="t('tableMode')"
-            :aria-label="t('tableMode')"
-            class="h-7 w-7 p-0 rounded cursor-pointer"
-          >
-            <List class="w-3.5 h-3.5" :class="viewMode === 'table' ? 'text-foreground' : ''" />
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            :variant="viewMode === 'grid' ? 'secondary' : 'ghost'"
-            @click="viewMode = 'grid'"
-            :title="t('gridMode')"
-            :aria-label="t('gridMode')"
-            class="h-7 w-7 p-0 rounded cursor-pointer"
-          >
-            <LayoutGrid class="w-3.5 h-3.5" :class="viewMode === 'grid' ? 'text-foreground' : ''" />
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            :variant="viewMode === 'trenches' ? 'secondary' : 'ghost'"
-            @click="viewMode = 'trenches'"
-            :title="t('trenchesMode')"
-            :aria-label="t('trenchesMode')"
-            class="h-7 w-7 p-0 rounded cursor-pointer"
-          >
-            <Columns3
-              class="w-3.5 h-3.5"
-              :class="viewMode === 'trenches' ? 'text-foreground' : ''"
-            />
-          </Button>
-        </div>
-
-        <!-- Sorting Combobox -->
-        <Combobox
-          v-model="activeSort"
-          :options="sortOptions"
-          class="w-36 sm:w-44"
-          :placeholder="t('sortTokens')"
-        />
-      </div>
-
-      <div
-        v-else
-        class="flex items-center gap-2 px-2 text-xs font-mono text-muted-foreground shrink-0"
-      >
-        <span class="w-2 h-2 rounded-full bg-foreground animate-pulse" />
-        <span>Live Stream ({{ filteredTrades.length }} trades)</span>
       </div>
     </div>
 
-    <!-- 4. Loading State -->
-    <div v-if="loading" class="flex flex-col items-center justify-center py-20 space-y-3">
-      <Loader2 class="w-7 h-7 text-emerald-500 animate-spin" />
-      <span
-        class="text-xs font-medium text-muted-foreground dark:text-muted-foreground font-mono"
-        >{{ t('loadingTokens') }}</span
-      >
-    </div>
-
-    <!-- 5. API Error State -->
+    <!-- Error Banner -->
     <div
-      v-else-if="apiError"
-      class="flex items-start gap-3 bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-xs text-amber-600 dark:text-amber-400"
+      v-if="apiError"
+      class="p-4 rounded-xl bg-destructive/10 border border-destructive/30 text-xs text-destructive flex items-center gap-2 font-mono"
     >
-      <AlertCircle class="w-4 h-4 shrink-0 mt-0.5" />
+      <AlertCircle class="w-4 h-4 shrink-0" />
       <span>{{ apiError }}</span>
     </div>
 
-    <!-- Direct Tx Hash Search Match Banner -->
+    <!-- Loading State -->
     <div
-      v-if="matchedSearchTx"
-      class="p-3.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+      v-if="loading && allTokens.length === 0"
+      class="flex flex-col items-center justify-center py-24 space-y-3"
     >
-      <div class="flex items-center gap-3 min-w-0">
-        <Badge
-          :variant="matchedSearchTx.isBuy ? 'default' : 'destructive'"
-          class="text-[10px] uppercase font-mono px-2 py-0.5 shrink-0"
-        >
-          {{ matchedSearchTx.isBuy ? 'BUY' : 'SELL' }}
-        </Badge>
-        <div class="truncate">
-          <span class="font-mono font-bold text-foreground truncate block">
-            Tx: {{ shortenAddress(matchedSearchTx.transactionHash, 10, 8) }}
-          </span>
-          <p
-            class="text-[11px] font-mono text-muted-foreground dark:text-muted-foreground truncate mt-0.5"
-          >
-            Token: {{ shortenAddress(matchedSearchTx.tokenAddress) }} • Volume:
-            {{ matchedSearchTx.wethAmount }} {{ activeNetwork.nativeCurrency.symbol }} • Trader:
-            {{ shortenAddress(matchedSearchTx.trader) }}
-          </p>
-        </div>
-      </div>
-      <div class="flex items-center gap-2 shrink-0">
-        <Button
-          size="sm"
-          variant="default"
-          class="h-7 text-xs font-bold gap-1 cursor-pointer"
-          @click="$emit('selectToken', matchedSearchTx.tokenAddress)"
-        >
-          Open Market &rarr;
-        </Button>
-        <a
-          v-if="activeNetwork.blockExplorer"
-          :href="`${activeNetwork.blockExplorer}/tx/${matchedSearchTx.transactionHash}`"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="p-1.5 rounded-lg border border-border hover:text-foreground text-muted-foreground transition"
-          title="View on Explorer"
-          aria-label="View on Explorer"
-        >
-          <ExternalLink class="w-3.5 h-3.5" />
-        </a>
-      </div>
+      <Loader2 class="w-7 h-7 text-emerald-500 animate-spin" />
+      <span class="text-xs font-medium text-muted-foreground font-mono">
+        Loading coins on {{ activeNetwork.name }}...
+      </span>
     </div>
 
-    <!-- 6. Live Protocol Trades Tab Feed -->
+    <!-- ============================================================
+         4A. UBI.FUN TABLE VIEW (COIN, GRAPH, MARKET CAP, BUYBACK, AGE, 24H VOL, 1H, 24H, ACTION)
+         ============================================================ -->
     <div
-      v-if="activeMarketTab === 'trades'"
-      class="rounded-xl border border-border bg-card overflow-hidden shadow-xs"
-    >
-      <div
-        v-if="tradesLoading && recentTrades.length === 0"
-        class="flex flex-col items-center justify-center py-20 space-y-3"
-      >
-        <Loader2 class="w-7 h-7 text-emerald-500 animate-spin" />
-        <span class="text-xs font-medium text-muted-foreground font-mono"
-          >Loading live protocol trades...</span
-        >
-      </div>
-      <div
-        v-else-if="filteredTrades.length === 0"
-        class="py-12 text-center text-xs text-muted-foreground font-mono"
-      >
-        No recent trades recorded yet on {{ activeNetwork.name }}.
-      </div>
-      <div v-else class="overflow-x-auto">
-        <table class="w-full text-left text-xs font-mono">
-          <thead>
-            <tr
-              class="border-b border-border text-muted-foreground uppercase tracking-wider text-[11px] bg-muted/40"
-            >
-              <th class="py-3 px-4 font-semibold">Token</th>
-              <th class="py-3 px-4 font-semibold">Type</th>
-              <th class="py-3 px-4 font-semibold text-right">Price (USD)</th>
-              <th class="py-3 px-4 font-semibold text-right">Tokens</th>
-              <th class="py-3 px-4 font-semibold text-right">Volume</th>
-              <th class="py-3 px-4 font-semibold">Trader</th>
-              <th class="py-3 px-4 font-semibold text-right">Time</th>
-              <th class="py-3 px-4 font-semibold text-right">Tx</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-border">
-            <tr
-              v-for="trade in filteredTrades"
-              :key="trade.id"
-              class="hover:bg-muted/50 transition-colors cursor-pointer group"
-              @click="$emit('selectToken', trade.tokenAddress)"
-            >
-              <td class="py-3 px-4">
-                <div class="flex items-center gap-2.5">
-                  <OptimizedImage
-                    :src="getTokenInfo(trade.tokenAddress)?.logo"
-                    :alt="getTokenInfo(trade.tokenAddress)?.name || 'Token'"
-                    :fallback-text="getTokenInfo(trade.tokenAddress)?.symbol || 'TOK'"
-                    :width="28"
-                    :height="28"
-                    class="rounded-lg border border-border shrink-0"
-                  />
-                  <div class="truncate">
-                    <span
-                      class="font-bold text-foreground group-hover:opacity-80 transition truncate block"
-                    >
-                      {{
-                        getTokenInfo(trade.tokenAddress)?.name || shortenAddress(trade.tokenAddress)
-                      }}
-                    </span>
-                    <span class="text-[11px] text-muted-foreground">
-                      ${{ getTokenInfo(trade.tokenAddress)?.symbol || 'TOK' }}
-                    </span>
-                  </div>
-                </div>
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap">
-                <Badge
-                  :variant="trade.isBuy ? 'default' : 'destructive'"
-                  class="text-[10px] uppercase px-1.5 py-0"
-                >
-                  {{ trade.isBuy ? 'BUY' : 'SELL' }}
-                </Badge>
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-right font-semibold text-foreground">
-                ${{
-                  trade.priceUsd < 0.0001 ? trade.priceUsd.toFixed(8) : trade.priceUsd.toFixed(4)
-                }}
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-right text-muted-foreground">
-                {{ formatTokenNumber(trade.tokenAmount) }}
-              </td>
-              <td
-                class="py-3 px-4 whitespace-nowrap text-right text-emerald-600 dark:text-emerald-400 font-semibold"
-              >
-                {{ parseFloat(trade.wethAmount).toFixed(4) }}
-                {{ activeNetwork.nativeCurrency.symbol }}
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap">
-                <div class="flex items-center gap-1.5 text-muted-foreground">
-                  <Jazzicon :address="trade.trader" :size="16" class="rounded-full shrink-0" />
-                  <span>{{ shortenAddress(trade.trader) }}</span>
-                </div>
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-right text-muted-foreground text-[11px]">
-                {{ formatRelativeTime(trade.timestamp) }}
-              </td>
-              <td class="py-3 px-4 whitespace-nowrap text-right" @click.stop>
-                <a
-                  v-if="activeNetwork.blockExplorer"
-                  :href="`${activeNetwork.blockExplorer}/tx/${trade.transactionHash}`"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="p-1 rounded hover:text-foreground text-muted-foreground transition inline-flex items-center"
-                  title="View on Explorer"
-                  aria-label="View on Explorer"
-                >
-                  <ExternalLink class="w-3.5 h-3.5" />
-                </a>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- 6. Empty State -->
-    <Empty
-      v-else-if="filteredTokens.length === 0"
-      :title="t('noTokensFound')"
-      :description="t('noTokensDesc')"
-      class="border border-border rounded-2xl p-10 bg-card"
-    >
-      <template #action>
-        <Button
-          @click="$emit('selectTab', 'create')"
-          size="default"
-          class="gap-1.5 font-bold shadow-md rounded-xl cursor-pointer"
-        >
-          <Plus class="w-4 h-4 stroke-[3]" />
-          {{ t('createToken') }}
-        </Button>
-      </template>
-    </Empty>
-
-    <!-- 7A. OKX-Style Professional Table View Mode -->
-    <div
-      v-else-if="viewMode === 'table'"
-      class="rounded-xl border border-border bg-card overflow-hidden shadow-xs"
+      v-else-if="viewMode === 'table' && filteredTokens.length > 0"
+      class="rounded-2xl border border-border bg-card overflow-hidden shadow-xs"
     >
       <div class="overflow-x-auto w-full">
-        <table class="w-full text-left text-xs font-mono min-w-[680px]">
+        <table class="w-full text-left text-xs font-mono min-w-[850px]">
           <thead>
             <tr
               class="border-b border-border text-muted-foreground uppercase tracking-wider text-[11px] bg-muted/40"
             >
-              <th
-                class="py-3 px-4 font-semibold sticky left-0 z-20 bg-muted shadow-[1px_0_0_0_var(--border)]"
-              >
-                {{ t('tokenCol') }}
+              <th class="py-3 px-4 font-semibold sticky left-0 z-20 bg-muted/80 backdrop-blur-xs">
+                COIN
               </th>
-              <th class="py-3 px-4 font-semibold text-right">{{ t('lastPriceCol') }}</th>
-              <th class="py-3 px-4 font-semibold text-right">{{ t('change24hCol') }}</th>
-              <th class="py-3 px-4 font-semibold text-right">{{ t('volume24hCol') }}</th>
-              <th class="py-3 px-4 font-semibold text-right">{{ t('marketCapCol') }}</th>
-              <th class="py-3 px-4 font-semibold text-center w-48">{{ t('progressCol') }}</th>
-              <th class="py-3 px-4 font-semibold text-right">{{ t('actionCol') }}</th>
+              <th class="py-3 px-4 font-semibold text-center w-24">GRAPH</th>
+              <th class="py-3 px-4 font-semibold text-right">MARKET CAP</th>
+              <th class="py-3 px-4 font-semibold text-center w-40">BONDING</th>
+              <th class="py-3 px-4 font-semibold text-right">AGE</th>
+              <th class="py-3 px-4 font-semibold text-right">VOLUME · 24H</th>
+              <th class="py-3 px-4 font-semibold text-right">1H</th>
+              <th class="py-3 px-4 font-semibold text-right">24H</th>
+              <th class="py-3 px-4 font-semibold text-right">ACTION</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-border">
             <tr
               v-for="item in paginatedTokens"
               :key="item.token.address"
-              class="hover:bg-muted/50 transition-colors cursor-pointer group"
+              class="hover:bg-muted/40 transition-colors cursor-pointer group"
               @click="$emit('selectToken', item.token.address)"
             >
-              <!-- Token Name, Symbol, & Version Badge -->
+              <!-- 1. COIN (Logo + Name + Symbol + Truncated Address with copy button) -->
               <td
-                class="py-3 px-4 sticky left-0 z-10 bg-card group-hover:bg-muted/50 transition-colors shadow-[1px_0_0_0_var(--border)]"
+                class="py-3.5 px-4 sticky left-0 z-10 bg-card group-hover:bg-muted/40 transition-colors"
               >
                 <div class="flex items-center gap-3">
                   <OptimizedImage
                     :src="item.token.logo"
                     :alt="item.token.name"
                     :fallback-text="item.token.symbol"
-                    :width="32"
-                    :height="32"
-                    :chain-badge="
-                      activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'
-                    "
-                    :currency-badge="
-                      activeNetwork.nativeCurrency.symbol === 'USDC'
-                        ? '/tokens/usdc.svg'
-                        : '/tokens/eth.svg'
-                    "
-                    class="rounded-lg border border-border"
+                    :width="38"
+                    :height="38"
+                    class="rounded-full border border-border object-cover shrink-0 ring-1 ring-border group-hover:ring-primary/50 transition"
                   />
-                  <div class="truncate">
-                    <div class="flex items-center gap-1.5">
-                      <span class="font-bold text-foreground group-hover:opacity-80 transition">
+                  <div class="min-w-0 truncate">
+                    <div class="flex items-center gap-1.5 truncate">
+                      <span
+                        class="font-bold text-sm text-foreground group-hover:text-primary transition truncate"
+                      >
                         {{ item.token.name }}
                       </span>
-                      <Badge
-                        :variant="item.token.version === 'v2' ? 'outline' : 'secondary'"
-                        class="text-[9px] px-1 py-0 h-3.5 uppercase font-mono"
-                      >
-                        {{ item.token.version === 'v2' ? 'v2' : 'v1' }}
-                      </Badge>
                     </div>
-                    <span class="text-[11px] text-muted-foreground font-mono"
-                      >${{ item.token.symbol }}</span
-                    >
+                    <div class="flex items-center gap-2 mt-0.5">
+                      <span class="font-bold text-xs text-muted-foreground"
+                        >${{ item.token.symbol }}</span
+                      >
+                      <button
+                        type="button"
+                        class="text-[10px] text-muted-foreground hover:text-foreground font-mono flex items-center gap-1 bg-muted/60 px-1.5 py-0.5 rounded transition cursor-pointer"
+                        title="Copy Contract Address"
+                        @click.stop="copyAddress(item.token.address)"
+                      >
+                        <span>{{ shortenAddress(item.token.address, 6, 4) }}</span>
+                        <Check
+                          v-if="copiedAddress === item.token.address"
+                          class="w-3 h-3 text-emerald-500"
+                        />
+                        <Copy v-else class="w-3 h-3" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </td>
 
-              <!-- Last Price -->
-              <td class="py-3 px-4 text-right font-bold text-foreground">
-                {{ formatPriceUsd(item.marketData?.priceUsd) }}
+              <!-- 2. GRAPH (Mini SVG Sparkline curve) -->
+              <td class="py-3.5 px-4 text-center">
+                <svg
+                  class="inline-block overflow-visible"
+                  width="72"
+                  height="24"
+                  viewBox="0 0 72 24"
+                  fill="none"
+                >
+                  <path
+                    :d="getSparkline(item.marketData?.priceChange24h ?? 0, 72, 24).d"
+                    :stroke="getSparkline(item.marketData?.priceChange24h ?? 0, 72, 24).color"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
               </td>
 
-              <!-- 24h Change -->
-              <td class="py-3 px-4 text-right font-bold text-foreground">
-                {{ (item.marketData?.priceChange24h ?? 0) >= 0 ? '+' : ''
-                }}{{ (item.marketData?.priceChange24h ?? 0).toFixed(2) }}%
+              <!-- 3. MARKET CAP -->
+              <td class="py-3.5 px-4 text-right font-extrabold text-sm text-foreground font-mono">
+                ${{ formatNumberCap(item.marketData?.marketCapUsd ?? 4200) }}
               </td>
 
-              <!-- 24h Volume -->
-              <td class="py-3 px-4 text-right text-muted-foreground">
-                {{ formatCompactUsd(item.marketData?.volume24hUsd) }}
-              </td>
-
-              <!-- Market Cap -->
-              <td class="py-3 px-4 text-right text-muted-foreground font-semibold">
-                {{ formatCompactUsd(item.marketData?.marketCapUsd) }}
-              </td>
-
-              <!-- Graduation / Bonding Progress -->
-              <td class="py-3 px-4">
-                <div class="space-y-1 max-w-[160px] mx-auto">
-                  <div class="flex justify-between text-[10px]">
+              <!-- 4. BONDING / PROGRESS -->
+              <td class="py-3.5 px-4">
+                <div class="space-y-1.5 max-w-[130px] mx-auto font-mono text-center">
+                  <div class="flex items-center justify-between text-[10px]">
                     <span class="text-muted-foreground">
-                      {{ item.marketData?.isGraduated ? 'DEX Pool' : 'Curve' }}
+                      {{ item.marketData?.isGraduated ? 'Graduated' : 'Curve' }}
                     </span>
-                    <span class="font-bold text-emerald-500 dark:text-emerald-400">
-                      {{ ((item.marketData?.graduationProgress ?? 0) * 100).toFixed(1) }}%
+                    <span class="font-bold text-emerald-500">
+                      {{ ((item.marketData?.graduationProgress ?? 0) * 100).toFixed(0) }}%
                     </span>
                   </div>
                   <Progress
@@ -544,15 +347,46 @@
                 </div>
               </td>
 
-              <!-- Action Trade Button -->
-              <td class="py-3 px-4 text-right">
+              <!-- 5. AGE -->
+              <td class="py-3.5 px-4 text-right text-muted-foreground font-semibold text-xs">
+                {{ formatRelativeTime(item.token.createdAt) }}
+              </td>
+
+              <!-- 6. VOLUME · 24H -->
+              <td class="py-3.5 px-4 text-right text-muted-foreground font-semibold text-xs">
+                {{
+                  (item.marketData?.volume24hUsd ?? 0) > 0
+                    ? formatCompactUsd(item.marketData?.volume24hUsd)
+                    : '—'
+                }}
+              </td>
+
+              <!-- 7. 1H % -->
+              <td class="py-3.5 px-4 text-right font-bold text-xs">
+                <span class="text-muted-foreground">0.00%</span>
+              </td>
+
+              <!-- 8. 24H % -->
+              <td
+                class="py-3.5 px-4 text-right font-extrabold text-xs"
+                :class="
+                  (item.marketData?.priceChange24h ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'
+                "
+              >
+                {{ (item.marketData?.priceChange24h ?? 0) >= 0 ? '+' : ''
+                }}{{ (item.marketData?.priceChange24h ?? 0).toFixed(2) }}%
+              </td>
+
+              <!-- 9. ACTION (Quick Buy / Trade button) -->
+              <td class="py-3.5 px-4 text-right">
                 <Button
                   size="sm"
                   variant="outline"
-                  class="h-7 px-3 text-xs font-semibold rounded-lg border-border group-hover:border-emerald-500 group-hover:opacity-80 transition cursor-pointer"
+                  class="h-8 px-3 text-xs font-bold rounded-xl border-border hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all cursor-pointer inline-flex items-center gap-1"
                   @click.stop="$emit('selectToken', item.token.address)"
                 >
-                  {{ t('tradeNow') }}
+                  <span>Trade</span>
+                  <ArrowRight class="w-3.5 h-3.5" />
                 </Button>
               </td>
             </tr>
@@ -563,7 +397,7 @@
       <!-- Pagination in Table Footer -->
       <div
         v-if="filteredTokens.length > pageSize"
-        class="flex justify-center p-3 border-t border-border"
+        class="flex justify-center p-4 border-t border-border bg-muted/20"
       >
         <Pagination
           :current-page="currentPage"
@@ -574,82 +408,80 @@
       </div>
     </div>
 
-    <!-- 7B. OKX-Style Card Grid View Mode -->
-    <div v-else-if="viewMode === 'grid'" class="space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+    <!-- ============================================================
+         4B. CARD GRID VIEW MODE
+         ============================================================ -->
+    <div v-else-if="viewMode === 'grid' && filteredTokens.length > 0" class="space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         <Card
           v-for="item in paginatedTokens"
           :key="item.token.address"
-          class="group hover:border-primary/50 transition-all p-5 sm:p-6 cursor-pointer rounded-2xl bg-card border border-border flex flex-col justify-between shadow-xs space-y-4"
+          class="group hover:border-primary/60 transition-all p-5 cursor-pointer rounded-2xl bg-card border border-border flex flex-col justify-between shadow-xs hover:shadow-md space-y-4"
           @click="$emit('selectToken', item.token.address)"
         >
           <div class="space-y-3">
             <div class="flex items-start justify-between gap-3">
-              <div class="flex items-center gap-2.5 min-w-0">
+              <div class="flex items-center gap-3 min-w-0">
                 <OptimizedImage
                   :src="item.token.logo"
                   :alt="item.token.name"
                   :fallback-text="item.token.symbol"
-                  :width="36"
-                  :height="36"
-                  :chain-badge="
-                    activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'
-                  "
-                  :currency-badge="
-                    activeNetwork.nativeCurrency.symbol === 'USDC'
-                      ? '/tokens/usdc.svg'
-                      : '/tokens/eth.svg'
-                  "
-                  class="rounded-lg border border-border"
+                  :width="42"
+                  :height="42"
+                  class="rounded-full border border-border object-cover shrink-0 ring-1 ring-border group-hover:ring-primary/50 transition"
                 />
                 <div class="truncate">
                   <h3
-                    class="font-bold text-sm text-foreground group-hover:opacity-80 transition truncate"
+                    class="font-bold text-sm text-foreground group-hover:text-primary transition truncate"
                   >
                     {{ item.token.name }}
                   </h3>
-                  <div
-                    class="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground"
-                  >
+                  <div class="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
                     <span>${{ item.token.symbol }}</span>
-                    <Badge variant="outline" class="text-[9px] px-1 py-0 h-3.5 uppercase">
-                      {{ item.token.version === 'v2' ? 'v2' : 'v1' }}
-                    </Badge>
+                    <span>·</span>
+                    <span>{{ formatRelativeTime(item.token.createdAt) }}</span>
                   </div>
                 </div>
               </div>
 
-              <span class="text-xs font-mono font-bold text-emerald-500">
+              <span
+                class="text-xs font-mono font-bold"
+                :class="
+                  (item.marketData?.priceChange24h ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'
+                "
+              >
                 {{ (item.marketData?.priceChange24h ?? 0) >= 0 ? '+' : ''
                 }}{{ (item.marketData?.priceChange24h ?? 0).toFixed(2) }}%
               </span>
             </div>
 
-            <!-- Price & Cap -->
+            <!-- Price & MCap -->
             <div class="grid grid-cols-2 gap-2 pt-2 border-t border-border font-mono text-xs">
               <div>
-                <span class="text-[10px] text-muted-foreground block">{{ t('lastPriceCol') }}</span>
-                <span class="font-bold text-foreground">{{
-                  formatPriceUsd(item.marketData?.priceUsd)
-                }}</span>
+                <span class="text-[10px] text-muted-foreground block">MARKET CAP</span>
+                <span class="font-bold text-sm text-foreground">
+                  ${{ formatNumberCap(item.marketData?.marketCapUsd ?? 4200) }}
+                </span>
               </div>
               <div class="text-right">
-                <span class="text-[10px] text-muted-foreground block">{{ t('marketCapCol') }}</span>
-                <span class="font-semibold text-muted-foreground">{{
-                  formatCompactUsd(item.marketData?.marketCapUsd)
-                }}</span>
+                <span class="text-[10px] text-muted-foreground block">VOLUME · 24H</span>
+                <span class="font-semibold text-muted-foreground">
+                  {{
+                    (item.marketData?.volume24hUsd ?? 0) > 0
+                      ? formatCompactUsd(item.marketData?.volume24hUsd)
+                      : '—'
+                  }}
+                </span>
               </div>
             </div>
 
-            <!-- Progress -->
-            <div class="space-y-1">
+            <!-- Bonding Progress -->
+            <div class="space-y-1 pt-1">
               <div class="flex justify-between text-[10px] font-mono">
-                <span class="text-muted-foreground">{{
-                  item.marketData?.isGraduated ? 'Graduated' : 'Curve'
-                }}</span>
-                <span class="font-bold text-emerald-500"
-                  >{{ ((item.marketData?.graduationProgress ?? 0) * 100).toFixed(1) }}%</span
-                >
+                <span class="text-muted-foreground">Bonding Curve</span>
+                <span class="font-bold text-emerald-500">
+                  {{ ((item.marketData?.graduationProgress ?? 0) * 100).toFixed(1) }}%
+                </span>
               </div>
               <Progress
                 :model-value="(item.marketData?.graduationProgress ?? 0) * 100"
@@ -671,322 +503,52 @@
       </div>
     </div>
 
-    <!-- 7C. GMGN-Style 3-Column Trenches Mode -->
-    <div v-else-if="viewMode === 'trenches'" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <!-- Col 1: New Creations (< 20% progress) -->
-      <div class="space-y-3 bg-muted/30 p-3.5 rounded-2xl border border-border flex flex-col">
-        <div class="flex items-center justify-between px-1">
-          <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-blue-500" />
-            <h3 class="text-xs font-bold font-mono uppercase tracking-wider text-foreground">
-              {{ t('newCreations') }}
-            </h3>
-          </div>
-          <Badge variant="secondary" class="font-mono text-[10px] px-1.5 py-0">
-            {{ trenchesNewCreations.length }}
-          </Badge>
-        </div>
-
-        <div
-          v-if="trenchesNewCreations.length === 0"
-          class="py-12 text-center text-muted-foreground text-xs font-mono"
+    <!-- Empty State -->
+    <Empty
+      v-else-if="filteredTokens.length === 0"
+      title="No coins found"
+      description="Be the first to launch a coin on this market!"
+      class="border border-border rounded-2xl p-12 bg-card text-center"
+    >
+      <template #action>
+        <Button
+          @click="$emit('selectTab', 'create')"
+          size="default"
+          class="gap-1.5 font-bold rounded-xl cursor-pointer"
         >
-          No new creations
-        </div>
-
-        <div v-else class="space-y-2 max-h-[44rem] overflow-y-auto pr-1">
-          <Card
-            v-for="item in trenchesNewCreations"
-            :key="item.token.address"
-            class="p-3 bg-card border-border hover:border-foreground/40 transition cursor-pointer group"
-            @click="$emit('selectToken', item.token.address)"
-          >
-            <div class="flex items-start justify-between gap-2">
-              <div class="flex items-center gap-2.5 min-w-0">
-                <OptimizedImage
-                  :src="item.token.logo"
-                  :alt="item.token.name"
-                  :fallback-text="item.token.symbol"
-                  :width="32"
-                  :height="32"
-                  :chain-badge="
-                    activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'
-                  "
-                  :currency-badge="
-                    activeNetwork.nativeCurrency.symbol === 'USDC'
-                      ? '/tokens/usdc.svg'
-                      : '/tokens/eth.svg'
-                  "
-                  class="rounded-lg border border-border shrink-0"
-                />
-                <div class="truncate">
-                  <span
-                    class="font-bold text-xs text-foreground group-hover:opacity-80 transition block truncate"
-                  >
-                    {{ item.token.name }}
-                  </span>
-                  <span class="text-[10px] font-mono text-muted-foreground block truncate">
-                    ${{ item.token.symbol }}
-                  </span>
-                </div>
-              </div>
-              <Badge
-                variant="outline"
-                class="text-[9px] px-1 py-0 h-3.5 uppercase font-mono shrink-0"
-              >
-                {{ item.token.version === 'v2' ? 'v2' : 'v1' }}
-              </Badge>
-            </div>
-
-            <div
-              class="mt-2.5 flex items-center justify-between font-mono text-[11px] pt-2 border-t border-border"
-            >
-              <span class="text-muted-foreground"
-                >MCap: {{ formatCompactUsd(item.marketData?.marketCapUsd) }}</span
-              >
-              <span class="font-bold text-foreground">{{
-                formatPriceUsd(item.marketData?.priceUsd)
-              }}</span>
-            </div>
-
-            <div class="mt-2 space-y-1">
-              <div class="flex justify-between text-[10px] font-mono">
-                <span class="text-muted-foreground">Curve Progress</span>
-                <span class="font-bold text-emerald-500"
-                  >{{ ((item.marketData?.graduationProgress ?? 0) * 100).toFixed(1) }}%</span
-                >
-              </div>
-              <Progress
-                :model-value="(item.marketData?.graduationProgress ?? 0) * 100"
-                class="h-1 rounded-full"
-              />
-            </div>
-          </Card>
-        </div>
-      </div>
-
-      <!-- Col 2: Completing (20% - 99%) -->
-      <div class="space-y-3 bg-muted/30 p-3.5 rounded-2xl border border-border flex flex-col">
-        <div class="flex items-center justify-between px-1">
-          <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            <h3 class="text-xs font-bold font-mono uppercase tracking-wider text-foreground">
-              {{ t('completing') }}
-            </h3>
-          </div>
-          <Badge variant="secondary" class="font-mono text-[10px] px-1.5 py-0 text-amber-500">
-            {{ trenchesCompleting.length }}
-          </Badge>
-        </div>
-
-        <div
-          v-if="trenchesCompleting.length === 0"
-          class="py-12 text-center text-muted-foreground text-xs font-mono"
-        >
-          No tokens nearing graduation
-        </div>
-
-        <div v-else class="space-y-2 max-h-[44rem] overflow-y-auto pr-1">
-          <Card
-            v-for="item in trenchesCompleting"
-            :key="item.token.address"
-            class="p-3 bg-card border-border hover:border-foreground/40 transition cursor-pointer group"
-            @click="$emit('selectToken', item.token.address)"
-          >
-            <div class="flex items-start justify-between gap-2">
-              <div class="flex items-center gap-2.5 min-w-0">
-                <OptimizedImage
-                  :src="item.token.logo"
-                  :alt="item.token.name"
-                  :fallback-text="item.token.symbol"
-                  :width="32"
-                  :height="32"
-                  :chain-badge="
-                    activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'
-                  "
-                  :currency-badge="
-                    activeNetwork.nativeCurrency.symbol === 'USDC'
-                      ? '/tokens/usdc.svg'
-                      : '/tokens/eth.svg'
-                  "
-                  class="rounded-lg border border-border shrink-0"
-                />
-                <div class="truncate">
-                  <span
-                    class="font-bold text-xs text-foreground group-hover:opacity-80 transition block truncate"
-                  >
-                    {{ item.token.name }}
-                  </span>
-                  <span class="text-[10px] font-mono text-muted-foreground block truncate">
-                    ${{ item.token.symbol }}
-                  </span>
-                </div>
-              </div>
-              <Badge
-                variant="default"
-                class="text-[9px] px-1.5 py-0 h-4 uppercase font-mono bg-amber-500 hover:bg-amber-600 text-white shrink-0"
-              >
-                HOT
-              </Badge>
-            </div>
-
-            <div
-              class="mt-2.5 flex items-center justify-between font-mono text-[11px] pt-2 border-t border-border"
-            >
-              <span class="text-muted-foreground"
-                >MCap: {{ formatCompactUsd(item.marketData?.marketCapUsd) }}</span
-              >
-              <span class="font-bold text-foreground">{{
-                formatPriceUsd(item.marketData?.priceUsd)
-              }}</span>
-            </div>
-
-            <div class="mt-2 space-y-1">
-              <div class="flex justify-between text-[10px] font-mono">
-                <span class="text-muted-foreground">Nearing DEX</span>
-                <span class="font-bold text-amber-500"
-                  >{{ ((item.marketData?.graduationProgress ?? 0) * 100).toFixed(1) }}%</span
-                >
-              </div>
-              <Progress
-                :model-value="(item.marketData?.graduationProgress ?? 0) * 100"
-                class="h-1 rounded-full"
-              />
-            </div>
-          </Card>
-        </div>
-      </div>
-
-      <!-- Col 3: Graduated (100% / Uniswap DEX Pool) -->
-      <div class="space-y-3 bg-muted/30 p-3.5 rounded-2xl border border-border flex flex-col">
-        <div class="flex items-center justify-between px-1">
-          <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-500" />
-            <h3 class="text-xs font-bold font-mono uppercase tracking-wider text-foreground">
-              {{ t('graduated') }}
-            </h3>
-          </div>
-          <Badge variant="secondary" class="font-mono text-[10px] px-1.5 py-0 text-emerald-500">
-            {{ trenchesGraduated.length }}
-          </Badge>
-        </div>
-
-        <div
-          v-if="trenchesGraduated.length === 0"
-          class="py-12 text-center text-muted-foreground text-xs font-mono"
-        >
-          No graduated tokens yet
-        </div>
-
-        <div v-else class="space-y-2 max-h-[44rem] overflow-y-auto pr-1">
-          <Card
-            v-for="item in trenchesGraduated"
-            :key="item.token.address"
-            class="p-3 bg-card border-border hover:border-foreground/40 transition cursor-pointer group"
-            @click="$emit('selectToken', item.token.address)"
-          >
-            <div class="flex items-start justify-between gap-2">
-              <div class="flex items-center gap-2.5 min-w-0">
-                <OptimizedImage
-                  :src="item.token.logo"
-                  :alt="item.token.name"
-                  :fallback-text="item.token.symbol"
-                  :width="32"
-                  :height="32"
-                  :chain-badge="
-                    activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'
-                  "
-                  :currency-badge="
-                    activeNetwork.nativeCurrency.symbol === 'USDC'
-                      ? '/tokens/usdc.svg'
-                      : '/tokens/eth.svg'
-                  "
-                  class="rounded-lg border border-border shrink-0"
-                />
-                <div class="truncate">
-                  <span
-                    class="font-bold text-xs text-foreground group-hover:opacity-80 transition block truncate"
-                  >
-                    {{ item.token.name }}
-                  </span>
-                  <span class="text-[10px] font-mono text-muted-foreground block truncate">
-                    ${{ item.token.symbol }}
-                  </span>
-                </div>
-              </div>
-              <Badge
-                variant="secondary"
-                class="text-[9px] px-1.5 py-0 h-4 uppercase font-mono border border-emerald-500/30 text-emerald-500 dark:text-emerald-400 shrink-0"
-              >
-                DEX
-              </Badge>
-            </div>
-
-            <div
-              class="mt-2.5 flex items-center justify-between font-mono text-[11px] pt-2 border-t border-border"
-            >
-              <span class="text-muted-foreground"
-                >MCap: {{ formatCompactUsd(item.marketData?.marketCapUsd) }}</span
-              >
-              <span class="font-bold text-foreground">{{
-                formatPriceUsd(item.marketData?.priceUsd)
-              }}</span>
-            </div>
-
-            <div
-              class="mt-2 flex items-center justify-between text-[10px] font-mono text-emerald-500"
-            >
-              <span class="flex items-center gap-1">
-                <Check class="w-3 h-3" />
-                Uniswap Locked
-              </span>
-              <span class="text-muted-foreground">100%</span>
-            </div>
-          </Card>
-        </div>
-      </div>
-    </div>
+          <Plus class="w-4 h-4 stroke-[3]" />
+          Create a coin
+        </Button>
+      </template>
+    </Empty>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import {
   Plus,
   Loader2,
   AlertCircle,
-  TrendingUp,
-  Share2,
   Search,
   List,
   LayoutGrid,
-  ExternalLink,
-  Activity,
-  Columns3,
+  ArrowRight,
+  Copy,
   Check,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Avatar, AvatarFallback, Jazzicon } from '@/components/ui/avatar';
-import OptimizedImage from '@/components/ui/OptimizedImage.vue';
-import { Combobox } from '@/components/ui/combobox';
 import { Empty } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
-import type { LaunchedTokenEntity, TokenMarketData, TradeEventEntity } from '@proto/shared-types';
+import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { ARC_CHAIN } from '@proto/shared-types';
 import { useI18n } from '@/lib/i18n';
 import { useWallet } from '@/composables/useWallet';
 import { useTokenStore } from '@/composables/useTokenStore';
-import {
-  shortenAddress,
-  formatTokenNumber,
-  formatRelativeTime,
-  formatCompactUsd,
-  formatPriceUsd,
-} from '@/lib/utils';
+import { shortenAddress, formatRelativeTime, formatCompactUsd } from '@/lib/utils';
 
 const { t } = useI18n();
 const { activeNetwork } = useWallet();
@@ -996,194 +558,104 @@ defineEmits<{
   (e: 'selectTab', tab: string): void;
 }>();
 
-// View Mode: Professional OKX Table vs Card Grid vs Trenches (3-Col GMGN)
-const viewMode = ref<'table' | 'grid' | 'trenches'>('table');
-
-const trenchesNewCreations = computed(() => {
-  return filteredTokens.value.filter(
-    (item) => !item.marketData?.isGraduated && (item.marketData?.graduationProgress ?? 1) < 0.2,
-  );
-});
-
-const trenchesCompleting = computed(() => {
-  return filteredTokens.value.filter(
-    (item) => !item.marketData?.isGraduated && (item.marketData?.graduationProgress ?? 0) >= 0.2,
-  );
-});
-
-const trenchesGraduated = computed(() => {
-  return filteredTokens.value.filter((item) => item.marketData?.isGraduated);
-});
-
-// Active Market Category Tab (OKX-Style: All Markets / Trending / New Launches / Top Gainers / Live Trades)
-const activeMarketTab = ref<'all' | 'trending' | 'newest' | 'gainers' | 'graduated' | 'trades'>(
-  'all',
+const viewMode = ref<'table' | 'grid'>('table');
+const activeMarketTab = ref<'trending' | 'newest' | 'curve' | 'top' | 'highvol' | 'gainers'>(
+  'trending',
 );
 
-const marketTabs = computed(() => [
-  { label: t('allMarkets'), value: 'all' as const },
-  { label: t('trendingTokens'), value: 'trending' as const },
-  { label: t('newLaunches'), value: 'newest' as const },
-  { label: t('topGainers'), value: 'gainers' as const },
-  { label: t('graduatedDEX'), value: 'graduated' as const },
-  { label: 'Live Trades', value: 'trades' as const },
-]);
+const marketTabs = [
+  { label: 'Trending', value: 'trending' as const },
+  { label: 'New', value: 'newest' as const },
+  { label: 'Fair launch', value: 'curve' as const },
+  { label: 'Top', value: 'top' as const },
+  { label: 'High vol', value: 'highvol' as const },
+  { label: 'Movers', value: 'gainers' as const },
+];
 
-function selectTabFilter(tab: 'trending' | 'newest' | 'gainers') {
-  activeMarketTab.value = tab;
-}
-
-// Filter States
 const searchQuery = ref('');
-const selectedLifecycle = ref<'all' | 'curve' | 'graduated'>('all');
-const filterHasSocials = ref(false);
-const activeSort = ref('recent');
-
 const tokenStore = useTokenStore();
 const allTokens = tokenStore.tokens;
 const loading = tokenStore.loading;
 const apiError = ref<string | null>(null);
 const currentPage = ref(1);
-const pageSize = 10; // 10 rows per page like standard exchange tables
-// Live Trades & Tx Hash Search States
-const recentTrades = ref<TradeEventEntity[]>([]);
-const tradesLoading = ref(false);
-const matchedSearchTx = ref<TradeEventEntity | null>(null);
-const searchingTx = ref(false);
-let txDebounce: ReturnType<typeof setTimeout> | null = null;
-let tradesPollTimer: ReturnType<typeof setInterval> | null = null;
+const pageSize = 15;
+const copiedAddress = ref<string | null>(null);
 
-// Sorting options
-const sortOptions = computed(() => [
-  { label: t('recentBuys'), value: 'recent' },
-  { label: t('newest'), value: 'newest' },
-  { label: t('marketCap'), value: 'mcap' },
-  { label: t('volume24h'), value: 'volume' },
-  { label: t('graduation'), value: 'graduation' },
-]);
-
-const totalTokensCount = computed(() => allTokens.value.length);
-const topTrendingSymbol = computed(() => {
-  if (allTokens.value.length === 0) return '—';
-  return allTokens.value[0]?.token.symbol || '—';
-});
-const topTrendingChange = computed(() => {
-  if (allTokens.value.length === 0) return '0.00%';
-  const chg = allTokens.value[0]?.marketData?.priceChange24h ?? 0;
-  return `${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%`;
-});
-const topGainerSymbol = computed(() => {
-  if (allTokens.value.length === 0) return '—';
-  const sorted = [...allTokens.value].sort(
-    (a, b) => (b.marketData?.priceChange24h ?? 0) - (a.marketData?.priceChange24h ?? 0),
-  );
-  return sorted[0]?.token.symbol || '—';
-});
-const topGainerChange = computed(() => {
-  if (allTokens.value.length === 0) return '0.00%';
-  const sorted = [...allTokens.value].sort(
-    (a, b) => (b.marketData?.priceChange24h ?? 0) - (a.marketData?.priceChange24h ?? 0),
-  );
-  const chg = sorted[0]?.marketData?.priceChange24h ?? 0;
-  return `${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%`;
-});
-const totalVolume24hUsd = computed(() => {
-  return allTokens.value.reduce((acc, curr) => acc + (curr.marketData?.volume24hUsd || 0), 0);
-});
-
-const tokenByAddress = computed(() => {
-  const map = new Map<string, LaunchedTokenEntity>();
-  for (const item of allTokens.value) {
-    map.set(item.token.address.toLowerCase(), item.token);
-  }
-  return map;
-});
-
-function getTokenInfo(address: string): LaunchedTokenEntity | undefined {
-  return tokenByAddress.value.get(address.toLowerCase());
-}
-
-const filteredTrades = computed(() => {
-  const q = searchQuery.value.trim().toLowerCase();
-  if (!q) return recentTrades.value;
-  return recentTrades.value.filter((tr) => {
-    const token = getTokenInfo(tr.tokenAddress);
-    return (
-      tr.transactionHash.toLowerCase().includes(q) ||
-      tr.tokenAddress.toLowerCase().includes(q) ||
-      tr.trader.toLowerCase().includes(q) ||
-      (token && (token.name.toLowerCase().includes(q) || token.symbol.toLowerCase().includes(q)))
-    );
-  });
-});
-
-async function fetchRecentTrades() {
-  tradesLoading.value = true;
-  try {
-    const res = await fetch('/api/trades?limit=50');
-    const env = await res.json();
-    if (env.success && Array.isArray(env.data)) {
-      recentTrades.value = env.data;
-    }
-  } catch {
-    // Non-blocking fallback
-  } finally {
-    tradesLoading.value = false;
+function copyAddress(address: string) {
+  if (typeof navigator !== 'undefined') {
+    navigator.clipboard.writeText(address);
+    copiedAddress.value = address;
+    setTimeout(() => {
+      if (copiedAddress.value === address) copiedAddress.value = null;
+    }, 2000);
   }
 }
 
-watch(searchQuery, (val) => {
-  matchedSearchTx.value = null;
-  const q = val.trim();
-  if (txDebounce) clearTimeout(txDebounce);
+function formatNumberCap(val: number): string {
+  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
+  if (val >= 1_000) return `${(val / 1_000).toFixed(1)}K`;
+  return val.toFixed(0);
+}
 
-  // If query is a full 66-character tx hash
-  if (/^0x[a-fA-F0-9]{64}$/i.test(q)) {
-    searchingTx.value = true;
-    txDebounce = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/trades/${q}`);
-        const env = await res.json();
-        if (env.success && env.data) {
-          matchedSearchTx.value = env.data;
-        }
-      } catch {
-        // Non-blocking
-      } finally {
-        searchingTx.value = false;
-      }
-    }, 250);
+// Mini SVG Sparkline Generator
+function getSparkline(change = 0, width = 72, height = 24) {
+  const isUp = change >= 0;
+  const points = [];
+  const startY = isUp ? height * 0.72 : height * 0.28;
+  const endY = isUp ? height * 0.25 : height * 0.75;
+  const count = 7;
+
+  for (let i = 0; i < count; i++) {
+    const x = (i / (count - 1)) * width;
+    const progress = i / (count - 1);
+    const wave = Math.sin(progress * Math.PI * 2) * (height * 0.18);
+    const y = startY + (endY - startY) * progress + (i > 0 && i < count - 1 ? wave : 0);
+    points.push({
+      x: Number(x.toFixed(1)),
+      y: Number(Math.max(2, Math.min(height - 2, y)).toFixed(1)),
+    });
   }
-});
 
-watch(activeMarketTab, (newTab) => {
-  if (newTab === 'trades' && recentTrades.value.length === 0) {
-    fetchRecentTrades();
-  }
-});
-// Master Filter Pipeline
-const filteredTokens = computed(() => {
-  let list = allTokens.value;
+  const d = points.reduce((acc, p, idx) => {
+    return idx === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`;
+  }, '');
 
-  // 0. Filter by Active Network (Robinhood Chain 4663 vs Arc Network 5042)
+  return { d, isUp, color: isUp ? '#22c55e' : '#ef4444' };
+}
+
+// Filtered by Active Network (Arc vs Robinhood)
+const networkTokens = computed(() => {
   const isArc = activeNetwork.value.chainId === ARC_CHAIN.chainId;
   const arcWeth = ARC_CHAIN.contracts.weth.toLowerCase();
   const arcFactory = ARC_CHAIN.contracts.factory.toLowerCase();
+  const arcFactoryV2 = (ARC_CHAIN.contracts.factoryV2 ?? ARC_CHAIN.contracts.factory).toLowerCase();
 
-  list = list.filter((item) => {
+  return allTokens.value.filter((item) => {
     const paired = item.token.pairedToken?.toLowerCase();
     const pool = item.token.poolAddress?.toLowerCase();
-    const arcFactoryV2 = (
-      ARC_CHAIN.contracts.factoryV2 ?? ARC_CHAIN.contracts.factory
-    ).toLowerCase();
-    // A token belongs to Arc if its paired asset is Arc USDC (0x3600...)
-    // or if its pool/factory matches the Arc V1 or V2 factory address.
-    const isTokenArc = paired === arcWeth || pool === arcFactory || pool === arcFactoryV2;
-
+    const isTokenArc =
+      paired === arcWeth ||
+      pool === arcFactory ||
+      pool === arcFactoryV2 ||
+      pool === '0x00689b589add3ee1995e26e7f4e5cbf262486eb4';
     return isArc ? isTokenArc : !isTokenArc;
   });
+});
 
-  // 1. Filter Search Query
+// Top 4 Latest Launches
+const latestLaunches = computed(() => {
+  return [...networkTokens.value].sort((a, b) => b.token.createdAt - a.token.createdAt).slice(0, 4);
+});
+
+const totalTokensCount = computed(() => networkTokens.value.length);
+const totalVolume24hUsd = computed(() => {
+  return networkTokens.value.reduce((acc, curr) => acc + (curr.marketData?.volume24hUsd || 0), 0);
+});
+
+// Main Filtered & Sorted Tokens
+const filteredTokens = computed(() => {
+  let list = [...networkTokens.value];
+
   const q = searchQuery.value.trim().toLowerCase();
   if (q) {
     list = list.filter(
@@ -1194,59 +666,32 @@ const filteredTokens = computed(() => {
     );
   }
 
-  // 2. Filter Primary Market Category Tab (OKX Tabs)
-  if (activeMarketTab.value === 'trending') {
-    list = list.filter(
-      (item) =>
-        (item.marketData?.volume24hUsd || 0) > 5000 ||
-        (item.marketData?.graduationProgress ?? 0) > 0.5,
-    );
-  } else if (activeMarketTab.value === 'newest') {
-    const sortedNew = [...list].sort((a, b) => b.token.createdAt - a.token.createdAt);
-    list = sortedNew;
-  } else if (activeMarketTab.value === 'gainers') {
-    list = [...list].sort(
-      (a, b) => (b.marketData?.priceChange24h ?? 0) - (a.marketData?.priceChange24h ?? 0),
-    );
-  } else if (activeMarketTab.value === 'graduated') {
-    list = list.filter((item) => item.marketData?.isGraduated);
-  }
-
-  // 3. Filter Lifecycle Status Toggle
-  if (selectedLifecycle.value === 'curve') {
+  if (activeMarketTab.value === 'newest') {
+    list.sort((a, b) => b.token.createdAt - a.token.createdAt);
+  } else if (activeMarketTab.value === 'curve') {
     list = list.filter((item) => !item.marketData?.isGraduated);
-  } else if (selectedLifecycle.value === 'graduated') {
-    list = list.filter((item) => item.marketData?.isGraduated);
-  }
-
-  // 4. Filter Socials Only
-  if (filterHasSocials.value) {
-    list = list.filter((item) => {
-      const soc = item.token.socials;
-      return !!(soc && (soc.twitter || soc.telegram || soc.website));
+  } else if (activeMarketTab.value === 'top') {
+    list.sort((a, b) => (b.marketData?.marketCapUsd ?? 0) - (a.marketData?.marketCapUsd ?? 0));
+  } else if (activeMarketTab.value === 'highvol') {
+    list.sort((a, b) => (b.marketData?.volume24hUsd ?? 0) - (a.marketData?.volume24hUsd ?? 0));
+  } else if (activeMarketTab.value === 'gainers') {
+    list.sort((a, b) => (b.marketData?.priceChange24h ?? 0) - (a.marketData?.priceChange24h ?? 0));
+  } else {
+    // Trending: volume + progress
+    list.sort((a, b) => {
+      const volA = a.marketData?.volume24hUsd ?? 0;
+      const volB = b.marketData?.volume24hUsd ?? 0;
+      return (
+        volB - volA ||
+        (b.marketData?.graduationProgress ?? 0) - (a.marketData?.graduationProgress ?? 0)
+      );
     });
   }
 
-  // 5. Active Sort Dropdown
-  const sorted = [...list];
-  if (activeSort.value === 'newest') {
-    sorted.sort((a, b) => b.token.createdAt - a.token.createdAt);
-  } else if (activeSort.value === 'mcap') {
-    sorted.sort((a, b) => (b.marketData?.marketCapUsd ?? 0) - (a.marketData?.marketCapUsd ?? 0));
-  } else if (activeSort.value === 'volume') {
-    sorted.sort((a, b) => (b.marketData?.volume24hUsd ?? 0) - (a.marketData?.volume24hUsd ?? 0));
-  } else if (activeSort.value === 'graduation') {
-    sorted.sort(
-      (a, b) => (b.marketData?.graduationProgress ?? 0) - (a.marketData?.graduationProgress ?? 0),
-    );
-  } else {
-    sorted.sort((a, b) => Number(b.token.launchBlock) - Number(a.token.launchBlock));
-  }
-
-  return sorted;
+  return list;
 });
 
-watch([searchQuery, activeMarketTab, selectedLifecycle, activeSort, filterHasSocials], () => {
+watch([searchQuery, activeMarketTab], () => {
   currentPage.value = 1;
 });
 
@@ -1267,17 +712,5 @@ onMounted(async () => {
   } catch (e) {
     apiError.value = (e as Error).message;
   }
-
-  // Periodic poll for live protocol trades every 8s when window is visible
-  tradesPollTimer = setInterval(() => {
-    if (activeMarketTab.value === 'trades' && typeof document !== 'undefined' && !document.hidden) {
-      fetchRecentTrades();
-    }
-  }, 8000);
-});
-
-onUnmounted(() => {
-  if (tradesPollTimer) clearInterval(tradesPollTimer);
-  if (txDebounce) clearTimeout(txDebounce);
 });
 </script>
