@@ -157,6 +157,9 @@
                   {{ (item.marketData.priceChange24h ?? 0) >= 0 ? '+' : ''
                   }}{{ (item.marketData.priceChange24h ?? 0).toFixed(1) }}%
                 </span>
+                <Badge v-if="item.marketData.isGraduated" variant="secondary" class="text-[10px]">
+                  {{ t('graduated') }}
+                </Badge>
               </div>
             </div>
 
@@ -211,6 +214,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { Plus, Loader2, AlertCircle, RefreshCw, Search } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';

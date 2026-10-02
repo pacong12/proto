@@ -131,16 +131,20 @@
         >
           <div class="flex items-center gap-2">
             <span class="text-foreground font-medium">{{ c.name }}</span>
-            <span
+            <Badge
               v-if="isContractDeployed(c.address)"
-              class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"
-              title="Active"
-            />
-            <span
+              variant="secondary"
+              class="text-[10px] py-0 px-1.5 font-mono"
+            >
+              Active
+            </Badge>
+            <Badge
               v-else
-              class="w-2 h-2 rounded-full bg-muted-foreground/40 shrink-0"
-              title="Pending"
-            />
+              variant="outline"
+              class="text-[10px] py-0 px-1.5 font-mono text-muted-foreground"
+            >
+              Pending
+            </Badge>
           </div>
 
           <div class="flex items-center gap-2">
@@ -193,6 +197,7 @@ import { RefreshCw, ExternalLink, Copy, Check, AlertCircle } from 'lucide-vue-ne
 import { useI18n } from '@/lib/i18n';
 import { useWallet } from '@/composables/useWallet';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import ReactiveBarChart, { type ChartDataPoint } from '@/components/ui/chart/ReactiveBarChart.vue';
 

@@ -55,12 +55,12 @@
             <span class="text-[10px] font-mono uppercase font-bold text-muted-foreground">
               Transaction Match
             </span>
-            <span
-              class="text-xs font-mono font-bold uppercase"
-              :class="matchedTrade.isBuy ? 'text-emerald-500' : 'text-rose-500'"
+            <Badge
+              :variant="matchedTrade.isBuy ? 'default' : 'destructive'"
+              class="text-[9px] uppercase px-1.5 py-0 font-mono"
             >
               {{ matchedTrade.isBuy ? 'BUY' : 'SELL' }}
-            </span>
+            </Badge>
           </div>
 
           <div
@@ -138,6 +138,12 @@
                     <span class="text-xs font-mono text-muted-foreground">
                       ${{ item.token.symbol }}
                     </span>
+                    <Badge
+                      :variant="item.token.version === 'v2' ? 'outline' : 'secondary'"
+                      class="text-[9px] px-1 py-0 h-3.5 font-mono uppercase"
+                    >
+                      {{ item.token.version === 'v2' ? 'v2' : 'v1' }}
+                    </Badge>
                   </div>
                   <p class="text-[11px] font-mono text-muted-foreground truncate mt-0.5">
                     {{ item.token.address }}
@@ -209,6 +215,7 @@ import { shortenAddress, formatCompactUsd, formatPriceUsd } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { Empty } from '@/components/ui/empty';
 import type { LaunchedTokenEntity, TokenMarketData, TradeEventEntity } from '@proto/shared-types';

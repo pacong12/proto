@@ -52,15 +52,12 @@
             >
               {{ t('connectedAccount') }}
             </span>
-            <div class="flex items-center gap-1.5 font-mono text-[10px]">
-              <span
-                class="w-1.5 h-1.5 rounded-full"
-                :class="isCorrectNetwork ? 'bg-emerald-500' : 'bg-rose-500'"
-              />
-              <span :class="isCorrectNetwork ? 'text-muted-foreground' : 'text-rose-500'">
-                {{ isCorrectNetwork ? activeNetwork.name : t('switchToRobinhood') }}
-              </span>
-            </div>
+            <Badge
+              :variant="isCorrectNetwork ? 'default' : 'destructive'"
+              class="text-[10px] font-mono"
+            >
+              {{ isCorrectNetwork ? activeNetwork.name : t('switchToRobinhood') }}
+            </Badge>
           </div>
 
           <!-- Address & Jazzicon Row -->
@@ -276,6 +273,7 @@ import { appKitConfigured } from '../lib/appkit';
 import { useI18n } from '@/lib/i18n';
 import { useWallet } from '../composables/useWallet';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage, Jazzicon } from '@/components/ui/avatar';
 import Select from '@/components/ui/select/Select.vue';
