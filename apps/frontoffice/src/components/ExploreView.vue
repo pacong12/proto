@@ -586,19 +586,26 @@ function formatNumberCap(val: number): string {
   return val.toFixed(0);
 }
 
-// Mini SVG Sparkline Generator
+// Mini SVG Sparkline Generator (Strictly real trend slope)
 function getSparkline(change = 0, width = 72, height = 24) {
-  const isUp = change >= 0;
-  const points = [];
-  const startY = isUp ? height * 0.72 : height * 0.28;
+  if (change === 0) {
+    const midY = height / 2;
+    return {
+      d: `M 2 ${midY} L ${width - 2} ${midY}`,
+      isUp: true,
+      color: '#71717a',
+    };
+  }
+  const isUp = change > 0;
+  const startY = isUp ? height * 0.75 : height * 0.25;
   const endY = isUp ? height * 0.25 : height * 0.75;
-  const count = 7;
+  const count = 5;
+  const points = [];
 
   for (let i = 0; i < count; i++) {
-    const x = (i / (count - 1)) * width;
+    const x = (i / (count - 1)) * (width - 4) + 2;
     const progress = i / (count - 1);
-    const wave = Math.sin(progress * Math.PI * 2) * (height * 0.18);
-    const y = startY + (endY - startY) * progress + (i > 0 && i < count - 1 ? wave : 0);
+    const y = startY + (endY - startY) * progress;
     points.push({
       x: Number(x.toFixed(1)),
       y: Number(Math.max(2, Math.min(height - 2, y)).toFixed(1)),
