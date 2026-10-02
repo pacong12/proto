@@ -90,7 +90,6 @@
               {{ t('hourlyAggregatedVolume') }}
             </p>
           </div>
-          <Badge variant="secondary">24h History</Badge>
         </div>
 
         <ReactiveBarChart :data="volumeChartData" :height="180" :is-currency="true" />
@@ -104,7 +103,6 @@
             </h2>
             <p class="text-xs text-muted-foreground">Token deployments over 24h</p>
           </div>
-          <Badge variant="secondary">{{ activeNetwork.name }}</Badge>
         </div>
 
         <ReactiveBarChart :data="tokenChartData" :height="180" unit="tokens" />
@@ -120,9 +118,9 @@
             Verified protocol smart contracts on {{ activeNetwork.name }}
           </p>
         </div>
-        <Badge variant="outline" class="font-mono text-xs self-start sm:self-auto">
+        <span class="font-mono text-xs text-muted-foreground self-start sm:self-auto">
           Chain ID: {{ activeNetwork.chainId }}
-        </Badge>
+        </span>
       </div>
 
       <div class="space-y-3 font-mono text-xs">
@@ -133,20 +131,16 @@
         >
           <div class="flex items-center gap-2">
             <span class="text-foreground font-medium">{{ c.name }}</span>
-            <Badge
+            <span
               v-if="isContractDeployed(c.address)"
-              variant="secondary"
-              class="text-[10px] py-0 px-1.5 font-mono"
-            >
-              Active
-            </Badge>
-            <Badge
+              class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"
+              title="Active"
+            />
+            <span
               v-else
-              variant="outline"
-              class="text-[10px] py-0 px-1.5 font-mono text-muted-foreground"
-            >
-              Pending
-            </Badge>
+              class="w-2 h-2 rounded-full bg-muted-foreground/40 shrink-0"
+              title="Pending"
+            />
           </div>
 
           <div class="flex items-center gap-2">
@@ -199,7 +193,6 @@ import { RefreshCw, ExternalLink, Copy, Check, AlertCircle } from 'lucide-vue-ne
 import { useI18n } from '@/lib/i18n';
 import { useWallet } from '@/composables/useWallet';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import ReactiveBarChart, { type ChartDataPoint } from '@/components/ui/chart/ReactiveBarChart.vue';
 

@@ -12,11 +12,6 @@
           <p class="text-xs text-muted-foreground/80 mt-0.5">Latest launches</p>
         </div>
         <div class="flex items-center gap-2">
-          <span
-            class="hidden sm:inline-flex text-[11px] font-mono text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-full border border-border"
-          >
-            0% launch fee · Just gas
-          </span>
           <Button
             @click="$emit('selectTab', 'create')"
             size="sm"
@@ -81,12 +76,6 @@
       class="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-card via-card to-muted/40 border border-border flex flex-col md:flex-row items-start md:items-center justify-between gap-5 shadow-xs"
     >
       <div class="space-y-1.5 max-w-xl">
-        <div
-          class="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-emerald-500 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20"
-        >
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span>Fair Launch Protocol</span>
-        </div>
         <h1 class="text-xl sm:text-2xl font-black tracking-tight text-foreground">
           The launch floor for {{ activeNetwork.name }}.
         </h1>

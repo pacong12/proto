@@ -48,10 +48,6 @@
               :fallback-text="currentToken.symbol"
               :width="48"
               :height="48"
-              :chain-badge="
-                tokenNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'
-              "
-              :currency-badge="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
               class="rounded-full border border-border object-cover ring-2 ring-border shadow-xs shrink-0"
             />
             <div class="min-w-0">
@@ -65,12 +61,6 @@
                 <span class="text-xs font-mono text-muted-foreground">
                   · {{ formatRelativeTime(currentToken.createdAt) }}
                 </span>
-                <Badge
-                  variant="outline"
-                  class="text-[9px] font-mono h-4 px-1.5 border-border text-foreground bg-muted/40 uppercase"
-                >
-                  {{ currentMarketData.isGraduated ? 'Graduated' : 'Curve' }}
-                </Badge>
               </div>
 
               <!-- Contract Address Pill & Socials -->
@@ -686,14 +676,14 @@
                         <span class="text-xs font-mono font-semibold text-foreground">
                           {{ truncateAddress(cmt.authorAddress) }}
                         </span>
-                        <Badge
+                        <span
                           v-if="
                             cmt.authorAddress.toLowerCase() === currentToken.deployer?.toLowerCase()
                           "
-                          class="text-[9px] px-1.5 py-0 h-4 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                          class="text-[10px] text-emerald-500 font-mono font-bold"
                         >
-                          Creator
-                        </Badge>
+                          (Creator)
+                        </span>
                       </div>
                       <span class="text-[10px] font-mono text-muted-foreground">
                         {{ formatRelativeTime(cmt.createdAt) }}
@@ -897,19 +887,8 @@
                             </button>
                           </div>
                         </td>
-                        <td class="py-2 px-3">
-                          <Badge
-                            :variant="
-                              trader.isDev
-                                ? 'default'
-                                : trader.walletTag === 'smart_degen'
-                                  ? 'outline'
-                                  : 'secondary'
-                            "
-                            class="text-[9px] px-1.5 py-0 uppercase h-4"
-                          >
-                            {{ trader.isDev ? 'Dev' : trader.walletTag }}
-                          </Badge>
+                        <td class="py-2 px-3 text-muted-foreground font-mono text-[11px]">
+                          {{ trader.isDev ? 'Dev' : trader.walletTag }}
                         </td>
                         <td class="py-2 px-3 text-right">
                           <span class="text-emerald-500 font-medium"
@@ -920,16 +899,15 @@
                             >${{ trader.sellVolumeUsd.toLocaleString() }}</span
                           >
                         </td>
-                        <td class="py-2 px-3 text-center">
-                          <Badge
-                            :variant="
+                        <td class="py-2 px-3 text-center font-medium font-mono text-[11px]">
+                          <span
+                            :class="
                               trader.positionStatus === 'holding'
-                                ? 'default'
+                                ? 'text-emerald-500'
                                 : trader.positionStatus === 'clean_all'
-                                  ? 'destructive'
-                                  : 'outline'
+                                  ? 'text-rose-500'
+                                  : 'text-muted-foreground'
                             "
-                            class="text-[9px] px-1.5 py-0 uppercase h-4"
                           >
                             {{
                               trader.positionStatus === 'holding'
@@ -938,7 +916,7 @@
                                   ? 'Exited'
                                   : 'Partial'
                             }}
-                          </Badge>
+                          </span>
                         </td>
                         <td
                           class="py-2 px-3 text-right font-bold"
@@ -1020,13 +998,12 @@
                               />
                               <Copy v-else class="w-3 h-3" />
                             </button>
-                            <Badge
+                            <span
                               v-if="getHolderBadge(holder.address)"
-                              variant="outline"
-                              class="text-[9px] px-1.5 py-0 h-4 border-border text-muted-foreground"
+                              class="text-[10px] text-muted-foreground font-mono"
                             >
-                              {{ getHolderBadge(holder.address) }}
-                            </Badge>
+                              ({{ getHolderBadge(holder.address) }})
+                            </span>
                           </div>
                         </td>
                         <td class="py-2 px-3 whitespace-nowrap">
@@ -1197,7 +1174,6 @@ import { useSwap, SLIPPAGE_WARN_THRESHOLD, parseAmountToWei } from '../composabl
 import { useWallet } from '../composables/useWallet';
 import { getPublicClient } from '../lib/viem-client';
 import { toast } from '@/components/ui/sonner';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Jazzicon } from '@/components/ui/avatar';
@@ -1356,18 +1332,6 @@ const devHoldingPercent = computed(() => {
 const top10HoldingPercent = computed(() => {
   if (holders.value.length === 0) return 0;
   return holders.value.slice(0, 10).reduce((acc, h) => acc + h.percent, 0);
-});
-
-const devBadgeVariant = computed(() => {
-  return devInfo.value.creatorStatus === 'holding' ? 'default' : 'secondary';
-});
-
-const devBadgeText = computed(() => {
-  if (devInfo.value.creatorStatus === 'holding') {
-    return `Dev ${devInfo.value.currentHoldPercent.toFixed(1)}%`;
-  }
-  if (devInfo.value.creatorStatus === 'sold') return 'Dev Sold';
-  return 'Dev 0%';
 });
 
 const remainingToGraduate = computed(() => {

@@ -2,10 +2,7 @@
   <div class="space-y-6">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
-        <div class="flex items-center gap-2">
-          <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t('memestock') }}</h1>
-          <Badge variant="secondary" class="text-xs"> {{ t('trendingFeed') }} </Badge>
-        </div>
+        <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t('memestock') }}</h1>
         <p class="text-sm mt-1 text-muted-foreground">
           {{ t('memestockSubtitle') }}
         </p>
@@ -135,14 +132,6 @@
                   :fallback-text="item.token.symbol"
                   :width="48"
                   :height="48"
-                  :chain-badge="
-                    activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'
-                  "
-                  :currency-badge="
-                    activeNetwork.nativeCurrency.symbol === 'USDC'
-                      ? '/tokens/usdc.svg'
-                      : '/tokens/eth.svg'
-                  "
                   class="rounded-xl border border-border group-hover:border-foreground/40 transition shrink-0"
                 />
                 <div class="min-w-0 truncate">
@@ -156,22 +145,18 @@
               </div>
 
               <div class="flex items-center gap-1.5 shrink-0">
-                <Badge
+                <span
                   v-if="(item.marketData.priceChange24h ?? 0) !== 0"
-                  variant="outline"
-                  class="text-[10px] font-mono font-bold"
+                  class="text-xs font-mono font-bold"
                   :class="
                     (item.marketData.priceChange24h ?? 0) >= 0
-                      ? 'text-foreground'
-                      : 'text-muted-foreground'
+                      ? 'text-emerald-500'
+                      : 'text-rose-500'
                   "
                 >
                   {{ (item.marketData.priceChange24h ?? 0) >= 0 ? '+' : ''
                   }}{{ (item.marketData.priceChange24h ?? 0).toFixed(1) }}%
-                </Badge>
-                <Badge v-if="item.marketData.isGraduated" variant="secondary" class="text-[10px]">
-                  {{ t('graduated') }}
-                </Badge>
+                </span>
               </div>
             </div>
 
@@ -226,7 +211,6 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { Plus, Loader2, AlertCircle, RefreshCw, Search } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';

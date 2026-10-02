@@ -311,12 +311,6 @@
                       <span class="text-xs font-mono text-muted-foreground"
                         >${{ token.symbol }}</span
                       >
-                      <Badge
-                        :variant="token.version === 'v2' ? 'outline' : 'secondary'"
-                        class="text-[9px] px-1.5 py-0 h-4 font-mono uppercase"
-                      >
-                        {{ token.version === 'v2' ? 'v2 Curve' : 'v1 Direct' }}
-                      </Badge>
                     </div>
                     <p
                       class="text-xs font-mono text-muted-foreground mt-0.5 break-all sm:break-normal"
@@ -469,12 +463,12 @@
                     class="hover:bg-muted/40 transition-colors"
                   >
                     <td class="py-2.5 px-3">
-                      <Badge
-                        :variant="act.isBuy ? 'default' : 'destructive'"
-                        class="text-[9px] uppercase px-1.5 py-0"
+                      <span
+                        class="text-xs font-mono font-bold uppercase"
+                        :class="act.isBuy ? 'text-emerald-500' : 'text-rose-500'"
                       >
                         {{ act.isBuy ? 'Buy' : 'Sell' }}
-                      </Badge>
+                      </span>
                     </td>
                     <td class="py-2.5 px-3 text-foreground font-medium">${{ act.tokenSymbol }}</td>
                     <td class="py-2.5 px-3 text-right text-foreground font-medium">
@@ -512,9 +506,6 @@
                     <Coins class="w-4 h-4 text-foreground" />
                     <h3 class="text-sm font-bold text-foreground">Holder Fee Sharing Dividends</h3>
                   </div>
-                  <Badge variant="outline" class="text-[10px] font-mono text-muted-foreground">
-                    70% Split
-                  </Badge>
                 </div>
                 <p class="text-xs text-muted-foreground">
                   Pro-rata trading fee rewards accrued from tokens you hold that enabled Holder Fee
@@ -548,9 +539,6 @@
                     <Lock class="w-4 h-4 text-foreground" />
                     <h3 class="text-sm font-bold text-foreground">Linear Vesting Vault</h3>
                   </div>
-                  <Badge variant="outline" class="text-[10px] font-mono text-muted-foreground">
-                    Continuous Release
-                  </Badge>
                 </div>
                 <p class="text-xs text-muted-foreground">
                   View and claim your non-custodial locked founder and team allocations.
@@ -685,21 +673,13 @@
                         (editForm.avatarUrl ? 'Custom Photo' : 'Upload from device')
                       }}
                     </span>
-                    <Badge
+                    <span
                       v-if="isUploadingAvatar"
-                      variant="outline"
-                      class="text-[9px] px-1 py-0 bg-muted text-foreground border-border flex items-center gap-1 shrink-0"
+                      class="text-[10px] text-muted-foreground flex items-center gap-1 shrink-0"
                     >
                       <Loader2 class="w-2.5 h-2.5 animate-spin" />
                       Optimizing...
-                    </Badge>
-                    <Badge
-                      v-else-if="editForm.avatarUrl"
-                      variant="outline"
-                      class="text-[9px] px-1 py-0 bg-muted text-foreground border-border shrink-0"
-                    >
-                      Active
-                    </Badge>
+                    </span>
                   </div>
                   <p class="text-[11px] text-muted-foreground truncate">
                     Click or drag image (PNG, JPG, WEBP max 5MB).
@@ -883,7 +863,6 @@ import { compressAndConvertToWebp } from '@/lib/image-optimizer';
 const { t } = useI18n();
 const { activeNetwork, openWallet } = useWallet();
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, Jazzicon } from '@/components/ui/avatar';
