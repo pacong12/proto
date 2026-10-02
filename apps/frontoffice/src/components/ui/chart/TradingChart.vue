@@ -17,7 +17,7 @@ import {
 import { CandlestickChart, TrendingUp, Maximize2 } from 'lucide-vue-next';
 
 // ---------------------------------------------------------------------------
-// Types & Props
+// Types
 // ---------------------------------------------------------------------------
 
 export interface CandlePoint {
@@ -35,48 +35,17 @@ interface Props {
   tokenAddress?: string;
   height?: number;
   resolution?: number;
-  marketCapUsd?: number;
-  currentPriceUsd?: number;
-  volume24hUsd?: number;
-  priceChange24h?: number;
-  totalSupply?: string | number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   tokenSymbol: '',
   tokenAddress: '',
-  height: 360,
-  resolution: 3600,
-  marketCapUsd: 0,
-  currentPriceUsd: 0,
-  volume24hUsd: 0,
-  priceChange24h: 0,
-  totalSupply: '1000000000',
+  height: 420,
+  resolution: 60,
 });
 
-const emit = defineEmits<{
-  (e: 'changeResolution', seconds: number): void;
-}>();
-
 // ---------------------------------------------------------------------------
-// View Mode & Timeframe State (ubi.fun exact layout)
-// ---------------------------------------------------------------------------
-
-export type ChartMode = 'mktcap' | 'price' | 'volume';
-const activeMode = ref<ChartMode>('mktcap');
-const priceChartType = ref<'candles' | 'area'>('candles');
-const isLogScale = ref(false);
-
-const timeframes = [
-  { label: '1m', seconds: 60 },
-  { label: '15m', seconds: 900 },
-  { label: '1h', seconds: 3600 },
-  { label: '4h', seconds: 14400 },
-  { label: '1d', seconds: 86400 },
-];
-
-// ---------------------------------------------------------------------------
-// Refs & Chart Instances
+// Refs / state
 // ---------------------------------------------------------------------------
 
 const chartContainer = ref<HTMLDivElement | null>(null);
@@ -87,44 +56,93 @@ let volumeSeries: ISeriesApi<'Histogram'> | null = null;
 let resizeObserver: ResizeObserver | null = null;
 let themeObserver: MutationObserver | null = null;
 
-const hoveredPoint = ref<{
-  time: number;
-  value: number;
-  open?: number;
-  close?: number;
-  volume?: number;
-} | null>(null);
+const chartType = ref<'candles' | 'area'>('candles');
+const isLogScale = ref(false);
+const hoveredBar = ref<CandlePoint | null>(null);
 
 // ---------------------------------------------------------------------------
-// Standard Colors
+// Helpers
 // ---------------------------------------------------------------------------
-
-const BULLISH_GREEN = '#21C95E';
-const BEARISH_RED = '#FF593C';
 
 function checkDark(): boolean {
   return typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
 }
 
+/**
+ * Detect whether the entire dataset has zero price variance.
+ * lightweight-charts collapses to a hairline when minValue === maxValue
+ * across all bars; we need to know this upfront to apply autoscaleInfoProvider.
+ */
+function isDataFlat(data: ReturnType<typeof formatData>): boolean {
+  if (data.length === 0) return true;
+  const first = data[0].close;
+  return data.every(
+    (d) => d.open === first && d.high === first && d.low === first && d.close === first,
+  );
+}
+
 // ---------------------------------------------------------------------------
-// Token Math & Data Formatting
+// Theme configuration
 // ---------------------------------------------------------------------------
 
-function getImplicitSupply(): number {
-  if (props.marketCapUsd && props.currentPriceUsd && props.currentPriceUsd > 0) {
-    return props.marketCapUsd / props.currentPriceUsd;
-  }
-  const raw = Number(props.totalSupply);
-  if (!isNaN(raw) && raw > 0) {
-    return raw > 1e15 ? raw / 1e18 : raw;
-  }
-  return 1_000_000_000;
+function getThemeConfig(isDark: boolean) {
+  return {
+    layout: {
+      background: {
+        type: ColorType.Solid,
+        color: isDark ? '#09090b' : '#ffffff',
+      },
+      textColor: isDark ? '#a1a1aa' : '#52525b',
+      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+    },
+    grid: {
+      vertLines: { color: isDark ? 'rgba(39,39,42,0.4)' : 'rgba(244,244,245,0.8)' },
+      horzLines: { color: isDark ? 'rgba(39,39,42,0.4)' : 'rgba(244,244,245,0.8)' },
+    },
+    crosshair: {
+      mode: CrosshairMode.Normal,
+      vertLine: {
+        color: isDark ? '#71717a' : '#a1a1aa',
+        width: 1 as const,
+        style: LineStyle.Dashed,
+        labelBackgroundColor: isDark ? '#27272a' : '#e4e4e7',
+      },
+      horzLine: {
+        color: isDark ? '#71717a' : '#a1a1aa',
+        width: 1 as const,
+        style: LineStyle.Dashed,
+        labelBackgroundColor: isDark ? '#27272a' : '#e4e4e7',
+      },
+    },
+    rightPriceScale: {
+      borderColor: isDark ? '#27272a' : '#e4e4e7',
+      scaleMargins: { top: 0.12, bottom: 0.22 },
+      mode: isLogScale.value ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal,
+    },
+    timeScale: {
+      borderColor: isDark ? '#27272a' : '#e4e4e7',
+      timeVisible: true,
+      secondsVisible: false,
+      rightOffset: 12,
+      barSpacing: 22,
+      minBarSpacing: 6,
+    },
+  };
 }
+
+// ---------------------------------------------------------------------------
+// Data formatting
+// Per lightweight-charts docs:
+//   - time must be UTCTimestamp (integer seconds, strictly ascending, no dups)
+//   - high >= max(open, close), low <= min(open, close)
+//   - Never mutate raw OHLC values; use autoscaleInfoProvider for display margin
+// ---------------------------------------------------------------------------
 
 function formatData(rawData: CandlePoint[]) {
   if (!rawData || rawData.length === 0) return [];
 
   const converted = rawData.map((item) => {
+    // Normalize timestamp: accept ms (>2e9) or seconds
     let tNum =
       typeof item.time === 'string' ? new Date(item.time).getTime() / 1000 : Number(item.time);
     if (tNum > 2_000_000_000) tNum = tNum / 1000;
@@ -135,12 +153,13 @@ function formatData(rawData: CandlePoint[]) {
     const rawHigh = Number(item.high);
     const rawLow = Number(item.low);
 
+    // Enforce OHLC invariant: high >= max(o,c), low <= min(o,c)
+    // Do NOT add synthetic wicks — pass raw values as-is
     const high = Math.max(open, close, rawHigh);
     const low = Math.min(open, close, rawLow);
 
     return {
       time: t as Time,
-      timeNum: t,
       open,
       high,
       low,
@@ -149,23 +168,23 @@ function formatData(rawData: CandlePoint[]) {
     };
   });
 
-  converted.sort((a, b) => a.timeNum - b.timeNum);
+  // Sort strictly ascending by integer seconds timestamp
+  converted.sort((a, b) => Number(a.time) - Number(b.time));
 
+  // Deduplicate: keep last entry for each timestamp (latest update wins)
   const seen = new Map<number, (typeof converted)[0]>();
   for (const bar of converted) {
-    seen.set(bar.timeNum, bar);
+    seen.set(Number(bar.time), bar);
   }
 
-  return Array.from(seen.values()).sort((a, b) => a.timeNum - b.timeNum);
+  return Array.from(seen.values()).sort((a, b) => Number(a.time) - Number(b.time));
 }
 
-function isDataFlat(data: ReturnType<typeof formatData>): boolean {
-  if (data.length === 0) return true;
-  const first = data[0].close;
-  return data.every(
-    (d) => d.open === first && d.high === first && d.low === first && d.close === first,
-  );
-}
+// ---------------------------------------------------------------------------
+// autoscaleInfoProvider factory
+// Per docs: return null to use default; return AutoscaleInfo to override.
+// We only intervene when the price range is zero (flat dataset).
+// ---------------------------------------------------------------------------
 
 function makeAutoscaleProvider(flatPrice: number | null) {
   return (original: () => AutoscaleInfo | null): AutoscaleInfo | null => {
@@ -174,6 +193,7 @@ function makeAutoscaleProvider(flatPrice: number | null) {
     const { minValue, maxValue } = res.priceRange;
     if (minValue === maxValue) {
       const val = flatPrice ?? minValue;
+      // Use 5 % band around the flat price for readable scale
       const margin = val > 0 ? val * 0.05 : 0.000001;
       return {
         priceRange: {
@@ -188,181 +208,75 @@ function makeAutoscaleProvider(flatPrice: number | null) {
 }
 
 // ---------------------------------------------------------------------------
-// Number & Currency Formatters (ubi.fun exact style)
+// Formatters for the OHLCV toolbar
 // ---------------------------------------------------------------------------
 
-function formatUsdValue(val: number): string {
-  if (isNaN(val) || val === 0) return '$0.00';
-  if (val >= 1_000_000_000) {
-    return `$${(val / 1_000_000_000).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}B`;
-  }
-  if (val >= 1_000_000) {
-    return `$${(val / 1_000_000).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}M`;
-  }
-  if (val >= 1000) {
-    return `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  }
-  if (val >= 1) {
-    return `$${val.toFixed(2)}`;
-  }
-  if (val < 0.00000001) return `$${val.toFixed(11)}`;
-  if (val < 0.0001) return `$${val.toFixed(8)}`;
-  return `$${val.toFixed(6)}`;
+function formatPrice(val: number): string {
+  if (isNaN(val) || val === 0) return '0.00';
+  if (val < 0.00000001) return val.toFixed(11);
+  if (val < 0.0001) return val.toFixed(8);
+  if (val < 1) return val.toFixed(6);
+  return val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
 }
 
-function formatDeltaUsd(val: number): string {
-  const abs = Math.abs(val);
-  const formatted = formatUsdValue(abs);
-  return `${val >= 0 ? '+' : '-'}${formatted}`;
+function getPriceFormatOptions(data: Array<{ close: number }>) {
+  const nonZero = data.map((d) => d.close).filter((c) => c > 0);
+  const minVal = nonZero.length > 0 ? Math.min(...nonZero) : 0;
+  if (minVal > 0 && minVal < 0.00001) {
+    return { type: 'price' as const, precision: 11, minMove: 0.00000000001 };
+  }
+  if (minVal > 0 && minVal < 1) {
+    return { type: 'price' as const, precision: 8, minMove: 0.00000001 };
+  }
+  return { type: 'price' as const, precision: 4, minMove: 0.0001 };
 }
 
-function formatHoveredTimestamp(timeSec: number): string {
-  if (!timeSec) return '';
-  const d = new Date(timeSec * 1000);
-  return d.toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+function formatVolume(val: number): string {
+  if (isNaN(val) || val === 0) return '0';
+  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(2)}M`;
+  if (val >= 1_000) return `${(val / 1_000).toFixed(2)}K`;
+  return val.toFixed(4);
 }
 
 // ---------------------------------------------------------------------------
-// Computed: Dynamic Live / Hover Metrics
+// Computed: active toolbar bar (hovered or last)
 // ---------------------------------------------------------------------------
 
-const supply = computed(() => getImplicitSupply());
-const formattedBars = computed(() => formatData(props.data));
-
-const isTrendingUp = computed(() => {
-  if (formattedBars.value.length >= 2) {
-    const first = formattedBars.value[0].close;
-    const last = formattedBars.value[formattedBars.value.length - 1].close;
-    return last >= first;
+const activeBar = computed<CandlePoint | null>(() => {
+  if (hoveredBar.value) return hoveredBar.value;
+  const formatted = formatData(props.data);
+  if (formatted.length > 0) {
+    const last = formatted[formatted.length - 1];
+    return {
+      time: String(last.time),
+      open: last.open,
+      high: last.high,
+      low: last.low,
+      close: last.close,
+      volume: last.volume,
+    };
   }
-  return (props.priceChange24h ?? 0) >= 0;
+  return null;
 });
 
-// Primary large number displayed at top-left
-const displayPrimaryValue = computed(() => {
-  if (hoveredPoint.value) {
-    if (activeMode.value === 'mktcap') {
-      return formatUsdValue(hoveredPoint.value.value);
-    }
-    if (activeMode.value === 'price') {
-      return formatUsdValue(hoveredPoint.value.close ?? hoveredPoint.value.value);
-    }
-    if (activeMode.value === 'volume') {
-      return formatUsdValue(hoveredPoint.value.volume ?? hoveredPoint.value.value);
-    }
-  }
-
-  if (activeMode.value === 'mktcap') {
-    return formatUsdValue(props.marketCapUsd || props.currentPriceUsd * supply.value || 4200);
-  }
-  if (activeMode.value === 'price') {
-    return formatUsdValue(props.currentPriceUsd || 0);
-  }
-  if (activeMode.value === 'volume') {
-    return props.volume24hUsd ? formatUsdValue(props.volume24hUsd) : '—';
-  }
-  return '$0.00';
+const barChangePercent = computed(() => {
+  if (!activeBar.value || activeBar.value.open === 0) return 0;
+  return ((activeBar.value.close - activeBar.value.open) / activeBar.value.open) * 100;
 });
 
-// Secondary change text displayed next to large number: "+$59.43 (+0.59%)"
-const displayChangeMetrics = computed(() => {
-  if (hoveredPoint.value && formattedBars.value.length > 0) {
-    const first = formattedBars.value[0];
-    let baseVal = first.close;
-    let curVal = hoveredPoint.value.close ?? hoveredPoint.value.value;
-
-    if (activeMode.value === 'mktcap') {
-      baseVal = first.close * supply.value;
-      curVal = hoveredPoint.value.value;
-    }
-
-    if (baseVal > 0) {
-      const delta = curVal - baseVal;
-      const pct = (delta / baseVal) * 100;
-      return {
-        deltaUsd: formatDeltaUsd(delta),
-        pct,
-        isPositive: pct >= 0,
-      };
-    }
-  }
-
-  // Fallback to 24h change
-  const pct = props.priceChange24h ?? 0;
-  const currentVal =
-    activeMode.value === 'mktcap'
-      ? props.marketCapUsd || props.currentPriceUsd * supply.value || 4200
-      : props.currentPriceUsd || 0;
-  const delta = currentVal * (pct / 100);
-
-  return {
-    deltaUsd: formatDeltaUsd(delta),
-    pct,
-    isPositive: pct >= 0,
-  };
-});
-
-const hoveredBarTime = computed(() => {
-  if (hoveredPoint.value) {
-    return formatHoveredTimestamp(hoveredPoint.value.time);
-  }
-  return '';
-});
+// Whether all candles share the same price (informational label)
+const dataIsFlat = computed(() => isDataFlat(formatData(props.data)));
 
 // ---------------------------------------------------------------------------
-// Chart Initialization & Series Options
+// Standard Financial Chart Colors (Green = Bullish, Red = Bearish)
 // ---------------------------------------------------------------------------
 
-function getThemeConfig(isDark: boolean) {
-  return {
-    layout: {
-      background: {
-        type: ColorType.Solid,
-        color: 'transparent',
-      },
-      textColor: isDark ? 'rgba(255, 255, 255, 0.45)' : 'rgba(0, 0, 0, 0.45)',
-      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-    },
-    grid: {
-      vertLines: { visible: false },
-      horzLines: { visible: false },
-    },
-    crosshair: {
-      mode: CrosshairMode.Normal,
-      vertLine: {
-        color: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)',
-        width: 1 as const,
-        style: LineStyle.Dashed,
-        labelBackgroundColor: isDark ? '#27272a' : '#e4e4e7',
-      },
-      horzLine: {
-        color: isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)',
-        width: 1 as const,
-        style: LineStyle.Dashed,
-        labelBackgroundColor: isDark ? '#27272a' : '#e4e4e7',
-      },
-    },
-    rightPriceScale: {
-      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
-      scaleMargins: { top: 0.28, bottom: 0.12 },
-      mode: isLogScale.value ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal,
-    },
-    timeScale: {
-      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
-      timeVisible: true,
-      secondsVisible: false,
-      rightOffset: 8,
-      barSpacing: 20,
-      minBarSpacing: 5,
-    },
-  };
-}
+const BULLISH_GREEN = '#22c55e';
+const BEARISH_RED = '#ef4444';
+
+// ---------------------------------------------------------------------------
+// Chart initialisation
+// ---------------------------------------------------------------------------
 
 function destroyChart() {
   if (resizeObserver) {
@@ -382,19 +296,6 @@ function destroyChart() {
   }
 }
 
-function applyOptimalVisibleRange(totalBars: number) {
-  if (!chart || totalBars <= 0) return;
-  if (totalBars <= 20) {
-    chart.timeScale().fitContent();
-    chart.timeScale().applyOptions({ barSpacing: 22, rightOffset: 8 });
-  } else {
-    chart.timeScale().setVisibleLogicalRange({
-      from: Math.max(0, totalBars - 40),
-      to: totalBars + 4,
-    });
-  }
-}
-
 function initChart() {
   if (!chartContainer.value) return;
   destroyChart();
@@ -402,12 +303,15 @@ function initChart() {
   const isDark = checkDark();
   const width = chartContainer.value.clientWidth || 700;
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
-  const responsiveHeight = isMobile ? Math.min(props.height, 300) : props.height;
+  const responsiveHeight = isMobile ? Math.min(props.height, 320) : props.height;
+  const formatted = formatData(props.data);
+  const flatPrice = dataIsFlat.value && formatted.length > 0 ? formatted[0].close : null;
 
   chart = createChart(chartContainer.value, {
     width,
     height: responsiveHeight,
     ...getThemeConfig(isDark),
+    // Disable built-in kinetic scroll so the series autoscale can breathe
     handleScroll: {
       mouseWheel: true,
       pressedMouseMove: true,
@@ -417,161 +321,108 @@ function initChart() {
     handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
   });
 
-  const formatted = formattedBars.value;
-  const flatPrice = isDataFlat(formatted) && formatted.length > 0 ? formatted[0].close : null;
+  // 1. Volume histogram — overlaid on its own scale (bottom 22%)
+  volumeSeries = chart.addSeries(HistogramSeries, {
+    priceFormat: { type: 'volume' },
+    priceScaleId: 'vol',
+  });
+  volumeSeries.priceScale().applyOptions({
+    scaleMargins: { top: 0.78, bottom: 0 },
+  });
+
   const autoscaleProvider = makeAutoscaleProvider(flatPrice);
 
-  const mainColor = isTrendingUp.value ? BULLISH_GREEN : BEARISH_RED;
+  // 2. Main price series
+  const upColor = BULLISH_GREEN;
+  const downColor = BEARISH_RED;
 
-  // Render appropriate series based on activeMode
-  if (activeMode.value === 'mktcap') {
-    // Mode 1: Market Cap Area Curve (ubi.fun default)
-    areaSeries = chart.addSeries(AreaSeries, {
-      topColor: isTrendingUp.value ? 'rgba(33, 201, 94, 0.25)' : 'rgba(255, 89, 60, 0.25)',
-      bottomColor: 'rgba(0, 0, 0, 0.0)',
-      lineColor: mainColor,
-      lineWidth: 2,
-      priceFormat: {
-        type: 'custom',
-        formatter: (price: number) => {
-          if (price >= 1_000_000) return `$${(price / 1_000_000).toFixed(2)}M`;
-          if (price >= 1_000) return `$${(price / 1_000).toFixed(1)}K`;
-          return `$${price.toFixed(2)}`;
-        },
-      },
+  if (chartType.value === 'candles') {
+    candleSeries = chart.addSeries(CandlestickSeries, {
+      upColor,
+      downColor,
+      borderVisible: true,
+      borderUpColor: upColor,
+      borderDownColor: downColor,
+      wickVisible: true,
+      wickUpColor: upColor,
+      wickDownColor: downColor,
+      priceFormat: getPriceFormatOptions(formatted),
       autoscaleInfoProvider: autoscaleProvider,
     });
-
-    const mktCapData = formatted.map((d) => ({
-      time: d.time,
-      value: d.close * supply.value,
-    }));
-    areaSeries.setData(mktCapData);
-  } else if (activeMode.value === 'price') {
-    // Mode 2: Token Price (Candlestick or Area)
-    if (priceChartType.value === 'candles') {
-      candleSeries = chart.addSeries(CandlestickSeries, {
-        upColor: BULLISH_GREEN,
-        downColor: BEARISH_RED,
-        borderVisible: true,
-        borderUpColor: BULLISH_GREEN,
-        borderDownColor: BEARISH_RED,
-        wickVisible: true,
-        wickUpColor: BULLISH_GREEN,
-        wickDownColor: BEARISH_RED,
-        priceFormat: {
-          type: 'custom',
-          formatter: (p: number) => formatUsdValue(p).replace('$', ''),
-        },
-        autoscaleInfoProvider: autoscaleProvider,
-      });
-      candleSeries.setData(formatted);
-    } else {
-      areaSeries = chart.addSeries(AreaSeries, {
-        topColor: isTrendingUp.value ? 'rgba(33, 201, 94, 0.25)' : 'rgba(255, 89, 60, 0.25)',
-        bottomColor: 'rgba(0, 0, 0, 0.0)',
-        lineColor: mainColor,
-        lineWidth: 2,
-        priceFormat: {
-          type: 'custom',
-          formatter: (p: number) => formatUsdValue(p).replace('$', ''),
-        },
-        autoscaleInfoProvider: autoscaleProvider,
-      });
-      areaSeries.setData(formatted.map((d) => ({ time: d.time, value: d.close })));
-    }
-
-    // Sub-histogram for volume
-    volumeSeries = chart.addSeries(HistogramSeries, {
-      priceFormat: { type: 'volume' },
-      priceScaleId: 'vol',
+    candleSeries.setData(formatted);
+  } else {
+    areaSeries = chart.addSeries(AreaSeries, {
+      topColor: 'rgba(34, 197, 94, 0.25)',
+      bottomColor: 'rgba(34, 197, 94, 0.01)',
+      lineColor: BULLISH_GREEN,
+      lineWidth: 2,
+      priceFormat: getPriceFormatOptions(formatted),
+      autoscaleInfoProvider: autoscaleProvider,
     });
-    volumeSeries.priceScale().applyOptions({
-      scaleMargins: { top: 0.8, bottom: 0 },
-    });
-    volumeSeries.setData(
-      formatted.map((d) => ({
-        time: d.time,
-        value: d.volume,
-        color: d.close >= d.open ? 'rgba(33, 201, 94, 0.45)' : 'rgba(255, 89, 60, 0.45)',
-      })),
-    );
-  } else if (activeMode.value === 'volume') {
-    // Mode 3: Pure Volume Histogram
-    volumeSeries = chart.addSeries(HistogramSeries, {
-      priceFormat: { type: 'volume' },
-    });
-    volumeSeries.setData(
-      formatted.map((d) => ({
-        time: d.time,
-        value: d.volume,
-        color: d.close >= d.open ? BULLISH_GREEN : BEARISH_RED,
-      })),
-    );
+    areaSeries.setData(formatted.map((d) => ({ time: d.time, value: d.close })));
   }
+
+  // 3. Volume data (Green for bullish bars, Red for bearish bars)
+  const volData = formatted.map((d) => ({
+    time: d.time,
+    value: d.volume,
+    color: d.close >= d.open ? 'rgba(34, 197, 94, 0.55)' : 'rgba(239, 68, 68, 0.55)',
+  }));
+  volumeSeries.setData(volData);
 
   if (formatted.length > 0) {
     applyOptimalVisibleRange(formatted.length);
   }
 
-  // Crosshair subscriber to update live numbers & hover timestamp
+  // 4. Crosshair move — update toolbar
   chart.subscribeCrosshairMove((param) => {
     if (!param || !param.time) {
-      hoveredPoint.value = null;
+      hoveredBar.value = null;
       return;
     }
+    const activeSeries = candleSeries ?? areaSeries;
+    if (!activeSeries) return;
 
-    const t = Number(param.time);
+    const barData = param.seriesData.get(activeSeries);
+    const volAtTime = volumeSeries ? param.seriesData.get(volumeSeries) : null;
+    const vol = volAtTime && 'value' in volAtTime ? Number(volAtTime.value) : undefined;
 
-    if (activeMode.value === 'mktcap' && areaSeries) {
-      const data = param.seriesData.get(areaSeries);
-      if (data && 'value' in data) {
-        hoveredPoint.value = { time: t, value: Number(data.value) };
-      }
-    } else if (activeMode.value === 'price') {
-      const activeS = candleSeries ?? areaSeries;
-      if (activeS) {
-        const data = param.seriesData.get(activeS);
-        const volData = volumeSeries ? param.seriesData.get(volumeSeries) : null;
-        const v = volData && 'value' in volData ? Number(volData.value) : 0;
-
-        if (data && 'open' in data) {
-          hoveredPoint.value = {
-            time: t,
-            value: Number(data.close),
-            open: Number(data.open),
-            close: Number(data.close),
-            volume: v,
-          };
-        } else if (data && 'value' in data) {
-          hoveredPoint.value = {
-            time: t,
-            value: Number(data.value),
-            close: Number(data.value),
-            volume: v,
-          };
-        }
-      }
-    } else if (activeMode.value === 'volume' && volumeSeries) {
-      const data = param.seriesData.get(volumeSeries);
-      if (data && 'value' in data) {
-        hoveredPoint.value = { time: t, value: Number(data.value), volume: Number(data.value) };
-      }
+    if (barData && 'open' in barData) {
+      hoveredBar.value = {
+        time: String(param.time),
+        open: Number(barData.open),
+        high: Number(barData.high),
+        low: Number(barData.low),
+        close: Number(barData.close),
+        volume: vol,
+      };
+    } else if (barData && 'value' in barData) {
+      const v = Number(barData.value);
+      hoveredBar.value = {
+        time: String(param.time),
+        open: v,
+        high: v,
+        low: v,
+        close: v,
+        volume: vol,
+      };
+    } else {
+      hoveredBar.value = null;
     }
   });
 
-  // Responsive resize
+  // 5. ResizeObserver — responsive width and height
   resizeObserver = new ResizeObserver((entries) => {
     const w = entries[0]?.contentRect.width;
     if (w && w > 0 && chart) {
-      const isMob = typeof window !== 'undefined' && window.innerWidth < 640;
-      const h = isMob ? Math.min(props.height, 300) : props.height;
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+      const h = isMobile ? Math.min(props.height, 320) : props.height;
       chart.applyOptions({ width: w, height: h });
     }
   });
   resizeObserver.observe(chartContainer.value);
 
-  // Dark/Light mode theme updates
+  // 6. MutationObserver — dark mode switch
   if (typeof document !== 'undefined') {
     themeObserver = new MutationObserver(() => {
       if (!chart) return;
@@ -585,22 +436,12 @@ function initChart() {
 }
 
 // ---------------------------------------------------------------------------
-// Actions
+// Controls
 // ---------------------------------------------------------------------------
 
-function setMode(mode: ChartMode) {
-  if (activeMode.value === mode) return;
-  activeMode.value = mode;
-  initChart();
-}
-
-function selectTimeframe(seconds: number) {
-  emit('changeResolution', seconds);
-}
-
-function togglePriceChartType(type: 'candles' | 'area') {
-  if (priceChartType.value === type) return;
-  priceChartType.value = type;
+function toggleChartType(type: 'candles' | 'area') {
+  if (chartType.value === type) return;
+  chartType.value = type;
   initChart();
 }
 
@@ -613,20 +454,77 @@ function toggleLogScale() {
   }
 }
 
+function applyOptimalVisibleRange(totalBars: number) {
+  if (!chart || totalBars <= 0) return;
+  if (totalBars <= 20) {
+    chart.timeScale().fitContent();
+    chart.timeScale().applyOptions({ barSpacing: 22, rightOffset: 12 });
+  } else {
+    chart.timeScale().setVisibleLogicalRange({
+      from: Math.max(0, totalBars - 35),
+      to: totalBars + 6,
+    });
+  }
+}
+
 function fitContent() {
   if (chart) {
-    applyOptimalVisibleRange(formattedBars.value.length);
+    const formatted = formatData(props.data);
+    if (formatted.length > 35) {
+      chart.timeScale().setVisibleLogicalRange({
+        from: Math.max(0, formatted.length - 35),
+        to: formatted.length + 6,
+      });
+    } else {
+      chart.timeScale().fitContent();
+      chart.timeScale().applyOptions({ barSpacing: 22, rightOffset: 12 });
+    }
   }
 }
 
 // ---------------------------------------------------------------------------
-// Watchers & Lifecycle
+// Watcher — update series data when prop changes
 // ---------------------------------------------------------------------------
 
 watch(
-  () => [props.data, props.marketCapUsd, props.currentPriceUsd],
-  () => {
-    initChart();
+  () => props.data,
+  (newData, oldData) => {
+    if (!chart) {
+      if (chartContainer.value) initChart();
+      return;
+    }
+
+    const formatted = formatData(newData);
+    const flatPrice = isDataFlat(formatted) && formatted.length > 0 ? formatted[0].close : null;
+
+    if (candleSeries) {
+      // Re-apply autoscaleInfoProvider with updated flat-price if needed
+      candleSeries.applyOptions({
+        priceFormat: getPriceFormatOptions(formatted),
+        autoscaleInfoProvider: makeAutoscaleProvider(flatPrice),
+      });
+      candleSeries.setData(formatted);
+    } else if (areaSeries) {
+      areaSeries.applyOptions({
+        priceFormat: getPriceFormatOptions(formatted),
+        autoscaleInfoProvider: makeAutoscaleProvider(flatPrice),
+      });
+      areaSeries.setData(formatted.map((d) => ({ time: d.time, value: d.close })));
+    }
+
+    if (volumeSeries) {
+      volumeSeries.setData(
+        formatted.map((d) => ({
+          time: d.time,
+          value: d.volume,
+          color: d.close >= d.open ? 'rgba(34, 197, 94, 0.55)' : 'rgba(239, 68, 68, 0.55)',
+        })),
+      );
+    }
+
+    if (formatted.length > 0) {
+      applyOptimalVisibleRange(formatted.length);
+    }
   },
   { deep: true },
 );
@@ -634,152 +532,113 @@ watch(
 watch(
   () => props.resolution,
   () => {
-    initChart();
+    if (chart) {
+      chart.timeScale().resetTimeScale();
+      const formatted = formatData(props.data);
+      applyOptimalVisibleRange(formatted.length);
+    }
   },
 );
+
+// ---------------------------------------------------------------------------
+// Lifecycle
+// ---------------------------------------------------------------------------
 
 onMounted(() => initChart());
 onUnmounted(() => destroyChart());
 </script>
 
 <template>
-  <div class="rounded-2xl border border-border bg-card overflow-hidden relative shadow-xs">
-    <!-- Chart Canvas Container with ubi.fun signature radial dot grid matrix -->
+  <div class="w-full flex flex-col gap-2">
+    <!-- OHLCV Professional Toolbar -->
     <div
-      class="relative w-full overflow-hidden bg-dot-matrix"
-      :style="{ minHeight: `${props.height}px` }"
+      class="flex flex-wrap items-center justify-between gap-2 text-xs font-mono px-2 py-1.5 rounded-lg bg-muted/40 border border-border"
     >
-      <!-- Top-Left Floating Live Metrics (ubi.fun layout) -->
-      <div class="absolute top-4 left-4 z-10 pointer-events-none select-none">
-        <div class="flex items-baseline gap-2.5 flex-wrap">
-          <h2 class="text-3xl sm:text-4xl font-black tracking-tight text-foreground font-mono">
-            {{ displayPrimaryValue }}
-          </h2>
-          <div
-            v-if="displayChangeMetrics"
-            class="flex items-baseline gap-1 text-sm font-mono font-bold"
-            :class="displayChangeMetrics.isPositive ? 'text-[#21C95E]' : 'text-[#FF593C]'"
-          >
-            <span>{{ displayChangeMetrics.deltaUsd }}</span>
-            <span
-              >({{ displayChangeMetrics.isPositive ? '+' : ''
-              }}{{ displayChangeMetrics.pct.toFixed(2) }}%)</span
-            >
-          </div>
-        </div>
+      <!-- Left: Symbol + OHLCV live bar -->
+      <div class="flex items-center gap-3 flex-wrap min-w-0">
+        <span
+          v-if="tokenSymbol"
+          class="font-extrabold tracking-wider text-foreground px-1.5 py-0.5 rounded bg-muted text-[11px]"
+        >
+          {{ tokenSymbol }}/USD
+        </span>
 
-        <!-- Hovered Timestamp or Mode indicator -->
-        <div class="text-[11px] font-mono text-muted-foreground mt-0.5 flex items-center gap-1.5">
+        <div v-if="activeBar" class="flex items-center gap-2.5 text-[11px] flex-wrap">
+          <span class="text-muted-foreground">
+            O:
+            <span class="font-bold text-foreground">{{ formatPrice(activeBar.open) }}</span>
+          </span>
+          <span class="text-muted-foreground">
+            H:
+            <span class="font-bold text-foreground">{{ formatPrice(activeBar.high) }}</span>
+          </span>
+          <span class="text-muted-foreground">
+            L:
+            <span class="font-bold text-foreground">{{ formatPrice(activeBar.low) }}</span>
+          </span>
+          <span class="text-muted-foreground">
+            C:
+            <span class="font-bold text-foreground">
+              {{ formatPrice(activeBar.close) }}
+            </span>
+          </span>
           <span
-            class="inline-block w-1.5 h-1.5 rounded-full"
-            :class="displayChangeMetrics.isPositive ? 'bg-[#21C95E]' : 'bg-[#FF593C]'"
-          />
-          <span v-if="hoveredBarTime">{{ hoveredBarTime }}</span>
-          <span v-else>
-            {{
-              activeMode === 'mktcap'
-                ? 'Market cap'
-                : activeMode === 'price'
-                  ? `${props.tokenSymbol || 'Token'} / USD`
-                  : 'Volume'
-            }}
+            :class="[
+              'px-1.5 py-0.5 rounded font-bold text-[10px] border transition-colors',
+              barChangePercent >= 0
+                ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/30'
+                : 'text-rose-500 bg-rose-500/10 border-rose-500/30',
+            ]"
+          >
+            {{ barChangePercent >= 0 ? '+' : '' }}{{ barChangePercent.toFixed(2) }}%
+          </span>
+          <span v-if="activeBar.volume !== undefined" class="text-muted-foreground">
+            Vol:
+            <span class="font-bold text-foreground">${{ formatVolume(activeBar.volume) }}</span>
           </span>
         </div>
+
+        <span
+          v-if="dataIsFlat && (data?.length ?? 0) > 1"
+          class="text-[10px] font-mono text-muted-foreground ml-1 italic"
+        >
+          no price movement yet
+        </span>
       </div>
 
-      <!-- TradingView Lightweight Charts Canvas -->
-      <div ref="chartContainer" class="w-full" :style="{ minHeight: `${props.height}px` }" />
-    </div>
-
-    <!-- Bottom Toolbar Row: Timeframes on left, Mode Switcher on right (ubi.fun exact layout) -->
-    <div
-      class="flex flex-wrap items-center justify-between gap-2 px-3.5 sm:px-4 py-2 border-t border-border/50 bg-card/60 text-xs font-mono select-none"
-    >
-      <!-- Left: Timeframe Switcher (1m, 15m, 1h, 4h, 1d) -->
-      <div class="flex items-center gap-1">
-        <button
-          v-for="tf in timeframes"
-          :key="tf.label"
-          type="button"
-          class="px-2 py-1 rounded-md transition-colors cursor-pointer text-xs"
-          :class="
-            props.resolution === tf.seconds
-              ? 'text-foreground font-bold bg-muted/80'
-              : 'text-muted-foreground hover:text-foreground'
-          "
-          @click="selectTimeframe(tf.seconds)"
+      <!-- Right: Chart controls -->
+      <div class="flex items-center gap-1.5 shrink-0 ml-auto flex-wrap">
+        <span
+          class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-muted text-muted-foreground border border-border"
         >
-          {{ tf.label }}
-        </button>
-      </div>
-
-      <!-- Right: Mode Switcher (Mkt cap, Price, Volume) & Controls -->
-      <div class="flex items-center gap-1">
+          TradingView Engine
+        </span>
         <button
           type="button"
-          class="px-2.5 py-1 rounded-md transition-colors cursor-pointer text-xs"
-          :class="
-            activeMode === 'mktcap'
-              ? 'text-foreground font-bold bg-muted/80'
-              : 'text-muted-foreground hover:text-foreground'
-          "
-          @click="setMode('mktcap')"
+          class="p-1 rounded text-muted-foreground hover:text-foreground transition cursor-pointer"
+          :class="chartType === 'candles' ? 'bg-muted text-foreground' : ''"
+          title="Candlestick chart"
+          aria-label="Candlestick chart"
+          @click="toggleChartType('candles')"
         >
-          Mkt cap
+          <CandlestickChart class="w-3.5 h-3.5" />
         </button>
+
+        <!-- Area toggle -->
         <button
           type="button"
-          class="px-2.5 py-1 rounded-md transition-colors cursor-pointer text-xs"
-          :class="
-            activeMode === 'price'
-              ? 'text-foreground font-bold bg-muted/80'
-              : 'text-muted-foreground hover:text-foreground'
-          "
-          @click="setMode('price')"
+          class="p-1 rounded text-muted-foreground hover:text-foreground transition cursor-pointer"
+          :class="chartType === 'area' ? 'bg-muted text-foreground' : ''"
+          title="Area chart"
+          aria-label="Area chart"
+          @click="toggleChartType('area')"
         >
-          Price
-        </button>
-        <button
-          type="button"
-          class="px-2.5 py-1 rounded-md transition-colors cursor-pointer text-xs"
-          :class="
-            activeMode === 'volume'
-              ? 'text-foreground font-bold bg-muted/80'
-              : 'text-muted-foreground hover:text-foreground'
-          "
-          @click="setMode('volume')"
-        >
-          Volume
+          <TrendingUp class="w-3.5 h-3.5" />
         </button>
 
-        <!-- Sub-controls when Price mode is active (Candles vs Area toggle) -->
-        <template v-if="activeMode === 'price'">
-          <span class="w-px h-3.5 bg-border mx-1" />
-          <button
-            type="button"
-            class="p-1 rounded text-muted-foreground hover:text-foreground transition cursor-pointer"
-            :class="priceChartType === 'candles' ? 'text-foreground bg-muted' : ''"
-            title="Candlesticks"
-            aria-label="Candlesticks"
-            @click="togglePriceChartType('candles')"
-          >
-            <CandlestickChart class="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            class="p-1 rounded text-muted-foreground hover:text-foreground transition cursor-pointer"
-            :class="priceChartType === 'area' ? 'text-foreground bg-muted' : ''"
-            title="Line/Area"
-            aria-label="Line/Area"
-            @click="togglePriceChartType('area')"
-          >
-            <TrendingUp class="w-3.5 h-3.5" />
-          </button>
-        </template>
+        <span class="w-px h-3.5 bg-border mx-0.5" />
 
-        <span class="w-px h-3.5 bg-border mx-1" />
-
-        <!-- Scale & Fit buttons -->
+        <!-- LOG / LIN -->
         <button
           type="button"
           class="px-1.5 py-0.5 text-[10px] font-bold rounded text-muted-foreground hover:text-foreground transition cursor-pointer"
@@ -791,28 +650,24 @@ onUnmounted(() => destroyChart());
           {{ isLogScale ? 'LOG' : 'LIN' }}
         </button>
 
+        <!-- Fit content -->
         <button
           type="button"
           class="p-1 rounded text-muted-foreground hover:text-foreground transition cursor-pointer"
-          title="Fit chart"
-          aria-label="Fit chart"
+          title="Fit chart to content"
+          aria-label="Fit chart to content"
           @click="fitContent"
         >
           <Maximize2 class="w-3.5 h-3.5" />
         </button>
       </div>
     </div>
+
+    <!-- Token Candlestick Chart Canvas (TradingView Lightweight Charts) -->
+    <div
+      ref="chartContainer"
+      class="w-full rounded-2xl overflow-hidden border border-border bg-card shadow-xs"
+      :style="{ minHeight: `${props.height}px` }"
+    />
   </div>
 </template>
-
-<style scoped>
-.bg-dot-matrix {
-  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.16) 1.2px, transparent 1.2px);
-  background-size: 20px 20px;
-  background-position: 0px 0px;
-}
-
-:root:not(.dark) .bg-dot-matrix {
-  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.12) 1.2px, transparent 1.2px);
-}
-</style>
