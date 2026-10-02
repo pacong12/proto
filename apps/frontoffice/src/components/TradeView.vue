@@ -268,60 +268,19 @@
       <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start">
         <!-- 1. Chart Card (Col 1, Row 1 on xl) -->
         <div class="xl:col-start-1 xl:row-start-1 min-w-0 w-full space-y-6">
-          <div class="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
-            <!-- Chart Header with Live Price + Timeframes (ubi.fun style) -->
-            <div
-              class="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-border bg-card"
-            >
-              <div class="flex items-baseline gap-2.5">
-                <span
-                  class="text-2xl sm:text-3xl font-black tracking-tight text-foreground font-mono"
-                >
-                  {{ formatPriceUsd(currentMarketData.priceUsd) }}
-                </span>
-                <span
-                  class="text-xs font-mono font-bold px-2 py-0.5 rounded-full"
-                  :class="
-                    (currentMarketData.priceChange24h ?? 0) >= 0
-                      ? 'text-emerald-500 bg-emerald-500/10 border border-emerald-500/20'
-                      : 'text-rose-500 bg-rose-500/10 border border-rose-500/20'
-                  "
-                >
-                  {{ (currentMarketData.priceChange24h ?? 0) >= 0 ? '+' : ''
-                  }}{{ (currentMarketData.priceChange24h ?? 0).toFixed(2) }}%
-                </span>
-              </div>
-
-              <!-- Timeframe switcher pills -->
-              <div class="flex items-center gap-1 bg-muted p-1 rounded-xl border border-border">
-                <button
-                  v-for="res in resolutions"
-                  :key="res.label"
-                  type="button"
-                  class="px-2.5 py-1 text-xs font-mono font-bold rounded-lg transition-all cursor-pointer"
-                  :class="
-                    selectedResolution === res.seconds
-                      ? 'bg-card text-foreground shadow-xs'
-                      : 'text-muted-foreground hover:text-foreground'
-                  "
-                  @click="changeResolution(res.seconds)"
-                >
-                  {{ res.label }}
-                </button>
-              </div>
-            </div>
-
-            <!-- TradingChart wrapper -->
-            <div class="p-4 sm:p-5 bg-card">
-              <TradingChart
-                :data="candlestickData"
-                :token-symbol="currentToken.symbol"
-                :token-address="currentToken.address"
-                :height="420"
-                :resolution="selectedResolution"
-              />
-            </div>
-          </div>
+          <TradingChart
+            :data="candlestickData"
+            :token-symbol="currentToken.symbol"
+            :token-address="currentToken.address"
+            :height="360"
+            :resolution="selectedResolution"
+            :market-cap-usd="currentMarketData.marketCapUsd"
+            :current-price-usd="currentMarketData.priceUsd"
+            :volume24h-usd="currentMarketData.volume24hUsd"
+            :price-change24h="currentMarketData.priceChange24h"
+            :total-supply="currentToken.totalSupply"
+            @change-resolution="changeResolution"
+          />
         </div>
 
         <!-- 2. Swap Panel Column (Mobile: 2nd right under Chart! Desktop: Col 2, Row 1-2) -->
@@ -1515,7 +1474,7 @@ const resolutions = [
   { label: '4h', seconds: 14400 },
   { label: '1d', seconds: 86400 },
 ];
-const selectedResolution = ref(60);
+const selectedResolution = ref(3600);
 const candlestickData = ref<
   Array<{ time: number; open: number; high: number; low: number; close: number; volume: number }>
 >([]);
