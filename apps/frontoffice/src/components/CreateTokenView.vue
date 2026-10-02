@@ -299,8 +299,8 @@
                 class="flex items-center justify-between p-3.5 sm:p-4 rounded-xl border border-border bg-muted/30 font-mono text-xs"
               >
                 <span class="truncate">{{ account || t('connectWallet') }}</span>
-                <Badge variant="secondary" class="text-[10px] shrink-0"
-                  >Deployer (msg.sender)</Badge
+                <span class="text-[10px] text-muted-foreground shrink-0 font-mono"
+                  >Deployer (msg.sender)</span
                 >
               </div>
               <p class="text-[10px] text-muted-foreground">
@@ -411,13 +411,12 @@
                   </div>
                   <p class="text-[11px] text-muted-foreground">Fee allocation (must total 100%)</p>
                 </div>
-                <Badge
-                  :variant="totalSplit === 100 ? 'default' : 'outline'"
-                  class="font-mono text-xs"
-                  :class="totalSplit !== 100 ? 'border-amber-500 text-amber-500' : ''"
+                <span
+                  class="font-mono text-xs font-bold"
+                  :class="totalSplit === 100 ? 'text-emerald-500' : 'text-amber-500'"
                 >
                   {{ totalSplit }}/100%
-                </Badge>
+                </span>
               </div>
 
               <!-- Quick Presets with Shadcn Button -->
@@ -886,13 +885,6 @@
             <div class="flex-1 min-w-0">
               <div class="text-sm font-semibold text-foreground flex items-center justify-between">
                 <span>{{ t('launchStepSign') }}</span>
-                <Badge
-                  v-if="launchStep === 'awaiting_signature'"
-                  variant="secondary"
-                  class="text-[10px] bg-foreground text-background animate-pulse"
-                >
-                  Action Required
-                </Badge>
               </div>
               <p class="text-xs text-muted-foreground mt-0.5">
                 {{ t('launchStepSignDesc') }}
@@ -1140,7 +1132,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { InfoTooltip } from '@/components/ui/tooltip';
