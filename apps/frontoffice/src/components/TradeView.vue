@@ -2013,86 +2013,62 @@ async function fetchCandlesticks(address: string, resolutionSeconds = 60) {
         }),
       );
 
-      // Only use API ohlcv directly if it contains actual activity or volume!
-      const hasActivity = parsed.some(
-        (c: { volume?: number; open: number; close: number; high: number; low: number }) =>
-          (c.volume && c.volume > 0) || c.open !== c.close || c.high !== c.low,
-      );
+      if (currentMarketData.value.priceUsd > 0) {
+        const last = parsed[parsed.length - 1];
+        const nowSec = Math.floor(Date.now() / 1000);
+        const currentBucket = Math.floor(nowSec / resolutionSeconds) * resolutionSeconds;
 
-      if (hasActivity) {
-        if (currentMarketData.value.priceUsd > 0) {
-          const last = parsed[parsed.length - 1];
-          const nowSec = Math.floor(Date.now() / 1000);
-          const currentBucket = Math.floor(nowSec / resolutionSeconds) * resolutionSeconds;
-
-          if (last.time === currentBucket) {
-            last.close = currentMarketData.value.priceUsd;
-            last.high = Math.max(last.high, currentMarketData.value.priceUsd);
-            last.low = Math.min(last.low, currentMarketData.value.priceUsd);
-          } else if (currentBucket > last.time) {
-            parsed.push({
-              time: currentBucket,
-              open: last.close,
-              high: Math.max(last.close, currentMarketData.value.priceUsd),
-              low: Math.min(last.close, currentMarketData.value.priceUsd),
-              close: currentMarketData.value.priceUsd,
-              volume: 0,
-            });
-          }
+        if (last.time === currentBucket) {
+          last.close = currentMarketData.value.priceUsd;
+          last.high = Math.max(last.high, currentMarketData.value.priceUsd);
+          last.low = Math.min(last.low, currentMarketData.value.priceUsd);
+        } else if (currentBucket > last.time) {
+          parsed.push({
+            time: currentBucket,
+            open: last.close,
+            high: Math.max(last.close, currentMarketData.value.priceUsd),
+            low: Math.min(last.close, currentMarketData.value.priceUsd),
+            close: currentMarketData.value.priceUsd,
+            volume: 0,
+          });
         }
-        candlestickData.value = [...parsed];
-        return;
       }
+      candlestickData.value = [...parsed];
+      return;
     }
 
-    // Client-side gap-filling fallback if API has no trades yet:
-    // Generate a sequence of realistic bonding curve candles up to the live price!
+    // Strictly real data fallback (0 dummy / synthetic data):
+    // If the indexer has no trade records yet, render the real creation baseline price
     if (currentMarketData.value.priceUsd > 0) {
+      const tokenCreatedSec = currentToken.value.createdAt
+        ? Math.floor(currentToken.value.createdAt / 1000)
+        : Math.floor(Date.now() / 1000) - 3600;
+      const nowSec = Math.floor(Date.now() / 1000);
+      const start = Math.floor(tokenCreatedSec / resolutionSeconds) * resolutionSeconds;
+      const end = Math.floor(nowSec / resolutionSeconds) * resolutionSeconds;
       const price = currentMarketData.value.priceUsd;
-      const count = 35;
-      const now = Math.floor(Date.now() / 1000);
-      const nowAligned = Math.floor(now / resolutionSeconds) * resolutionSeconds;
 
-      const rawSteps: Array<{
-        open: number;
-        high: number;
-        low: number;
-        close: number;
-        volume: number;
-      }> = [];
-      let current = price * 0.91; // starts at initial curve deposit
-
-      for (let i = 0; i < count; i++) {
-        const volatility = current * 0.02;
-        const progressFactor = i / (count - 1);
-        const trend = (price - current) * (0.05 + 0.1 * progressFactor);
-        const noise = (Math.sin(i * 1.5) * 0.5 + (Math.random() - 0.48)) * volatility;
-        const open = current;
-        let close = Math.max(open + trend + noise, current * 0.01);
-        if (i === count - 1) close = price;
-
-        const wickSpread = volatility * 0.6;
-        const high = Math.max(open, close) + Math.random() * wickSpread;
-        const low = Math.max(Math.min(open, close) - Math.random() * wickSpread, current * 0.005);
-        const volume = Math.floor(Math.random() * 2500 + 400);
-
-        rawSteps.push({ open, high, low, close, volume });
-        current = close;
+      const realBaseline = [
+        {
+          time: start,
+          open: price,
+          high: price,
+          low: price,
+          close: price,
+          volume: 0,
+        },
+      ];
+      if (end > start) {
+        realBaseline.push({
+          time: end,
+          open: price,
+          high: price,
+          low: price,
+          close: price,
+          volume: 0,
+        });
       }
-
-      const lastClose = rawSteps[rawSteps.length - 1]?.close || price;
-      const scale = price / lastClose;
-
-      const synthetic = rawSteps.map((step, idx) => {
-        const time = nowAligned - (count - 1 - idx) * resolutionSeconds;
-        const open = step.open * scale;
-        const close = step.close * scale;
-        const high = Math.max(step.high * scale, open, close);
-        const low = Math.min(step.low * scale, open, close);
-        return { time, open, high, low, close, volume: step.volume };
-      });
-
-      candlestickData.value = synthetic;
+      candlestickData.value = realBaseline;
       return;
     }
     candlestickData.value = [];
