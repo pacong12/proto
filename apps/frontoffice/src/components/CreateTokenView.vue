@@ -411,12 +411,13 @@
                   </div>
                   <p class="text-[11px] text-muted-foreground">Fee allocation (must total 100%)</p>
                 </div>
-                <span
-                  class="font-mono text-xs font-bold"
-                  :class="totalSplit === 100 ? 'text-emerald-500' : 'text-amber-500'"
+                <Badge
+                  :variant="totalSplit === 100 ? 'default' : 'outline'"
+                  class="font-mono text-xs"
+                  :class="totalSplit !== 100 ? 'border-amber-500 text-amber-500' : ''"
                 >
                   {{ totalSplit }}/100%
-                </span>
+                </Badge>
               </div>
 
               <!-- Quick Presets with Shadcn Button -->
@@ -1132,6 +1133,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { InfoTooltip } from '@/components/ui/tooltip';

@@ -311,6 +311,12 @@
                       <span class="text-xs font-mono text-muted-foreground"
                         >${{ token.symbol }}</span
                       >
+                      <Badge
+                        :variant="token.version === 'v2' ? 'outline' : 'secondary'"
+                        class="text-[9px] px-1.5 py-0 h-4 font-mono uppercase"
+                      >
+                        {{ token.version === 'v2' ? 'v2 Curve' : 'v1 Direct' }}
+                      </Badge>
                     </div>
                     <p
                       class="text-xs font-mono text-muted-foreground mt-0.5 break-all sm:break-normal"
@@ -463,12 +469,12 @@
                     class="hover:bg-muted/40 transition-colors"
                   >
                     <td class="py-2.5 px-3">
-                      <span
-                        class="text-xs font-mono font-bold uppercase"
-                        :class="act.isBuy ? 'text-emerald-500' : 'text-rose-500'"
+                      <Badge
+                        :variant="act.isBuy ? 'default' : 'destructive'"
+                        class="text-[9px] uppercase px-1.5 py-0 font-mono"
                       >
                         {{ act.isBuy ? 'Buy' : 'Sell' }}
-                      </span>
+                      </Badge>
                     </td>
                     <td class="py-2.5 px-3 text-foreground font-medium">${{ act.tokenSymbol }}</td>
                     <td class="py-2.5 px-3 text-right text-foreground font-medium">
@@ -863,6 +869,7 @@ import { compressAndConvertToWebp } from '@/lib/image-optimizer';
 const { t } = useI18n();
 const { activeNetwork, openWallet } = useWallet();
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, Jazzicon } from '@/components/ui/avatar';

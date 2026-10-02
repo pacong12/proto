@@ -55,6 +55,12 @@
                 <h1 class="text-xl sm:text-2xl font-black tracking-tight text-foreground truncate">
                   {{ currentToken.name }}
                 </h1>
+                <Badge
+                  :variant="currentMarketData.isGraduated ? 'default' : 'outline'"
+                  class="text-[10px] font-mono h-4 px-1.5 border-border uppercase font-semibold"
+                >
+                  {{ currentMarketData.isGraduated ? 'Open Market' : 'Bonding Curve' }}
+                </Badge>
                 <span class="text-xs sm:text-sm font-bold font-mono text-muted-foreground">
                   ${{ currentToken.symbol }}
                 </span>
@@ -676,14 +682,15 @@
                         <span class="text-xs font-mono font-semibold text-foreground">
                           {{ truncateAddress(cmt.authorAddress) }}
                         </span>
-                        <span
+                        <Badge
                           v-if="
                             cmt.authorAddress.toLowerCase() === currentToken.deployer?.toLowerCase()
                           "
-                          class="text-[10px] text-emerald-500 font-mono font-bold"
+                          variant="secondary"
+                          class="text-[9px] px-1.5 py-0 h-4 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-mono"
                         >
-                          (Creator)
-                        </span>
+                          Creator
+                        </Badge>
                       </div>
                       <span class="text-[10px] font-mono text-muted-foreground">
                         {{ formatRelativeTime(cmt.createdAt) }}
@@ -887,8 +894,19 @@
                             </button>
                           </div>
                         </td>
-                        <td class="py-2 px-3 text-muted-foreground font-mono text-[11px]">
-                          {{ trader.isDev ? 'Dev' : trader.walletTag }}
+                        <td class="py-2 px-3">
+                          <Badge
+                            :variant="
+                              trader.isDev
+                                ? 'default'
+                                : trader.walletTag === 'smart_degen'
+                                  ? 'outline'
+                                  : 'secondary'
+                            "
+                            class="text-[9px] px-1.5 py-0 uppercase h-4 font-mono"
+                          >
+                            {{ trader.isDev ? 'Dev' : trader.walletTag }}
+                          </Badge>
                         </td>
                         <td class="py-2 px-3 text-right">
                           <span class="text-emerald-500 font-medium"
@@ -899,15 +917,16 @@
                             >${{ trader.sellVolumeUsd.toLocaleString() }}</span
                           >
                         </td>
-                        <td class="py-2 px-3 text-center font-medium font-mono text-[11px]">
-                          <span
-                            :class="
+                        <td class="py-2 px-3 text-center">
+                          <Badge
+                            :variant="
                               trader.positionStatus === 'holding'
-                                ? 'text-emerald-500'
+                                ? 'default'
                                 : trader.positionStatus === 'clean_all'
-                                  ? 'text-rose-500'
-                                  : 'text-muted-foreground'
+                                  ? 'destructive'
+                                  : 'outline'
                             "
+                            class="text-[9px] px-1.5 py-0 uppercase h-4 font-mono"
                           >
                             {{
                               trader.positionStatus === 'holding'
@@ -916,7 +935,7 @@
                                   ? 'Exited'
                                   : 'Partial'
                             }}
-                          </span>
+                          </Badge>
                         </td>
                         <td
                           class="py-2 px-3 text-right font-bold"
@@ -998,12 +1017,13 @@
                               />
                               <Copy v-else class="w-3 h-3" />
                             </button>
-                            <span
+                            <Badge
                               v-if="getHolderBadge(holder.address)"
-                              class="text-[10px] text-muted-foreground font-mono"
+                              variant="outline"
+                              class="text-[9px] px-1.5 py-0 h-4 border-border text-muted-foreground font-mono"
                             >
-                              ({{ getHolderBadge(holder.address) }})
-                            </span>
+                              {{ getHolderBadge(holder.address) }}
+                            </Badge>
                           </div>
                         </td>
                         <td class="py-2 px-3 whitespace-nowrap">
@@ -1174,6 +1194,7 @@ import { useSwap, SLIPPAGE_WARN_THRESHOLD, parseAmountToWei } from '../composabl
 import { useWallet } from '../composables/useWallet';
 import { getPublicClient } from '../lib/viem-client';
 import { toast } from '@/components/ui/sonner';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Jazzicon } from '@/components/ui/avatar';
