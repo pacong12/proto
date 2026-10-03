@@ -255,6 +255,13 @@
             </span>
           </div>
         </div>
+
+      <!-- Pending tax change warning - visible to all visitors -->
+      <PendingTaxBanner
+        v-if="hasPendingTax && pendingTax"
+        :pending="pendingTax"
+        :symbol="currentToken.symbol"
+      />
       </div>
 
       <!-- ============================================================
@@ -1247,8 +1254,8 @@
           <DialogHeader>
             <DialogTitle>Creator Tax Settings</DialogTitle>
             <DialogDescription>
-              Configure trading taxes on ${{ currentToken.symbol }}. Taxes are received directly by
-              your creator wallet (max 10%).
+              Configure trading taxes on ${{ currentToken.symbol }}. Changes require a 24-hour
+              timelock before taking effect (max 10%).
             </DialogDescription>
           </DialogHeader>
 
@@ -1286,6 +1293,24 @@
                 :placeholder="account || '0x...'"
               />
             </div>
+          </div>
+
+          <!-- Deployer: manage pending timelock proposal -->
+          <div class="pt-2 border-t border-border">
+            <p class="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-3 font-mono">
+              Pending proposal
+            </p>
+            <TaxTimelockPanel
+              :token-address="currentToken.address"
+              :pending="pendingTax"
+              :has-pending="hasPendingTax"
+              :is-ready="taxIsReady"
+              :seconds-until-ready="taxSecondsUntilReady"
+              :action-loading="taxActionLoading"
+              :error="taxError"
+              @accept="handleAcceptTax"
+              @cancel="handleCancelTax"
+            />
           </div>
 
           <DialogFooter>
@@ -1327,6 +1352,7 @@ import {
 import { useSwap, SLIPPAGE_WARN_THRESHOLD, parseAmountToWei } from '../composables/useSwap';
 import { useWallet } from '../composables/useWallet';
 import { useLaunchpad } from '../composables/useLaunchpad';
+import { useTaxConfig } from '../composables/useTaxConfig';
 import { getPublicClient } from '../lib/viem-client';
 import { toast } from '@/components/ui/sonner';
 import { Badge } from '@/components/ui/badge';
@@ -1342,6 +1368,8 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Jazzicon } from '@/components/ui/avatar';
+import PendingTaxBanner from './tax/PendingTaxBanner.vue';
+import TaxTimelockPanel from './tax/TaxTimelockPanel.vue';
 import { Progress } from '@/components/ui/progress';
 import { Pagination } from '@/components/ui/pagination';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
@@ -1411,6 +1439,37 @@ const {
 
 const { setTokenTax } = useLaunchpad();
 
+const {
+  pending: pendingTax,
+  hasPending: hasPendingTax,
+  isReady: taxIsReady,
+  secondsUntilReady: taxSecondsUntilReady,
+  actionLoading: taxActionLoading,
+  error: taxError,
+  loadPendingTax,
+  acceptTaxConfig,
+  cancelTaxConfig,
+} = useTaxConfig();
+
+async function handleAcceptTax() {
+  const hash = await acceptTaxConfig(currentToken.value.address);
+  if (hash) {
+    toast.success('Tax configuration applied onchain');
+    await loadOnchainTax(currentToken.value.address);
+  } else if (taxError.value) {
+    toast.error('Failed to apply tax config: ' + taxError.value);
+  }
+}
+
+async function handleCancelTax() {
+  const hash = await cancelTaxConfig(currentToken.value.address);
+  if (hash) {
+    toast.success('Tax proposal cancelled');
+  } else if (taxError.value) {
+    toast.error('Failed to cancel tax proposal: ' + taxError.value);
+  }
+}
+
 const isCreator = computed(() => {
   if (!account.value || !currentToken.value.deployer) return false;
   return account.value.toLowerCase() === currentToken.value.deployer.toLowerCase();
@@ -1460,10 +1519,11 @@ async function handleUpdateTax() {
     const recipient = (editTaxRecipient.value.trim() as `0x${string}`) || account.value;
     const hash = await setTokenTax(currentToken.value.address, buyVal, sellVal, recipient);
     if (hash) {
-      toast.success('Creator Tax Updated Onchain', {
+      toast.success('Tax change proposed — activates in 24 hours', {
         description: `Buy Tax: ${buyVal}%, Sell Tax: ${sellVal}%`,
       });
       await loadOnchainTax(currentToken.value.address);
+      await loadPendingTax(currentToken.value.address, tokenNetwork.value.chainId);
       taxModalOpen.value = false;
     }
   } catch (err) {
@@ -2545,6 +2605,7 @@ async function loadTokenData(address: `0x${string}`) {
     fetchComments(address),
     fetchVotes(address),
     loadOnchainTax(address),
+    loadPendingTax(address, tokenNetwork.value.chainId),
   ]);
   tokenLoading.value = false;
 }
