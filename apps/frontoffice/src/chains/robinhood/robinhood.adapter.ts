@@ -141,37 +141,66 @@ export class RobinhoodChainAdapter implements ChainAdapter {
     );
 
     if (isV2) {
-      // Robinhood V2 Launch
-      const hash = await walletClient.writeContract({
-        address: targetFactory!,
-        abi: robinhoodLaunchpadV2Abi,
-        functionName: 'launchToken',
-        args: [
-          {
-            name: params.name,
-            symbol: params.symbol,
-            logo: params.logo,
-            description: params.description,
-            socials: {
-              twitter: params.socials.twitter ?? '',
-              telegram: params.socials.telegram ?? '',
-              discord: params.socials.discord ?? '',
-              website: params.socials.website ?? '',
-              farcaster: params.socials.farcaster ?? '',
+      const isPonsLegacy =
+        targetFactory!.toLowerCase() === '0x7ed598bcef8bd9edd8c97a195c6d13f40801ec7e';
+
+      let hash: `0x${string}`;
+      if (isPonsLegacy) {
+        // Legacy Pons contract support if explicitly configured
+        hash = await walletClient.writeContract({
+          address: targetFactory!,
+          abi: robinhoodLaunchpadV2Abi,
+          functionName: 'launchToken',
+          args: [
+            {
+              name: params.name,
+              symbol: params.symbol,
+              logo: params.logo,
+              description: params.description,
+              socials: {
+                twitter: params.socials.twitter ?? '',
+                telegram: params.socials.telegram ?? '',
+                discord: params.socials.discord ?? '',
+                website: params.socials.website ?? '',
+                farcaster: params.socials.farcaster ?? '',
+              },
+              creatorFeeRecipient: account,
+              feeConfig: 0,
+              isFair: false,
+              b1: '0x0000000000000000000000000000000000000000000000000000000000000000',
+              b2: '0x0000000000000000000000000000000000000000000000000000000000000000',
             },
-            creatorFeeRecipient: account,
-            feeConfig: 0,
-            isFair: false,
-            b1: '0x0000000000000000000000000000000000000000000000000000000000000000',
-            b2: '0x0000000000000000000000000000000000000000000000000000000000000000',
-          },
-          0n,
-          '0x0000000000000000000000000000000000000000',
-        ],
-        value: this.network.launchConfig.launchFeeWei,
-        account,
-        chain: walletClient.chain,
-      });
+            0n,
+            '0x0000000000000000000000000000000000000000',
+          ],
+          value: this.network.launchConfig.launchFeeWei,
+          account,
+          chain: walletClient.chain,
+        });
+      } else {
+        // Proto Canonical LaunchpadV2Factory on Robinhood Chain
+        const initialBuyWei = parseInitialBuyWei(params.initialBuyAmountEth);
+        const totalValue = this.network.launchConfig.launchFeeWei + initialBuyWei;
+
+        hash = await walletClient.writeContract({
+          address: targetFactory!,
+          abi: launchpadV2FactoryAbi,
+          functionName: 'launchTokenV2',
+          args: [
+            params.name,
+            params.symbol,
+            params.logo,
+            params.description,
+            params.socials.twitter ?? '',
+            params.socials.telegram ?? '',
+            params.socials.website ?? '',
+            params.minInitialTokensOut ?? 0n,
+          ],
+          value: totalValue,
+          account,
+          chain: walletClient.chain,
+        });
+      }
 
       onHashEmitted?.(hash);
       const receipt = await waitForReceiptWithFallback(publicClient, hash, walletClient);
