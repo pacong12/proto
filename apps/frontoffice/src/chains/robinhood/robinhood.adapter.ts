@@ -230,14 +230,14 @@ export class RobinhoodChainAdapter implements ChainAdapter {
           const taxHash = await walletClient.writeContract({
             address: launchResult.tokenAddress,
             abi: launchpadTokenAbi,
-            functionName: 'setTaxConfig',
+            functionName: 'proposeTaxConfig',
             args: [buyTaxBps, sellTaxBps, recipient],
             account,
             chain: walletClient.chain,
           });
           await waitForReceiptWithFallback(publicClient, taxHash, walletClient);
         } catch (taxErr) {
-          console.warn('[RobinhoodAdapter] Post-launch setTaxConfig skipped or deferred:', taxErr);
+          console.warn('[RobinhoodAdapter] Post-launch proposeTaxConfig skipped or deferred:', taxErr);
         }
       }
       return launchResult;
@@ -296,7 +296,7 @@ export class RobinhoodChainAdapter implements ChainAdapter {
           const taxHash = await walletClient.writeContract({
             address: v1Result.tokenAddress,
             abi: launchpadTokenAbi,
-            functionName: 'setTaxConfig',
+            functionName: 'proposeTaxConfig',
             args: [buyTaxBps, sellTaxBps, recipient],
             account,
             chain: walletClient.chain,
@@ -304,7 +304,7 @@ export class RobinhoodChainAdapter implements ChainAdapter {
           await waitForReceiptWithFallback(publicClient, taxHash, walletClient);
         } catch (taxErr) {
           console.warn(
-            '[RobinhoodAdapter] Post-launch V1 setTaxConfig skipped or deferred:',
+            '[RobinhoodAdapter] Post-launch V1 proposeTaxConfig skipped or deferred:',
             taxErr,
           );
         }

@@ -918,7 +918,7 @@ export function useLaunchpad() {
       const hash = await walletClient.writeContract({
         address: tokenAddress,
         abi: launchpadTokenAbi,
-        functionName: 'setTaxConfig',
+        functionName: 'proposeTaxConfig',
         args: [buyTaxBps, sellTaxBps, recipient],
         account,
         chain: walletClient.chain,

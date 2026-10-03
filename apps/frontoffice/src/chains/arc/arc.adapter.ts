@@ -175,14 +175,14 @@ export class ArcChainAdapter implements ChainAdapter {
         const taxHash = await walletClient.writeContract({
           address: launchResult.tokenAddress,
           abi: launchpadTokenAbi,
-          functionName: 'setTaxConfig',
+          functionName: 'proposeTaxConfig',
           args: [buyTaxBps, sellTaxBps, recipient],
           account,
           chain: walletClient.chain,
         });
         await waitForReceiptWithFallback(publicClient, taxHash, walletClient);
       } catch (taxErr) {
-        console.warn('[ArcAdapter] Post-launch setTaxConfig skipped or deferred:', taxErr);
+        console.warn('[ArcAdapter] Post-launch proposeTaxConfig skipped or deferred:', taxErr);
       }
     }
 
