@@ -310,6 +310,8 @@ export class EventPollerService {
         if (priceUsd > 0) {
           const mkt = await this.tokenRepository.getMarketData(token.address);
           if (mkt) {
+            // Use the token's actual total supply for market cap, not a hardcoded 1B.
+            // totalSupply is stored as a decimal string (wei units); divide by 1e18.
             const supplyTokens = token.totalSupply
               ? Number(BigInt(token.totalSupply)) / 1e18
               : 1_000_000_000;
