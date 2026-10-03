@@ -347,7 +347,6 @@ sinyal risiko GMGN, dan flag GoPlus Security yang umum digunakan DexScreener.
     > minimum caller ke cap yang dikonfigurasi tanpa memerlukan oracle on-chain
 
 ---
-
 ## Bagian 4: Standardisasi Commit & Quality Tooling
 
 ### C-01: Penegakan Aturan Zero Emojis pada Git Commit
