@@ -255,6 +255,13 @@
             </span>
           </div>
         </div>
+
+        <!-- Pending tax change warning - visible to all visitors -->
+        <PendingTaxBanner
+          v-if="hasPendingTax && pendingTax"
+          :pending="pendingTax"
+          :symbol="currentToken.symbol"
+        />
       </div>
 
       <!-- ============================================================
@@ -551,6 +558,22 @@
                 >
                   <span>{{ estimatedOutput }}</span>
                 </div>
+              </div>
+
+              <!-- High-slippage inline warning (L-3 fix) -->
+              <div
+                v-if="
+                  slippage > SLIPPAGE_WARN_THRESHOLD &&
+                  isConnected &&
+                  activeNetwork.chainId === tokenNetwork.chainId
+                "
+                class="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-2.5 text-[11px] font-mono text-amber-500"
+              >
+                <AlertCircle class="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                <span>
+                  Slippage is set to <strong>{{ slippage }}%</strong> — high sandwich attack risk.
+                  Lower it in the settings above or proceed with caution.
+                </span>
               </div>
 
               <!-- CTA Swap button -->
@@ -1247,8 +1270,8 @@
           <DialogHeader>
             <DialogTitle>Creator Tax Settings</DialogTitle>
             <DialogDescription>
-              Configure trading taxes on ${{ currentToken.symbol }}. Taxes are received directly by
-              your creator wallet (max 10%).
+              Configure trading taxes on ${{ currentToken.symbol }}. Changes require a 24-hour
+              timelock before taking effect (max 10%).
             </DialogDescription>
           </DialogHeader>
 
@@ -1286,6 +1309,26 @@
                 :placeholder="account || '0x...'"
               />
             </div>
+          </div>
+
+          <!-- Deployer: manage pending timelock proposal -->
+          <div class="pt-2 border-t border-border">
+            <p
+              class="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-3 font-mono"
+            >
+              Pending proposal
+            </p>
+            <TaxTimelockPanel
+              :token-address="currentToken.address"
+              :pending="pendingTax"
+              :has-pending="hasPendingTax"
+              :is-ready="taxIsReady"
+              :seconds-until-ready="taxSecondsUntilReady"
+              :action-loading="taxActionLoading"
+              :error="taxError"
+              @accept="handleAcceptTax"
+              @cancel="handleCancelTax"
+            />
           </div>
 
           <DialogFooter>
@@ -1327,6 +1370,7 @@ import {
 import { useSwap, SLIPPAGE_WARN_THRESHOLD, parseAmountToWei } from '../composables/useSwap';
 import { useWallet } from '../composables/useWallet';
 import { useLaunchpad } from '../composables/useLaunchpad';
+import { useTaxConfig } from '../composables/useTaxConfig';
 import { getPublicClient } from '../lib/viem-client';
 import { toast } from '@/components/ui/sonner';
 import { Badge } from '@/components/ui/badge';
@@ -1342,6 +1386,8 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Jazzicon } from '@/components/ui/avatar';
+import PendingTaxBanner from './tax/PendingTaxBanner.vue';
+import TaxTimelockPanel from './tax/TaxTimelockPanel.vue';
 import { Progress } from '@/components/ui/progress';
 import { Pagination } from '@/components/ui/pagination';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
@@ -1411,6 +1457,37 @@ const {
 
 const { setTokenTax } = useLaunchpad();
 
+const {
+  pending: pendingTax,
+  hasPending: hasPendingTax,
+  isReady: taxIsReady,
+  secondsUntilReady: taxSecondsUntilReady,
+  actionLoading: taxActionLoading,
+  error: taxError,
+  loadPendingTax,
+  acceptTaxConfig,
+  cancelTaxConfig,
+} = useTaxConfig();
+
+async function handleAcceptTax() {
+  const hash = await acceptTaxConfig(currentToken.value.address);
+  if (hash) {
+    toast.success('Tax configuration applied onchain');
+    await loadOnchainTax(currentToken.value.address);
+  } else if (taxError.value) {
+    toast.error('Failed to apply tax config: ' + taxError.value);
+  }
+}
+
+async function handleCancelTax() {
+  const hash = await cancelTaxConfig(currentToken.value.address);
+  if (hash) {
+    toast.success('Tax proposal cancelled');
+  } else if (taxError.value) {
+    toast.error('Failed to cancel tax proposal: ' + taxError.value);
+  }
+}
+
 const isCreator = computed(() => {
   if (!account.value || !currentToken.value.deployer) return false;
   return account.value.toLowerCase() === currentToken.value.deployer.toLowerCase();
@@ -1460,10 +1537,11 @@ async function handleUpdateTax() {
     const recipient = (editTaxRecipient.value.trim() as `0x${string}`) || account.value;
     const hash = await setTokenTax(currentToken.value.address, buyVal, sellVal, recipient);
     if (hash) {
-      toast.success('Creator Tax Updated Onchain', {
+      toast.success('Tax change proposed — activates in 24 hours', {
         description: `Buy Tax: ${buyVal}%, Sell Tax: ${sellVal}%`,
       });
       await loadOnchainTax(currentToken.value.address);
+      await loadPendingTax(currentToken.value.address, tokenNetwork.value.chainId);
       taxModalOpen.value = false;
     }
   } catch (err) {
@@ -1675,7 +1753,13 @@ let liveCandleTimer: ReturnType<typeof setInterval> | null = null;
 
 // -----------------------------------------------------------------------
 // Bonding curve AMM preview math
+// Mirrors BondingCurve.sol constants exactly:
+//   CURVE_TOKEN_SUPPLY = 800_000_000 (tokens allocated to curve, not wei)
+//   POOL_RESERVE_SUPPLY = 200_000_000 (reserved for V4 LP)
+//   fee = 1% (100 bps)
 // -----------------------------------------------------------------------
+const CURVE_TOKEN_SUPPLY = 800_000_000; // tokens (not wei)
+
 function getVirtualReserves() {
   const vEthRaw = currentToken.value.virtualEthReserve;
   const vTokenRaw = currentToken.value.virtualTokenReserve;
@@ -1686,23 +1770,31 @@ function getVirtualReserves() {
       return { vEth, vToken };
     }
   }
+  // Fallback: reconstruct from pairedPrincipalWeth + contract initial virtual reserves.
+  // BondingCurve constructor: virtualEthReserve = 3 ETH (Robinhood) / 4200 USDC (Arc),
+  // virtualTokenReserve = CURVE_TOKEN_SUPPLY = 800_000_000.
   const currentRaised = parseFloat(currentMarketData.value.pairedPrincipalWeth) || 0;
   const isArc = currencySymbol.value === 'USDC';
-  const baseVirtualEth = isArc ? 3.0 : 3.0;
+  const baseVirtualEth = isArc ? 4200.0 : 3.0;
   return {
     vEth: baseVirtualEth + currentRaised,
-    vToken: 1_000_000_000,
+    vToken: CURVE_TOKEN_SUPPLY,
   };
 }
 
 function computeCurveBuyOutput(ethIn: number): number {
   if (ethIn <= 0) return 0;
   const { vEth, vToken } = getVirtualReserves();
+  // 1% fee deducted before AMM calculation (matches contract: fee = ethIn * 100 / 10000)
   const netEth = ethIn * 0.99;
   const k = vEth * vToken;
   const newEthReserve = vEth + netEth;
   const newTokenReserve = k / newEthReserve;
-  return Math.max(0, vToken - newTokenReserve);
+  const rawOut = Math.max(0, vToken - newTokenReserve);
+  // Cap to curve-available supply: contract checks balanceOf(curve) - POOL_RESERVE_SUPPLY
+  // We approximate: remaining curve supply = vToken (decreases as tokens are bought)
+  // Conservative cap: don't show more than what the virtual reserve can deliver
+  return Math.min(rawOut, vToken);
 }
 
 function computeCurveSellOutput(tokensIn: number): number {
@@ -1711,6 +1803,7 @@ function computeCurveSellOutput(tokensIn: number): number {
   const k = vEth * vToken;
   const newTokenReserve = vToken + tokensIn;
   const newEthReserve = k / newTokenReserve;
+  // 1% fee taken from gross ETH out (matches contract: feeEth = grossEth * 100 / 10000)
   const grossEth = Math.max(0, vEth - newEthReserve);
   return grossEth * 0.99;
 }
@@ -2545,6 +2638,7 @@ async function loadTokenData(address: `0x${string}`) {
     fetchComments(address),
     fetchVotes(address),
     loadOnchainTax(address),
+    loadPendingTax(address, tokenNetwork.value.chainId),
   ]);
   tokenLoading.value = false;
 }

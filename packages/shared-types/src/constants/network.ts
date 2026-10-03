@@ -13,6 +13,8 @@ export interface NetworkConfig {
     factory: `0x${string}`;
     factoryV2?: `0x${string}`;
     locker: `0x${string}`;
+    /** Optional: HolderFeeDistributor contract. Absent on chains that do not use holder fee sharing. */
+    holderFeeDistributor?: `0x${string}`;
     uniswapV3Factory: `0x${string}`;
     positionManager: `0x${string}`;
     swapRouter: `0x${string}`;

@@ -118,9 +118,12 @@ contract LaunchpadTest is Test {
         vm.prank(deployer);
         token.transfer(mockPool, 10_000_000 * 10**18);
 
-        // Configure 5% buy tax (500 bps) and 10% sell tax (1000 bps)
+        // Configure 5% buy tax (500 bps) and 10% sell tax (1000 bps) via two-step timelock
         vm.prank(deployer);
-        token.setTaxConfig(500, 1000, taxRecipient);
+        token.proposeTaxConfig(500, 1000, taxRecipient);
+        vm.warp(block.timestamp + 24 hours);
+        vm.prank(deployer);
+        token.acceptTaxConfig();
 
         (uint16 buyBps, uint16 sellBps, address recipient) = token.taxConfig();
         assertEq(buyBps, 500);
@@ -325,6 +328,52 @@ contract LaunchpadTest is Test {
         vm.prank(lockerOwner);
         vm.expectRevert(LiquidityLocker.Unauthorized.selector);
         locker.setFeeRedirect(tokenAddress, lockerOwner);
+
+        // Third party cannot call claimFees
+        vm.prank(address(0x9999));
+        vm.expectRevert(LiquidityLocker.Unauthorized.selector);
+        locker.claimFees(tokenAddress);
+    }
+
+    function test_FeeRedirectCancelAndClaimByRedirect() public {
+        ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials("", "", "", "", "");
+        vm.deal(deployer, 10 ether);
+        vm.startPrank(deployer);
+        (address tokenAddress, ) = factory.launchToken{value: factory.launchFee()}(
+            "Redirect Test Token",
+            "RTT",
+            "ipfs://rtt",
+            "Testing cancel redirect",
+            socials,
+            0
+        );
+        address redirect1 = address(0x7777);
+        address redirect2 = address(0x8888);
+
+        // 1. Propose redirect1 and cancel
+        locker.setFeeRedirect(tokenAddress, redirect1);
+        locker.cancelFeeRedirect(tokenAddress);
+
+        // 2. Warp and try to accept — reverts because cancelled
+        vm.warp(block.timestamp + 49 hours);
+        vm.expectRevert(LiquidityLocker.NoPendingRedirect.selector);
+        locker.acceptFeeRedirect(tokenAddress);
+
+        // 3. Propose redirect2 and accept
+        locker.setFeeRedirect(tokenAddress, redirect2);
+        vm.warp(block.timestamp + 100 hours);
+        locker.acceptFeeRedirect(tokenAddress);
+        assertEq(locker.feeRedirects(tokenAddress), redirect2);
+
+        // 4. Fund positionManager with 1 WETH
+        weth.deposit{value: 1 ether}();
+        weth.transfer(address(positionManager), 1 ether);
+        vm.stopPrank();
+
+        // 5. ClaimFees by redirect2 succeeds
+        vm.prank(redirect2);
+        locker.claimFees(tokenAddress);
+        assertEq(weth.balanceOf(redirect2), 0.7 ether);
     }
 
     function test_SetTaxConfigRestrictedToDeployer_M01() public {
@@ -343,23 +392,49 @@ contract LaunchpadTest is Test {
 
         LaunchpadToken token = LaunchpadToken(payable(tokenAddress));
 
-        // Factory cannot call setTaxConfig
+        // Factory cannot call proposeTaxConfig
         vm.prank(address(factory));
         vm.expectRevert(LaunchpadToken.Unauthorized.selector);
-        token.setTaxConfig(100, 100, address(0));
+        token.proposeTaxConfig(100, 100, address(0));
 
-        // Random address cannot call setTaxConfig
+        // Random address cannot call proposeTaxConfig
         vm.prank(address(0xDEADBEEF));
         vm.expectRevert(LaunchpadToken.Unauthorized.selector);
-        token.setTaxConfig(100, 100, address(0));
+        token.proposeTaxConfig(100, 100, address(0));
 
-        // Deployer can call setTaxConfig
+        // Deployer proposes — active immediately after 24h timelock
         vm.prank(deployer);
-        token.setTaxConfig(100, 200, deployer);
+        token.proposeTaxConfig(100, 200, deployer);
+
+        // acceptTaxConfig reverts before timelock expires
+        vm.prank(deployer);
+        vm.expectRevert(LaunchpadToken.TimelockNotExpired.selector);
+        token.acceptTaxConfig();
+
+        // Warp past timelock and accept
+        vm.warp(block.timestamp + 24 hours);
+        vm.prank(deployer);
+        token.acceptTaxConfig();
+
         (uint16 buyTax, uint16 sellTax, address taxRecipient) = token.taxConfig();
         assertEq(buyTax, 100);
         assertEq(sellTax, 200);
         assertEq(taxRecipient, deployer);
+
+        // Proposing again while a proposal exists reverts with PendingTaxExists
+        vm.prank(deployer);
+        token.proposeTaxConfig(300, 300, deployer);
+
+        vm.prank(deployer);
+        vm.expectRevert(LaunchpadToken.PendingTaxExists.selector);
+        token.proposeTaxConfig(400, 400, deployer);
+
+        // Cancel clears proposal, allowing new proposal
+        vm.prank(deployer);
+        token.cancelTaxConfig();
+
+        vm.prank(deployer);
+        token.proposeTaxConfig(400, 400, deployer);
     }
 
     function test_FactoryOwnershipTransfer_M03() public {

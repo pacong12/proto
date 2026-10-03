@@ -1134,7 +1134,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { InfoTooltip } from '@/components/ui/tooltip';
 import {
@@ -1364,8 +1363,6 @@ const dragOver = ref(false);
 const isUploadingIpfs = ref(false);
 const imageError = ref('');
 const advancedOpen = ref(false);
-const holderFeeSharing = ref(false);
-
 function clearImage() {
   selectedFileName.value = '';
   imagePreview.value = '';

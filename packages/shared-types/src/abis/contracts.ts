@@ -69,10 +69,15 @@ export const launchpadTokenAbi = parseAbi([
   'function launchBlock() view returns (uint256)',
   'function socials() view returns (string twitter, string telegram, string discord, string website, string farcaster)',
   'function taxConfig() view returns (uint16 buyTaxBps, uint16 sellTaxBps, address taxRecipient)',
-  'function setTaxConfig(uint16 buyTaxBps, uint16 sellTaxBps, address taxRecipient) external',
+  'function proposeTaxConfig(uint16 buyTaxBps, uint16 sellTaxBps, address taxRecipient) external',
+  'function acceptTaxConfig() external',
+  'function cancelTaxConfig() external',
+  'function pendingTaxConfig() view returns (uint16 buyTaxBps, uint16 sellTaxBps, address taxRecipient, uint256 validAfter)',
   'event Transfer(address indexed from, address indexed to, uint256 value)',
   'event Approval(address indexed owner, address indexed spender, uint256 value)',
   'event TaxConfigUpdated(uint16 buyTaxBps, uint16 sellTaxBps, address taxRecipient)',
+  'event TaxConfigProposed(uint16 buyTaxBps, uint16 sellTaxBps, address indexed taxRecipient, uint256 validAfter)',
+  'event TaxConfigCancelled()',
   'event TaxCollected(address indexed from, address indexed to, uint256 taxAmount, bool isBuy)',
 ]);
 
@@ -127,4 +132,19 @@ export const bondingCurveAbi = parseAbi([
   'function getAmountOut(uint256 amountIn, bool isBuy) external view returns (uint256 amountOut, uint256 fee)',
   'event Trade(address indexed trader, bool indexed isBuy, uint256 ethAmount, uint256 tokenAmount, uint256 feeEth)',
   'event Graduated(address indexed token, bytes32 indexed poolId, uint256 ethGraduated, uint256 tokensGraduated)',
+]);
+
+// ---------------------------------------------------------------------------
+// HolderFeeDistributor
+// ---------------------------------------------------------------------------
+
+export const holderFeeDistributorAbi = parseAbi([
+  'function depositRewards(address token, uint256 amount) external',
+  'function earned(address token, address holder) view returns (uint256)',
+  'function claimReward(address token) external returns (uint256 reward)',
+  'function checkpoint(address token, address holder) external',
+  'function tokenFeeStates(address token) view returns (uint256 rewardPerTokenCumulative, uint256 totalDistributedWeth)',
+  'function snapshotBalance(address token, address holder) view returns (uint256)',
+  'event RewardDeposited(address indexed token, uint256 wethAmount)',
+  'event RewardClaimed(address indexed token, address indexed holder, uint256 amount)',
 ]);

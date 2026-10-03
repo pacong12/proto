@@ -59,13 +59,18 @@ contract BuybackBurnerTest is Test {
         burner.executeBuyback(500 * 10**18);
 
         // After cooldown, a new buyback succeeds.
+        // M-02 fix: minAmountOut must satisfy the lastKnownRate-derived floor.
+        // First buyback: 5 WETH -> 1000e18 tokens => lastKnownRate = 200e18 (tokens per WETH).
+        // MockSwapRouter now consumes WETH; after first buyback burner WETH = 0.
+        // Second buyback: 2 WETH transferred => expectedOut = 400e18; requiredMin ~ 388e18.
+        // Pass 400e18 which is >= requiredMin and <= mock output of 1000e18.
         vm.warp(block.timestamp + 3601);
         vm.prank(deployer);
         weth.deposit{value: 2 ether}();
         vm.prank(deployer);
         weth.transfer(address(burner), 2 ether);
 
-        uint256 burnedSecond = burner.executeBuyback(100 * 10**18);
+        uint256 burnedSecond = burner.executeBuyback(400 * 10**18);
         assertGt(burnedSecond, 0);
         assertEq(burner.totalBurned(), burned + burnedSecond);
     }

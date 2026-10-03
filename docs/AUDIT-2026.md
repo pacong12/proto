@@ -251,6 +251,101 @@ Seluruh temuan telah diverifikasi secara matematis dan empiris. Solusi telah dii
 
 ---
 
+---
+
+## Bagian 5: Audit Keamanan Tambahan 2026-10 (Web3/DeFi Threat Model)
+
+**Tanggal audit**: 2026-10-03
+**Konteks**: Review berbasis komparasi dengan ponsfamily.com (Robinhood Chain launchpad),
+sinyal risiko GMGN, dan flag GoPlus Security yang umum digunakan DexScreener.
+**Branch**: `fix/security-audit-contracts-2026-10`
+
+### Ringkasan Matriks Temuan Baru
+
+| Tingkat Keparahan | Kontrak                                   | Temuan                                                                 | Status   |
+| :---------------- | :---------------------------------------- | :--------------------------------------------------------------------- | :------- |
+| **HIGH**          | HolderFeeDistributor                      | H-03: Flash-loan bypass via live balanceOf() di earned()               | RESOLVED |
+| **HIGH**          | LaunchpadV2Factory, LaunchpadV2FactoryArc | H-02: Anti-snipe dead code — liquidityPool tidak pernah di-set pada V2 | RESOLVED |
+| **HIGH**          | BondingCurve                              | H-01: receive() menerima ETH post-graduation, distorsi V4 pool price   | RESOLVED |
+| **MEDIUM/LOW**    | LaunchpadToken                            | L-01: setTaxConfig tanpa timelock — mutable tax honeypot vector        | RESOLVED |
+| **MEDIUM**        | BuybackBurner                             | M-02: maxSlippageBps tidak di-enforce on-chain                         | RESOLVED |
+
+---
+
+### [HIGH] H-03: Flash-loan Reward Drain pada HolderFeeDistributor
+
+- **File**: `contracts/src/HolderFeeDistributor.sol`
+- **Deskripsi**: Fungsi `earned()` memanggil `ILaunchpadToken(token).balanceOf(holder)` secara
+  langsung (live balance), bukan snapshot. Komentar kode mengklaim menggunakan snapshot tapi
+  mapping `snapshotBalance` tidak pernah dideklarasikan atau diisi. Attacker dapat flash-loan
+  token dalam jumlah besar, call `claimReward()`, lalu kembalikan flash-loan dalam satu transaksi
+  untuk drain seluruh WETH yang terakumulasi di distributor.
+- **Remediasi**:
+  - Ditambahkan `mapping(address => mapping(address => uint256)) public snapshotBalance`
+  - `_updateReward()` kini menyimpan `ILaunchpadToken(token).balanceOf(holder)` ke snapshot
+    setelah zeroing delta, sehingga perolehan historis terkunci pada balance saat checkpoint
+  - `earned()` membaca `snapshotBalance[token][holder]` bukan live `balanceOf()`
+  - Holder tanpa checkpoint sebelumnya mendapat `snapshotBalance == 0`, tidak bisa retroaktif
+    mengklaim reward dari deposit sebelum mereka pertama kali berinteraksi
+
+### [HIGH] H-02: Anti-snipe Protection Dead Code pada V2 Bonding Curve
+
+- **File**: `contracts/src/LaunchpadV2Factory.sol`, `contracts/src/LaunchpadV2FactoryArc.sol`
+- **Deskripsi**: `LaunchpadToken._transfer()` hanya menerapkan guard `MAX_BUY_AMOUNT` dan
+  `MAX_HOLD_AMOUNT` ketika `liquidityPool != address(0)`. Kedua V2Factory membuat token dengan
+  `pairedToken = address(0)` dan tidak pernah memanggil `setLiquidityPool()`, sehingga
+  `liquidityPool` tetap `address(0)` selamanya. Kondisi anti-snipe di baris 226 tidak pernah
+  terpenuhi. Bertentangan langsung dengan `INV-SC-3` di `INVARIANTS.md`.
+- **Remediasi**: Ditambahkan pemanggilan `token.setLiquidityPool(curveAddress)` di kedua factory
+  segera setelah transfer supply ke curve, sebelum state ditulis atau external calls dibuat.
+  Modifier `onlyFactoryOrDeployer` mengizinkan pemanggilan ini dari factory.
+
+### [HIGH] H-01: Arbitrary ETH Injection Post-Graduation pada BondingCurve
+
+- **File**: `contracts/src/BondingCurve.sol`
+- **Deskripsi**: Fungsi `receive() external payable {}` menerima ETH tanpa syarat. Setelah token
+  lulus (graduated), seluruh ETH di kontrak adalah milik V4 migration pool. Siapapun dapat
+  mengirim ETH ke kontrak post-graduation, menggelembungkan `address(this).balance`. Saat
+  `migrateToV4()` dieksekusi, seluruh balance (termasuk ETH yang disuntikkan) diteruskan ke
+  recipient V4, mengacaukan `sqrtPriceX96` pool dan membuka peluang arbitrase instan terhadap LP.
+- **Remediasi**: `receive()` kini merevert dengan `AlreadyGraduated()` jika `graduated == true`.
+  Transfer ETH plain sebelum graduation tetap diterima karena diperlukan untuk creator initial buy.
+
+### [LOW] L-01: setTaxConfig Tanpa Timelock — Mutable Tax Honeypot Vector
+
+- **File**: `contracts/src/LaunchpadToken.sol`, `packages/shared-types/src/abis/contracts.ts`,
+  frontend adapters
+- **Deskripsi**: Deployer dapat memanggil `setTaxConfig()` kapan saja untuk menaikkan `sellTaxBps`
+  hingga 1000 (10%) tanpa delay, tanpa notifikasi, tanpa governance. Dari perspektif GMGN/GoPlus
+  Security, token dengan mutable instant tax dikategorikan HIGH RISK dan berpotensi dideteksi
+  sebagai honeypot oleh scanner DEX. Ini menurunkan kepercayaan listing pada DexScreener.
+- **Remediasi**:
+  - `setTaxConfig()` diganti dengan flow dua langkah berbasis timelock 24 jam:
+    - `proposeTaxConfig()` — antri perubahan pending, emit `TaxConfigProposed`
+    - `acceptTaxConfig()` — finalisasi setelah `TAX_CHANGE_TIMELOCK = 24 hours`
+    - `cancelTaxConfig()` — deployer dapat membatalkan proposal sebelum berlaku
+  - Ditambahkan `pendingTaxConfig()` view agar frontend dan scanner dapat menampilkan
+    perubahan yang menunggu beserta timestamp aktivasinya kepada holder
+  - ABI di `shared-types` diperbarui; frontend adapters diperbarui ke `proposeTaxConfig`
+  - Test Foundry diperbarui: `warp(24 hours)` + `acceptTaxConfig()`; verifikasi `TimelockNotExpired`
+
+### [MEDIUM] M-02: maxSlippageBps Tidak Di-enforce On-chain pada BuybackBurner
+
+- **File**: `contracts/src/BuybackBurner.sol`
+- **Deskripsi**: `maxSlippageBps` adalah parameter yang dapat diset owner, namun tidak memiliki
+  efek on-chain pada `executeBuyback()`. Owner yang kompromis atau ceroboh dapat melewatkan
+  `minAmountOut = 1` (valid karena > 0) dan swap berjalan dengan slippage tak terbatas, membuka
+  seluruh WETH buyback terhadap sandwich attack.
+- **Remediasi**:
+  - Ditambahkan `MAX_SLIPPAGE_CAP_BPS = 1000` (10%) sebagai hard constant
+  - `setMaxSlippageBps()` menolak nilai 0 dan nilai di atas cap (`InvalidSlippage`)
+  - Ditambahkan `lastKnownRate` state: token per 1e18 WETH dari buyback terakhir berhasil
+  - `executeBuyback()` menegakkan floor: setelah buyback pertama, `minAmountOut` harus
+    > = `wethBalance * lastKnownRate * (BPS - maxSlippageBps) / BPS / 1e18`, mengikat
+    > minimum caller ke cap yang dikonfigurasi tanpa memerlukan oracle on-chain
+
+---
+
 ## Bagian 4: Standardisasi Commit & Quality Tooling
 
 ### C-01: Penegakan Aturan Zero Emojis pada Git Commit

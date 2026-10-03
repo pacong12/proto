@@ -144,7 +144,7 @@
           <p class="text-2xl font-bold font-mono text-foreground mt-2">
             {{ totalClaimableWeth }} {{ activeNetwork.nativeCurrency.symbol }}
           </p>
-          <p class="text-xs text-muted-foreground mt-1">70% creator share</p>
+          <p class="text-xs text-muted-foreground mt-1">v1 locker fees only</p>
         </Card>
 
         <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
@@ -328,10 +328,15 @@
                     >
                       <span>
                         Accrued:
-                        <strong class="text-foreground font-mono"
-                          >{{ token.unclaimedWeth }}
-                          {{ activeNetwork.nativeCurrency.symbol }}</strong
-                        >
+                        <strong class="text-foreground font-mono">
+                          {{
+                            token.unclaimedWeth === '—'
+                              ? token.version === 'v2'
+                                ? 'v2 curve'
+                                : '—'
+                              : `${token.unclaimedWeth} ${activeNetwork.nativeCurrency.symbol}`
+                          }}
+                        </strong>
                       </span>
                       <span>•</span>
                       <span>
@@ -512,30 +517,92 @@
                     <Coins class="w-4 h-4 text-foreground" />
                     <h3 class="text-sm font-bold text-foreground">Holder Fee Sharing Dividends</h3>
                   </div>
+                  <Button
+                    v-if="isOwnProfile"
+                    variant="ghost"
+                    size="sm"
+                    class="h-7 w-7 p-0 rounded-lg"
+                    :disabled="dividendsLoading"
+                    @click="refreshDividends"
+                  >
+                    <Loader2 v-if="dividendsLoading" class="w-3.5 h-3.5 animate-spin" />
+                    <RefreshCw v-else class="w-3.5 h-3.5" />
+                  </Button>
                 </div>
                 <p class="text-xs text-muted-foreground">
                   Pro-rata trading fee rewards accrued from tokens you hold that enabled Holder Fee
                   Sharing.
                 </p>
+
+                <!-- Total + Claim All -->
                 <div class="flex items-end justify-between pt-2 border-t border-border">
                   <div>
-                    <span class="text-[10px] text-muted-foreground uppercase font-mono"
-                      >Claimable Reward</span
-                    >
+                    <span class="text-[10px] text-muted-foreground uppercase font-mono">
+                      Total Claimable
+                    </span>
                     <p class="text-lg font-bold font-mono text-foreground">
-                      0.0000 {{ activeNetwork.nativeCurrency.symbol }}
+                      {{ dividendsTotalFormatted }} {{ activeNetwork.nativeCurrency.symbol }}
                     </p>
                   </div>
                   <Button
+                    v-if="isOwnProfile"
                     size="sm"
                     variant="default"
-                    :disabled="true"
-                    class="h-8 text-xs font-semibold opacity-50 cursor-not-allowed"
+                    class="h-8 text-xs font-semibold gap-1"
+                    :disabled="!dividendsHasAny || !!dividendsActionLoading"
+                    @click="handleClaimAll"
                   >
-                    <ArrowDownToLine class="w-3.5 h-3.5 mr-1" />
-                    Claim Dividends
+                    <Loader2 v-if="dividendsActionLoading" class="w-3.5 h-3.5 animate-spin" />
+                    <ArrowDownToLine v-else class="w-3.5 h-3.5" />
+                    Claim All
                   </Button>
                 </div>
+
+                <!-- Per-token entries -->
+                <div
+                  v-if="dividendEntries.length > 0"
+                  class="space-y-2 pt-1 border-t border-border"
+                >
+                  <div
+                    v-for="entry in dividendEntries"
+                    :key="entry.tokenAddress"
+                    class="flex items-center justify-between text-xs font-mono"
+                  >
+                    <div>
+                      <span class="font-bold text-foreground">${{ entry.tokenSymbol }}</span>
+                      <span class="text-muted-foreground ml-2">
+                        {{ entry.earnedFormatted }} {{ activeNetwork.nativeCurrency.symbol }}
+                      </span>
+                    </div>
+                    <Button
+                      v-if="isOwnProfile"
+                      size="sm"
+                      variant="outline"
+                      class="h-6 px-2 text-[10px] gap-1"
+                      :disabled="dividendsActionLoading === entry.tokenAddress"
+                      @click="handleClaimSingle(entry.tokenAddress)"
+                    >
+                      <Loader2
+                        v-if="dividendsActionLoading === entry.tokenAddress"
+                        class="w-3 h-3 animate-spin"
+                      />
+                      Claim
+                    </Button>
+                  </div>
+                </div>
+
+                <!-- Empty state when no pending rewards -->
+                <p
+                  v-else-if="!dividendsLoading"
+                  class="text-[11px] text-muted-foreground font-mono"
+                >
+                  No claimable dividends found for your holdings.
+                </p>
+
+                <!-- Error -->
+                <p v-if="dividendsError" class="text-[11px] text-rose-500">
+                  {{ dividendsError }}
+                </p>
               </Card>
 
               <!-- Linear Vesting Schedule Card -->
@@ -889,6 +956,7 @@ import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
 import { erc20Abi } from 'viem';
 import { getPublicClient } from '@/lib/viem-client';
 import { liquidityLockerAbi } from '@proto/shared-types';
+import { useHolderDividends } from '../composables/useHolderDividends';
 
 const route = useRoute();
 
@@ -911,6 +979,63 @@ const isOwnProfile = computed(() => {
 });
 
 const { claimFees, setFeeRedirect, loading, error: launchpadError } = useLaunchpad();
+
+const {
+  entries: dividendEntries,
+  loading: dividendsLoading,
+  actionLoading: dividendsActionLoading,
+  error: dividendsError,
+  totalEarnedFormatted: dividendsTotalFormatted,
+  hasAnyEarned: dividendsHasAny,
+  loadDividends,
+  claimDividend,
+  claimAllDividends,
+  reset: resetDividends,
+} = useHolderDividends();
+
+function getDistributorAddress() {
+  const addr = activeNetwork.value.contracts.holderFeeDistributor;
+  return addr ?? ('0x0000000000000000000000000000000000000000' as `0x${string}`);
+}
+
+async function refreshDividends() {
+  const holder = profileAddress.value;
+  if (!holder) return;
+  resetDividends();
+  const tokens = portfolioPositions.value.map((p) => ({
+    address: p.tokenAddress as `0x${string}`,
+    symbol: p.symbol,
+    name: p.name,
+  }));
+  await loadDividends(
+    holder as `0x${string}`,
+    tokens,
+    getDistributorAddress(),
+    activeNetwork.value.chainId,
+  );
+}
+
+async function handleClaimSingle(tokenAddress: `0x${string}`) {
+  const hash = await claimDividend(
+    tokenAddress,
+    getDistributorAddress(),
+    activeNetwork.value.chainId,
+  );
+  if (hash) {
+    successTx.value = hash;
+  } else if (dividendsError.value) {
+    actionError.value = dividendsError.value;
+  }
+}
+
+async function handleClaimAll() {
+  const hashes = await claimAllDividends(getDistributorAddress(), activeNetwork.value.chainId);
+  if (hashes.length > 0) {
+    successTx.value = hashes[hashes.length - 1];
+  } else if (dividendsError.value) {
+    actionError.value = dividendsError.value;
+  }
+}
 
 const activeTab = ref('created');
 const editModalOpen = ref(false);
@@ -1163,7 +1288,10 @@ async function fetchMyLaunches() {
       const launches = await Promise.all(
         envelope.data.map(async (item) => {
           let redirect: string | null = null;
+          let unclaimedWeth = '—';
+
           if (hasLocker) {
+            // Read fee redirect (view call, always available)
             try {
               const r = (await publicClient.readContract({
                 address: lockerAddr,
@@ -1177,14 +1305,36 @@ async function fetchMyLaunches() {
             } catch {
               // Non-blocking
             }
+
+            // Simulate claimFees with the deployer as caller to read pending WETH fees.
+            // simulateContract uses eth_call — no gas consumed, no tx submitted.
+            // Only works for v1 (locker-based) tokens; v2 uses BondingCurve tax distributor.
+            if (item.token.version !== 'v2') {
+              try {
+                const { result } = await publicClient.simulateContract({
+                  address: lockerAddr,
+                  abi: liquidityLockerAbi,
+                  functionName: 'claimFees',
+                  args: [item.token.address as `0x${string}`],
+                  account: target as `0x${string}`,
+                });
+                // result = [creatorTokenFee, creatorWethFee] per ABI
+                const [, creatorWethFee] = result as [bigint, bigint];
+                const wethNum = Number(creatorWethFee) / 1e18;
+                unclaimedWeth = wethNum.toFixed(4);
+              } catch {
+                // Locker may not have a position for this token yet — keep '—'
+              }
+            }
           }
+
           return {
             address: item.token.address,
             name: item.token.name,
             symbol: item.token.symbol,
             logo: item.token.logo,
             version: item.token.version ?? 'v1',
-            unclaimedWeth: '0.0000',
+            unclaimedWeth,
             redirect,
           };
         }),
@@ -1301,6 +1451,8 @@ async function fetchUserPositionsAndActivity() {
 
 async function refreshAllData() {
   await Promise.all([fetchMyLaunches(), fetchUserPositionsAndActivity()]);
+  // Dividends depend on portfolioPositions being populated first
+  await refreshDividends();
 }
 
 watch(profileAddress, () => {
