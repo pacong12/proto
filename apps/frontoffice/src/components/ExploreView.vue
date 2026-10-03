@@ -317,7 +317,7 @@
               <td class="py-3.5 px-4 text-right font-extrabold text-sm text-foreground font-mono">
                 {{
                   (item.marketData?.marketCapUsd ?? 0) > 0
-                    ? `$${formatNumberCap(item.marketData.marketCapUsd)}`
+                    ? `$${formatNumberCap(item.marketData?.marketCapUsd ?? 0)}`
                     : '—'
                 }}
               </td>
