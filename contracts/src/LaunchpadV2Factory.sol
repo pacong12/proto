@@ -159,6 +159,12 @@ contract LaunchpadV2Factory {
         bool tokenSent = token.transfer(curveAddress, token.totalSupply());
         if (!tokenSent) revert TransferFailed();
 
+        // H-02 fix: register the bonding curve as the liquidity pool so that
+        // anti-snipe restrictions in LaunchpadToken._transfer() are active.
+        // Without this call, liquidityPool remains address(0) and the block-based
+        // MAX_BUY_AMOUNT / MAX_HOLD_AMOUNT guards in _transfer() never fire.
+        token.setLiquidityPool(curveAddress);
+
         launches[tokenAddress] = V2Launch({
             token: tokenAddress, curve: curveAddress, creator: msg.sender, createdAt: block.timestamp, graduated: false
         });
