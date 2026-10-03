@@ -24,7 +24,7 @@ export const ROBINHOOD_NETWORK: NetworkConfig = {
   contracts: {
     factory: getEnv(
       'ROBINHOOD_FACTORY_ADDRESS',
-      getEnv('LAUNCHPAD_FACTORY_ADDRESS', '0x48844223aBDceeb1Ce502F54d559681358E68200'),
+      getEnv('LAUNCHPAD_FACTORY_ADDRESS', '0xcC547D4EC0eF85FE506D2b2EEe02Be3620178B16'),
     ) as `0x${string}`,
     factoryV2: getEnv(
       'ROBINHOOD_FACTORY_V2_ADDRESS',
@@ -32,7 +32,7 @@ export const ROBINHOOD_NETWORK: NetworkConfig = {
     ) as `0x${string}`,
     locker: getEnv(
       'ROBINHOOD_LOCKER_ADDRESS',
-      getEnv('LIQUIDITY_LOCKER_ADDRESS', '0x070233B6F46ccD61CA2B7bc1E13520c3fE4614E4'),
+      getEnv('LIQUIDITY_LOCKER_ADDRESS', '0xf60664BEadbcBe25aFFdae0e7E2a41a819c81FCe'),
     ) as `0x${string}`,
     uniswapV3Factory: getEnv(
       'ROBINHOOD_V3_FACTORY',

@@ -2250,8 +2250,11 @@ async function loadTokenData(address: `0x${string}`) {
           network.chainId === 5042
             ? ('0xf94d16c9E90fCd55b75D318d0104269146612abF' as `0x${string}`)
             : undefined,
-          network.chainId === 5042
-            ? ('0x48844223aBDceeb1Ce502F54d559681358E68200' as `0x${string}`)
+          network.chainId === 4663
+            ? ('0x094858C1C9721506D3384eC8f6a97b61A34a5896' as `0x${string}`)
+            : undefined,
+          network.chainId === 4663
+            ? ('0xcC547D4EC0eF85FE506D2b2EEe02Be3620178B16' as `0x${string}`)
             : undefined,
         ].filter((f): f is `0x${string}` =>
           Boolean(f && f !== '0x0000000000000000000000000000000000000000'),
