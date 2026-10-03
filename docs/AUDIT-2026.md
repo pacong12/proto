@@ -284,7 +284,9 @@ sinyal risiko GMGN, dan flag GoPlus Security yang umum digunakan DexScreener.
   - Ditambahkan `mapping(address => mapping(address => uint256)) public snapshotBalance`
   - `_updateReward()` kini menyimpan `ILaunchpadToken(token).balanceOf(holder)` ke snapshot
     setelah zeroing delta, sehingga perolehan historis terkunci pada balance saat checkpoint
-  - `earned()` membaca `snapshotBalance[token][holder]` bukan live `balanceOf()`
+  - Remediasi H-03 & GitHub Security review: `earned()` membaca `min(snapshotBalance[token][holder], liveBalance)`.
+    Ini mencegah penyerang yang meminjam token via flash-loan lalu memanggil `checkpoint()` untuk mengunci
+    snapshot tinggi, karena segera setelah token dikembalikan atau dijual, saldo efektif jatuh ke saldo live (0).
   - Holder tanpa checkpoint sebelumnya mendapat `snapshotBalance == 0`, tidak bisa retroaktif
     mengklaim reward dari deposit sebelum mereka pertama kali berinteraksi
 

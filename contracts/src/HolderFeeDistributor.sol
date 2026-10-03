@@ -100,17 +100,17 @@ contract HolderFeeDistributor {
 
     /**
      * @notice Compute unclaimed WETH for a holder based on their snapshotted balance
-     *         and the cumulative reward-per-token since their last checkpoint.
-     * @dev H-03 fix: uses snapshotBalance[token][holder] captured at _updateReward,
-     *      NOT live balanceOf(). This neutralises flash-loan balance inflation:
-     *      acquiring tokens in the same block as a deposit cannot retroactively
-     *      earn rewards because the snapshot was taken before the acquisition.
-     *      A holder with no prior checkpoint has snapshotBalance == 0, so they
-     *      earn zero from historical accumulation — only future deposits after
-     *      their first _updateReward call will be counted.
+     *         capped by their current live balance, and the cumulative reward-per-token.
+     * @dev H-03 & GitHub Security remediation: uses effectiveBalance = min(snapshotBalance, liveBalance).
+     *      This prevents a snapshotted high balance (e.g. from a flash-loan or pre-sale holding)
+     *      from continuing to earn rewards after the tokens have been sold or transferred away.
+     *      If an attacker flash-loans tokens, calls checkpoint(), and repays in the same block,
+     *      their live balance drops to 0, making effectiveBalance 0 so they earn nothing.
      */
     function earned(address token, address holder) public view returns (uint256) {
-        uint256 balance = snapshotBalance[token][holder];
+        uint256 liveBalance = ILaunchpadToken(token).balanceOf(holder);
+        uint256 snap = snapshotBalance[token][holder];
+        uint256 balance = snap < liveBalance ? snap : liveBalance;
         uint256 cum = tokenFeeStates[token].rewardPerTokenCumulative;
         uint256 paid = userRewardPerTokenPaid[token][holder];
 
