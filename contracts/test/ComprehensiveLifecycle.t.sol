@@ -138,9 +138,9 @@ contract ComprehensiveLifecycleTest is Test {
 
         // Entire 1B supply sits in BondingCurve contract
         assertEq(token.balanceOf(curveAddress), 1_000_000_000 * 1e18);
-
-        // Advance past anti-snipe window
+        // Advance past anti-snipe window — vm.roll required: guard uses block.number
         vm.warp(block.timestamp + 5);
+        vm.roll(block.number + 3);
 
         // Trader Alice buys from curve
         vm.prank(traderAlice);
@@ -279,6 +279,11 @@ contract ComprehensiveLifecycleTest is Test {
         // 700M (70%) to Alice, 300M (30%) to Bob
         token.transfer(traderAlice, 700_000_000 * 1e18);
         token.transfer(traderBob, 300_000_000 * 1e18);
+
+        // H-03 fix: checkpoint must be called before depositRewards so snapshotBalance
+        // is populated; otherwise earned() returns 0 for unchecked holders.
+        feeDistributor.checkpoint(address(token), traderAlice);
+        feeDistributor.checkpoint(address(token), traderBob);
 
         // I-05 fix: depositRewards is restricted to the locker address.
         // Fund the locker with WETH and impersonate it.

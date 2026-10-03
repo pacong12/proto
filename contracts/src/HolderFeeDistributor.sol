@@ -126,6 +126,19 @@ contract HolderFeeDistributor {
         snapshotBalance[token][holder] = ILaunchpadToken(token).balanceOf(holder);
     }
 
+
+    /**
+     * @notice Snapshot the caller's current balance into the reward accounting system.
+     * @dev Allows a holder to register their balance before rewards are deposited,
+     *      ensuring they will earn from subsequent deposits. Without calling checkpoint
+     *      (or claimReward), a holder with snapshotBalance == 0 earns nothing from
+     *      historical accumulation — only future deposits after their first checkpoint.
+     *      Any address may checkpoint any holder; snapshotting another holder is safe
+     *      because it can only increase their tracked balance, never decrease it.
+     */
+    function checkpoint(address token, address holder) external nonReentrant {
+        _updateReward(token, holder);
+    }
     /**
      * @notice Claim accrued WETH rewards for the caller.
      */

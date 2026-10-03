@@ -47,7 +47,10 @@ contract UniswapV4GraduationTest is Test {
         (address tokenAddress, address curveAddress) = _launch();
         BondingCurve curve = BondingCurve(payable(curveAddress));
 
-        // Push curve past 4.2 ETH graduation target
+        // Push curve past 4.2 ETH graduation target.
+        // vm.roll past restrictionsEndBlock (launchBlock+2): at launchBlock+1 and +2
+        // the MAX_BUY_AMOUNT cap applies; at launchBlock+3 all restrictions are lifted.
+        vm.roll(block.number + 3);
         vm.startPrank(buyer);
         for (uint256 i; i < 20; i++) {
             curve.buy{value: 0.25 ether}(0);
@@ -81,6 +84,7 @@ contract UniswapV4GraduationTest is Test {
         (, address curveAddress) = _launch();
         BondingCurve curve = BondingCurve(payable(curveAddress));
 
+        vm.roll(block.number + 3);
         vm.startPrank(buyer);
         for (uint256 i; i < 20; i++) {
             if (curve.graduated()) break;

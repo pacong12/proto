@@ -50,18 +50,12 @@ contract HolderSharingAndVestingTest is Test {
     }
 
     function test_HolderFeeDistributionProRata() public {
+        // H-03 fix: snapshotBalance is 0 until checkpoint or claimReward is called.
+        // Holders must checkpoint before depositRewards to earn from that deposit.
+        distributor.checkpoint(address(token), alice);
+        distributor.checkpoint(address(token), bob);
+
         // I-05 fix: depositRewards is now restricted to the locker address.
-        // Impersonate the locker to deposit rewards.
-        vm.startPrank(deployer);
-        weth.approve(mockLocker, 10 ether);
-        vm.stopPrank();
-
-        vm.startPrank(mockLocker);
-        // The locker transfers WETH on behalf of itself (allowance set by deployer in test setup).
-        // In production the locker holds the WETH from claimFees before forwarding.
-        // Here we transfer directly to the locker first.
-        vm.stopPrank();
-
         // Fund the mock locker with WETH and have it approve + deposit.
         vm.startPrank(deployer);
         weth.transfer(mockLocker, 10 ether);
