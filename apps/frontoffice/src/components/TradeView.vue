@@ -1749,7 +1749,13 @@ let liveCandleTimer: ReturnType<typeof setInterval> | null = null;
 
 // -----------------------------------------------------------------------
 // Bonding curve AMM preview math
+// Mirrors BondingCurve.sol constants exactly:
+//   CURVE_TOKEN_SUPPLY = 800_000_000 (tokens allocated to curve, not wei)
+//   POOL_RESERVE_SUPPLY = 200_000_000 (reserved for V4 LP)
+//   fee = 1% (100 bps)
 // -----------------------------------------------------------------------
+const CURVE_TOKEN_SUPPLY = 800_000_000; // tokens (not wei)
+
 function getVirtualReserves() {
   const vEthRaw = currentToken.value.virtualEthReserve;
   const vTokenRaw = currentToken.value.virtualTokenReserve;
@@ -1760,23 +1766,31 @@ function getVirtualReserves() {
       return { vEth, vToken };
     }
   }
+  // Fallback: reconstruct from pairedPrincipalWeth + contract initial virtual reserves.
+  // BondingCurve constructor: virtualEthReserve = 3 ETH (Robinhood) / 4200 USDC (Arc),
+  // virtualTokenReserve = CURVE_TOKEN_SUPPLY = 800_000_000.
   const currentRaised = parseFloat(currentMarketData.value.pairedPrincipalWeth) || 0;
   const isArc = currencySymbol.value === 'USDC';
-  const baseVirtualEth = isArc ? 3.0 : 3.0;
+  const baseVirtualEth = isArc ? 4200.0 : 3.0;
   return {
     vEth: baseVirtualEth + currentRaised,
-    vToken: 1_000_000_000,
+    vToken: CURVE_TOKEN_SUPPLY,
   };
 }
 
 function computeCurveBuyOutput(ethIn: number): number {
   if (ethIn <= 0) return 0;
   const { vEth, vToken } = getVirtualReserves();
+  // 1% fee deducted before AMM calculation (matches contract: fee = ethIn * 100 / 10000)
   const netEth = ethIn * 0.99;
   const k = vEth * vToken;
   const newEthReserve = vEth + netEth;
   const newTokenReserve = k / newEthReserve;
-  return Math.max(0, vToken - newTokenReserve);
+  const rawOut = Math.max(0, vToken - newTokenReserve);
+  // Cap to curve-available supply: contract checks balanceOf(curve) - POOL_RESERVE_SUPPLY
+  // We approximate: remaining curve supply = vToken (decreases as tokens are bought)
+  // Conservative cap: don't show more than what the virtual reserve can deliver
+  return Math.min(rawOut, vToken);
 }
 
 function computeCurveSellOutput(tokensIn: number): number {
@@ -1785,6 +1799,7 @@ function computeCurveSellOutput(tokensIn: number): number {
   const k = vEth * vToken;
   const newTokenReserve = vToken + tokensIn;
   const newEthReserve = k / newTokenReserve;
+  // 1% fee taken from gross ETH out (matches contract: feeEth = grossEth * 100 / 10000)
   const grossEth = Math.max(0, vEth - newEthReserve);
   return grossEth * 0.99;
 }

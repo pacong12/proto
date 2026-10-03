@@ -513,11 +513,13 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
         graduated: graduated as boolean,
       };
     } catch {
+      // RPC unavailable: return safe defaults matching BondingCurve constructor values.
+      // CURVE_TOKEN_SUPPLY = 800_000_000 * 1e18 (not 1B — 200M is reserved for V4 LP).
       return {
         totalEthRaised: 0n,
         virtualEthReserve:
           networkConfig.chainId === ARC_CHAIN.chainId ? 4_200n * 10n ** 18n : 3n * 10n ** 18n,
-        virtualTokenReserve: 1_000_000_000n * 10n ** 18n,
+        virtualTokenReserve: 800_000_000n * 10n ** 18n,
         graduationTarget: networkConfig.launchConfig.graduationThresholdWei,
         graduated: false,
       };

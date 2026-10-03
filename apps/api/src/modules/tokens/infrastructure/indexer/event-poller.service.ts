@@ -310,12 +310,17 @@ export class EventPollerService {
         if (priceUsd > 0) {
           const mkt = await this.tokenRepository.getMarketData(token.address);
           if (mkt) {
+            // Use the token's actual total supply for market cap, not a hardcoded 1B.
+            // totalSupply is stored as a decimal string (wei units); divide by 1e18.
+            const supplyTokens = token.totalSupply
+              ? Number(BigInt(token.totalSupply)) / 1e18
+              : 1_000_000_000;
             await this.tokenRepository.saveMarketData({
               ...mkt,
               priceUsd,
               priceInWeth: priceUsd / quotePriceUsd,
-              marketCapUsd: priceUsd * 1_000_000_000,
-              fdvUsd: priceUsd * 1_000_000_000,
+              marketCapUsd: priceUsd * supplyTokens,
+              fdvUsd: priceUsd * supplyTokens,
             });
           }
         }
@@ -380,11 +385,15 @@ export class EventPollerService {
         if (amount0 === undefined || amount1 === undefined) continue;
 
         const isToken0 = token.isToken0;
-        const pairSigned = isToken0 ? amount1 : amount0;
-        const isBuy = pairSigned > 0n;
+        // Uniswap V3 sign convention: negative amount = asset flows OUT of the pool (to user).
+        // Buy token = token flows out of pool → tokenAmount < 0.
+        // token is amount0 when isToken0, amount1 otherwise.
+        const tokenAmountSigned = isToken0 ? amount0 : amount1;
+        const isBuy = tokenAmountSigned < 0n;
 
-        const tokenAmountRaw = Math.abs(Number(isToken0 ? amount0 : amount1)) / 1e18;
-        const wethAmountRaw = Math.abs(Number(isToken0 ? amount1 : amount0)) / 1e18;
+        const tokenAmountRaw = Math.abs(Number(tokenAmountSigned)) / 1e18;
+        const wethAmountSigned = isToken0 ? amount1 : amount0;
+        const wethAmountRaw = Math.abs(Number(wethAmountSigned)) / 1e18;
 
         const marketData = this.calculatePricing.execute({
           address: token.address,
