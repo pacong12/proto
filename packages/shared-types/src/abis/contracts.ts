@@ -133,3 +133,18 @@ export const bondingCurveAbi = parseAbi([
   'event Trade(address indexed trader, bool indexed isBuy, uint256 ethAmount, uint256 tokenAmount, uint256 feeEth)',
   'event Graduated(address indexed token, bytes32 indexed poolId, uint256 ethGraduated, uint256 tokensGraduated)',
 ]);
+
+// ---------------------------------------------------------------------------
+// HolderFeeDistributor
+// ---------------------------------------------------------------------------
+
+export const holderFeeDistributorAbi = parseAbi([
+  'function depositRewards(address token, uint256 amount) external',
+  'function earned(address token, address holder) view returns (uint256)',
+  'function claimReward(address token) external returns (uint256 reward)',
+  'function checkpoint(address token, address holder) external',
+  'function tokenFeeStates(address token) view returns (uint256 rewardPerTokenCumulative, uint256 totalDistributedWeth)',
+  'function snapshotBalance(address token, address holder) view returns (uint256)',
+  'event RewardDeposited(address indexed token, uint256 wethAmount)',
+  'event RewardClaimed(address indexed token, address indexed holder, uint256 amount)',
+]);
