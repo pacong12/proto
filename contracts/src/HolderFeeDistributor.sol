@@ -36,6 +36,12 @@ contract HolderFeeDistributor {
     mapping(address => TokenFeeState) public tokenFeeStates;
     mapping(address => mapping(address => uint256)) public userRewardPerTokenPaid;
     mapping(address => mapping(address => uint256)) public userEarnedWeth;
+    /// @notice Balance snapshot captured at the last _updateReward checkpoint.
+    ///         Used instead of live balanceOf() to neutralise flash-loan inflation:
+    ///         tokens acquired *after* the accumulator has advanced cannot
+    ///         retroactively earn from prior deposits because their snapshot is
+    ///         still zero (or the pre-buy value) until _updateReward fires again.
+    mapping(address => mapping(address => uint256)) public snapshotBalance;
 
     event RewardDeposited(address indexed token, uint256 wethAmount);
     event RewardClaimed(address indexed token, address indexed holder, uint256 amount);
@@ -95,13 +101,16 @@ contract HolderFeeDistributor {
     /**
      * @notice Compute unclaimed WETH for a holder based on their snapshotted balance
      *         and the cumulative reward-per-token since their last checkpoint.
-     * @dev F-03 fix: uses snapshotBalance[token][holder] captured at _updateReward,
+     * @dev H-03 fix: uses snapshotBalance[token][holder] captured at _updateReward,
      *      NOT live balanceOf(). This neutralises flash-loan balance inflation:
      *      acquiring tokens in the same block as a deposit cannot retroactively
      *      earn rewards because the snapshot was taken before the acquisition.
+     *      A holder with no prior checkpoint has snapshotBalance == 0, so they
+     *      earn zero from historical accumulation — only future deposits after
+     *      their first _updateReward call will be counted.
      */
     function earned(address token, address holder) public view returns (uint256) {
-        uint256 balance = ILaunchpadToken(token).balanceOf(holder);
+        uint256 balance = snapshotBalance[token][holder];
         uint256 cum = tokenFeeStates[token].rewardPerTokenCumulative;
         uint256 paid = userRewardPerTokenPaid[token][holder];
 
@@ -112,6 +121,9 @@ contract HolderFeeDistributor {
     function _updateReward(address token, address holder) internal {
         userEarnedWeth[token][holder] = earned(token, holder);
         userRewardPerTokenPaid[token][holder] = tokenFeeStates[token].rewardPerTokenCumulative;
+        // Snapshot the live balance now so future reward calculations use this
+        // checkpoint rather than a potentially manipulated live balance.
+        snapshotBalance[token][holder] = ILaunchpadToken(token).balanceOf(holder);
     }
 
     /**
