@@ -21,6 +21,9 @@ import {ILaunchpadToken} from "./interfaces/ILaunchpadToken.sol";
 contract BuybackBurner is IBuybackBurner {
     address public constant BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
     uint24 public constant POOL_FEE = 10000;
+    /// @notice Hard cap on maxSlippageBps. 1000 bps = 10% — beyond this the
+    ///         buyback becomes trivially sandwichable regardless of minAmountOut.
+    uint24 public constant MAX_SLIPPAGE_CAP_BPS = 1000;
 
     address public immutable targetToken;
     address public immutable weth;
@@ -32,6 +35,10 @@ contract BuybackBurner is IBuybackBurner {
     uint256 public override lastBuybackTimestamp;
     uint256 public override cooldown = 3600;
     uint24 public maxSlippageBps = 300;
+    /// @notice Tokens received per 1e18 WETH in the last successful buyback.
+    ///         Used as reference price for enforcing the maxSlippageBps floor.
+    ///         Zero until the first buyback executes (no floor applied on first call).
+    uint256 public lastKnownRate;
 
     bool private _locked;
 
@@ -39,6 +46,7 @@ contract BuybackBurner is IBuybackBurner {
     error CooldownActive();
     error InsufficientWethBalance();
     error ZeroMinAmountOut();
+    error InvalidSlippage();
     error SlippageExceeded();
     error ZeroAddress();
     error Reentrancy();
@@ -89,7 +97,15 @@ contract BuybackBurner is IBuybackBurner {
         emit CooldownUpdated(newCooldown);
     }
 
+    /**
+     * @notice Set the maximum permitted slippage for buyback swaps.
+     * @dev M-02 fix: enforce that slippage cap is non-zero (a zero cap makes
+     *      minAmountOut meaningless because any value would satisfy it) and that
+     *      it cannot exceed MAX_SLIPPAGE_CAP_BPS (1000 bps = 10%). Values above
+     *      10% make the buyback trivially front-runnable regardless of minAmountOut.
+     */
     function setMaxSlippageBps(uint24 newMaxSlippage) external onlyOwner {
+        if (newMaxSlippage == 0 || newMaxSlippage > MAX_SLIPPAGE_CAP_BPS) revert InvalidSlippage();
         maxSlippageBps = newMaxSlippage;
         emit MaxSlippageUpdated(newMaxSlippage);
     }
@@ -158,11 +174,24 @@ contract BuybackBurner is IBuybackBurner {
         // M-01 fix: reject zero minimum so the slippage floor is always meaningful.
         if (minAmountOut == 0) revert ZeroMinAmountOut();
 
+        // M-02 fix: enforce maxSlippageBps on-chain using lastKnownRate as a reference
+        // price. After the first buyback, the caller's minAmountOut must be at least
+        // wethBalance * lastKnownRate * (BPS - maxSlippageBps) / BPS / 1e18.
+        // This prevents a compromised or careless owner from passing a trivially small
+        // minAmountOut that ignores the configured slippage cap.
+        // On the very first call (lastKnownRate == 0) the only guard is minAmountOut > 0;
+        // the actual swap outcome seeds lastKnownRate for all future calls.
+        if (lastKnownRate > 0) {
+            uint256 expectedOut = (wethBalance * lastKnownRate) / 1e18;
+            uint256 requiredMin = expectedOut * (10_000 - maxSlippageBps) / 10_000;
+            if (minAmountOut < requiredMin) revert SlippageExceeded();
+        }
+
         // Update state before external swap interaction (CEI pattern)
         lastBuybackTimestamp = block.timestamp;
 
-        // minAmountOut is the effective floor; caller must compute it using QuoterV2
-        // and apply maxSlippageBps off-chain before submitting.
+        // minAmountOut is the effective floor; caller must derive it from an off-chain
+        // QuoterV2 call and apply maxSlippageBps before submitting.
         bool okZero = IWETH(weth).approve(address(swapRouter), 0);
         if (!okZero) revert TransferFailed();
         bool okApprove = IWETH(weth).approve(address(swapRouter), wethBalance);
@@ -181,6 +210,9 @@ contract BuybackBurner is IBuybackBurner {
 
         tokensBurned = swapRouter.exactInputSingle(params);
         if (tokensBurned < minAmountOut) revert SlippageExceeded();
+
+        // Update reference rate: tokens per 1e18 WETH, used to floor the next call.
+        lastKnownRate = (tokensBurned * 1e18) / wethBalance;
 
         totalBurned += tokensBurned;
 
