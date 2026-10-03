@@ -34,8 +34,10 @@ export const ROBINHOOD_NETWORK: NetworkConfig = {
       'ROBINHOOD_LOCKER_ADDRESS',
       getEnv('LIQUIDITY_LOCKER_ADDRESS', '0xf60664BEadbcBe25aFFdae0e7E2a41a819c81FCe'),
     ) as `0x${string}`,
-    // Not yet deployed to Robinhood mainnet. Fill in the address once deployed.
-    holderFeeDistributor: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+    holderFeeDistributor: getEnv(
+      'ROBINHOOD_HOLDER_FEE_DISTRIBUTOR_ADDRESS',
+      getEnv('HOLDER_FEE_DISTRIBUTOR_ADDRESS', '0x0000000000000000000000000000000000000000'),
+    ) as `0x${string}`,
     uniswapV3Factory: getEnv(
       'ROBINHOOD_V3_FACTORY',
       getEnv('V3_FACTORY', '0x1f7d7550B1b028f7571E69A784071F0205FD2EfA'),
