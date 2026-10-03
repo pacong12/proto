@@ -328,6 +328,52 @@ contract LaunchpadTest is Test {
         vm.prank(lockerOwner);
         vm.expectRevert(LiquidityLocker.Unauthorized.selector);
         locker.setFeeRedirect(tokenAddress, lockerOwner);
+
+        // Third party cannot call claimFees
+        vm.prank(address(0x9999));
+        vm.expectRevert(LiquidityLocker.Unauthorized.selector);
+        locker.claimFees(tokenAddress);
+    }
+
+    function test_FeeRedirectCancelAndClaimByRedirect() public {
+        ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials("", "", "", "", "");
+        vm.deal(deployer, 10 ether);
+        vm.startPrank(deployer);
+        (address tokenAddress, ) = factory.launchToken{value: factory.launchFee()}(
+            "Redirect Test Token",
+            "RTT",
+            "ipfs://rtt",
+            "Testing cancel redirect",
+            socials,
+            0
+        );
+        address redirect1 = address(0x7777);
+        address redirect2 = address(0x8888);
+
+        // 1. Propose redirect1 and cancel
+        locker.setFeeRedirect(tokenAddress, redirect1);
+        locker.cancelFeeRedirect(tokenAddress);
+
+        // 2. Warp and try to accept — reverts because cancelled
+        vm.warp(block.timestamp + 49 hours);
+        vm.expectRevert(LiquidityLocker.NoPendingRedirect.selector);
+        locker.acceptFeeRedirect(tokenAddress);
+
+        // 3. Propose redirect2 and accept
+        locker.setFeeRedirect(tokenAddress, redirect2);
+        vm.warp(block.timestamp + 100 hours);
+        locker.acceptFeeRedirect(tokenAddress);
+        assertEq(locker.feeRedirects(tokenAddress), redirect2);
+
+        // 4. Fund positionManager with 1 WETH
+        weth.deposit{value: 1 ether}();
+        weth.transfer(address(positionManager), 1 ether);
+        vm.stopPrank();
+
+        // 5. ClaimFees by redirect2 succeeds
+        vm.prank(redirect2);
+        locker.claimFees(tokenAddress);
+        assertEq(weth.balanceOf(redirect2), 0.7 ether);
     }
 
     function test_SetTaxConfigRestrictedToDeployer_M01() public {
@@ -374,6 +420,21 @@ contract LaunchpadTest is Test {
         assertEq(buyTax, 100);
         assertEq(sellTax, 200);
         assertEq(taxRecipient, deployer);
+
+        // Proposing again while a proposal exists reverts with PendingTaxExists
+        vm.prank(deployer);
+        token.proposeTaxConfig(300, 300, deployer);
+
+        vm.prank(deployer);
+        vm.expectRevert(LaunchpadToken.PendingTaxExists.selector);
+        token.proposeTaxConfig(400, 400, deployer);
+
+        // Cancel clears proposal, allowing new proposal
+        vm.prank(deployer);
+        token.cancelTaxConfig();
+
+        vm.prank(deployer);
+        token.proposeTaxConfig(400, 400, deployer);
     }
 
     function test_FactoryOwnershipTransfer_M03() public {

@@ -237,7 +237,10 @@ export class RobinhoodChainAdapter implements ChainAdapter {
           });
           await waitForReceiptWithFallback(publicClient, taxHash, walletClient);
         } catch (taxErr) {
-          console.warn('[RobinhoodAdapter] Post-launch proposeTaxConfig skipped or deferred:', taxErr);
+          console.warn(
+            '[RobinhoodAdapter] Post-launch proposeTaxConfig skipped or deferred:',
+            taxErr,
+          );
         }
       }
       return launchResult;

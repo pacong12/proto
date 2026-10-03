@@ -562,7 +562,11 @@
 
               <!-- High-slippage inline warning (L-3 fix) -->
               <div
-                v-if="slippage > SLIPPAGE_WARN_THRESHOLD && isConnected && activeNetwork.chainId === tokenNetwork.chainId"
+                v-if="
+                  slippage > SLIPPAGE_WARN_THRESHOLD &&
+                  isConnected &&
+                  activeNetwork.chainId === tokenNetwork.chainId
+                "
                 class="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-2.5 text-[11px] font-mono text-amber-500"
               >
                 <AlertCircle class="w-3.5 h-3.5 shrink-0 mt-0.5" />

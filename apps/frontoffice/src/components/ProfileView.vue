@@ -144,7 +144,7 @@
           <p class="text-2xl font-bold font-mono text-foreground mt-2">
             {{ totalClaimableWeth }} {{ activeNetwork.nativeCurrency.symbol }}
           </p>
-          <p class="text-xs text-muted-foreground mt-1">70% creator share</p>
+          <p class="text-xs text-muted-foreground mt-1">v1 locker fees only</p>
         </Card>
 
         <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
@@ -328,10 +328,15 @@
                     >
                       <span>
                         Accrued:
-                        <strong class="text-foreground font-mono"
-                          >{{ token.unclaimedWeth }}
-                          {{ activeNetwork.nativeCurrency.symbol }}</strong
-                        >
+                        <strong class="text-foreground font-mono">
+                          {{
+                            token.unclaimedWeth === '—'
+                              ? token.version === 'v2'
+                                ? 'v2 curve'
+                                : '—'
+                              : `${token.unclaimedWeth} ${activeNetwork.nativeCurrency.symbol}`
+                          }}
+                        </strong>
                       </span>
                       <span>•</span>
                       <span>
@@ -1283,7 +1288,10 @@ async function fetchMyLaunches() {
       const launches = await Promise.all(
         envelope.data.map(async (item) => {
           let redirect: string | null = null;
+          let unclaimedWeth = '—';
+
           if (hasLocker) {
+            // Read fee redirect (view call, always available)
             try {
               const r = (await publicClient.readContract({
                 address: lockerAddr,
@@ -1297,14 +1305,36 @@ async function fetchMyLaunches() {
             } catch {
               // Non-blocking
             }
+
+            // Simulate claimFees with the deployer as caller to read pending WETH fees.
+            // simulateContract uses eth_call — no gas consumed, no tx submitted.
+            // Only works for v1 (locker-based) tokens; v2 uses BondingCurve tax distributor.
+            if (item.token.version !== 'v2') {
+              try {
+                const { result } = await publicClient.simulateContract({
+                  address: lockerAddr,
+                  abi: liquidityLockerAbi,
+                  functionName: 'claimFees',
+                  args: [item.token.address as `0x${string}`],
+                  account: target as `0x${string}`,
+                });
+                // result = [creatorTokenFee, creatorWethFee] per ABI
+                const [, creatorWethFee] = result as [bigint, bigint];
+                const wethNum = Number(creatorWethFee) / 1e18;
+                unclaimedWeth = wethNum.toFixed(4);
+              } catch {
+                // Locker may not have a position for this token yet — keep '—'
+              }
+            }
           }
+
           return {
             address: item.token.address,
             name: item.token.name,
             symbol: item.token.symbol,
             logo: item.token.logo,
             version: item.token.version ?? 'v1',
-            unclaimedWeth: '0.0000',
+            unclaimedWeth,
             redirect,
           };
         }),

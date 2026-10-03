@@ -67,7 +67,11 @@ const hasActivated = computed(() => {
           Buy tax
           <strong>{{ buyTaxPct }}%</strong>, sell tax
           <strong>{{ sellTaxPct }}%</strong>
-          {{ hasActivated ? 'can be applied by the deployer now.' : `will activate after ${activatesAt}.` }}
+          {{
+            hasActivated
+              ? 'can be applied by the deployer now.'
+              : `will activate after ${activatesAt}.`
+          }}
         </span>
       </p>
       <p v-if="!hasActivated" class="text-[10px] opacity-75">

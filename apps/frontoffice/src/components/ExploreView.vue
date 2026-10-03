@@ -315,7 +315,11 @@
 
               <!-- 3. MARKET CAP -->
               <td class="py-3.5 px-4 text-right font-extrabold text-sm text-foreground font-mono">
-                ${{ formatNumberCap(item.marketData?.marketCapUsd ?? 4200) }}
+                {{
+                  (item.marketData?.marketCapUsd ?? 0) > 0
+                    ? `$${formatNumberCap(item.marketData.marketCapUsd)}`
+                    : '—'
+                }}
               </td>
 
               <!-- 4. BONDING / PROGRESS -->
@@ -350,9 +354,9 @@
                 }}
               </td>
 
-              <!-- 7. 1H % -->
+              <!-- 7. 1H % — no 1h candle data in API; show dash until priceChange1h is available -->
               <td class="py-3.5 px-4 text-right font-bold text-xs">
-                <span class="text-muted-foreground">0.00%</span>
+                <span class="text-muted-foreground">—</span>
               </td>
 
               <!-- 8. 24H % -->

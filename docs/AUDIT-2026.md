@@ -262,13 +262,13 @@ sinyal risiko GMGN, dan flag GoPlus Security yang umum digunakan DexScreener.
 
 ### Ringkasan Matriks Temuan Baru
 
-| Tingkat Keparahan | Kontrak | Temuan | Status |
-| :---------------- | :------ | :----- | :----- |
-| **HIGH** | HolderFeeDistributor | H-03: Flash-loan bypass via live balanceOf() di earned() | RESOLVED |
-| **HIGH** | LaunchpadV2Factory, LaunchpadV2FactoryArc | H-02: Anti-snipe dead code — liquidityPool tidak pernah di-set pada V2 | RESOLVED |
-| **HIGH** | BondingCurve | H-01: receive() menerima ETH post-graduation, distorsi V4 pool price | RESOLVED |
-| **MEDIUM/LOW** | LaunchpadToken | L-01: setTaxConfig tanpa timelock — mutable tax honeypot vector | RESOLVED |
-| **MEDIUM** | BuybackBurner | M-02: maxSlippageBps tidak di-enforce on-chain | RESOLVED |
+| Tingkat Keparahan | Kontrak                                   | Temuan                                                                 | Status   |
+| :---------------- | :---------------------------------------- | :--------------------------------------------------------------------- | :------- |
+| **HIGH**          | HolderFeeDistributor                      | H-03: Flash-loan bypass via live balanceOf() di earned()               | RESOLVED |
+| **HIGH**          | LaunchpadV2Factory, LaunchpadV2FactoryArc | H-02: Anti-snipe dead code — liquidityPool tidak pernah di-set pada V2 | RESOLVED |
+| **HIGH**          | BondingCurve                              | H-01: receive() menerima ETH post-graduation, distorsi V4 pool price   | RESOLVED |
+| **MEDIUM/LOW**    | LaunchpadToken                            | L-01: setTaxConfig tanpa timelock — mutable tax honeypot vector        | RESOLVED |
+| **MEDIUM**        | BuybackBurner                             | M-02: maxSlippageBps tidak di-enforce on-chain                         | RESOLVED |
 
 ---
 
@@ -341,11 +341,10 @@ sinyal risiko GMGN, dan flag GoPlus Security yang umum digunakan DexScreener.
   - `setMaxSlippageBps()` menolak nilai 0 dan nilai di atas cap (`InvalidSlippage`)
   - Ditambahkan `lastKnownRate` state: token per 1e18 WETH dari buyback terakhir berhasil
   - `executeBuyback()` menegakkan floor: setelah buyback pertama, `minAmountOut` harus
-    >= `wethBalance * lastKnownRate * (BPS - maxSlippageBps) / BPS / 1e18`, mengikat
-    minimum caller ke cap yang dikonfigurasi tanpa memerlukan oracle on-chain
+    > = `wethBalance * lastKnownRate * (BPS - maxSlippageBps) / BPS / 1e18`, mengikat
+    > minimum caller ke cap yang dikonfigurasi tanpa memerlukan oracle on-chain
 
 ---
-
 
 ## Bagian 4: Standardisasi Commit & Quality Tooling
 
