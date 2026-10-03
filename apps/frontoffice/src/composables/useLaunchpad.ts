@@ -301,10 +301,7 @@ export function useLaunchpad() {
       launchStep.value = 'awaiting_signature';
 
       let hash: `0x${string}`;
-      if (
-        network.chainId === 4663 ||
-        targetFactory.toLowerCase() === '0x7ed598bcef8bd9edd8c97a195c6d13f40801ec7e'
-      ) {
+      if (targetFactory.toLowerCase() === '0x7ed598bcef8bd9edd8c97a195c6d13f40801ec7e') {
         // Robinhood Chain LaunchpadV2Factory (0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e)
         // Uses launchToken(params, initialBuyAmount, referral) with launchFee (0.0005 ETH)
         hash = await walletClient.writeContract({
