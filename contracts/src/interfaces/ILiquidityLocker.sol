@@ -17,6 +17,7 @@ interface ILiquidityLocker {
     );
 
     event FeeRedirectUpdated(address indexed token, address indexed redirect);
+    event FeeRedirectCancelled(address indexed token);
 
     function lockPosition(
         address token,
@@ -27,6 +28,7 @@ interface ILiquidityLocker {
 
     function claimFees(address token) external returns (uint256 creatorTokenFee, uint256 creatorWethFee);
     function setFeeRedirect(address token, address redirect) external;
+    function cancelFeeRedirect(address token) external;
     function tokenProtocolFeeShares(address token) external view returns (uint256);
     function feeRedirects(address token) external view returns (address);
     function tokenPositions(address token) external view returns (uint256);

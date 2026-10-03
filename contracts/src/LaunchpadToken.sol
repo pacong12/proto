@@ -62,6 +62,7 @@ contract LaunchpadToken is ILaunchpadToken {
     error ExcessiveTax();
     error TimelockNotExpired();
     error NoPendingTaxConfig();
+    error PendingTaxExists();
 
     event TaxConfigUpdated(uint16 buyTaxBps, uint16 sellTaxBps, address indexed taxRecipient);
     event TaxConfigProposed(uint16 buyTaxBps, uint16 sellTaxBps, address indexed taxRecipient, uint256 validAfter);
@@ -164,6 +165,7 @@ contract LaunchpadToken is ILaunchpadToken {
     function proposeTaxConfig(uint16 buyTaxBps, uint16 sellTaxBps, address taxRecipient) external {
         if (msg.sender != deployer) revert Unauthorized();
         if (buyTaxBps > MAX_TAX_BPS || sellTaxBps > MAX_TAX_BPS) revert ExcessiveTax();
+        if (_pendingTaxConfig.validAfter != 0) revert PendingTaxExists();
 
         address recipient = taxRecipient != address(0) ? taxRecipient : deployer;
         uint256 validAfter = block.timestamp + TAX_CHANGE_TIMELOCK;

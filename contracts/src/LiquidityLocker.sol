@@ -142,6 +142,7 @@ contract LiquidityLocker is ILiquidityLocker {
         address deployer = tokenDeployers[token];
         if (msg.sender != deployer) revert Unauthorized();
         delete pendingFeeRedirects[token];
+        emit FeeRedirectCancelled(token);
     }
 
     function setProtocolFeeRecipient(address recipient) external onlyOwner {
@@ -164,6 +165,7 @@ contract LiquidityLocker is ILiquidityLocker {
     }
 
     function claimFees(address token) external override nonReentrant returns (uint256 creatorTokenFee, uint256 creatorWethFee) {
+        if (msg.sender != tokenDeployers[token] && msg.sender != owner) revert Unauthorized();
         uint256 positionId = tokenPositions[token];
         if (positionId == 0) revert NotLocked();
 
