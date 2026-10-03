@@ -9,6 +9,9 @@ export interface ChainLaunchParams {
   socials: TokenSocials;
   initialBuyAmountEth?: string;
   minInitialTokensOut?: bigint;
+  buyTaxPercent?: number;
+  sellTaxPercent?: number;
+  creatorTaxWallet?: `0x${string}`;
 }
 
 export interface ChainLaunchResult {

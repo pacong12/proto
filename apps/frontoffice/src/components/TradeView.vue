@@ -1199,11 +1199,104 @@
                     </p>
                   </div>
                 </div>
+
+                <!-- Trading Taxes & Fees Card -->
+                <div class="space-y-2.5 pt-3 border-t border-border font-mono text-xs">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p
+                        class="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground"
+                      >
+                        Trading Taxes &amp; Fees
+                      </p>
+                      <p class="text-xs text-foreground mt-0.5">
+                        Buy Tax:
+                        <span class="font-bold"
+                          >{{ (onchainTaxConfig.buyTaxBps / 100).toFixed(1) }}%</span
+                        >
+                        • Sell Tax:
+                        <span class="font-bold"
+                          >{{ (onchainTaxConfig.sellTaxBps / 100).toFixed(1) }}%</span
+                        >
+                        • Protocol Fee:
+                        <span class="font-bold text-emerald-500">1.0%</span>
+                      </p>
+                    </div>
+
+                    <!-- Creator Manage Tax Trigger -->
+                    <Button
+                      v-if="isCreator"
+                      variant="outline"
+                      size="sm"
+                      class="h-7 text-xs font-mono cursor-pointer"
+                      @click="taxModalOpen = true"
+                    >
+                      Update Tax
+                    </Button>
+                  </div>
+                </div>
               </TabsContent>
             </Tabs>
           </div>
         </div>
       </div>
+
+      <!-- Creator Tax Management Dialog -->
+      <Dialog v-model:open="taxModalOpen">
+        <DialogContent class="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Creator Tax Settings</DialogTitle>
+            <DialogDescription>
+              Configure trading taxes on ${{ currentToken.symbol }}. Taxes are received directly by
+              your creator wallet (max 10%).
+            </DialogDescription>
+          </DialogHeader>
+
+          <div class="space-y-4 py-2 font-mono text-xs">
+            <div class="space-y-1.5">
+              <Label for="update-buy-tax">Buy Tax (%)</Label>
+              <Input
+                id="update-buy-tax"
+                v-model="editBuyTax"
+                type="number"
+                min="0"
+                max="10"
+                step="0.1"
+                placeholder="1"
+              />
+            </div>
+            <div class="space-y-1.5">
+              <Label for="update-sell-tax">Sell Tax (%)</Label>
+              <Input
+                id="update-sell-tax"
+                v-model="editSellTax"
+                type="number"
+                min="0"
+                max="10"
+                step="0.1"
+                placeholder="1"
+              />
+            </div>
+            <div class="space-y-1.5">
+              <Label for="update-tax-recipient">Tax Recipient Wallet</Label>
+              <Input
+                id="update-tax-recipient"
+                v-model="editTaxRecipient"
+                type="text"
+                :placeholder="account || '0x...'"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" @click="taxModalOpen = false">Cancel</Button>
+            <Button :disabled="updatingTax" @click="handleUpdateTax">
+              <Loader2 v-if="updatingTax" class="w-4 h-4 mr-2 animate-spin" />
+              Save Onchain Tax
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </template>
   </div>
 </template>
@@ -1233,11 +1326,21 @@ import {
 } from 'lucide-vue-next';
 import { useSwap, SLIPPAGE_WARN_THRESHOLD, parseAmountToWei } from '../composables/useSwap';
 import { useWallet } from '../composables/useWallet';
+import { useLaunchpad } from '../composables/useLaunchpad';
 import { getPublicClient } from '../lib/viem-client';
 import { toast } from '@/components/ui/sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Jazzicon } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Pagination } from '@/components/ui/pagination';
@@ -1305,6 +1408,70 @@ const {
   openWallet,
   updateBalance,
 } = useWallet();
+
+const { setTokenTax } = useLaunchpad();
+
+const isCreator = computed(() => {
+  if (!account.value || !currentToken.value.deployer) return false;
+  return account.value.toLowerCase() === currentToken.value.deployer.toLowerCase();
+});
+
+const onchainTaxConfig = ref({
+  buyTaxBps: 0,
+  sellTaxBps: 0,
+  taxRecipient: '',
+});
+
+const taxModalOpen = ref(false);
+const editBuyTax = ref('1');
+const editSellTax = ref('1');
+const editTaxRecipient = ref('');
+const updatingTax = ref(false);
+
+async function loadOnchainTax(tokenAddr: `0x${string}`) {
+  try {
+    const client = getPublicClient(tokenNetwork.value.chainId);
+    const cfg = (await client.readContract({
+      address: tokenAddr,
+      abi: launchpadTokenAbi,
+      functionName: 'taxConfig',
+    })) as [number, number, string];
+    if (cfg) {
+      onchainTaxConfig.value = {
+        buyTaxBps: Number(cfg[0]),
+        sellTaxBps: Number(cfg[1]),
+        taxRecipient: cfg[2],
+      };
+      editBuyTax.value = String(Number(cfg[0]) / 100);
+      editSellTax.value = String(Number(cfg[1]) / 100);
+      editTaxRecipient.value = cfg[2];
+    }
+  } catch {
+    // Non-blocking
+  }
+}
+
+async function handleUpdateTax() {
+  if (!account.value) return;
+  updatingTax.value = true;
+  try {
+    const buyVal = parseFloat(editBuyTax.value || '0');
+    const sellVal = parseFloat(editSellTax.value || '0');
+    const recipient = (editTaxRecipient.value.trim() as `0x${string}`) || account.value;
+    const hash = await setTokenTax(currentToken.value.address, buyVal, sellVal, recipient);
+    if (hash) {
+      toast.success('Creator Tax Updated Onchain', {
+        description: `Buy Tax: ${buyVal}%, Sell Tax: ${sellVal}%`,
+      });
+      await loadOnchainTax(currentToken.value.address);
+      taxModalOpen.value = false;
+    }
+  } catch (err) {
+    toast.error('Failed to update tax: ' + (err as Error).message);
+  } finally {
+    updatingTax.value = false;
+  }
+}
 
 const currentToken = ref<LaunchedTokenEntity>({
   address: (props.tokenAddress as `0x${string}`) || '0x0000000000000000000000000000000000000000',
@@ -2377,6 +2544,7 @@ async function loadTokenData(address: `0x${string}`) {
     fetchHolders(address),
     fetchComments(address),
     fetchVotes(address),
+    loadOnchainTax(address),
   ]);
   tokenLoading.value = false;
 }

@@ -1469,6 +1469,9 @@ async function handleLaunch() {
         telegram: form.value.telegram.trim(),
       },
       initialBuyAmountEth: String(form.value.initialBuyEth || '0').trim(),
+      buyTaxPercent: parseFloat(form.value.buyTax || '0'),
+      sellTaxPercent: parseFloat(form.value.sellTax || '0'),
+      creatorTaxWallet: form.value.creatorWallet.trim() || undefined,
     },
     selectedVersion.value,
   );

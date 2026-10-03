@@ -94,6 +94,9 @@ export function useLaunchpad() {
     description: string;
     socials: TokenSocials;
     initialBuyAmountEth?: string;
+    buyTaxPercent?: number;
+    sellTaxPercent?: number;
+    creatorTaxWallet?: string;
   }): Promise<{ tokenAddress: `0x${string}`; poolAddress: `0x${string}` } | null> {
     loading.value = true;
     error.value = null;
@@ -257,6 +260,9 @@ export function useLaunchpad() {
     socials: TokenSocials;
     initialBuyAmountEth?: string;
     minInitialTokensOut?: bigint;
+    buyTaxPercent?: number;
+    sellTaxPercent?: number;
+    creatorTaxWallet?: string;
   }): Promise<{ tokenAddress: `0x${string}`; curveAddress: `0x${string}` } | null> {
     loading.value = true;
     error.value = null;
@@ -501,6 +507,9 @@ export function useLaunchpad() {
       socials: TokenSocials;
       initialBuyAmountEth?: string;
       minInitialTokensOut?: bigint;
+      buyTaxPercent?: number;
+      sellTaxPercent?: number;
+      creatorTaxWallet?: string;
     },
     version: 'v1' | 'v2' = 'v2',
   ) {
@@ -888,6 +897,46 @@ export function useLaunchpad() {
     return null;
   }
 
+  async function setTokenTax(
+    tokenAddress: `0x${string}`,
+    buyTaxPercent: number,
+    sellTaxPercent: number,
+    taxRecipient?: `0x${string}`,
+  ): Promise<`0x${string}` | null> {
+    loading.value = true;
+    error.value = null;
+    try {
+      const walletClient = await getWalletClient();
+      if (!walletClient) throw new Error('No Web3 wallet detected');
+      const [account] = await walletClient.getAddresses();
+      if (!account) throw new Error('Please connect your wallet');
+
+      const buyTaxBps = Math.min(1000, Math.max(0, Math.round(buyTaxPercent * 100)));
+      const sellTaxBps = Math.min(1000, Math.max(0, Math.round(sellTaxPercent * 100)));
+      const recipient = taxRecipient || account;
+
+      const hash = await walletClient.writeContract({
+        address: tokenAddress,
+        abi: launchpadTokenAbi,
+        functionName: 'setTaxConfig',
+        args: [buyTaxBps, sellTaxBps, recipient],
+        account,
+        chain: walletClient.chain,
+      });
+
+      const client = getPublicClient();
+      await client.waitForTransactionReceipt({ hash });
+      return hash;
+    } catch (err) {
+      if (!isUserRejection(err)) {
+        error.value = (err as Error).message;
+      }
+      return null;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   return {
     loading,
     error,
@@ -900,6 +949,7 @@ export function useLaunchpad() {
     fetchTokenDetails,
     claimFees,
     setFeeRedirect,
+    setTokenTax,
     checkPendingTransaction,
   };
 }

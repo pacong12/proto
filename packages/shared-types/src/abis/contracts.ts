@@ -68,8 +68,12 @@ export const launchpadTokenAbi = parseAbi([
   'function restrictionsEndBlock() view returns (uint256)',
   'function launchBlock() view returns (uint256)',
   'function socials() view returns (string twitter, string telegram, string discord, string website, string farcaster)',
+  'function taxConfig() view returns (uint16 buyTaxBps, uint16 sellTaxBps, address taxRecipient)',
+  'function setTaxConfig(uint16 buyTaxBps, uint16 sellTaxBps, address taxRecipient) external',
   'event Transfer(address indexed from, address indexed to, uint256 value)',
   'event Approval(address indexed owner, address indexed spender, uint256 value)',
+  'event TaxConfigUpdated(uint16 buyTaxBps, uint16 sellTaxBps, address taxRecipient)',
+  'event TaxCollected(address indexed from, address indexed to, uint256 taxAmount, bool isBuy)',
 ]);
 
 // ---------------------------------------------------------------------------
