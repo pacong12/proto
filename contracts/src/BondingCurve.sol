@@ -417,5 +417,16 @@ contract BondingCurve {
         emit EmergencyWithdraw(recipient, ethAmount, tokenAmount);
     }
 
-    receive() external payable {}
+    /**
+     * @notice Accept ETH only while the bonding curve is active (not yet graduated).
+     * @dev H-01 fix: after graduation all ETH in this contract belongs to the V4
+     *      migration pool. Accepting arbitrary ETH post-graduation would distort
+     *      the pool's sqrtPriceX96 when migrateToV4() forwards address(this).balance,
+     *      causing immediate arbitrage against the LP.
+     *      Pre-graduation, plain ETH transfers are needed so the factory can fund
+     *      the initial creator buy via buyFor().
+     */
+    receive() external payable {
+        if (graduated) revert AlreadyGraduated();
+    }
 }
