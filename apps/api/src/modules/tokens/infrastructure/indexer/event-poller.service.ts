@@ -310,17 +310,23 @@ export class EventPollerService {
         if (priceUsd > 0) {
           const mkt = await this.tokenRepository.getMarketData(token.address);
           if (mkt) {
-            // Use the token's actual total supply for market cap, not a hardcoded 1B.
-            // totalSupply is stored as a decimal string (wei units); divide by 1e18.
             const supplyTokens = token.totalSupply
               ? Number(BigInt(token.totalSupply)) / 1e18
               : 1_000_000_000;
+            // Recompute 24h volume from stored trades so the value is always accurate
+            // and never lost when saveMarketData overwrites the DB row.
+            const cutoff24h = Date.now() - 86_400_000;
+            const recentTrades = await this.tokenRepository.getTrades(token.address, 500, 0);
+            const volume24hUsd = recentTrades
+              .filter((t) => (t.timestamp ?? 0) >= cutoff24h)
+              .reduce((sum, t) => sum + parseFloat(t.wethAmount || '0') * quotePriceUsd, 0);
             await this.tokenRepository.saveMarketData({
               ...mkt,
               priceUsd,
               priceInWeth: priceUsd / quotePriceUsd,
               marketCapUsd: priceUsd * supplyTokens,
               fdvUsd: priceUsd * supplyTokens,
+              volume24hUsd,
             });
           }
         }
