@@ -28,7 +28,7 @@ export const ROBINHOOD_NETWORK: NetworkConfig = {
     ) as `0x${string}`,
     factoryV2: getEnv(
       'ROBINHOOD_FACTORY_V2_ADDRESS',
-      getEnv('LAUNCHPAD_V2_FACTORY_ADDRESS', '0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e'),
+      getEnv('LAUNCHPAD_V2_FACTORY_ADDRESS', '0x094858C1C9721506D3384eC8f6a97b61A34a5896'),
     ) as `0x${string}`,
     locker: getEnv(
       'ROBINHOOD_LOCKER_ADDRESS',
