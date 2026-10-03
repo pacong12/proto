@@ -25,6 +25,7 @@ contract LaunchpadToken is ILaunchpadToken {
     uint256 public constant MAX_HOLD_AMOUNT = 50_000_000 * 10 ** 18;
     uint256 public constant MAX_BUY_AMOUNT = 55_000_000 * 10 ** 18;
     uint16 public constant MAX_TAX_BPS = 1000;
+    uint256 public constant TAX_CHANGE_TIMELOCK = 24 hours;
 
     string private _name;
     string private _symbol;
@@ -32,6 +33,12 @@ contract LaunchpadToken is ILaunchpadToken {
     string private _description;
     Socials private _socials;
     TaxConfig private _taxConfig;
+
+    struct PendingTaxConfig {
+        TaxConfig config;
+        uint256 validAfter;
+    }
+    PendingTaxConfig private _pendingTaxConfig;
 
     address public immutable override deployer;
     address public immutable factory;
@@ -53,8 +60,12 @@ contract LaunchpadToken is ILaunchpadToken {
     error InsufficientAllowance();
     error ZeroAddress();
     error ExcessiveTax();
+    error TimelockNotExpired();
+    error NoPendingTaxConfig();
 
     event TaxConfigUpdated(uint16 buyTaxBps, uint16 sellTaxBps, address indexed taxRecipient);
+    event TaxConfigProposed(uint16 buyTaxBps, uint16 sellTaxBps, address indexed taxRecipient, uint256 validAfter);
+    event TaxConfigCancelled();
 
     modifier onlyFactoryOrDeployer() {
         if (msg.sender != deployer && msg.sender != factory) revert Unauthorized();
@@ -144,26 +155,65 @@ contract LaunchpadToken is ILaunchpadToken {
     // ---------------------------------------------------------------------------
 
     /**
-     * @notice Update the creator trading tax configuration.
-     * @dev F-08 fix: the previous code.length == 0 EOA check was bypassable from
-     *      a contract constructor (code.length is 0 during construction) and provided
-     *      false security. It is removed. The deployer is solely responsible for
-     *      supplying a taxRecipient that can receive ERC-20 transfers without reverting.
-     *      If the recipient is a broken contract, the deployer's own users suffer —
-     *      an acceptable deployer-bears-own-risk model.
+     * @notice Propose a tax configuration change. Takes effect after TAX_CHANGE_TIMELOCK (24h).
+     * @dev L-01 fix: instant setTaxConfig allowed deployer to spike sell tax to 10% without
+     *      warning. GMGN/GoPlus flag tokens with instant mutable tax as HIGH RISK.
+     *      Two-step flow: proposeTaxConfig() -> wait 24h -> acceptTaxConfig().
+     *      Deployer may call cancelTaxConfig() at any time to abort.
      */
-    function setTaxConfig(uint16 buyTaxBps, uint16 sellTaxBps, address taxRecipient) external {
+    function proposeTaxConfig(uint16 buyTaxBps, uint16 sellTaxBps, address taxRecipient) external {
         if (msg.sender != deployer) revert Unauthorized();
         if (buyTaxBps > MAX_TAX_BPS || sellTaxBps > MAX_TAX_BPS) revert ExcessiveTax();
 
         address recipient = taxRecipient != address(0) ? taxRecipient : deployer;
+        uint256 validAfter = block.timestamp + TAX_CHANGE_TIMELOCK;
 
-        _taxConfig = TaxConfig({
-            buyTaxBps: buyTaxBps,
-            sellTaxBps: sellTaxBps,
-            taxRecipient: recipient
+        _pendingTaxConfig = PendingTaxConfig({
+            config: TaxConfig({
+                buyTaxBps: buyTaxBps,
+                sellTaxBps: sellTaxBps,
+                taxRecipient: recipient
+            }),
+            validAfter: validAfter
         });
-        emit TaxConfigUpdated(buyTaxBps, sellTaxBps, recipient);
+
+        emit TaxConfigProposed(buyTaxBps, sellTaxBps, recipient, validAfter);
+    }
+
+    /// @notice Finalise a pending tax configuration change after the 24-hour timelock.
+    function acceptTaxConfig() external {
+        if (msg.sender != deployer) revert Unauthorized();
+        PendingTaxConfig memory pending = _pendingTaxConfig;
+        if (pending.validAfter == 0) revert NoPendingTaxConfig();
+        if (block.timestamp < pending.validAfter) revert TimelockNotExpired();
+
+        _taxConfig = pending.config;
+        delete _pendingTaxConfig;
+
+        emit TaxConfigUpdated(
+            pending.config.buyTaxBps,
+            pending.config.sellTaxBps,
+            pending.config.taxRecipient
+        );
+    }
+
+    /// @notice Cancel a pending tax configuration proposal before it takes effect.
+    function cancelTaxConfig() external {
+        if (msg.sender != deployer) revert Unauthorized();
+        if (_pendingTaxConfig.validAfter == 0) revert NoPendingTaxConfig();
+        delete _pendingTaxConfig;
+        emit TaxConfigCancelled();
+    }
+
+    /// @notice View the pending tax config (returns zeros if none pending).
+    function pendingTaxConfig() external view returns (
+        uint16 buyTaxBps,
+        uint16 sellTaxBps,
+        address taxRecipient,
+        uint256 validAfter
+    ) {
+        PendingTaxConfig memory p = _pendingTaxConfig;
+        return (p.config.buyTaxBps, p.config.sellTaxBps, p.config.taxRecipient, p.validAfter);
     }
 
     function setLiquidityPool(address pool) external override onlyFactoryOrDeployer {
