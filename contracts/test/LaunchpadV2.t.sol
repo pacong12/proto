@@ -140,16 +140,54 @@ contract LaunchpadV2Test is Test {
     }
 
     function test_LaunchTokenV2WithInitialBuy_DirectRecipient_C02() public {
+        uint256 feeRecipientBalanceBefore = feeRecipient.balance;
+        uint256 initialBuy = 0.1 ether;
+
         vm.prank(creator);
-        (address tokenAddress,) = factory.launchTokenV2{value: 0.0005 ether + 0.1 ether}(
+        (address tokenAddress, address curveAddress) = factory.launchTokenV2{value: 0.0005 ether + initialBuy}(
             "Initial Buy Token", "INIT", "ipfs://logo", "Testing direct initial buy", "", "", "", 0
         );
 
         LaunchpadToken token = LaunchpadToken(payable(tokenAddress));
+        BondingCurve curve = BondingCurve(payable(curveAddress));
 
-        // C-02 Verification: Creator must receive initial buy tokens directly, factory holds 0
+        // 1. Fee recipient (owner) receives exact 0.0005 ETH launch fee + 1% curve trading fee on initial buy
+        uint256 expectedTradingFee = (initialBuy * 100) / 10000; // 1% of 0.1 ETH = 0.001 ETH
+        assertEq(
+            feeRecipient.balance,
+            feeRecipientBalanceBefore + 0.0005 ether + expectedTradingFee,
+            "protocol fee recipient must receive launch fee plus 1% curve trade fee"
+        );
+
+        // 2. Creator receives initial buy tokens directly, factory holds 0
         assertGt(token.balanceOf(creator), 0, "creator must receive initial buy tokens");
         assertEq(token.balanceOf(address(factory)), 0, "factory must hold 0 tokens");
+
+        // 3. Curve totalEthRaised reflects ONLY initialBuy minus trading fee, never the launch fee
+        assertEq(curve.totalVolumeEth(), initialBuy, "curve volume reflects only initial buy");
+        assertEq(curve.totalEthRaised(), initialBuy - expectedTradingFee, "curve net ETH raised excludes launch fee");
+    }
+
+    function test_LaunchTokenV2_ZeroInitialBuy_NoTokensBought() public {
+        uint256 feeRecipientBalanceBefore = feeRecipient.balance;
+
+        vm.prank(creator);
+        (address tokenAddress, address curveAddress) = factory.launchTokenV2{value: 0.0005 ether}(
+            "No Prebuy Token", "ZERO", "ipfs://logo", "No initial buy", "", "", "", 0
+        );
+
+        LaunchpadToken token = LaunchpadToken(payable(tokenAddress));
+        BondingCurve curve = BondingCurve(payable(curveAddress));
+
+        // 1. Fee recipient receives exactly 0.0005 ether
+        assertEq(feeRecipient.balance, feeRecipientBalanceBefore + 0.0005 ether);
+
+        // 2. Creator has exactly 0 tokens — NO prebuy occurred
+        assertEq(token.balanceOf(creator), 0, "creator balance must be 0 when no initial buy specified");
+
+        // 3. Curve has 0 eth raised and 0 volume
+        assertEq(curve.totalEthRaised(), 0, "total ETH raised must be 0");
+        assertEq(curve.totalVolumeEth(), 0, "total volume must be 0");
     }
 
     function test_OwnershipTransfer_TwoStepFlow() public {
