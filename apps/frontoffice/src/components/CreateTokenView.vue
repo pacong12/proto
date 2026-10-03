@@ -1364,8 +1364,6 @@ const dragOver = ref(false);
 const isUploadingIpfs = ref(false);
 const imageError = ref('');
 const advancedOpen = ref(false);
-const holderFeeSharing = ref(false);
-
 function clearImage() {
   selectedFileName.value = '';
   imagePreview.value = '';

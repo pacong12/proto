@@ -256,12 +256,12 @@
           </div>
         </div>
 
-      <!-- Pending tax change warning - visible to all visitors -->
-      <PendingTaxBanner
-        v-if="hasPendingTax && pendingTax"
-        :pending="pendingTax"
-        :symbol="currentToken.symbol"
-      />
+        <!-- Pending tax change warning - visible to all visitors -->
+        <PendingTaxBanner
+          v-if="hasPendingTax && pendingTax"
+          :pending="pendingTax"
+          :symbol="currentToken.symbol"
+        />
       </div>
 
       <!-- ============================================================
@@ -558,6 +558,18 @@
                 >
                   <span>{{ estimatedOutput }}</span>
                 </div>
+              </div>
+
+              <!-- High-slippage inline warning (L-3 fix) -->
+              <div
+                v-if="slippage > SLIPPAGE_WARN_THRESHOLD && isConnected && activeNetwork.chainId === tokenNetwork.chainId"
+                class="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-2.5 text-[11px] font-mono text-amber-500"
+              >
+                <AlertCircle class="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                <span>
+                  Slippage is set to <strong>{{ slippage }}%</strong> — high sandwich attack risk.
+                  Lower it in the settings above or proceed with caution.
+                </span>
               </div>
 
               <!-- CTA Swap button -->
@@ -1297,7 +1309,9 @@
 
           <!-- Deployer: manage pending timelock proposal -->
           <div class="pt-2 border-t border-border">
-            <p class="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-3 font-mono">
+            <p
+              class="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-3 font-mono"
+            >
               Pending proposal
             </p>
             <TaxTimelockPanel

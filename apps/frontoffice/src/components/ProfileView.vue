@@ -985,6 +985,7 @@ const {
   loadDividends,
   claimDividend,
   claimAllDividends,
+  reset: resetDividends,
 } = useHolderDividends();
 
 function getDistributorAddress() {
@@ -995,6 +996,7 @@ function getDistributorAddress() {
 async function refreshDividends() {
   const holder = profileAddress.value;
   if (!holder) return;
+  resetDividends();
   const tokens = portfolioPositions.value.map((p) => ({
     address: p.tokenAddress as `0x${string}`,
     symbol: p.symbol,
@@ -1009,7 +1011,11 @@ async function refreshDividends() {
 }
 
 async function handleClaimSingle(tokenAddress: `0x${string}`) {
-  const hash = await claimDividend(tokenAddress, getDistributorAddress(), activeNetwork.value.chainId);
+  const hash = await claimDividend(
+    tokenAddress,
+    getDistributorAddress(),
+    activeNetwork.value.chainId,
+  );
   if (hash) {
     successTx.value = hash;
   } else if (dividendsError.value) {

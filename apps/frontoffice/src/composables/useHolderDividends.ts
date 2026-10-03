@@ -46,9 +46,7 @@ export function useHolderDividends() {
   const actionLoading = ref<string | null>(null); // token address being claimed
   const error = ref<string | null>(null);
 
-  const totalEarnedWei = computed(() =>
-    entries.value.reduce((acc, e) => acc + e.earnedWei, 0n),
-  );
+  const totalEarnedWei = computed(() => entries.value.reduce((acc, e) => acc + e.earnedWei, 0n));
 
   const totalEarnedFormatted = computed(() => {
     const n = Number(formatEther(totalEarnedWei.value));
@@ -180,5 +178,9 @@ export function useHolderDividends() {
     loadDividends,
     claimDividend,
     claimAllDividends,
+    /** Reset entries to empty — call before loadDividends when switching wallet/profile. */
+    reset() {
+      entries.value = [];
+    },
   };
 }
