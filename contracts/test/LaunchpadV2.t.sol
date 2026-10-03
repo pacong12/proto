@@ -90,8 +90,11 @@ contract LaunchpadV2Test is Test {
         assertEq(token.balanceOf(curveAddress), 1_000_000_000 * 1e18);
         assertEq(curve.virtualEthReserve(), 3.0 ether);
 
-        // Buyer1 purchases tokens from the curve after snipe tax window
+        // Buyer1 purchases tokens from the curve after snipe tax window.
+        // vm.roll is required: LaunchpadToken's anti-snipe guard uses block.number,
+        // not block.timestamp. Advancing only time is insufficient.
         vm.warp(block.timestamp + 10);
+        vm.roll(block.number + 3);
         vm.startPrank(buyer1);
         (uint256 expectedTokens, uint256 expectedFee) = curve.getAmountOutBuy(0.5 ether);
         uint256 tokensReceived = curve.buy{value: 0.5 ether}(expectedTokens);
@@ -110,7 +113,11 @@ contract LaunchpadV2Test is Test {
         uint256 initialVirtualTokens = curve.virtualTokenReserve();
         (uint256 grossTokensExpected,) = curve.getAmountOutBuy(0.1 ether);
 
-        // Buy at t=0 (snipe tax 99%)
+        // Buy at launchBlock+1: snipe tax (99%) still applies; block restriction only
+        // gates launchBlock itself. After H-02 fix, liquidityPool is set post-launch so
+        // the deployer-only guard is active at launchBlock. Advancing one block lets
+        // buyer1 buy while snipe tax is still at maximum (restrictionsEndBlock = launchBlock+2).
+        vm.roll(block.number + 1);
         vm.startPrank(buyer1);
         uint256 tokensReceived = curve.buy{value: 0.1 ether}(0);
         vm.stopPrank();

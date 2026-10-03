@@ -202,7 +202,8 @@ contract LaunchpadV2FactoryArc {
         // anti-snipe restrictions in LaunchpadToken._transfer() are active.
         // Without this call, liquidityPool remains address(0) and the block-based
         // MAX_BUY_AMOUNT / MAX_HOLD_AMOUNT guards in _transfer() never fire.
-        token.setLiquidityPool(curveAddress);
+        // NOTE: setLiquidityPool is called AFTER the initial buy to allow factory-internal
+        // snipe-fee distributions to feeRecipient without triggering the deployer-only guard.
 
         // CEI: write state before external calls
         launches[tokenAddress] = V2Launch({
@@ -226,6 +227,8 @@ contract LaunchpadV2FactoryArc {
             uint256 tokensBought = curve.buyFor{value: initialBuyUsdc}(msg.sender, minInitialTokensOut);
             require(tokensBought >= minInitialTokensOut, "Slippage");
         }
+
+        token.setLiquidityPool(curveAddress);
     }
 
     // ---------------------------------------------------------------------------
