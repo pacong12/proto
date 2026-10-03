@@ -329,8 +329,11 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
     const factories = [
       cfg.contracts.factoryV2,
       cfg.contracts.factory,
-      cfg.chainId === ARC_CHAIN.chainId
-        ? ('0x48844223aBDceeb1Ce502F54d559681358E68200' as Address)
+      cfg.chainId === ROBINHOOD_CHAIN.chainId
+        ? ('0x094858C1C9721506D3384eC8f6a97b61A34a5896' as Address)
+        : undefined,
+      cfg.chainId === ROBINHOOD_CHAIN.chainId
+        ? ('0xcC547D4EC0eF85FE506D2b2EEe02Be3620178B16' as Address)
         : undefined,
     ].filter((f): f is Address => Boolean(f && f !== '0x0000000000000000000000000000000000000000'));
 

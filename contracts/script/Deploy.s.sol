@@ -13,16 +13,23 @@ contract DeployScript is Script {
     address public constant RH_WETH = 0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73;
 
     function run() external returns (address factoryAddress, address lockerAddress) {
-        uint256 deployerPrivateKey = vm.envOr("PRIVATE_KEY", uint256(1));
+        uint256 deployerPrivateKey;
+        address deployer;
+        bool hasExplicitKey = false;
 
-        address deployer = vm.addr(deployerPrivateKey);
-        console.log("Deployer Address:", deployer);
+        try vm.envUint("PRIVATE_KEY") returns (uint256 pk) {
+            deployerPrivateKey = pk;
+            deployer = vm.addr(pk);
+            hasExplicitKey = true;
+        } catch {
+            deployer = msg.sender;
+        }
 
         address feeRecipient;
         try vm.envAddress("PROTOCOL_FEE_RECIPIENT") returns (address recipient) {
             feeRecipient = recipient;
         } catch {
-            feeRecipient = deployer;
+            feeRecipient = 0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2;
         }
 
         address v3Factory = vm.envOr("V3_FACTORY", RH_V3_FACTORY);
@@ -30,7 +37,15 @@ contract DeployScript is Script {
         address swapRouter = vm.envOr("SWAP_ROUTER", RH_SWAP_ROUTER);
         address weth = vm.envOr("WETH_ADDRESS", RH_WETH);
 
-        vm.startBroadcast(deployerPrivateKey);
+        console.log("=== ROBINHOOD V1 FACTORY DEPLOYMENT ===");
+        console.log("Deployer Address:", deployer);
+        console.log("Fee Recipient   :", feeRecipient);
+
+        if (hasExplicitKey) {
+            vm.startBroadcast(deployerPrivateKey);
+        } else {
+            vm.startBroadcast();
+        }
 
         LaunchpadFactory factory = new LaunchpadFactory(
             v3Factory,
@@ -45,7 +60,7 @@ contract DeployScript is Script {
 
         vm.stopBroadcast();
 
-        console.log("=== PROTO PROTOCOL DEPLOYED ===");
+        console.log("=== PROTO V1 DEPLOYED SUCCESSFULLY ===");
         console.log("LaunchpadFactory:", factoryAddress);
         console.log("LiquidityLocker :", lockerAddress);
         console.log("WETH Address    :", weth);
