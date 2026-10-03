@@ -41,10 +41,8 @@ export const ARC_NETWORK: NetworkConfig = {
       'ARC_LOCKER_ADDRESS',
       '0x173FF5D4eF626869a5a35FF0EA0c56c0A7e4Cd8b',
     ) as `0x${string}`,
-    holderFeeDistributor: getEnv(
-      'ARC_HOLDER_FEE_DISTRIBUTOR_ADDRESS',
-      getEnv('HOLDER_FEE_DISTRIBUTOR_ADDRESS', '0x0000000000000000000000000000000000000000'),
-    ) as `0x${string}`,
+    // Not yet deployed to Arc mainnet. Fill in the address once deployed.
+    holderFeeDistributor: '0x0000000000000000000000000000000000000000' as `0x${string}`,
     uniswapV3Factory: getEnv(
       'ARC_V3_FACTORY',
       '0xf0db7b58379503491d857dB50AC9ece64c653918',
