@@ -9,7 +9,7 @@ For transparency and safety, all Proto launchpad contracts across supported netw
 | Contract Name                            | Address                                      | Function                                     |
 | :--------------------------------------- | :------------------------------------------- | :------------------------------------------- |
 | **Launchpad Factory (v1 Direct Pool)**   | `0xcC547D4EC0eF85FE506D2b2EEe02Be3620178B16` | Deploys tokens and seeds Uniswap V3 pools    |
-| **Launchpad Factory (v2 Bonding Curve)** | `0x094858C1C9721506D3384eC8f6a97b61A34a5896` | Deploys tokens and active bonding curves     |
+| **Launchpad Factory (v2 Bonding Curve)** | `0xbA42499Cfe59abc05120A100EEc4f859F476034F` | Deploys tokens and active bonding curves     |
 | **Liquidity Locker**                     | `0xf60664BEadbcBe25aFFdae0e7E2a41a819c81FCe` | Holds and permanently locks LP position NFTs |
 | **Uniswap V3 Factory**                   | `0x1f7d7550B1b028f7571E69A784071F0205FD2EfA` | Canonical decentralized pool registry        |
 | **Position Manager**                     | `0x73991a25C818Bf1f1128dEAaB1492D45638DE0D3` | Concentrated liquidity position NFT manager  |
