@@ -80,6 +80,42 @@ contract HolderSharingAndVestingTest is Test {
         assertEq(distributor.earned(address(token), alice), 0);
     }
 
+    function test_FlashLoanCheckpointExploitDefeated() public {
+        address attacker = address(0x9999);
+
+        // 1. Attacker temporarily acquires tokens (simulating a flash loan)
+        vm.prank(alice);
+        token.transfer(attacker, 500_000_000 * 1e18);
+
+        // 2. Attacker checkpoints their temporary high balance
+        distributor.checkpoint(address(token), attacker);
+        assertEq(distributor.snapshotBalance(address(token), attacker), 500_000_000 * 1e18);
+
+        // 3. Attacker returns tokens (flash loan repaid in same transaction)
+        vm.prank(attacker);
+        token.transfer(alice, 500_000_000 * 1e18);
+        assertEq(token.balanceOf(attacker), 0);
+
+        // 4. Rewards are deposited by the locker
+        vm.startPrank(deployer);
+        weth.transfer(mockLocker, 5 ether);
+        vm.stopPrank();
+
+        vm.startPrank(mockLocker);
+        weth.approve(address(distributor), 5 ether);
+        distributor.depositRewards(address(token), 5 ether);
+        vm.stopPrank();
+
+        // 5. Attacker earned is ZERO because live balance is 0 (effectiveBalance = min(snap, live))
+        assertEq(distributor.earned(address(token), attacker), 0, "attacker must earn 0 after returning tokens");
+
+        // 6. Attacker claim yields 0 reward
+        vm.prank(attacker);
+        uint256 claimed = distributor.claimReward(address(token));
+        assertEq(claimed, 0, "attacker claimed amount must be 0");
+        assertEq(weth.balanceOf(attacker), 0, "attacker receives no WETH");
+    }
+
     function test_VestingVaultLinearRelease() public {
         uint256 grantAmount = 10_000 * 1e18;
         uint256 duration = 100 days;
