@@ -43,6 +43,23 @@ export class GetTokenByAddressUseCase {
     return ((currentPriceUsd - anchor.priceUsd) / anchor.priceUsd) * 100;
   }
 
+  /**
+   * Compute total trading volume in USD for the last 24 hours.
+   * Sums wethAmount (native quote) for all trades in the 24h window and multiplies
+   * by quoteAssetPriceUsd (1.0 for Arc/USDC, live ETH price for Robinhood).
+   * Uses the same 500-trade fetch as computePriceChange24h; trades are stored DESC.
+   */
+  private async computeVolume24h(
+    address: `0x${string}`,
+    quoteAssetPriceUsd: number,
+  ): Promise<number> {
+    const cutoff = Date.now() - 86_400_000; // ms
+    const trades = await this.tokenRepository.getTrades(address, 500, 0);
+    return trades
+      .filter((t) => (t.timestamp ?? 0) >= cutoff)
+      .reduce((sum, t) => sum + parseFloat(t.wethAmount || '0') * quoteAssetPriceUsd, 0);
+  }
+
   async execute(address: `0x${string}`): Promise<TokenDetailResult | null> {
     let token = await this.tokenRepository.findByAddress(address);
 
@@ -104,7 +121,10 @@ export class GetTokenByAddressUseCase {
       });
 
       const priceChange24h = await this.computePriceChange24h(token.address, marketData.priceUsd);
-      const marketDataWithChange = { ...marketData, priceChange24h };
+      // Recompute volume24hUsd from trades — calculatePricing does not have access to trades,
+      // so it always emits 0. We compute it here and include it in the saved market data.
+      const volume24hUsd = await this.computeVolume24h(token.address, quoteAssetPriceUsd);
+      const marketDataWithChange = { ...marketData, priceChange24h, volume24hUsd };
 
       await this.tokenRepository.saveMarketData(marketDataWithChange);
 
@@ -143,10 +163,10 @@ export class GetTokenByAddressUseCase {
     });
 
     const priceChange24h = await this.computePriceChange24h(token.address, marketData.priceUsd);
-    const marketDataWithChange = { ...marketData, priceChange24h };
+    const volume24hUsd = await this.computeVolume24h(token.address, quoteAssetPriceUsd);
+    const marketDataWithChange = { ...marketData, priceChange24h, volume24hUsd };
 
     // Fire-and-forget: market data write must not block the GET response path.
-    // SQLite write locks are per-connection; an awaited write here delays concurrent reads.
     void this.tokenRepository.saveMarketData(marketDataWithChange);
 
     return { token, marketData: marketDataWithChange };
