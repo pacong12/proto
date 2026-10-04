@@ -330,7 +330,7 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
       cfg.contracts.factoryV2,
       cfg.contracts.factory,
       cfg.chainId === ROBINHOOD_CHAIN.chainId
-        ? ('0x094858C1C9721506D3384eC8f6a97b61A34a5896' as Address)
+        ? ('0xbA42499Cfe59abc05120A100EEc4f859F476034F' as Address)
         : undefined,
       cfg.chainId === ROBINHOOD_CHAIN.chainId
         ? ('0xcC547D4EC0eF85FE506D2b2EEe02Be3620178B16' as Address)
