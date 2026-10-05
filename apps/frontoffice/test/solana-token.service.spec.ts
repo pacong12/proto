@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { SOLANA_MAX_TRANSACTION_BYTES } from '../src/chains/solana/solana-token.service';
+import { estimateSolanaLaunchCostLamports } from '../src/chains/solana/solana-cost';
 
 /**
  * The launch transaction is executed against the real SPL Token-2022 program on LiteSVM
@@ -53,6 +54,13 @@ describe('Solana token launch transaction (executed on LiteSVM)', () => {
     expect(r.transactionBytes).toBeLessThanOrEqual(SOLANA_MAX_TRANSACTION_BYTES);
     expect(r.spentLamports).toBeGreaterThan(r.rentLamports);
     expect(r.spentLamports).toBeLessThanOrEqual(r.estimatedTotalLamports);
+  });
+
+  it('keeps the lightweight UI cost estimate in line with the real rent', () => {
+    const r = report.maxLength;
+    const estimate = estimateSolanaLaunchCostLamports('N'.repeat(32), 'S'.repeat(10), 200);
+    expect(estimate).toBeGreaterThanOrEqual(r.spentLamports);
+    expect(estimate).toBeLessThan(r.spentLamports * 1.02);
   });
 
   it('is rejected when the creator cannot pay for it', () => {
