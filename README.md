@@ -9,6 +9,7 @@ Proto is an institutional-grade, non-custodial token launchpad and trading proto
 - **2-Block Anti-Snipe Window**: Max wallet (5%) and max buy (5.5%) restrictions for the first 2 blocks post-launch.
 - **Creator & Protocol Fee Split**: Trading fees (WETH + Token) are accrued in the locker and split (70% Creator / 30% Protocol) with automated holder distribution support.
 - **Self-Describing Onchain Metadata**: All token metadata (`name`, `symbol`, `logo`, `description`, `socials`, `liquidityPool`) lives directly onchain.
+- **Solana SPL Token Launch**: Create a fixed-supply SPL Token-2022 token on Solana from the Create page (Solana tab). See [docs/SOLANA.md](docs/SOLANA.md).
 
 ## Directory Structure
 
