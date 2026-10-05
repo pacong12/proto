@@ -5,6 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {LaunchpadV2Factory} from "../src/LaunchpadV2Factory.sol";
 import {BondingCurve} from "../src/BondingCurve.sol";
 import {LaunchpadToken} from "../src/LaunchpadToken.sol";
+import {ILaunchpadToken} from "../src/interfaces/ILaunchpadToken.sol";
 
 contract ReentrantAttackerRecipient {
     LaunchpadV2Factory public factory;
@@ -325,5 +326,48 @@ contract LaunchpadV2Test is Test {
         (address tokenAddress,) =
             factory.launchTokenV2{value: 1.0 ether}("Arc Token", "ARC", "", "", "", "", "", 0);
         assertNotEq(tokenAddress, address(0));
+    }
+
+    // ---------------------------------------------------------------------------
+    // Initializer guards
+    // ---------------------------------------------------------------------------
+
+    function test_Token_DoubleInitialize_Reverts() public {
+        (address tokenAddress,) = _launch();
+        LaunchpadToken token = LaunchpadToken(payable(tokenAddress));
+        ILaunchpadToken.Socials memory s = ILaunchpadToken.Socials("", "", "", "", "");
+        vm.expectRevert(LaunchpadToken.AlreadyInitialized.selector);
+        token.initialize("Dup", "DUP", "", "", s, address(this), address(0), address(this));
+    }
+
+    function test_Curve_DoubleInitialize_Reverts() public {
+        (, address curveAddress) = _launch();
+        BondingCurve curve = BondingCurve(payable(curveAddress));
+        vm.expectRevert(BondingCurve.AlreadyInitialized.selector);
+        curve.initialize(
+            address(0x1),
+            address(0x2),
+            payable(address(0x3)),
+            payable(address(0x4)),
+            1 ether,
+            1 ether,
+            1 ether,
+            address(0),
+            address(0)
+        );
+    }
+
+    function test_CREATE2_AddressPrediction_MatchesDeployed() public {
+        // Pre-compute expected salts for creator's first launch (nonce=0).
+        bytes32 tokenSalt = keccak256(abi.encode(creator, uint256(0)));
+        bytes32 curveSalt = keccak256(abi.encode(creator, uint256(0), uint256(1)));
+
+        address predictedToken = factory.predictTokenAddress(tokenSalt);
+        address predictedCurve = factory.predictCurveAddress(curveSalt);
+
+        (address tokenAddress, address curveAddress) = _launch();
+
+        assertEq(tokenAddress, predictedToken, "token address mismatch");
+        assertEq(curveAddress, predictedCurve, "curve address mismatch");
     }
 }
