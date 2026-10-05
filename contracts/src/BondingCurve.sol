@@ -20,8 +20,11 @@ import {PoolKey, PoolIdLibrary, IPoolManager} from "./interfaces/IUniswapV4.sol"
  *   - nonReentrant guard on all state-mutating external functions.
  *   - CEI pattern: all state changes precede external calls.
  *   - C-02 fix: funds are no longer permanently locked. Two recovery paths exist:
- *       migrateToV4()    — normal path, executed by factory after V4 is live.
+ *       migrateToV4()       — normal path, executed by factory after V4 is live.
  *       emergencyWithdraw() — safety valve, callable by factory after MIGRATION_DEADLINE.
+ *   - Initializer pattern: no constructor args. initialize() replaces the constructor
+ *     so bytecode is argument-free and identical across all deployments, enabling
+ *     CREATE2-based auto-verification on block explorers.
  */
 contract BondingCurve {
     using PoolIdLibrary for PoolKey;
@@ -34,16 +37,17 @@ contract BondingCurve {
     // emergencyWithdraw if V4 migration cannot be completed.
     uint256 public constant MIGRATION_DEADLINE = 180 days;
 
-    ILaunchpadToken public immutable token;
-    address public immutable factory;
-    address payable public immutable feeRecipient;
-    address payable public immutable creator;
+    // Storage vars (replacing immutables for CREATE2 + initializer pattern)
+    ILaunchpadToken public token;
+    address public factory;
+    address payable public feeRecipient;
+    address payable public creator;
 
-    uint256 public immutable graduationTarget;
-    uint256 public immutable launchTime;
+    uint256 public graduationTarget;
+    uint256 public launchTime;
 
-    address public immutable poolManagerV4;
-    address public immutable memeHook;
+    address public poolManagerV4;
+    address public memeHook;
 
     uint256 public virtualEthReserve;
     uint256 public virtualTokenReserve;
@@ -54,6 +58,7 @@ contract BondingCurve {
     bytes32 public graduatedPoolId;
     bool public migrationExecuted;
 
+    bool private _initialized;
     uint256 private _locked;
 
     event Trade(
@@ -72,6 +77,7 @@ contract BondingCurve {
     event MigrationExecuted(address indexed recipient, uint256 ethAmount, uint256 tokenAmount);
     event EmergencyWithdraw(address indexed recipient, uint256 ethAmount, uint256 tokenAmount);
 
+    error AlreadyInitialized();
     error AlreadyGraduated();
     error NotGraduated();
     error MigrationAlreadyExecuted();
@@ -95,7 +101,16 @@ contract BondingCurve {
         _;
     }
 
-    constructor(
+    // ---------------------------------------------------------------------------
+    // Initializer (replaces constructor for CREATE2 auto-verify compatibility)
+    // ---------------------------------------------------------------------------
+
+    /**
+     * @notice One-time initializer called by the factory immediately after CREATE2 deploy.
+     * @dev Reverts if called more than once. Storage vars replace immutables so the
+     *      compiled bytecode is identical for every curve, enabling auto-verification.
+     */
+    function initialize(
         address _token,
         address _factory,
         address payable _feeRecipient,
@@ -105,10 +120,16 @@ contract BondingCurve {
         uint256 _virtualTokenReserve,
         address _poolManagerV4,
         address _memeHook
-    ) {
-        if (_token == address(0) || _factory == address(0) || _feeRecipient == address(0) || _creator == address(0)) {
-            revert ZeroAddress();
-        }
+    ) external {
+        if (_initialized) revert AlreadyInitialized();
+        if (
+            _token == address(0) ||
+            _factory == address(0) ||
+            _feeRecipient == address(0) ||
+            _creator == address(0)
+        ) revert ZeroAddress();
+
+        _initialized = true;
         token = ILaunchpadToken(_token);
         factory = _factory;
         feeRecipient = _feeRecipient;
@@ -293,12 +314,6 @@ contract BondingCurve {
      * @dev F-09 fix: sqrtPriceX96 is derived from the actual reserves at graduation time
      *      rather than a hardcoded launch-price constant. Initialising the pool at the
      *      wrong price causes immediate arbitrage against the LP.
-     *
-     *      sqrtPriceX96 = sqrt(price) * 2^96
-     *      price (token1/token0) where currency0=ETH(address(0)), currency1=token
-     *        → price = virtualEthReserve / virtualTokenReserve
-     *      We compute: sqrtPriceX96 = sqrt(virtualEthReserve * 2^192 / virtualTokenReserve)
-     *      using integer square root to avoid external dependencies.
      */
     function _prepareGraduationV4() internal {
         uint256 ethHeld = address(this).balance;
@@ -325,23 +340,16 @@ contract BondingCurve {
 
     /**
      * @notice Compute sqrtPriceX96 from actual reserves.
-     * @dev price = ethReserve / tokenReserve (ETH per token in reserve-ratio units)
-     *      sqrtPriceX96 = sqrt(ethReserve / tokenReserve) * 2^96
+     * @dev sqrtPriceX96 = sqrt(ethReserve / tokenReserve) * 2^96
      *                   = sqrt(ethReserve * 2^192 / tokenReserve)
-     *      Uses Babylonian integer sqrt. Safe: both reserves are > 0 at graduation.
-     *      Result fits in uint160: for any plausible reserve ratio where
-     *      ethReserve << tokenReserve (e.g. 4.2e18 ETH vs 1e27 tokens),
-     *      sqrtNum << sqrtDen, so (sqrtNum << 96) / sqrtDen << 2^96 << 2^160.
+     *      Uses Babylonian integer sqrt.
      */
     function _computeSqrtPriceX96(uint256 ethReserve, uint256 tokenReserve) internal pure returns (uint160) {
         require(tokenReserve > 0, "zero tokenReserve");
-        uint256 sqrtNum = _sqrt(ethReserve);   // sqrt(ethReserve)
-        uint256 sqrtDen = _sqrt(tokenReserve); // sqrt(tokenReserve)
+        uint256 sqrtNum = _sqrt(ethReserve);
+        uint256 sqrtDen = _sqrt(tokenReserve);
         require(sqrtDen > 0, "zero sqrtDen");
-        // sqrtPriceX96 = sqrt(ethReserve) * 2^96 / sqrt(tokenReserve)
         uint256 result = (sqrtNum << 96) / sqrtDen;
-        // casting to 'uint160' is safe because result = sqrt(eth) * 2^96 / sqrt(tokens).
-        // At graduation: eth ~4.2e18, tokens ~200e24 → sqrt ratio ~1/219,000 → result ~2^96/219000 << 2^160.
         // forge-lint: disable-next-line(unsafe-typecast)
         return uint160(result);
     }
@@ -360,9 +368,6 @@ contract BondingCurve {
     /**
      * @notice Execute liquidity migration into the Uniswap V4 pool.
      * @dev C-02 fix: callable only by the factory once V4 is live.
-     *      Transfers all ETH and tokens to the designated pool manager or recipient.
-     *      Only callable once.
-     * @param recipient Address that receives the migrated funds (e.g. V4 PoolManager unlock callback proxy).
      */
     function migrateToV4(address payable recipient) external nonReentrant onlyFactory {
         if (!graduated) revert NotGraduated();
@@ -391,7 +396,6 @@ contract BondingCurve {
      * @notice Safety valve allowing the factory owner to recover funds if V4 migration
      *         cannot be completed within MIGRATION_DEADLINE seconds after graduation.
      * @dev C-02 fix: prevents permanent fund lockup if V4 is never deployed.
-     * @param recipient Address to receive recovered ETH and tokens.
      */
     function emergencyWithdraw(address payable recipient) external nonReentrant onlyFactory {
         if (!graduated) revert NotGraduated();
@@ -421,10 +425,7 @@ contract BondingCurve {
      * @notice Accept ETH only while the bonding curve is active (not yet graduated).
      * @dev H-01 fix: after graduation all ETH in this contract belongs to the V4
      *      migration pool. Accepting arbitrary ETH post-graduation would distort
-     *      the pool's sqrtPriceX96 when migrateToV4() forwards address(this).balance,
-     *      causing immediate arbitrage against the LP.
-     *      Pre-graduation, plain ETH transfers are needed so the factory can fund
-     *      the initial creator buy via buyFor().
+     *      the pool's sqrtPriceX96 when migrateToV4() forwards address(this).balance.
      */
     receive() external payable {
         if (graduated) revert AlreadyGraduated();
