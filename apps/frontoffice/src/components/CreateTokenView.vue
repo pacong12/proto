@@ -1415,8 +1415,10 @@ async function processImageFile(file: File) {
       body: formData,
     });
     const data = await res.json();
-    if (data.success && data.data?.uri) {
-      form.value.logo = data.data.uri;
+    // The API returns { cid, url }; `uri` is accepted for backwards compatibility.
+    const uploadedUrl = data.data?.url ?? data.data?.uri;
+    if (data.success && uploadedUrl) {
+      form.value.logo = uploadedUrl;
     } else {
       form.value.logo = '';
     }
