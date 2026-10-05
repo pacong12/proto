@@ -57,6 +57,7 @@ contract LaunchpadV2FactoryArc {
     address public pendingOwner;
 
     bool private _locked;
+    uint256 private _nonce;
 
     struct V2Launch {
         address token;
@@ -144,6 +145,25 @@ contract LaunchpadV2FactoryArc {
     }
 
     // ---------------------------------------------------------------------------
+    // CREATE2 helpers
+    // ---------------------------------------------------------------------------
+
+    function predictTokenAddress(bytes32 salt) external view returns (address) {
+        return _predict(type(LaunchpadToken).creationCode, salt);
+    }
+
+    function predictCurveAddress(bytes32 salt) external view returns (address) {
+        return _predict(type(BondingCurve).creationCode, salt);
+    }
+
+    function _predict(bytes memory creationCode, bytes32 salt) internal view returns (address) {
+        bytes32 hash = keccak256(
+            abi.encodePacked(bytes1(0xff), address(this), salt, keccak256(creationCode))
+        );
+        return address(uint160(uint256(hash)));
+    }
+
+    // ---------------------------------------------------------------------------
     // Core launch
     // ---------------------------------------------------------------------------
 
@@ -174,13 +194,22 @@ contract LaunchpadV2FactoryArc {
             farcaster: ""
         });
 
-        LaunchpadToken token = new LaunchpadToken(
-            name, symbol, logo, description, socials, msg.sender, address(0), address(this)
-        );
+        uint256 nonce = _nonce++;
+        bytes32 tokenSalt = keccak256(abi.encode(msg.sender, nonce));
+        bytes32 curveSalt = keccak256(abi.encode(msg.sender, nonce, uint256(1)));
+
+        // CREATE2 deploy — no constructor args; bytecode identical across all deployments.
+        LaunchpadToken token = new LaunchpadToken{salt: tokenSalt}();
+        BondingCurve curve = new BondingCurve{salt: curveSalt}();
 
         tokenAddress = address(token);
+        curveAddress = address(curve);
 
-        BondingCurve curve = new BondingCurve(
+        // Initialize token: mint supply to factory so it can transfer to curve next.
+        token.initialize(name, symbol, logo, description, socials, msg.sender, address(0), address(this));
+
+        // Initialize curve with all bonding curve parameters.
+        curve.initialize(
             tokenAddress,
             address(this),
             protocolFeeRecipient,
@@ -191,8 +220,6 @@ contract LaunchpadV2FactoryArc {
             poolManagerV4,
             memeHook
         );
-
-        curveAddress = address(curve);
 
         // Transfer full supply to bonding curve; curve distributes on buy/sell
         bool tokenSent = token.transfer(curveAddress, token.totalSupply());

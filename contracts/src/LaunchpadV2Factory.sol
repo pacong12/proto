@@ -15,6 +15,8 @@ import {BondingCurve} from "./BondingCurve.sol";
  *               factory owner can act as the authorised caller on deployed curves.
  *   - CEI pattern: state storage and event emission precede external fee transfer and curve buy.
  *   - nonReentrant guard on launchTokenV2.
+ *   - CREATE2 deploy: token and curve bytecode contains no constructor args, enabling
+ *     block-explorer auto-verification via bytecode match without per-token submissions.
  */
 contract LaunchpadV2Factory {
     uint256 public launchFee = 0.0005 ether;
@@ -31,6 +33,9 @@ contract LaunchpadV2Factory {
     address public pendingOwner;
 
     bool private _locked;
+
+    /// @dev Nonce incremented per launch to ensure unique CREATE2 salts.
+    uint256 private _nonce;
 
     struct V2Launch {
         address token;
@@ -116,6 +121,33 @@ contract LaunchpadV2Factory {
     }
 
     // ---------------------------------------------------------------------------
+    // CREATE2 helpers
+    // ---------------------------------------------------------------------------
+
+    /**
+     * @notice Predict the CREATE2 address for a LaunchpadToken before deployment.
+     * @param salt The salt used (keccak256 of deployer + nonce).
+     */
+    function predictTokenAddress(bytes32 salt) external view returns (address) {
+        return _predict(type(LaunchpadToken).creationCode, salt);
+    }
+
+    /**
+     * @notice Predict the CREATE2 address for a BondingCurve before deployment.
+     * @param salt The salt used (keccak256 of deployer + nonce + 1).
+     */
+    function predictCurveAddress(bytes32 salt) external view returns (address) {
+        return _predict(type(BondingCurve).creationCode, salt);
+    }
+
+    function _predict(bytes memory creationCode, bytes32 salt) internal view returns (address) {
+        bytes32 hash = keccak256(
+            abi.encodePacked(bytes1(0xff), address(this), salt, keccak256(creationCode))
+        );
+        return address(uint160(uint256(hash)));
+    }
+
+    // ---------------------------------------------------------------------------
     // Core launch
     // ---------------------------------------------------------------------------
 
@@ -137,12 +169,25 @@ contract LaunchpadV2Factory {
             twitter: twitter, telegram: telegram, discord: "", website: website, farcaster: ""
         });
 
-        LaunchpadToken token =
-            new LaunchpadToken(name, symbol, logo, description, socials, msg.sender, address(0), address(this));
+        // Derive unique salts from deployer + nonce so two simultaneous launches
+        // from the same address in the same block never collide.
+        uint256 nonce = _nonce++;
+        bytes32 tokenSalt = keccak256(abi.encode(msg.sender, nonce));
+        bytes32 curveSalt = keccak256(abi.encode(msg.sender, nonce, uint256(1)));
+
+        // CREATE2 deploy — no constructor args; bytecode is identical across all tokens.
+        LaunchpadToken token = new LaunchpadToken{salt: tokenSalt}();
+        BondingCurve curve = new BondingCurve{salt: curveSalt}();
 
         tokenAddress = address(token);
+        curveAddress = address(curve);
 
-        BondingCurve curve = new BondingCurve(
+        // Initialize token: supply minted to this factory (address(this)) so we can
+        // transfer it to the curve in the next step without a separate approval.
+        token.initialize(name, symbol, logo, description, socials, msg.sender, address(0), address(this));
+
+        // Initialize curve with all bonding curve parameters.
+        curve.initialize(
             tokenAddress,
             address(this),
             protocolFeeRecipient,
@@ -154,22 +199,15 @@ contract LaunchpadV2Factory {
             memeHook
         );
 
-        curveAddress = address(curve);
-
         bool tokenSent = token.transfer(curveAddress, token.totalSupply());
         if (!tokenSent) revert TransferFailed();
 
         // H-02 fix: register the bonding curve as the liquidity pool so that
         // anti-snipe restrictions in LaunchpadToken._transfer() are active.
-        // Without this call, liquidityPool remains address(0) and the block-based
-        // MAX_BUY_AMOUNT / MAX_HOLD_AMOUNT guards in _transfer() never fire.
         // NOTE: setLiquidityPool is called AFTER the initial buy so that the
         // factory's internal buyFor (snipe-fee distributions to protocolFeeRecipient)
         // are not blocked by the deployer-only guard that activates once liquidityPool
-        // is set. The factory's own initial buy goes to msg.sender == deployer, which
-        // satisfies the guard, but snipe-fee tokens go to a separate feeRecipient.
-        // Calling setLiquidityPool post-initial-buy prevents that internal fee transfer
-        // from reverting while still enabling anti-snipe for all subsequent public buys.
+        // is set.
 
         launches[tokenAddress] = V2Launch({
             token: tokenAddress, curve: curveAddress, creator: msg.sender, createdAt: block.timestamp, graduated: false

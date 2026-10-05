@@ -42,6 +42,7 @@ contract LaunchpadFactory is ILaunchpadFactory {
     uint256 public override launchFee = 0.0005 ether;
     uint256 public override graduationThreshold = 4.2 ether;
     uint256 public defaultProtocolFeeShare = 30;
+    uint256 private _nonce;
 
     mapping(address => LaunchedToken) public launchedTokens;
     address[] public allTokens;
@@ -168,17 +169,12 @@ contract LaunchpadFactory is ILaunchpadFactory {
             if (!feeSent) revert InsufficientLaunchFee();
         }
 
-        // 2. Deploy token; factory is initial recipient so it can seed the pool.
-        LaunchpadToken token = new LaunchpadToken(
-            name,
-            symbol,
-            logo,
-            description,
-            socials,
-            msg.sender,
-            weth,
-            address(this)
-        );
+        // 2. Deploy token via CREATE2 (no constructor args) then initialize.
+        //    Factory is initial token recipient so it can seed the pool.
+        uint256 nonce = _nonce++;
+        bytes32 tokenSalt = keccak256(abi.encode(msg.sender, nonce));
+        LaunchpadToken token = new LaunchpadToken{salt: tokenSalt}();
+        token.initialize(name, symbol, logo, description, socials, msg.sender, weth, address(this));
         tokenAddress = address(token);
 
         // 3. Determine token ordering and create the Uniswap V3 pool.
