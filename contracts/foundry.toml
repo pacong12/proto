@@ -9,7 +9,7 @@ via_ir = true
 evm_version = "cancun"
 
 [etherscan]
-# Robinhood Chain (chain ID 4663) — via Etherscan V2 unified API
-robinhood = { key = "${ETHERSCAN_API_KEY}", url = "https://api.etherscan.io/v2/api?chainid=4663", chain = 4663 }
+# Robinhood Chain (chain ID 4663) — RobinScan native Etherscan-compatible API
+robinhood = { key = "${ROBINSCAN_API_KEY}", url = "https://api.etherscan.io/v2/api?chainid=4663", chain = 4663 }
 # Arc Mainnet (chain ID 5042) — via Etherscan V2 unified API
-arc = { key = "${ETHERSCAN_API_KEY}", url = "https://api.etherscan.io/v2/api?chainid=5042", chain = 5042 }
+arc = { key = "${ROBINSCAN_API_KEY}", url = "https://api.etherscan.io/v2/api?chainid=5042", chain = 5042 }
