@@ -226,7 +226,8 @@ contract ComprehensiveLifecycleTest is Test {
     // ==========================================
     function test_Complete_Linear_Vesting_Vault() public {
         ILaunchpadToken.Socials memory s = ILaunchpadToken.Socials("", "", "", "", "");
-        LaunchpadToken token = new LaunchpadToken(
+        LaunchpadToken token = new LaunchpadToken();
+        token.initialize(
             "Vesting Token",
             "VEST",
             "ipfs://vest",
@@ -265,7 +266,8 @@ contract ComprehensiveLifecycleTest is Test {
     // ==========================================
     function test_Complete_Holder_Fee_Sharing() public {
         ILaunchpadToken.Socials memory s = ILaunchpadToken.Socials("", "", "", "", "");
-        LaunchpadToken token = new LaunchpadToken(
+        LaunchpadToken token = new LaunchpadToken();
+        token.initialize(
             "Dividends Token",
             "DIV",
             "ipfs://div",
