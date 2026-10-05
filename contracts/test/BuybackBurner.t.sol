@@ -20,7 +20,8 @@ contract BuybackBurnerTest is Test {
         swapRouter = new MockSwapRouter();
 
         ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials("", "", "", "", "");
-        targetToken = new LaunchpadToken(
+        targetToken = new LaunchpadToken();
+        targetToken.initialize(
             "Proto Token",
             "PROTO",
             "ipfs://proto",

@@ -25,7 +25,8 @@ contract HolderSharingAndVestingTest is Test {
         vault = new VestingVault();
 
         ILaunchpadToken.Socials memory s = ILaunchpadToken.Socials("", "", "", "", "");
-        token = new LaunchpadToken(
+        token = new LaunchpadToken();
+        token.initialize(
             "Dividends Token",
             "DIV",
             "ipfs://div",

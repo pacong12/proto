@@ -58,7 +58,8 @@ contract LaunchpadTest is Test {
         });
 
         vm.prank(deployer);
-        LaunchpadToken token = new LaunchpadToken(
+        LaunchpadToken token = new LaunchpadToken();
+        token.initialize(
             "Proto Token",
             "PROTO",
             "ipfs://QmLogoHash",
@@ -97,7 +98,8 @@ contract LaunchpadTest is Test {
         ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials("", "", "", "", "");
 
         vm.prank(deployer);
-        LaunchpadToken token = new LaunchpadToken(
+        LaunchpadToken token = new LaunchpadToken();
+        token.initialize(
             "Tax Token",
             "TAX",
             "ipfs://tax",
@@ -156,7 +158,8 @@ contract LaunchpadTest is Test {
         ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials("", "", "", "", "");
 
         vm.prank(deployer);
-        LaunchpadToken token = new LaunchpadToken(
+        LaunchpadToken token = new LaunchpadToken();
+        token.initialize(
             "AntiSnipe",
             "SNIPE",
             "ipfs://snipe",
