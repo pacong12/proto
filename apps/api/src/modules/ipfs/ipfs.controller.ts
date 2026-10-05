@@ -15,6 +15,20 @@ export interface IpfsDirectUploadPayload {
   mimeType?: string;
   fileBuffer?: ArrayBuffer | Buffer;
 }
+/** Off-chain token metadata (Metaplex / Token-2022 compatible JSON) pinned for Solana launches. */
+export interface TokenMetadataDocument {
+  name: string;
+  symbol: string;
+  description: string;
+  image: string;
+  external_url?: string;
+  extensions?: {
+    website?: string;
+    twitter?: string;
+    telegram?: string;
+  };
+}
+
 export class IpfsController {
   constructor(private readonly ipfsService: IpfsService = new IpfsService()) {}
 
@@ -45,6 +59,99 @@ export class IpfsController {
       text.includes('<foreignobject') ||
       /\bon[a-z]+\s*=/i.test(text)
     );
+  }
+
+  // Metadata JSON is tiny; anything larger is either abuse or a mistake.
+  private static readonly MAX_METADATA_BYTES = 16 * 1024;
+
+  private static readonly SAFE_URL = /^(https:\/\/|ipfs:\/\/)[^\s<>"']{1,2040}$/;
+
+  /**
+   * Validate an untrusted metadata payload and rebuild it from known fields only,
+   * so arbitrary keys or non-string values can never be pinned.
+   */
+  static sanitizeTokenMetadata(
+    input: unknown,
+  ): { ok: true; value: TokenMetadataDocument } | { ok: false; message: string } {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) {
+      return { ok: false, message: 'Metadata must be a JSON object' };
+    }
+    const body = input as Record<string, unknown>;
+    const str = (key: string) =>
+      typeof body[key] === 'string' ? (body[key] as string).trim() : '';
+
+    const name = str('name');
+    const symbol = str('symbol');
+    const description = str('description');
+    const image = str('image');
+
+    if (!name || name.length > 32) return { ok: false, message: 'name must be 1-32 characters' };
+    if (!symbol || symbol.length > 10 || !/^[A-Za-z0-9]+$/.test(symbol)) {
+      return { ok: false, message: 'symbol must be 1-10 alphanumeric characters' };
+    }
+    if (description.length > 1000) {
+      return { ok: false, message: 'description must be at most 1000 characters' };
+    }
+    if (image && !IpfsController.SAFE_URL.test(image)) {
+      return { ok: false, message: 'image must be an https:// or ipfs:// URL' };
+    }
+
+    const value: TokenMetadataDocument = { name, symbol, description, image };
+
+    const rawExtensions =
+      body.extensions && typeof body.extensions === 'object' && !Array.isArray(body.extensions)
+        ? (body.extensions as Record<string, unknown>)
+        : {};
+    const extensions: NonNullable<TokenMetadataDocument['extensions']> = {};
+    for (const key of ['website', 'twitter', 'telegram'] as const) {
+      const raw =
+        typeof rawExtensions[key] === 'string' ? (rawExtensions[key] as string).trim() : '';
+      if (!raw) continue;
+      if (!IpfsController.SAFE_URL.test(raw)) {
+        return { ok: false, message: `extensions.${key} must be an https:// URL` };
+      }
+      extensions[key] = raw;
+    }
+    if (Object.keys(extensions).length > 0) {
+      value.extensions = extensions;
+      if (extensions.website) value.external_url = extensions.website;
+    }
+
+    return { ok: true, value };
+  }
+
+  /** POST /api/ipfs/metadata: pin a validated token metadata JSON document. */
+  async handleMetadataUpload(req: Request): Promise<ApiEnvelope<IpfsUploadResult>> {
+    try {
+      const contentType = req.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        return err('UNSUPPORTED_MEDIA_TYPE', 'Request must be application/json');
+      }
+      const raw = await req.text();
+      if (new TextEncoder().encode(raw).byteLength > IpfsController.MAX_METADATA_BYTES) {
+        return err('PAYLOAD_TOO_LARGE', 'Metadata exceeds 16 KiB limit');
+      }
+
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        return err('INVALID_JSON', 'Body is not valid JSON');
+      }
+
+      const result = IpfsController.sanitizeTokenMetadata(parsed);
+      if (!result.ok) return err('INVALID_METADATA', result.message);
+
+      const document = Buffer.from(JSON.stringify(result.value), 'utf8');
+      const uploaded = await this.ipfsService.uploadFile(
+        document,
+        `${result.value.symbol.toLowerCase()}-metadata.json`,
+        'application/json',
+      );
+      return ok(uploaded);
+    } catch {
+      return err('UPLOAD_FAILED', 'Failed to process metadata upload');
+    }
   }
 
   async handleUpload(req: Request): Promise<ApiEnvelope<IpfsUploadResult>> {

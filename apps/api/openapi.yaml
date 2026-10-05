@@ -202,6 +202,49 @@ paths:
         '400':
           description: Bad request.
 
+  /api/ipfs/metadata:
+    post:
+      summary: Token Metadata JSON Upload
+      description: >-
+        Validates and pins an off-chain token metadata document (Metaplex / SPL Token-2022
+        compatible) used as the metadata URI for Solana token launches. Unknown fields are
+        dropped. Shares the upload rate-limit bucket.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, symbol]
+              properties:
+                name:
+                  type: string
+                  maxLength: 32
+                symbol:
+                  type: string
+                  maxLength: 10
+                  pattern: '^[A-Za-z0-9]+$'
+                description:
+                  type: string
+                  maxLength: 1000
+                image:
+                  type: string
+                  description: https:// or ipfs:// URL
+                extensions:
+                  type: object
+                  properties:
+                    website:
+                      type: string
+                    twitter:
+                      type: string
+                    telegram:
+                      type: string
+      responses:
+        '200':
+          description: IPFS CID and gateway URL of the pinned metadata document.
+        '400':
+          description: Invalid metadata, malformed JSON, or payload over 16 KiB.
+
   /dex/latest-block:
     get:
       summary: DEX Screener Latest Indexed Block

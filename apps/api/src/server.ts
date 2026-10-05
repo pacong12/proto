@@ -446,7 +446,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
   const isHealthProbe = url.pathname === '/health' || url.pathname === '/';
   // Upload endpoints get a tighter per-IP bucket to prevent OOM from concurrent large uploads.
-  const isUploadPath = url.pathname === '/api/ipfs/upload';
+  const isUploadPath = url.pathname === '/api/ipfs/upload' || url.pathname === '/api/ipfs/metadata';
   const rateTier = isPublicCrawlerPath ? 'crawler' : isUploadPath ? 'upload' : 'api';
   const maxRequests = isPublicCrawlerPath ? 600 : isUploadPath ? 10 : 120;
   if (!isHealthProbe && !(await checkRateLimit(clientIp, maxRequests, 60_000, rateTier))) {
@@ -1174,6 +1174,17 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       return replyJson(res, status);
     } catch {
       return replyError('UPLOAD_ERROR', 'Failed to process upload', 500);
+    }
+  }
+
+  // POST /api/ipfs/metadata
+  if (url.pathname === '/api/ipfs/metadata' && req.method === 'POST') {
+    try {
+      const res = await ipfsController.handleMetadataUpload(req);
+      const status = res.success ? 200 : 400;
+      return replyJson(res, status);
+    } catch {
+      return replyError('UPLOAD_ERROR', 'Failed to process metadata upload', 500);
     }
   }
 
