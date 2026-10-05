@@ -9,6 +9,10 @@ import {ILaunchpadToken} from "./interfaces/ILaunchpadToken.sol";
  *         protection, and optional creator buy/sell taxes.
  *
  * Security notes:
+ *   - Initializer pattern: no constructor args. initialize() replaces the
+ *     constructor so the bytecode is argument-free and identical across all
+ *     deployments, enabling CREATE2-based auto-verification on block explorers.
+ *   - initialize() is guarded by _initialized; calling it twice reverts.
  *   - M-02 fix: anti-snipe exemptions for the deployer (allowing unrestricted
  *     purchase at launchBlock) are decoupled from tax exemptions. Deployer buys
  *     during the restriction window are still subject to buy tax if one is
@@ -16,7 +20,7 @@ import {ILaunchpadToken} from "./interfaces/ILaunchpadToken.sol";
  *     are bypassed for the deployer, not the tax logic.
  *   - L-02 fix: setTaxConfig validates that taxRecipient has no code (must be
  *     an EOA) to prevent failed silent tax transfers to broken contracts.
- *   - Supply is permanently fixed at construction; no mint function exists.
+ *   - Supply is permanently fixed; no mint function exists.
  */
 contract LaunchpadToken is ILaunchpadToken {
     uint8 public constant override decimals = 18;
@@ -40,17 +44,21 @@ contract LaunchpadToken is ILaunchpadToken {
     }
     PendingTaxConfig private _pendingTaxConfig;
 
-    address public immutable override deployer;
-    address public immutable factory;
-    address public immutable override pairedToken;
+    // Storage vars replacing immutables (required for initializer / CREATE2 pattern)
+    address public override deployer;
+    address public factory;
+    address public override pairedToken;
     address public override liquidityPool;
 
-    uint256 public immutable launchBlock;
-    uint256 public immutable override restrictionsEndBlock;
+    uint256 public launchBlock;
+    uint256 public override restrictionsEndBlock;
+
+    bool private _initialized;
 
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
 
+    error AlreadyInitialized();
     error Unauthorized();
     error PoolAlreadySet();
     error MaxWalletExceeded();
@@ -73,7 +81,24 @@ contract LaunchpadToken is ILaunchpadToken {
         _;
     }
 
-    constructor(
+    // ---------------------------------------------------------------------------
+    // Initializer (replaces constructor for CREATE2 auto-verify compatibility)
+    // ---------------------------------------------------------------------------
+
+    /**
+     * @notice One-time initializer called by the factory immediately after CREATE2 deploy.
+     * @dev Reverts if called more than once. Replaces constructor args so the compiled
+     *      bytecode is identical for every token, enabling block-explorer auto-verification.
+     * @param tokenName        ERC-20 name
+     * @param tokenSymbol      ERC-20 symbol
+     * @param tokenLogo        IPFS/URL logo string stored onchain
+     * @param tokenDescription Short description stored onchain
+     * @param tokenSocials     Social links struct
+     * @param tokenDeployer    Creator address (receives tax, controls tax config)
+     * @param tokenPairedToken Paired ERC-20 address (0x0 for ETH-paired)
+     * @param initialRecipient Address that receives the full initial supply (factory)
+     */
+    function initialize(
         string memory tokenName,
         string memory tokenSymbol,
         string memory tokenLogo,
@@ -82,8 +107,11 @@ contract LaunchpadToken is ILaunchpadToken {
         address tokenDeployer,
         address tokenPairedToken,
         address initialRecipient
-    ) {
+    ) external {
+        if (_initialized) revert AlreadyInitialized();
         if (tokenDeployer == address(0) || initialRecipient == address(0)) revert ZeroAddress();
+
+        _initialized = true;
 
         _name = tokenName;
         _symbol = tokenSymbol;

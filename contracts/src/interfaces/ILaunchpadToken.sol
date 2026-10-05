@@ -49,5 +49,16 @@ interface ILaunchpadToken {
         address taxRecipient
     );
 
+    function initialize(
+        string memory tokenName,
+        string memory tokenSymbol,
+        string memory tokenLogo,
+        string memory tokenDescription,
+        Socials memory tokenSocials,
+        address tokenDeployer,
+        address tokenPairedToken,
+        address initialRecipient
+    ) external;
+
     function setLiquidityPool(address pool) external;
 }
