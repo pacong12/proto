@@ -96,6 +96,7 @@
         "@tailwindcss/vite": "^4.3.3",
         "@vitejs/plugin-vue": "^5.2.1",
         "@vue/test-utils": "^2.4.6",
+        "litesvm": "0.8.0",
         "tailwindcss": "^4.3.3",
         "typescript": "^5.7.3",
         "vite": "^6.1.0",
@@ -1224,6 +1225,20 @@
     "lit-element": ["lit-element@4.2.2", "", { "dependencies": { "@lit-labs/ssr-dom-shim": "^1.5.0", "@lit/reactive-element": "^2.1.0", "lit-html": "^3.3.0" } }, "sha512-aFKhNToWxoyhkNDmWZwEva2SlQia+jfG0fjIWV//YeTaWrVnOxD89dPKfigCUspXFmjzOEUQpOkejH5Ly6sG0w=="],
 
     "lit-html": ["lit-html@3.3.3", "", { "dependencies": { "@types/trusted-types": "^2.0.2" } }, "sha512-el8M6jK2o3RXBnrSHX3ZKrsN8zEV63pSExTO1wYJz7QndGYZ8353e2a5PPX+qHe2aGayfnchQmkAojaWAREOIA=="],
+
+    "litesvm": ["litesvm@0.8.0", "", { "dependencies": { "@solana/web3.js": "^1.98.4", "fastestsmallesttextencoderdecoder": "^1.0.22" }, "optionalDependencies": { "litesvm-darwin-arm64": "0.8.0", "litesvm-darwin-x64": "0.8.0", "litesvm-linux-arm64-gnu": "0.8.0", "litesvm-linux-arm64-musl": "0.8.0", "litesvm-linux-x64-gnu": "0.8.0", "litesvm-linux-x64-musl": "0.8.0" } }, "sha512-P0Ly11FSr1f77bKwaRf0VQQZYdsw6Oi3OLKBxgBN5iJcB7W7lTjFB1tnVcJqdn1NMz6upqU/04rZFCC/JfYBWg=="],
+
+    "litesvm-darwin-arm64": ["litesvm-darwin-arm64@0.8.0", "", { "os": "darwin", "cpu": "arm64" }, "sha512-XYa0oOA7FVbMYKvIDbBznWUjkHQD8J/fn5kPMBSX4QWf4yfFda/+L4JHeSngx+dBCM0LyEyLeakVrnmdR1KYPQ=="],
+
+    "litesvm-darwin-x64": ["litesvm-darwin-x64@0.8.0", "", { "os": "darwin", "cpu": "x64" }, "sha512-lrxU6VXEqY7MHHIskdjB88xM9OiGR2ZcXf+fMESnetCk6rVUM6Llfb386wsMiqvi1+DowJwShxluBsCutWo2Sw=="],
+
+    "litesvm-linux-arm64-gnu": ["litesvm-linux-arm64-gnu@0.8.0", "", { "os": "linux", "cpu": "arm64" }, "sha512-D0pdYTQkoibPCfza2x1urSjIpHdwHVagHs0fBMHpzxSEvXND2qqDR3jXYf6xcE0sAq0knXjQmGz7WzP/HhFeFw=="],
+
+    "litesvm-linux-arm64-musl": ["litesvm-linux-arm64-musl@0.8.0", "", { "os": "linux", "cpu": "arm64" }, "sha512-g7vgYPJZC6cT1gaWA1M2SbZu+Sngs9FuxsybDSE1Mmelmaejlguf7X/ymUuhehaSjEY+QSi+ydWtwzgE95JL0w=="],
+
+    "litesvm-linux-x64-gnu": ["litesvm-linux-x64-gnu@0.8.0", "", { "os": "linux", "cpu": "x64" }, "sha512-nn599p+XuOJoQN2XTSaY4Yz1ZqYxLNUbvt30kImuRUs2ZlIv5FANzM+VUsZgSzWV0phW8m6stX3mpdVv0iIuFQ=="],
+
+    "litesvm-linux-x64-musl": ["litesvm-linux-x64-musl@0.8.0", "", { "os": "linux", "cpu": "x64" }, "sha512-UH4v1GM4hNOjEIzx/dBZQ5mxWGFOd85qs7IBou070dLjH0vdZMh4avQCQyc127+A7aRfdc8+wK7t4SEIn4EEgw=="],
 
     "locate-path": ["locate-path@6.0.0", "", { "dependencies": { "p-locate": "^5.0.0" } }, "sha512-iPZK6eYjbxRu3uB4/WZ3EsEIMJFMqAoopl3R+zuq0UjcAm/MO6KCweDgPfP3elTztoKP3KtnVHxTn2NHBSDVUw=="],
 
