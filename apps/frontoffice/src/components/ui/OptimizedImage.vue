@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 
 interface Props {
   src?: string;
@@ -28,16 +28,35 @@ const props = withDefaults(defineProps<Props>(), {
 
 const isLoaded = ref(false);
 const hasError = ref(false);
+const gatewayIndex = ref(0);
+
+const CANDIDATE_GATEWAYS = [
+  (hash: string) => `/api/ipfs/${hash}`,
+  (hash: string) => `https://ipfs.filebase.io/ipfs/${hash}`,
+  (hash: string) => `https://4everland.io/ipfs/${hash}`,
+  (hash: string) => `https://gateway.pinata.cloud/ipfs/${hash}`,
+  (hash: string) => `https://cloudflare-ipfs.com/ipfs/${hash}`,
+];
 
 const resolvedSrc = computed(() => {
   if (!props.src) return '';
-  // Resolve ipfs:// protocol to dedicated ipfs public gateway
+  // Resolve ipfs:// protocol to local API cache first, with reputable fallbacks
   if (props.src.startsWith('ipfs://')) {
     const hash = props.src.replace('ipfs://', '');
-    return `https://ipfs.io/ipfs/${hash}`;
+    const resolver = CANDIDATE_GATEWAYS[gatewayIndex.value] || CANDIDATE_GATEWAYS[0];
+    return resolver(hash);
   }
   return props.src;
 });
+
+watch(
+  () => props.src,
+  () => {
+    isLoaded.value = false;
+    hasError.value = false;
+    gatewayIndex.value = 0;
+  },
+);
 
 function handleLoad() {
   isLoaded.value = true;
@@ -45,6 +64,10 @@ function handleLoad() {
 }
 
 function handleError() {
+  if (props.src.startsWith('ipfs://') && gatewayIndex.value < CANDIDATE_GATEWAYS.length - 1) {
+    gatewayIndex.value++;
+    return;
+  }
   hasError.value = true;
   isLoaded.value = false;
 }

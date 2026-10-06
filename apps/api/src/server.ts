@@ -178,7 +178,7 @@ function scheduleRobinhoodPoll(): void {
       }
     }
     scheduleRobinhoodPoll();
-  }, 5_000);
+  }, 60_000);
 }
 let arcPolling = false;
 function scheduleArcPoll(): void {
@@ -194,11 +194,11 @@ function scheduleArcPoll(): void {
       }
     }
     scheduleArcPoll();
-  }, 5_000);
+  }, 60_000);
 }
 scheduleRobinhoodPoll();
-// Stagger Arc chain by 2.5s to avoid simultaneous RPC bursts
-setTimeout(scheduleArcPoll, 2_500);
+// Stagger Arc chain by 30s to avoid simultaneous RPC bursts
+setTimeout(scheduleArcPoll, 30_000);
 
 function safeStringify(value: unknown): string {
   return JSON.stringify(value, (_, v) => (typeof v === 'bigint' ? v.toString() : v));
@@ -1177,6 +1177,29 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     }
   }
 
+  // GET & HEAD /api/ipfs/:cid
+  const ipfsGetMatch = url.pathname.match(/^\/api\/ipfs\/([a-zA-Z0-9]+)$/);
+  if (ipfsGetMatch && (req.method === 'GET' || req.method === 'HEAD')) {
+    try {
+      const cid = ipfsGetMatch[1];
+      const file = await ipfsService.getFile(cid);
+      if (!file) {
+        return replyError('FILE_NOT_FOUND', 'IPFS file not found', 404);
+      }
+      return new Response(req.method === 'HEAD' ? null : new Uint8Array(file.data), {
+        status: 200,
+        headers: {
+          'Content-Type': file.mimeType,
+          'Content-Length': file.data.byteLength.toString(),
+          'Cache-Control': 'public, max-age=31536000, immutable',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    } catch {
+      return replyError('FETCH_ERROR', 'Failed to retrieve IPFS file', 500);
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // DEX Screener Partner API (https://docs.dexscreener.com/api/partner)
   // Required endpoints for chain listing & token indexing
@@ -1632,6 +1655,7 @@ export const server =
   typeof Bun !== 'undefined'
     ? Bun.serve({
         port: PORT,
+        hostname: '0.0.0.0',
         fetch: handleRequest,
       })
     : {
