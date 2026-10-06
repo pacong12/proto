@@ -372,7 +372,7 @@
                 <span
                   class="text-2xl sm:text-3xl font-black tracking-tight text-foreground font-mono"
                 >
-                  {{ formatPriceUsd(currentMarketData.priceUsd) }}
+                  {{ activeChartHeaderPrice }}
                 </span>
                 <span
                   class="text-xs font-mono font-bold px-2 py-0.5 rounded-full"
@@ -409,11 +409,22 @@
             <!-- TradingChart wrapper -->
             <div class="p-4 sm:p-5 bg-card">
               <TradingChart
+                v-model:chart-mode="chartDisplayMode"
+                v-model:currency-mode="chartCurrencyMode"
                 :data="candlestickData"
                 :token-symbol="currentToken.symbol"
                 :token-address="currentToken.address"
                 :height="420"
                 :resolution="selectedResolution"
+                :native-symbol="currencySymbol"
+                :native-quote-price="quoteAssetPriceUsd"
+                :total-supply="
+                  Number(
+                    currentToken.totalSupply
+                      ? BigInt(currentToken.totalSupply) / 10n ** 18n
+                      : 1000000000,
+                  )
+                "
               />
             </div>
           </div>
@@ -1905,6 +1916,22 @@ const remainingToGraduate = computed(() => {
 const tradeTab = ref<'buy' | 'sell'>('buy');
 const isBuy = computed(() => tradeTab.value === 'buy');
 const payInUsd = ref(false);
+const chartDisplayMode = ref<'price' | 'mcap'>('price');
+const chartCurrencyMode = ref<'usd' | 'native'>('usd');
+
+const activeChartHeaderPrice = computed(() => {
+  if (chartDisplayMode.value === 'mcap') {
+    return formatCompactUsd(currentMarketData.value.marketCapUsd || 4200);
+  }
+  if (chartCurrencyMode.value === 'native') {
+    const val = currentMarketData.value.priceInWeth || 0;
+    if (val < 0.00000001) return `${val.toFixed(11)} ${currencySymbol.value}`;
+    if (val < 0.0001) return `${val.toFixed(8)} ${currencySymbol.value}`;
+    return `${val.toFixed(6)} ${currencySymbol.value}`;
+  }
+  return formatPriceUsd(currentMarketData.value.priceUsd);
+});
+
 const amountIn = ref('10');
 const tokenNotFound = ref(false);
 const swapSuccessTx = ref<string | null>(null);
@@ -2986,6 +3013,21 @@ watch(
       ]);
     } else if (!newAcc) {
       userTokenBalance.value = 0n;
+    }
+  },
+);
+
+watch(
+  () => [currentMarketData.value.priceUsd, currentMarketData.value.priceInWeth],
+  ([newPriceUsd]) => {
+    if (Number(newPriceUsd) > 0 && candlestickData.value.length > 0) {
+      const copy = [...candlestickData.value];
+      const last = { ...copy[copy.length - 1] };
+      last.close = Number(newPriceUsd);
+      last.high = Math.max(last.high, Number(newPriceUsd));
+      last.low = Math.min(last.low, Number(newPriceUsd));
+      copy[copy.length - 1] = last;
+      candlestickData.value = copy;
     }
   },
 );

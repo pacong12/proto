@@ -35,6 +35,11 @@ interface Props {
   tokenAddress?: string;
   height?: number;
   resolution?: number;
+  chartMode?: 'price' | 'mcap';
+  currencyMode?: 'usd' | 'native';
+  nativeSymbol?: string;
+  nativeQuotePrice?: number;
+  totalSupply?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -42,7 +47,17 @@ const props = withDefaults(defineProps<Props>(), {
   tokenAddress: '',
   height: 420,
   resolution: 60,
+  chartMode: 'price',
+  currencyMode: 'usd',
+  nativeSymbol: 'ETH',
+  nativeQuotePrice: 2700,
+  totalSupply: 1_000_000_000,
 });
+
+const emit = defineEmits<{
+  (e: 'update:chartMode', val: 'price' | 'mcap'): void;
+  (e: 'update:currencyMode', val: 'usd' | 'native'): void;
+}>();
 
 // ---------------------------------------------------------------------------
 // Refs / state
@@ -59,6 +74,43 @@ let themeObserver: MutationObserver | null = null;
 const chartType = ref<'candles' | 'area'>('candles');
 const isLogScale = ref(false);
 const hoveredBar = ref<CandlePoint | null>(null);
+
+const activeChartMode = ref<'price' | 'mcap'>(props.chartMode);
+const activeCurrencyMode = ref<'usd' | 'native'>(props.currencyMode);
+
+watch(
+  () => props.chartMode,
+  (val) => {
+    if (val && val !== activeChartMode.value) {
+      activeChartMode.value = val;
+      initChart();
+    }
+  },
+);
+
+watch(
+  () => props.currencyMode,
+  (val) => {
+    if (val && val !== activeCurrencyMode.value) {
+      activeCurrencyMode.value = val;
+      initChart();
+    }
+  },
+);
+
+function setChartMode(mode: 'price' | 'mcap') {
+  if (activeChartMode.value === mode) return;
+  activeChartMode.value = mode;
+  emit('update:chartMode', mode);
+  initChart();
+}
+
+function setCurrencyMode(mode: 'usd' | 'native') {
+  if (activeCurrencyMode.value === mode) return;
+  activeCurrencyMode.value = mode;
+  emit('update:currencyMode', mode);
+  initChart();
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -138,8 +190,21 @@ function getThemeConfig(isDark: boolean) {
 //   - Never mutate raw OHLC values; use autoscaleInfoProvider for display margin
 // ---------------------------------------------------------------------------
 
+function getModeMultiplier(): number {
+  if (activeChartMode.value === 'mcap') {
+    const supply = props.totalSupply > 0 ? props.totalSupply : 1_000_000_000;
+    return supply;
+  }
+  if (activeCurrencyMode.value === 'native') {
+    const rate = props.nativeQuotePrice > 0 ? props.nativeQuotePrice : 2700;
+    return 1 / rate;
+  }
+  return 1;
+}
+
 function formatData(rawData: CandlePoint[]) {
   if (!rawData || rawData.length === 0) return [];
+  const multiplier = getModeMultiplier();
 
   const converted = rawData.map((item) => {
     // Normalize timestamp: accept ms (>2e9) or seconds
@@ -148,10 +213,10 @@ function formatData(rawData: CandlePoint[]) {
     if (tNum > 2_000_000_000) tNum = tNum / 1000;
     const t = Math.floor(tNum);
 
-    const open = Number(item.open);
-    const close = Number(item.close);
-    const rawHigh = Number(item.high);
-    const rawLow = Number(item.low);
+    const open = Number(item.open) * multiplier;
+    const close = Number(item.close) * multiplier;
+    const rawHigh = Number(item.high) * multiplier;
+    const rawLow = Number(item.low) * multiplier;
 
     // Enforce OHLC invariant: high >= max(o,c), low <= min(o,c)
     // Do NOT add synthetic wicks — pass raw values as-is
@@ -213,22 +278,60 @@ function makeAutoscaleProvider(flatPrice: number | null) {
 
 function formatPrice(val: number): string {
   if (isNaN(val) || val === 0) return '0.00';
-  if (val < 0.00000001) return val.toFixed(11);
-  if (val < 0.0001) return val.toFixed(8);
-  if (val < 1) return val.toFixed(6);
-  return val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+  if (activeChartMode.value === 'mcap') {
+    if (val >= 1_000_000_000) return `$${(val / 1_000_000_000).toFixed(2)}B`;
+    if (val >= 1_000_000) return `$${(val / 1_000_000).toFixed(2)}M`;
+    if (val >= 1_000) return `$${(val / 1_000).toFixed(2)}K`;
+    return `$${val.toFixed(2)}`;
+  }
+  if (activeCurrencyMode.value === 'native') {
+    if (val < 0.00000001) return `${val.toFixed(11)} ${props.nativeSymbol}`;
+    if (val < 0.0001) return `${val.toFixed(8)} ${props.nativeSymbol}`;
+    if (val < 1) return `${val.toFixed(6)} ${props.nativeSymbol}`;
+    return `${val.toFixed(4)} ${props.nativeSymbol}`;
+  }
+  if (val < 0.00000001) return `$${val.toFixed(11)}`;
+  if (val < 0.0001) return `$${val.toFixed(8)}`;
+  if (val < 1) return `$${val.toFixed(6)}`;
+  return `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`;
 }
 
 function getPriceFormatOptions(data: Array<{ close: number }>) {
-  const nonZero = data.map((d) => d.close).filter((c) => c > 0);
-  const minVal = nonZero.length > 0 ? Math.min(...nonZero) : 0;
-  if (minVal > 0 && minVal < 0.00001) {
-    return { type: 'price' as const, precision: 11, minMove: 0.00000000001 };
+  if (activeChartMode.value === 'mcap') {
+    return {
+      type: 'custom' as const,
+      formatter: (val: number) => {
+        if (val >= 1_000_000_000) return `$${(val / 1_000_000_000).toFixed(2)}B`;
+        if (val >= 1_000_000) return `$${(val / 1_000_000).toFixed(2)}M`;
+        if (val >= 1_000) return `$${(val / 1_000).toFixed(2)}K`;
+        return `$${val.toFixed(2)}`;
+      },
+      minMove: 0.01,
+    };
   }
-  if (minVal > 0 && minVal < 1) {
-    return { type: 'price' as const, precision: 8, minMove: 0.00000001 };
+  if (activeCurrencyMode.value === 'native') {
+    return {
+      type: 'custom' as const,
+      formatter: (val: number) => {
+        if (val < 0.00000001) return val.toFixed(10);
+        if (val < 0.0001) return val.toFixed(8);
+        if (val < 1) return val.toFixed(6);
+        return val.toFixed(4);
+      },
+      minMove: 0.0000000001,
+    };
   }
-  return { type: 'price' as const, precision: 4, minMove: 0.0001 };
+  return {
+    type: 'custom' as const,
+    formatter: (val: number) => {
+      if (val === 0) return '$0';
+      if (val < 0.00000001) return `$${val.toFixed(10)}`;
+      if (val < 0.0001) return `$${val.toFixed(8)}`;
+      if (val < 1) return `$${val.toFixed(6)}`;
+      return `$${val.toFixed(2)}`;
+    },
+    minMove: 0.00000001,
+  };
 }
 
 function formatVolume(val: number): string {
@@ -554,14 +657,75 @@ onUnmounted(() => destroyChart());
     <div
       class="flex flex-wrap items-center justify-between gap-2 text-xs font-mono px-2 py-1.5 rounded-lg bg-muted/40 border border-border"
     >
-      <!-- Left: Symbol + OHLCV live bar -->
-      <div class="flex items-center gap-3 flex-wrap min-w-0">
+      <!-- Left: Symbol + Mode Toggles + OHLCV live bar -->
+      <div class="flex items-center gap-2 sm:gap-3 flex-wrap min-w-0">
         <span
           v-if="tokenSymbol"
           class="font-extrabold tracking-wider text-foreground px-1.5 py-0.5 rounded bg-muted text-[11px]"
         >
-          {{ tokenSymbol }}/USD
+          {{ tokenSymbol }}/{{ activeCurrencyMode === 'native' ? nativeSymbol : 'USD' }}
         </span>
+
+        <!-- PRICE / MCAP switcher (lunch.fun style) -->
+        <div
+          class="flex items-center bg-muted p-0.5 rounded-lg border border-border text-[10px] font-bold"
+        >
+          <button
+            type="button"
+            class="px-2 py-0.5 rounded transition cursor-pointer"
+            :class="
+              activeChartMode === 'price'
+                ? 'bg-card text-foreground shadow-2xs'
+                : 'text-muted-foreground hover:text-foreground'
+            "
+            @click="setChartMode('price')"
+          >
+            PRICE
+          </button>
+          <button
+            type="button"
+            class="px-2 py-0.5 rounded transition cursor-pointer"
+            :class="
+              activeChartMode === 'mcap'
+                ? 'bg-card text-foreground shadow-2xs'
+                : 'text-muted-foreground hover:text-foreground'
+            "
+            @click="setChartMode('mcap')"
+          >
+            MCAP
+          </button>
+        </div>
+
+        <!-- USD / Native switcher (lunch.fun style) -->
+        <div
+          v-if="activeChartMode === 'price'"
+          class="flex items-center bg-muted p-0.5 rounded-lg border border-border text-[10px] font-bold"
+        >
+          <button
+            type="button"
+            class="px-2 py-0.5 rounded transition cursor-pointer"
+            :class="
+              activeCurrencyMode === 'usd'
+                ? 'bg-card text-foreground shadow-2xs'
+                : 'text-muted-foreground hover:text-foreground'
+            "
+            @click="setCurrencyMode('usd')"
+          >
+            USD
+          </button>
+          <button
+            type="button"
+            class="px-2 py-0.5 rounded transition cursor-pointer"
+            :class="
+              activeCurrencyMode === 'native'
+                ? 'bg-card text-foreground shadow-2xs'
+                : 'text-muted-foreground hover:text-foreground'
+            "
+            @click="setCurrencyMode('native')"
+          >
+            {{ nativeSymbol || 'ETH' }}
+          </button>
+        </div>
 
         <div v-if="activeBar" class="flex items-center gap-2.5 text-[11px] flex-wrap">
           <span class="text-muted-foreground">
@@ -608,11 +772,6 @@ onUnmounted(() => destroyChart());
 
       <!-- Right: Chart controls -->
       <div class="flex items-center gap-1.5 shrink-0 ml-auto flex-wrap">
-        <span
-          class="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-muted text-muted-foreground border border-border"
-        >
-          TradingView Engine
-        </span>
         <button
           type="button"
           class="p-1 rounded text-muted-foreground hover:text-foreground transition cursor-pointer"
