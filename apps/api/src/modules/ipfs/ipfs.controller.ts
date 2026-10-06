@@ -4,6 +4,7 @@ import { IpfsService } from './ipfs.service';
 export interface IpfsUploadResult {
   cid: string;
   url: string;
+  uri: string;
 }
 
 export interface IpfsDirectUploadPayload {

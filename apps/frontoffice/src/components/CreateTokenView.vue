@@ -111,6 +111,15 @@
               <span>{{ t('pinningIpfs') }}</span>
             </div>
 
+            <!-- IPFS Ready Indicator -->
+            <div
+              v-else-if="form.logo"
+              class="flex items-center gap-1.5 text-[11px] font-mono text-emerald-500 pt-0.5"
+            >
+              <Check class="w-3 h-3 shrink-0" />
+              <span>{{ t('ipfsReady') }}</span>
+            </div>
+
             <!-- Image Error -->
             <div
               v-if="imageError"
@@ -1415,13 +1424,19 @@ async function processImageFile(file: File) {
       body: formData,
     });
     const data = await res.json();
-    if (data.success && data.data?.uri) {
-      form.value.logo = data.data.uri;
+    const logoUri =
+      (data.data?.cid ? `ipfs://${data.data.cid}` : '') || data.data?.uri || data.data?.url || '';
+    if (data.success && logoUri) {
+      form.value.logo = logoUri;
+      imageError.value = '';
     } else {
       form.value.logo = '';
+      imageError.value = data?.error?.message || 'Failed to upload image to IPFS.';
     }
-  } catch {
+  } catch (err) {
+    console.warn('[CreateToken] Image upload error:', err);
     form.value.logo = '';
+    imageError.value = 'Failed to upload image to IPFS. Please try again.';
   } finally {
     isUploadingIpfs.value = false;
   }
@@ -1444,6 +1459,11 @@ function handleDrop(event: DragEvent) {
 }
 
 async function handleLaunch() {
+  if (isUploadingIpfs.value) return;
+  if (imagePreview.value && !form.value.logo) {
+    imageError.value = 'Image upload incomplete or failed. Please re-upload before launching.';
+    return;
+  }
   if (!isConnected.value) {
     openWallet();
     return;

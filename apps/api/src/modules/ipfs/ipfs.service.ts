@@ -41,7 +41,7 @@ export async function uploadFile(
   fileBuffer: Buffer | ArrayBuffer,
   fileName: string,
   mimeType: string,
-): Promise<{ cid: string; url: string }> {
+): Promise<{ cid: string; url: string; uri: string }> {
   const buf = Buffer.isBuffer(fileBuffer) ? fileBuffer : Buffer.from(fileBuffer);
   const pinataJwt = process.env.PINATA_JWT?.trim();
 
@@ -71,6 +71,7 @@ export async function uploadFile(
           return {
             cid,
             url: `${cleanGateway}${cid}`,
+            uri: `ipfs://${cid}`,
           };
         }
       } else {
@@ -91,6 +92,7 @@ export async function uploadFile(
   return {
     cid,
     url: `${cleanGateway}${cid}`,
+    uri: `ipfs://${cid}`,
   };
 }
 
@@ -99,7 +101,7 @@ export class IpfsService {
     fileBuffer: Buffer | ArrayBuffer,
     fileName: string,
     mimeType: string,
-  ): Promise<{ cid: string; url: string }> {
+  ): Promise<{ cid: string; url: string; uri: string }> {
     return uploadFile(fileBuffer, fileName, mimeType);
   }
 }

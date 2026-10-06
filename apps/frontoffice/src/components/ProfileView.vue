@@ -1099,8 +1099,13 @@ async function processAvatarFile(file: File) {
     });
     if (res.ok) {
       const data = await res.json();
-      if (data?.data?.cid) {
-        editForm.value.avatarUrl = `ipfs://${data.data.cid}`;
+      const avatarUri =
+        (data?.data?.cid ? `ipfs://${data.data.cid}` : '') ||
+        data?.data?.uri ||
+        data?.data?.url ||
+        '';
+      if (avatarUri) {
+        editForm.value.avatarUrl = avatarUri;
       }
     }
   } catch (err) {
