@@ -176,25 +176,16 @@
 
           <!-- Right Action Controls (Voice Call, Share, Copy Link) -->
           <div class="flex items-center gap-2 shrink-0 flex-wrap">
-            <!-- Voice Call / Live Space (pump.fun & lunch.fun style) -->
-            <button
-              type="button"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition cursor-pointer text-xs font-mono font-bold select-none"
-              :class="
-                isInVoiceCall
-                  ? 'bg-rose-500/15 border-rose-500/40 text-rose-500 hover:bg-rose-500/25 shadow-xs'
-                  : 'bg-muted/60 border-border text-muted-foreground hover:text-foreground hover:bg-muted'
-              "
-              title="Community Voice Call / Spaces"
-              @click="voiceModalOpen = true"
+            <!-- Callout Button (pump.fun style) -->
+            <Button
+              variant="outline"
+              size="sm"
+              class="h-8 px-3 text-xs font-bold gap-1.5 rounded-xl border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer shadow-2xs font-mono"
+              @click="openCallModal"
             >
-              <span
-                class="w-2 h-2 rounded-full"
-                :class="isInVoiceCall ? 'bg-rose-500 animate-ping' : 'bg-rose-500/80'"
-              />
-              <Radio class="w-3.5 h-3.5" />
-              <span>{{ isInVoiceCall ? `Live Call · ${voiceListenersCount}` : 'Voice Call' }}</span>
-            </button>
+              <Megaphone class="w-3.5 h-3.5" />
+              <span>Call ${{ currentToken.symbol }}</span>
+            </Button>
 
             <!-- Share to X Button -->
             <Button
@@ -821,7 +812,7 @@
                 >
                   <TabsTrigger
                     v-for="tab in [
-                      { value: 'thread', label: 'Thread' },
+                      { value: 'callouts', label: 'Callouts' },
                       { value: 'trades', label: t('trades') },
                       { value: 'top-traders', label: t('topTraders') },
                       { value: 'holders', label: t('holders') },
@@ -833,8 +824,8 @@
                   >
                     {{ tab.label }}
                     <span
-                      v-if="tab.value === 'thread' && comments.length > 0"
-                      class="ml-1 px-1.5 py-0.2 rounded-full bg-muted text-[10px]"
+                      v-if="tab.value === 'callouts' && comments.length > 0"
+                      class="ml-1 px-1.5 py-0.2 rounded-full bg-primary/20 text-primary font-bold text-[10px]"
                     >
                       {{ comments.length }}
                     </span>
@@ -852,7 +843,7 @@
                   <span class="hidden sm:inline">Refresh</span>
                 </Button>
                 <Button
-                  v-if="activeBottomTab === 'thread'"
+                  v-if="activeBottomTab === 'callouts'"
                   variant="ghost"
                   size="sm"
                   class="ml-auto h-7 px-2 text-xs font-mono text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
@@ -863,49 +854,44 @@
                 </Button>
               </div>
 
-              <!-- Tab: Discussion Thread & Comments -->
+              <!-- Tab: Community Callouts (pump.fun style) -->
               <TabsContent
-                value="thread"
-                class="mt-0 max-h-[420px] overflow-y-auto p-5 sm:p-6 space-y-5"
+                value="callouts"
+                class="mt-0 max-h-[460px] overflow-y-auto p-4 sm:p-5 space-y-4"
               >
-                <!-- Post Comment Form -->
-                <div class="p-4 sm:p-5 rounded-2xl border border-border bg-muted/30 space-y-3">
-                  <div
-                    class="flex items-center justify-between text-xs text-muted-foreground font-mono"
-                  >
-                    <span class="flex items-center gap-1.5 font-semibold text-foreground">
-                      <MessageSquare class="w-3.5 h-3.5 text-emerald-500" />
-                      Share your take on ${{ currentToken.symbol }}
+                <!-- Quick Post Callout Bar -->
+                <div
+                  class="p-3.5 sm:p-4 rounded-2xl border border-border bg-muted/30 space-y-3 font-mono"
+                >
+                  <div class="flex items-center justify-between text-xs text-muted-foreground">
+                    <span class="flex items-center gap-1.5 font-bold text-foreground">
+                      <Megaphone class="w-3.5 h-3.5 text-primary" />
+                      Post a Call on ${{ currentToken.symbol }}
                     </span>
                     <span v-if="account" class="text-[10px]">
-                      Posting as
+                      Caller:
                       <span class="font-bold text-foreground">{{ truncateAddress(account) }}</span>
                     </span>
                   </div>
 
-                  <div class="relative">
-                    <textarea
+                  <div class="flex items-center gap-2">
+                    <Input
                       v-model="newCommentText"
-                      rows="2"
+                      type="text"
                       maxlength="500"
-                      placeholder="What is your price target or reaction?..."
-                      class="w-full text-xs font-sans p-2.5 rounded-lg border border-border bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-foreground resize-none"
+                      placeholder="Call this token (e.g. target $100K MC, breaking out, dev based!)..."
+                      class="h-9 text-xs font-sans bg-card flex-1"
+                      @keydown.enter="postComment"
                     />
-                  </div>
-
-                  <div class="flex items-center justify-between">
-                    <span class="text-[10px] font-mono text-muted-foreground"
-                      >{{ newCommentText.length }}/500</span
-                    >
                     <Button
                       size="sm"
-                      class="h-7 px-3 text-xs font-bold bg-primary hover:opacity-90 text-primary-foreground cursor-pointer rounded-lg flex items-center gap-1"
+                      class="h-9 px-3.5 text-xs font-bold gap-1 cursor-pointer shrink-0"
                       :disabled="isPostingComment || !newCommentText.trim()"
                       @click="postComment"
                     >
                       <Loader2 v-if="isPostingComment" class="w-3 h-3 animate-spin" />
-                      <Send v-else class="w-3 h-3" />
-                      <span>Post Comment</span>
+                      <Megaphone v-else class="w-3 h-3" />
+                      <span>Call</span>
                     </Button>
                   </div>
                   <div
@@ -917,34 +903,35 @@
                   </div>
                 </div>
 
-                <!-- Comments Feed -->
+                <!-- Callouts Feed -->
                 <div
                   v-if="commentsLoading && comments.length === 0"
                   class="py-12 text-center text-muted-foreground"
                 >
-                  <Loader2 class="w-4 h-4 animate-spin mx-auto mb-2 text-emerald-500" />
-                  <span class="text-xs">Loading comments...</span>
+                  <Loader2 class="w-4 h-4 animate-spin mx-auto mb-2 text-primary" />
+                  <span class="text-xs font-mono">Loading callouts...</span>
                 </div>
                 <div
                   v-else-if="comments.length === 0"
-                  class="py-12 text-center text-muted-foreground space-y-1"
+                  class="py-12 text-center text-muted-foreground space-y-1 font-mono"
                 >
-                  <MessageSquare class="w-6 h-6 mx-auto mb-1.5 text-muted-foreground opacity-60" />
-                  <p class="text-xs font-mono font-medium">No comments yet.</p>
+                  <Megaphone class="w-6 h-6 mx-auto mb-1.5 text-muted-foreground opacity-60" />
+                  <p class="text-xs font-bold">No callouts yet.</p>
                   <p class="text-[11px] text-muted-foreground">
-                    Be the first to share your thoughts on ${{ currentToken.symbol }}!
+                    Be the first to call ${{ currentToken.symbol }} to the community!
                   </p>
                 </div>
-                <div v-else class="space-y-2.5">
+                <div v-else class="space-y-3">
                   <div
                     v-for="cmt in paginatedComments"
                     :key="cmt.id"
-                    class="p-3 rounded-xl border border-border bg-card hover:bg-muted/80 transition-colors space-y-1.5"
+                    class="p-3.5 rounded-xl border border-border bg-card hover:bg-muted/30 transition-colors space-y-2.5"
                   >
+                    <!-- Header: Author + Badges + Time -->
                     <div class="flex items-center justify-between gap-2">
                       <div class="flex items-center gap-2">
-                        <Jazzicon :address="cmt.authorAddress" :size="16" />
-                        <span class="text-xs font-mono font-semibold text-foreground">
+                        <Jazzicon :address="cmt.authorAddress" :size="18" />
+                        <span class="text-xs font-mono font-bold text-foreground">
                           {{ truncateAddress(cmt.authorAddress) }}
                         </span>
                         <Badge
@@ -956,23 +943,88 @@
                         >
                           Creator
                         </Badge>
+                        <Badge
+                          v-else-if="isHolderAddress(cmt.authorAddress)"
+                          variant="outline"
+                          class="text-[9px] px-1.5 py-0 h-4 font-mono text-muted-foreground"
+                        >
+                          Holder
+                        </Badge>
                       </div>
                       <span class="text-[10px] font-mono text-muted-foreground">
                         {{ formatRelativeTime(cmt.createdAt) }}
                       </span>
                     </div>
 
+                    <!-- Callout Text -->
                     <p
-                      class="text-xs leading-relaxed text-foreground font-sans break-words whitespace-pre-wrap"
+                      class="text-xs leading-relaxed text-foreground font-sans break-words whitespace-pre-wrap font-medium"
                     >
                       {{ cmt.content }}
                     </p>
 
-                    <div class="flex items-center justify-end gap-2 pt-1 border-t border-border">
+                    <!-- Optional Attached Image -->
+                    <div
+                      v-if="cmt.imageUrl"
+                      class="rounded-lg overflow-hidden border border-border max-w-xs"
+                    >
+                      <img
+                        :src="cmt.imageUrl"
+                        alt="Call attachment"
+                        class="w-full max-h-48 object-cover"
+                      />
+                    </div>
+
+                    <!-- Pump.fun Style Callout Mini Token Card -->
+                    <div
+                      class="p-2.5 rounded-xl border border-border bg-muted/40 flex items-center justify-between gap-3 text-xs font-mono"
+                    >
+                      <div class="flex items-center gap-2 min-w-0">
+                        <OptimizedImage
+                          :src="currentToken.logo"
+                          :alt="currentToken.name"
+                          :fallback-text="currentToken.symbol"
+                          :width="26"
+                          :height="26"
+                          class="rounded-full border border-border shrink-0"
+                        />
+                        <div class="min-w-0">
+                          <div class="flex items-center gap-1.5 leading-none">
+                            <span class="font-bold text-foreground text-xs"
+                              >${{ currentToken.symbol }}</span
+                            >
+                            <span class="text-[10px] text-muted-foreground truncate">{{
+                              currentToken.name
+                            }}</span>
+                          </div>
+                          <span class="text-[10px] text-emerald-500 font-bold block mt-1">
+                            {{
+                              cmt.targetMcap
+                                ? `Target: ${cmt.targetMcap}`
+                                : `MC: ${formatCompactUsd(currentMarketData.marketCapUsd || 4200)}`
+                            }}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="text-right shrink-0">
+                        <span class="text-[9px] text-muted-foreground block uppercase font-bold"
+                          >Position</span
+                        >
+                        <span class="text-xs font-bold text-foreground">
+                          {{ cmt.positionUsd ? `$${cmt.positionUsd.toFixed(2)}` : 'Holder' }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- Card Actions: Heart like + Share Call to X -->
+                    <div
+                      class="flex items-center justify-between pt-1 border-t border-border text-[11px] font-mono"
+                    >
                       <button
                         type="button"
-                        aria-label="Like comment"
-                        class="flex items-center gap-1 text-[11px] font-mono text-muted-foreground hover:text-destructive transition cursor-pointer"
+                        aria-label="Like callout"
+                        class="flex items-center gap-1.5 text-muted-foreground hover:text-rose-500 transition cursor-pointer"
                         :class="cmt.isLikedByViewer ? 'text-rose-500 font-bold' : ''"
                         @click="toggleLike(cmt.id)"
                       >
@@ -982,10 +1034,20 @@
                         />
                         <span>{{ cmt.likesCount }}</span>
                       </button>
+
+                      <button
+                        type="button"
+                        class="flex items-center gap-1 text-muted-foreground hover:text-foreground transition cursor-pointer text-[10px] font-bold"
+                        title="Share this call on X"
+                        @click="shareCalloutToX(cmt)"
+                      >
+                        <Share2 class="w-3 h-3" />
+                        <span>Share Call</span>
+                      </button>
                     </div>
                   </div>
 
-                  <!-- Comments Pagination -->
+                  <!-- Callouts Pagination -->
                   <div v-if="comments.length > commentsPageSize" class="pt-2 flex justify-center">
                     <Pagination
                       :total="comments.length"
@@ -1592,191 +1654,165 @@
         </DialogContent>
       </Dialog>
 
-      <!-- Community Voice Call / Space Modal (pump.fun & lunch.fun style) -->
-      <Dialog v-model:open="voiceModalOpen">
-        <DialogContent class="sm:max-w-md bg-card border-border">
+      <!-- Callout Modal (pump.fun style) -->
+      <Dialog v-model:open="callModalOpen">
+        <DialogContent class="sm:max-w-md bg-card border-border font-mono text-xs">
           <DialogHeader>
             <div class="flex items-center gap-2">
-              <span
-                class="w-2.5 h-2.5 rounded-full"
-                :class="isInVoiceCall ? 'bg-rose-500 animate-ping' : 'bg-rose-500'"
-              />
+              <Megaphone class="w-4 h-4 text-primary shrink-0" />
               <DialogTitle class="text-base font-black font-mono">
-                ${{ currentToken.symbol }} Community Voice Call
+                Call ${{ currentToken.symbol }}
               </DialogTitle>
             </div>
             <DialogDescription class="text-xs text-muted-foreground font-mono">
-              Live decentralized audio space for ${{ currentToken.symbol }} holders & creators.
+              Post an on-chain verified alpha callout with your price target and thesis.
             </DialogDescription>
           </DialogHeader>
 
-          <!-- Voice Room UI -->
-          <div class="space-y-4 py-2 font-mono text-xs">
-            <!-- Active Room Header Card -->
-            <div class="p-4 rounded-xl border border-border bg-muted/40 space-y-3">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2.5 min-w-0">
-                  <OptimizedImage
-                    :src="currentToken.logo"
-                    :alt="currentToken.name"
-                    :fallback-text="currentToken.symbol"
-                    :width="36"
-                    :height="36"
-                    class="rounded-full border border-border shrink-0"
-                  />
-                  <div class="min-w-0">
-                    <p class="font-bold text-foreground text-sm leading-tight truncate">
+          <div class="space-y-4 py-2">
+            <!-- Mini Token Card Preview -->
+            <div
+              class="p-3.5 rounded-xl border border-border bg-muted/40 flex items-center justify-between gap-3"
+            >
+              <div class="flex items-center gap-2.5 min-w-0">
+                <OptimizedImage
+                  :src="currentToken.logo"
+                  :alt="currentToken.name"
+                  :fallback-text="currentToken.symbol"
+                  :width="36"
+                  :height="36"
+                  class="rounded-full border border-border shrink-0"
+                />
+                <div class="min-w-0">
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-bold text-foreground text-sm leading-tight truncate">
+                      ${{ currentToken.symbol }}
+                    </span>
+                    <span class="text-muted-foreground text-[11px] truncate">
                       {{ currentToken.name }}
-                    </p>
-                    <p class="text-[11px] text-muted-foreground truncate">
-                      ${{ currentToken.symbol }} Voice Space
-                    </p>
+                    </span>
                   </div>
-                </div>
-
-                <div
-                  class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-card border border-border text-[11px] shrink-0"
-                >
-                  <Users class="w-3.5 h-3.5 text-muted-foreground" />
-                  <span class="font-bold text-foreground">{{ voiceListenersCount }}</span>
-                  <span class="text-muted-foreground">in room</span>
-                </div>
-              </div>
-
-              <!-- Animated Equalizer Audio Visualizer when in call -->
-              <div
-                v-if="isInVoiceCall && !isMicMuted"
-                class="flex items-center justify-center gap-1.5 py-3.5 bg-card/60 rounded-xl border border-border"
-              >
-                <span
-                  class="w-1.5 h-3 bg-emerald-500 rounded-full animate-bounce [animation-delay:0ms]"
-                />
-                <span
-                  class="w-1.5 h-6 bg-emerald-500 rounded-full animate-bounce [animation-delay:150ms]"
-                />
-                <span
-                  class="w-1.5 h-8 bg-emerald-500 rounded-full animate-bounce [animation-delay:300ms]"
-                />
-                <span
-                  class="w-1.5 h-5 bg-emerald-500 rounded-full animate-bounce [animation-delay:450ms]"
-                />
-                <span
-                  class="w-1.5 h-7 bg-emerald-500 rounded-full animate-bounce [animation-delay:200ms]"
-                />
-                <span
-                  class="w-1.5 h-4 bg-emerald-500 rounded-full animate-bounce [animation-delay:350ms]"
-                />
-                <span
-                  class="w-1.5 h-2 bg-emerald-500 rounded-full animate-bounce [animation-delay:100ms]"
-                />
-                <span class="text-[11px] text-emerald-500 font-bold ml-2">Speaking Live</span>
-              </div>
-              <div
-                v-else-if="isInVoiceCall && isMicMuted"
-                class="text-center py-3 text-[11px] text-muted-foreground bg-card/40 rounded-xl border border-border"
-              >
-                Microphone is muted (Listening mode)
-              </div>
-              <div
-                v-else
-                class="text-center py-3 text-[11px] text-muted-foreground bg-card/40 rounded-xl border border-border"
-              >
-                Live audio room ready. Connect microphone to talk with holders.
-              </div>
-            </div>
-
-            <!-- Participant / Host Info -->
-            <div class="space-y-2">
-              <p class="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-                Speakers & Host
-              </p>
-              <div
-                class="flex items-center justify-between p-2.5 rounded-xl bg-muted/20 border border-border"
-              >
-                <div class="flex items-center gap-2">
-                  <Jazzicon
-                    :address="currentToken.deployer || '0x0000000000000000000000000000000000000000'"
-                    :size="22"
-                  />
-                  <div>
-                    <span class="font-bold text-foreground">{{
-                      shortenAddress(currentToken.deployer || '', 6, 4)
-                    }}</span>
-                    <Badge
-                      variant="secondary"
-                      class="ml-1.5 text-[9px] px-1 py-0 h-4 bg-primary/10 text-primary border-primary/20"
+                  <span class="text-[11px] text-muted-foreground block mt-0.5">
+                    MC:
+                    <strong class="text-foreground"
+                      >${{ formatCompactUsd(currentMarketData.marketCapUsd || 4200) }}</strong
                     >
-                      Creator / Host
-                    </Badge>
-                  </div>
-                </div>
-                <Volume2 class="w-4 h-4 text-muted-foreground" />
-              </div>
-
-              <!-- Viewer Participant if connected -->
-              <div
-                v-if="isInVoiceCall && account"
-                class="flex items-center justify-between p-2.5 rounded-xl bg-muted/20 border border-border"
-              >
-                <div class="flex items-center gap-2">
-                  <Jazzicon :address="account" :size="22" />
-                  <div>
-                    <span class="font-bold text-foreground">{{
-                      shortenAddress(account, 6, 4)
-                    }}</span>
-                    <Badge variant="outline" class="ml-1.5 text-[9px] px-1 py-0 h-4"> You </Badge>
-                  </div>
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <span
-                    class="w-2 h-2 rounded-full"
-                    :class="!isMicMuted ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground'"
-                  />
-                  <span class="text-[11px] text-muted-foreground font-bold">
-                    {{ !isMicMuted ? 'Mic On' : 'Muted' }}
+                    · Price:
+                    <strong class="text-foreground">{{
+                      formatPriceUsd(currentMarketData.priceUsd)
+                    }}</strong>
                   </span>
                 </div>
               </div>
+
+              <div class="text-right shrink-0">
+                <span class="text-[10px] text-muted-foreground block uppercase font-bold"
+                  >Your Position</span
+                >
+                <span
+                  class="text-xs font-bold"
+                  :class="userHoldingTokensCount > 0 ? 'text-emerald-500' : 'text-muted-foreground'"
+                >
+                  {{ userHoldingTokensCount > 0 ? `$${userHoldingUsd.toFixed(2)}` : '0 tokens' }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Target Market Cap selector pills -->
+            <div class="space-y-1.5">
+              <Label class="text-[11px] font-bold text-foreground">Target Market Cap</Label>
+              <div class="grid grid-cols-4 gap-1.5">
+                <Button
+                  v-for="target in [
+                    '$25K MC',
+                    '$50K MC',
+                    '$100K MC',
+                    '$250K MC',
+                    '$500K MC',
+                    '$1M MC',
+                    '$5M MC',
+                    'Moon 🚀',
+                  ]"
+                  :key="target"
+                  type="button"
+                  size="sm"
+                  :variant="callTargetMcap === target ? 'default' : 'outline'"
+                  class="h-7 px-1 text-[11px] font-mono"
+                  @click="callTargetMcap = target"
+                >
+                  {{ target }}
+                </Button>
+              </div>
+            </div>
+
+            <!-- Thesis / Callout Message -->
+            <div class="space-y-1.5">
+              <Label class="text-[11px] font-bold text-foreground">Call Thesis / Alpha</Label>
+              <textarea
+                v-model="callContent"
+                rows="3"
+                maxlength="500"
+                placeholder="Why are you calling this token? (e.g. dev is active, community building, send it to $100K MC!)..."
+                class="w-full text-xs font-sans p-2.5 rounded-lg border border-border bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-foreground resize-none"
+              />
+              <div class="flex justify-between text-[10px] text-muted-foreground font-mono">
+                <span>{{ callContent.length }}/500</span>
+                <span v-if="account" class="truncate"
+                  >Caller: {{ shortenAddress(account, 6, 4) }}</span
+                >
+              </div>
+            </div>
+
+            <!-- Optional Image URL -->
+            <div class="space-y-1.5">
+              <Label class="text-[11px] font-bold text-foreground"
+                >Image / Chart URL (Optional)</Label
+              >
+              <Input
+                v-model="callImageUrl"
+                type="text"
+                placeholder="https://... or ipfs://... (chart screenshot / meme)"
+                class="h-8 text-xs font-mono"
+              />
+            </div>
+
+            <!-- Also share to X toggle -->
+            <div class="flex items-center gap-2 pt-1">
+              <input
+                id="share-call-x"
+                v-model="callShareToX"
+                type="checkbox"
+                class="rounded border-border text-primary cursor-pointer"
+              />
+              <label
+                for="share-call-x"
+                class="text-xs text-muted-foreground cursor-pointer select-none"
+              >
+                Also compose tweet to share on X (Twitter)
+              </label>
+            </div>
+
+            <!-- Error message -->
+            <div
+              v-if="callError"
+              class="text-[11px] text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2"
+            >
+              {{ callError }}
             </div>
           </div>
 
           <DialogFooter class="flex sm:justify-between items-center gap-2 pt-2">
-            <template v-if="isInVoiceCall">
-              <Button
-                variant="outline"
-                size="sm"
-                class="gap-1.5 font-bold cursor-pointer"
-                :class="
-                  isMicMuted
-                    ? 'text-amber-500 border-amber-500/40'
-                    : 'text-emerald-500 border-emerald-500/40'
-                "
-                @click="toggleMic"
-              >
-                <MicOff v-if="isMicMuted" class="w-3.5 h-3.5" />
-                <Mic v-else class="w-3.5 h-3.5" />
-                <span>{{ isMicMuted ? 'Unmute Mic' : 'Mute Mic' }}</span>
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                class="gap-1.5 font-bold cursor-pointer"
-                @click="leaveVoiceCall"
-              >
-                <PhoneOff class="w-3.5 h-3.5" />
-                <span>Leave Call</span>
-              </Button>
-            </template>
-            <template v-else>
-              <Button variant="outline" size="sm" @click="voiceModalOpen = false"> Close </Button>
-              <Button
-                class="gap-1.5 font-bold cursor-pointer shadow-xs"
-                @click="toggleJoinVoiceCall"
-              >
-                <Radio class="w-3.5 h-3.5" />
-                <span>Join Voice Call</span>
-              </Button>
-            </template>
+            <Button variant="outline" size="sm" @click="callModalOpen = false">Cancel</Button>
+            <Button
+              :disabled="isPostingCall || !callContent.trim()"
+              size="sm"
+              class="gap-1.5 font-bold cursor-pointer shadow-xs"
+              @click="handlePostCallout"
+            >
+              <Loader2 v-if="isPostingCall" class="w-3.5 h-3.5 animate-spin" />
+              <Megaphone v-else class="w-3.5 h-3.5" />
+              <span>Post Call 📢</span>
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1806,12 +1842,9 @@ import {
   RefreshCw,
   Globe,
   ArrowRight,
-  Radio,
-  Mic,
-  MicOff,
-  PhoneOff,
-  Volume2,
-  Users,
+  Megaphone,
+  Share2,
+  TrendingUp,
 } from 'lucide-vue-next';
 import { useSwap, SLIPPAGE_WARN_THRESHOLD, parseAmountToWei } from '../composables/useSwap';
 import { useWallet } from '../composables/useWallet';
@@ -1939,58 +1972,101 @@ const isCreator = computed(() => {
   return account.value.toLowerCase() === currentToken.value.deployer.toLowerCase();
 });
 
-// Community Voice Call / Space State (pump.fun & lunch.fun style)
-const voiceModalOpen = ref(false);
-const isInVoiceCall = ref(false);
-const isMicMuted = ref(false);
-const voiceListenersCount = ref(3);
-let localVoiceStream: MediaStream | null = null;
+// Callout State (pump.fun style)
+const callModalOpen = ref(false);
+const callTargetMcap = ref('$100K MC');
+const callContent = ref('');
+const callImageUrl = ref('');
+const callShareToX = ref(true);
+const isPostingCall = ref(false);
+const callError = ref<string | null>(null);
 
-async function toggleJoinVoiceCall() {
-  if (isInVoiceCall.value) {
-    leaveVoiceCall();
+const userHoldingTokensCount = computed(() => {
+  const decimals = currentToken.value.decimals || 18;
+  return Number(userTokenBalance.value) / 10 ** decimals;
+});
+
+const userHoldingUsd = computed(() => {
+  return userHoldingTokensCount.value * (currentMarketData.value.priceUsd || 0);
+});
+
+function openCallModal() {
+  callModalOpen.value = true;
+  callError.value = null;
+  if (!callContent.value) {
+    callContent.value = `Calling $${currentToken.value.symbol} — target ${callTargetMcap.value}! 🚀`;
+  }
+}
+
+async function handlePostCallout() {
+  if (!account.value) {
+    openWallet();
     return;
   }
+  const content = callContent.value.trim();
+  if (!content) {
+    callError.value = 'Please write your thesis or target before calling.';
+    return;
+  }
+
+  isPostingCall.value = true;
+  callError.value = null;
   try {
-    if (typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
-      localVoiceStream = await navigator.mediaDevices
-        .getUserMedia({ audio: true })
-        .catch(() => null);
-    }
-    isInVoiceCall.value = true;
-    isMicMuted.value = false;
-    voiceListenersCount.value++;
-    toast.success('Connected to Live Voice Call 🎙️');
-  } catch {
-    isInVoiceCall.value = true;
-    isMicMuted.value = true;
-    toast.info('Connected in Listening Mode 🎧');
-  }
-}
-
-function toggleMic() {
-  isMicMuted.value = !isMicMuted.value;
-  if (localVoiceStream) {
-    localVoiceStream.getAudioTracks().forEach((track) => {
-      track.enabled = !isMicMuted.value;
+    const res = await fetch(`/api/tokens/${currentToken.value.address}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        authorAddress: account.value,
+        content,
+        imageUrl: callImageUrl.value.trim() || undefined,
+        targetMcap: callTargetMcap.value,
+        positionUsd: userHoldingUsd.value > 0 ? userHoldingUsd.value : undefined,
+        callType: 'call',
+      }),
     });
-  }
-  if (isMicMuted.value) {
-    toast.info('Microphone Muted 🔇');
-  } else {
-    toast.success('Microphone Live 🎙️');
+    const envelope = await res.json();
+    if (envelope.success && envelope.data) {
+      toast.success(`Called $${currentToken.value.symbol}! 📢`);
+
+      if (callShareToX.value && typeof window !== 'undefined') {
+        const tweetText = encodeURIComponent(
+          `I just called $${currentToken.value.symbol} at ${formatCompactUsd(currentMarketData.value.marketCapUsd || 4200)} MC (Target: ${callTargetMcap.value}) on @proto_protocol! 🚀\n\n"${content.slice(0, 100)}"\n\n${window.location.href}`,
+        );
+        window.open(
+          `https://twitter.com/intent/tweet?text=${tweetText}`,
+          '_blank',
+          'noopener,noreferrer',
+        );
+      }
+
+      callContent.value = '';
+      callImageUrl.value = '';
+      callModalOpen.value = false;
+      activeBottomTab.value = 'callouts';
+      await fetchComments(currentToken.value.address);
+    } else {
+      callError.value = envelope.error?.message || 'Failed to publish callout.';
+    }
+  } catch (err) {
+    callError.value = (err as Error).message || 'Network error.';
+  } finally {
+    isPostingCall.value = false;
   }
 }
 
-function leaveVoiceCall() {
-  if (localVoiceStream) {
-    localVoiceStream.getTracks().forEach((track) => track.stop());
-    localVoiceStream = null;
+function shareCalloutToX(cmt: TokenCommentEntity) {
+  if (typeof window !== 'undefined') {
+    const target = cmt.targetMcap ? `(Target: ${cmt.targetMcap}) ` : '';
+    const text = encodeURIComponent(
+      `Check out this call on $${currentToken.value.symbol} ${target}on @proto_protocol! 📢\n\n"${cmt.content.slice(0, 120)}"\n\n${window.location.href}`,
+    );
+    window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank', 'noopener,noreferrer');
   }
-  isInVoiceCall.value = false;
-  isMicMuted.value = false;
-  if (voiceListenersCount.value > 1) voiceListenersCount.value--;
-  toast.info('Left Voice Space');
+}
+
+function isHolderAddress(addr: string): boolean {
+  if (!addr || holders.value.length === 0) return false;
+  return holders.value.some((h) => h.address.toLowerCase() === addr.toLowerCase());
 }
 
 const onchainTaxConfig = ref({
@@ -2196,7 +2272,9 @@ const swapSuccessTx = ref<string | null>(null);
 const copied = ref(false);
 const copiedId = ref<string | null>(null);
 const tokenLoading = ref(true);
-const activeBottomTab = ref<'thread' | 'trades' | 'top-traders' | 'holders' | 'about'>('thread');
+const activeBottomTab = ref<'callouts' | 'trades' | 'top-traders' | 'holders' | 'about'>(
+  'callouts',
+);
 
 const effectiveNativeInput = computed(() => {
   const input = parseFloat(amountIn.value) || 0;
@@ -2753,6 +2831,9 @@ async function postComment() {
       body: JSON.stringify({
         authorAddress: account.value,
         content,
+        targetMcap: callTargetMcap.value,
+        positionUsd: userHoldingUsd.value > 0 ? userHoldingUsd.value : undefined,
+        callType: 'call',
       }),
     });
     const envelope = await res.json();
@@ -3310,10 +3391,6 @@ onUnmounted(() => {
   if (liveCandleTimer) {
     clearInterval(liveCandleTimer);
     liveCandleTimer = null;
-  }
-  if (localVoiceStream) {
-    localVoiceStream.getTracks().forEach((track) => track.stop());
-    localVoiceStream = null;
   }
 });
 </script>

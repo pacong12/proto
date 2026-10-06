@@ -112,6 +112,17 @@ export interface TokenCommentEntity {
   likesCount: number;
   createdAt: number;
   isLikedByViewer?: boolean;
+  targetMcap?: string;
+  positionUsd?: number;
+  callType?: 'call' | 'comment';
+}
+
+export interface FeedCalloutItem extends TokenCommentEntity {
+  tokenName?: string;
+  tokenSymbol?: string;
+  tokenLogo?: string;
+  tokenMarketCapUsd?: number;
+  tokenPriceUsd?: number;
 }
 
 export interface TokenVotesSummary {

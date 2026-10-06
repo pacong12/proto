@@ -780,6 +780,17 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     return replyEnvelope(res);
   }
 
+  // GET /api/feed or /api/callouts — global community callouts across all tokens
+  if ((url.pathname === '/api/feed' || url.pathname === '/api/callouts') && req.method === 'GET') {
+    const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') ?? '50', 10)));
+    const offset = Math.max(0, parseInt(url.searchParams.get('offset') ?? '0', 10));
+    const viewer = url.searchParams.get('viewer') || undefined;
+    const callouts = (await repository.getFeedCallouts?.(limit, offset, viewer)) || [];
+    return new Response(safeStringify({ success: true, data: callouts, timestamp: Date.now() }), {
+      headers,
+    });
+  }
+
   // GET & POST /api/tokens/:address/comments
   const commentsMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/comments$/);
   if (commentsMatch && req.method === 'GET') {
@@ -798,10 +809,19 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         content?: string;
         authorAddress?: string;
         imageUrl?: string;
+        targetMcap?: string;
+        positionUsd?: number;
+        callType?: 'call' | 'comment';
       }>(req, 32_768);
       const content = String(body.content || '').trim();
       const authorAddress = String(body.authorAddress || '').trim();
       const imageUrl = body.imageUrl ? String(body.imageUrl).trim() : undefined;
+      const targetMcap = body.targetMcap ? String(body.targetMcap).trim() : undefined;
+      const positionUsd =
+        typeof body.positionUsd === 'number' && !isNaN(body.positionUsd)
+          ? body.positionUsd
+          : undefined;
+      const callType = body.callType === 'comment' ? 'comment' : 'call';
       if (!content || content.length > 500) {
         return replyError(
           'INVALID_COMMENT',
@@ -835,6 +855,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         imageUrl,
         likesCount: 0,
         createdAt: Date.now(),
+        targetMcap,
+        positionUsd,
+        callType,
       };
 
       await repository.saveComment?.(comment);

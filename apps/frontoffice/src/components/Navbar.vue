@@ -166,6 +166,18 @@ function copyAddress() {
           </RouterLink>
 
           <RouterLink
+            to="/feed"
+            :class="[
+              'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
+              isRouteActive('/feed')
+                ? 'bg-muted text-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
+            ]"
+          >
+            {{ t('feed') }}
+          </RouterLink>
+
+          <RouterLink
             to="/analytics"
             :class="[
               'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
@@ -477,6 +489,19 @@ function copyAddress() {
           ]"
         >
           {{ t('memestock') }}
+        </RouterLink>
+
+        <RouterLink
+          to="/feed"
+          @click="mobileMenuOpen = false"
+          :class="[
+            'flex items-center gap-2.5 py-2.5 px-3 rounded-xl text-sm font-semibold transition',
+            isRouteActive('/feed')
+              ? 'bg-muted text-foreground font-bold'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
+          ]"
+        >
+          {{ t('feed') }}
         </RouterLink>
 
         <RouterLink

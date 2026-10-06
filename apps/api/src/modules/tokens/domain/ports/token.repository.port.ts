@@ -44,6 +44,11 @@ export interface TokenRepositoryPort {
   // Discussion comments & sentiment voting
   saveComment?(comment: TokenCommentEntity): Promise<void>;
   getComments?(tokenAddress: string, viewerAddress?: string): Promise<TokenCommentEntity[]>;
+  getFeedCallouts?(
+    limit?: number,
+    offset?: number,
+    viewerAddress?: string,
+  ): Promise<import('@proto/shared-types').FeedCalloutItem[]>;
   toggleCommentLike?(
     commentId: string,
     userAddress: string,

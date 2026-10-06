@@ -298,9 +298,26 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
         content TEXT NOT NULL,
         image_url TEXT,
         likes_count INTEGER DEFAULT 0,
-        created_at INTEGER NOT NULL
+        created_at INTEGER NOT NULL,
+        target_mcap TEXT,
+        position_usd REAL,
+        call_type TEXT
       );
     `);
+
+    // Safe additive migrations for comments
+    const commentMigrations = [
+      'ALTER TABLE comments ADD COLUMN target_mcap TEXT',
+      'ALTER TABLE comments ADD COLUMN position_usd REAL',
+      'ALTER TABLE comments ADD COLUMN call_type TEXT',
+    ];
+    for (const sql of commentMigrations) {
+      try {
+        this.db.run(sql);
+      } catch {
+        /* column already exists */
+      }
+    }
 
     this.db.run(`
       CREATE INDEX IF NOT EXISTS idx_comments_token ON comments (token_address, created_at DESC);
@@ -581,8 +598,8 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
 
   async saveComment(comment: TokenCommentEntity): Promise<void> {
     const stmt = this.db.prepare(`
-      INSERT INTO comments (id, token_address, author_address, content, image_url, likes_count, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO comments (id, token_address, author_address, content, image_url, likes_count, created_at, target_mcap, position_usd, call_type)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     stmt.run(
       comment.id,
@@ -592,6 +609,9 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       comment.imageUrl ?? null,
       comment.likesCount || 0,
       comment.createdAt,
+      comment.targetMcap ?? null,
+      comment.positionUsd ?? null,
+      comment.callType ?? 'call',
     );
   }
 
@@ -610,6 +630,9 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       image_url: string | null;
       likes_count: number;
       created_at: number;
+      target_mcap: string | null;
+      position_usd: number | null;
+      call_type: string | null;
     }
     const rows = stmt.all(tokenAddress) as CommentRow[];
 
@@ -632,6 +655,77 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       likesCount: Number(r.likes_count || 0),
       createdAt: Number(r.created_at),
       isLikedByViewer: viewerLikedIds.has(r.id),
+      targetMcap: r.target_mcap ?? undefined,
+      positionUsd: r.position_usd != null ? Number(r.position_usd) : undefined,
+      callType: (r.call_type as 'call' | 'comment') ?? 'call',
+    }));
+  }
+
+  async getFeedCallouts(
+    limit = 50,
+    offset = 0,
+    viewerAddress?: string,
+  ): Promise<import('@proto/shared-types').FeedCalloutItem[]> {
+    const stmt = this.db.prepare(`
+      SELECT 
+        c.id, c.token_address, c.author_address, c.content, c.image_url, 
+        c.likes_count, c.created_at, c.target_mcap, c.position_usd, c.call_type,
+        t.name as token_name, t.symbol as token_symbol, t.logo as token_logo,
+        m.marketCapUsd as token_market_cap, m.priceUsd as token_price_usd
+      FROM comments c
+      LEFT JOIN tokens t ON LOWER(t.address) = LOWER(c.token_address)
+      LEFT JOIN market_data m ON LOWER(m.address) = LOWER(c.token_address)
+      ORDER BY c.created_at DESC
+      LIMIT ? OFFSET ?
+    `);
+
+    interface FeedRow {
+      id: string;
+      token_address: string;
+      author_address: string;
+      content: string;
+      image_url: string | null;
+      likes_count: number;
+      created_at: number;
+      target_mcap: string | null;
+      position_usd: number | null;
+      call_type: string | null;
+      token_name: string | null;
+      token_symbol: string | null;
+      token_logo: string | null;
+      token_market_cap: number | null;
+      token_price_usd: number | null;
+    }
+
+    const rows = stmt.all(limit, offset) as FeedRow[];
+
+    let viewerLikedIds = new Set<string>();
+    if (viewerAddress) {
+      const likeStmt = this.db.prepare(`
+        SELECT comment_id FROM comment_likes
+        WHERE LOWER(user_address) = LOWER(?)
+      `);
+      const likeRows = likeStmt.all(viewerAddress) as Array<{ comment_id: string }>;
+      viewerLikedIds = new Set(likeRows.map((r) => r.comment_id));
+    }
+
+    return rows.map((r) => ({
+      id: r.id,
+      tokenAddress: r.token_address,
+      authorAddress: r.author_address,
+      content: r.content,
+      imageUrl: r.image_url ?? undefined,
+      likesCount: Number(r.likes_count || 0),
+      createdAt: Number(r.created_at),
+      isLikedByViewer: viewerLikedIds.has(r.id),
+      targetMcap: r.target_mcap ?? undefined,
+      positionUsd: r.position_usd != null ? Number(r.position_usd) : undefined,
+      callType: (r.call_type as 'call' | 'comment') ?? 'call',
+      tokenName: r.token_name ?? undefined,
+      tokenSymbol: r.token_symbol ?? undefined,
+      tokenLogo: r.token_logo ?? undefined,
+      tokenMarketCapUsd: r.token_market_cap != null ? Number(r.token_market_cap) : undefined,
+      tokenPriceUsd: r.token_price_usd != null ? Number(r.token_price_usd) : undefined,
     }));
   }
 

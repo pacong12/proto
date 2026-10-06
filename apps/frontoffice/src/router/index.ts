@@ -30,6 +30,11 @@ export const router = createRouter({
       component: () => import('@/pages/MemestockPage.vue'),
     },
     {
+      path: '/feed',
+      name: 'feed',
+      component: () => import('@/pages/FeedPage.vue'),
+    },
+    {
       path: '/launchpad/:address',
       name: 'trade',
       component: () => import('@/pages/TradePage.vue'),

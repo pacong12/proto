@@ -285,4 +285,29 @@ describe('SqliteTokenRepository', () => {
     );
     expect(notFound).toBeNull();
   });
+
+  it('saves comments with callout metadata and returns in getFeedCallouts', async () => {
+    await repository.save(sampleToken);
+    await repository.saveComment({
+      id: 'call-sample-1',
+      tokenAddress: sampleToken.address,
+      authorAddress: '0x3333333333333333333333333333333333333333',
+      content: 'Strong accumulation, looking for 5x!',
+      targetMcap: '$500K MC',
+      positionUsd: 120,
+      callType: 'call',
+      likesCount: 2,
+      createdAt: Date.now(),
+    });
+
+    const comments = await repository.getComments(sampleToken.address);
+    expect(comments).toHaveLength(1);
+    expect(comments[0].targetMcap).toBe('$500K MC');
+    expect(comments[0].positionUsd).toBe(120);
+
+    const feed = await repository.getFeedCallouts(10, 0);
+    expect(feed.length).toBeGreaterThanOrEqual(1);
+    expect(feed[0].tokenSymbol).toBe('PROTO');
+    expect(feed[0].tokenName).toBe('Proto Token');
+  });
 });

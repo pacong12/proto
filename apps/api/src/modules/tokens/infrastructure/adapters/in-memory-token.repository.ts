@@ -167,6 +167,34 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
     }));
   }
 
+  async getFeedCallouts(
+    limit = 50,
+    offset = 0,
+    viewerAddress?: string,
+  ): Promise<import('@proto/shared-types').FeedCalloutItem[]> {
+    const allComments: import('@proto/shared-types').FeedCalloutItem[] = [];
+    const viewer = viewerAddress?.toLowerCase();
+
+    for (const [tokenAddr, list] of this.comments.entries()) {
+      const token = this.tokens.get(tokenAddr);
+      const mkt = this.marketData.get(tokenAddr);
+      for (const c of list) {
+        allComments.push({
+          ...c,
+          isLikedByViewer: viewer ? (this.commentLikes.get(c.id)?.has(viewer) ?? false) : false,
+          tokenName: token?.name,
+          tokenSymbol: token?.symbol,
+          tokenLogo: token?.logo,
+          tokenMarketCapUsd: mkt?.marketCapUsd,
+          tokenPriceUsd: mkt?.priceUsd,
+        });
+      }
+    }
+
+    allComments.sort((a, b) => b.createdAt - a.createdAt);
+    return allComments.slice(offset, offset + limit);
+  }
+
   async toggleCommentLike(
     commentId: string,
     userAddress: string,
