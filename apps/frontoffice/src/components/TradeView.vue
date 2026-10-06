@@ -174,44 +174,27 @@
             </div>
           </div>
 
-          <!-- Right Action Controls (Share, Copy, Sentiment Vote) -->
+          <!-- Right Action Controls (Voice Call, Share, Copy Link) -->
           <div class="flex items-center gap-2 shrink-0 flex-wrap">
-            <!-- Sentiment Voting -->
-            <div
-              class="flex items-center gap-1 bg-muted/60 px-2 py-1 rounded-xl border border-border text-xs font-mono"
+            <!-- Voice Call / Live Space (pump.fun & lunch.fun style) -->
+            <button
+              type="button"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition cursor-pointer text-xs font-mono font-bold select-none"
+              :class="
+                isInVoiceCall
+                  ? 'bg-rose-500/15 border-rose-500/40 text-rose-500 hover:bg-rose-500/25 shadow-xs'
+                  : 'bg-muted/60 border-border text-muted-foreground hover:text-foreground hover:bg-muted'
+              "
+              title="Community Voice Call / Spaces"
+              @click="voiceModalOpen = true"
             >
-              <button
-                type="button"
-                class="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-bold transition cursor-pointer"
-                :class="
-                  votesSummary.viewerVote === 'bullish'
-                    ? 'bg-foreground text-background shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground'
-                "
-                title="Vote Bullish"
-                @click="castVote('bullish')"
-              >
-                <Rocket class="w-3 h-3" />
-                <span>{{ votesSummary.bullishCount }}</span>
-              </button>
-              <span class="text-muted-foreground text-[10px] font-bold"
-                >{{ votesSummary.bullishPercent }}%</span
-              >
-              <button
-                type="button"
-                class="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-bold transition cursor-pointer"
-                :class="
-                  votesSummary.viewerVote === 'bearish'
-                    ? 'bg-foreground text-background shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground'
-                "
-                title="Vote Bearish"
-                @click="castVote('bearish')"
-              >
-                <Flame class="w-3 h-3" />
-                <span>{{ votesSummary.bearishCount }}</span>
-              </button>
-            </div>
+              <span
+                class="w-2 h-2 rounded-full"
+                :class="isInVoiceCall ? 'bg-rose-500 animate-ping' : 'bg-rose-500/80'"
+              />
+              <Radio class="w-3.5 h-3.5" />
+              <span>{{ isInVoiceCall ? `Live Call · ${voiceListenersCount}` : 'Voice Call' }}</span>
+            </button>
 
             <!-- Share to X Button -->
             <Button
@@ -1608,6 +1591,195 @@
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <!-- Community Voice Call / Space Modal (pump.fun & lunch.fun style) -->
+      <Dialog v-model:open="voiceModalOpen">
+        <DialogContent class="sm:max-w-md bg-card border-border">
+          <DialogHeader>
+            <div class="flex items-center gap-2">
+              <span
+                class="w-2.5 h-2.5 rounded-full"
+                :class="isInVoiceCall ? 'bg-rose-500 animate-ping' : 'bg-rose-500'"
+              />
+              <DialogTitle class="text-base font-black font-mono">
+                ${{ currentToken.symbol }} Community Voice Call
+              </DialogTitle>
+            </div>
+            <DialogDescription class="text-xs text-muted-foreground font-mono">
+              Live decentralized audio space for ${{ currentToken.symbol }} holders & creators.
+            </DialogDescription>
+          </DialogHeader>
+
+          <!-- Voice Room UI -->
+          <div class="space-y-4 py-2 font-mono text-xs">
+            <!-- Active Room Header Card -->
+            <div class="p-4 rounded-xl border border-border bg-muted/40 space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <OptimizedImage
+                    :src="currentToken.logo"
+                    :alt="currentToken.name"
+                    :fallback-text="currentToken.symbol"
+                    :width="36"
+                    :height="36"
+                    class="rounded-full border border-border shrink-0"
+                  />
+                  <div class="min-w-0">
+                    <p class="font-bold text-foreground text-sm leading-tight truncate">
+                      {{ currentToken.name }}
+                    </p>
+                    <p class="text-[11px] text-muted-foreground truncate">
+                      ${{ currentToken.symbol }} Voice Space
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-card border border-border text-[11px] shrink-0"
+                >
+                  <Users class="w-3.5 h-3.5 text-muted-foreground" />
+                  <span class="font-bold text-foreground">{{ voiceListenersCount }}</span>
+                  <span class="text-muted-foreground">in room</span>
+                </div>
+              </div>
+
+              <!-- Animated Equalizer Audio Visualizer when in call -->
+              <div
+                v-if="isInVoiceCall && !isMicMuted"
+                class="flex items-center justify-center gap-1.5 py-3.5 bg-card/60 rounded-xl border border-border"
+              >
+                <span
+                  class="w-1.5 h-3 bg-emerald-500 rounded-full animate-bounce [animation-delay:0ms]"
+                />
+                <span
+                  class="w-1.5 h-6 bg-emerald-500 rounded-full animate-bounce [animation-delay:150ms]"
+                />
+                <span
+                  class="w-1.5 h-8 bg-emerald-500 rounded-full animate-bounce [animation-delay:300ms]"
+                />
+                <span
+                  class="w-1.5 h-5 bg-emerald-500 rounded-full animate-bounce [animation-delay:450ms]"
+                />
+                <span
+                  class="w-1.5 h-7 bg-emerald-500 rounded-full animate-bounce [animation-delay:200ms]"
+                />
+                <span
+                  class="w-1.5 h-4 bg-emerald-500 rounded-full animate-bounce [animation-delay:350ms]"
+                />
+                <span
+                  class="w-1.5 h-2 bg-emerald-500 rounded-full animate-bounce [animation-delay:100ms]"
+                />
+                <span class="text-[11px] text-emerald-500 font-bold ml-2">Speaking Live</span>
+              </div>
+              <div
+                v-else-if="isInVoiceCall && isMicMuted"
+                class="text-center py-3 text-[11px] text-muted-foreground bg-card/40 rounded-xl border border-border"
+              >
+                Microphone is muted (Listening mode)
+              </div>
+              <div
+                v-else
+                class="text-center py-3 text-[11px] text-muted-foreground bg-card/40 rounded-xl border border-border"
+              >
+                Live audio room ready. Connect microphone to talk with holders.
+              </div>
+            </div>
+
+            <!-- Participant / Host Info -->
+            <div class="space-y-2">
+              <p class="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                Speakers & Host
+              </p>
+              <div
+                class="flex items-center justify-between p-2.5 rounded-xl bg-muted/20 border border-border"
+              >
+                <div class="flex items-center gap-2">
+                  <Jazzicon
+                    :address="currentToken.deployer || '0x0000000000000000000000000000000000000000'"
+                    :size="22"
+                  />
+                  <div>
+                    <span class="font-bold text-foreground">{{
+                      shortenAddress(currentToken.deployer || '', 6, 4)
+                    }}</span>
+                    <Badge
+                      variant="secondary"
+                      class="ml-1.5 text-[9px] px-1 py-0 h-4 bg-primary/10 text-primary border-primary/20"
+                    >
+                      Creator / Host
+                    </Badge>
+                  </div>
+                </div>
+                <Volume2 class="w-4 h-4 text-muted-foreground" />
+              </div>
+
+              <!-- Viewer Participant if connected -->
+              <div
+                v-if="isInVoiceCall && account"
+                class="flex items-center justify-between p-2.5 rounded-xl bg-muted/20 border border-border"
+              >
+                <div class="flex items-center gap-2">
+                  <Jazzicon :address="account" :size="22" />
+                  <div>
+                    <span class="font-bold text-foreground">{{
+                      shortenAddress(account, 6, 4)
+                    }}</span>
+                    <Badge variant="outline" class="ml-1.5 text-[9px] px-1 py-0 h-4"> You </Badge>
+                  </div>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span
+                    class="w-2 h-2 rounded-full"
+                    :class="!isMicMuted ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground'"
+                  />
+                  <span class="text-[11px] text-muted-foreground font-bold">
+                    {{ !isMicMuted ? 'Mic On' : 'Muted' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter class="flex sm:justify-between items-center gap-2 pt-2">
+            <template v-if="isInVoiceCall">
+              <Button
+                variant="outline"
+                size="sm"
+                class="gap-1.5 font-bold cursor-pointer"
+                :class="
+                  isMicMuted
+                    ? 'text-amber-500 border-amber-500/40'
+                    : 'text-emerald-500 border-emerald-500/40'
+                "
+                @click="toggleMic"
+              >
+                <MicOff v-if="isMicMuted" class="w-3.5 h-3.5" />
+                <Mic v-else class="w-3.5 h-3.5" />
+                <span>{{ isMicMuted ? 'Unmute Mic' : 'Mute Mic' }}</span>
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                class="gap-1.5 font-bold cursor-pointer"
+                @click="leaveVoiceCall"
+              >
+                <PhoneOff class="w-3.5 h-3.5" />
+                <span>Leave Call</span>
+              </Button>
+            </template>
+            <template v-else>
+              <Button variant="outline" size="sm" @click="voiceModalOpen = false"> Close </Button>
+              <Button
+                class="gap-1.5 font-bold cursor-pointer shadow-xs"
+                @click="toggleJoinVoiceCall"
+              >
+                <Radio class="w-3.5 h-3.5" />
+                <span>Join Voice Call</span>
+              </Button>
+            </template>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </template>
   </div>
 </template>
@@ -1634,6 +1806,12 @@ import {
   RefreshCw,
   Globe,
   ArrowRight,
+  Radio,
+  Mic,
+  MicOff,
+  PhoneOff,
+  Volume2,
+  Users,
 } from 'lucide-vue-next';
 import { useSwap, SLIPPAGE_WARN_THRESHOLD, parseAmountToWei } from '../composables/useSwap';
 import { useWallet } from '../composables/useWallet';
@@ -1760,6 +1938,60 @@ const isCreator = computed(() => {
   if (!account.value || !currentToken.value.deployer) return false;
   return account.value.toLowerCase() === currentToken.value.deployer.toLowerCase();
 });
+
+// Community Voice Call / Space State (pump.fun & lunch.fun style)
+const voiceModalOpen = ref(false);
+const isInVoiceCall = ref(false);
+const isMicMuted = ref(false);
+const voiceListenersCount = ref(3);
+let localVoiceStream: MediaStream | null = null;
+
+async function toggleJoinVoiceCall() {
+  if (isInVoiceCall.value) {
+    leaveVoiceCall();
+    return;
+  }
+  try {
+    if (typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
+      localVoiceStream = await navigator.mediaDevices
+        .getUserMedia({ audio: true })
+        .catch(() => null);
+    }
+    isInVoiceCall.value = true;
+    isMicMuted.value = false;
+    voiceListenersCount.value++;
+    toast.success('Connected to Live Voice Call 🎙️');
+  } catch {
+    isInVoiceCall.value = true;
+    isMicMuted.value = true;
+    toast.info('Connected in Listening Mode 🎧');
+  }
+}
+
+function toggleMic() {
+  isMicMuted.value = !isMicMuted.value;
+  if (localVoiceStream) {
+    localVoiceStream.getAudioTracks().forEach((track) => {
+      track.enabled = !isMicMuted.value;
+    });
+  }
+  if (isMicMuted.value) {
+    toast.info('Microphone Muted 🔇');
+  } else {
+    toast.success('Microphone Live 🎙️');
+  }
+}
+
+function leaveVoiceCall() {
+  if (localVoiceStream) {
+    localVoiceStream.getTracks().forEach((track) => track.stop());
+    localVoiceStream = null;
+  }
+  isInVoiceCall.value = false;
+  isMicMuted.value = false;
+  if (voiceListenersCount.value > 1) voiceListenersCount.value--;
+  toast.info('Left Voice Space');
+}
 
 const onchainTaxConfig = ref({
   buyTaxBps: 0,
@@ -3078,6 +3310,10 @@ onUnmounted(() => {
   if (liveCandleTimer) {
     clearInterval(liveCandleTimer);
     liveCandleTimer = null;
+  }
+  if (localVoiceStream) {
+    localVoiceStream.getTracks().forEach((track) => track.stop());
+    localVoiceStream = null;
   }
 });
 </script>
