@@ -92,6 +92,23 @@
                   <ExternalLink class="w-3.5 h-3.5" />
                 </a>
 
+                <!-- Dev wallet attribution (lunch.fun style) -->
+                <span
+                  v-if="currentToken.deployer"
+                  class="text-muted-foreground text-[11px] flex items-center gap-1"
+                >
+                  <span>by</span>
+                  <a
+                    :href="`${explorerUrl}/address/${currentToken.deployer}`"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="hover:text-foreground underline decoration-dotted transition"
+                    title="Dev Wallet"
+                  >
+                    {{ shortenAddress(currentToken.deployer, 6, 4) }}
+                  </a>
+                </span>
+
                 <!-- Socials -->
                 <a
                   v-if="currentToken.socials?.twitter"
@@ -256,6 +273,81 @@
           </div>
         </div>
 
+        <!-- Security, Distribution & Trust Ribbon (lunch.fun style) -->
+        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 text-xs font-mono">
+          <div
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border shrink-0 shadow-2xs"
+            title="Supply held by top 10 holders"
+          >
+            <span class="text-muted-foreground text-[10px] uppercase font-bold tracking-wider"
+              >Top 10:</span
+            >
+            <span class="font-bold text-foreground">
+              {{ top10HoldingPercent > 0 ? top10HoldingPercent.toFixed(1) + '%' : '—' }}
+            </span>
+          </div>
+
+          <div
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border shrink-0 shadow-2xs"
+            title="Supply held by token creator"
+          >
+            <span class="text-muted-foreground text-[10px] uppercase font-bold tracking-wider"
+              >Dev Holds:</span
+            >
+            <span
+              class="font-bold"
+              :class="devHoldingPercent > 10 ? 'text-amber-500' : 'text-foreground'"
+            >
+              {{ devHoldingPercent.toFixed(1) }}%
+            </span>
+          </div>
+
+          <div
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border shrink-0 shadow-2xs"
+            title="Total unique token holders"
+          >
+            <span class="text-muted-foreground text-[10px] uppercase font-bold tracking-wider"
+              >Holders:</span
+            >
+            <span class="font-bold text-foreground">{{ holders.length.toLocaleString() }}</span>
+          </div>
+
+          <div
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border shrink-0 shadow-2xs"
+            title="Buy / Sell creator trading tax"
+          >
+            <span class="text-muted-foreground text-[10px] uppercase font-bold tracking-wider"
+              >Tax:</span
+            >
+            <span class="font-bold text-foreground">
+              {{ (onchainTaxConfig.buyTaxBps / 100).toFixed(0) }}% /
+              {{ (onchainTaxConfig.sellTaxBps / 100).toFixed(0) }}%
+            </span>
+          </div>
+
+          <div
+            v-if="burnedInfo.percent > 0"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border shrink-0 shadow-2xs"
+            title="Total burned supply"
+          >
+            <span class="text-muted-foreground text-[10px] uppercase font-bold tracking-wider"
+              >Burned:</span
+            >
+            <span class="font-bold text-rose-500">{{ burnedInfo.percent.toFixed(1) }}%</span>
+          </div>
+
+          <a
+            :href="`${explorerUrl}/token/${currentToken.address}#code`"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shrink-0 font-bold text-[11px] transition"
+            title="View contract source on explorer"
+          >
+            <Check class="w-3.5 h-3.5" />
+            <span>Verified</span>
+          </a>
+        </div>
+
         <!-- Pending tax change warning - visible to all visitors -->
         <PendingTaxBanner
           v-if="hasPendingTax && pendingTax"
@@ -372,6 +464,54 @@
               </div>
             </div>
 
+            <!-- Post-Graduation Pool Details Card (lunch.fun style) -->
+            <div
+              v-if="currentMarketData.isGraduated && currentToken.poolAddress"
+              class="p-4 border-b border-border bg-muted/20 space-y-2 text-xs font-mono"
+            >
+              <div class="flex items-center justify-between font-bold text-foreground">
+                <span class="text-[10px] uppercase tracking-wider text-muted-foreground"
+                  >Uniswap Pool</span
+                >
+                <span class="text-emerald-500 flex items-center gap-1 text-[11px]">
+                  <Check class="w-3 h-3" />
+                  Locked
+                </span>
+              </div>
+              <div class="space-y-1 text-[11px]">
+                <div class="flex justify-between">
+                  <span class="text-muted-foreground">Pair</span>
+                  <div class="flex items-center gap-1">
+                    <span class="text-foreground">{{
+                      shortenAddress(currentToken.poolAddress, 6, 4)
+                    }}</span>
+                    <button
+                      type="button"
+                      class="text-muted-foreground hover:text-foreground cursor-pointer"
+                      title="Copy pair address"
+                      @click="copyAddress(currentToken.poolAddress)"
+                    >
+                      <Copy class="w-3 h-3" />
+                    </button>
+                    <a
+                      :href="`${explorerUrl}/address/${currentToken.poolAddress}`"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="text-muted-foreground hover:text-foreground"
+                    >
+                      <ExternalLink class="w-3 h-3" />
+                    </a>
+                  </div>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-muted-foreground">Locked {{ currencySymbol }}</span>
+                  <span class="font-bold text-foreground">
+                    {{ currentMarketData.pairedPrincipalWeth }} {{ currencySymbol }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
             <!-- Swap panel form wrapper -->
             <div class="p-5 sm:p-6 space-y-4">
               <!-- Wrong network warning banner -->
@@ -482,8 +622,39 @@
 
               <!-- You Pay input -->
               <div class="space-y-2">
-                <div class="flex justify-between text-xs text-muted-foreground">
-                  <span>You pay</span>
+                <div class="flex justify-between items-center text-xs text-muted-foreground">
+                  <div class="flex items-center gap-2">
+                    <span>You pay</span>
+                    <div
+                      v-if="isBuy"
+                      class="flex items-center bg-muted/80 p-0.5 rounded-lg border border-border text-[10px] font-mono font-bold"
+                    >
+                      <button
+                        type="button"
+                        class="px-1.5 py-0.5 rounded transition cursor-pointer"
+                        :class="
+                          !payInUsd
+                            ? 'bg-background text-foreground shadow-2xs'
+                            : 'text-muted-foreground hover:text-foreground'
+                        "
+                        @click="payInUsd = false"
+                      >
+                        {{ currencySymbol }}
+                      </button>
+                      <button
+                        type="button"
+                        class="px-1.5 py-0.5 rounded transition cursor-pointer"
+                        :class="
+                          payInUsd
+                            ? 'bg-background text-foreground shadow-2xs'
+                            : 'text-muted-foreground hover:text-foreground'
+                        "
+                        @click="payInUsd = true"
+                      >
+                        USD
+                      </button>
+                    </div>
+                  </div>
                   <span
                     class="font-mono flex items-center gap-1 cursor-pointer select-none hover:opacity-80 transition"
                     :title="
@@ -516,20 +687,20 @@
                   <span
                     class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono font-semibold text-muted-foreground select-none"
                   >
-                    {{ isBuy ? currencySymbol : currentToken.symbol }}
+                    {{ isBuy ? (payInUsd ? 'USD' : currencySymbol) : currentToken.symbol }}
                   </span>
                 </div>
 
                 <!-- Quick buy presets (buy mode only) -->
                 <div v-if="isBuy" class="grid grid-cols-4 gap-1.5 pt-0.5">
                   <button
-                    v-for="ethVal in buyPresets"
-                    :key="ethVal"
+                    v-for="presetVal in activeBuyPresets"
+                    :key="presetVal"
                     type="button"
                     class="h-7 text-xs font-mono font-medium rounded-lg border border-border bg-muted/50 hover:bg-muted text-foreground transition cursor-pointer"
-                    @click="applyQuickBuy(ethVal)"
+                    @click="applyQuickBuy(presetVal)"
                   >
-                    {{ ethVal }}
+                    {{ payInUsd ? '$' + presetVal : presetVal }}
                   </button>
                 </div>
 
@@ -558,6 +729,16 @@
                 >
                   <span>{{ estimatedOutput }}</span>
                 </div>
+              </div>
+
+              <!-- Last price indicator (lunch.fun style) -->
+              <div
+                class="flex items-center justify-between text-[11px] font-mono text-muted-foreground pt-0.5 px-0.5"
+              >
+                <span>Last price</span>
+                <span class="font-bold text-foreground truncate">
+                  {{ formatPriceUsd(currentMarketData.priceUsd) }}
+                </span>
               </div>
 
               <!-- High-slippage inline warning (L-3 fix) -->
@@ -798,6 +979,50 @@
 
               <!-- Tab: Live Trades -->
               <TabsContent value="trades" class="mt-0 max-h-[340px] overflow-y-auto">
+                <!-- Order flow filters & stats (lunch.fun style) -->
+                <div
+                  v-if="trades.length > 0"
+                  class="flex flex-wrap items-center justify-between gap-2 p-2.5 sm:px-4 border-b border-border bg-muted/20 text-xs font-mono"
+                >
+                  <div class="flex items-center gap-1.5">
+                    <button
+                      v-for="flt in [
+                        { key: 'all', label: `All (${trades.length})` },
+                        { key: 'buy', label: `Buys (${orderFlowStats.buyCount})` },
+                        { key: 'sell', label: `Sells (${orderFlowStats.sellCount})` },
+                      ]"
+                      :key="flt.key"
+                      type="button"
+                      class="px-2 py-0.5 rounded-lg text-[11px] font-bold transition cursor-pointer"
+                      :class="
+                        tradeFilter === flt.key
+                          ? 'bg-foreground text-background shadow-2xs'
+                          : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+                      "
+                      @click="
+                        tradeFilter = flt.key as any;
+                        tradesPage = 1;
+                      "
+                    >
+                      {{ flt.label }}
+                    </button>
+                  </div>
+                  <div class="text-[11px] font-bold">
+                    <span class="text-muted-foreground">Net: </span>
+                    <span
+                      :class="
+                        orderFlowStats.netVolumeUsd >= 0 ? 'text-emerald-500' : 'text-rose-500'
+                      "
+                    >
+                      {{ orderFlowStats.netVolumeUsd >= 0 ? '+' : '' }}${{
+                        Math.abs(orderFlowStats.netVolumeUsd).toLocaleString(undefined, {
+                          maximumFractionDigits: 1,
+                        })
+                      }}
+                    </span>
+                  </div>
+                </div>
+
                 <div
                   v-if="tradesLoading && trades.length === 0"
                   class="py-16 text-center text-muted-foreground"
@@ -810,6 +1035,12 @@
                   class="py-16 text-center text-muted-foreground"
                 >
                   <p class="text-xs font-mono">No trades recorded yet.</p>
+                </div>
+                <div
+                  v-else-if="filteredTrades.length === 0"
+                  class="py-16 text-center text-muted-foreground"
+                >
+                  <p class="text-xs font-mono">No trades match this filter.</p>
                 </div>
                 <div v-else class="overflow-x-auto">
                   <table class="w-full text-left text-xs font-mono min-w-[540px]">
@@ -893,11 +1124,11 @@
 
                   <!-- Trades Pagination -->
                   <div
-                    v-if="trades.length > tradesPageSize"
+                    v-if="filteredTrades.length > tradesPageSize"
                     class="py-3 border-t border-border flex justify-center bg-muted/30"
                   >
                     <Pagination
-                      :total="trades.length"
+                      :total="filteredTrades.length"
                       :items-per-page="tradesPageSize"
                       :page="tradesPage"
                       @update:page="tradesPage = $event"
@@ -1641,6 +1872,25 @@ const top10HoldingPercent = computed(() => {
   return holders.value.slice(0, 10).reduce((acc, h) => acc + h.percent, 0);
 });
 
+const burnedInfo = computed(() => {
+  if (holders.value.length === 0) return { amount: 0, percent: 0 };
+  const dead = holders.value.find(
+    (h) =>
+      h.address.toLowerCase() === '0x000000000000000000000000000000000000dead' ||
+      h.address.toLowerCase() === '0x0000000000000000000000000000000000000000',
+  );
+  if (!dead) return { amount: 0, percent: 0 };
+  return { amount: dead.balance, percent: dead.percent };
+});
+
+const quoteAssetPriceUsd = computed(() => {
+  if (isArcToken.value) return 1;
+  if (currentMarketData.value.priceInWeth > 0) {
+    return currentMarketData.value.priceUsd / currentMarketData.value.priceInWeth;
+  }
+  return 2700;
+});
+
 const remainingToGraduate = computed(() => {
   const current = Number(currentMarketData.value.pairedPrincipalWeth || 0);
   const target = Number(
@@ -1654,6 +1904,7 @@ const remainingToGraduate = computed(() => {
 // Trade state
 const tradeTab = ref<'buy' | 'sell'>('buy');
 const isBuy = computed(() => tradeTab.value === 'buy');
+const payInUsd = ref(false);
 const amountIn = ref('10');
 const tokenNotFound = ref(false);
 const swapSuccessTx = ref<string | null>(null);
@@ -1662,9 +1913,60 @@ const copiedId = ref<string | null>(null);
 const tokenLoading = ref(true);
 const activeBottomTab = ref<'thread' | 'trades' | 'top-traders' | 'holders' | 'about'>('thread');
 
+const effectiveNativeInput = computed(() => {
+  const input = parseFloat(amountIn.value) || 0;
+  if (input <= 0) return 0;
+  if (isBuy.value && payInUsd.value) {
+    return input / (quoteAssetPriceUsd.value || 1);
+  }
+  return input;
+});
+
+const activeBuyPresets = computed(() => {
+  if (payInUsd.value) {
+    return ['10', '50', '100', '500'];
+  }
+  return buyPresets.value;
+});
+
 // Trades
 const trades = ref<LiveTrade[]>([]);
 const tradesLoading = ref(false);
+const tradeFilter = ref<'all' | 'buy' | 'sell'>('all');
+
+const filteredTrades = computed(() => {
+  if (tradeFilter.value === 'all') return trades.value;
+  return trades.value.filter((t) => (tradeFilter.value === 'buy' ? t.isBuy : !t.isBuy));
+});
+
+const orderFlowStats = computed(() => {
+  let buyCount = 0;
+  let sellCount = 0;
+  let buyVolume = 0;
+  let sellVolume = 0;
+
+  for (const t of trades.value) {
+    const isB = t.isBuy;
+    const val = Number(t.wethAmount || 0);
+    if (isB) {
+      buyCount++;
+      buyVolume += val;
+    } else {
+      sellCount++;
+      sellVolume += val;
+    }
+  }
+
+  const netVolumeEth = buyVolume - sellVolume;
+  const netVolumeUsd = netVolumeEth * (quoteAssetPriceUsd.value || 1);
+
+  return {
+    buyCount,
+    sellCount,
+    netVolumeUsd,
+  };
+});
+
 const userTokenBalance = ref<bigint>(0n);
 const isTokenBalanceLoading = ref(false);
 const isMaxSell = ref(false);
@@ -1694,7 +1996,7 @@ const tradesPage = ref(1);
 const tradesPageSize = 10;
 const paginatedTrades = computed(() => {
   const start = (tradesPage.value - 1) * tradesPageSize;
-  return trades.value.slice(start, start + tradesPageSize);
+  return filteredTrades.value.slice(start, start + tradesPageSize);
 });
 
 const topTradersPage = ref(1);
@@ -1719,7 +2021,7 @@ const paginatedComments = computed(() => {
 });
 
 // Reset current page when lists update and exceed max pages
-watch(trades, (list) => {
+watch(filteredTrades, (list) => {
   const max = Math.max(1, Math.ceil(list.length / tradesPageSize));
   if (tradesPage.value > max) tradesPage.value = 1;
 });
@@ -1809,7 +2111,7 @@ function computeCurveSellOutput(tokensIn: number): number {
 }
 
 const estimatedOutput = computed(() => {
-  const input = parseFloat(amountIn.value) || 0;
+  const input = effectiveNativeInput.value;
   if (input <= 0) return `0 ${isBuy.value ? currentToken.value.symbol : currencySymbol.value}`;
 
   const isV2OnCurve = currentToken.value.version === 'v2' && !currentMarketData.value.isGraduated;
@@ -1834,7 +2136,7 @@ const swapButtonText = computed(() => {
   if (activeNetwork.value.chainId !== tokenNetwork.value.chainId) {
     return `Switch to ${tokenNetwork.value.name}`;
   }
-  const input = parseFloat(amountIn.value) || 0;
+  const input = effectiveNativeInput.value;
   if (!amountIn.value || input <= 0) return 'Enter an amount';
 
   if (!isBuy.value) {
@@ -1894,12 +2196,14 @@ function applyPercentage(percent: number) {
       amountIn.value = '0';
       return;
     }
-    if (percent === 100) {
-      const reserveGas = isArc ? 0.05 : 0.005;
-      const maxEth = Math.max(0, ethBalance - reserveGas);
-      amountIn.value = (maxEth > 0 ? maxEth : ethBalance).toFixed(isArc ? 2 : 4);
+    const reserveGas = isArc ? 0.05 : 0.005;
+    const maxEth =
+      percent === 100 ? Math.max(0, ethBalance - reserveGas) : ethBalance * (percent / 100);
+    const nativeVal = maxEth > 0 ? maxEth : ethBalance;
+    if (payInUsd.value) {
+      amountIn.value = (nativeVal * (quoteAssetPriceUsd.value || 1)).toFixed(2);
     } else {
-      amountIn.value = (ethBalance * (percent / 100)).toFixed(isArc ? 2 : 4);
+      amountIn.value = nativeVal.toFixed(isArc ? 2 : 4);
     }
   } else {
     const decimals = currentToken.value.decimals || 18;
@@ -2345,7 +2649,7 @@ async function changeResolution(seconds: number) {
 async function handleSwap() {
   swapSuccessTx.value = null;
   let expectedAmountOut: bigint | undefined;
-  const input = parseFloat(amountIn.value) || 0;
+  const input = effectiveNativeInput.value;
   const isV2OnCurve = currentToken.value.version === 'v2' && !currentMarketData.value.isGraduated;
 
   if (input > 0 && currentMarketData.value.priceInWeth > 0) {
@@ -2367,7 +2671,12 @@ async function handleSwap() {
   const hash = await executeSwap({
     tokenAddress: currentToken.value.address,
     isBuy: isBuy.value,
-    amountInEth: !isBuy.value && isMaxSell.value ? userTokenBalance.value : amountIn.value,
+    amountInEth:
+      !isBuy.value && isMaxSell.value
+        ? userTokenBalance.value
+        : isBuy.value
+          ? effectiveNativeInput.value.toString()
+          : amountIn.value,
     slippagePercent: slippage.value,
     expectedAmountOut,
     version: currentToken.value.version,
@@ -2647,6 +2956,7 @@ async function loadTokenData(address: `0x${string}`) {
 // to avoid unit confusion (ETH vs token amount).
 watch(tradeTab, (newTab) => {
   amountIn.value = '';
+  payInUsd.value = false;
   isMaxSell.value = false;
   swapSuccessTx.value = null;
   if (newTab === 'sell') {
