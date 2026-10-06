@@ -92,6 +92,7 @@ export async function uploadFile(
         const data = (await response.json()) as { IpfsHash?: string };
         if (data && data.IpfsHash) {
           const cid = data.IpfsHash;
+          saveLocalFile(cid, buf, mimeType, fileName);
           const gateway = process.env.IPFS_GATEWAY || 'https://gateway.pinata.cloud/ipfs/';
           const cleanGateway = gateway.endsWith('/') ? gateway : `${gateway}/`;
           return {
