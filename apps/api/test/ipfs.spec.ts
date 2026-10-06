@@ -62,6 +62,7 @@ describe('IPFS Service & Controller', () => {
 
       expect(result.cid.startsWith('bafybei')).toBe(true);
       expect(result.url).toBe(`https://ipfs.io/ipfs/${result.cid}`);
+      expect(result.uri).toBe(`ipfs://${result.cid}`);
     });
   });
 
@@ -82,6 +83,7 @@ describe('IPFS Service & Controller', () => {
         expect(res.data.cid).toBeDefined();
         expect(res.data.cid.startsWith('bafybei')).toBe(true);
         expect(res.data.url).toContain(res.data.cid);
+        expect(res.data.uri).toBe(`ipfs://${res.data.cid}`);
       }
     });
 
