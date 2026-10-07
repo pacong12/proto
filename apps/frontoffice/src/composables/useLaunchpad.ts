@@ -97,6 +97,12 @@ export function useLaunchpad() {
     buyTaxPercent?: number;
     sellTaxPercent?: number;
     creatorTaxWallet?: string;
+    revenueSplit?: {
+      creator: number;
+      buyback: number;
+      holders: number;
+      growth: number;
+    };
   }): Promise<{ tokenAddress: `0x${string}`; poolAddress: `0x${string}` } | null> {
     loading.value = true;
     error.value = null;
@@ -202,9 +208,50 @@ export function useLaunchpad() {
 
       if (v1Events.length > 0) {
         launchStep.value = 'success';
-        launchTokenAddress.value = v1Events[0].args.token;
+        const tokenAddr = v1Events[0].args.token;
+        launchTokenAddress.value = tokenAddr;
+
+        // Apply advanced trading tax configuration if specified
+        if (
+          (params.buyTaxPercent && params.buyTaxPercent > 0) ||
+          (params.sellTaxPercent && params.sellTaxPercent > 0)
+        ) {
+          try {
+            const buyTaxBps = Math.min(1000, Math.max(0, Math.round((params.buyTaxPercent || 0) * 100)));
+            const sellTaxBps = Math.min(1000, Math.max(0, Math.round((params.sellTaxPercent || 0) * 100)));
+            const recipient = (params.creatorTaxWallet as `0x${string}`) || account;
+            const taxHash = await walletClient.writeContract({
+              address: tokenAddr,
+              abi: launchpadTokenAbi,
+              functionName: 'proposeTaxConfig',
+              args: [buyTaxBps, sellTaxBps, recipient],
+              account,
+              chain: walletClient.chain,
+            });
+            await publicClient.waitForTransactionReceipt({ hash: taxHash });
+          } catch (taxErr) {
+            console.warn('[LaunchpadV1] Post-launch proposeTaxConfig skipped or deferred:', taxErr);
+          }
+        }
+
+        try {
+          await fetch(`/api/tokens/${tokenAddr}/sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              txHash: hash,
+              taxConfig: {
+                buyTaxBps: Math.min(1000, Math.max(0, Math.round((params.buyTaxPercent || 0) * 100))),
+                sellTaxBps: Math.min(1000, Math.max(0, Math.round((params.sellTaxPercent || 0) * 100))),
+                taxRecipient: (params.creatorTaxWallet as `0x${string}`) || account,
+                revenueSplit: params.revenueSplit,
+              },
+            }),
+          });
+        } catch {}
+
         return {
-          tokenAddress: v1Events[0].args.token,
+          tokenAddress: tokenAddr,
           poolAddress: v1Events[0].args.pool,
         };
       }
@@ -263,6 +310,12 @@ export function useLaunchpad() {
     buyTaxPercent?: number;
     sellTaxPercent?: number;
     creatorTaxWallet?: string;
+    revenueSplit?: {
+      creator: number;
+      buyback: number;
+      holders: number;
+      growth: number;
+    };
   }): Promise<{ tokenAddress: `0x${string}`; curveAddress: `0x${string}` } | null> {
     loading.value = true;
     error.value = null;
@@ -427,6 +480,46 @@ export function useLaunchpad() {
         const curveAddr = launchEv.args.curve as `0x${string}`;
         launchStep.value = 'success';
         launchTokenAddress.value = tokenAddr;
+
+        // Apply advanced trading tax configuration if specified
+        if (
+          (params.buyTaxPercent && params.buyTaxPercent > 0) ||
+          (params.sellTaxPercent && params.sellTaxPercent > 0)
+        ) {
+          try {
+            const buyTaxBps = Math.min(1000, Math.max(0, Math.round((params.buyTaxPercent || 0) * 100)));
+            const sellTaxBps = Math.min(1000, Math.max(0, Math.round((params.sellTaxPercent || 0) * 100)));
+            const recipient = (params.creatorTaxWallet as `0x${string}`) || account;
+            const taxHash = await walletClient.writeContract({
+              address: tokenAddr,
+              abi: launchpadTokenAbi,
+              functionName: 'proposeTaxConfig',
+              args: [buyTaxBps, sellTaxBps, recipient],
+              account,
+              chain: walletClient.chain,
+            });
+            await publicClient.waitForTransactionReceipt({ hash: taxHash });
+          } catch (taxErr) {
+            console.warn('[LaunchpadV2] Post-launch proposeTaxConfig skipped or deferred:', taxErr);
+          }
+        }
+
+        try {
+          await fetch(`/api/tokens/${tokenAddr}/sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              txHash: hash,
+              taxConfig: {
+                buyTaxBps: Math.min(1000, Math.max(0, Math.round((params.buyTaxPercent || 0) * 100))),
+                sellTaxBps: Math.min(1000, Math.max(0, Math.round((params.sellTaxPercent || 0) * 100))),
+                taxRecipient: (params.creatorTaxWallet as `0x${string}`) || account,
+                revenueSplit: params.revenueSplit,
+              },
+            }),
+          });
+        } catch {}
+
         return {
           tokenAddress: tokenAddr,
           curveAddress: curveAddr,
@@ -510,6 +603,12 @@ export function useLaunchpad() {
       buyTaxPercent?: number;
       sellTaxPercent?: number;
       creatorTaxWallet?: string;
+      revenueSplit?: {
+        creator: number;
+        buyback: number;
+        holders: number;
+        growth: number;
+      };
     },
     version: 'v1' | 'v2' = 'v2',
   ) {

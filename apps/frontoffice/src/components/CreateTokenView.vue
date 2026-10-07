@@ -288,7 +288,12 @@
             @click="advancedOpen = !advancedOpen"
             class="w-full flex items-center justify-between px-5 py-4 h-auto text-xs font-semibold transition hover:bg-muted/40 cursor-pointer rounded-none"
           >
-            <span>{{ t('advanced') }}</span>
+            <div class="flex items-center gap-2">
+              <span class="font-bold font-mono">{{ t('advanced') }}</span>
+              <span class="text-[10px] text-muted-foreground font-mono">
+                (Buy: {{ form.buyTax }}% &middot; Sell: {{ form.sellTax }}% &middot; Split: {{ totalSplit }}/100%)
+              </span>
+            </div>
             <ChevronDown
               class="w-3.5 h-3.5 transition-transform duration-200 opacity-60"
               :class="advancedOpen ? 'rotate-180' : ''"
@@ -298,22 +303,30 @@
           <div v-show="advancedOpen" class="p-6 sm:p-7 space-y-7 border-t border-border">
             <!-- Connected Creator Wallet -->
             <div class="space-y-2">
-              <div class="flex items-center gap-1.5">
-                <Label class="text-xs font-semibold">{{ t('creatorWallet') }}</Label>
-                <InfoTooltip
-                  text="Receives creator fees, initial token supply allocations, and governance permissions. Defaults to the deployer wallet if left blank."
-                />
-              </div>
-              <div
-                class="flex items-center justify-between p-3.5 sm:p-4 rounded-xl border border-border bg-muted/30 font-mono text-xs"
-              >
-                <span class="truncate">{{ account || t('connectWallet') }}</span>
-                <span class="text-[10px] text-muted-foreground shrink-0 font-mono"
-                  >Deployer (msg.sender)</span
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                  <Label class="text-xs font-semibold">{{ t('creatorWallet') }}</Label>
+                  <InfoTooltip
+                    text="Receives creator fees, trading taxes, and governance permissions. Defaults to your connected wallet if left blank."
+                  />
+                </div>
+                <button
+                  v-if="account && form.creatorWallet !== account"
+                  type="button"
+                  class="text-[10px] text-primary hover:underline font-mono cursor-pointer"
+                  @click="form.creatorWallet = account"
                 >
+                  Use Connected Wallet
+                </button>
               </div>
-              <p class="text-[10px] text-muted-foreground">
-                {{ t('creatorWalletDesc') }}
+              <Input
+                v-model="form.creatorWallet"
+                type="text"
+                :placeholder="account || '0x... (defaults to deployer)'"
+                class="h-10 text-xs font-mono rounded-xl bg-muted/20"
+              />
+              <p class="text-[10px] text-muted-foreground font-mono">
+                Recipient for fee revenue and tax collections. Defaults to {{ account ? shortenAddress(account) : 'deployer' }}.
               </p>
             </div>
 
@@ -355,11 +368,11 @@
                   />
                   <div class="flex items-center gap-1.5 pt-1">
                     <Button
-                      v-for="p in [1, 2, 5, 10]"
+                      v-for="p in [0, 1, 2, 5, 10]"
                       :key="p"
                       type="button"
                       size="sm"
-                      :variant="form.buyTax === String(p) ? 'default' : 'outline'"
+                      :variant="parseFloat(form.buyTax || '0') === p ? 'default' : 'outline'"
                       class="flex-1 h-7 text-xs font-mono p-0 cursor-pointer"
                       @click="form.buyTax = String(p)"
                     >
@@ -393,11 +406,11 @@
                   />
                   <div class="flex items-center gap-1.5 pt-1">
                     <Button
-                      v-for="p in [1, 2, 5, 10]"
+                      v-for="p in [0, 1, 2, 5, 10]"
                       :key="p"
                       type="button"
                       size="sm"
-                      :variant="form.sellTax === String(p) ? 'destructive' : 'outline'"
+                      :variant="parseFloat(form.sellTax || '0') === p ? 'destructive' : 'outline'"
                       class="flex-1 h-7 text-xs font-mono p-0 cursor-pointer"
                       @click="form.sellTax = String(p)"
                     >
@@ -420,13 +433,25 @@
                   </div>
                   <p class="text-[11px] text-muted-foreground">Fee allocation (must total 100%)</p>
                 </div>
-                <Badge
-                  :variant="totalSplit === 100 ? 'default' : 'outline'"
-                  class="font-mono text-xs"
-                  :class="totalSplit !== 100 ? 'border-amber-500 text-amber-500' : ''"
-                >
-                  {{ totalSplit }}/100%
-                </Badge>
+                <div class="flex items-center gap-2">
+                  <Button
+                    v-if="totalSplit !== 100"
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    class="h-6 px-2 text-[10px] font-mono border-amber-500/50 text-amber-500 hover:bg-amber-500/10 cursor-pointer"
+                    @click="autoBalanceSplit"
+                  >
+                    Auto-balance
+                  </Button>
+                  <Badge
+                    :variant="totalSplit === 100 ? 'default' : 'outline'"
+                    class="font-mono text-xs"
+                    :class="totalSplit !== 100 ? 'border-amber-500 text-amber-500' : ''"
+                  >
+                    {{ totalSplit }}/100%
+                  </Badge>
+                </div>
               </div>
 
               <!-- Quick Presets with Shadcn Button -->
@@ -1154,6 +1179,8 @@ import {
 } from '@/components/ui/dialog';
 import { useI18n } from '@/lib/i18n';
 import { compressAndConvertToWebp } from '@/lib/image-optimizer';
+import { shortenAddress } from '@/lib/utils';
+import { toast } from '@/components/ui/sonner';
 import { ARC_CHAIN } from '@proto/shared-types';
 
 const { t } = useI18n();
@@ -1342,6 +1369,19 @@ function applySplitPreset(creator: number, buyback: number, holders: number, gro
   revenueSplit.value = { creator, buyback, holders, growth };
 }
 
+function autoBalanceSplit() {
+  const currentTotal = totalSplit.value;
+  if (currentTotal === 100) return;
+  const diff = 100 - currentTotal;
+  if (revenueSplit.value.holders + diff >= 0 && revenueSplit.value.holders + diff <= 100) {
+    revenueSplit.value.holders += diff;
+  } else if (revenueSplit.value.creator + diff >= 0 && revenueSplit.value.creator + diff <= 100) {
+    revenueSplit.value.creator += diff;
+  } else {
+    revenueSplit.value = { creator: 50, buyback: 0, holders: 50, growth: 0 };
+  }
+}
+
 function updateShare(key: keyof RevenueSplit, val: unknown): void {
   const allKeys: (keyof RevenueSplit)[] = ['creator', 'buyback', 'holders', 'growth'];
   const otherKeys = allKeys.filter((k) => k !== key);
@@ -1472,7 +1512,11 @@ async function handleLaunch() {
     await switchOrAddNetwork(activeNetwork.value);
     return;
   }
-  if (totalSplit.value !== 100) return;
+  if (totalSplit.value !== 100) {
+    advancedOpen.value = true;
+    toast.error(`Revenue split allocation must equal 100% (currently ${totalSplit.value}%). Please auto-balance or adjust.`);
+    return;
+  }
   isModalOpen.value = true;
   const result = await launchToken(
     {
@@ -1489,6 +1533,7 @@ async function handleLaunch() {
       buyTaxPercent: parseFloat(form.value.buyTax || '0'),
       sellTaxPercent: parseFloat(form.value.sellTax || '0'),
       creatorTaxWallet: form.value.creatorWallet.trim() || undefined,
+      revenueSplit: { ...revenueSplit.value },
     },
     selectedVersion.value,
   );

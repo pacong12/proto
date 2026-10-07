@@ -674,15 +674,25 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   if (syncMatch && req.method === 'POST') {
     const address = syncMatch[1] as `0x${string}`;
     try {
-      let body: { txHash?: string } = {};
+      let body: { txHash?: string; taxConfig?: unknown } = {};
       try {
-        body = await parseJsonBody<{ txHash?: string }>(req, 4096);
+        body = await parseJsonBody<{ txHash?: string; taxConfig?: unknown }>(req, 4096);
       } catch {
         // optional body
       }
 
       if (body.txHash && body.txHash.startsWith('0x') && body.txHash.length === 66) {
         await indexTradeFromReceipt(body.txHash as `0x${string}`, address);
+      }
+
+      if (body.taxConfig && typeof body.taxConfig === 'object') {
+        const existing = await repository.findByAddress(address);
+        if (existing) {
+          await repository.save({
+            ...existing,
+            taxConfig: body.taxConfig as any,
+          });
+        }
       }
 
       Promise.allSettled([robinhoodPoller.pollEvents(), arcPoller.pollEvents()]);

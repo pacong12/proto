@@ -10,6 +10,12 @@ export interface TokenTaxConfig {
   buyTaxBps?: number; // Base points (100 = 1%)
   sellTaxBps?: number;
   taxRecipient?: `0x${string}`;
+  revenueSplit?: {
+    creator: number;
+    buyback: number;
+    holders: number;
+    growth: number;
+  };
 }
 export type LaunchVersion = 'v1' | 'v2';
 
