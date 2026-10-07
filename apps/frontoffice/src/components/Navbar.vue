@@ -75,7 +75,10 @@ watch(
 
 function isRouteActive(path: string) {
   if (path === '/launchpad') {
-    return route.path === '/launchpad' || route.path === '/';
+    return route.path === '/launchpad' || route.path === '/' || route.path === '/explore';
+  }
+  if (path === '/profile') {
+    return route.path.startsWith('/profile') || route.path.startsWith('/u');
   }
   return route.path.startsWith(path);
 }

@@ -1,3 +1,4 @@
+export { default as ProfileView } from './ProfileView.vue';
 export { default as ProfileHero } from './ProfileHero.vue';
 export { default as ProfileStats } from './ProfileStats.vue';
 export { default as ProfilePostsTab } from './ProfilePostsTab.vue';

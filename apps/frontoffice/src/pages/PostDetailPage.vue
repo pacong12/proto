@@ -69,7 +69,7 @@
               <div class="flex items-center gap-1.5 flex-wrap">
                 <span
                   class="font-bold text-foreground text-sm sm:text-base hover:underline cursor-pointer truncate font-mono"
-                  @click="router.push(`/profile/${post.authorAddress}`)"
+                  @click="router.push(`/u/${post.authorAddress}`)"
                 >
                   {{ shortenAddress(post.authorAddress, 6, 4) }}
                 </span>
@@ -325,7 +325,10 @@
             <!-- Reply Content & Actions -->
             <div class="flex-1 min-w-0 space-y-1.5">
               <div class="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
-                <span class="font-bold text-foreground text-xs hover:underline cursor-pointer">
+                <span
+                  class="font-bold text-foreground text-xs hover:underline cursor-pointer"
+                  @click="router.push(`/u/${rep.authorAddress}`)"
+                >
                   {{ shortenAddress(rep.authorAddress, 6, 4) }}
                 </span>
                 <CheckCircle2 class="w-3.5 h-3.5 fill-primary text-background shrink-0" />
@@ -377,7 +380,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
   ArrowLeft,
@@ -416,7 +419,7 @@ const { account, openWallet } = useWallet();
 const { tokens: allTokens, fetchTokens } = useTokenStore();
 const { toggleLike, toggleRepost, recordView } = useFeed();
 
-const calloutId = String(route.params.id || '');
+const calloutId = computed(() => String(route.params.id || route.params.detail || ''));
 const post = ref<FeedCalloutItem | null>(null);
 const replies = ref<FeedCalloutItem[]>([]);
 const loading = ref(true);
@@ -463,16 +466,17 @@ function formatAbsoluteTime(timestamp: number): string {
 }
 
 async function loadPost(): Promise<void> {
-  if (!calloutId) return;
+  const targetId = calloutId.value;
+  if (!targetId) return;
   loading.value = true;
   try {
     const viewerParam = account.value ? `?viewer=${account.value}` : '';
-    const res = await fetch(`/api/callouts/${calloutId}${viewerParam}`);
+    const res = await fetch(`/api/callouts/${targetId}${viewerParam}`);
     const data = await res.json();
     if (data.success && data.data) {
       post.value = data.data;
       replies.value = data.data.replies || [];
-      recordView(calloutId);
+      recordView(targetId);
     } else {
       post.value = null;
     }

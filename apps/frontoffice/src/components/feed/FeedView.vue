@@ -1200,7 +1200,7 @@ function navigateToToken(address: string): void {
 
 function navigateToCaller(address: string): void {
   if (address) {
-    router.push(`/profile/${address}`);
+    router.push(`/u/${address}`);
   }
 }
 

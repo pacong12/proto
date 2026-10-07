@@ -2,7 +2,7 @@
   <div class="max-w-5xl mx-auto space-y-6 sm:space-y-8 font-sans">
     <!-- Disconnected Warning Banner using Shadcn Empty -->
     <Empty
-      v-if="!connectedAccount"
+      v-if="!targetAccount"
       title="Wallet Not Connected"
       description="Connect your wallet to access your personal dashboard, alpha calls, created tokens, portfolio holdings, and trading activity."
       class="py-16 bg-card/60"
@@ -25,8 +25,8 @@
     <template v-else>
       <!-- 1. Profile Hero: Twitter Cover Banner x Web3 Connected Trader Identity -->
       <ProfileHero
-        :profile-address="connectedAccount"
-        :is-own-profile="true"
+        :profile-address="targetAccount"
+        :is-own-profile="isOwnProfile"
         :profile-data="profileData"
         :resolved-avatar-url="resolvedAvatarUrl"
         :resolved-banner-url="resolvedBannerUrl"
@@ -36,12 +36,12 @@
         @share="shareProfile"
       />
 
-      <!-- 2. On-Chain Stats Summary Grid for Connected Account -->
+      <!-- 2. On-Chain Stats Summary Grid for Target Account -->
       <ProfileStats
         :total-claimable-weth="totalClaimableWeth"
         :native-currency-symbol="activeNetwork.nativeCurrency.symbol"
         :created-tokens-count="myLaunches.length"
-        :is-own-profile="true"
+        :is-own-profile="isOwnProfile"
         :active-positions-count="portfolioPositions.length"
         :total-trades-count="userActivities.length"
       />
@@ -140,7 +140,7 @@
             <ProfilePostsTab
               :posts="userPosts"
               :loading="loadingPosts"
-              :is-own-profile="true"
+              :is-own-profile="isOwnProfile"
               :all-tokens="allTokens"
               @reply="openThreadModal"
               @quote="openQuoteModal"
@@ -156,7 +156,7 @@
             <ProfileCreatedTab
               :my-launches="myLaunches"
               :loading="loadingLaunches"
-              :is-own-profile="true"
+              :is-own-profile="isOwnProfile"
               :claiming-token="claimingToken"
               :loading-action="Boolean(loadingLaunchpad)"
               :native-currency-symbol="activeNetwork.nativeCurrency.symbol"
@@ -182,7 +182,7 @@
           <!-- TAB 4: DIVIDENDS & VESTING -->
           <TabsContent value="dividends" class="mt-4">
             <ProfileDividendsTab
-              :is-own-profile="true"
+              :is-own-profile="isOwnProfile"
               :dividends-loading="dividendsLoading"
               :dividends-total-formatted="dividendsTotalFormatted"
               :dividends-has-any="dividendsHasAny"
@@ -201,7 +201,7 @@
       <!-- Edit Profile Modal -->
       <EditProfileModal
         v-model:open="editModalOpen"
-        :profile-address="connectedAccount"
+        :profile-address="targetAccount"
         :initial-data="profileData"
         @save="saveProfile"
       />
@@ -247,7 +247,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { Check, AlertCircle, RefreshCw, X, Wallet } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { useLaunchpad } from '@/composables/useLaunchpad';
@@ -276,7 +276,7 @@ import {
   type MyLaunchItem,
   type PortfolioPosition,
   type UserActivity,
-} from './profile';
+} from './index';
 import { erc20Abi } from 'viem';
 import {
   liquidityLockerAbi,
@@ -287,15 +287,34 @@ import {
 
 const { t } = useI18n();
 const router = useRouter();
+const route = useRoute();
 const { account, activeNetwork, openWallet } = useWallet();
 const { claimFees, setFeeRedirect, loading: loadingLaunchpad, error: launchpadError } = useLaunchpad();
 const { fetchUserPosts, toggleLike, toggleRepost } = useFeed();
 const { tokens: allTokens } = useTokenStore();
 
-// Strictly use the connected wallet account so users only see their own data
+function isAddressValid(addr: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/.test(addr.trim());
+}
+
+// Connected wallet account
 const connectedAccount = computed<string | null>(() => {
   const addr = walletAddress.value || account.value;
   return addr ? addr.toLowerCase() : null;
+});
+
+// Profile to display: target route param address (e.g. /u/:address) or connected wallet
+const targetAccount = computed<string | null>(() => {
+  const param = (route.params.address || route.params.id) as string | undefined;
+  if (param && isAddressValid(param)) {
+    return param.toLowerCase();
+  }
+  return connectedAccount.value;
+});
+
+const isOwnProfile = computed(() => {
+  if (!connectedAccount.value || !targetAccount.value) return false;
+  return connectedAccount.value === targetAccount.value;
 });
 
 // Profile Metadata for the connected account
@@ -335,9 +354,9 @@ const resolvedAvatarUrl = computed(() => resolveSafeUrl(profileData.value.avatar
 const resolvedBannerUrl = computed(() => resolveSafeUrl(profileData.value.bannerUrl));
 
 function loadLocalProfile() {
-  if (!connectedAccount.value || typeof window === 'undefined') return;
+  if (!targetAccount.value || typeof window === 'undefined') return;
   try {
-    const raw = localStorage.getItem(`proto_profile_${connectedAccount.value}`);
+    const raw = localStorage.getItem(`proto_profile_${targetAccount.value}`);
     if (raw) {
       profileData.value = JSON.parse(raw);
     } else {
@@ -356,10 +375,10 @@ function loadLocalProfile() {
 }
 
 function saveProfile(data: ProfileStorageData) {
-  if (!connectedAccount.value || typeof window === 'undefined') return;
+  if (!targetAccount.value || typeof window === 'undefined') return;
   try {
     profileData.value = { ...data };
-    localStorage.setItem(`proto_profile_${connectedAccount.value}`, JSON.stringify(data));
+    localStorage.setItem(`proto_profile_${targetAccount.value}`, JSON.stringify(data));
   } catch {
     // Ignore storage errors
   }
@@ -368,7 +387,7 @@ function saveProfile(data: ProfileStorageData) {
 const copiedShare = ref(false);
 function shareProfile() {
   if (typeof window === 'undefined') return;
-  const url = `${window.location.origin}/profile/${connectedAccount.value || ''}`;
+  const url = `${window.location.origin}/u/${targetAccount.value || ''}`;
   navigator.clipboard.writeText(url);
   copiedShare.value = true;
   setTimeout(() => {
@@ -376,19 +395,19 @@ function shareProfile() {
   }, 2000);
 }
 
-// Connected Account Posts & Calls
+// Target Account Posts & Calls
 const userPosts = ref<FeedCalloutItem[]>([]);
 const loadingPosts = ref(false);
 
 async function loadUserPosts(): Promise<void> {
-  const target = connectedAccount.value;
+  const target = targetAccount.value;
   if (!target) {
     userPosts.value = [];
     return;
   }
   loadingPosts.value = true;
   try {
-    userPosts.value = await fetchUserPosts(target, target);
+    userPosts.value = await fetchUserPosts(target, connectedAccount.value || undefined);
   } catch {
     userPosts.value = [];
   } finally {
@@ -474,7 +493,7 @@ const userActivities = ref<UserActivity[]>([]);
 
 const totalClaimableWeth = computed(() => {
   const sum = myLaunches.value.reduce(
-    (acc, item) => acc + parseFloat(item.unclaimedWeth || '0'),
+    (acc: number, item: MyLaunchItem) => acc + parseFloat(item.unclaimedWeth || '0'),
     0,
   );
   return sum.toFixed(4);
@@ -511,10 +530,10 @@ function getDistributorAddress(): `0x${string}` {
 }
 
 async function refreshDividends() {
-  const holder = connectedAccount.value;
+  const holder = targetAccount.value;
   if (!holder) return;
   resetDividends();
-  const tokens = portfolioPositions.value.map((p) => ({
+  const tokens = portfolioPositions.value.map((p: PortfolioPosition) => ({
     address: p.tokenAddress as `0x${string}`,
     symbol: p.symbol,
     name: p.name,
@@ -549,9 +568,9 @@ async function handleClaimAll() {
   }
 }
 
-// 1. Fetch launches created by the connected wallet
+// 1. Fetch launches created by the target account
 async function fetchMyLaunches() {
-  const target = connectedAccount.value;
+  const target = targetAccount.value;
   if (!target) {
     myLaunches.value = [];
     return;
@@ -628,9 +647,9 @@ async function fetchMyLaunches() {
   }
 }
 
-// 2. Fetch positions and activities strictly for the connected wallet
+// 2. Fetch positions and activities strictly for the target account
 async function fetchUserPositionsAndActivity() {
-  const target = connectedAccount.value;
+  const target = targetAccount.value;
   if (!target) {
     portfolioPositions.value = [];
     userActivities.value = [];
@@ -734,10 +753,18 @@ async function refreshAllData() {
   await refreshDividends();
 }
 
-watch(connectedAccount, () => {
+watch(targetAccount, () => {
   loadLocalProfile();
   refreshAllData();
 });
+
+watch(
+  () => [route.params.address, route.params.id],
+  () => {
+    loadLocalProfile();
+    refreshAllData();
+  },
+);
 
 onMounted(() => {
   loadLocalProfile();
@@ -768,10 +795,6 @@ async function handleClaim(tokenAddress: string) {
   } finally {
     claimingToken.value = null;
   }
-}
-
-function isAddressValid(addr: string): boolean {
-  return /^0x[a-fA-F0-9]{40}$/.test(addr.trim());
 }
 
 async function handleSetRedirect(targetRecipient: string) {

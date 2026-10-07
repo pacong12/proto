@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import ExploreView from '../src/components/ExploreView.vue';
 import CreateTokenView from '../src/components/CreateTokenView.vue';
 import TradeView from '../src/components/TradeView.vue';
-import ProfileView from '../src/components/ProfileView.vue';
+import ProfileView from '../src/components/profile/ProfileView.vue';
 import AnalyticsView from '../src/components/AnalyticsView.vue';
 import MemestockView from '../src/components/MemestockView.vue';
 import FeedView from '../src/components/feed/FeedView.vue';
