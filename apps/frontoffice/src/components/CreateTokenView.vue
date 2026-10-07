@@ -541,52 +541,52 @@
                       fill="transparent"
                       class="text-muted/60"
                     />
-                    <!-- 1. Creator segment (Emerald #10B981) -->
+                    <!-- 1. Creator segment (Emerald var(--chart-2)) -->
                     <circle
                       v-if="revenueSplit.creator > 0"
                       cx="50"
                       cy="50"
                       r="38"
-                      stroke="#10b981"
+                      stroke="var(--chart-2)"
                       stroke-width="12"
                       fill="transparent"
                       :stroke-dasharray="`${creatorStroke} ${donutCircumference}`"
                       :stroke-dashoffset="creatorOffset"
                       class="transition-all duration-300"
                     />
-                    <!-- 2. Buyback & Burn segment (Rose #F43F5E) -->
+                    <!-- 2. Buyback & Burn segment (Rose var(--bearish)) -->
                     <circle
                       v-if="revenueSplit.buyback > 0"
                       cx="50"
                       cy="50"
                       r="38"
-                      stroke="#f43f5e"
+                      stroke="var(--bearish)"
                       stroke-width="12"
                       fill="transparent"
                       :stroke-dasharray="`${buybackStroke} ${donutCircumference}`"
                       :stroke-dashoffset="buybackOffset"
                       class="transition-all duration-300"
                     />
-                    <!-- 3. Holders segment (Violet #8B5CF6) -->
+                    <!-- 3. Holders segment (Violet var(--chart-4)) -->
                     <circle
                       v-if="revenueSplit.holders > 0"
                       cx="50"
                       cy="50"
                       r="38"
-                      stroke="#8b5cf6"
+                      stroke="var(--chart-4)"
                       stroke-width="12"
                       fill="transparent"
                       :stroke-dasharray="`${holdersStroke} ${donutCircumference}`"
                       :stroke-dashoffset="holdersOffset"
                       class="transition-all duration-300"
                     />
-                    <!-- 4. Growth segment (Sky #0EA5E9) -->
+                    <!-- 4. Growth segment (Sky var(--chart-1)) -->
                     <circle
                       v-if="revenueSplit.growth > 0"
                       cx="50"
                       cy="50"
                       r="38"
-                      stroke="#0ea5e9"
+                      stroke="var(--chart-1)"
                       stroke-width="12"
                       fill="transparent"
                       :stroke-dasharray="`${growthStroke} ${donutCircumference}`"

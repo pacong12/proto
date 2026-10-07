@@ -19,7 +19,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   height: 240,
-  color: '#0ea5e9', // Sky blue / Primary
+  color: 'var(--chart-1)',
   gradientId: 'shadcn-chart-gradient',
   unit: '',
   isCurrency: false,

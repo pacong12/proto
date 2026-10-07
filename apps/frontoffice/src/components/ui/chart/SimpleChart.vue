@@ -15,8 +15,8 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   height: 200,
-  color: '#10b981',
-  fillColor: 'rgba(16, 185, 129, 0.1)',
+  color: 'var(--chart-2)',
+  fillColor: 'var(--muted)',
 });
 
 const padding = 20;
@@ -65,7 +65,7 @@ const fillPath = computed(() => {
         :y1="padding"
         :x2="width - padding"
         :y2="padding"
-        stroke="#27272a"
+        stroke="var(--border)"
         stroke-dasharray="4 4"
         stroke-width="1"
       />
@@ -74,7 +74,7 @@ const fillPath = computed(() => {
         :y1="height / 2"
         :x2="width - padding"
         :y2="height / 2"
-        stroke="#27272a"
+        stroke="var(--border)"
         stroke-dasharray="4 4"
         stroke-width="1"
       />
@@ -83,7 +83,7 @@ const fillPath = computed(() => {
         :y1="height - padding"
         :x2="width - padding"
         :y2="height - padding"
-        stroke="#3f3f46"
+        stroke="var(--border)"
         stroke-width="1"
       />
 

@@ -123,7 +123,7 @@
       <ShadcnAreaChart
         :data="currentChartData"
         :height="240"
-        :color="activeMetric === 'volume' ? '#10b981' : activeMetric === 'launches' ? '#0ea5e9' : '#f59e0b'"
+        :color="activeMetric === 'volume' ? 'var(--chart-2)' : activeMetric === 'launches' ? 'var(--chart-1)' : 'var(--chart-3)'"
         :gradient-id="`shadcn-${activeMetric}-gradient`"
         :is-currency="activeMetric !== 'launches'"
         :unit="activeMetric === 'launches' ? 'tokens' : ''"

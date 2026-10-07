@@ -137,14 +137,24 @@ function isDataFlat(data: ReturnType<typeof formatData>): boolean {
 // Theme configuration
 // ---------------------------------------------------------------------------
 
+function getCssVar(name: string, fallback: string): string {
+  if (typeof window === 'undefined') return fallback;
+  const val = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return val || fallback;
+}
+
 function getThemeConfig(isDark: boolean) {
+  const bg = getCssVar('--background', isDark ? '#09090b' : '#ffffff');
+  const border = getCssVar('--border', isDark ? '#27272a' : '#e4e4e7');
+  const textMuted = getCssVar('--muted-foreground', isDark ? '#a1a1aa' : '#52525b');
+
   return {
     layout: {
       background: {
         type: ColorType.Solid,
-        color: isDark ? '#09090b' : '#ffffff',
+        color: bg,
       },
-      textColor: isDark ? '#a1a1aa' : '#52525b',
+      textColor: textMuted,
       fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
     },
     grid: {
@@ -154,25 +164,25 @@ function getThemeConfig(isDark: boolean) {
     crosshair: {
       mode: CrosshairMode.Normal,
       vertLine: {
-        color: isDark ? '#71717a' : '#a1a1aa',
+        color: textMuted,
         width: 1 as const,
         style: LineStyle.Dashed,
-        labelBackgroundColor: isDark ? '#27272a' : '#e4e4e7',
+        labelBackgroundColor: border,
       },
       horzLine: {
-        color: isDark ? '#71717a' : '#a1a1aa',
+        color: textMuted,
         width: 1 as const,
         style: LineStyle.Dashed,
-        labelBackgroundColor: isDark ? '#27272a' : '#e4e4e7',
+        labelBackgroundColor: border,
       },
     },
     rightPriceScale: {
-      borderColor: isDark ? '#27272a' : '#e4e4e7',
+      borderColor: border,
       scaleMargins: { top: 0.12, bottom: 0.22 },
       mode: isLogScale.value ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal,
     },
     timeScale: {
-      borderColor: isDark ? '#27272a' : '#e4e4e7',
+      borderColor: border,
       timeVisible: true,
       secondsVisible: false,
       rightOffset: 12,
@@ -371,11 +381,9 @@ const barChangePercent = computed(() => {
 const dataIsFlat = computed(() => isDataFlat(formatData(props.data)));
 
 // ---------------------------------------------------------------------------
-// Standard Financial Chart Colors (Green = Bullish, Red = Bearish)
-// ---------------------------------------------------------------------------
-
-const BULLISH_GREEN = '#22c55e';
-const BEARISH_RED = '#ef4444';
+// Standard Financial Chart Colors (Retrieved dynamically from CSS variables)
+const BULLISH_GREEN = getCssVar('--bullish', '#22c55e');
+const BEARISH_RED = getCssVar('--bearish', '#ef4444');
 
 // ---------------------------------------------------------------------------
 // Chart initialisation

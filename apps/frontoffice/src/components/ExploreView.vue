@@ -691,7 +691,7 @@ function getSparkline(change = 0, width = 72, height = 24) {
     return {
       d: `M 2 ${midY} L ${width - 2} ${midY}`,
       isUp: true,
-      color: '#71717a',
+      color: 'var(--muted-foreground)',
     };
   }
   const isUp = change > 0;
@@ -714,7 +714,7 @@ function getSparkline(change = 0, width = 72, height = 24) {
     return idx === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`;
   }, '');
 
-  return { d, isUp, color: isUp ? '#22c55e' : '#ef4444' };
+  return { d, isUp, color: isUp ? 'var(--bullish)' : 'var(--bearish)' };
 }
 
 // Top 4 Latest Launches
