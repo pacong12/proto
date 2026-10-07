@@ -824,10 +824,10 @@
                   >
                     {{ tab.label }}
                     <span
-                      v-if="tab.value === 'callouts' && comments.length > 0"
+                      v-if="tab.value === 'callouts' && callouts.length > 0"
                       class="ml-1 px-1.5 py-0.2 rounded-full bg-primary/20 text-primary font-bold text-[10px]"
                     >
-                      {{ comments.length }}
+                      {{ callouts.length }}
                     </span>
                   </TabsTrigger>
                 </TabsList>
@@ -847,7 +847,7 @@
                   variant="ghost"
                   size="sm"
                   class="ml-auto h-7 px-2 text-xs font-mono text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
-                  @click="fetchComments(currentToken.address)"
+                  @click="fetchCallouts(currentToken.address)"
                 >
                   <RefreshCw class="w-3.5 h-3.5 sm:mr-1" />
                   <span class="hidden sm:inline">Refresh</span>
@@ -859,60 +859,41 @@
                 value="callouts"
                 class="mt-0 max-h-[460px] overflow-y-auto p-4 sm:p-5 space-y-4"
               >
-                <!-- Quick Post Callout Bar -->
+                <!-- Quick Post Callout Action -->
                 <div
-                  class="p-3.5 sm:p-4 rounded-2xl border border-border bg-muted/30 space-y-3 font-mono"
+                  class="p-4 rounded-2xl border border-border bg-muted/30 flex items-center justify-between gap-3 font-mono text-xs"
                 >
-                  <div class="flex items-center justify-between text-xs text-muted-foreground">
-                    <span class="flex items-center gap-1.5 font-bold text-foreground">
-                      <Megaphone class="w-3.5 h-3.5 text-primary" />
-                      Post a Call on ${{ currentToken.symbol }}
-                    </span>
-                    <span v-if="account" class="text-[10px]">
-                      Caller:
-                      <span class="font-bold text-foreground">{{ truncateAddress(account) }}</span>
-                    </span>
+                  <div class="flex items-center gap-2 min-w-0">
+                    <Megaphone class="w-4 h-4 text-primary shrink-0" />
+                    <div class="min-w-0">
+                      <p class="font-bold text-foreground text-xs leading-tight">
+                        Post a Community Callout
+                      </p>
+                      <p class="text-[11px] text-muted-foreground truncate">
+                        Attach your thesis, exit price target, and verified position.
+                      </p>
+                    </div>
                   </div>
-
-                  <div class="flex items-center gap-2">
-                    <Input
-                      v-model="newCommentText"
-                      type="text"
-                      maxlength="500"
-                      placeholder="Call this token (e.g. target $100K MC, breaking out, dev based!)..."
-                      class="h-9 text-xs font-sans bg-card flex-1"
-                      @keydown.enter="postComment"
-                    />
-                    <Button
-                      size="sm"
-                      class="h-9 px-3.5 text-xs font-bold gap-1 cursor-pointer shrink-0"
-                      :disabled="isPostingComment || !newCommentText.trim()"
-                      @click="postComment"
-                    >
-                      <Loader2 v-if="isPostingComment" class="w-3 h-3 animate-spin" />
-                      <Megaphone v-else class="w-3 h-3" />
-                      <span>Call</span>
-                    </Button>
-                  </div>
-                  <div
-                    v-if="commentError"
-                    class="text-[10px] font-mono text-rose-500 flex items-center gap-1 mt-1"
+                  <Button
+                    size="sm"
+                    class="h-8 px-3 text-xs font-bold gap-1.5 cursor-pointer shrink-0 shadow-2xs"
+                    @click="openCallModal"
                   >
-                    <AlertCircle class="w-3 h-3 shrink-0" />
-                    <span>{{ commentError }}</span>
-                  </div>
+                    <Megaphone class="w-3 h-3" />
+                    <span>Call ${{ currentToken.symbol }}</span>
+                  </Button>
                 </div>
 
                 <!-- Callouts Feed -->
                 <div
-                  v-if="commentsLoading && comments.length === 0"
+                  v-if="calloutsLoading && callouts.length === 0"
                   class="py-12 text-center text-muted-foreground"
                 >
                   <Loader2 class="w-4 h-4 animate-spin mx-auto mb-2 text-primary" />
                   <span class="text-xs font-mono">Loading callouts...</span>
                 </div>
                 <div
-                  v-else-if="comments.length === 0"
+                  v-else-if="callouts.length === 0"
                   class="py-12 text-center text-muted-foreground space-y-1 font-mono"
                 >
                   <Megaphone class="w-6 h-6 mx-auto mb-1.5 text-muted-foreground opacity-60" />
@@ -923,7 +904,7 @@
                 </div>
                 <div v-else class="space-y-3">
                   <div
-                    v-for="cmt in paginatedComments"
+                    v-for="cmt in paginatedCallouts"
                     :key="cmt.id"
                     class="p-3.5 rounded-xl border border-border bg-card hover:bg-muted/30 transition-colors space-y-2.5"
                   >
@@ -1048,12 +1029,12 @@
                   </div>
 
                   <!-- Callouts Pagination -->
-                  <div v-if="comments.length > commentsPageSize" class="pt-2 flex justify-center">
+                  <div v-if="callouts.length > calloutsPageSize" class="pt-2 flex justify-center">
                     <Pagination
-                      :total="comments.length"
-                      :items-per-page="commentsPageSize"
-                      :page="commentsPage"
-                      @update:page="commentsPage = $event"
+                      :total="callouts.length"
+                      :items-per-page="calloutsPageSize"
+                      :page="calloutsPage"
+                      @update:page="calloutsPage = $event"
                     />
                   </div>
                 </div>
@@ -2067,7 +2048,7 @@ async function handlePostCallout(): Promise<void> {
       callImageUrl.value = '';
       callModalOpen.value = false;
       activeBottomTab.value = 'callouts';
-      await fetchComments(currentToken.value.address);
+      await fetchCallouts(currentToken.value.address);
     } else {
       callError.value = envelope.error?.message || 'Failed to publish callout.';
     }
@@ -2362,14 +2343,11 @@ const isMaxSell = ref(false);
 const isCustomSlippage = ref(false);
 const customSlippageInput = ref('');
 
-// Comments & Discussion State
-const comments = ref<TokenCommentEntity[]>([]);
-const commentsLoading = ref(false);
-const newCommentText = ref('');
-const isPostingComment = ref(false);
-const commentError = ref<string | null>(null);
+// Callouts State
+const callouts = ref<TokenCommentEntity[]>([]);
+const calloutsLoading = ref(false);
 
-// Pagination state for bottom tabs (Trades, Top Traders, Holders, Comments)
+// Pagination state for bottom tabs (Trades, Top Traders, Holders, Callouts)
 const tradesPage = ref(1);
 const tradesPageSize = 10;
 const paginatedTrades = computed(() => {
@@ -2391,11 +2369,11 @@ const paginatedHolders = computed(() => {
   return holders.value.slice(start, start + holdersPageSize);
 });
 
-const commentsPage = ref(1);
-const commentsPageSize = 10;
-const paginatedComments = computed(() => {
-  const start = (commentsPage.value - 1) * commentsPageSize;
-  return comments.value.slice(start, start + commentsPageSize);
+const calloutsPage = ref(1);
+const calloutsPageSize = 10;
+const paginatedCallouts = computed(() => {
+  const start = (calloutsPage.value - 1) * calloutsPageSize;
+  return callouts.value.slice(start, start + calloutsPageSize);
 });
 
 // Reset current page when lists update and exceed max pages
@@ -2411,9 +2389,9 @@ watch(holders, (list) => {
   const max = Math.max(1, Math.ceil(list.length / holdersPageSize));
   if (holdersPage.value > max) holdersPage.value = 1;
 });
-watch(comments, (list) => {
-  const max = Math.max(1, Math.ceil(list.length / commentsPageSize));
-  if (commentsPage.value > max) commentsPage.value = 1;
+watch(callouts, (list) => {
+  const max = Math.max(1, Math.ceil(list.length / calloutsPageSize));
+  if (calloutsPage.value > max) calloutsPage.value = 1;
 });
 
 // Resolution & candle data
@@ -2811,58 +2789,21 @@ async function fetchDevActivity(address: string) {
 }
 
 // -----------------------------------------------------------------------
-// Discussion Comments & Sentiment Votes Fetchers
+// Community Callouts Fetcher & Reaction
 // -----------------------------------------------------------------------
-async function fetchComments(address: string) {
-  commentsLoading.value = true;
+async function fetchCallouts(address: string) {
+  calloutsLoading.value = true;
   try {
     const viewerParam = account.value ? `?viewer=${account.value}` : '';
     const res = await fetch(`/api/tokens/${address}/comments${viewerParam}`);
     const envelope = await res.json();
     if (envelope.success && Array.isArray(envelope.data)) {
-      comments.value = envelope.data;
+      callouts.value = envelope.data;
     }
   } catch {
-    comments.value = [];
+    callouts.value = [];
   } finally {
-    commentsLoading.value = false;
-  }
-}
-
-async function postComment() {
-  if (!account.value) {
-    openWallet();
-    return;
-  }
-  const content = newCommentText.value.trim();
-  if (!content || isPostingComment.value) return;
-
-  isPostingComment.value = true;
-  commentError.value = null;
-  try {
-    const res = await fetch(`/api/tokens/${currentToken.value.address}/comments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        authorAddress: account.value,
-        content,
-        targetMcap: callTargetMcap.value,
-        positionUsd: userHoldingUsd.value > 0 ? userHoldingUsd.value : undefined,
-        callType: 'call',
-      }),
-    });
-    const envelope = await res.json();
-    if (envelope.success && envelope.data) {
-      newCommentText.value = '';
-      commentError.value = null;
-      await fetchComments(currentToken.value.address);
-    } else {
-      commentError.value = envelope.error?.message || 'Failed to post comment.';
-    }
-  } catch (e) {
-    commentError.value = (e as Error).message || 'Network error.';
-  } finally {
-    isPostingComment.value = false;
+    calloutsLoading.value = false;
   }
 }
 
@@ -2882,10 +2823,10 @@ async function toggleLike(commentId: string) {
     );
     const envelope = await res.json();
     if (envelope.success && envelope.data) {
-      const comment = comments.value.find((c) => c.id === commentId);
-      if (comment) {
-        comment.isLikedByViewer = envelope.data.liked;
-        comment.likesCount = envelope.data.likesCount;
+      const call = callouts.value.find((c) => c.id === commentId);
+      if (call) {
+        call.isLikedByViewer = envelope.data.liked;
+        call.likesCount = envelope.data.likesCount;
       }
     }
   } catch {
@@ -3289,7 +3230,7 @@ async function loadTokenData(address: `0x${string}`) {
     fetchTopTraders(address),
     fetchDevActivity(address),
     fetchHolders(address),
-    fetchComments(address),
+    fetchCallouts(address),
     loadOnchainTax(address),
     loadPendingTax(address, tokenNetwork.value.chainId),
   ]);
@@ -3323,7 +3264,7 @@ watch(
   () => account.value,
   (newAcc, oldAcc) => {
     if (newAcc && newAcc !== oldAcc) {
-      Promise.allSettled([fetchUserTokenBalance(true), fetchComments(currentToken.value.address)]);
+      Promise.allSettled([fetchUserTokenBalance(true), fetchCallouts(currentToken.value.address)]);
     } else if (!newAcc) {
       userTokenBalance.value = 0n;
     }
