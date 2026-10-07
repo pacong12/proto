@@ -154,6 +154,37 @@
                 </div>
               </div>
 
+              <!-- Twitter / X Style Attached Image Preview Card -->
+              <div
+                v-if="composerImagePreview"
+                class="relative rounded-2xl overflow-hidden border border-border/80 bg-muted/20 max-h-72 w-full group"
+              >
+                <img
+                  :src="composerImagePreview"
+                  alt="Attached Preview"
+                  class="w-full h-full object-cover max-h-72"
+                />
+
+                <!-- Top-Right Remove (X) Button like Twitter -->
+                <button
+                  type="button"
+                  class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center transition cursor-pointer shadow-md backdrop-blur-xs"
+                  title="Remove image"
+                  @click="removeAttachedImage"
+                >
+                  <X class="w-4 h-4" />
+                </button>
+
+                <!-- Uploading / Pinning Status Banner -->
+                <div
+                  v-if="isUploadingMedia"
+                  class="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center gap-2 text-xs text-white font-mono"
+                >
+                  <Loader2 class="w-4 h-4 animate-spin text-primary" />
+                  <span>Uploading to IPFS...</span>
+                </div>
+              </div>
+
               <!-- Embedded Token Selector & Target MC Ribbon -->
               <div class="flex flex-wrap items-center gap-2 pt-1 font-mono text-xs">
                 <!-- Dropdown Token Picker -->
@@ -283,15 +314,36 @@
               <!-- Composer Footer Toolbar -->
               <div class="flex items-center justify-between pt-1 border-t border-border/50">
                 <div class="flex items-center gap-2">
+                  <!-- Hidden File Input for Device Photo Upload like Twitter -->
+                  <input
+                    ref="mediaFileInputRef"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    class="hidden"
+                    @change="handleMediaFileChange"
+                  />
+
+                  <button
+                    type="button"
+                    class="p-1.5 rounded-lg border border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground transition cursor-pointer flex items-center gap-1.5"
+                    :class="composerImagePreview ? 'border-primary/40 bg-primary/10 text-primary' : ''"
+                    title="Upload photo from device (like Twitter)"
+                    @click="triggerMediaUpload"
+                  >
+                    <ImageIcon class="w-4 h-4" />
+                    <span class="text-[11px] font-mono hidden sm:inline">Photo</span>
+                  </button>
+
                   <button
                     type="button"
                     class="p-1.5 rounded-lg border border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground transition cursor-pointer"
                     :class="showMediaInput ? 'border-primary/40 bg-primary/10 text-primary' : ''"
-                    title="Attach image or chart URL"
+                    title="Paste Image or Chart URL"
                     @click="showMediaInput = !showMediaInput"
                   >
-                    <ImageIcon class="w-4 h-4" />
+                    <Link2 class="w-4 h-4" />
                   </button>
+
                   <span class="text-[11px] text-muted-foreground font-mono">
                     {{ composerContent.length }}/500
                   </span>
@@ -424,7 +476,7 @@
               class="rounded-xl overflow-hidden border border-border/60 max-h-72 cursor-pointer bg-muted/20"
               @click.stop="openImage(call.imageUrl)"
             >
-              <img :src="call.imageUrl" alt="Attachment" class="w-full h-full object-cover hover:scale-[1.01] transition-transform" />
+              <img :src="resolveSafeUrl(call.imageUrl)" alt="Attachment" class="w-full h-full object-cover hover:scale-[1.01] transition-transform" />
             </div>
 
             <!-- Signature Web3 Token Card Widget -->
@@ -726,6 +778,8 @@ import {
   Megaphone,
   Flame,
   ShieldCheck,
+  X,
+  Link2,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
@@ -745,6 +799,7 @@ import ShareModal from './ShareModal.vue';
 import ThreadModal from './ThreadModal.vue';
 import QuoteModal from './QuoteModal.vue';
 import { shortenAddress, formatRelativeTime, formatCompactUsd } from '@/lib/utils';
+import { compressAndConvertToWebp } from '@/lib/image-optimizer';
 import { toast } from '@/components/ui/sonner';
 import type { FeedCalloutItem, LaunchedTokenEntity } from '@proto/shared-types';
 
@@ -850,6 +905,9 @@ async function onQuotePosted(): Promise<void> {
 const composerContent = ref('');
 const composerTargetMcap = ref('$100K MC');
 const composerImageUrl = ref('');
+const composerImagePreview = ref('');
+const mediaFileInputRef = ref<HTMLInputElement | null>(null);
+const isUploadingMedia = ref(false);
 const showMediaInput = ref(false);
 const isPostingCall = ref(false);
 const composerError = ref<string | null>(null);
@@ -858,6 +916,59 @@ const tokenSearchQuery = ref('');
 const selectedToken = ref<LaunchedTokenEntity | null>(null);
 const callerTokenBalance = ref<number>(0);
 const checkingBalance = ref(false);
+
+function triggerMediaUpload(): void {
+  mediaFileInputRef.value?.click();
+}
+
+async function handleMediaFileChange(e: Event): Promise<void> {
+  const input = e.target as HTMLInputElement;
+  if (input.files && input.files[0]) {
+    await processMediaFile(input.files[0]);
+  }
+}
+
+async function processMediaFile(file: File): Promise<void> {
+  composerError.value = null;
+  if (!file.type.startsWith('image/')) {
+    composerError.value = 'Please select a valid image file (PNG, JPG, WEBP, GIF).';
+    return;
+  }
+  if (file.size > 8 * 1024 * 1024) {
+    composerError.value = 'Image size must be less than 8MB.';
+    return;
+  }
+
+  try {
+    isUploadingMedia.value = true;
+    const processed = await compressAndConvertToWebp(file, 1200, 0.85);
+    composerImagePreview.value = processed.dataUrl;
+
+    const formData = new FormData();
+    formData.append('file', processed.file);
+    const res = await fetch('/api/ipfs/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const ipfsUri = data.data?.cid ? `ipfs://${data.data.cid}` : data.data?.uri || data.data?.url || '';
+      if (ipfsUri) {
+        composerImageUrl.value = ipfsUri;
+      }
+    }
+  } catch (err) {
+    console.warn('[Feed] Image upload failed, retaining dataUrl preview:', err);
+  } finally {
+    isUploadingMedia.value = false;
+  }
+}
+
+function removeAttachedImage(): void {
+  composerImagePreview.value = '';
+  composerImageUrl.value = '';
+  if (mediaFileInputRef.value) mediaFileInputRef.value.value = '';
+}
 
 // Live Cashtag ($) Autocomplete State
 const composerTextarea = ref<HTMLTextAreaElement | null>(null);
@@ -1054,13 +1165,14 @@ async function submitCallout(): Promise<void> {
       tokenAddress: targetToken.address,
       authorAddress: account.value,
       content,
-      imageUrl: composerImageUrl.value.trim() || undefined,
+      imageUrl: composerImageUrl.value.trim() || composerImagePreview.value.trim() || undefined,
       targetMcap: composerTargetMcap.value,
     });
     if (created) {
       toast.success(`Posted call on $${targetToken.symbol}!`);
       composerContent.value = '';
       composerImageUrl.value = '';
+      composerImagePreview.value = '';
       showMediaInput.value = false;
       await fetchFeed(account.value);
     }
@@ -1092,9 +1204,19 @@ function navigateToCaller(address: string): void {
   }
 }
 
+function resolveSafeUrl(url?: string): string {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (trimmed.startsWith('ipfs://')) {
+    const hash = trimmed.replace('ipfs://', '');
+    return `/api/ipfs/${hash}`;
+  }
+  return trimmed;
+}
+
 function openImage(url?: string): void {
   if (url && typeof window !== 'undefined') {
-    window.open(url, '_blank', 'noopener,noreferrer');
+    window.open(resolveSafeUrl(url), '_blank', 'noopener,noreferrer');
   }
 }
 

@@ -950,7 +950,7 @@
                       class="rounded-lg overflow-hidden border border-border max-w-xs"
                     >
                       <img
-                        :src="cmt.imageUrl"
+                        :src="resolveSafeUrl(cmt.imageUrl)"
                         alt="Call attachment"
                         class="w-full max-h-48 object-cover"
                       />
@@ -2162,6 +2162,16 @@ function shareCalloutToX(cmt: TokenCommentEntity) {
     );
     window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank', 'noopener,noreferrer');
   }
+}
+
+function resolveSafeUrl(url?: string): string {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (trimmed.startsWith('ipfs://')) {
+    const hash = trimmed.replace('ipfs://', '');
+    return `/api/ipfs/${hash}`;
+  }
+  return trimmed;
 }
 
 function isHolderAddress(addr: string): boolean {

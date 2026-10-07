@@ -67,7 +67,7 @@
           class="rounded-xl overflow-hidden border border-border/60 max-h-72 cursor-pointer bg-muted/20"
           @click="openImage(call.imageUrl)"
         >
-          <img :src="call.imageUrl" alt="Attachment" class="w-full h-full object-cover" />
+          <img :src="resolveSafeUrl(call.imageUrl)" alt="Attachment" class="w-full h-full object-cover" />
         </div>
 
         <!-- Embedded Mini Coin Widget Card -->
@@ -256,9 +256,19 @@ function formatViews(val: number): string {
   return String(val || 0);
 }
 
+function resolveSafeUrl(url?: string): string {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (trimmed.startsWith('ipfs://')) {
+    const hash = trimmed.replace('ipfs://', '');
+    return `/api/ipfs/${hash}`;
+  }
+  return trimmed;
+}
+
 function openImage(url?: string): void {
   if (url && typeof window !== 'undefined') {
-    window.open(url, '_blank', 'noopener,noreferrer');
+    window.open(resolveSafeUrl(url), '_blank', 'noopener,noreferrer');
   }
 }
 </script>

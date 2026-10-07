@@ -117,7 +117,7 @@
           class="rounded-2xl overflow-hidden border border-border/70 max-h-[460px] cursor-pointer bg-muted/20"
           @click="openImage(post.imageUrl)"
         >
-          <img :src="post.imageUrl" alt="Attachment" class="w-full h-full object-cover" />
+          <img :src="resolveSafeUrl(post.imageUrl)" alt="Attachment" class="w-full h-full object-cover" />
         </div>
 
         <!-- Embedded Coin Widget Card -->
@@ -559,9 +559,19 @@ async function submitReply(): Promise<void> {
   }
 }
 
+function resolveSafeUrl(url?: string): string {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (trimmed.startsWith('ipfs://')) {
+    const hash = trimmed.replace('ipfs://', '');
+    return `/api/ipfs/${hash}`;
+  }
+  return trimmed;
+}
+
 function openImage(url?: string): void {
   if (url && typeof window !== 'undefined') {
-    window.open(url, '_blank', 'noopener,noreferrer');
+    window.open(resolveSafeUrl(url), '_blank', 'noopener,noreferrer');
   }
 }
 

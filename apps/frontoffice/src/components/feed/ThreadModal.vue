@@ -77,7 +77,7 @@
             class="rounded-xl overflow-hidden border border-border bg-muted/20 max-h-60 cursor-pointer"
             @click="openImage(targetCall.imageUrl)"
           >
-            <img :src="targetCall.imageUrl" alt="Attachment" class="w-full h-full object-cover" />
+            <img :src="resolveSafeUrl(targetCall.imageUrl)" alt="Attachment" class="w-full h-full object-cover" />
           </div>
 
           <!-- Mini Coin Widget Card -->
@@ -389,9 +389,19 @@ async function handleLikeReply(replyId: string): Promise<void> {
   } catch {}
 }
 
+function resolveSafeUrl(url?: string): string {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (trimmed.startsWith('ipfs://')) {
+    const hash = trimmed.replace('ipfs://', '');
+    return `/api/ipfs/${hash}`;
+  }
+  return trimmed;
+}
+
 function openImage(url?: string): void {
   if (url && typeof window !== 'undefined') {
-    window.open(url, '_blank', 'noopener,noreferrer');
+    window.open(resolveSafeUrl(url), '_blank', 'noopener,noreferrer');
   }
 }
 </script>
