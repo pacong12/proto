@@ -35,6 +35,18 @@ export const router = createRouter({
       component: () => import('@/pages/FeedPage.vue'),
     },
     {
+      path: '/feed/:id',
+      name: 'feed-detail',
+      component: () => import('@/pages/PostDetailPage.vue'),
+      props: true,
+    },
+    {
+      path: '/post/:id',
+      name: 'post-detail',
+      component: () => import('@/pages/PostDetailPage.vue'),
+      props: true,
+    },
+    {
       path: '/launchpad/:address',
       name: 'trade',
       component: () => import('@/pages/TradePage.vue'),
