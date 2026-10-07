@@ -5,7 +5,7 @@ import TradeView from '../src/components/TradeView.vue';
 import ProfileView from '../src/components/ProfileView.vue';
 import AnalyticsView from '../src/components/AnalyticsView.vue';
 import MemestockView from '../src/components/MemestockView.vue';
-import FeedView from '../src/components/FeedView.vue';
+import FeedView from '../src/components/feed/FeedView.vue';
 import Navbar from '../src/components/Navbar.vue';
 import ThemeToggle from '../src/components/ThemeToggle.vue';
 import SearchDialog from '../src/components/SearchDialog.vue';

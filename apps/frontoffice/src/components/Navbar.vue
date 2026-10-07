@@ -576,9 +576,35 @@ function copyAddress() {
           <span>{{ isConnecting ? t('connecting') : t('connectWallet') }}</span>
         </Button>
 
-        <!-- Theme & Language Row in Mobile Drawer -->
         <!-- Theme & Language Section in Mobile Drawer -->
         <div class="space-y-2.5 pt-1">
+          <!-- Network Switcher Card in Mobile Drawer -->
+          <div
+            class="flex items-center justify-between p-2.5 rounded-xl border border-border bg-card"
+          >
+            <div class="flex items-center gap-2 text-xs font-semibold text-foreground">
+              <img
+                :src="activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+                :alt="activeNetwork.name"
+                class="w-4 h-4 rounded-xs object-contain shrink-0"
+              />
+              <span>{{ activeNetwork.name }}</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <Button
+                v-for="net in Object.values(SUPPORTED_CHAINS)"
+                :key="net.chainId"
+                size="sm"
+                variant="outline"
+                class="h-7 px-2.5 text-[11px] font-mono font-bold cursor-pointer border-border"
+                :class="activeNetwork.chainId === net.chainId ? 'bg-primary text-primary-foreground border-primary' : ''"
+                @click="handleChainSelect(net.chainId)"
+              >
+                {{ net.chainId === 5042 ? 'Arc' : 'Robinhood' }}
+              </Button>
+            </div>
+          </div>
+
           <!-- Theme Card -->
           <div
             class="flex items-center justify-between p-2.5 rounded-xl border border-border bg-card"
