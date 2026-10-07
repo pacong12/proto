@@ -147,11 +147,13 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
 
   private comments = new Map<string, TokenCommentEntity[]>();
   private commentLikes = new Map<string, Set<string>>();
+  private commentReposts = new Map<string, Set<string>>();
+  private commentViews = new Map<string, number>();
 
   async saveComment(comment: TokenCommentEntity): Promise<void> {
     const key = comment.tokenAddress.toLowerCase();
     const existing = this.comments.get(key) ?? [];
-    existing.unshift(comment);
+    existing.unshift({ ...comment, viewsCount: comment.viewsCount || 0 });
     this.comments.set(key, existing);
   }
 
@@ -162,6 +164,8 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
     return list.map((c) => ({
       ...c,
       isLikedByViewer: viewer ? (this.commentLikes.get(c.id)?.has(viewer) ?? false) : false,
+      isRepostedByViewer: viewer ? (this.commentReposts.get(c.id)?.has(viewer) ?? false) : false,
+      viewsCount: this.commentViews.get(c.id) ?? c.viewsCount ?? 0,
     }));
   }
 
@@ -169,17 +173,23 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
     limit = 50,
     offset = 0,
     viewerAddress?: string,
+    authorAddress?: string,
   ): Promise<import('@proto/shared-types').FeedCalloutItem[]> {
-    const allComments: import('@proto/shared-types').FeedCalloutItem[] = [];
+    let allComments: import('@proto/shared-types').FeedCalloutItem[] = [];
     const viewer = viewerAddress?.toLowerCase();
 
     for (const [tokenAddr, list] of this.comments.entries()) {
       const token = this.tokens.get(tokenAddr);
       const mkt = this.marketData.get(tokenAddr);
       for (const c of list) {
+        if (authorAddress && c.authorAddress.toLowerCase() !== authorAddress.toLowerCase()) {
+          continue;
+        }
         allComments.push({
           ...c,
           isLikedByViewer: viewer ? (this.commentLikes.get(c.id)?.has(viewer) ?? false) : false,
+          isRepostedByViewer: viewer ? (this.commentReposts.get(c.id)?.has(viewer) ?? false) : false,
+          viewsCount: this.commentViews.get(c.id) ?? c.viewsCount ?? 0,
           tokenName: token?.name,
           tokenSymbol: token?.symbol,
           tokenLogo: token?.logo,
@@ -191,6 +201,38 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
 
     allComments.sort((a, b) => b.createdAt - a.createdAt);
     return allComments.slice(offset, offset + limit);
+  }
+
+  async incrementCommentViews(commentId: string): Promise<number> {
+    const current = (this.commentViews.get(commentId) ?? 0) + 1;
+    this.commentViews.set(commentId, current);
+    return current;
+  }
+
+  async getCalloutThread(
+    calloutId: string,
+    viewerAddress?: string,
+  ): Promise<import('@proto/shared-types').FeedCalloutItem | null> {
+    for (const [tokenAddr, list] of this.comments.entries()) {
+      const match = list.find((c) => c.id === calloutId);
+      if (match) {
+        const token = this.tokens.get(tokenAddr);
+        const mkt = this.marketData.get(tokenAddr);
+        const viewer = viewerAddress?.toLowerCase();
+        return {
+          ...match,
+          isLikedByViewer: viewer ? (this.commentLikes.get(match.id)?.has(viewer) ?? false) : false,
+          isRepostedByViewer: viewer ? (this.commentReposts.get(match.id)?.has(viewer) ?? false) : false,
+          tokenName: token?.name,
+          tokenSymbol: token?.symbol,
+          tokenLogo: token?.logo,
+          tokenMarketCapUsd: mkt?.marketCapUsd,
+          tokenPriceUsd: mkt?.priceUsd,
+          replies: [],
+        };
+      }
+    }
+    return null;
   }
 
   async toggleCommentLike(
@@ -216,5 +258,30 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
       if (match) match.likesCount = likesCount;
     }
     return { liked: !liked, likesCount };
+  }
+
+  async toggleCommentRepost(
+    commentId: string,
+    userAddress: string,
+  ): Promise<{ reposted: boolean; repostsCount: number }> {
+    const user = userAddress.toLowerCase();
+    let set = this.commentReposts.get(commentId);
+    if (!set) {
+      set = new Set<string>();
+      this.commentReposts.set(commentId, set);
+    }
+    const reposted = set.has(user);
+    if (reposted) {
+      set.delete(user);
+    } else {
+      set.add(user);
+    }
+    const repostsCount = set.size;
+    // update comment in list
+    for (const list of this.comments.values()) {
+      const match = list.find((c) => c.id === commentId);
+      if (match) match.repostsCount = repostsCount;
+    }
+    return { reposted: !reposted, repostsCount };
   }
 }

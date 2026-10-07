@@ -47,9 +47,19 @@ export interface TokenRepositoryPort {
     limit?: number,
     offset?: number,
     viewerAddress?: string,
+    authorAddress?: string,
   ): Promise<import('@proto/shared-types').FeedCalloutItem[]>;
+  getCalloutThread?(
+    calloutId: string,
+    viewerAddress?: string,
+  ): Promise<import('@proto/shared-types').FeedCalloutItem | null>;
   toggleCommentLike?(
     commentId: string,
     userAddress: string,
   ): Promise<{ liked: boolean; likesCount: number }>;
+  toggleCommentRepost?(
+    commentId: string,
+    userAddress: string,
+  ): Promise<{ reposted: boolean; repostsCount: number }>;
+  incrementCommentViews?(commentId: string): Promise<number>;
 }

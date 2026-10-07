@@ -310,4 +310,66 @@ describe('SqliteTokenRepository', () => {
     expect(feed[0].tokenSymbol).toBe('PROTO');
     expect(feed[0].tokenName).toBe('Proto Token');
   });
+
+  it('supports threaded replies, reposts, quotes, and view tracking', async () => {
+    await repository.save(sampleToken);
+    const rootCallId = 'call-root-1';
+    await repository.saveComment({
+      id: rootCallId,
+      tokenAddress: sampleToken.address,
+      authorAddress: '0x3333333333333333333333333333333333333333',
+      content: 'LFG $PROTO looking prime!',
+      targetMcap: '$1M MC',
+      positionUsd: 500,
+      callType: 'call',
+      likesCount: 5,
+      createdAt: Date.now() - 1000,
+    });
+
+    // Test repost toggle
+    const viewer = '0x4444444444444444444444444444444444444444';
+    const repResult = await repository.toggleCommentRepost(rootCallId, viewer);
+    expect(repResult.reposted).toBe(true);
+    expect(repResult.repostsCount).toBe(1);
+
+    // Test quote post
+    const quoteId = 'call-quote-1';
+    await repository.saveComment({
+      id: quoteId,
+      tokenAddress: sampleToken.address,
+      authorAddress: viewer,
+      content: 'I agree with this thesis, added more $PROTO!',
+      quotedCalloutId: rootCallId,
+      callType: 'call',
+      likesCount: 0,
+      createdAt: Date.now() - 500,
+    });
+
+    // Test thread reply
+    const replyId = 'reply-1';
+    await repository.saveComment({
+      id: replyId,
+      tokenAddress: sampleToken.address,
+      authorAddress: '0x5555555555555555555555555555555555555555',
+      content: 'What is your target timeframe?',
+      parentId: rootCallId,
+      callType: 'comment',
+      likesCount: 0,
+      createdAt: Date.now(),
+    });
+
+    // Test view increment
+    const newViews = await repository.incrementCommentViews(rootCallId);
+    expect(newViews).toBeGreaterThanOrEqual(1);
+
+    // Test getCalloutThread
+    const thread = await repository.getCalloutThread(rootCallId, viewer);
+    expect(thread).not.toBeNull();
+    expect(thread?.id).toBe(rootCallId);
+    expect(thread?.isRepostedByViewer).toBe(true);
+    expect(thread?.replies).toBeDefined();
+    expect(thread?.replies?.length).toBe(1);
+    expect(thread?.replies?.[0].content).toBe('What is your target timeframe?');
+    expect(thread?.viewsCount).toBeGreaterThanOrEqual(1);
+  });
 });

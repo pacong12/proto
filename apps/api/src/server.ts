@@ -785,7 +785,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') ?? '50', 10)));
     const offset = Math.max(0, parseInt(url.searchParams.get('offset') ?? '0', 10));
     const viewer = url.searchParams.get('viewer') || undefined;
-    const callouts = (await repository.getFeedCallouts?.(limit, offset, viewer)) || [];
+    const author = url.searchParams.get('author') || undefined;
+    const callouts = (await repository.getFeedCallouts?.(limit, offset, viewer, author)) || [];
     return new Response(safeStringify({ success: true, data: callouts, timestamp: Date.now() }), {
       headers,
     });
@@ -812,15 +813,20 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         targetMcap?: string;
         positionUsd?: number;
         callType?: 'call' | 'comment';
+        parentId?: string;
+        quotedCalloutId?: string;
       }>(req, 32_768);
       const content = String(body.content || '').trim();
       const authorAddress = String(body.authorAddress || '').trim();
       const imageUrl = body.imageUrl ? String(body.imageUrl).trim() : undefined;
       const targetMcap = body.targetMcap ? String(body.targetMcap).trim() : undefined;
+      const parentId = body.parentId ? String(body.parentId).trim() : undefined;
+      const quotedCalloutId = body.quotedCalloutId ? String(body.quotedCalloutId).trim() : undefined;
       let positionUsd =
         typeof body.positionUsd === 'number' && !isNaN(body.positionUsd)
           ? body.positionUsd
           : undefined;
+      let supplyPercent: number | undefined;
       const callType = body.callType === 'comment' ? 'comment' : 'call';
       if (!content || content.length > 500) {
         return replyError(
@@ -910,6 +916,15 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
               const mkt = await repository.getMarketData(address as `0x${string}`);
               const price = mkt?.priceUsd ?? 0;
               verifiedPositionUsd = tokenCount * price;
+
+              if (token?.totalSupply) {
+                try {
+                  const totalTokens = Number(BigInt(token.totalSupply)) / 10 ** decimals;
+                  if (totalTokens > 0) {
+                    supplyPercent = Math.min(100, Math.max(0, (tokenCount / totalTokens) * 100));
+                  }
+                } catch {}
+              }
             }
           } catch {
             // Non-blocking
@@ -939,7 +954,13 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         createdAt: Date.now(),
         targetMcap,
         positionUsd,
+        supplyPercent,
         callType,
+        parentId,
+        quotedCalloutId,
+        repostsCount: 0,
+        quotesCount: 0,
+        repliesCount: 0,
       };
 
       await repository.saveComment?.(comment);
@@ -981,6 +1002,52 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       }
       return replyError('LIKE_ERROR', 'Failed to process like', 400);
     }
+  }
+
+  // POST /api/comments/:commentId/repost
+  const repostMatch = url.pathname.match(/^\/api\/comments\/([^/]+)\/repost$/);
+  if (repostMatch && req.method === 'POST') {
+    const commentId = repostMatch[1];
+    try {
+      const body = await parseJsonBody<{ userAddress?: string }>(req, 2048);
+      const userAddress = String(body.userAddress || '').trim();
+      if (!userAddress || !/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
+        return replyError('INVALID_ADDRESS', 'Valid Ethereum address required to repost', 400);
+      }
+      const result = (await repository.toggleCommentRepost?.(commentId, userAddress)) ?? {
+        reposted: false,
+        repostsCount: 0,
+      };
+      return new Response(safeStringify({ success: true, data: result, timestamp: Date.now() }), {
+        headers,
+      });
+    } catch {
+      return replyError('REPOST_ERROR', 'Failed to process repost', 400);
+    }
+  }
+
+  // POST /api/comments/:commentId/view OR /api/callouts/:calloutId/view -- record view impression
+  const viewMatch = url.pathname.match(/^\/api\/(callouts|comments)\/([a-zA-Z0-9_-]+)\/view$/);
+  if (viewMatch && req.method === 'POST') {
+    const commentId = viewMatch[2];
+    const viewsCount = (await repository.incrementCommentViews?.(commentId)) ?? 1;
+    return new Response(safeStringify({ success: true, data: { viewsCount }, timestamp: Date.now() }), {
+      headers,
+    });
+  }
+
+  // GET /api/callouts/:calloutId or /api/comments/:commentId -- get full thread & detail
+  const calloutDetailMatch = url.pathname.match(/^\/api\/(callouts|comments)\/([a-zA-Z0-9_-]+)$/);
+  if (calloutDetailMatch && req.method === 'GET') {
+    const calloutId = calloutDetailMatch[2];
+    const viewer = url.searchParams.get('viewer') || undefined;
+    const item = await repository.getCalloutThread?.(calloutId, viewer);
+    if (!item) {
+      return replyError('NOT_FOUND', 'Callout not found', 404);
+    }
+    return new Response(safeStringify({ success: true, data: item, timestamp: Date.now() }), {
+      headers,
+    });
   }
 
   // GET /api/tokens/:address
