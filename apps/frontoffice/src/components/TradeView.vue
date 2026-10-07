@@ -1550,11 +1550,11 @@
                         <span class="font-bold"
                           >{{ (onchainTaxConfig.buyTaxBps / 100).toFixed(1) }}%</span
                         >
-                        • Sell Tax:
+                        - Sell Tax:
                         <span class="font-bold"
                           >{{ (onchainTaxConfig.sellTaxBps / 100).toFixed(1) }}%</span
                         >
-                        • Protocol Fee:
+                        - Protocol Fee:
                         <span class="font-bold text-emerald-500">1.0%</span>
                       </p>
                     </div>
@@ -1711,11 +1711,32 @@
                 >
                 <span
                   class="text-xs font-bold"
-                  :class="userHoldingTokensCount > 0 ? 'text-emerald-500' : 'text-muted-foreground'"
+                  :class="userHoldingTokensCount > 0 ? 'text-emerald-500' : 'text-amber-500'"
                 >
                   {{ userHoldingTokensCount > 0 ? `$${userHoldingUsd.toFixed(2)}` : '0 tokens' }}
                 </span>
               </div>
+            </div>
+
+            <!-- Position Requirement Alert (pump.fun rule: caller must hold tokens) -->
+            <div
+              v-if="userTokenBalance <= 0n"
+              class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-500 flex items-center justify-between gap-2"
+            >
+              <div class="flex items-center gap-2 min-w-0">
+                <AlertCircle class="w-4 h-4 shrink-0" />
+                <span class="text-[11px] font-sans">
+                  You must hold a position in ${{ currentToken.symbol }} to post a callout.
+                </span>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                class="h-6 px-2 text-[10px] border-amber-500 text-amber-500 hover:bg-amber-500/10 shrink-0 font-bold cursor-pointer"
+                @click="goToBuyFromCall"
+              >
+                Buy Now
+              </Button>
             </div>
 
             <!-- Target Market Cap selector pills -->
@@ -1804,14 +1825,14 @@
           <DialogFooter class="flex sm:justify-between items-center gap-2 pt-2">
             <Button variant="outline" size="sm" @click="callModalOpen = false">Cancel</Button>
             <Button
-              :disabled="isPostingCall || !callContent.trim()"
+              :disabled="isPostingCall || !callContent.trim() || userTokenBalance <= 0n"
               size="sm"
               class="gap-1.5 font-bold cursor-pointer shadow-xs"
               @click="handlePostCallout"
             >
               <Loader2 v-if="isPostingCall" class="w-3.5 h-3.5 animate-spin" />
               <Megaphone v-else class="w-3.5 h-3.5" />
-              <span>Post Call 📢</span>
+              <span>Post Call</span>
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1990,17 +2011,26 @@ const userHoldingUsd = computed(() => {
   return userHoldingTokensCount.value * (currentMarketData.value.priceUsd || 0);
 });
 
-function openCallModal() {
+function openCallModal(): void {
   callModalOpen.value = true;
   callError.value = null;
   if (!callContent.value) {
-    callContent.value = `Calling $${currentToken.value.symbol} — target ${callTargetMcap.value}! 🚀`;
+    callContent.value = `Calling $${currentToken.value.symbol} - target ${callTargetMcap.value}!`;
   }
 }
 
-async function handlePostCallout() {
+function goToBuyFromCall(): void {
+  callModalOpen.value = false;
+  tradeTab.value = 'buy';
+}
+
+async function handlePostCallout(): Promise<void> {
   if (!account.value) {
     openWallet();
+    return;
+  }
+  if (userTokenBalance.value <= 0n) {
+    callError.value = `You must hold a position in $${currentToken.value.symbol} to post a callout. Please buy tokens first.`;
     return;
   }
   const content = callContent.value.trim();

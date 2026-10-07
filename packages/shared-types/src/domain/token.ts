@@ -114,6 +114,7 @@ export interface TokenCommentEntity {
   isLikedByViewer?: boolean;
   targetMcap?: string;
   positionUsd?: number;
+  profitUsd?: number;
   callType?: 'call' | 'comment';
 }
 
@@ -123,6 +124,7 @@ export interface FeedCalloutItem extends TokenCommentEntity {
   tokenLogo?: string;
   tokenMarketCapUsd?: number;
   tokenPriceUsd?: number;
+  holdersCount?: number;
 }
 
 export interface TokenVotesSummary {

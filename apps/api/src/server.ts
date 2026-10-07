@@ -817,7 +817,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       const authorAddress = String(body.authorAddress || '').trim();
       const imageUrl = body.imageUrl ? String(body.imageUrl).trim() : undefined;
       const targetMcap = body.targetMcap ? String(body.targetMcap).trim() : undefined;
-      const positionUsd =
+      let positionUsd =
         typeof body.positionUsd === 'number' && !isNaN(body.positionUsd)
           ? body.positionUsd
           : undefined;
@@ -847,6 +847,88 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         }
       }
 
+      // Callout position check: callers must hold a position in the token to post a callout
+      if (callType === 'call') {
+        let hasPosition = false;
+        let verifiedPositionUsd = positionUsd ?? 0;
+
+        // 1. Check if caller already verified position value
+        if (positionUsd && positionUsd > 0) {
+          hasPosition = true;
+        }
+
+        // 2. Check indexed holders from repository (fast local DB lookup)
+        if (!hasPosition) {
+          try {
+            const holders = await repository.getHolders(address);
+            const inHolders = holders.some(
+              (h) =>
+                h.address.toLowerCase() === authorAddress.toLowerCase() &&
+                parseFloat(h.balance) > 0,
+            );
+            if (inHolders) {
+              hasPosition = true;
+            }
+          } catch {
+            // Non-blocking
+          }
+        }
+
+        // 3. Fallback: on-chain verification with strict 1s timeout to avoid RPC latency
+        if (!hasPosition) {
+          try {
+            const token = await repository.findByAddress(address as `0x${string}`);
+            const chain = token
+              ? chainRegistry.resolveForToken(token)
+              : chainRegistry.getChainByParam(undefined);
+
+            const rpcTimeout = new Promise<bigint>((_, reject) =>
+              setTimeout(() => reject(new Error('RPC_TIMEOUT')), 1000),
+            );
+
+            const balPromise = chain.client.readContract({
+              address: address as `0x${string}`,
+              abi: [
+                {
+                  name: 'balanceOf',
+                  type: 'function',
+                  stateMutability: 'view',
+                  inputs: [{ name: 'account', type: 'address' }],
+                  outputs: [{ name: '', type: 'uint256' }],
+                },
+              ],
+              functionName: 'balanceOf',
+              args: [authorAddress as `0x${string}`],
+            }) as Promise<bigint>;
+
+            const balWei = await Promise.race([balPromise, rpcTimeout]);
+
+            if (balWei > 0n) {
+              hasPosition = true;
+              const decimals = token?.decimals ?? 18;
+              const tokenCount = Number(balWei) / 10 ** decimals;
+              const mkt = await repository.getMarketData(address as `0x${string}`);
+              const price = mkt?.priceUsd ?? 0;
+              verifiedPositionUsd = tokenCount * price;
+            }
+          } catch {
+            // Non-blocking
+          }
+        }
+
+        if (!hasPosition) {
+          return replyError(
+            'NO_TOKEN_POSITION',
+            'You must hold a position in this token to post a callout. Please buy tokens first.',
+            400,
+          );
+        }
+
+        if (verifiedPositionUsd > 0) {
+          positionUsd = verifiedPositionUsd;
+        }
+      }
+
       const comment: TokenCommentEntity = {
         id: crypto.randomUUID(),
         tokenAddress: address,
@@ -873,12 +955,13 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     }
   }
 
-  // POST /api/tokens/:address/comments/:commentId/like
-  const commentLikeMatch = url.pathname.match(
+  // POST /api/comments/:commentId/like OR /api/tokens/:address/comments/:commentId/like
+  const directLikeMatch = url.pathname.match(/^\/api\/comments\/([^/]+)\/like$/);
+  const tokenLikeMatch = url.pathname.match(
     /^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/comments\/([^/]+)\/like$/,
   );
-  if (commentLikeMatch && req.method === 'POST') {
-    const commentId = commentLikeMatch[2];
+  if ((directLikeMatch || tokenLikeMatch) && req.method === 'POST') {
+    const commentId = directLikeMatch ? directLikeMatch[1] : tokenLikeMatch![2];
     try {
       const body = await parseJsonBody<{ userAddress?: string }>(req, 2048);
       const userAddress = String(body.userAddress || '').trim();

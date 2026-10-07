@@ -309,6 +309,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     const commentMigrations = [
       'ALTER TABLE comments ADD COLUMN target_mcap TEXT',
       'ALTER TABLE comments ADD COLUMN position_usd REAL',
+      'ALTER TABLE comments ADD COLUMN profit_usd REAL',
       'ALTER TABLE comments ADD COLUMN call_type TEXT',
     ];
     for (const sql of commentMigrations) {
@@ -598,8 +599,8 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
 
   async saveComment(comment: TokenCommentEntity): Promise<void> {
     const stmt = this.db.prepare(`
-      INSERT INTO comments (id, token_address, author_address, content, image_url, likes_count, created_at, target_mcap, position_usd, call_type)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO comments (id, token_address, author_address, content, image_url, likes_count, created_at, target_mcap, position_usd, profit_usd, call_type)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     stmt.run(
       comment.id,
@@ -611,6 +612,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       comment.createdAt,
       comment.targetMcap ?? null,
       comment.positionUsd ?? null,
+      comment.profitUsd ?? null,
       comment.callType ?? 'call',
     );
   }
@@ -632,6 +634,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       created_at: number;
       target_mcap: string | null;
       position_usd: number | null;
+      profit_usd: number | null;
       call_type: string | null;
     }
     const rows = stmt.all(tokenAddress) as CommentRow[];
@@ -657,6 +660,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       isLikedByViewer: viewerLikedIds.has(r.id),
       targetMcap: r.target_mcap ?? undefined,
       positionUsd: r.position_usd != null ? Number(r.position_usd) : undefined,
+      profitUsd: r.profit_usd != null ? Number(r.profit_usd) : undefined,
       callType: (r.call_type as 'call' | 'comment') ?? 'call',
     }));
   }
@@ -669,7 +673,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     const stmt = this.db.prepare(`
       SELECT 
         c.id, c.token_address, c.author_address, c.content, c.image_url, 
-        c.likes_count, c.created_at, c.target_mcap, c.position_usd, c.call_type,
+        c.likes_count, c.created_at, c.target_mcap, c.position_usd, c.profit_usd, c.call_type,
         t.name as token_name, t.symbol as token_symbol, t.logo as token_logo,
         m.marketCapUsd as token_market_cap, m.priceUsd as token_price_usd
       FROM comments c
@@ -689,6 +693,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       created_at: number;
       target_mcap: string | null;
       position_usd: number | null;
+      profit_usd: number | null;
       call_type: string | null;
       token_name: string | null;
       token_symbol: string | null;
@@ -720,6 +725,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       isLikedByViewer: viewerLikedIds.has(r.id),
       targetMcap: r.target_mcap ?? undefined,
       positionUsd: r.position_usd != null ? Number(r.position_usd) : undefined,
+      profitUsd: r.profit_usd != null ? Number(r.profit_usd) : undefined,
       callType: (r.call_type as 'call' | 'comment') ?? 'call',
       tokenName: r.token_name ?? undefined,
       tokenSymbol: r.token_symbol ?? undefined,

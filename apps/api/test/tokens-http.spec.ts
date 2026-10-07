@@ -154,4 +154,23 @@ describe('Tokens HTTP Endpoints Integration', () => {
     const calloutsRes = await server.fetch(calloutsReq);
     expect(calloutsRes.status).toBe(200);
   });
+
+  it('POST /api/tokens/:address/comments rejects callouts when caller holds no position', async () => {
+    const nonHolder = '0x9999999999999999999999999999999999999999';
+    const req = new Request(`http://localhost:3001/api/tokens/${testAddress}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        authorAddress: nonHolder,
+        content: 'I have no coins but I am calling it anyway',
+        callType: 'call',
+        positionUsd: 0,
+      }),
+    });
+    const res = await server.fetch(req);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.success).toBe(false);
+    expect(json.error.code).toBe('NO_TOKEN_POSITION');
+  });
 });
