@@ -36,13 +36,25 @@
           @click="$emit('selectToken', item.token.address)"
           class="p-3.5 rounded-2xl bg-card border border-border hover:border-primary/60 transition-all cursor-pointer flex items-center justify-between gap-3 group shadow-xs hover:shadow-md"
         >
-          <div class="flex items-center gap-3 min-w-0">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <button
+              type="button"
+              class="p-1 -ml-1 rounded-lg transition-transform hover:scale-110 cursor-pointer select-none shrink-0"
+              :class="isPinned(item.token.address) ? 'text-amber-400' : 'text-muted-foreground/35 hover:text-amber-400'"
+              :title="isPinned(item.token.address) ? 'Unpin coin' : 'Pin to Watchlist'"
+              @click.stop="togglePin(item.token.address)"
+            >
+              <Star
+                class="w-3.5 h-3.5"
+                :class="isPinned(item.token.address) ? 'fill-amber-400 text-amber-400' : ''"
+              />
+            </button>
             <OptimizedImage
               :src="item.token.logo"
               :alt="item.token.name"
               :fallback-text="item.token.symbol"
-              :width="42"
-              :height="42"
+              :width="38"
+              :height="38"
               class="rounded-full border border-border object-cover shrink-0 ring-1 ring-border group-hover:ring-primary/40 transition"
             />
             <div class="min-w-0 truncate">
@@ -223,14 +235,14 @@
     </div>
 
     <!-- ============================================================
-         4A. UBI.FUN TABLE VIEW (COIN, GRAPH, MARKET CAP, BUYBACK, AGE, 24H VOL, 1H, 24H, ACTION)
+         4A. HYBRID UBI.FUN X PONS TABLE VIEW
          ============================================================ -->
     <div
       v-else-if="viewMode === 'table' && filteredTokens.length > 0"
       class="rounded-2xl border border-border bg-card overflow-hidden shadow-xs"
     >
       <div class="overflow-x-auto w-full">
-        <table class="w-full text-left text-xs font-mono min-w-[850px]">
+        <table class="w-full text-left text-xs font-mono min-w-[920px]">
           <thead>
             <tr
               class="border-b border-border text-muted-foreground uppercase tracking-wider text-[11px] bg-muted/40"
@@ -238,12 +250,12 @@
               <th class="py-3 px-4 font-semibold sticky left-0 z-20 bg-muted/80 backdrop-blur-xs">
                 COIN
               </th>
+              <th class="py-3 px-3 font-semibold text-center w-20">PAIR</th>
               <th class="py-3 px-4 font-semibold text-center w-24">GRAPH</th>
               <th class="py-3 px-4 font-semibold text-right">MARKET CAP</th>
-              <th class="py-3 px-4 font-semibold text-center w-40">BONDING</th>
+              <th class="py-3 px-4 font-semibold text-center w-36">BONDING</th>
               <th class="py-3 px-4 font-semibold text-right">AGE</th>
-              <th class="py-3 px-4 font-semibold text-right">VOLUME · 24H</th>
-              <th class="py-3 px-4 font-semibold text-right">1H</th>
+              <th class="py-3 px-4 font-semibold text-right">VOLUME 24H</th>
               <th class="py-3 px-4 font-semibold text-right">24H</th>
               <th class="py-3 px-4 font-semibold text-right">ACTION</th>
             </tr>
@@ -255,19 +267,34 @@
               class="hover:bg-muted/40 transition-colors cursor-pointer group"
               @click="$emit('selectToken', item.token.address)"
             >
-              <!-- 1. COIN (Logo + Name + Symbol + Truncated Address with copy button) -->
+              <!-- 1. COIN (Pin + Logo + Name + Symbol + Creator + Copy Contract) -->
               <td
                 class="py-3.5 px-4 sticky left-0 z-10 bg-card group-hover:bg-muted/40 transition-colors"
               >
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2.5">
+                  <!-- Pons-style Pin / Star Button -->
+                  <button
+                    type="button"
+                    class="p-1 rounded-lg transition-transform hover:scale-110 cursor-pointer select-none shrink-0"
+                    :class="isPinned(item.token.address) ? 'text-amber-400' : 'text-muted-foreground/35 hover:text-amber-400'"
+                    :title="isPinned(item.token.address) ? 'Unpin coin' : 'Pin to Watchlist'"
+                    @click.stop="togglePin(item.token.address)"
+                  >
+                    <Star
+                      class="w-4 h-4"
+                      :class="isPinned(item.token.address) ? 'fill-amber-400 text-amber-400' : ''"
+                    />
+                  </button>
+
                   <OptimizedImage
                     :src="item.token.logo"
                     :alt="item.token.name"
                     :fallback-text="item.token.symbol"
-                    :width="38"
-                    :height="38"
+                    :width="36"
+                    :height="36"
                     class="rounded-full border border-border object-cover shrink-0 ring-1 ring-border group-hover:ring-primary/50 transition"
                   />
+
                   <div class="min-w-0 truncate">
                     <div class="flex items-center gap-1.5 truncate">
                       <span
@@ -280,13 +307,17 @@
                       <span class="font-bold text-xs text-muted-foreground"
                         >${{ item.token.symbol }}</span
                       >
+                      <span class="text-muted-foreground/50 text-[10px] hidden sm:inline">&middot;</span>
+                      <span class="text-[10px] text-muted-foreground truncate hidden sm:inline">
+                        by {{ shortenAddress(item.token.deployer, 4, 3) }}
+                      </span>
                       <button
                         type="button"
                         class="text-[10px] text-muted-foreground hover:text-foreground font-mono flex items-center gap-1 bg-muted/60 px-1.5 py-0.5 rounded transition cursor-pointer"
                         title="Copy Contract Address"
                         @click.stop="copyAddress(item.token.address)"
                       >
-                        <span>{{ shortenAddress(item.token.address, 6, 4) }}</span>
+                        <span>{{ shortenAddress(item.token.address, 4, 3) }}</span>
                         <Check
                           v-if="copiedAddress === item.token.address"
                           class="w-3 h-3 text-emerald-500"
@@ -298,7 +329,19 @@
                 </div>
               </td>
 
-              <!-- 2. GRAPH (Mini SVG Sparkline curve) -->
+              <!-- 2. PAIR (Native Currency Pair like Pons) -->
+              <td class="py-3.5 px-3 text-center">
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-border/70 bg-muted/30 text-[10px] font-mono font-bold text-muted-foreground">
+                  <img
+                    :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
+                    alt=""
+                    class="w-3 h-3 rounded-full object-contain"
+                  />
+                  {{ currencySymbol }}
+                </span>
+              </td>
+
+              <!-- 3. GRAPH (Mini SVG Sparkline curve) -->
               <td class="py-3.5 px-4 text-center">
                 <svg
                   class="inline-block overflow-visible"
@@ -317,7 +360,7 @@
                 </svg>
               </td>
 
-              <!-- 3. MARKET CAP -->
+              <!-- 4. MARKET CAP -->
               <td class="py-3.5 px-4 text-right font-extrabold text-sm text-foreground font-mono">
                 {{
                   (item.marketData?.marketCapUsd ?? 0) > 0
@@ -326,7 +369,7 @@
                 }}
               </td>
 
-              <!-- 4. BONDING / PROGRESS -->
+              <!-- 5. BONDING / PROGRESS -->
               <td class="py-3.5 px-4">
                 <div class="space-y-1.5 max-w-[130px] mx-auto font-mono text-center">
                   <div class="flex items-center justify-between text-[10px]">
@@ -344,23 +387,18 @@
                 </div>
               </td>
 
-              <!-- 5. AGE -->
+              <!-- 6. AGE -->
               <td class="py-3.5 px-4 text-right text-muted-foreground font-semibold text-xs">
                 {{ formatRelativeTime(item.token.createdAt) }}
               </td>
 
-              <!-- 6. VOLUME · 24H -->
+              <!-- 7. VOLUME 24H -->
               <td class="py-3.5 px-4 text-right text-muted-foreground font-semibold text-xs">
                 {{
                   (item.marketData?.volume24hUsd ?? 0) > 0
                     ? formatCompactUsd(item.marketData?.volume24hUsd)
                     : '—'
                 }}
-              </td>
-
-              <!-- 7. 1H % — no 1h candle data in API; show dash until priceChange1h is available -->
-              <td class="py-3.5 px-4 text-right font-bold text-xs">
-                <span class="text-muted-foreground">—</span>
               </td>
 
               <!-- 8. 24H % -->
@@ -379,7 +417,7 @@
                 <Button
                   size="sm"
                   variant="outline"
-                  class="h-8 px-3 text-xs font-bold rounded-xl border-border hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all cursor-pointer inline-flex items-center gap-1"
+                  class="h-8 px-3 text-xs font-bold rounded-xl border-border hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all cursor-pointer inline-flex items-center gap-1 font-mono"
                   @click.stop="$emit('selectToken', item.token.address)"
                 >
                   <span>Trade</span>
@@ -435,21 +473,36 @@
                   </h3>
                   <div class="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
                     <span>${{ item.token.symbol }}</span>
-                    <span>·</span>
+                    <span>&middot;</span>
                     <span>{{ formatRelativeTime(item.token.createdAt) }}</span>
                   </div>
                 </div>
               </div>
 
-              <span
-                class="text-xs font-mono font-bold"
-                :class="
-                  (item.marketData?.priceChange24h ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'
-                "
-              >
-                {{ (item.marketData?.priceChange24h ?? 0) >= 0 ? '+' : ''
-                }}{{ (item.marketData?.priceChange24h ?? 0).toFixed(2) }}%
-              </span>
+              <!-- Top-right: Pin Button + Price Change -->
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  class="p-1 rounded-lg transition-transform hover:scale-110 cursor-pointer select-none"
+                  :class="isPinned(item.token.address) ? 'text-amber-400' : 'text-muted-foreground/35 hover:text-amber-400'"
+                  :title="isPinned(item.token.address) ? 'Unpin coin' : 'Pin to Watchlist'"
+                  @click.stop="togglePin(item.token.address)"
+                >
+                  <Star
+                    class="w-4 h-4"
+                    :class="isPinned(item.token.address) ? 'fill-amber-400 text-amber-400' : ''"
+                  />
+                </button>
+                <span
+                  class="text-xs font-mono font-bold"
+                  :class="
+                    (item.marketData?.priceChange24h ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'
+                  "
+                >
+                  {{ (item.marketData?.priceChange24h ?? 0) >= 0 ? '+' : ''
+                  }}{{ (item.marketData?.priceChange24h ?? 0).toFixed(2) }}%
+                </span>
+              </div>
             </div>
 
             <!-- Price & MCap -->
@@ -461,7 +514,7 @@
                 </span>
               </div>
               <div class="text-right">
-                <span class="text-[10px] text-muted-foreground block">VOLUME · 24H</span>
+                <span class="text-[10px] text-muted-foreground block">VOLUME 24H</span>
                 <span class="font-semibold text-muted-foreground">
                   {{
                     (item.marketData?.volume24hUsd ?? 0) > 0
@@ -533,6 +586,7 @@ import {
   ArrowRight,
   Copy,
   Check,
+  Star,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -556,18 +610,53 @@ defineEmits<{
 }>();
 
 const viewMode = ref<'table' | 'grid'>('table');
-const activeMarketTab = ref<'trending' | 'newest' | 'curve' | 'top' | 'highvol' | 'gainers'>(
-  'trending',
-);
+const activeMarketTab = ref<
+  'trending' | 'newest' | 'curve' | 'top' | 'highvol' | 'gainers' | 'pinned'
+>('trending');
 
-const marketTabs = [
+// Watchlist Pin Feature (Pons style with localStorage persistence)
+const pinnedTokens = ref<Set<string>>(new Set());
+
+function loadPinnedTokens() {
+  if (typeof window === 'undefined') return;
+  try {
+    const raw = localStorage.getItem('proto_pinned_tokens');
+    if (raw) {
+      pinnedTokens.value = new Set(JSON.parse(raw));
+    }
+  } catch {}
+}
+
+function togglePin(address: string) {
+  if (!address) return;
+  const lower = address.toLowerCase();
+  const next = new Set(pinnedTokens.value);
+  if (next.has(lower)) {
+    next.delete(lower);
+  } else {
+    next.add(lower);
+  }
+  pinnedTokens.value = next;
+  try {
+    localStorage.setItem('proto_pinned_tokens', JSON.stringify(Array.from(next)));
+  } catch {}
+}
+
+function isPinned(address: string): boolean {
+  return pinnedTokens.value.has(address.toLowerCase());
+}
+
+const marketTabs = computed(() => [
   { label: 'Trending', value: 'trending' as const },
   { label: 'New', value: 'newest' as const },
   { label: 'Fair launch', value: 'curve' as const },
   { label: 'Top', value: 'top' as const },
   { label: 'High vol', value: 'highvol' as const },
   { label: 'Movers', value: 'gainers' as const },
-];
+  { label: `Pinned (${pinnedTokens.value.size})`, value: 'pinned' as const },
+]);
+
+const currencySymbol = computed(() => activeNetwork.value.nativeCurrency.symbol);
 
 const searchQuery = ref('');
 const tokenStore = useTokenStore();
@@ -652,7 +741,9 @@ const filteredTokens = computed(() => {
     );
   }
 
-  if (activeMarketTab.value === 'newest') {
+  if (activeMarketTab.value === 'pinned') {
+    return list.filter((item) => isPinned(item.token.address));
+  } else if (activeMarketTab.value === 'newest') {
     list.sort((a, b) => b.token.createdAt - a.token.createdAt);
   } else if (activeMarketTab.value === 'curve') {
     list = list.filter((item) => !item.marketData?.isGraduated);
@@ -687,6 +778,7 @@ const paginatedTokens = computed(() => {
 });
 
 onMounted(async () => {
+  loadPinnedTokens();
   if (typeof window !== 'undefined' && window.innerWidth < 768) {
     viewMode.value = 'grid';
   }

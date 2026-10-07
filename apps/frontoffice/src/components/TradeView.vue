@@ -55,6 +55,19 @@
                 <h1 class="text-xl sm:text-2xl font-black tracking-tight text-foreground truncate">
                   {{ currentToken.name }}
                 </h1>
+                <!-- Pin / Star Watchlist Button (Pons style) -->
+                <button
+                  type="button"
+                  class="p-1 rounded-lg transition-transform hover:scale-110 cursor-pointer select-none"
+                  :class="isPinned(currentToken.address) ? 'text-amber-400' : 'text-muted-foreground/40 hover:text-amber-400'"
+                  :title="isPinned(currentToken.address) ? 'Unpin coin' : 'Pin to Watchlist'"
+                  @click.stop="togglePin(currentToken.address)"
+                >
+                  <Star
+                    class="w-4 h-4"
+                    :class="isPinned(currentToken.address) ? 'fill-amber-400 text-amber-400' : ''"
+                  />
+                </button>
                 <Badge
                   :variant="currentMarketData.isGraduated ? 'default' : 'outline'"
                   class="text-[10px] font-mono h-4 px-1.5 border-border uppercase font-semibold"
@@ -1888,6 +1901,7 @@ import {
   Share2,
   MessageCircle,
   BarChart2,
+  Star,
 } from 'lucide-vue-next';
 import { useSwap, SLIPPAGE_WARN_THRESHOLD, parseAmountToWei } from '../composables/useSwap';
 import { useWallet } from '../composables/useWallet';
@@ -2162,6 +2176,38 @@ function shareCalloutToX(cmt: TokenCommentEntity) {
     );
     window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank', 'noopener,noreferrer');
   }
+}
+
+// Watchlist Pin Feature (Pons style with localStorage persistence)
+const pinnedTokens = ref<Set<string>>(new Set());
+
+function loadPinnedTokens() {
+  if (typeof window === 'undefined') return;
+  try {
+    const raw = localStorage.getItem('proto_pinned_tokens');
+    if (raw) {
+      pinnedTokens.value = new Set(JSON.parse(raw));
+    }
+  } catch {}
+}
+
+function togglePin(address: string) {
+  if (!address) return;
+  const lower = address.toLowerCase();
+  const next = new Set(pinnedTokens.value);
+  if (next.has(lower)) {
+    next.delete(lower);
+  } else {
+    next.add(lower);
+  }
+  pinnedTokens.value = next;
+  try {
+    localStorage.setItem('proto_pinned_tokens', JSON.stringify(Array.from(next)));
+  } catch {}
+}
+
+function isPinned(address: string): boolean {
+  return pinnedTokens.value.has(address.toLowerCase());
 }
 
 function resolveSafeUrl(url?: string): string {
@@ -3392,6 +3438,7 @@ watch(
 );
 
 onMounted(async () => {
+  loadPinnedTokens();
   const addr = (props.tokenAddress as `0x${string}`) || currentToken.value.address;
   if (addr && addr !== '0x0000000000000000000000000000000000000000') {
     currentToken.value.address = addr;

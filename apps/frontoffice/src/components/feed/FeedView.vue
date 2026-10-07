@@ -498,6 +498,18 @@
                     <span class="font-black text-foreground text-xs sm:text-sm">
                       ${{ call.tokenSymbol || 'TOKEN' }}
                     </span>
+                    <button
+                      type="button"
+                      class="p-0.5 rounded transition-transform hover:scale-110 cursor-pointer select-none"
+                      :class="isPinned(call.tokenAddress) ? 'text-amber-400' : 'text-muted-foreground/35 hover:text-amber-400'"
+                      :title="isPinned(call.tokenAddress) ? 'Unpin coin' : 'Pin to Watchlist'"
+                      @click.stop="togglePin(call.tokenAddress)"
+                    >
+                      <Star
+                        class="w-3.5 h-3.5"
+                        :class="isPinned(call.tokenAddress) ? 'fill-amber-400 text-amber-400' : ''"
+                      />
+                    </button>
                     <!-- GMGN Chain Badge -->
                     <span
                       class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[9px] font-mono font-bold"
@@ -780,6 +792,7 @@ import {
   ShieldCheck,
   X,
   Link2,
+  Star,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
@@ -850,6 +863,38 @@ watch(activeNetwork, () => {
     selectedToken.value = null;
   }
 });
+
+// Watchlist Pin Feature (Pons style with localStorage persistence)
+const pinnedTokens = ref<Set<string>>(new Set());
+
+function loadPinnedTokens() {
+  if (typeof window === 'undefined') return;
+  try {
+    const raw = localStorage.getItem('proto_pinned_tokens');
+    if (raw) {
+      pinnedTokens.value = new Set(JSON.parse(raw));
+    }
+  } catch {}
+}
+
+function togglePin(address: string) {
+  if (!address) return;
+  const lower = address.toLowerCase();
+  const next = new Set(pinnedTokens.value);
+  if (next.has(lower)) {
+    next.delete(lower);
+  } else {
+    next.add(lower);
+  }
+  pinnedTokens.value = next;
+  try {
+    localStorage.setItem('proto_pinned_tokens', JSON.stringify(Array.from(next)));
+  } catch {}
+}
+
+function isPinned(address: string): boolean {
+  return pinnedTokens.value.has(address.toLowerCase());
+}
 
 // Social Modals state
 const isShareModalOpen = ref(false);
@@ -1221,6 +1266,7 @@ function openImage(url?: string): void {
 }
 
 onMounted(async () => {
+  loadPinnedTokens();
   await Promise.allSettled([fetchFeed(account.value || undefined), fetchTokens()]);
   if (networkTokens.value?.length > 0 && !selectedToken.value) {
     selectedToken.value = networkTokens.value[0].token;
