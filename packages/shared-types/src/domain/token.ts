@@ -110,10 +110,19 @@ export interface TokenCommentEntity {
   content: string;
   imageUrl?: string;
   likesCount: number;
+  repostsCount?: number;
+  quotesCount?: number;
+  repliesCount?: number;
+  viewsCount?: number;
+  parentId?: string;
+  quotedCalloutId?: string;
+  quotedCallout?: FeedCalloutItem;
   createdAt: number;
   isLikedByViewer?: boolean;
+  isRepostedByViewer?: boolean;
   targetMcap?: string;
   positionUsd?: number;
+  supplyPercent?: number;
   profitUsd?: number;
   callType?: 'call' | 'comment';
 }
@@ -125,4 +134,5 @@ export interface FeedCalloutItem extends TokenCommentEntity {
   tokenMarketCapUsd?: number;
   tokenPriceUsd?: number;
   holdersCount?: number;
+  replies?: FeedCalloutItem[];
 }
