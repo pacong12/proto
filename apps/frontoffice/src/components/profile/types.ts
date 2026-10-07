@@ -2,6 +2,7 @@ export interface ProfileStorageData {
   displayName: string;
   bio: string;
   avatarUrl: string;
+  bannerUrl?: string;
   twitter: string;
   telegram: string;
 }

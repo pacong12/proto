@@ -3,12 +3,33 @@
   <div class="rounded-3xl border border-border bg-card overflow-hidden shadow-sm font-sans">
     <!-- 1. Ambient Banner -->
     <div
-      class="h-28 sm:h-40 bg-gradient-to-r from-zinc-950 via-zinc-900 to-black relative overflow-hidden border-b border-border/60"
+      class="h-28 sm:h-44 bg-gradient-to-r from-zinc-950 via-zinc-900 to-black relative overflow-hidden border-b border-border/60 group"
+      :class="isOwnProfile ? 'cursor-pointer' : ''"
+      @click="isOwnProfile && emit('edit')"
     >
+      <img
+        v-if="resolvedBannerUrl"
+        :src="resolvedBannerUrl"
+        alt="Cover Banner"
+        class="w-full h-full object-cover"
+      />
       <div
+        v-else
         class="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.25),rgba(255,255,255,0))]"
       />
-      <div class="absolute top-3 right-3 flex items-center gap-2">
+
+      <div
+        v-if="isOwnProfile"
+        class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+        title="Update header banner"
+      >
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-background/85 text-foreground shadow-xs">
+          <Camera class="w-3.5 h-3.5" />
+          Update Banner
+        </span>
+      </div>
+
+      <div class="absolute top-3 right-3 flex items-center gap-2 z-20">
         <span
           class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-background/80 backdrop-blur-md border border-border/80 text-foreground"
         >
@@ -149,6 +170,7 @@ defineProps<{
   isOwnProfile: boolean;
   profileData: ProfileStorageData;
   resolvedAvatarUrl: string;
+  resolvedBannerUrl?: string;
   activeNetwork: NetworkConfig;
   copiedShare: boolean;
 }>();

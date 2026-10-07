@@ -29,6 +29,7 @@
         :is-own-profile="true"
         :profile-data="profileData"
         :resolved-avatar-url="resolvedAvatarUrl"
+        :resolved-banner-url="resolvedBannerUrl"
         :active-network="activeNetwork"
         :copied-share="copiedShare"
         @edit="editModalOpen = true"
@@ -314,20 +315,24 @@ function isSafeImageUrl(url: string): boolean {
     trimmed.startsWith('http://') ||
     trimmed.startsWith('ipfs://') ||
     trimmed.startsWith('data:image/') ||
-    trimmed.startsWith('blob:')
+    trimmed.startsWith('blob:') ||
+    trimmed.startsWith('/api/ipfs/')
   );
 }
 
-const resolvedAvatarUrl = computed(() => {
-  if (!profileData.value.avatarUrl) return '';
-  const url = profileData.value.avatarUrl.trim();
-  if (!isSafeImageUrl(url)) return '';
-  if (url.startsWith('ipfs://')) {
-    const hash = url.replace('ipfs://', '');
-    return `https://ipfs.io/ipfs/${hash}`;
+function resolveSafeUrl(url?: string): string {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (!isSafeImageUrl(trimmed)) return '';
+  if (trimmed.startsWith('ipfs://')) {
+    const hash = trimmed.replace('ipfs://', '');
+    return `/api/ipfs/${hash}`;
   }
-  return url;
-});
+  return trimmed;
+}
+
+const resolvedAvatarUrl = computed(() => resolveSafeUrl(profileData.value.avatarUrl));
+const resolvedBannerUrl = computed(() => resolveSafeUrl(profileData.value.bannerUrl));
 
 function loadLocalProfile() {
   if (!connectedAccount.value || typeof window === 'undefined') return;
@@ -340,6 +345,7 @@ function loadLocalProfile() {
         displayName: '',
         bio: '',
         avatarUrl: '',
+        bannerUrl: '',
         twitter: '',
         telegram: '',
       };
