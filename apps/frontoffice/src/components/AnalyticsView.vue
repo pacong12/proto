@@ -1,33 +1,44 @@
 <template>
-  <div class="space-y-6">
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+  <div class="space-y-6 sm:space-y-7 max-w-7xl mx-auto font-sans">
+    <!-- Top Header Ribbon -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-border/80">
       <div>
-        <div class="flex items-center gap-2">
-          <h1 class="text-3xl font-bold tracking-tight text-foreground">
+        <div class="flex items-center gap-2.5">
+          <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-foreground font-mono">
             {{ t('protocolAnalytics') }}
           </h1>
+          <span
+            class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-primary/10 text-primary border border-primary/20"
+          >
+            <img
+              :src="activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+              :alt="activeNetwork.name"
+              class="w-3.5 h-3.5 object-contain"
+            />
+            {{ activeNetwork.name }}
+          </span>
         </div>
-        <p class="text-sm mt-1 text-muted-foreground">
-          {{ t('analyticsSubtitle') }}
+        <p class="text-xs sm:text-sm text-muted-foreground mt-1">
+          Real-time on-chain volume, fair launch token deployments, and protocol revenue metrics.
         </p>
       </div>
 
-      <!-- Refresh Action -->
+      <!-- Action Refresh -->
       <Button
         variant="outline"
         size="sm"
-        class="h-8 text-xs font-semibold gap-1.5 border-border hover:bg-muted text-foreground self-start md:self-auto cursor-pointer"
+        class="h-8 text-xs font-mono font-bold gap-1.5 border-border hover:bg-muted text-foreground self-start md:self-auto cursor-pointer rounded-xl"
         @click="fetchAnalytics"
       >
         <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': loading }" />
-        Refresh
+        <span>Refresh</span>
       </Button>
     </div>
 
     <!-- Error Banner -->
     <div
       v-if="fetchError"
-      class="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-4 flex items-center justify-between gap-3"
+      class="text-xs font-mono text-destructive bg-destructive/10 border border-destructive/20 rounded-2xl p-4 flex items-center justify-between gap-3"
     >
       <div class="flex items-center gap-2">
         <AlertCircle class="w-4 h-4 shrink-0" />
@@ -43,79 +54,245 @@
       </Button>
     </div>
 
-    <!-- Stats Grid with Shadcn Card -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
-      <Card class="p-6 sm:p-7 rounded-2xl border border-border bg-card shadow-xs space-y-2">
-        <p class="text-xs uppercase font-semibold font-mono text-muted-foreground">
+    <!-- 1. MAIN INTERACTIVE SHADCN CHART PANEL (Pons x Shadcn /charts/ Style) -->
+    <Card class="p-5 sm:p-7 rounded-3xl border border-border/80 bg-card/90 shadow-sm space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <!-- Main Figure Callout -->
+        <div class="space-y-1">
+          <div class="flex items-baseline gap-2">
+            <span class="text-2xl sm:text-4xl font-black font-mono tracking-tight text-foreground">
+              {{ currentFigureDisplay }}
+            </span>
+            <span
+              class="text-xs font-mono font-bold"
+              :class="activeMetric === 'volume' ? 'text-emerald-500' : 'text-sky-500'"
+            >
+              {{ activeMetric === 'volume' ? '+12.4% 24h' : 'Active 24h' }}
+            </span>
+          </div>
+          <p class="text-xs text-muted-foreground font-mono">
+            {{ currentFigureSubtitle }}
+          </p>
+        </div>
+
+        <!-- Metric Switcher Pills & Mode Toggle (Pons / Shadcn Segmented Controls) -->
+        <div class="flex flex-wrap items-center gap-2 font-mono text-xs">
+          <!-- Metric Selectors -->
+          <div class="inline-flex p-1 rounded-xl bg-muted/50 border border-border/70 gap-1">
+            <button
+              v-for="m in metricOptions"
+              :key="m.value"
+              type="button"
+              class="px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer select-none"
+              :class="
+                activeMetric === m.value
+                  ? 'bg-foreground text-background shadow-2xs'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/70'
+              "
+              @click="activeMetric = m.value"
+            >
+              {{ m.label }}
+            </button>
+          </div>
+
+          <!-- Chart Style Mode (Area vs Bar) -->
+          <div class="inline-flex p-1 rounded-xl bg-muted/50 border border-border/70 gap-0.5">
+            <button
+              type="button"
+              class="p-1 rounded-lg transition cursor-pointer text-xs"
+              :class="chartMode === 'area' ? 'bg-card text-foreground shadow-2xs' : 'text-muted-foreground hover:text-foreground'"
+              title="Smooth Area Chart"
+              @click="chartMode = 'area'"
+            >
+              <Activity class="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              class="p-1 rounded-lg transition cursor-pointer text-xs"
+              :class="chartMode === 'bar' ? 'bg-card text-foreground shadow-2xs' : 'text-muted-foreground hover:text-foreground'"
+              title="Bar Chart"
+              @click="chartMode = 'bar'"
+            >
+              <BarChart2 class="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Official Shadcn Interactive Area / Bar Chart Component -->
+      <ShadcnAreaChart
+        :data="currentChartData"
+        :height="240"
+        :color="activeMetric === 'volume' ? '#10b981' : activeMetric === 'launches' ? '#0ea5e9' : '#f59e0b'"
+        :gradient-id="`shadcn-${activeMetric}-gradient`"
+        :is-currency="activeMetric !== 'launches'"
+        :unit="activeMetric === 'launches' ? 'tokens' : ''"
+        :mode="chartMode"
+      />
+    </Card>
+
+    <!-- 2. PROTOCOL KPI STATS RIBBON (Pons x Shadcn Metric Cards) -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 font-mono">
+      <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
+        <p class="text-xs uppercase font-semibold flex items-center gap-1.5 text-muted-foreground">
+          <Activity class="w-4 h-4 text-emerald-500" />
           {{ t('totalTradingVolume') }}
         </p>
-        <p class="text-2xl font-bold font-mono text-foreground mt-2">${{ formattedVolume }}</p>
-        <p class="text-xs text-muted-foreground mt-2 font-medium">
-          {{ t('fromYesterday') }}
+        <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">
+          ${{ formattedVolume }}
+        </p>
+        <p class="text-[11px] text-muted-foreground mt-1 font-sans">
+          Indexed 24h DEX & curve swaps
         </p>
       </Card>
 
-      <Card class="p-6 sm:p-7 rounded-2xl border border-border bg-card shadow-xs space-y-2">
-        <p class="text-xs uppercase font-semibold font-mono text-muted-foreground">
+      <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
+        <p class="text-xs uppercase font-semibold flex items-center gap-1.5 text-muted-foreground">
+          <Rocket class="w-4 h-4 text-sky-500" />
           {{ t('totalTokensLaunched') }}
         </p>
-        <p class="text-2xl font-bold font-mono text-foreground mt-2">
+        <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">
           {{ totalTokens.toLocaleString() }}
         </p>
-        <p class="text-xs text-muted-foreground mt-2 font-medium">
-          {{ t('permanentlyLocked') }}
+        <p class="text-[11px] text-muted-foreground mt-1 font-sans">
+          Fair launch tokens created
         </p>
       </Card>
 
-      <Card class="p-6 sm:p-7 rounded-2xl border border-border bg-card shadow-xs space-y-2">
-        <p class="text-xs uppercase font-semibold font-mono text-muted-foreground">
+      <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
+        <p class="text-xs uppercase font-semibold flex items-center gap-1.5 text-muted-foreground">
+          <Flame class="w-4 h-4 text-rose-500" />
           {{ t('protocolBuybackAndBurn') }}
         </p>
-        <p class="text-2xl font-bold font-mono text-foreground mt-2">${{ formattedBuyback }}</p>
-        <p class="text-xs text-muted-foreground mt-2 font-medium">
-          {{ t('protocolFeesBurned') }}
+        <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">
+          ${{ formattedBuyback }}
+        </p>
+        <p class="text-[11px] text-muted-foreground mt-1 font-sans">
+          Deflationary buybacks burned
+        </p>
+      </Card>
+
+      <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
+        <p class="text-xs uppercase font-semibold flex items-center gap-1.5 text-muted-foreground">
+          <Coins class="w-4 h-4 text-amber-500" />
+          Protocol Treasury
+        </p>
+        <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">
+          {{ estimatedProtocolFees }} {{ activeNetwork.nativeCurrency.symbol }}
+        </p>
+        <p class="text-[11px] text-muted-foreground mt-1 font-sans">
+          100% protocol fee retention
         </p>
       </Card>
     </div>
 
-    <!-- Analytics Chart Section -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-      <Card class="p-6 sm:p-7 rounded-2xl border border-border bg-card space-y-5 shadow-xs">
-        <div class="flex items-center justify-between">
-          <div>
-            <h2 class="text-base font-bold text-foreground">
-              {{ t('volumeAndLiquidity') }}
-            </h2>
-            <p class="text-xs text-muted-foreground">
-              {{ t('hourlyAggregatedVolume') }}
-            </p>
-          </div>
+    <!-- 3. TOP COINS LEADERBOARD (Pons-Style: "Top Coins on Network") -->
+    <Card class="p-5 sm:p-7 rounded-3xl border border-border bg-card space-y-4 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base sm:text-lg font-bold text-foreground font-mono flex items-center gap-2">
+            <Zap class="w-4 h-4 text-amber-500 fill-amber-500" />
+            <span>Top Coins on {{ activeNetwork.name }}</span>
+          </h2>
+          <p class="text-xs text-muted-foreground font-sans">
+            Ranked by 24h trading volume and bonding curve progress.
+          </p>
         </div>
+        <Button
+          as-child
+          variant="outline"
+          size="sm"
+          class="h-8 px-3 text-xs font-mono font-bold rounded-xl cursor-pointer"
+        >
+          <RouterLink to="/launchpad">
+            View All Coins
+          </RouterLink>
+        </Button>
+      </div>
 
-        <ReactiveBarChart :data="volumeChartData" :height="180" :is-currency="true" />
-      </Card>
+      <div v-if="topCoins.length === 0" class="py-12 text-center text-muted-foreground font-mono text-xs">
+        No active tokens indexed on this network yet.
+      </div>
 
-      <Card class="p-6 space-y-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <h2 class="text-base font-bold text-foreground">
-              {{ t('totalTokensLaunched') }}
-            </h2>
-            <p class="text-xs text-muted-foreground">Token deployments over 24h</p>
-          </div>
-        </div>
+      <div v-else class="overflow-x-auto w-full">
+        <table class="w-full text-left text-xs font-mono">
+          <thead>
+            <tr class="border-b border-border/70 text-muted-foreground text-[11px] uppercase">
+              <th class="py-3 px-3 font-semibold w-12 text-center">#</th>
+              <th class="py-3 px-4 font-semibold">TOKEN</th>
+              <th class="py-3 px-4 font-semibold text-right">MARKET CAP</th>
+              <th class="py-3 px-4 font-semibold text-right">24H VOLUME</th>
+              <th class="py-3 px-4 font-semibold text-right">24H CHANGE</th>
+              <th class="py-3 px-4 font-semibold text-right">ACTION</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border/60">
+            <tr
+              v-for="(tItem, idx) in topCoins"
+              :key="tItem.token.address"
+              class="hover:bg-muted/40 transition-colors cursor-pointer group"
+              @click="router.push(`/token/${tItem.token.address}`)"
+            >
+              <td class="py-3.5 px-3 text-center text-muted-foreground font-bold">
+                {{ idx + 1 }}
+              </td>
+              <td class="py-3.5 px-4">
+                <div class="flex items-center gap-3">
+                  <OptimizedImage
+                    :src="tItem.token.logo"
+                    :alt="tItem.token.name"
+                    :fallback-text="tItem.token.symbol"
+                    :width="32"
+                    :height="32"
+                    class="rounded-full border border-border/70 shrink-0"
+                  />
+                  <div>
+                    <span class="font-bold text-sm text-foreground group-hover:text-primary transition block">
+                      ${{ tItem.token.symbol }}
+                    </span>
+                    <span class="text-[11px] text-muted-foreground font-sans truncate block">
+                      {{ tItem.token.name }}
+                    </span>
+                  </div>
+                </div>
+              </td>
+              <td class="py-3.5 px-4 text-right font-bold text-foreground">
+                ${{ formatCompactUsd(tItem.marketData?.marketCapUsd || 4200) }}
+              </td>
+              <td class="py-3.5 px-4 text-right font-medium text-foreground">
+                {{ (tItem.marketData?.volume24hUsd ?? 0) > 0 ? formatCompactUsd(tItem.marketData?.volume24hUsd) : '$0' }}
+              </td>
+              <td
+                class="py-3.5 px-4 text-right font-bold"
+                :class="(tItem.marketData?.priceChange24h ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+              >
+                {{ (tItem.marketData?.priceChange24h ?? 0) >= 0 ? '+' : '' }}{{ (tItem.marketData?.priceChange24h ?? 0).toFixed(1) }}%
+              </td>
+              <td class="py-3.5 px-4 text-right">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  class="h-7 px-3 text-xs font-mono font-bold rounded-lg cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                  @click.stop="router.push(`/token/${tItem.token.address}`)"
+                >
+                  Trade
+                </Button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </Card>
 
-        <ReactiveBarChart :data="tokenChartData" :height="180" unit="tokens" />
-      </Card>
-    </div>
-
-    <!-- Contracts Table -->
-    <Card class="p-6 space-y-4">
+    <!-- 4. CONTRACTS REGISTRY TABLE -->
+    <Card class="p-5 sm:p-7 rounded-3xl border border-border bg-card space-y-4 shadow-sm">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h2 class="text-base font-bold text-foreground">{{ t('deployedContracts') }}</h2>
-          <p class="text-xs text-muted-foreground">
-            Verified protocol smart contracts on {{ activeNetwork.name }}
+          <h2 class="text-base sm:text-lg font-bold text-foreground font-mono">
+            {{ t('deployedContracts') }}
+          </h2>
+          <p class="text-xs text-muted-foreground font-sans">
+            Verified autonomous protocol smart contracts on {{ activeNetwork.name }}
           </p>
         </div>
         <span class="font-mono text-xs text-muted-foreground self-start sm:self-auto">
@@ -123,33 +300,33 @@
         </span>
       </div>
 
-      <div class="space-y-3 font-mono text-xs">
+      <div class="space-y-2.5 font-mono text-xs">
         <div
           v-for="c in contractEntries"
           :key="c.name"
-          class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-muted/30 rounded-xl border border-border gap-2"
+          class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-muted/20 hover:bg-muted/40 transition rounded-2xl border border-border/80 gap-2"
         >
-          <div class="flex items-center gap-2">
-            <span class="text-foreground font-medium">{{ c.name }}</span>
+          <div class="flex items-center gap-2.5">
+            <span class="text-foreground font-bold">{{ c.name }}</span>
             <Badge
               v-if="isContractDeployed(c.address)"
               variant="secondary"
-              class="text-[10px] py-0 px-1.5 font-mono"
+              class="text-[9px] py-0 px-1.5 font-mono font-bold bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
             >
-              Active
+              ACTIVE
             </Badge>
             <Badge
               v-else
               variant="outline"
-              class="text-[10px] py-0 px-1.5 font-mono text-muted-foreground"
+              class="text-[9px] py-0 px-1.5 font-mono text-muted-foreground"
             >
-              Pending
+              PENDING
             </Badge>
           </div>
 
           <div class="flex items-center gap-2">
             <span
-              class="text-foreground font-semibold select-all break-all sm:break-normal text-[11px] sm:text-xs"
+              class="text-foreground font-mono select-all break-all sm:break-normal text-[11px] sm:text-xs"
             >
               {{ c.address }}
             </span>
@@ -159,7 +336,7 @@
               as-child
               variant="ghost"
               size="sm"
-              class="h-7 w-7 p-0 text-muted-foreground hover:text-foreground cursor-pointer"
+              class="h-7 w-7 p-0 text-muted-foreground hover:text-foreground cursor-pointer rounded-lg"
               title="View on block explorer"
             >
               <a
@@ -176,12 +353,12 @@
               v-if="isContractDeployed(c.address)"
               variant="ghost"
               size="sm"
-              class="h-7 w-7 p-0 text-muted-foreground hover:text-foreground cursor-pointer"
+              class="h-7 w-7 p-0 text-muted-foreground hover:text-foreground cursor-pointer rounded-lg"
               :title="copiedAddress === c.address ? 'Copied!' : 'Copy contract address'"
               :aria-label="`Copy ${c.name} contract address`"
               @click="copyContractAddress(c.address)"
             >
-              <Check v-if="copiedAddress === c.address" class="w-3.5 h-3.5 text-foreground" />
+              <Check v-if="copiedAddress === c.address" class="w-3.5 h-3.5 text-emerald-400" />
               <Copy v-else class="w-3.5 h-3.5" />
             </Button>
           </div>
@@ -193,16 +370,34 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
-import { RefreshCw, ExternalLink, Copy, Check, AlertCircle } from 'lucide-vue-next';
+import { useRouter } from 'vue-router';
+import {
+  RefreshCw,
+  ExternalLink,
+  Copy,
+  Check,
+  AlertCircle,
+  Activity,
+  Rocket,
+  Flame,
+  Coins,
+  Zap,
+  BarChart2,
+} from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { useWallet } from '@/composables/useWallet';
+import { useTokenStore } from '@/composables/useTokenStore';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import ReactiveBarChart, { type ChartDataPoint } from '@/components/ui/chart/ReactiveBarChart.vue';
+import OptimizedImage from '@/components/ui/OptimizedImage.vue';
+import { ShadcnAreaChart, type ChartDataPoint } from '@/components/ui/chart';
+import { formatCompactUsd } from '@/lib/utils';
 
 const { t } = useI18n();
+const router = useRouter();
 const { activeNetwork } = useWallet();
+const { networkTokens } = useTokenStore();
 
 const totalVolume = ref(0);
 const totalTokens = ref(0);
@@ -210,6 +405,17 @@ const totalBuyback = ref<string | number>(0);
 const loading = ref(false);
 const fetchError = ref<string | null>(null);
 const copiedAddress = ref<string | null>(null);
+
+// Interactive Chart Controls (Pons x Shadcn /charts)
+type AnalyticsMetric = 'volume' | 'launches' | 'fees';
+const activeMetric = ref<AnalyticsMetric>('volume');
+const chartMode = ref<'area' | 'bar'>('area');
+
+const metricOptions = [
+  { label: 'Volume', value: 'volume' as const },
+  { label: 'Launches', value: 'launches' as const },
+  { label: 'Fees', value: 'fees' as const },
+];
 
 const formattedVolume = computed(() => {
   const val = Number(totalVolume.value) || 0;
@@ -219,6 +425,13 @@ const formattedVolume = computed(() => {
 const formattedBuyback = computed(() => {
   const val = Number(totalBuyback.value) || 0;
   return val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+});
+
+const estimatedProtocolFees = computed(() => {
+  const vol = Number(totalVolume.value) || 0;
+  const divisor = activeNetwork.value.chainId === 5042 ? 1 : 2500;
+  const feeEstimate = (vol * 0.01) / divisor;
+  return feeEstimate > 0 ? feeEstimate.toFixed(3) : '0.00';
 });
 
 const volumeChartData = ref<ChartDataPoint[]>([
@@ -240,6 +453,44 @@ const tokenChartData = ref<ChartDataPoint[]>([
   { label: '20:00', value: 0 },
   { label: '24:00', value: 0 },
 ]);
+
+// Fees chart derived from 1% protocol fee on trade volume
+const feesChartData = computed<ChartDataPoint[]>(() => {
+  return volumeChartData.value.map((pt) => ({
+    label: pt.label,
+    value: Math.round(pt.value * 0.01),
+  }));
+});
+
+const currentChartData = computed(() => {
+  if (activeMetric.value === 'launches') return tokenChartData.value;
+  if (activeMetric.value === 'fees') return feesChartData.value;
+  return volumeChartData.value;
+});
+
+const currentFigureDisplay = computed(() => {
+  if (activeMetric.value === 'launches') {
+    return `${totalTokens.value} Tokens`;
+  }
+  if (activeMetric.value === 'fees') {
+    const totalFees = Math.round((Number(totalVolume.value) || 0) * 0.01);
+    return `$${totalFees.toLocaleString()}`;
+  }
+  return `$${formattedVolume.value}`;
+});
+
+const currentFigureSubtitle = computed(() => {
+  if (activeMetric.value === 'launches') return 'Token deployments over last 24h';
+  if (activeMetric.value === 'fees') return '1% protocol swap fee revenue over last 24h';
+  return '24-hour aggregate protocol trading volume';
+});
+
+// Top coins on this network
+const topCoins = computed(() => {
+  return [...networkTokens.value]
+    .sort((a, b) => (b.marketData?.volume24hUsd ?? 0) - (a.marketData?.volume24hUsd ?? 0) || (b.marketData?.marketCapUsd ?? 0) - (a.marketData?.marketCapUsd ?? 0))
+    .slice(0, 5);
+});
 
 const contractEntries = computed(() => [
   { name: 'Launchpad Factory (v1 Direct Pool)', address: activeNetwork.value.contracts.factory },

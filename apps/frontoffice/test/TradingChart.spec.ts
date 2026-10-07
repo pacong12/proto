@@ -1,10 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { TradingChart, SimpleChart } from '../src/components/ui/chart';
+import { TradingChart, SimpleChart, ShadcnAreaChart } from '../src/components/ui/chart';
 
 describe('TradingChart & Candlestick Component', () => {
-  it('exports TradingChart and SimpleChart from chart UI module', () => {
+  it('exports TradingChart, SimpleChart, and ShadcnAreaChart from chart UI module', () => {
     expect(TradingChart).toBeDefined();
     expect(SimpleChart).toBeDefined();
+    expect(ShadcnAreaChart).toBeDefined();
+    expect(ShadcnAreaChart.__name || ShadcnAreaChart.name).toBe('ShadcnAreaChart');
   });
 
   it('verifies TradingChart component definition and props', () => {
