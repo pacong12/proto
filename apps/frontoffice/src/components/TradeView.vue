@@ -892,16 +892,16 @@
                   <Loader2 class="w-4 h-4 animate-spin mx-auto mb-2 text-primary" />
                   <span class="text-xs font-mono">Loading callouts...</span>
                 </div>
-                <div
+                <Empty
                   v-else-if="callouts.length === 0"
-                  class="py-12 text-center text-muted-foreground space-y-1 font-mono"
+                  :title="'No callouts yet'"
+                  :description="`Be the first to call $${currentToken.symbol} to the community!`"
+                  class="py-12 border-none bg-muted/20"
                 >
-                  <Megaphone class="w-6 h-6 mx-auto mb-1.5 text-muted-foreground opacity-60" />
-                  <p class="text-xs font-bold">No callouts yet.</p>
-                  <p class="text-[11px] text-muted-foreground">
-                    Be the first to call ${{ currentToken.symbol }} to the community!
-                  </p>
-                </div>
+                  <template #icon>
+                    <Megaphone class="w-6 h-6 text-muted-foreground opacity-60" />
+                  </template>
+                </Empty>
                 <div v-else class="space-y-3">
                   <div
                     v-for="cmt in paginatedCallouts"
@@ -941,7 +941,7 @@
                     <p
                       class="text-xs leading-relaxed text-foreground font-sans break-words whitespace-pre-wrap font-medium"
                     >
-                      {{ cmt.content }}
+                      <CashtagText :text="cmt.content" :tokens="[{ token: currentToken }]" />
                     </p>
 
                     <!-- Optional Attached Image -->
@@ -998,32 +998,58 @@
                       </div>
                     </div>
 
-                    <!-- Card Actions: Heart like + Share Call to X -->
+                    <!-- Card Actions: Thread Replies + Like + Total Views + Share Sheet (Twitter/X style) -->
                     <div
-                      class="flex items-center justify-between pt-1 border-t border-border text-[11px] font-mono"
+                      class="flex items-center justify-between pt-1 border-t border-border text-xs font-sans text-muted-foreground"
                     >
                       <button
                         type="button"
-                        aria-label="Like callout"
-                        class="flex items-center gap-1.5 text-muted-foreground hover:text-rose-500 transition cursor-pointer"
-                        :class="cmt.isLikedByViewer ? 'text-rose-500 font-bold' : ''"
-                        @click="toggleLike(cmt.id)"
+                        class="group flex items-center gap-1 hover:text-sky-500 transition-colors cursor-pointer text-xs"
+                        title="View replies"
+                        @click="openThreadModal(cmt)"
                       >
-                        <Heart
-                          class="w-3.5 h-3.5"
-                          :class="cmt.isLikedByViewer ? 'fill-rose-500 text-rose-500' : ''"
-                        />
-                        <span>{{ cmt.likesCount }}</span>
+                        <div class="p-1 rounded-full group-hover:bg-sky-500/10 transition-colors">
+                          <MessageCircle class="w-3.5 h-3.5" />
+                        </div>
+                        <span class="group-hover:text-sky-500">{{ cmt.repliesCount || 0 }}</span>
                       </button>
 
                       <button
                         type="button"
-                        class="flex items-center gap-1 text-muted-foreground hover:text-foreground transition cursor-pointer text-[10px] font-bold"
-                        title="Share this call on X"
-                        @click="shareCalloutToX(cmt)"
+                        aria-label="Like callout"
+                        class="group flex items-center gap-1 hover:text-rose-500 transition-colors cursor-pointer text-xs"
+                        :class="cmt.isLikedByViewer ? 'text-rose-500 font-bold' : ''"
+                        @click="toggleLike(cmt.id)"
                       >
-                        <Share2 class="w-3 h-3" />
-                        <span>Share Call</span>
+                        <div class="p-1 rounded-full group-hover:bg-rose-500/10 transition-colors">
+                          <Heart
+                            class="w-3.5 h-3.5"
+                            :class="cmt.isLikedByViewer ? 'fill-rose-500 text-rose-500' : ''"
+                          />
+                        </div>
+                        <span class="group-hover:text-rose-500">{{ cmt.likesCount }}</span>
+                      </button>
+
+                      <!-- Total Views (Display only, strictly NOT clickable, Twitter / X style) -->
+                      <div
+                        class="flex items-center gap-1 text-muted-foreground select-none cursor-default text-xs"
+                        title="Views"
+                      >
+                        <div class="p-1">
+                          <BarChart2 class="w-3.5 h-3.5 text-muted-foreground/70" />
+                        </div>
+                        <span>{{ formatViews(cmt.viewsCount || 0) }}</span>
+                      </div>
+
+                      <button
+                        type="button"
+                        class="group flex items-center text-muted-foreground hover:text-sky-500 transition-colors cursor-pointer text-xs"
+                        title="Share callout"
+                        @click="openShareModal(cmt)"
+                      >
+                        <div class="p-1 rounded-full group-hover:bg-sky-500/10 transition-colors">
+                          <Share2 class="w-3.5 h-3.5" />
+                        </div>
                       </button>
                     </div>
                   </div>
@@ -1818,6 +1844,24 @@
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <!-- Share Sheet & Thread Modals -->
+      <ShareModal
+        :is-open="isShareModalOpen"
+        :call="activeShareCall"
+        @close="isShareModalOpen = false"
+      />
+
+      <ThreadModal
+        :is-open="isThreadModalOpen"
+        :target-call="activeThreadCall"
+        :account="account"
+        :tokens="[{ token: currentToken }]"
+        @close="isThreadModalOpen = false"
+        @toggle-like="toggleLike"
+        @share="openShareModal"
+        @reply-posted="onReplyPosted"
+      />
     </template>
   </div>
 </template>
@@ -1842,6 +1886,8 @@ import {
   ArrowRight,
   Megaphone,
   Share2,
+  MessageCircle,
+  BarChart2,
 } from 'lucide-vue-next';
 import { useSwap, SLIPPAGE_WARN_THRESHOLD, parseAmountToWei } from '../composables/useSwap';
 import { useWallet } from '../composables/useWallet';
@@ -1866,10 +1912,12 @@ import PendingTaxBanner from './tax/PendingTaxBanner.vue';
 import TaxTimelockPanel from './tax/TaxTimelockPanel.vue';
 import { Progress } from '@/components/ui/progress';
 import { Pagination } from '@/components/ui/pagination';
+import { Empty } from '@/components/ui/empty';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { TradingChart } from '@/components/ui/chart';
+import { CashtagText, ShareModal, ThreadModal } from '@/components/feed';
 import {
   shortenAddress,
   formatTokenNumber,
@@ -1888,6 +1936,7 @@ import {
   type LaunchedTokenEntity,
   type TokenMarketData,
   type TokenCommentEntity,
+  type FeedCalloutItem,
 } from '@proto/shared-types';
 
 const props = defineProps<{
@@ -2056,6 +2105,52 @@ async function handlePostCallout(): Promise<void> {
     callError.value = (err as Error).message || 'Network error.';
   } finally {
     isPostingCall.value = false;
+  }
+}
+
+// Social Modals state
+const isShareModalOpen = ref(false);
+const activeShareCall = ref<FeedCalloutItem | null>(null);
+const isThreadModalOpen = ref(false);
+const activeThreadCall = ref<FeedCalloutItem | null>(null);
+
+function formatViews(val: number): string {
+  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
+  if (val >= 1_000) return `${(val / 1_000).toFixed(1)}K`;
+  return String(val || 0);
+}
+
+function openShareModal(cmt: TokenCommentEntity) {
+  activeShareCall.value = {
+    ...cmt,
+    tokenName: currentToken.value.name,
+    tokenSymbol: currentToken.value.symbol,
+    tokenLogo: currentToken.value.logo,
+    tokenMarketCapUsd: currentMarketData.value?.marketCapUsd,
+    tokenPriceUsd: currentMarketData.value?.priceUsd,
+  };
+  isShareModalOpen.value = true;
+}
+
+function openThreadModal(cmt: TokenCommentEntity) {
+  activeThreadCall.value = {
+    ...cmt,
+    tokenName: currentToken.value.name,
+    tokenSymbol: currentToken.value.symbol,
+    tokenLogo: currentToken.value.logo,
+    tokenMarketCapUsd: currentMarketData.value?.marketCapUsd,
+    tokenPriceUsd: currentMarketData.value?.priceUsd,
+  };
+  isThreadModalOpen.value = true;
+}
+
+function onReplyPosted(reply: FeedCalloutItem) {
+  if (activeThreadCall.value) {
+    activeThreadCall.value.repliesCount = (activeThreadCall.value.repliesCount || 0) + 1;
+  }
+  const rootItem = callouts.value.find((c) => c.id === reply.parentId);
+  if (rootItem) {
+    rootItem.repliesCount = (rootItem.repliesCount || 0) + 1;
   }
 }
 

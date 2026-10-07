@@ -6,8 +6,12 @@
     <div v-if="latestLaunches.length > 0" class="space-y-3">
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-xs uppercase tracking-widest font-mono font-bold text-muted-foreground">
-            New on {{ activeNetwork.name }}
+          <h2 class="text-xs uppercase tracking-widest font-mono font-bold text-muted-foreground flex items-center gap-2">
+            <span>New on {{ activeNetwork.name }}</span>
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-primary/10 text-primary border border-primary/20">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              {{ activeNetwork.nativeCurrency.symbol }}
+            </span>
           </h2>
           <p class="text-xs text-muted-foreground/80 mt-0.5">Latest launches</p>
         </div>
@@ -568,6 +572,7 @@ const marketTabs = [
 const searchQuery = ref('');
 const tokenStore = useTokenStore();
 const allTokens = tokenStore.tokens;
+const networkTokens = tokenStore.networkTokens;
 const loading = tokenStore.loading;
 const apiError = ref<string | null>(null);
 const currentPage = ref(1);
@@ -622,25 +627,6 @@ function getSparkline(change = 0, width = 72, height = 24) {
 
   return { d, isUp, color: isUp ? '#22c55e' : '#ef4444' };
 }
-
-// Filtered by Active Network (Arc vs Robinhood)
-const networkTokens = computed(() => {
-  const isArc = activeNetwork.value.chainId === ARC_CHAIN.chainId;
-  const arcWeth = ARC_CHAIN.contracts.weth.toLowerCase();
-  const arcFactory = ARC_CHAIN.contracts.factory.toLowerCase();
-  const arcFactoryV2 = (ARC_CHAIN.contracts.factoryV2 ?? ARC_CHAIN.contracts.factory).toLowerCase();
-
-  return allTokens.value.filter((item) => {
-    const paired = item.token.pairedToken?.toLowerCase();
-    const pool = item.token.poolAddress?.toLowerCase();
-    const isTokenArc =
-      paired === arcWeth ||
-      pool === arcFactory ||
-      pool === arcFactoryV2 ||
-      pool === '0x00689b589add3ee1995e26e7f4e5cbf262486eb4';
-    return isArc ? isTokenArc : !isTokenArc;
-  });
-});
 
 // Top 4 Latest Launches
 const latestLaunches = computed(() => {
