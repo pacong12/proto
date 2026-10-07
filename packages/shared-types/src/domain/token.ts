@@ -126,12 +126,3 @@ export interface FeedCalloutItem extends TokenCommentEntity {
   tokenPriceUsd?: number;
   holdersCount?: number;
 }
-
-export interface TokenVotesSummary {
-  tokenAddress: string;
-  bullishCount: number;
-  bearishCount: number;
-  totalVotes: number;
-  bullishPercent: number;
-  viewerVote?: 'bullish' | 'bearish';
-}

@@ -4,7 +4,6 @@ import {
   TradeEventEntity,
   CandlestickEntity,
   TokenCommentEntity,
-  TokenVotesSummary,
 } from '@proto/shared-types';
 
 export interface TokenRepositoryPort {
@@ -53,10 +52,4 @@ export interface TokenRepositoryPort {
     commentId: string,
     userAddress: string,
   ): Promise<{ liked: boolean; likesCount: number }>;
-  saveVote?(
-    tokenAddress: string,
-    userAddress: string,
-    voteType: 'bullish' | 'bearish',
-  ): Promise<void>;
-  getVotes?(tokenAddress: string, viewerAddress?: string): Promise<TokenVotesSummary>;
 }

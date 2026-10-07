@@ -4,7 +4,6 @@ import {
   TradeEventEntity,
   CandlestickEntity,
   TokenCommentEntity,
-  TokenVotesSummary,
 } from '@proto/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import {
@@ -148,7 +147,6 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
 
   private comments = new Map<string, TokenCommentEntity[]>();
   private commentLikes = new Map<string, Set<string>>();
-  private votes = new Map<string, Map<string, 'bullish' | 'bearish'>>();
 
   async saveComment(comment: TokenCommentEntity): Promise<void> {
     const key = comment.tokenAddress.toLowerCase();
@@ -218,42 +216,5 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
       if (match) match.likesCount = likesCount;
     }
     return { liked: !liked, likesCount };
-  }
-
-  async saveVote(
-    tokenAddress: string,
-    userAddress: string,
-    voteType: 'bullish' | 'bearish',
-  ): Promise<void> {
-    const tokenKey = tokenAddress.toLowerCase();
-    let tokenVoteMap = this.votes.get(tokenKey);
-    if (!tokenVoteMap) {
-      tokenVoteMap = new Map();
-      this.votes.set(tokenKey, tokenVoteMap);
-    }
-    tokenVoteMap.set(userAddress.toLowerCase(), voteType);
-  }
-
-  async getVotes(tokenAddress: string, viewerAddress?: string): Promise<TokenVotesSummary> {
-    const tokenKey = tokenAddress.toLowerCase();
-    const tokenVoteMap = this.votes.get(tokenKey) ?? new Map();
-    let bullishCount = 0;
-    let bearishCount = 0;
-    for (const v of tokenVoteMap.values()) {
-      if (v === 'bullish') bullishCount++;
-      else if (v === 'bearish') bearishCount++;
-    }
-    const totalVotes = bullishCount + bearishCount;
-    const bullishPercent = totalVotes > 0 ? Math.round((bullishCount / totalVotes) * 100) : 50;
-    const viewer = viewerAddress?.toLowerCase();
-    const viewerVote = viewer ? tokenVoteMap.get(viewer) : undefined;
-    return {
-      tokenAddress,
-      bullishCount,
-      bearishCount,
-      totalVotes,
-      bullishPercent,
-      viewerVote,
-    };
   }
 }

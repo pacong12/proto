@@ -174,7 +174,7 @@
             </div>
           </div>
 
-          <!-- Right Action Controls (Voice Call, Share, Copy Link) -->
+          <!-- Right Action Controls (Callout, Share, Copy Link) -->
           <div class="flex items-center gap-2 shrink-0 flex-wrap">
             <!-- Callout Button (pump.fun style) -->
             <Button
@@ -1853,11 +1853,7 @@ import {
   Loader2,
   Settings,
   ExternalLink,
-  ShieldCheck,
   Sparkles,
-  Rocket,
-  Flame,
-  MessageSquare,
   Send,
   Heart,
   RefreshCw,
@@ -1865,7 +1861,6 @@ import {
   ArrowRight,
   Megaphone,
   Share2,
-  TrendingUp,
 } from 'lucide-vue-next';
 import { useSwap, SLIPPAGE_WARN_THRESHOLD, parseAmountToWei } from '../composables/useSwap';
 import { useWallet } from '../composables/useWallet';
@@ -1912,7 +1907,6 @@ import {
   type LaunchedTokenEntity,
   type TokenMarketData,
   type TokenCommentEntity,
-  type TokenVotesSummary,
 } from '@proto/shared-types';
 
 const props = defineProps<{
@@ -2374,15 +2368,6 @@ const commentsLoading = ref(false);
 const newCommentText = ref('');
 const isPostingComment = ref(false);
 const commentError = ref<string | null>(null);
-
-// Sentiment Votes State
-const votesSummary = ref<TokenVotesSummary>({
-  tokenAddress: '',
-  bullishCount: 0,
-  bearishCount: 0,
-  totalVotes: 0,
-  bullishPercent: 50,
-});
 
 // Pagination state for bottom tabs (Trades, Top Traders, Holders, Comments)
 const tradesPage = ref(1);
@@ -2908,42 +2893,6 @@ async function toggleLike(commentId: string) {
   }
 }
 
-async function fetchVotes(address: string) {
-  try {
-    const viewerParam = account.value ? `?viewer=${account.value}` : '';
-    const res = await fetch(`/api/tokens/${address}/votes${viewerParam}`);
-    const envelope = await res.json();
-    if (envelope.success && envelope.data) {
-      votesSummary.value = envelope.data;
-    }
-  } catch {
-    // Non-blocking
-  }
-}
-
-async function castVote(type: 'bullish' | 'bearish') {
-  if (!account.value) {
-    openWallet();
-    return;
-  }
-  try {
-    const res = await fetch(`/api/tokens/${currentToken.value.address}/vote`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userAddress: account.value,
-        voteType: type,
-      }),
-    });
-    const envelope = await res.json();
-    if (envelope.success && envelope.data) {
-      votesSummary.value = envelope.data;
-    }
-  } catch {
-    // Non-blocking
-  }
-}
-
 // -----------------------------------------------------------------------
 // Multi-Timeframe Candlestick Engine (1m, 5m, 15m, 1h, 4h, 1d)
 // Continuous timeline from token release to now
@@ -3341,7 +3290,6 @@ async function loadTokenData(address: `0x${string}`) {
     fetchDevActivity(address),
     fetchHolders(address),
     fetchComments(address),
-    fetchVotes(address),
     loadOnchainTax(address),
     loadPendingTax(address, tokenNetwork.value.chainId),
   ]);
@@ -3375,11 +3323,7 @@ watch(
   () => account.value,
   (newAcc, oldAcc) => {
     if (newAcc && newAcc !== oldAcc) {
-      Promise.allSettled([
-        fetchUserTokenBalance(true),
-        fetchComments(currentToken.value.address),
-        fetchVotes(currentToken.value.address),
-      ]);
+      Promise.allSettled([fetchUserTokenBalance(true), fetchComments(currentToken.value.address)]);
     } else if (!newAcc) {
       userTokenBalance.value = 0n;
     }

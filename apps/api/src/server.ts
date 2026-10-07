@@ -983,48 +983,6 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     }
   }
 
-  // GET & POST /api/tokens/:address/votes (or /vote)
-  const votesMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/votes?$/);
-  if (votesMatch && req.method === 'GET') {
-    const address = votesMatch[1];
-    const viewer = url.searchParams.get('viewer') || undefined;
-    const summary = (await repository.getVotes?.(address, viewer)) || {
-      tokenAddress: address,
-      bullishCount: 0,
-      bearishCount: 0,
-      totalVotes: 0,
-      bullishPercent: 50,
-    };
-    return new Response(safeStringify({ success: true, data: summary, timestamp: Date.now() }), {
-      headers,
-    });
-  }
-
-  if (votesMatch && req.method === 'POST') {
-    const address = votesMatch[1];
-    try {
-      const body = await parseJsonBody<{ userAddress?: string; voteType?: string }>(req, 2048);
-      const userAddress = String(body.userAddress || '').trim();
-      const voteType = String(body.voteType || '').toLowerCase();
-      if (!userAddress || !/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
-        return replyError('INVALID_ADDRESS', 'Valid Ethereum address required to vote', 400);
-      }
-      if (voteType !== 'bullish' && voteType !== 'bearish') {
-        return replyError('INVALID_VOTE', 'Vote type must be "bullish" or "bearish"', 400);
-      }
-      await repository.saveVote?.(address, userAddress, voteType as 'bullish' | 'bearish');
-      const summary = await repository.getVotes?.(address, userAddress);
-      return new Response(safeStringify({ success: true, data: summary, timestamp: Date.now() }), {
-        headers,
-      });
-    } catch (e) {
-      if ((e as Error)?.message === 'PAYLOAD_TOO_LARGE') {
-        return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
-      }
-      return replyError('VOTE_ERROR', 'Failed to record vote', 400);
-    }
-  }
-
   // GET /api/tokens/:address
   const tokenMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})$/);
   if (tokenMatch && req.method === 'GET') {

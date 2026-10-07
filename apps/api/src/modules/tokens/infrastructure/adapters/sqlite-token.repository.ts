@@ -8,7 +8,6 @@ import {
   TradeEventEntity,
   CandlestickEntity,
   TokenCommentEntity,
-  TokenVotesSummary,
 } from '@proto/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import {
@@ -330,16 +329,6 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
         user_address TEXT NOT NULL,
         created_at INTEGER NOT NULL,
         PRIMARY KEY (comment_id, user_address)
-      );
-    `);
-
-    this.db.run(`
-      CREATE TABLE IF NOT EXISTS token_votes (
-        token_address TEXT NOT NULL,
-        user_address TEXT NOT NULL,
-        vote_type TEXT NOT NULL CHECK (vote_type IN ('bullish', 'bearish')),
-        created_at INTEGER NOT NULL,
-        PRIMARY KEY (token_address, user_address)
       );
     `);
   }
@@ -778,60 +767,6 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
         return { liked: true, likesCount: countRow ? Number(countRow.likes_count) : 1 };
       }
     })() as { liked: boolean; likesCount: number };
-  }
-
-  async saveVote(
-    tokenAddress: string,
-    userAddress: string,
-    voteType: 'bullish' | 'bearish',
-  ): Promise<void> {
-    const stmt = this.db.prepare(`
-      INSERT OR REPLACE INTO token_votes (token_address, user_address, vote_type, created_at)
-      VALUES (?, ?, ?, ?)
-    `);
-    stmt.run(tokenAddress.toLowerCase(), userAddress.toLowerCase(), voteType, Date.now());
-  }
-
-  async getVotes(tokenAddress: string, viewerAddress?: string): Promise<TokenVotesSummary> {
-    const countStmt = this.db.prepare(`
-      SELECT
-        SUM(CASE WHEN vote_type = 'bullish' THEN 1 ELSE 0 END) as bullish,
-        SUM(CASE WHEN vote_type = 'bearish' THEN 1 ELSE 0 END) as bearish,
-        COUNT(*) as total
-      FROM token_votes
-      WHERE LOWER(token_address) = LOWER(?)
-    `);
-    const counts = countStmt.get(tokenAddress) as {
-      bullish: number | null;
-      bearish: number | null;
-      total: number | null;
-    } | null;
-    const bullishCount = Number(counts?.bullish || 0);
-    const bearishCount = Number(counts?.bearish || 0);
-    const totalVotes = Number(counts?.total || 0);
-    const bullishPercent = totalVotes > 0 ? Math.round((bullishCount / totalVotes) * 100) : 50;
-
-    let viewerVote: 'bullish' | 'bearish' | undefined;
-    if (viewerAddress) {
-      const viewerStmt = this.db.prepare(`
-        SELECT vote_type FROM token_votes
-        WHERE LOWER(token_address) = LOWER(?) AND LOWER(user_address) = LOWER(?)
-        LIMIT 1
-      `);
-      const row = viewerStmt.get(tokenAddress, viewerAddress) as {
-        vote_type: 'bullish' | 'bearish';
-      } | null;
-      if (row) viewerVote = row.vote_type;
-    }
-
-    return {
-      tokenAddress,
-      bullishCount,
-      bearishCount,
-      totalVotes,
-      bullishPercent,
-      viewerVote,
-    };
   }
 
   close(): void {
