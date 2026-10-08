@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { formatPriceUsd, formatCompactUsd, formatRelativeTime } from '@/lib/utils';
 import type { CandlePoint } from './TradingChart.vue';
 
@@ -75,10 +77,10 @@ const isBullish = computed(() => {
   return last.close >= first.open;
 });
 
-// Theme accent color: dynamic neon pink/green or props.color
+// Theme accent color: dynamic green/red or props.color
 const lineColor = computed(() => {
   if (props.color) return props.color;
-  return isBullish.value ? '#FC4198' : '#ef4444';
+  return isBullish.value ? '#22c55e' : '#ef4444';
 });
 
 // Dynamic min & max price with margin
@@ -154,7 +156,7 @@ const volumeBars = computed(() => {
       y,
       width: barW,
       height: bh,
-      color: isUp ? 'rgba(252, 65, 152, 0.28)' : 'rgba(239, 68, 68, 0.28)',
+      color: isUp ? 'rgba(34, 197, 94, 0.35)' : 'rgba(239, 68, 68, 0.35)',
     };
   });
 });
@@ -470,8 +472,8 @@ function formatDisplayPrice(val: number): string {
         </g>
       </svg>
 
-      <!-- Floating Interactive Tooltip Card (Shadcn Card Component Aesthetic) -->
-      <div
+      <!-- Floating Interactive Tooltip Card (Official Shadcn Card Component) -->
+      <Card
         v-if="activePoint"
         class="absolute pointer-events-none z-30 transition-all duration-75 ease-out shadow-2xl rounded-xl border border-border/80 bg-zinc-950/95 p-2.5 text-xs font-mono text-zinc-100 backdrop-blur-md"
         :style="{
@@ -484,18 +486,14 @@ function formatDisplayPrice(val: number): string {
           <!-- Time Row -->
           <div class="text-[10px] text-muted-foreground font-semibold flex items-center justify-between gap-3">
             <span>{{ formatFullTime(activePoint.data.timestamp) }}</span>
-            <span
+            <Badge
               v-if="activePoint.data.open > 0"
-              class="font-bold px-1 py-0.2 rounded text-[9px]"
-              :class="
-                activePoint.data.close >= activePoint.data.open
-                  ? 'text-emerald-400 bg-emerald-500/15'
-                  : 'text-rose-400 bg-rose-500/15'
-              "
+              :variant="activePoint.data.close >= activePoint.data.open ? 'default' : 'destructive'"
+              class="px-1 py-0 h-3.5 text-[9px] font-mono font-bold leading-none"
             >
               {{ activePoint.data.close >= activePoint.data.open ? '+' : ''
               }}{{ (((activePoint.data.close - activePoint.data.open) / activePoint.data.open) * 100).toFixed(2) }}%
-            </span>
+            </Badge>
           </div>
 
           <!-- Price Row -->
@@ -514,7 +512,7 @@ function formatDisplayPrice(val: number): string {
             </span>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
   </div>
 </template>

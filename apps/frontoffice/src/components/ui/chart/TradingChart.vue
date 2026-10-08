@@ -7,18 +7,25 @@ import {
   AreaSeries,
   PriceScaleMode,
   CrosshairMode,
-  LineStyle,
   ColorType,
+  TickMarkType,
   type IChartApi,
   type ISeriesApi,
   type Time,
   type AutoscaleInfo,
 } from 'lightweight-charts';
-import { CandlestickChart, TrendingUp, Maximize2 } from 'lucide-vue-next';
-import ShadcnTradingLineChart from './ShadcnTradingLineChart.vue';
+import {
+  CandlestickChart,
+  TrendingUp,
+  Maximize,
+  Minimize,
+  ScanLine,
+  ChevronsRight,
+  Loader2,
+} from 'lucide-vue-next';
 
 // ---------------------------------------------------------------------------
-// Types
+// Types & props
 // ---------------------------------------------------------------------------
 
 export interface CandlePoint {
@@ -30,17 +37,23 @@ export interface CandlePoint {
   volume?: number;
 }
 
+interface Bar {
+  time: Time;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
 interface Props {
   data: CandlePoint[];
   tokenSymbol?: string;
   tokenAddress?: string;
-  height?: number;
+  height?: number; // desktop height in px; mobile is fixed at 300
   resolution?: number;
-  chartMode?: 'price' | 'mcap';
-  currencyMode?: 'usd' | 'native';
-  nativeSymbol?: string;
-  nativeQuotePrice?: number;
-  totalSupply?: number;
+  loading?: boolean; // parent sets true while fetching a new timeframe
+  totalSupply?: number; // used for the Market Cap mode (price x supply)
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -48,94 +61,64 @@ const props = withDefaults(defineProps<Props>(), {
   tokenAddress: '',
   height: 420,
   resolution: 60,
-  chartMode: 'price',
-  currencyMode: 'usd',
-  nativeSymbol: 'ETH',
-  nativeQuotePrice: 2700,
+  loading: false,
   totalSupply: 1_000_000_000,
 });
 
-const emit = defineEmits<{
-  (e: 'update:chartMode', val: 'price' | 'mcap'): void;
-  (e: 'update:currencyMode', val: 'usd' | 'native'): void;
-}>();
-
 // ---------------------------------------------------------------------------
-// Refs / state
+// State
 // ---------------------------------------------------------------------------
 
+const root = ref<HTMLElement | null>(null);
 const chartContainer = ref<HTMLDivElement | null>(null);
+
 let chart: IChartApi | null = null;
-let candleSeries: ISeriesApi<'Candlestick'> | null = null;
-let areaSeries: ISeriesApi<'Area'> | null = null;
+let mainSeries: ISeriesApi<'Candlestick'> | ISeriesApi<'Area'> | null = null;
 let volumeSeries: ISeriesApi<'Histogram'> | null = null;
-let resizeObserver: ResizeObserver | null = null;
 let themeObserver: MutationObserver | null = null;
 
-const chartType = ref<'candles' | 'area'>('candles');
-const isLogScale = ref(false);
-const hoveredBar = ref<CandlePoint | null>(null);
+// Bars currently drawn (already scaled for the active mode). Read by autoscale.
+let shownBars: Bar[] = [];
+let lastKey = '';
+let lastLen = 0;
+let lastLastTime: number | null = null;
 
-const activeChartMode = ref<'price' | 'mcap'>(props.chartMode);
-const activeCurrencyMode = ref<'usd' | 'native'>(props.currencyMode);
-
-watch(
-  () => props.chartMode,
-  (val) => {
-    if (val && val !== activeChartMode.value) {
-      activeChartMode.value = val;
-      initChart();
-    }
-  },
-);
-
-watch(
-  () => props.currencyMode,
-  (val) => {
-    if (val && val !== activeCurrencyMode.value) {
-      activeCurrencyMode.value = val;
-      initChart();
-    }
-  },
-);
-
-function setChartMode(mode: 'price' | 'mcap') {
-  if (activeChartMode.value === mode) return;
-  activeChartMode.value = mode;
-  emit('update:chartMode', mode);
-  initChart();
+const PREF_KEY = 'trading-chart:prefs';
+function loadPrefs(): { type?: string; mode?: string; log?: boolean; clip?: boolean } {
+  try {
+    return JSON.parse(localStorage.getItem(PREF_KEY) || '{}');
+  } catch {
+    return {};
+  }
 }
+const prefs = loadPrefs();
 
-function setCurrencyMode(mode: 'usd' | 'native') {
-  if (activeCurrencyMode.value === mode) return;
-  activeCurrencyMode.value = mode;
-  emit('update:currencyMode', mode);
-  initChart();
-}
+const chartType = ref<'candles' | 'area'>(prefs.type === 'area' ? 'area' : 'candles');
+const valueMode = ref<'price' | 'mcap'>(prefs.mode === 'price' ? 'price' : 'mcap');
+const isLogScale = ref(!!prefs.log);
+const clipWicks = ref(prefs.clip !== false);
+const isFullscreen = ref(false);
+const isAwayFromLatest = ref(false);
+const hoveredBar = ref<Bar | null>(null);
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function checkDark(): boolean {
-  return typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
-}
-
-/**
- * Detect whether the entire dataset has zero price variance.
- * lightweight-charts collapses to a hairline when minValue === maxValue
- * across all bars; we need to know this upfront to apply autoscaleInfoProvider.
- */
-function isDataFlat(data: ReturnType<typeof formatData>): boolean {
-  if (data.length === 0) return true;
-  const first = data[0].close;
-  return data.every(
-    (d) => d.open === first && d.high === first && d.low === first && d.close === first,
-  );
+function savePrefs() {
+  try {
+    localStorage.setItem(
+      PREF_KEY,
+      JSON.stringify({
+        type: chartType.value,
+        mode: valueMode.value,
+        log: isLogScale.value,
+        clip: clipWicks.value,
+      }),
+    );
+  } catch {
+    // storage unavailable: ignore
+  }
 }
 
 // ---------------------------------------------------------------------------
-// Theme configuration
+// Colors (single source of truth: matching --bull/--bear)
 // ---------------------------------------------------------------------------
 
 function getCssVar(name: string, fallback: string): string {
@@ -144,267 +127,181 @@ function getCssVar(name: string, fallback: string): string {
   return val || fallback;
 }
 
-function getThemeConfig(isDark: boolean) {
-  const bg = getCssVar('--background', isDark ? '#09090b' : '#ffffff');
-  const border = getCssVar('--border', isDark ? '#27272a' : '#e4e4e7');
-  const textMuted = getCssVar('--muted-foreground', isDark ? '#a1a1aa' : '#52525b');
+const BULL = '#22c55e';
+const BEAR = '#ef4444';
+const BULL_VOL = 'rgba(34, 197, 94, 0.6)';
+const BEAR_VOL = 'rgba(239, 68, 68, 0.6)';
 
-  return {
-    layout: {
-      background: {
-        type: ColorType.Solid,
-        color: bg,
-      },
-      textColor: textMuted,
-      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-    },
-    grid: {
-      vertLines: { color: isDark ? 'rgba(39,39,42,0.4)' : 'rgba(244,244,245,0.8)' },
-      horzLines: { color: isDark ? 'rgba(39,39,42,0.4)' : 'rgba(244,244,245,0.8)' },
-    },
-    crosshair: {
-      mode: CrosshairMode.Normal,
-      vertLine: {
-        color: textMuted,
-        width: 1 as const,
-        style: LineStyle.Dashed,
-        labelBackgroundColor: border,
-      },
-      horzLine: {
-        color: textMuted,
-        width: 1 as const,
-        style: LineStyle.Dashed,
-        labelBackgroundColor: border,
-      },
-    },
-    rightPriceScale: {
-      borderColor: border,
-      scaleMargins: { top: 0.12, bottom: 0.22 },
-      mode: isLogScale.value ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal,
-    },
-    timeScale: {
-      borderColor: border,
-      timeVisible: true,
-      secondsVisible: false,
-      rightOffset: 12,
-      barSpacing: 22,
-      minBarSpacing: 6,
-    },
-  };
+function isDark(): boolean {
+  return typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
 }
 
 // ---------------------------------------------------------------------------
-// Data formatting
-// Per lightweight-charts docs:
-//   - time must be UTCTimestamp (integer seconds, strictly ascending, no dups)
-//   - high >= max(open, close), low <= min(open, close)
-//   - Never mutate raw OHLC values; use autoscaleInfoProvider for display margin
+// Data
 // ---------------------------------------------------------------------------
 
-function getModeMultiplier(): number {
-  if (activeChartMode.value === 'mcap') {
-    const supply = props.totalSupply > 0 ? props.totalSupply : 1_000_000_000;
-    return supply;
-  }
-  if (activeCurrencyMode.value === 'native') {
-    const rate = props.nativeQuotePrice > 0 ? props.nativeQuotePrice : 2700;
-    return 1 / rate;
-  }
-  return 1;
-}
-
-function formatData(rawData: CandlePoint[]) {
-  if (!rawData || rawData.length === 0) return [];
-  const multiplier = getModeMultiplier();
-
-  const converted = rawData.map((item) => {
-    // Normalize timestamp: accept ms (>2e9) or seconds
-    let tNum =
-      typeof item.time === 'string' ? new Date(item.time).getTime() / 1000 : Number(item.time);
-    if (tNum > 2_000_000_000) tNum = tNum / 1000;
-    const t = Math.floor(tNum);
-
-    const open = Number(item.open) * multiplier;
-    const close = Number(item.close) * multiplier;
-    const rawHigh = Number(item.high) * multiplier;
-    const rawLow = Number(item.low) * multiplier;
-
-    // Enforce OHLC invariant: high >= max(o,c), low <= min(o,c)
-    // Do NOT add synthetic wicks — pass raw values as-is
-    const high = Math.max(open, close, rawHigh);
-    const low = Math.min(open, close, rawLow);
-
-    return {
+function formatData(raw: CandlePoint[]): Bar[] {
+  if (!raw || raw.length === 0) return [];
+  const byTime = new Map<number, Bar>();
+  for (const item of raw) {
+    let t = typeof item.time === 'string' ? new Date(item.time).getTime() / 1000 : Number(item.time);
+    if (t > 2_000_000_000) t = t / 1000; // ms -> s
+    t = Math.floor(t);
+    const open = Number(item.open);
+    const close = Number(item.close);
+    if (!isFinite(t) || !isFinite(open) || !isFinite(close)) continue;
+    byTime.set(t, {
       time: t as Time,
       open,
-      high,
-      low,
       close,
+      high: Math.max(open, close, Number(item.high)),
+      low: Math.min(open, close, Number(item.low)),
       volume: Number(item.volume ?? 0),
-    };
+    });
+  }
+  return Array.from(byTime.values()).sort((a, b) => Number(a.time) - Number(b.time));
+}
+
+// Computed once per data change
+const formatted = computed(() => formatData(props.data));
+const scale = computed(() => (valueMode.value === 'mcap' ? props.totalSupply : 1));
+
+function scaleBars(bars: Bar[]): Bar[] {
+  const s = scale.value;
+  if (s === 1) return bars;
+  return bars.map((b) => ({
+    ...b,
+    open: b.open * s,
+    high: b.high * s,
+    low: b.low * s,
+    close: b.close * s,
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// Formatters
+// ---------------------------------------------------------------------------
+
+const SUB = '₀₁₂₃₄₅₆₇₈₉';
+const toSub = (n: number) => String(n).replace(/\d/g, (d) => SUB[+d]);
+
+/** 0.00000012345 -> 0.0₆12345 (DEX convention) */
+function formatPrice(v: number): string {
+  if (!isFinite(v) || v === 0) return '0';
+  if (v >= 1) return v.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  if (v >= 0.0001) return v.toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
+  const [m, e] = v.toExponential(3).split('e');
+  const zeros = Math.abs(Number(e)) - 1;
+  const sig = m.replace('.', '').replace(/0+$/, '');
+  return `0.0${toSub(zeros)}${sig}`;
+}
+
+function formatCompact(v: number): string {
+  if (!isFinite(v)) return '0';
+  const a = Math.abs(v);
+  if (a >= 1e9) return `${(v / 1e9).toFixed(2)}B`;
+  if (a >= 1e6) return `${(v / 1e6).toFixed(2)}M`;
+  if (a >= 1e3) return `${(v / 1e3).toFixed(1)}K`;
+  return v.toFixed(a >= 100 ? 0 : 2);
+}
+
+function formatY(v: number): string {
+  return valueMode.value === 'mcap' ? `$${formatCompact(v)}` : `$${formatPrice(v)}`;
+}
+
+function formatTime(t: Time): string {
+  return new Date(Number(t) * 1000).toLocaleString(undefined, {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
   });
-
-  // Sort strictly ascending by integer seconds timestamp
-  converted.sort((a, b) => Number(a.time) - Number(b.time));
-
-  // Deduplicate: keep last entry for each timestamp (latest update wins)
-  const seen = new Map<number, (typeof converted)[0]>();
-  for (const bar of converted) {
-    seen.set(Number(bar.time), bar);
-  }
-
-  return Array.from(seen.values()).sort((a, b) => Number(a.time) - Number(b.time));
 }
 
 // ---------------------------------------------------------------------------
-// autoscaleInfoProvider factory
-// Per docs: return null to use default; return AutoscaleInfo to override.
-// We only intervene when the price range is zero (flat dataset).
+// Autoscale: ignore extreme wicks so candle bodies stay readable
 // ---------------------------------------------------------------------------
 
-function makeAutoscaleProvider(flatPrice: number | null) {
-  return (original: () => AutoscaleInfo | null): AutoscaleInfo | null => {
-    const res = original();
-    if (!res || !res.priceRange) return res;
-    const { minValue, maxValue } = res.priceRange;
-    if (minValue === maxValue) {
-      const val = flatPrice ?? minValue;
-      // Use 5 % band around the flat price for readable scale
-      const margin = val > 0 ? val * 0.05 : 0.000001;
-      return {
-        priceRange: {
-          minValue: Math.max(0, val - margin),
-          maxValue: val + margin,
-        },
-        margins: res.margins,
-      };
-    }
-    return res;
-  };
+function autoscale(original: () => AutoscaleInfo | null): AutoscaleInfo | null {
+  const res = original();
+  if (!res || !res.priceRange || !chart || shownBars.length === 0) return res;
+  const { minValue, maxValue } = res.priceRange;
+
+  const vr = chart.timeScale().getVisibleLogicalRange();
+  const from = Math.max(0, Math.floor(vr?.from ?? 0));
+  const to = Math.min(shownBars.length - 1, Math.ceil(vr?.to ?? shownBars.length - 1));
+  let lo = Infinity;
+  let hi = -Infinity;
+  for (let i = from; i <= to; i++) {
+    const b = shownBars[i];
+    lo = Math.min(lo, b.open, b.close);
+    hi = Math.max(hi, b.open, b.close);
+  }
+  if (!isFinite(lo) || !isFinite(hi)) return res;
+
+  // Flat data: give it a readable band
+  if (minValue === maxValue) {
+    const pad = hi * 0.05 || 1e-6;
+    return { priceRange: { minValue: Math.max(0, lo - pad), maxValue: hi + pad }, margins: res.margins };
+  }
+  if (!clipWicks.value) return res;
+
+  const pad = hi > lo ? (hi - lo) * 0.45 : hi * 0.05;
+  const clippedMin = Math.max(minValue, lo - pad, lo * 0.5);
+  const clippedMax = Math.min(maxValue, hi + pad);
+  if (clippedMin >= clippedMax) return res;
+  return { priceRange: { minValue: clippedMin, maxValue: clippedMax }, margins: res.margins };
 }
 
 // ---------------------------------------------------------------------------
-// Formatters for the OHLCV toolbar
+// Chart construction
 // ---------------------------------------------------------------------------
 
-function formatPrice(val: number): string {
-  if (isNaN(val) || val === 0) return '0.00';
-  if (activeChartMode.value === 'mcap') {
-    if (val >= 1_000_000_000) return `$${(val / 1_000_000_000).toFixed(2)}B`;
-    if (val >= 1_000_000) return `$${(val / 1_000_000).toFixed(2)}M`;
-    if (val >= 1_000) return `$${(val / 1_000).toFixed(2)}K`;
-    return `$${val.toFixed(2)}`;
-  }
-  if (activeCurrencyMode.value === 'native') {
-    if (val < 0.00000001) return `${val.toFixed(11)} ${props.nativeSymbol}`;
-    if (val < 0.0001) return `${val.toFixed(8)} ${props.nativeSymbol}`;
-    if (val < 1) return `${val.toFixed(6)} ${props.nativeSymbol}`;
-    return `${val.toFixed(4)} ${props.nativeSymbol}`;
-  }
-  if (val < 0.00000001) return `$${val.toFixed(11)}`;
-  if (val < 0.0001) return `$${val.toFixed(8)}`;
-  if (val < 1) return `$${val.toFixed(6)}`;
-  return `$${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`;
-}
-
-function getPriceFormatOptions(data: Array<{ close: number }>) {
-  if (activeChartMode.value === 'mcap') {
-    return {
-      type: 'custom' as const,
-      formatter: (val: number) => {
-        if (val >= 1_000_000_000) return `$${(val / 1_000_000_000).toFixed(2)}B`;
-        if (val >= 1_000_000) return `$${(val / 1_000_000).toFixed(2)}M`;
-        if (val >= 1_000) return `$${(val / 1_000).toFixed(2)}K`;
-        return `$${val.toFixed(2)}`;
-      },
-      minMove: 0.01,
-    };
-  }
-  if (activeCurrencyMode.value === 'native') {
-    return {
-      type: 'custom' as const,
-      formatter: (val: number) => {
-        if (val < 0.00000001) return val.toFixed(10);
-        if (val < 0.0001) return val.toFixed(8);
-        if (val < 1) return val.toFixed(6);
-        return val.toFixed(4);
-      },
-      minMove: 0.0000000001,
-    };
-  }
+function themeOptions() {
+  const dark = isDark();
+  const line = dark ? 'rgba(63,63,70,0.35)' : 'rgba(228,228,231,0.7)';
   return {
-    type: 'custom' as const,
-    formatter: (val: number) => {
-      if (val === 0) return '$0';
-      if (val < 0.00000001) return `$${val.toFixed(10)}`;
-      if (val < 0.0001) return `$${val.toFixed(8)}`;
-      if (val < 1) return `$${val.toFixed(6)}`;
-      return `$${val.toFixed(2)}`;
+    layout: {
+      background: { type: ColorType.Solid, color: 'transparent' }, // follows --card
+      textColor: dark ? '#a1a1aa' : '#52525b',
+      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+      fontSize: 12,
     },
-    minMove: 0.00000001,
+    grid: { vertLines: { color: line }, horzLines: { color: line } },
+    crosshair: {
+      vertLine: { labelBackgroundColor: dark ? '#27272a' : '#e4e4e7' },
+      horzLine: { labelBackgroundColor: dark ? '#27272a' : '#e4e4e7' },
+    },
+    rightPriceScale: { borderVisible: false },
+    timeScale: { borderVisible: false },
   };
 }
 
-function formatVolume(val: number): string {
-  if (isNaN(val) || val === 0) return '0';
-  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(2)}M`;
-  if (val >= 1_000) return `${(val / 1_000).toFixed(2)}K`;
-  return val.toFixed(4);
-}
-
-// ---------------------------------------------------------------------------
-// Computed: active toolbar bar (hovered or last)
-// ---------------------------------------------------------------------------
-
-const activeBar = computed<CandlePoint | null>(() => {
-  if (hoveredBar.value) return hoveredBar.value;
-  const formatted = formatData(props.data);
-  if (formatted.length > 0) {
-    const last = formatted[formatted.length - 1];
-    return {
-      time: String(last.time),
-      open: last.open,
-      high: last.high,
-      low: last.low,
-      close: last.close,
-      volume: last.volume,
-    };
-  }
-  return null;
-});
-
-const barChangePercent = computed(() => {
-  if (!activeBar.value || activeBar.value.open === 0) return 0;
-  return ((activeBar.value.close - activeBar.value.open) / activeBar.value.open) * 100;
-});
-
-// Whether all candles share the same price (informational label)
-const dataIsFlat = computed(() => isDataFlat(formatData(props.data)));
-
-// ---------------------------------------------------------------------------
-// Standard Financial Chart Colors (Retrieved dynamically from CSS variables)
-const BULLISH_GREEN = getCssVar('--bullish', '#22c55e');
-const BEARISH_RED = getCssVar('--bearish', '#ef4444');
-
-// ---------------------------------------------------------------------------
-// Chart initialisation
-// ---------------------------------------------------------------------------
-
-function destroyChart() {
-  if (resizeObserver) {
-    resizeObserver.disconnect();
-    resizeObserver = null;
-  }
-  if (themeObserver) {
-    themeObserver.disconnect();
-    themeObserver = null;
-  }
-  if (chart) {
-    chart.remove();
-    chart = null;
-    candleSeries = null;
-    areaSeries = null;
-    volumeSeries = null;
+function createMainSeries() {
+  if (!chart) return;
+  const priceFormat = { type: 'custom' as const, formatter: formatY, minMove: 1e-11 };
+  if (chartType.value === 'candles') {
+    mainSeries = chart.addSeries(CandlestickSeries, {
+      upColor: BULL,
+      downColor: BEAR,
+      borderUpColor: BULL,
+      borderDownColor: BEAR,
+      wickUpColor: BULL,
+      wickDownColor: BEAR,
+      priceLineColor: BULL,
+      priceFormat,
+      autoscaleInfoProvider: autoscale,
+    });
+  } else {
+    mainSeries = chart.addSeries(AreaSeries, {
+      topColor: 'rgba(34, 197, 94, 0.25)',
+      bottomColor: 'rgba(34, 197, 94, 0.01)',
+      lineColor: BULL,
+      priceLineColor: BULL,
+      lineWidth: 2,
+      priceFormat,
+      autoscaleInfoProvider: autoscale,
+    });
   }
 }
 
@@ -412,456 +309,392 @@ function initChart() {
   if (!chartContainer.value) return;
   destroyChart();
 
-  const isDark = checkDark();
-  const width = chartContainer.value.clientWidth || 700;
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
-  const responsiveHeight = isMobile ? Math.min(props.height, 320) : props.height;
-  const formatted = formatData(props.data);
-  const flatPrice = dataIsFlat.value && formatted.length > 0 ? formatted[0].close : null;
-
   chart = createChart(chartContainer.value, {
-    width,
-    height: responsiveHeight,
-    ...getThemeConfig(isDark),
-    // Disable built-in kinetic scroll so the series autoscale can breathe
-    handleScroll: {
-      mouseWheel: true,
-      pressedMouseMove: true,
-      horzTouchDrag: true,
-      vertTouchDrag: false,
+    autoSize: true, // no manual ResizeObserver needed
+    ...themeOptions(),
+    crosshair: { mode: CrosshairMode.Normal, ...themeOptions().crosshair },
+    rightPriceScale: {
+      borderVisible: false,
+      scaleMargins: { top: 0.1, bottom: 0.24 },
+      mode: isLogScale.value ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal,
     },
+    timeScale: {
+      borderVisible: false,
+      timeVisible: true,
+      secondsVisible: false,
+      rightOffset: 6,
+      barSpacing: 14,
+      minBarSpacing: 3,
+      tickMarkFormatter: (t: Time, type: TickMarkType) => {
+        const d = new Date(Number(t) * 1000);
+        if (type === TickMarkType.Time || type === TickMarkType.TimeWithSeconds)
+          return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        if (type === TickMarkType.Year) return String(d.getFullYear());
+        if (type === TickMarkType.Month) return d.toLocaleDateString(undefined, { month: 'short' });
+        return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+      },
+    },
+    localization: { timeFormatter: formatTime }, // local timezone, not UTC
+    handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
     handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
   });
 
-  // 1. Volume histogram — overlaid on its own scale (bottom 22%)
   volumeSeries = chart.addSeries(HistogramSeries, {
     priceFormat: { type: 'volume' },
     priceScaleId: 'vol',
+    lastValueVisible: false,
+    priceLineVisible: false,
   });
-  volumeSeries.priceScale().applyOptions({
-    scaleMargins: { top: 0.78, bottom: 0 },
-  });
+  volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
 
-  const autoscaleProvider = makeAutoscaleProvider(flatPrice);
+  createMainSeries();
 
-  // 2. Main price series
-  const upColor = BULLISH_GREEN;
-  const downColor = BEARISH_RED;
-
-  if (chartType.value === 'candles') {
-    candleSeries = chart.addSeries(CandlestickSeries, {
-      upColor,
-      downColor,
-      borderVisible: true,
-      borderUpColor: upColor,
-      borderDownColor: downColor,
-      wickVisible: true,
-      wickUpColor: upColor,
-      wickDownColor: downColor,
-      priceFormat: getPriceFormatOptions(formatted),
-      autoscaleInfoProvider: autoscaleProvider,
-    });
-    candleSeries.setData(formatted);
-  } else {
-    areaSeries = chart.addSeries(AreaSeries, {
-      topColor: 'rgba(34, 197, 94, 0.25)',
-      bottomColor: 'rgba(34, 197, 94, 0.01)',
-      lineColor: BULLISH_GREEN,
-      lineWidth: 2,
-      priceFormat: getPriceFormatOptions(formatted),
-      autoscaleInfoProvider: autoscaleProvider,
-    });
-    areaSeries.setData(formatted.map((d) => ({ time: d.time, value: d.close })));
-  }
-
-  // 3. Volume data (Green for bullish bars, Red for bearish bars)
-  const volData = formatted.map((d) => ({
-    time: d.time,
-    value: d.volume,
-    color: d.close >= d.open ? 'rgba(34, 197, 94, 0.55)' : 'rgba(239, 68, 68, 0.55)',
-  }));
-  volumeSeries.setData(volData);
-
-  if (formatted.length > 0) {
-    applyOptimalVisibleRange(formatted.length);
-  }
-
-  // 4. Crosshair move — update toolbar
   chart.subscribeCrosshairMove((param) => {
-    if (!param || !param.time) {
+    if (!param?.time || !mainSeries) {
       hoveredBar.value = null;
       return;
     }
-    const activeSeries = candleSeries ?? areaSeries;
-    if (!activeSeries) return;
-
-    const barData = param.seriesData.get(activeSeries);
-    const volAtTime = volumeSeries ? param.seriesData.get(volumeSeries) : null;
-    const vol = volAtTime && 'value' in volAtTime ? Number(volAtTime.value) : undefined;
-
-    if (barData && 'open' in barData) {
-      hoveredBar.value = {
-        time: String(param.time),
-        open: Number(barData.open),
-        high: Number(barData.high),
-        low: Number(barData.low),
-        close: Number(barData.close),
-        volume: vol,
-      };
-    } else if (barData && 'value' in barData) {
-      const v = Number(barData.value);
-      hoveredBar.value = {
-        time: String(param.time),
-        open: v,
-        high: v,
-        low: v,
-        close: v,
-        volume: vol,
-      };
-    } else {
+    const d = param.seriesData.get(mainSeries) as any;
+    const v = volumeSeries ? (param.seriesData.get(volumeSeries) as any) : null;
+    if (!d) {
       hoveredBar.value = null;
+      return;
     }
+    const isOhlc = 'open' in d;
+    hoveredBar.value = {
+      time: param.time,
+      open: isOhlc ? d.open : d.value,
+      high: isOhlc ? d.high : d.value,
+      low: isOhlc ? d.low : d.value,
+      close: isOhlc ? d.close : d.value,
+      volume: v && 'value' in v ? Number(v.value) : 0,
+    };
   });
 
-  // 5. ResizeObserver — responsive width and height
-  resizeObserver = new ResizeObserver((entries) => {
-    const w = entries[0]?.contentRect.width;
-    if (w && w > 0 && chart) {
-      const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
-      const h = isMobile ? Math.min(props.height, 320) : props.height;
-      chart.applyOptions({ width: w, height: h });
-    }
+  chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
+    isAwayFromLatest.value = !!range && shownBars.length > 0 && range.to < shownBars.length - 3;
   });
-  resizeObserver.observe(chartContainer.value);
 
-  // 6. MutationObserver — dark mode switch
-  if (typeof document !== 'undefined') {
-    themeObserver = new MutationObserver(() => {
-      if (!chart) return;
-      chart.applyOptions(getThemeConfig(checkDark()));
-    });
-    themeObserver.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class'],
-    });
-  }
+  themeObserver = new MutationObserver(() => chart?.applyOptions(themeOptions()));
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+  lastKey = '';
+  sync(formatted.value, true);
 }
 
-// ---------------------------------------------------------------------------
-// Controls
-// ---------------------------------------------------------------------------
-
-function onShadcnBarHover(bar: CandlePoint | null) {
-  hoveredBar.value = bar;
-}
-
-function toggleChartType(type: 'candles' | 'area') {
-  if (chartType.value === type) return;
-  chartType.value = type;
-  if (type === 'candles') {
-    setTimeout(() => {
-      initChart();
-    }, 20);
-  }
-}
-
-function toggleLogScale() {
-  isLogScale.value = !isLogScale.value;
+function destroyChart() {
+  themeObserver?.disconnect();
+  themeObserver = null;
   if (chart) {
-    chart.priceScale('right').applyOptions({
-      mode: isLogScale.value ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal,
-    });
+    chart.remove();
+    chart = null;
   }
+  mainSeries = null;
+  volumeSeries = null;
 }
 
-function applyOptimalVisibleRange(totalBars: number) {
-  if (!chart || totalBars <= 0) return;
-  if (totalBars <= 20) {
-    chart.timeScale().fitContent();
-    chart.timeScale().applyOptions({ barSpacing: 22, rightOffset: 12 });
+// ---------------------------------------------------------------------------
+// Data sync: full reset only when context changes, otherwise incremental
+// ---------------------------------------------------------------------------
+
+function toMain(b: Bar) {
+  return chartType.value === 'candles'
+    ? { time: b.time, open: b.open, high: b.high, low: b.low, close: b.close }
+    : { time: b.time, value: b.close };
+}
+const toVol = (b: Bar) => ({
+  time: b.time,
+  value: b.volume,
+  color: b.close >= b.open ? BULL_VOL : BEAR_VOL,
+});
+
+function sync(base: Bar[], forceFull = false) {
+  if (!chart || !mainSeries || !volumeSeries) return;
+  const bars = scaleBars(base);
+  shownBars = bars;
+
+  const key = `${props.tokenAddress}|${props.resolution}|${valueMode.value}|${chartType.value}`;
+  const canAppend =
+    !forceFull &&
+    key === lastKey &&
+    lastLen > 0 &&
+    bars.length >= lastLen &&
+    bars.length - lastLen <= 2 &&
+    Number(bars[lastLen - 1]?.time) === lastLastTime;
+
+  if (canAppend) {
+    // Zoom and scroll stay untouched; only the live candle (and new ones) change
+    for (let i = lastLen - 1; i < bars.length; i++) {
+      (mainSeries as ISeriesApi<'Candlestick'>).update(toMain(bars[i]) as any);
+      volumeSeries.update(toVol(bars[i]));
+    }
   } else {
-    chart.timeScale().setVisibleLogicalRange({
-      from: Math.max(0, totalBars - 35),
-      to: totalBars + 6,
-    });
+    (mainSeries as ISeriesApi<'Candlestick'>).setData(bars.map(toMain) as any);
+    volumeSeries.setData(bars.map(toVol));
+    showLatest(bars.length);
+  }
+
+  lastKey = key;
+  lastLen = bars.length;
+  lastLastTime = bars.length ? Number(bars[bars.length - 1].time) : null;
+}
+
+function showLatest(total: number) {
+  if (!chart || total <= 0) return;
+  if (total <= 20) {
+    chart.timeScale().fitContent();
+  } else {
+    chart.timeScale().setVisibleLogicalRange({ from: Math.max(-1, total - 60), to: total + 4 });
   }
 }
 
-function fitContent() {
-  if (chart) {
-    const formatted = formatData(props.data);
-    if (formatted.length > 35) {
-      chart.timeScale().setVisibleLogicalRange({
-        from: Math.max(0, formatted.length - 35),
-        to: formatted.length + 6,
-      });
-    } else {
-      chart.timeScale().fitContent();
-      chart.timeScale().applyOptions({ barSpacing: 22, rightOffset: 12 });
-    }
+watch(formatted, (bars) => {
+  if (!chart) {
+    if (chartContainer.value) initChart();
+    return;
   }
+  sync(bars);
+});
+
+// ---------------------------------------------------------------------------
+// Toolbar actions
+// ---------------------------------------------------------------------------
+
+function setChartType(type: 'candles' | 'area') {
+  if (chartType.value === type || !chart || !mainSeries) return;
+  chartType.value = type;
+  chart.removeSeries(mainSeries); // keep zoom, only swap the series
+  createMainSeries();
+  sync(formatted.value, true);
+  savePrefs();
 }
 
+function setMode(mode: 'price' | 'mcap') {
+  if (valueMode.value === mode) return;
+  valueMode.value = mode;
+  hoveredBar.value = null;
+  mainSeries?.applyOptions({
+    priceFormat: { type: 'custom', formatter: formatY, minMove: 1e-11 },
+  } as any);
+  sync(formatted.value, true);
+  savePrefs();
+}
+
+function toggleLog() {
+  isLogScale.value = !isLogScale.value;
+  chart?.priceScale('right').applyOptions({
+    mode: isLogScale.value ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal,
+  });
+  savePrefs();
+}
+
+function toggleClip() {
+  clipWicks.value = !clipWicks.value;
+  mainSeries?.applyOptions({ autoscaleInfoProvider: autoscale } as any); // forces a rescale
+  savePrefs();
+}
+
+function goLatest() {
+  chart?.timeScale().scrollToRealTime();
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) root.value?.requestFullscreen?.();
+  else document.exitFullscreen?.();
+}
+const onFsChange = () => (isFullscreen.value = document.fullscreenElement === root.value);
+
 // ---------------------------------------------------------------------------
-// Watcher — update series data when prop changes
+// Legend (overlay inside the chart)
 // ---------------------------------------------------------------------------
 
-watch(
-  () => props.data,
-  (newData, oldData) => {
-    if (!chart) {
-      if (chartContainer.value) initChart();
-      return;
-    }
+const activeBar = computed<Bar | null>(() => {
+  if (hoveredBar.value) return hoveredBar.value;
+  const bars = formatted.value;
+  if (bars.length === 0) return null;
+  return scaleBars([bars[bars.length - 1]])[0];
+});
 
-    const formatted = formatData(newData);
-    const flatPrice = isDataFlat(formatted) && formatted.length > 0 ? formatted[0].close : null;
+const changePct = computed(() => {
+  const b = activeBar.value;
+  return b && b.open !== 0 ? ((b.close - b.open) / b.open) * 100 : 0;
+});
 
-    if (candleSeries) {
-      // Re-apply autoscaleInfoProvider with updated flat-price if needed
-      candleSeries.applyOptions({
-        priceFormat: getPriceFormatOptions(formatted),
-        autoscaleInfoProvider: makeAutoscaleProvider(flatPrice),
-      });
-      candleSeries.setData(formatted);
-    } else if (areaSeries) {
-      areaSeries.applyOptions({
-        priceFormat: getPriceFormatOptions(formatted),
-        autoscaleInfoProvider: makeAutoscaleProvider(flatPrice),
-      });
-      areaSeries.setData(formatted.map((d) => ({ time: d.time, value: d.close })));
-    }
-
-    if (volumeSeries) {
-      volumeSeries.setData(
-        formatted.map((d) => ({
-          time: d.time,
-          value: d.volume,
-          color: d.close >= d.open ? 'rgba(34, 197, 94, 0.55)' : 'rgba(239, 68, 68, 0.55)',
-        })),
-      );
-    }
-
-    if (formatted.length > 0) {
-      applyOptimalVisibleRange(formatted.length);
-    }
-  },
-  { deep: true },
-);
-
-watch(
-  () => props.resolution,
-  () => {
-    if (chart) {
-      chart.timeScale().resetTimeScale();
-      const formatted = formatData(props.data);
-      applyOptimalVisibleRange(formatted.length);
-    }
-  },
-);
+const isEmpty = computed(() => formatted.value.length === 0);
 
 // ---------------------------------------------------------------------------
 // Lifecycle
 // ---------------------------------------------------------------------------
 
-onMounted(() => initChart());
-onUnmounted(() => destroyChart());
+onMounted(() => {
+  initChart();
+  document.addEventListener('fullscreenchange', onFsChange);
+});
+onUnmounted(() => {
+  document.removeEventListener('fullscreenchange', onFsChange);
+  destroyChart();
+});
 </script>
 
 <template>
-  <div class="w-full flex flex-col gap-2">
-    <!-- OHLCV Professional Toolbar -->
-    <div
-      class="flex flex-wrap items-center justify-between gap-2 text-xs font-mono px-2 py-1.5 rounded-lg bg-muted/40 border border-border"
-    >
-      <!-- Left: Symbol + Mode Toggles + OHLCV live bar -->
-      <div class="flex items-center gap-2 sm:gap-3 flex-wrap min-w-0">
-        <span
-          v-if="tokenSymbol"
-          class="font-extrabold tracking-wider text-foreground px-1.5 py-0.5 rounded bg-muted text-[11px]"
+  <div ref="root" class="flex w-full flex-col bg-card" :class="isFullscreen ? 'h-screen' : ''">
+    <!-- Toolbar: one row, big touch targets -->
+    <div class="flex items-center justify-between gap-2 px-3 py-2 border-b border-border/80">
+      <!-- Price / Market cap -->
+      <div class="flex items-center rounded-lg bg-muted p-0.5" role="group" aria-label="Chart value">
+        <button
+          v-for="m in [
+            { v: 'mcap', l: 'Market cap' },
+            { v: 'price', l: 'Price' },
+          ] as const"
+          :key="m.v"
+          type="button"
+          class="h-8 cursor-pointer rounded-md px-3 text-xs font-semibold transition"
+          :class="valueMode === m.v ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'"
+          :aria-pressed="valueMode === m.v"
+          @click="setMode(m.v)"
         >
-          {{ tokenSymbol }}/{{ activeCurrencyMode === 'native' ? nativeSymbol : 'USD' }}
-        </span>
-
-        <!-- PRICE / MCAP switcher (lunch.fun style) -->
-        <div
-          class="flex items-center bg-muted p-0.5 rounded-lg border border-border text-[10px] font-bold"
-        >
-          <button
-            type="button"
-            class="px-2 py-0.5 rounded transition cursor-pointer"
-            :class="
-              activeChartMode === 'price'
-                ? 'bg-card text-foreground shadow-2xs'
-                : 'text-muted-foreground hover:text-foreground'
-            "
-            @click="setChartMode('price')"
-          >
-            PRICE
-          </button>
-          <button
-            type="button"
-            class="px-2 py-0.5 rounded transition cursor-pointer"
-            :class="
-              activeChartMode === 'mcap'
-                ? 'bg-card text-foreground shadow-2xs'
-                : 'text-muted-foreground hover:text-foreground'
-            "
-            @click="setChartMode('mcap')"
-          >
-            MCAP
-          </button>
-        </div>
-
-        <!-- USD / Native switcher (lunch.fun style) -->
-        <div
-          v-if="activeChartMode === 'price'"
-          class="flex items-center bg-muted p-0.5 rounded-lg border border-border text-[10px] font-bold"
-        >
-          <button
-            type="button"
-            class="px-2 py-0.5 rounded transition cursor-pointer"
-            :class="
-              activeCurrencyMode === 'usd'
-                ? 'bg-card text-foreground shadow-2xs'
-                : 'text-muted-foreground hover:text-foreground'
-            "
-            @click="setCurrencyMode('usd')"
-          >
-            USD
-          </button>
-          <button
-            type="button"
-            class="px-2 py-0.5 rounded transition cursor-pointer"
-            :class="
-              activeCurrencyMode === 'native'
-                ? 'bg-card text-foreground shadow-2xs'
-                : 'text-muted-foreground hover:text-foreground'
-            "
-            @click="setCurrencyMode('native')"
-          >
-            {{ nativeSymbol || 'ETH' }}
-          </button>
-        </div>
-
-        <div v-if="activeBar" class="flex items-center gap-2.5 text-[11px] flex-wrap">
-          <span class="text-muted-foreground">
-            O:
-            <span class="font-bold text-foreground">{{ formatPrice(activeBar.open) }}</span>
-          </span>
-          <span class="text-muted-foreground">
-            H:
-            <span class="font-bold text-foreground">{{ formatPrice(activeBar.high) }}</span>
-          </span>
-          <span class="text-muted-foreground">
-            L:
-            <span class="font-bold text-foreground">{{ formatPrice(activeBar.low) }}</span>
-          </span>
-          <span class="text-muted-foreground">
-            C:
-            <span class="font-bold text-foreground">
-              {{ formatPrice(activeBar.close) }}
-            </span>
-          </span>
-          <span
-            :class="[
-              'px-1.5 py-0.5 rounded font-bold text-[10px] border transition-colors',
-              barChangePercent >= 0
-                ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/30'
-                : 'text-rose-500 bg-rose-500/10 border-rose-500/30',
-            ]"
-          >
-            {{ barChangePercent >= 0 ? '+' : '' }}{{ barChangePercent.toFixed(2) }}%
-          </span>
-          <span v-if="activeBar.volume !== undefined" class="text-muted-foreground">
-            Vol:
-            <span class="font-bold text-foreground">${{ formatVolume(activeBar.volume) }}</span>
-          </span>
-        </div>
-
-        <span
-          v-if="dataIsFlat && (data?.length ?? 0) > 1"
-          class="text-[10px] font-mono text-muted-foreground ml-1 italic"
-        >
-          no price movement yet
-        </span>
+          {{ m.l }}
+        </button>
       </div>
 
-      <!-- Right: Chart controls -->
-      <div class="flex items-center gap-1.5 shrink-0 ml-auto flex-wrap">
+      <div class="flex items-center gap-1">
         <button
           type="button"
-          class="p-1 rounded text-muted-foreground hover:text-foreground transition cursor-pointer"
-          :class="chartType === 'candles' ? 'bg-muted text-foreground' : ''"
-          title="Candlestick chart"
-          aria-label="Candlestick chart"
-          @click="toggleChartType('candles')"
+          class="grid h-8 w-8 cursor-pointer place-items-center rounded-md transition"
+          :class="chartType === 'candles' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'"
+          title="Candles"
+          aria-label="Candles"
+          :aria-pressed="chartType === 'candles'"
+          @click="setChartType('candles')"
         >
-          <CandlestickChart class="w-3.5 h-3.5" />
+          <CandlestickChart class="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          class="grid h-8 w-8 cursor-pointer place-items-center rounded-md transition"
+          :class="chartType === 'area' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'"
+          title="Line"
+          aria-label="Line"
+          :aria-pressed="chartType === 'area'"
+          @click="setChartType('area')"
+        >
+          <TrendingUp class="h-4 w-4" />
         </button>
 
-        <!-- Area toggle -->
+        <span class="mx-1 h-4 w-px bg-border" />
+
         <button
           type="button"
-          class="p-1 rounded text-muted-foreground hover:text-foreground transition cursor-pointer"
-          :class="chartType === 'area' ? 'bg-muted text-foreground' : ''"
-          title="Area chart"
-          aria-label="Area chart"
-          @click="toggleChartType('area')"
+          class="h-8 cursor-pointer rounded-md px-2 text-xs font-semibold transition"
+          :class="isLogScale ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'"
+          title="Logarithmic scale"
+          aria-label="Logarithmic scale"
+          :aria-pressed="isLogScale"
+          @click="toggleLog"
         >
-          <TrendingUp class="w-3.5 h-3.5" />
+          Log
         </button>
-
-        <span class="w-px h-3.5 bg-border mx-0.5" />
-
-        <!-- LOG / LIN -->
         <button
           type="button"
-          class="px-1.5 py-0.5 text-[10px] font-bold rounded text-muted-foreground hover:text-foreground transition cursor-pointer"
-          :class="isLogScale ? 'bg-muted text-foreground' : ''"
-          title="Toggle log / linear scale"
-          aria-label="Toggle log / linear scale"
-          @click="toggleLogScale"
+          class="grid h-8 w-8 cursor-pointer place-items-center rounded-md transition"
+          :class="clipWicks ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'"
+          title="Ignore extreme wicks when scaling"
+          aria-label="Ignore extreme wicks when scaling"
+          :aria-pressed="clipWicks"
+          @click="toggleClip"
         >
-          {{ isLogScale ? 'LOG' : 'LIN' }}
+          <ScanLine class="h-4 w-4" />
         </button>
-
-        <!-- Fit content -->
         <button
           type="button"
-          class="p-1 rounded text-muted-foreground hover:text-foreground transition cursor-pointer"
-          title="Fit chart to content"
-          aria-label="Fit chart to content"
-          @click="fitContent"
+          class="grid h-8 w-8 cursor-pointer place-items-center rounded-md text-muted-foreground transition hover:text-foreground"
+          :title="isFullscreen ? 'Exit full screen' : 'Full screen'"
+          :aria-label="isFullscreen ? 'Exit full screen' : 'Full screen'"
+          @click="toggleFullscreen"
         >
-          <Maximize2 class="w-3.5 h-3.5" />
+          <Minimize v-if="isFullscreen" class="h-4 w-4" />
+          <Maximize v-else class="h-4 w-4" />
         </button>
       </div>
     </div>
 
-    <!-- Token Candlestick Chart Canvas (TradingView Lightweight Charts) -->
+    <!-- Chart canvas (full-bleed: the parent card owns the border) -->
     <div
-      v-show="chartType === 'candles'"
-      ref="chartContainer"
-      class="w-full rounded-2xl overflow-hidden border border-border bg-black shadow-xs"
-      :style="{ minHeight: `${props.height}px` }"
-    />
-
-    <!-- Custom Shadcn Area / Line Chart with Glowing Gradient & Floating Tooltip -->
-    <div
-      v-if="chartType === 'area'"
-      class="w-full rounded-2xl overflow-hidden border border-border bg-black shadow-xs p-1"
+      class="relative w-full"
+      :class="isFullscreen ? 'min-h-0 flex-1' : 'h-[300px] sm:h-[var(--chart-h)]'"
+      :style="{ '--chart-h': `${height}px` }"
     >
-      <ShadcnTradingLineChart
-        :data="props.data"
-        :height="props.height"
-        :token-symbol="props.tokenSymbol"
-        :native-symbol="props.nativeSymbol"
-        :chart-mode="activeChartMode"
-        :currency-mode="activeCurrencyMode"
-        :multiplier="getModeMultiplier()"
-        @hover-bar="onShadcnBarHover"
+      <div
+        ref="chartContainer"
+        class="absolute inset-0 transition-opacity"
+        :class="loading && !isEmpty ? 'opacity-50' : 'opacity-100'"
+        role="img"
+        :aria-label="`${tokenSymbol} ${valueMode === 'mcap' ? 'market cap' : 'price'} chart`"
       />
+
+      <!-- Legend overlay (top-left, inside chart) -->
+      <div
+        v-if="activeBar && !isEmpty"
+        class="pointer-events-none absolute left-3 top-1 z-10 flex flex-col gap-0.5 text-xs tabular-nums"
+      >
+        <span v-if="hoveredBar" class="text-muted-foreground">{{ formatTime(hoveredBar.time) }}</span>
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+          <span class="hidden text-muted-foreground sm:inline">
+            O <span class="text-foreground">{{ formatY(activeBar.open) }}</span>
+          </span>
+          <span class="hidden text-muted-foreground sm:inline">
+            H <span class="text-foreground">{{ formatY(activeBar.high) }}</span>
+          </span>
+          <span class="hidden text-muted-foreground sm:inline">
+            L <span class="text-foreground">{{ formatY(activeBar.low) }}</span>
+          </span>
+          <span class="text-muted-foreground">
+            C <span class="text-foreground">{{ formatY(activeBar.close) }}</span>
+          </span>
+          <span class="font-semibold" :class="changePct >= 0 ? 'text-emerald-500' : 'text-rose-500'">
+            {{ changePct >= 0 ? '+' : '' }}{{ changePct.toFixed(2) }}%
+          </span>
+          <span class="text-muted-foreground">
+            Vol <span class="text-foreground">{{ formatCompact(activeBar.volume) }}</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Back to latest -->
+      <button
+        v-if="isAwayFromLatest"
+        type="button"
+        class="absolute bottom-10 right-16 z-10 flex h-8 cursor-pointer items-center gap-1 rounded-full border border-border bg-card px-3 text-xs font-semibold text-foreground shadow-xs transition hover:bg-muted"
+        @click="goLatest"
+      >
+        Latest
+        <ChevronsRight class="h-3.5 w-3.5" />
+      </button>
+
+      <!-- Discreet loading spinner badge (no intrusive bar line) -->
+      <div
+        v-if="loading && !isEmpty"
+        class="absolute top-2 right-2 z-20 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-xs text-[10px] text-muted-foreground border border-border/40 pointer-events-none"
+      >
+        <Loader2 class="w-3 h-3 animate-spin text-muted-foreground" />
+      </div>
+      <div
+        v-if="loading && isEmpty"
+        class="absolute inset-0 z-20 flex items-center justify-center gap-2 text-sm text-muted-foreground"
+      >
+        <Loader2 class="h-4 w-4 animate-spin" />
+        Loading candles
+      </div>
+
+      <!-- Empty -->
+      <div
+        v-else-if="isEmpty"
+        class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-1 text-center"
+      >
+        <p class="text-sm font-semibold text-foreground">No trades yet</p>
+        <p class="text-xs text-muted-foreground">The chart appears after the first buy or sell.</p>
+      </div>
     </div>
   </div>
 </template>
