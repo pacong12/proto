@@ -797,13 +797,30 @@ async function refreshAllData() {
   await refreshDividends();
 }
 
-watch(targetAccount, () => {
-  loadLocalProfile();
-  refreshAllData();
-});
+watch(
+  () => [targetAccount.value, route.path],
+  ([target, path]) => {
+    if (target) {
+      loadLocalProfile();
+      refreshAllData();
+
+      // Canonical URL rewrite: replace /profile or /u/0x... with /:Username
+      const identity = getUserIdentity(target);
+      if (
+        path === '/profile' ||
+        path === '/u' ||
+        path === '/user' ||
+        (typeof path === 'string' && (path.startsWith('/profile/0x') || path.startsWith('/u/0x')))
+      ) {
+        router.replace(`/${identity.name}`);
+      }
+    }
+  },
+  { immediate: true },
+);
 
 watch(
-  () => [route.params.address, route.params.id],
+  () => [route.params.address, route.params.id, route.params.username],
   () => {
     loadLocalProfile();
     refreshAllData();

@@ -74,12 +74,24 @@ watch(
   },
 );
 
+const userProfileUrl = computed(() => {
+  if (account.value) {
+    return `/${getUserIdentity(account.value).name}`;
+  }
+  return '/launchpad';
+});
+
 function isRouteActive(path: string) {
   if (path === '/launchpad') {
     return route.path === '/launchpad' || route.path === '/' || route.path === '/explore';
   }
   if (path === '/profile') {
-    return route.path.startsWith('/profile') || route.path.startsWith('/u');
+    const userPath = account.value ? `/${getUserIdentity(account.value).name}` : '';
+    return (
+      route.path.startsWith('/profile') ||
+      route.path.startsWith('/u') ||
+      (Boolean(userPath) && route.path === userPath)
+    );
   }
   return route.path.startsWith(path);
 }
@@ -341,7 +353,7 @@ function copyAddress() {
 
               <DropdownMenuItem as-child>
                 <RouterLink
-                  to="/profile"
+                  :to="userProfileUrl"
                   class="flex items-center gap-2.5 w-full cursor-pointer text-foreground px-3 py-2.5 text-xs rounded-xl hover:bg-muted transition"
                 >
                   <User class="w-4 h-4" />
@@ -522,7 +534,7 @@ function copyAddress() {
         </RouterLink>
 
         <RouterLink
-          to="/profile"
+          :to="userProfileUrl"
           @click="mobileMenuOpen = false"
           :class="[
             'flex items-center gap-2.5 py-2.5 px-3 rounded-xl text-sm font-semibold transition',

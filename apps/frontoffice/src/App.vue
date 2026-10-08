@@ -54,7 +54,7 @@
               </RouterLink>
             </li>
             <li>
-              <RouterLink to="/profile" class="hover:text-primary transition">
+              <RouterLink :to="userProfileUrl" class="hover:text-primary transition">
                 {{ t('profile') }}
               </RouterLink>
             </li>
@@ -172,6 +172,7 @@ import Navbar from './components/Navbar.vue';
 import { Toaster } from '@/components/ui/sonner';
 import { walletAddress, walletModalOpen } from './lib/wallet-store';
 import { useWallet } from './composables/useWallet';
+import { getUserIdentity } from './lib/username';
 
 const WalletModal = defineAsyncComponent(() => import('./components/WalletModal.vue'));
 const SearchDialog = defineAsyncComponent(() => import('./components/SearchDialog.vue'));
@@ -185,6 +186,13 @@ const { activeNetwork } = useWallet();
 const router = useRouter();
 const route = useRoute();
 const docsUrl = import.meta.env.VITE_DOCS_URL || 'https://docs.proto.family';
+
+const userProfileUrl = computed(() => {
+  if (walletAddress.value) {
+    return `/${getUserIdentity(walletAddress.value).name}`;
+  }
+  return '/launchpad';
+});
 
 // Trade page uses full-width terminal layout — no outer max-width / padding
 const isTradeRoute = computed(
