@@ -49,24 +49,20 @@
            LEFT: Social Alpha Stream (Hybrid Timeline)
            ============================================================ -->
       <div class="space-y-4 min-w-0">
-        <!-- 1. Feed Filter Tabs Bar -->
-        <div class="p-2 sm:p-2.5 rounded-2xl border border-border/80 bg-card/70 backdrop-blur-md shadow-2xs">
-          <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar font-mono text-xs">
-            <button
-              v-for="flt in filterTabs"
-              :key="flt.key"
-              type="button"
-              class="px-3 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer select-none whitespace-nowrap"
-              :class="
-                activeFilter === flt.key
-                  ? 'bg-foreground text-background border-foreground shadow-2xs'
-                  : 'bg-muted/40 border-border/70 text-muted-foreground hover:text-foreground hover:bg-muted'
-              "
-              @click="handleFilterClick(flt.key)"
-            >
-              {{ flt.label }}
-            </button>
-          </div>
+        <!-- 1. Feed Filter Tabs Bar (Shadcn Tabs variant="line") -->
+        <div class="px-3 pt-2 pb-0 border-b border-border bg-card/60 rounded-2xl">
+          <Tabs v-model="activeFilter" class="w-full">
+            <TabsList variant="line" class="font-mono text-xs overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0">
+              <TabsTrigger
+                v-for="flt in filterTabs"
+                :key="flt.key"
+                :value="flt.key"
+                @click="handleFilterClick(flt.key)"
+              >
+                {{ flt.label }}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
         <!-- 2. Hybrid Alpha Terminal Composer -->
@@ -799,6 +795,7 @@ import { Empty } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Pagination } from '@/components/ui/pagination';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   DropdownMenu,
   DropdownMenuTrigger,

@@ -21,6 +21,8 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-brand: #FC4198;
+  --color-card-raised: var(--card-raised);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -70,27 +72,9 @@ html {
   }
 }
 
-/* Universal Typography: Inter matching VitePress Docs */
+/* Universal Typography: Inter / System UI */
 html,
-body,
-.font-sans,
-.font-heading,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-p,
-span,
-div,
-a,
-button,
-input,
-textarea,
-select,
-label,
-[class*='font-']:not([class*='font-mono']) {
+body {
   font-family:
     'Inter',
     ui-sans-serif,
@@ -99,7 +83,7 @@ label,
     BlinkMacSystemFont,
     'Segoe UI',
     Roboto,
-    sans-serif !important;
+    sans-serif;
 }
 
 /* Headings: Space & weight hierarchy */
@@ -108,10 +92,7 @@ h2,
 h3,
 h4,
 h5,
-h6,
-.font-heading,
-.font-extrabold,
-.font-bold {
+h6 {
   font-family:
     'Inter',
     ui-sans-serif,
@@ -120,17 +101,23 @@ h6,
     BlinkMacSystemFont,
     'Segoe UI',
     Roboto,
-    sans-serif !important;
-  font-weight: 700;
+    sans-serif;
   letter-spacing: -0.02em;
   line-height: 1.25;
 }
 
-h3,
+h1 {
+  font-weight: 800;
+}
+
+h2,
+h3 {
+  font-weight: 700;
+}
+
 h4,
 h5,
-h6,
-.font-semibold {
+h6 {
   font-weight: 600;
 }
 
@@ -145,9 +132,109 @@ table,
 th,
 td {
   font-family:
-    ui-monospace, 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', monospace !important;
+    ui-monospace, 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
+}
+
+/* ==========================================================================
+   OFFICIAL SHADCN UI TYPOGRAPHY SCALE (https://ui.shadcn.com/docs/components/radix/typography)
+   ========================================================================== */
+
+.typography-h1 {
+  scroll-margin-top: 5rem;
+  font-size: 2.25rem; /* 36px */
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+@media (min-width: 1024px) {
+  .typography-h1 {
+    font-size: 3rem; /* 48px */
+  }
+}
+
+.typography-h2 {
+  scroll-margin-top: 5rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+  font-size: 1.875rem; /* 30px */
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.typography-h3 {
+  scroll-margin-top: 5rem;
+  font-size: 1.5rem; /* 24px */
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.typography-h4 {
+  scroll-margin-top: 5rem;
+  font-size: 1.25rem; /* 20px */
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.typography-p {
+  line-height: 1.75;
+}
+.typography-p:not(:first-child) {
+  margin-top: 1.5rem;
+}
+
+.typography-blockquote {
+  margin-top: 1.5rem;
+  border-left: 2px solid var(--border);
+  padding-left: 1.5rem;
+  font-style: italic;
+}
+
+.typography-table {
+  width: 100%;
+  margin: 1.5rem 0;
+  overflow-y: auto;
+}
+
+.typography-code {
+  position: relative;
+  border-radius: 0.25rem;
+  background-color: var(--muted);
+  padding: 0.2rem 0.3rem;
+  font-family: ui-monospace, 'Menlo', 'Monaco', 'Consolas', monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.typography-lead {
+  font-size: 1.25rem;
+  color: var(--muted-foreground);
+}
+
+.typography-large {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.typography-small {
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.typography-muted {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+/* Shadcn Typeset Container Rhythm */
+.typeset {
+  --typeset-size: 15px;
+  --typeset-leading: 1.75;
+  --typeset-flow: 1.25em;
+  font-size: var(--typeset-size);
+  line-height: var(--typeset-leading);
 }
 
 /* ==========================================================================
@@ -189,85 +276,91 @@ td {
 }
 
 /* ==========================================================================
-   STRICT 3-COLOR PROFESSIONAL MONOCHROME SYSTEM:
-   - Color 1 (Black)       : #000000 / #09090b (Deep base, high-contrast)
-   - Color 2 (White)       : #ffffff / #fafafa (Crisp clean paper / inverted elements)
-   - Color 3 (Neutral Gray): #71717a / #a1a1aa (Secondary text), #e4e4e7 / #27272a (Borders), #f4f4f5 / #18181b (Surfaces)
+   PONS-INSPIRED CLEAN MONOCHROME SYSTEM WITH PINK #FC4198 ACCENT:
+   - Base Surface (Dark)   : #0b0b0b (Pons --p-bg)
+   - Card Surface (Dark)   : #151515 (Pons --p-surface)
+   - Card Raised (Dark)    : #1c1c1c (Pons --p-surface-raised)
+   - Borders (Dark)        : #222222
+   - Brand Accent Pink     : #FC4198
    ========================================================================== */
 
 :root {
-  --background: #ffffff;
+  --background: #f5f5f7;
   --foreground: #09090b;
 
   --card: #ffffff;
   --card-foreground: #09090b;
+  --card-raised: #ffffff;
 
   --popover: #ffffff;
   --popover-foreground: #09090b;
 
-  --border: #e4e4e7;
-  --input: #e4e4e7;
-  --ring: #09090b;
+  --border: #e5e5e7;
+  --input: #e5e5e7;
+  --ring: #FC4198;
 
-  --primary: #09090b;
+  --primary: #FC4198;
   --primary-foreground: #ffffff;
 
   --secondary: #f4f4f5;
   --secondary-foreground: #09090b;
 
-  --muted: #f4f4f5;
+  --muted: #ebebee;
   --muted-foreground: #71717a;
 
-  --accent: #f4f4f5;
+  --accent: #ebebee;
   --accent-foreground: #09090b;
 
   --destructive: #18181b;
   --destructive-foreground: #ffffff;
 
-  --chart-1: #0ea5e9;
-  --chart-2: #10b981;
+  --brand: #FC4198;
+  --chart-1: #FC4198;
+  --chart-2: #FC4198;
   --chart-3: #f59e0b;
   --chart-4: #8b5cf6;
-  --chart-5: #ec4899;
-  --bullish: #16a34a;
-  --bearish: #dc2626;
+  --chart-5: #FC4198;
+  --bullish: #FC4198;
+  --bearish: #ef4444;
 }
 
 .dark {
-  --background: #000000;
+  --background: #0b0b0b;
   --foreground: #fafafa;
 
-  --card: #121214;
+  --card: #151515;
   --card-foreground: #fafafa;
+  --card-raised: #1c1c1c;
 
-  --popover: #121214;
+  --popover: #151515;
   --popover-foreground: #fafafa;
 
-  --border: #27272a;
-  --input: #27272a;
-  --ring: #fafafa;
+  --border: #222222;
+  --input: #222222;
+  --ring: #FC4198;
 
-  --primary: #ffffff;
-  --primary-foreground: #000000;
+  --primary: #FC4198;
+  --primary-foreground: #ffffff;
 
-  --secondary: #18181b;
+  --secondary: #1c1c1c;
   --secondary-foreground: #fafafa;
 
-  --muted: #18181b;
-  --muted-foreground: #a1a1aa;
+  --muted: #1c1c1c;
+  --muted-foreground: #888888;
 
-  --accent: #18181b;
+  --accent: #1c1c1c;
   --accent-foreground: #fafafa;
 
   --destructive: #27272a;
   --destructive-foreground: #fafafa;
 
-  --chart-1: #38bdf8;
-  --chart-2: #22c55e;
+  --brand: #FC4198;
+  --chart-1: #FC4198;
+  --chart-2: #FC4198;
   --chart-3: #f59e0b;
   --chart-4: #a855f7;
-  --chart-5: #ec4899;
-  --bullish: #22c55e;
+  --chart-5: #FC4198;
+  --bullish: #FC4198;
   --bearish: #ef4444;
 }
 
@@ -408,61 +501,33 @@ button:active:not(:disabled),
   transform: scale(0.98);
 }
 
-/* Strict 3-color monochrome button states */
-.bg-emerald-500,
-.bg-emerald-600,
-.bg-emerald-400 {
-  background-color: var(--primary) !important;
-  color: var(--primary-foreground) !important;
+/* Card Surface & Border Normalizer (Pons Clean Monochrome) */
+.card,
+[class*='bg-card'] {
+  background-color: var(--card);
+  color: var(--card-foreground);
 }
 
-.bg-emerald-500:hover:not(:disabled),
-.bg-emerald-600:hover:not(:disabled) {
-  opacity: 0.9 !important;
+.card-raised,
+[class*='bg-card-raised'] {
+  background-color: var(--card-raised);
 }
 
-.bg-rose-500,
-.bg-rose-600 {
-  background-color: var(--secondary) !important;
-  color: var(--secondary-foreground) !important;
-  border: 1px solid var(--border) !important;
+/* Brand Pink #FC4198 Token Utilities */
+.text-brand-pink,
+.text-brand {
+  color: var(--brand) !important;
 }
 
-/* Monochromatic typography normalizer — eliminates rainbow accents */
-.text-emerald-400,
-.text-emerald-500,
-.text-emerald-600,
-.text-indigo-400,
-.text-indigo-500,
-.text-violet-500,
-.text-rose-500,
-.text-rose-600,
-.text-amber-500,
-.text-amber-400,
-.text-sky-400,
-.text-sky-500 {
-  color: var(--foreground) !important;
+.bg-brand-pink,
+.bg-brand {
+  background-color: var(--brand) !important;
+  color: #ffffff !important;
 }
 
-.border-emerald-500,
-.border-emerald-500\/50,
-.border-emerald-500\/40,
-.border-emerald-500\/30,
-.border-emerald-500\/20,
-.border-rose-500,
-.border-amber-500,
-.border-violet-500 {
-  border-color: var(--border) !important;
-}
-
-.bg-emerald-500\/10,
-.bg-emerald-500\/15,
-.bg-emerald-500\/20,
-.bg-rose-500\/10,
-.bg-rose-500\/15,
-.bg-amber-500\/10,
-.bg-violet-500\/15 {
-  background-color: var(--muted) !important;
+.border-brand-pink,
+.border-brand {
+  border-color: var(--brand) !important;
 }
 
 /* Hide scrollbars while preserving scroll functionality (used on overflow-x-auto nav strips) */

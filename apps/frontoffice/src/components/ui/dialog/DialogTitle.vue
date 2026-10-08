@@ -10,7 +10,7 @@ const forwarded = useForwardProps(props);
 <template>
   <RadixDialogTitle
     v-bind="forwarded"
-    :class="cn('text-lg font-semibold leading-none tracking-tight text-white', props.class)"
+    :class="cn('text-lg font-semibold leading-none tracking-tight text-foreground', props.class)"
   >
     <slot />
   </RadixDialogTitle>

@@ -87,38 +87,34 @@
       <Card class="p-5 sm:p-7 border border-border bg-card rounded-3xl shadow-sm space-y-6">
         <Tabs v-model="activeTab" class="w-full">
           <div
-            class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3"
+            class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-1"
           >
             <TabsList
-              class="flex sm:inline-flex w-full sm:w-auto overflow-x-auto no-scrollbar bg-muted/60 p-1 rounded-xl border border-border gap-1 h-auto shrink-0 font-mono"
+              variant="line"
+              class="flex sm:inline-flex w-full sm:w-auto overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0 font-mono text-xs"
             >
               <TabsTrigger
                 value="posts"
-                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-foreground whitespace-nowrap shrink-0"
               >
                 Posts & Calls ({{ userPosts.length }})
               </TabsTrigger>
               <TabsTrigger
                 value="created"
-                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-foreground whitespace-nowrap shrink-0"
               >
                 {{ t('createdTokens') }} ({{ myLaunches.length }})
               </TabsTrigger>
               <TabsTrigger
                 value="portfolio"
-                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-foreground whitespace-nowrap shrink-0"
               >
                 {{ t('portfolio') }} ({{ portfolioPositions.length }})
               </TabsTrigger>
               <TabsTrigger
                 value="dividends"
-                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-foreground whitespace-nowrap shrink-0"
               >
                 {{ t('dividendsAndVesting') }}
               </TabsTrigger>
               <TabsTrigger
                 value="activity"
-                class="text-xs font-semibold px-3 py-1.5 rounded-lg text-foreground whitespace-nowrap shrink-0"
               >
                 {{ t('activity') }} ({{ userActivities.length }})
               </TabsTrigger>

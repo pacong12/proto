@@ -58,7 +58,7 @@
           >
             <div class="flex items-center gap-3">
               <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-                <Check v-if="copiedLink" class="w-4 h-4 text-emerald-500" />
+                <Check v-if="copiedLink" class="w-4 h-4 text-primary" />
                 <Link2 v-else class="w-4 h-4" />
               </div>
               <div>
@@ -105,7 +105,7 @@
             @click="showPnlCard = !showPnlCard"
           >
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+              <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                 <TrendingUp class="w-4 h-4" />
               </div>
               <div>
@@ -126,19 +126,19 @@
         <div v-if="showPnlCard" class="space-y-3 pt-2">
           <div
             id="pnl-alpha-card"
-            class="p-4 rounded-2xl bg-gradient-to-br from-zinc-950 via-zinc-900 to-black border-2 border-emerald-500/40 text-white shadow-xl space-y-3 relative overflow-hidden"
+            class="p-4 rounded-2xl bg-card border-2 border-primary/40 text-card-foreground shadow-xl space-y-3 relative overflow-hidden"
           >
-            <!-- Background Glow Accent -->
-            <div class="absolute -top-12 -right-12 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none" />
+            <!-- Background Glow Accent (#FC4198) -->
+            <div class="absolute -top-12 -right-12 w-32 h-32 bg-primary/15 rounded-full blur-2xl pointer-events-none" />
 
             <!-- Brand Header -->
-            <div class="flex items-center justify-between relative z-10 border-b border-white/10 pb-2">
-              <div class="flex items-center gap-1.5 font-bold tracking-wider text-[11px] text-emerald-400">
+            <div class="flex items-center justify-between relative z-10 border-b border-border pb-2">
+              <div class="flex items-center gap-1.5 font-bold tracking-wider text-[11px] text-primary">
                 <Sparkles class="w-3.5 h-3.5" />
                 <span>PROTO ALPHA SIGNAL</span>
               </div>
-              <Badge variant="outline" class="text-[9px] border-white/20 text-white/80 font-mono">
-                Skin in the Game Verified
+              <Badge variant="outline" class="text-[9px] border-primary/30 text-primary font-mono">
+                Verified Position
               </Badge>
             </div>
 
@@ -151,39 +151,39 @@
                   :fallback-text="call.tokenSymbol || 'TOK'"
                   :width="40"
                   :height="40"
-                  class="rounded-full border border-white/20 shrink-0"
+                  class="rounded-full border border-border shrink-0"
                 />
                 <div>
-                  <h3 class="font-black text-sm text-white">
+                  <h3 class="font-black text-sm text-foreground">
                     ${{ call.tokenSymbol || 'TOKEN' }}
                   </h3>
-                  <p class="text-[10px] text-white/60">
+                  <p class="text-[10px] text-muted-foreground">
                     {{ call.tokenName || 'Proto Token' }}
                   </p>
                 </div>
               </div>
 
               <div class="text-right">
-                <span class="text-[9px] text-white/60 block uppercase font-bold">Target MC</span>
-                <span class="text-xs font-black text-emerald-400">
+                <span class="text-[9px] text-muted-foreground block uppercase font-bold">Target MC</span>
+                <span class="text-xs font-black text-primary">
                   {{ call.targetMcap || 'Moon' }}
                 </span>
               </div>
             </div>
 
             <!-- Position & Profit Stats Ribbon -->
-            <div class="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-white/5 border border-white/10 relative z-10">
+            <div class="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-muted/50 border border-border relative z-10 font-mono">
               <div>
-                <span class="text-[9px] text-white/60 block uppercase">Caller Position</span>
-                <span class="text-xs font-bold text-white">
+                <span class="text-[9px] text-muted-foreground block uppercase">Caller Position</span>
+                <span class="text-xs font-bold text-foreground">
                   {{ call.positionUsd ? `$${call.positionUsd.toFixed(1)}` : 'Verified Holder' }}
                 </span>
               </div>
               <div class="text-right">
-                <span class="text-[9px] text-white/60 block uppercase">Current Profit</span>
+                <span class="text-[9px] text-muted-foreground block uppercase">Current Profit</span>
                 <span
                   class="text-xs font-bold"
-                  :class="(call.profitUsd ?? 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'"
+                  :class="(call.profitUsd ?? 0) >= 0 ? 'text-primary' : 'text-rose-500'"
                 >
                   {{ (call.profitUsd ?? 0) >= 0 ? '+' : '' }}${{ (call.profitUsd ?? 0).toFixed(1) }}
                 </span>
@@ -191,7 +191,7 @@
             </div>
 
             <!-- Card Footer -->
-            <div class="flex items-center justify-between text-[10px] text-white/50 relative z-10 pt-1">
+            <div class="flex items-center justify-between text-[10px] text-muted-foreground relative z-10 pt-1 font-mono">
               <span>by {{ shortenAddress(call.authorAddress, 6, 4) }}</span>
               <span>proto.it/launchpad</span>
             </div>

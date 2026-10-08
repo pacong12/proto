@@ -3,7 +3,7 @@
   <div class="rounded-3xl border border-border bg-card overflow-hidden shadow-sm font-sans">
     <!-- 1. Ambient Banner -->
     <div
-      class="h-28 sm:h-44 bg-gradient-to-r from-zinc-950 via-zinc-900 to-black relative overflow-hidden border-b border-border/60 group"
+      class="h-28 sm:h-44 bg-card relative overflow-hidden border-b border-border group"
       :class="isOwnProfile ? 'cursor-pointer' : ''"
       @click="isOwnProfile && emit('edit')"
     >
@@ -15,16 +15,16 @@
       />
       <div
         v-else
-        class="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.25),rgba(255,255,255,0))]"
+        class="absolute inset-0 bg-muted/40"
       />
 
       <div
         v-if="isOwnProfile"
-        class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+        class="absolute inset-0 bg-background/50 backdrop-blur-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
         title="Update header banner"
       >
-        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-background/85 text-foreground shadow-xs">
-          <Camera class="w-3.5 h-3.5" />
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-card text-foreground shadow-xs border border-border">
+          <Camera class="w-3.5 h-3.5 text-primary" />
           Update Banner
         </span>
       </div>
@@ -66,10 +66,10 @@
           />
           <div
             v-if="isOwnProfile"
-            class="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            class="absolute inset-0 rounded-full bg-background/50 backdrop-blur-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
             title="Update profile photo"
           >
-            <Camera class="w-6 h-6 text-white" />
+            <Camera class="w-6 h-6 text-foreground" />
           </div>
         </div>
 

@@ -89,7 +89,7 @@
          2. PROTOCOL HIGHLIGHTS HERO STRIP (ubi.fun style)
          ============================================================ -->
     <div
-      class="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-card via-card to-muted/40 border border-border flex flex-col md:flex-row items-start md:items-center justify-between gap-5 shadow-xs"
+      class="p-5 sm:p-6 rounded-3xl bg-card border border-border flex flex-col md:flex-row items-start md:items-center justify-between gap-5 shadow-xs"
     >
       <div class="space-y-1.5 max-w-xl">
         <h1 class="text-xl sm:text-2xl font-black tracking-tight text-foreground">
@@ -149,16 +149,16 @@
           </p>
         </div>
 
-        <!-- Right Controls: View Mode Switcher -->
-        <div class="flex items-center gap-2 self-end sm:self-auto">
-          <div class="inline-flex items-center p-0.5 bg-muted rounded-lg border border-border">
+        <!-- Right Controls: View Mode Switcher (Pons-Style Pills) -->
+        <div class="flex items-center gap-2 self-end sm:self-auto font-mono">
+          <div class="inline-flex items-center p-1 bg-muted/40 rounded-full border border-border gap-1">
             <button
               type="button"
               @click="viewMode = 'table'"
-              class="px-2.5 py-1 text-xs font-semibold rounded-md transition cursor-pointer flex items-center gap-1.5"
+              class="px-3 py-1 text-xs font-semibold rounded-full transition cursor-pointer flex items-center gap-1.5"
               :class="
                 viewMode === 'table'
-                  ? 'bg-card text-foreground shadow-xs'
+                  ? 'bg-card text-foreground shadow-xs border border-border/80 font-bold'
                   : 'text-muted-foreground hover:text-foreground'
               "
             >
@@ -168,10 +168,10 @@
             <button
               type="button"
               @click="viewMode = 'grid'"
-              class="px-2.5 py-1 text-xs font-semibold rounded-md transition cursor-pointer flex items-center gap-1.5"
+              class="px-3 py-1 text-xs font-semibold rounded-full transition cursor-pointer flex items-center gap-1.5"
               :class="
                 viewMode === 'grid'
-                  ? 'bg-card text-foreground shadow-xs'
+                  ? 'bg-card text-foreground shadow-xs border border-border/80 font-bold'
                   : 'text-muted-foreground hover:text-foreground'
               "
             >
@@ -182,24 +182,22 @@
         </div>
       </div>
 
-      <!-- Navigation Filter Pills (ubi.fun exact categories) + Search Bar -->
+      <!-- Navigation Filter Pills (Shadcn Tabs variant="line") + Search Bar -->
       <div
-        class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-border"
+        class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-border font-mono text-xs"
       >
         <!-- Filter Tabs -->
-        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-          <Button
-            type="button"
-            v-for="tab in marketTabs"
-            :key="tab.value"
-            @click="activeMarketTab = tab.value"
-            :variant="activeMarketTab === tab.value ? 'default' : 'secondary'"
-            size="sm"
-            class="h-8 px-3.5 text-xs font-bold rounded-xl transition whitespace-nowrap cursor-pointer shrink-0"
-          >
-            {{ tab.label }}
-          </Button>
-        </div>
+        <Tabs v-model="activeMarketTab" class="w-full md:w-auto">
+          <TabsList variant="line" class="overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0 w-auto">
+            <TabsTrigger
+              v-for="tab in marketTabs"
+              :key="tab.value"
+              :value="tab.value"
+            >
+              {{ tab.label }}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         <!-- Search Bar -->
         <div class="relative w-full md:w-64 shrink-0">
@@ -235,199 +233,195 @@
     </div>
 
     <!-- ============================================================
-         4A. HYBRID UBI.FUN X PONS TABLE VIEW
+         4A. SHADCN UI TABLE VIEW (https://ui.shadcn.com/docs/components/radix/table)
          ============================================================ -->
     <div
       v-else-if="viewMode === 'table' && filteredTokens.length > 0"
-      class="rounded-2xl border border-border bg-card overflow-hidden shadow-xs"
+      class="rounded-2xl border border-border bg-black overflow-hidden shadow-xs"
     >
-      <div class="overflow-x-auto w-full">
-        <table class="w-full text-left text-xs font-mono min-w-[920px]">
-          <thead>
-            <tr
-              class="border-b border-border text-muted-foreground uppercase tracking-wider text-[11px] bg-muted/40"
+      <Table class="text-xs font-mono min-w-[920px] bg-black">
+        <TableHeader>
+          <TableRow class="border-b border-border text-muted-foreground uppercase tracking-wider text-[11px] bg-black hover:bg-black">
+            <TableHead class="py-3 px-4 font-semibold sticky left-0 z-20 bg-black text-muted-foreground">
+              COIN
+            </TableHead>
+            <TableHead class="py-3 px-3 font-semibold text-center w-20 text-muted-foreground bg-black">PAIR</TableHead>
+            <TableHead class="py-3 px-4 font-semibold text-center w-24 text-muted-foreground bg-black">GRAPH</TableHead>
+            <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black">MARKET CAP</TableHead>
+            <TableHead class="py-3 px-4 font-semibold text-center w-36 text-muted-foreground bg-black">BONDING</TableHead>
+            <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black">AGE</TableHead>
+            <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black">VOLUME 24H</TableHead>
+            <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black">24H</TableHead>
+            <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black">ACTION</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow
+            v-for="item in paginatedTokens"
+            :key="item.token.address"
+            class="hover:bg-zinc-900/40 transition-colors cursor-pointer group bg-black"
+            @click="$emit('selectToken', item.token.address)"
+          >
+            <!-- 1. COIN (Pin + Logo + Name + Symbol + Creator + Copy Contract) -->
+            <TableCell
+              class="py-3.5 px-4 sticky left-0 z-10 bg-black group-hover:bg-zinc-900/40 transition-colors"
             >
-              <th class="py-3 px-4 font-semibold sticky left-0 z-20 bg-muted/80 backdrop-blur-xs">
-                COIN
-              </th>
-              <th class="py-3 px-3 font-semibold text-center w-20">PAIR</th>
-              <th class="py-3 px-4 font-semibold text-center w-24">GRAPH</th>
-              <th class="py-3 px-4 font-semibold text-right">MARKET CAP</th>
-              <th class="py-3 px-4 font-semibold text-center w-36">BONDING</th>
-              <th class="py-3 px-4 font-semibold text-right">AGE</th>
-              <th class="py-3 px-4 font-semibold text-right">VOLUME 24H</th>
-              <th class="py-3 px-4 font-semibold text-right">24H</th>
-              <th class="py-3 px-4 font-semibold text-right">ACTION</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-border">
-            <tr
-              v-for="item in paginatedTokens"
-              :key="item.token.address"
-              class="hover:bg-muted/40 transition-colors cursor-pointer group"
-              @click="$emit('selectToken', item.token.address)"
-            >
-              <!-- 1. COIN (Pin + Logo + Name + Symbol + Creator + Copy Contract) -->
-              <td
-                class="py-3.5 px-4 sticky left-0 z-10 bg-card group-hover:bg-muted/40 transition-colors"
-              >
-                <div class="flex items-center gap-2.5">
-                  <!-- Pons-style Pin / Star Button -->
-                  <button
-                    type="button"
-                    class="p-1 rounded-lg transition-transform hover:scale-110 cursor-pointer select-none shrink-0"
-                    :class="isPinned(item.token.address) ? 'text-amber-400' : 'text-muted-foreground/35 hover:text-amber-400'"
-                    :title="isPinned(item.token.address) ? 'Unpin coin' : 'Pin to Watchlist'"
-                    @click.stop="togglePin(item.token.address)"
-                  >
-                    <Star
-                      class="w-4 h-4"
-                      :class="isPinned(item.token.address) ? 'fill-amber-400 text-amber-400' : ''"
-                    />
-                  </button>
-
-                  <OptimizedImage
-                    :src="item.token.logo"
-                    :alt="item.token.name"
-                    :fallback-text="item.token.symbol"
-                    :width="36"
-                    :height="36"
-                    class="rounded-full border border-border object-cover shrink-0 ring-1 ring-border group-hover:ring-primary/50 transition"
-                  />
-
-                  <div class="min-w-0 truncate">
-                    <div class="flex items-center gap-1.5 truncate">
-                      <span
-                        class="font-bold text-sm text-foreground group-hover:text-primary transition truncate"
-                      >
-                        {{ item.token.name }}
-                      </span>
-                    </div>
-                    <div class="flex items-center gap-2 mt-0.5">
-                      <span class="font-bold text-xs text-muted-foreground"
-                        >${{ item.token.symbol }}</span
-                      >
-                      <span class="text-muted-foreground/50 text-[10px] hidden sm:inline">&middot;</span>
-                      <span class="text-[10px] text-muted-foreground truncate hidden sm:inline">
-                        by {{ shortenAddress(item.token.deployer, 4, 3) }}
-                      </span>
-                      <button
-                        type="button"
-                        class="text-[10px] text-muted-foreground hover:text-foreground font-mono flex items-center gap-1 bg-muted/60 px-1.5 py-0.5 rounded transition cursor-pointer"
-                        title="Copy Contract Address"
-                        @click.stop="copyAddress(item.token.address)"
-                      >
-                        <span>{{ shortenAddress(item.token.address, 4, 3) }}</span>
-                        <Check
-                          v-if="copiedAddress === item.token.address"
-                          class="w-3 h-3 text-emerald-500"
-                        />
-                        <Copy v-else class="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </td>
-
-              <!-- 2. PAIR (Native Currency Pair like Pons) -->
-              <td class="py-3.5 px-3 text-center">
-                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-border/70 bg-muted/30 text-[10px] font-mono font-bold text-muted-foreground">
-                  <img
-                    :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
-                    alt=""
-                    class="w-3 h-3 rounded-full object-contain"
-                  />
-                  {{ currencySymbol }}
-                </span>
-              </td>
-
-              <!-- 3. GRAPH (Mini SVG Sparkline curve) -->
-              <td class="py-3.5 px-4 text-center">
-                <svg
-                  class="inline-block overflow-visible"
-                  width="72"
-                  height="24"
-                  viewBox="0 0 72 24"
-                  fill="none"
+              <div class="flex items-center gap-2.5">
+                <!-- Pons-style Pin / Star Button -->
+                <button
+                  type="button"
+                  class="p-1 rounded-lg transition-transform hover:scale-110 cursor-pointer select-none shrink-0"
+                  :class="isPinned(item.token.address) ? 'text-amber-400' : 'text-muted-foreground/35 hover:text-amber-400'"
+                  :title="isPinned(item.token.address) ? 'Unpin coin' : 'Pin to Watchlist'"
+                  @click.stop="togglePin(item.token.address)"
                 >
-                  <path
-                    :d="getSparkline(item.marketData?.priceChange24h ?? 0, 72, 24).d"
-                    :stroke="getSparkline(item.marketData?.priceChange24h ?? 0, 72, 24).color"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                  <Star
+                    class="w-4 h-4"
+                    :class="isPinned(item.token.address) ? 'fill-amber-400 text-amber-400' : ''"
                   />
-                </svg>
-              </td>
+                </button>
 
-              <!-- 4. MARKET CAP -->
-              <td class="py-3.5 px-4 text-right font-extrabold text-sm text-foreground font-mono">
-                {{
-                  (item.marketData?.marketCapUsd ?? 0) > 0
-                    ? `$${formatNumberCap(item.marketData?.marketCapUsd ?? 0)}`
-                    : '—'
-                }}
-              </td>
+                <OptimizedImage
+                  :src="item.token.logo"
+                  :alt="item.token.name"
+                  :fallback-text="item.token.symbol"
+                  :width="36"
+                  :height="36"
+                  class="rounded-full border border-border object-cover shrink-0 ring-1 ring-border group-hover:ring-primary/50 transition"
+                />
 
-              <!-- 5. BONDING / PROGRESS -->
-              <td class="py-3.5 px-4">
-                <div class="space-y-1.5 max-w-[130px] mx-auto font-mono text-center">
-                  <div class="flex items-center justify-between text-[10px]">
-                    <span class="text-muted-foreground">
-                      {{ item.marketData?.isGraduated ? 'Graduated' : 'Curve' }}
-                    </span>
-                    <span class="font-bold text-emerald-500">
-                      {{ ((item.marketData?.graduationProgress ?? 0) * 100).toFixed(0) }}%
+                <div class="min-w-0 truncate">
+                  <div class="flex items-center gap-1.5 truncate">
+                    <span
+                      class="font-bold text-sm text-foreground group-hover:text-primary transition truncate"
+                    >
+                      {{ item.token.name }}
                     </span>
                   </div>
-                  <Progress
-                    :model-value="(item.marketData?.graduationProgress ?? 0) * 100"
-                    class="h-1.5 rounded-full"
-                  />
+                  <div class="flex items-center gap-2 mt-0.5">
+                    <span class="font-bold text-xs text-muted-foreground"
+                      >${{ item.token.symbol }}</span
+                    >
+                    <span class="text-muted-foreground/50 text-[10px] hidden sm:inline">&middot;</span>
+                    <span class="text-[10px] text-muted-foreground truncate hidden sm:inline">
+                      by {{ shortenAddress(item.token.deployer, 4, 3) }}
+                    </span>
+                    <button
+                      type="button"
+                      class="text-[10px] text-muted-foreground hover:text-foreground font-mono flex items-center gap-1 bg-muted/60 px-1.5 py-0.5 rounded transition cursor-pointer"
+                      title="Copy Contract Address"
+                      @click.stop="copyAddress(item.token.address)"
+                    >
+                      <span>{{ shortenAddress(item.token.address, 4, 3) }}</span>
+                      <Check
+                        v-if="copiedAddress === item.token.address"
+                        class="w-3 h-3 text-emerald-500"
+                      />
+                      <Copy v-else class="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
-              </td>
+              </div>
+            </TableCell>
 
-              <!-- 6. AGE -->
-              <td class="py-3.5 px-4 text-right text-muted-foreground font-semibold text-xs">
-                {{ formatRelativeTime(item.token.createdAt) }}
-              </td>
+            <!-- 2. PAIR (Native Currency Pair like Pons) -->
+            <TableCell class="py-3.5 px-3 text-center">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-border/70 bg-muted/30 text-[10px] font-mono font-bold text-muted-foreground">
+                <img
+                  :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
+                  alt=""
+                  class="w-3 h-3 rounded-full object-contain"
+                />
+                {{ currencySymbol }}
+              </span>
+            </TableCell>
 
-              <!-- 7. VOLUME 24H -->
-              <td class="py-3.5 px-4 text-right text-muted-foreground font-semibold text-xs">
-                {{
-                  (item.marketData?.volume24hUsd ?? 0) > 0
-                    ? formatCompactUsd(item.marketData?.volume24hUsd)
-                    : '—'
-                }}
-              </td>
-
-              <!-- 8. 24H % -->
-              <td
-                class="py-3.5 px-4 text-right font-extrabold text-xs"
-                :class="
-                  (item.marketData?.priceChange24h ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'
-                "
+            <!-- 3. GRAPH (Mini SVG Sparkline curve) -->
+            <TableCell class="py-3.5 px-4 text-center">
+              <svg
+                class="inline-block overflow-visible"
+                width="72"
+                height="24"
+                viewBox="0 0 72 24"
+                fill="none"
               >
-                {{ (item.marketData?.priceChange24h ?? 0) >= 0 ? '+' : ''
-                }}{{ (item.marketData?.priceChange24h ?? 0).toFixed(2) }}%
-              </td>
+                <path
+                  :d="getSparkline(item.marketData?.priceChange24h ?? 0, 72, 24).d"
+                  :stroke="getSparkline(item.marketData?.priceChange24h ?? 0, 72, 24).color"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </TableCell>
 
-              <!-- 9. ACTION (Quick Buy / Trade button) -->
-              <td class="py-3.5 px-4 text-right">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  class="h-8 px-3 text-xs font-bold rounded-xl border-border hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all cursor-pointer inline-flex items-center gap-1 font-mono"
-                  @click.stop="$emit('selectToken', item.token.address)"
-                >
-                  <span>Trade</span>
-                  <ArrowRight class="w-3.5 h-3.5" />
-                </Button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+            <!-- 4. MARKET CAP -->
+            <TableCell class="py-3.5 px-4 text-right font-extrabold text-sm text-foreground font-mono">
+              {{
+                (item.marketData?.marketCapUsd ?? 0) > 0
+                  ? `$${formatNumberCap(item.marketData?.marketCapUsd ?? 0)}`
+                  : '—'
+              }}
+            </TableCell>
+
+            <!-- 5. BONDING / PROGRESS -->
+            <TableCell class="py-3.5 px-4">
+              <div class="space-y-1.5 max-w-[130px] mx-auto font-mono text-center">
+                <div class="flex items-center justify-between text-[10px]">
+                  <span class="text-muted-foreground">
+                    {{ item.marketData?.isGraduated ? 'Graduated' : 'Curve' }}
+                  </span>
+                  <span class="font-bold text-emerald-500">
+                    {{ ((item.marketData?.graduationProgress ?? 0) * 100).toFixed(0) }}%
+                  </span>
+                </div>
+                <Progress
+                  :model-value="(item.marketData?.graduationProgress ?? 0) * 100"
+                  class="h-1.5 rounded-full"
+                />
+              </div>
+            </TableCell>
+
+            <!-- 6. AGE -->
+            <TableCell class="py-3.5 px-4 text-right text-muted-foreground font-semibold text-xs">
+              {{ formatRelativeTime(item.token.createdAt) }}
+            </TableCell>
+
+            <!-- 7. VOLUME 24H -->
+            <TableCell class="py-3.5 px-4 text-right text-muted-foreground font-semibold text-xs">
+              {{
+                (item.marketData?.volume24hUsd ?? 0) > 0
+                  ? formatCompactUsd(item.marketData?.volume24hUsd)
+                  : '—'
+              }}
+            </TableCell>
+
+            <!-- 8. 24H % -->
+            <TableCell
+              class="py-3.5 px-4 text-right font-extrabold text-xs"
+              :class="
+                (item.marketData?.priceChange24h ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'
+              "
+            >
+              {{ (item.marketData?.priceChange24h ?? 0) >= 0 ? '+' : ''
+              }}{{ (item.marketData?.priceChange24h ?? 0).toFixed(2) }}%
+            </TableCell>
+
+            <!-- 9. ACTION (Quick Buy / Trade button) -->
+            <TableCell class="py-3.5 px-4 text-right">
+              <Button
+                size="sm"
+                variant="outline"
+                class="h-8 px-3 text-xs font-bold rounded-xl border-border hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all cursor-pointer inline-flex items-center gap-1 font-mono"
+                @click.stop="$emit('selectToken', item.token.address)"
+              >
+                <span>Trade</span>
+                <ArrowRight class="w-3.5 h-3.5" />
+              </Button>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
 
       <!-- Pagination in Table Footer -->
       <div
@@ -589,7 +583,15 @@ import {
   Star,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Empty } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';

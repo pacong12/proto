@@ -55,7 +55,7 @@
     </div>
 
     <!-- 1. MAIN INTERACTIVE SHADCN CHART PANEL (Pons x Shadcn /charts/ Style) -->
-    <Card class="p-5 sm:p-7 rounded-3xl border border-border/80 bg-card/90 shadow-sm space-y-6">
+    <Card class="p-5 sm:p-7 rounded-3xl border border-border bg-card shadow-sm space-y-6">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <!-- Main Figure Callout -->
         <div class="space-y-1">
@@ -214,29 +214,29 @@
         No active tokens indexed on this network yet.
       </div>
 
-      <div v-else class="overflow-x-auto w-full">
-        <table class="w-full text-left text-xs font-mono">
-          <thead>
-            <tr class="border-b border-border/70 text-muted-foreground text-[11px] uppercase">
-              <th class="py-3 px-3 font-semibold w-12 text-center">#</th>
-              <th class="py-3 px-4 font-semibold">TOKEN</th>
-              <th class="py-3 px-4 font-semibold text-right">MARKET CAP</th>
-              <th class="py-3 px-4 font-semibold text-right">24H VOLUME</th>
-              <th class="py-3 px-4 font-semibold text-right">24H CHANGE</th>
-              <th class="py-3 px-4 font-semibold text-right">ACTION</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-border/60">
-            <tr
+      <div v-else class="rounded-2xl border border-border/80 overflow-hidden bg-black">
+        <Table class="text-xs font-mono bg-black">
+          <TableHeader>
+            <TableRow class="border-b border-border/70 text-muted-foreground text-[11px] uppercase bg-black hover:bg-black">
+              <TableHead class="py-3 px-3 font-semibold w-12 text-center text-muted-foreground bg-black">#</TableHead>
+              <TableHead class="py-3 px-4 font-semibold text-muted-foreground bg-black">TOKEN</TableHead>
+              <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black">MARKET CAP</TableHead>
+              <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black">24H VOLUME</TableHead>
+              <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black">24H CHANGE</TableHead>
+              <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black">ACTION</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow
               v-for="(tItem, idx) in topCoins"
               :key="tItem.token.address"
-              class="hover:bg-muted/40 transition-colors cursor-pointer group"
+              class="hover:bg-zinc-900/40 transition-colors cursor-pointer group bg-black"
               @click="router.push(`/token/${tItem.token.address}`)"
             >
-              <td class="py-3.5 px-3 text-center text-muted-foreground font-bold">
+              <TableCell class="py-3.5 px-3 text-center text-muted-foreground font-bold">
                 {{ idx + 1 }}
-              </td>
-              <td class="py-3.5 px-4">
+              </TableCell>
+              <TableCell class="py-3.5 px-4">
                 <div class="flex items-center gap-3">
                   <OptimizedImage
                     :src="tItem.token.logo"
@@ -255,20 +255,20 @@
                     </span>
                   </div>
                 </div>
-              </td>
-              <td class="py-3.5 px-4 text-right font-bold text-foreground">
+              </TableCell>
+              <TableCell class="py-3.5 px-4 text-right font-bold text-foreground">
                 ${{ formatCompactUsd(tItem.marketData?.marketCapUsd || 4200) }}
-              </td>
-              <td class="py-3.5 px-4 text-right font-medium text-foreground">
+              </TableCell>
+              <TableCell class="py-3.5 px-4 text-right font-medium text-foreground">
                 {{ (tItem.marketData?.volume24hUsd ?? 0) > 0 ? formatCompactUsd(tItem.marketData?.volume24hUsd) : '$0' }}
-              </td>
-              <td
+              </TableCell>
+              <TableCell
                 class="py-3.5 px-4 text-right font-bold"
                 :class="(tItem.marketData?.priceChange24h ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'"
               >
                 {{ (tItem.marketData?.priceChange24h ?? 0) >= 0 ? '+' : '' }}{{ (tItem.marketData?.priceChange24h ?? 0).toFixed(1) }}%
-              </td>
-              <td class="py-3.5 px-4 text-right">
+              </TableCell>
+              <TableCell class="py-3.5 px-4 text-right">
                 <Button
                   size="sm"
                   variant="outline"
@@ -277,10 +277,10 @@
                 >
                   Trade
                 </Button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
     </Card>
 
@@ -390,6 +390,14 @@ import { useTokenStore } from '@/composables/useTokenStore';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { ShadcnAreaChart, type ChartDataPoint } from '@/components/ui/chart';
 import { formatCompactUsd } from '@/lib/utils';

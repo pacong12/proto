@@ -818,10 +818,11 @@
             <Tabs v-model="activeBottomTab" class="w-full">
               <!-- Tab headers -->
               <div
-                class="flex items-center justify-between border-b border-border bg-muted/30 px-3 sm:px-4 py-2 overflow-x-auto no-scrollbar gap-2"
+                class="flex items-center justify-between border-b border-border px-3 sm:px-4 py-1.5 overflow-x-auto no-scrollbar gap-2"
               >
                 <TabsList
-                  class="flex gap-1 bg-transparent border-0 rounded-none h-auto p-0 shrink-0"
+                  variant="line"
+                  class="flex gap-4 sm:gap-6 border-b-0 w-auto"
                 >
                   <TabsTrigger
                     v-for="tab in [
@@ -833,9 +834,8 @@
                     ]"
                     :key="tab.value"
                     :value="tab.value"
-                    class="px-3 sm:px-4 py-2 text-xs font-semibold rounded-lg border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary text-muted-foreground hover:text-foreground bg-transparent transition-all cursor-pointer whitespace-nowrap shrink-0"
                   >
-                    {{ tab.label }}
+                    <span>{{ tab.label }}</span>
                     <span
                       v-if="tab.value === 'callouts' && callouts.length > 0"
                       class="ml-1 px-1.5 py-0.2 rounded-full bg-primary/20 text-primary font-bold text-[10px]"
@@ -1144,26 +1144,26 @@
                 >
                   <p class="text-xs font-mono">No trades match this filter.</p>
                 </div>
-                <div v-else class="overflow-x-auto">
-                  <table class="w-full text-left text-xs font-mono min-w-[540px]">
-                    <thead class="sticky top-0 z-10 bg-muted">
-                      <tr class="border-b border-border text-muted-foreground">
-                        <th class="py-2 px-3 font-semibold">Type</th>
-                        <th class="py-2 px-3 font-semibold">Price</th>
-                        <th class="py-2 px-3 font-semibold">{{ currencySymbol }}</th>
-                        <th class="py-2 px-3 font-semibold">{{ currentToken.symbol }}</th>
-                        <th class="py-2 px-3 font-semibold">Trader</th>
-                        <th class="py-2 px-3 font-semibold">Age</th>
-                        <th class="py-2 px-3 font-semibold text-right">Tx</th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-border">
-                      <tr
+                <div v-else class="overflow-x-auto rounded-2xl border border-border bg-black">
+                  <Table class="w-full text-left text-xs font-mono min-w-[540px] bg-black">
+                    <TableHeader>
+                      <TableRow class="border-b border-border text-muted-foreground bg-black hover:bg-black">
+                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">Type</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">Price</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">{{ currencySymbol }}</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">{{ currentToken.symbol }}</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">Trader</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">Age</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Tx</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow
                         v-for="trade in paginatedTrades"
                         :key="trade.id || trade.transactionHash"
-                        class="hover:bg-muted/50 transition-colors"
+                        class="hover:bg-zinc-900/40 transition-colors bg-black"
                       >
-                        <td class="py-2 px-3 whitespace-nowrap">
+                        <TableCell class="py-2 px-3 whitespace-nowrap">
                           <span
                             class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider border border-border"
                             :class="
@@ -1174,21 +1174,21 @@
                           >
                             {{ trade.isBuy ? 'BUY' : 'SELL' }}
                           </span>
-                        </td>
-                        <td class="py-2 px-3 whitespace-nowrap text-foreground font-medium">
+                        </TableCell>
+                        <TableCell class="py-2 px-3 whitespace-nowrap text-foreground font-medium">
                           ${{
                             trade.priceUsd < 0.0001
                               ? trade.priceUsd.toFixed(8)
                               : trade.priceUsd.toFixed(4)
                           }}
-                        </td>
-                        <td class="py-2 px-3 whitespace-nowrap text-foreground">
+                        </TableCell>
+                        <TableCell class="py-2 px-3 whitespace-nowrap text-foreground">
                           {{ parseFloat(trade.wethAmount).toFixed(4) }}
-                        </td>
-                        <td class="py-2 px-3 whitespace-nowrap text-foreground font-medium">
+                        </TableCell>
+                        <TableCell class="py-2 px-3 whitespace-nowrap text-foreground font-medium">
                           {{ formatTokenNumber(trade.tokenAmount) }}
-                        </td>
-                        <td class="py-2 px-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell class="py-2 px-3 whitespace-nowrap">
                           <div class="flex items-center gap-1.5 text-foreground">
                             <Jazzicon :address="trade.trader" :size="14" />
                             <span>{{ truncateAddress(trade.trader) }}</span>
@@ -1205,11 +1205,11 @@
                               <Copy v-else class="w-3 h-3" />
                             </button>
                           </div>
-                        </td>
-                        <td class="py-2 px-3 whitespace-nowrap text-muted-foreground">
+                        </TableCell>
+                        <TableCell class="py-2 px-3 whitespace-nowrap text-muted-foreground">
                           {{ formatRelativeTime(trade.timestamp) }}
-                        </td>
-                        <td class="py-2 px-3 whitespace-nowrap text-right">
+                        </TableCell>
+                        <TableCell class="py-2 px-3 whitespace-nowrap text-right">
                           <a
                             :href="`${explorerUrl}/tx/${trade.transactionHash}`"
                             target="_blank"
@@ -1219,10 +1219,10 @@
                           >
                             <ExternalLink class="w-3 h-3" />
                           </a>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
 
                   <!-- Trades Pagination -->
                   <div
@@ -1254,28 +1254,28 @@
                 >
                   <p class="text-xs font-mono">No trading activity recorded yet.</p>
                 </div>
-                <div v-else class="overflow-x-auto">
-                  <table class="w-full text-left text-xs font-mono min-w-[520px]">
-                    <thead class="sticky top-0 z-10 bg-muted">
-                      <tr class="border-b border-border text-muted-foreground">
-                        <th class="py-2 px-3 font-semibold w-10">#</th>
-                        <th class="py-2 px-3 font-semibold">Trader</th>
-                        <th class="py-2 px-3 font-semibold">Tag</th>
-                        <th class="py-2 px-3 font-semibold text-right">Buy / Sell</th>
-                        <th class="py-2 px-3 font-semibold text-center">Position</th>
-                        <th class="py-2 px-3 font-semibold text-right">Est. PnL</th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-border">
-                      <tr
+                <div v-else class="overflow-x-auto rounded-2xl border border-border bg-black">
+                  <Table class="w-full text-left text-xs font-mono min-w-[520px] bg-black">
+                    <TableHeader>
+                      <TableRow class="border-b border-border text-muted-foreground bg-black hover:bg-black">
+                        <TableHead class="py-2.5 px-3 font-semibold w-10 text-muted-foreground bg-black">#</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">Trader</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">Tag</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Buy / Sell</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold text-center text-muted-foreground bg-black">Position</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Est. PnL</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow
                         v-for="(trader, idx) in paginatedTopTraders"
                         :key="trader.address"
-                        class="hover:bg-muted/50 transition-colors"
+                        class="hover:bg-zinc-900/40 transition-colors bg-black"
                       >
-                        <td class="py-2 px-3 text-muted-foreground font-bold">
+                        <TableCell class="py-2.5 px-3 text-muted-foreground font-bold">
                           #{{ (topTradersPage - 1) * topTradersPageSize + idx + 1 }}
-                        </td>
-                        <td class="py-2 px-3">
+                        </TableCell>
+                        <TableCell class="py-2.5 px-3">
                           <div class="flex items-center gap-1.5">
                             <Jazzicon :address="trader.address" :size="14" />
                             <span class="text-foreground font-medium">{{
@@ -1290,8 +1290,8 @@
                               <Copy class="w-3 h-3" />
                             </button>
                           </div>
-                        </td>
-                        <td class="py-2 px-3">
+                        </TableCell>
+                        <TableCell class="py-2.5 px-3">
                           <Badge
                             :variant="
                               trader.isDev
@@ -1304,8 +1304,8 @@
                           >
                             {{ trader.isDev ? 'Dev' : trader.walletTag }}
                           </Badge>
-                        </td>
-                        <td class="py-2 px-3 text-right">
+                        </TableCell>
+                        <TableCell class="py-2.5 px-3 text-right">
                           <span class="text-emerald-500 font-medium"
                             >${{ trader.buyVolumeUsd.toLocaleString() }}</span
                           >
@@ -1313,8 +1313,8 @@
                           <span class="text-rose-500 font-medium"
                             >${{ trader.sellVolumeUsd.toLocaleString() }}</span
                           >
-                        </td>
-                        <td class="py-2 px-3 text-center">
+                        </TableCell>
+                        <TableCell class="py-2.5 px-3 text-center">
                           <Badge
                             :variant="
                               trader.positionStatus === 'holding'
@@ -1333,18 +1333,18 @@
                                   : 'Partial'
                             }}
                           </Badge>
-                        </td>
-                        <td
-                          class="py-2 px-3 text-right font-bold"
+                        </TableCell>
+                        <TableCell
+                          class="py-2.5 px-3 text-right font-bold"
                           :class="trader.profitUsd >= 0 ? 'text-emerald-500' : 'text-rose-500'"
                         >
                           {{ trader.profitUsd >= 0 ? '+' : '-' }}${{
                             Math.abs(trader.profitUsd).toLocaleString()
                           }}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
 
                   <!-- Top Traders Pagination -->
                   <div
@@ -1376,27 +1376,27 @@
                 >
                   <p class="text-xs font-mono">No holder data available.</p>
                 </div>
-                <div v-else class="overflow-x-auto">
-                  <table class="w-full text-left text-xs font-mono min-w-[500px]">
-                    <thead class="sticky top-0 z-10 bg-muted">
-                      <tr class="border-b border-border text-muted-foreground">
-                        <th class="py-2 px-3 font-semibold w-10">#</th>
-                        <th class="py-2 px-3 font-semibold">Holder</th>
-                        <th class="py-2 px-3 font-semibold w-44">Share</th>
-                        <th class="py-2 px-3 font-semibold text-right">Balance</th>
-                        <th class="py-2 px-3 font-semibold text-right w-8"></th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-border">
-                      <tr
+                <div v-else class="overflow-x-auto rounded-2xl border border-border bg-black">
+                  <Table class="w-full text-left text-xs font-mono min-w-[500px] bg-black">
+                    <TableHeader>
+                      <TableRow class="border-b border-border text-muted-foreground bg-black hover:bg-black">
+                        <TableHead class="py-2.5 px-3 font-semibold w-10 text-muted-foreground bg-black">#</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">Holder</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold w-44 text-muted-foreground bg-black">Share</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Balance</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold text-right w-8 text-muted-foreground bg-black"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow
                         v-for="(holder, idx) in paginatedHolders"
                         :key="holder.address"
-                        class="hover:bg-muted/50 transition-colors"
+                        class="hover:bg-zinc-900/40 transition-colors bg-black"
                       >
-                        <td class="py-2 px-3 text-muted-foreground font-bold">
+                        <TableCell class="py-2.5 px-3 text-muted-foreground font-bold">
                           #{{ (holdersPage - 1) * holdersPageSize + idx + 1 }}
-                        </td>
-                        <td class="py-2 px-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell class="py-2.5 px-3 whitespace-nowrap">
                           <div class="flex items-center gap-1.5">
                             <Jazzicon :address="holder.address" :size="14" />
                             <span class="text-foreground font-medium">{{
@@ -1422,31 +1422,32 @@
                               {{ getHolderBadge(holder.address) }}
                             </Badge>
                           </div>
-                        </td>
-                        <td class="py-2 px-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell class="py-2.5 px-3 whitespace-nowrap">
                           <div class="flex items-center gap-2">
                             <span class="text-foreground font-semibold w-12 text-right shrink-0">
                               {{ holder.percent.toFixed(2) }}%
                             </span>
                             <Progress :model-value="holder.percent" class="h-1.5 w-28" />
                           </div>
-                        </td>
-                        <td class="py-2 px-3 whitespace-nowrap text-right text-foreground">
+                        </TableCell>
+                        <TableCell class="py-2.5 px-3 whitespace-nowrap text-right text-foreground">
                           {{ formatTokenNumber(holder.balance) }}
-                        </td>
-                        <td class="py-2 px-3 whitespace-nowrap text-right">
+                        </TableCell>
+                        <TableCell class="py-2.5 px-3 whitespace-nowrap text-right">
                           <a
                             :href="`${explorerUrl}/address/${holder.address}`"
                             target="_blank"
                             rel="noopener noreferrer"
+                            aria-label="View holder on explorer"
                             class="text-muted-foreground hover:text-foreground transition-colors inline-flex items-center"
                           >
                             <ExternalLink class="w-3 h-3" />
                           </a>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
 
                   <!-- Holders Pagination -->
                   <div
@@ -1927,6 +1928,14 @@ import TaxTimelockPanel from './tax/TaxTimelockPanel.vue';
 import { Progress } from '@/components/ui/progress';
 import { Pagination } from '@/components/ui/pagination';
 import { Empty } from '@/components/ui/empty';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
