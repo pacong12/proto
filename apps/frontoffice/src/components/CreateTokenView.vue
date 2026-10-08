@@ -10,7 +10,7 @@
     <!-- Form container using Shadcn Card -->
     <Card class="p-4 sm:p-8 lg:p-10 border border-border bg-card shadow-sm rounded-3xl">
       <!-- Dual Launch Architecture Tabs (v2 / v1) -->
-      <div class="mb-8 p-1.5 bg-muted rounded-2xl flex gap-2 border border-border">
+      <div class="mb-8 p-1.5 bg-black rounded-2xl flex gap-2 border border-border">
         <Button
           type="button"
           @click="selectedVersion = 'v2'"
@@ -758,7 +758,7 @@
 
             <!-- Anti-Snipe Notice -->
             <div
-              class="p-4 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground space-y-1.5"
+              class="p-4 rounded-xl border border-border bg-black text-xs text-muted-foreground space-y-1.5"
             >
               <div class="font-semibold text-foreground flex items-center gap-1">
                 <span>Fair Launch Anti-Snipe Safeguard</span>
@@ -777,7 +777,7 @@
         <!-- Form Footer Rate & Submit Button -->
         <div class="pt-6 border-t border-border space-y-4">
           <!-- Launch Cost Summary Breakdown -->
-          <div class="rounded-2xl border border-border bg-muted/40 p-4 space-y-3 text-xs font-mono">
+          <div class="rounded-2xl border border-border bg-black p-4 space-y-3 text-xs font-mono">
             <div class="flex items-center justify-between text-muted-foreground">
               <span>{{ t('platformCreationFee') }}</span>
               <span class="font-bold text-foreground flex items-center gap-1.5">

@@ -138,20 +138,18 @@
               <div class="flex items-center gap-2 flex-wrap text-xs font-sans text-muted-foreground pt-0.5">
                 <span v-if="currentToken.deployer" class="inline-flex items-center gap-1">
                   <span>by</span>
-                  <a
-                    :href="`${explorerUrl}/address/${currentToken.deployer}`"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="hover:text-foreground underline decoration-dotted transition text-foreground font-mono"
-                    title="Dev Wallet"
+                  <RouterLink
+                    :to="'/' + getUserIdentity(currentToken.deployer).name"
+                    class="hover:text-foreground hover:underline transition text-foreground font-mono font-bold"
+                    :title="currentToken.deployer"
                   >
-                    {{ shortenAddress(currentToken.deployer, 6, 4) }}
-                  </a>
+                    {{ getUserIdentity(currentToken.deployer).name }}
+                  </RouterLink>
                 </span>
                 <span class="text-muted-foreground/50">·</span>
                 <span class="font-mono text-[11px]">{{ formatRelativeTime(currentToken.createdAt) }}</span>
                 <span class="text-muted-foreground/50">·</span>
-                <span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-md bg-muted/60 border border-border text-[11px] text-foreground font-semibold font-mono">
+                <span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-md bg-black border border-border text-[11px] text-foreground font-semibold font-mono">
                   {{ currencySymbol }} pair
                 </span>
                 <span class="text-muted-foreground/50">·</span>
@@ -304,7 +302,7 @@
               class="flex items-center justify-between gap-3 px-3.5 py-2.5 border-b border-border/80 bg-card text-xs font-mono"
             >
               <!-- Timeframe switcher pills (Shadcn Buttons) -->
-              <div class="flex items-center gap-1 bg-muted/60 p-0.5 rounded-xl border border-border">
+              <div class="flex items-center gap-1 bg-black p-0.5 rounded-xl border border-border">
                 <Button
                   v-for="res in resolutions"
                   :key="res.label"
@@ -374,7 +372,7 @@
               <!-- Wrong network warning banner -->
               <div
                 v-if="isConnected && activeNetwork.chainId !== tokenNetwork.chainId"
-                class="px-3 py-2.5 rounded-xl bg-muted border border-border text-xs text-foreground flex items-center gap-2"
+                class="px-3 py-2.5 rounded-xl bg-black border border-border text-xs text-foreground flex items-center gap-2"
               >
                 <AlertCircle class="w-3.5 h-3.5 shrink-0" />
                 <span>Switch to {{ tokenNetwork.name }} to trade.</span>
@@ -382,7 +380,7 @@
 
               <!-- Buy / Sell tabs + Slippage gear in ONE row (Semantic Colors) -->
               <div class="flex items-center justify-between gap-3">
-                <div class="inline-flex rounded-xl border border-border bg-muted/60 p-1 w-full gap-1">
+                <div class="inline-flex rounded-xl border border-border bg-black p-1 w-full gap-1">
                   <Button
                     size="sm"
                     class="flex-1 h-8 text-xs font-sans font-bold rounded-lg transition-all"
@@ -457,7 +455,7 @@
                           min="0.1"
                           max="49"
                           placeholder="1.0"
-                          class="h-8 text-xs font-mono pr-7 bg-muted/40"
+                          class="h-8 text-xs font-mono pr-7 bg-black"
                           @input="handleCustomSlippageInput"
                         />
                         <span
@@ -484,14 +482,14 @@
                     <span>You pay</span>
                     <div
                       v-if="isBuy"
-                      class="flex items-center bg-muted/80 p-0.5 rounded-lg border border-border text-[10px] font-mono font-bold"
+                      class="flex items-center bg-black p-0.5 rounded-lg border border-border text-[10px] font-mono font-bold"
                     >
                       <button
                         type="button"
                         class="px-1.5 py-0.5 rounded transition cursor-pointer"
                         :class="
                           !payInUsd
-                            ? 'bg-background text-foreground shadow-2xs'
+                            ? 'bg-card text-foreground shadow-2xs border border-border/80'
                             : 'text-muted-foreground hover:text-foreground'
                         "
                         @click="payInUsd = false"
@@ -503,7 +501,7 @@
                         class="px-1.5 py-0.5 rounded transition cursor-pointer"
                         :class="
                           payInUsd
-                            ? 'bg-background text-foreground shadow-2xs'
+                            ? 'bg-card text-foreground shadow-2xs border border-border/80'
                             : 'text-muted-foreground hover:text-foreground'
                         "
                         @click="payInUsd = true"
@@ -539,9 +537,9 @@
                     type="number"
                     step="any"
                     placeholder="0.0"
-                    class="text-xl sm:text-2xl font-mono font-bold text-foreground bg-muted/40 border-input h-14 pr-20 rounded-xl"
+                    class="text-sm sm:text-base font-mono font-semibold text-foreground bg-black border-input h-11 pr-20 rounded-xl"
                   />
-                  <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-muted/80 px-2 py-1 rounded-lg border border-border">
+                  <div class="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-black px-2 py-1 rounded-lg border border-border">
                     <span class="text-xs font-mono font-bold text-foreground">
                       {{ isBuy ? (payInUsd ? 'USD' : currencySymbol) : currentToken.symbol }}
                     </span>
@@ -555,7 +553,7 @@
                     :key="presetVal"
                     variant="outline"
                     size="sm"
-                    class="h-8 text-xs font-mono font-medium rounded-lg border-border hover:bg-muted"
+                    class="h-8 text-xs font-mono font-medium rounded-lg border-border bg-black hover:bg-zinc-900"
                     @click="applyQuickBuy(presetVal)"
                   >
                     {{ payInUsd ? '$' + presetVal : presetVal }}
@@ -569,7 +567,7 @@
                     :key="percent"
                     variant="outline"
                     size="sm"
-                    class="h-8 text-xs font-mono font-medium rounded-lg border-border hover:bg-muted"
+                    class="h-8 text-xs font-mono font-medium rounded-lg border-border bg-black hover:bg-zinc-900"
                     @click="applyPercentage(percent)"
                   >
                     {{ percent === 100 ? 'Max' : `${percent}%` }}
@@ -583,26 +581,26 @@
                   <span>You receive (est.)</span>
                 </div>
                 <div
-                  class="w-full rounded-xl border border-border bg-muted/20 px-3.5 py-3 min-h-[52px] flex items-center justify-between gap-3"
+                  class="w-full rounded-xl border border-border bg-black px-3 py-2 min-h-[44px] flex items-center justify-between gap-3"
                 >
-                  <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="flex items-center gap-2 min-w-0">
                     <OptimizedImage
                       v-if="isBuy"
                       :src="currentToken.logo"
                       :alt="currentToken.name"
                       :fallback-text="currentToken.symbol"
-                      :width="28"
-                      :height="28"
-                      class="rounded-full border border-border object-cover shrink-0 w-7 h-7"
+                      :width="24"
+                      :height="24"
+                      class="rounded-full border border-border object-cover shrink-0 w-6 h-6"
                     />
-                    <div v-else class="w-7 h-7 rounded-full bg-muted flex items-center justify-center font-mono text-[10px] font-bold border border-border shrink-0">
+                    <div v-else class="w-6 h-6 rounded-full bg-black flex items-center justify-center font-mono text-[9px] font-bold border border-border shrink-0">
                       {{ currencySymbol.slice(0, 3) }}
                     </div>
-                    <span class="text-lg sm:text-xl font-mono font-bold text-foreground truncate">
+                    <span class="text-sm sm:text-base font-mono font-semibold text-foreground truncate">
                       {{ estimatedOutputAmount }}
                     </span>
                   </div>
-                  <div class="flex items-center gap-1.5 bg-muted/80 px-2.5 py-1 rounded-lg border border-border shrink-0">
+                  <div class="flex items-center gap-1 bg-black px-2 py-0.5 rounded-lg border border-border shrink-0">
                     <span class="font-mono text-xs text-foreground font-bold">
                       {{ isBuy ? currentToken.symbol : currencySymbol }}
                     </span>
@@ -727,7 +725,7 @@
             <!-- Post-Graduation Pool Details Card (if graduated) -->
             <div
               v-if="currentMarketData.isGraduated && currentToken.poolAddress"
-              class="p-3.5 rounded-xl border border-border bg-muted/20 space-y-2 text-xs"
+              class="p-3.5 rounded-xl border border-border bg-black space-y-2 text-xs"
             >
               <div class="flex items-center justify-between font-bold text-foreground">
                 <span class="text-[10px] uppercase tracking-wider text-muted-foreground">Uniswap Pool</span>
@@ -814,7 +812,7 @@
             <!-- Trust & Secondary Badges (Preserved) -->
             <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1 text-[11px]">
               <div
-                class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-muted/60 border border-border shrink-0"
+                class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black border border-border shrink-0"
                 title="Buy / Sell creator trading tax"
               >
                 <span class="text-muted-foreground font-semibold">Tax:</span>
@@ -825,7 +823,7 @@
 
               <div
                 v-if="burnedInfo.percent > 0"
-                class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-muted/60 border border-border shrink-0"
+                class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black border border-border shrink-0"
                 title="Total burned supply"
               >
                 <span class="text-muted-foreground font-semibold">Burned:</span>
@@ -908,7 +906,7 @@
               >
                 <!-- Quick Post Callout Action -->
                 <div
-                  class="p-4 rounded-2xl border border-border bg-muted/30 flex items-center justify-between gap-3 font-mono text-xs"
+                  class="p-4 rounded-2xl border border-border bg-black flex items-center justify-between gap-3 font-mono text-xs"
                 >
                   <div class="flex items-center gap-2 min-w-0">
                     <Megaphone class="w-4 h-4 text-primary shrink-0" />
@@ -943,7 +941,7 @@
                   v-else-if="callouts.length === 0"
                   :title="'No callouts yet'"
                   :description="`Be the first to call $${currentToken.symbol} to the community!`"
-                  class="py-12 border-none bg-muted/20"
+                  class="py-12 border border-dashed border-border bg-black"
                 >
                   <template #icon>
                     <Megaphone class="w-6 h-6 text-muted-foreground opacity-60" />
@@ -953,15 +951,18 @@
                   <div
                     v-for="cmt in paginatedCallouts"
                     :key="cmt.id"
-                    class="p-3.5 rounded-xl border border-border bg-card hover:bg-muted/30 transition-colors space-y-2.5"
+                    class="p-3.5 rounded-xl border border-border bg-black hover:bg-zinc-950 transition-colors space-y-2.5"
                   >
                     <!-- Header: Author + Badges + Time -->
                     <div class="flex items-center justify-between gap-2">
                       <div class="flex items-center gap-2">
                         <Jazzicon :address="cmt.authorAddress" :size="18" />
-                        <span class="text-xs font-mono font-bold text-foreground">
+                        <RouterLink
+                          :to="'/' + getUserIdentity(cmt.authorAddress).name"
+                          class="text-xs font-mono font-bold text-foreground hover:underline"
+                        >
                           {{ truncateAddress(cmt.authorAddress) }}
-                        </span>
+                        </RouterLink>
                         <Badge
                           v-if="
                             cmt.authorAddress.toLowerCase() === currentToken.deployer?.toLowerCase()
@@ -1005,7 +1006,7 @@
 
                     <!-- Pump.fun Style Callout Mini Token Card -->
                     <div
-                      class="p-2.5 rounded-xl border border-border bg-muted/40 flex items-center justify-between gap-3 text-xs font-mono"
+                      class="p-2.5 rounded-xl border border-border bg-black flex items-center justify-between gap-3 text-xs font-mono"
                     >
                       <div class="flex items-center gap-2 min-w-0">
                         <OptimizedImage
@@ -1118,7 +1119,7 @@
                 <!-- Order flow filters & stats (lunch.fun style) -->
                 <div
                   v-if="trades.length > 0"
-                  class="flex flex-wrap items-center justify-between gap-2 p-2.5 sm:px-4 border-b border-border bg-muted/20 text-xs font-mono"
+                  class="flex flex-wrap items-center justify-between gap-2 p-2.5 sm:px-4 border-b border-border bg-black text-xs font-mono"
                 >
                   <div class="flex items-center gap-1.5">
                     <button
@@ -1133,7 +1134,7 @@
                       :class="
                         tradeFilter === flt.key
                           ? 'bg-foreground text-background shadow-2xs'
-                          : 'bg-muted hover:bg-muted/80 text-muted-foreground'
+                          : 'bg-black border border-border hover:bg-zinc-900 text-muted-foreground hover:text-foreground'
                       "
                       @click="
                         tradeFilter = flt.key as any;
@@ -1202,8 +1203,8 @@
                             class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider border border-border"
                             :class="
                               trade.isBuy
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted text-muted-foreground'
+                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                                : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
                             "
                           >
                             {{ trade.isBuy ? 'BUY' : 'SELL' }}
@@ -1261,7 +1262,7 @@
                   <!-- Trades Pagination -->
                   <div
                     v-if="filteredTrades.length > tradesPageSize"
-                    class="py-3 border-t border-border flex justify-center bg-muted/30"
+                    class="py-3 border-t border-border flex justify-center bg-black"
                   >
                     <Pagination
                       :total="filteredTrades.length"
@@ -1312,9 +1313,12 @@
                         <TableCell class="py-2.5 px-3">
                           <div class="flex items-center gap-1.5">
                             <Jazzicon :address="trader.address" :size="14" />
-                            <span class="text-foreground font-medium">{{
-                              truncateAddress(trader.address)
-                            }}</span>
+                            <RouterLink
+                              :to="'/' + getUserIdentity(trader.address).name"
+                              class="text-foreground font-medium hover:underline"
+                            >
+                              {{ truncateAddress(trader.address) }}
+                            </RouterLink>
                             <button
                               type="button"
                               aria-label="Copy trader address"
@@ -1383,7 +1387,7 @@
                   <!-- Top Traders Pagination -->
                   <div
                     v-if="topTraders.length > topTradersPageSize"
-                    class="py-3 border-t border-border flex justify-center bg-muted/30"
+                    class="py-3 border-t border-border flex justify-center bg-black"
                   >
                     <Pagination
                       :total="topTraders.length"
@@ -1433,9 +1437,12 @@
                         <TableCell class="py-2.5 px-3 whitespace-nowrap">
                           <div class="flex items-center gap-1.5">
                             <Jazzicon :address="holder.address" :size="14" />
-                            <span class="text-foreground font-medium">{{
-                              truncateAddress(holder.address)
-                            }}</span>
+                            <RouterLink
+                              :to="'/' + getUserIdentity(holder.address).name"
+                              class="text-foreground font-medium hover:underline"
+                            >
+                              {{ truncateAddress(holder.address) }}
+                            </RouterLink>
                             <button
                               type="button"
                               aria-label="Copy holder address"
@@ -1486,7 +1493,7 @@
                   <!-- Holders Pagination -->
                   <div
                     v-if="holders.length > holdersPageSize"
-                    class="py-3 border-t border-border flex justify-center bg-muted/30"
+                    class="py-3 border-t border-border flex justify-center bg-black"
                   >
                     <Pagination
                       :total="holders.length"
@@ -1727,7 +1734,7 @@
           <div class="space-y-4 py-2">
             <!-- Mini Token Card Preview -->
             <div
-              class="p-3.5 rounded-xl border border-border bg-muted/40 flex items-center justify-between gap-3"
+              class="p-3.5 rounded-xl border border-border bg-black flex items-center justify-between gap-3"
             >
               <div class="flex items-center gap-2.5 min-w-0">
                 <OptimizedImage
@@ -1773,62 +1780,38 @@
               </div>
             </div>
 
-            <!-- Position Requirement Alert (pump.fun rule: caller must hold tokens) -->
+            <!-- Anti-Spam Position Requirement (Pump.fun Rule: must hold at least $1 worth of token) -->
             <div
-              v-if="userTokenBalance <= 0n"
-              class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-500 flex items-center justify-between gap-2"
+              v-if="!hasSufficientHoldingForComment"
+              class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-500 flex items-center justify-between gap-3 text-xs font-sans"
             >
               <div class="flex items-center gap-2 min-w-0">
                 <AlertCircle class="w-4 h-4 shrink-0" />
                 <span class="text-[11px] font-sans">
-                  You must hold a position in ${{ currentToken.symbol }} to post a callout.
+                  Anti-spam: You must hold at least $1.00 worth of ${{ currentToken.symbol }} to comment.
+                  <span v-if="userHoldingUsd > 0" class="block font-mono text-[10px] text-amber-400">
+                    (Current: ${{ userHoldingUsd.toFixed(2) }})
+                  </span>
                 </span>
               </div>
               <Button
                 size="sm"
                 variant="outline"
-                class="h-6 px-2 text-[10px] border-amber-500 text-amber-500 hover:bg-amber-500/10 shrink-0 font-bold cursor-pointer"
+                class="h-7 px-2.5 text-[11px] border-amber-500 text-amber-500 hover:bg-amber-500/10 shrink-0 font-bold font-mono cursor-pointer rounded-lg"
                 @click="goToBuyFromCall"
               >
-                Buy Now
+                Buy ${{ Math.max(1, Math.ceil(1 - userHoldingUsd)) }} of ${{ currentToken.symbol }}
               </Button>
             </div>
 
-            <!-- Target Market Cap selector pills -->
+            <!-- Comment Message / Thesis -->
             <div class="space-y-1.5">
-              <Label class="text-[11px] font-bold text-foreground">Target Market Cap</Label>
-              <div class="grid grid-cols-4 gap-1.5">
-                <Button
-                  v-for="target in [
-                    '$25K MC',
-                    '$50K MC',
-                    '$100K MC',
-                    '$250K MC',
-                    '$500K MC',
-                    '$1M MC',
-                    '$5M MC',
-                    'Moon 🚀',
-                  ]"
-                  :key="target"
-                  type="button"
-                  size="sm"
-                  :variant="callTargetMcap === target ? 'default' : 'outline'"
-                  class="h-7 px-1 text-[11px] font-mono"
-                  @click="callTargetMcap = target"
-                >
-                  {{ target }}
-                </Button>
-              </div>
-            </div>
-
-            <!-- Thesis / Callout Message -->
-            <div class="space-y-1.5">
-              <Label class="text-[11px] font-bold text-foreground">Call Thesis / Alpha</Label>
+              <Label class="text-[11px] font-bold text-foreground">Comment / Meme Alpha</Label>
               <textarea
                 v-model="callContent"
                 rows="3"
                 maxlength="500"
-                placeholder="Why are you calling this token? (e.g. dev is active, community building, send it to $100K MC!)..."
+                :placeholder="`Share your thoughts or post a meme about $${currentToken.symbol}...`"
                 class="w-full text-xs font-sans p-2.5 rounded-lg border border-border bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-foreground resize-none"
               />
               <div class="flex justify-between text-[10px] text-muted-foreground font-mono">
@@ -2011,6 +1994,7 @@ import {
   formatCompactUsd,
   formatPriceUsd,
 } from '@/lib/utils';
+import { getUserIdentity } from '@/lib/username';
 import {
   ROBINHOOD_CHAIN,
   ARC_CHAIN,
@@ -2117,21 +2101,41 @@ const userHoldingTokensCount = computed(() => {
   return Number(userTokenBalance.value) / 10 ** decimals;
 });
 
+const effectiveTokenPriceUsd = computed(() => {
+  if (currentMarketData.value.priceUsd > 0) {
+    return currentMarketData.value.priceUsd;
+  }
+  const { vEth, vToken } = getVirtualReserves();
+  if (vToken > 0 && vEth > 0) {
+    const spotEth = vEth / vToken;
+    const ethUsd = quoteAssetPriceUsd.value || 2700;
+    return spotEth * ethUsd;
+  }
+  return 0;
+});
+
 const userHoldingUsd = computed(() => {
-  return userHoldingTokensCount.value * (currentMarketData.value.priceUsd || 0);
+  return userHoldingTokensCount.value * effectiveTokenPriceUsd.value;
+});
+
+const MIN_HOLD_USD_FOR_COMMENT = 1.0;
+const hasSufficientHoldingForComment = computed(() => {
+  if (isCreator.value) return true;
+  return userHoldingUsd.value >= (MIN_HOLD_USD_FOR_COMMENT * 0.95);
 });
 
 function openCallModal(): void {
   callModalOpen.value = true;
   callError.value = null;
-  if (!callContent.value) {
-    callContent.value = `Calling $${currentToken.value.symbol} - target ${callTargetMcap.value}!`;
-  }
 }
 
 function goToBuyFromCall(): void {
   callModalOpen.value = false;
   tradeTab.value = 'buy';
+  payInUsd.value = true;
+  const neededUsd = Math.max(1, Math.ceil(1 - userHoldingUsd.value));
+  amountIn.value = String(neededUsd);
+  scrollToSwap('buy');
 }
 
 async function handlePostCallout(): Promise<void> {
@@ -2139,13 +2143,13 @@ async function handlePostCallout(): Promise<void> {
     openWallet();
     return;
   }
-  if (userTokenBalance.value <= 0n) {
-    callError.value = `You must hold a position in $${currentToken.value.symbol} to post a callout. Please buy tokens first.`;
+  if (!hasSufficientHoldingForComment.value) {
+    callError.value = `Anti-spam: You must hold at least $1.00 worth of $${currentToken.value.symbol} to comment. (Current holding: $${userHoldingUsd.value.toFixed(2)})`;
     return;
   }
   const content = callContent.value.trim();
   if (!content) {
-    callError.value = 'Please write your thesis or target before calling.';
+    callError.value = 'Please write a comment or thesis.';
     return;
   }
 
@@ -2924,7 +2928,8 @@ function formatTokenBalance(wei: bigint): string {
   return val.toFixed(6);
 }
 function truncateAddress(addr: string): string {
-  return shortenAddress(addr);
+  if (!addr) return '';
+  return getUserIdentity(addr).displayName;
 }
 
 function getHolderBadge(addr: string): string | null {

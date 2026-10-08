@@ -2,7 +2,7 @@
   <div class="max-w-5xl mx-auto space-y-6 sm:space-y-8 font-sans">
     <!-- Disconnected Warning Banner using Shadcn Empty -->
     <Empty
-      v-if="!targetAccount"
+      v-if="!targetAccount && !hasRouteParam"
       title="Wallet Not Connected"
       description="Connect your wallet to access your personal dashboard, alpha calls, created tokens, portfolio holdings, and trading activity."
       class="py-16 bg-card/60"
@@ -18,6 +18,28 @@
           @click="openWallet"
         >
           Connect Wallet
+        </Button>
+      </template>
+    </Empty>
+
+    <!-- User Profile Not Found State -->
+    <Empty
+      v-else-if="!targetAccount && hasRouteParam"
+      title="Profile Not Found"
+      description="The requested profile handle or wallet address could not be located on this network."
+      class="py-16 bg-card/60"
+    >
+      <template #icon>
+        <UserX class="w-6 h-6 text-muted-foreground" />
+      </template>
+      <template #action>
+        <Button
+          size="sm"
+          variant="outline"
+          class="h-10 px-6 font-bold text-xs shrink-0 cursor-pointer font-mono rounded-xl border-border"
+          @click="router.push('/launchpad')"
+        >
+          Back to Markets
         </Button>
       </template>
     </Empty>
@@ -49,7 +71,7 @@
       <!-- Notifications -->
       <div
         v-if="successTx"
-        class="text-xs font-mono text-foreground bg-muted/60 border border-border rounded-xl p-4 flex items-start justify-between gap-2 break-all"
+        class="text-xs font-mono text-foreground bg-black border border-border rounded-xl p-4 flex items-start justify-between gap-2 break-all"
       >
         <div class="flex items-start gap-2">
           <Check class="w-4 h-4 shrink-0 mt-0.5 text-foreground" />
@@ -244,7 +266,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { Check, AlertCircle, RefreshCw, X, Wallet } from 'lucide-vue-next';
+import { Check, AlertCircle, RefreshCw, X, Wallet, UserX } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { useLaunchpad } from '@/composables/useLaunchpad';
 import { useWallet } from '@/composables/useWallet';
@@ -253,6 +275,7 @@ import { useTokenStore } from '@/composables/useTokenStore';
 import { useHolderDividends } from '@/composables/useHolderDividends';
 import { walletAddress } from '@/lib/wallet-store';
 import { getPublicClient } from '@/lib/viem-client';
+import { resolveUserAddress, getUserIdentity } from '@/lib/username';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
@@ -281,6 +304,10 @@ import {
   type TokenMarketData,
 } from '@proto/shared-types';
 
+const props = defineProps<{
+  address?: string;
+}>();
+
 const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
@@ -299,11 +326,31 @@ const connectedAccount = computed<string | null>(() => {
   return addr ? addr.toLowerCase() : null;
 });
 
-// Profile to display: target route param address (e.g. /u/:address) or connected wallet
+const routeParam = computed(() => {
+  return (
+    props.address ||
+    (route.params.address as string) ||
+    (route.params.username as string) ||
+    (route.params.id as string) ||
+    ''
+  ).trim();
+});
+
+const hasRouteParam = computed(() => !!routeParam.value);
+
+// Profile to display: target route param address (e.g. /u/:address, /:username, or /profile/:username) or connected wallet
 const targetAccount = computed<string | null>(() => {
-  const param = (route.params.address || route.params.id) as string | undefined;
-  if (param && isAddressValid(param)) {
-    return param.toLowerCase();
+  const param = routeParam.value;
+  if (param) {
+    if (isAddressValid(param)) {
+      return param.toLowerCase();
+    }
+    const known = allTokens.value.map((t) => t.token.deployer).filter(Boolean);
+    const resolved = resolveUserAddress(param, known);
+    if (resolved) {
+      return resolved;
+    }
+    return null;
   }
   return connectedAccount.value;
 });
@@ -382,8 +429,9 @@ function saveProfile(data: ProfileStorageData) {
 
 const copiedShare = ref(false);
 function shareProfile() {
-  if (typeof window === 'undefined') return;
-  const url = `${window.location.origin}/u/${targetAccount.value || ''}`;
+  if (typeof window === 'undefined' || !targetAccount.value) return;
+  const identity = getUserIdentity(targetAccount.value);
+  const url = `${window.location.origin}/${identity.name}`;
   navigator.clipboard.writeText(url);
   copiedShare.value = true;
   setTimeout(() => {

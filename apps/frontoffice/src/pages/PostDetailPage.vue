@@ -69,14 +69,14 @@
               <div class="flex items-center gap-1.5 flex-wrap">
                 <span
                   class="font-bold text-foreground text-sm sm:text-base hover:underline cursor-pointer truncate font-mono"
-                  @click="router.push(`/u/${post.authorAddress}`)"
+                  @click="router.push(`/${getUserIdentity(post.authorAddress).name}`)"
                 >
-                  {{ shortenAddress(post.authorAddress, 6, 4) }}
+                  {{ getUserIdentity(post.authorAddress).displayName }}
                 </span>
                 <CheckCircle2 class="w-4 h-4 fill-primary text-background shrink-0" />
               </div>
               <span class="text-xs text-muted-foreground font-mono block truncate">
-                @{{ shortenAddress(post.authorAddress, 4, 4) }}
+                @{{ getUserIdentity(post.authorAddress).name }} &middot; {{ shortenAddress(post.authorAddress, 6, 4) }}
               </span>
             </div>
           </div>
@@ -96,7 +96,7 @@
           <div class="flex items-center gap-1.5">
             <Jazzicon :address="post.quotedCallout.authorAddress" :size="18" class="rounded-full" />
             <span class="font-bold text-foreground font-mono">
-              {{ shortenAddress(post.quotedCallout.authorAddress, 6, 4) }}
+              {{ getUserIdentity(post.quotedCallout.authorAddress).displayName }}
             </span>
             <span v-if="post.quotedCallout.tokenSymbol" class="text-primary font-bold font-mono">
               ${{ post.quotedCallout.tokenSymbol }}
@@ -327,12 +327,12 @@
               <div class="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
                 <span
                   class="font-bold text-foreground text-xs hover:underline cursor-pointer"
-                  @click="router.push(`/u/${rep.authorAddress}`)"
+                  @click="router.push(`/${getUserIdentity(rep.authorAddress).name}`)"
                 >
-                  {{ shortenAddress(rep.authorAddress, 6, 4) }}
+                  {{ getUserIdentity(rep.authorAddress).displayName }}
                 </span>
                 <CheckCircle2 class="w-3.5 h-3.5 fill-primary text-background shrink-0" />
-                <span>@{{ shortenAddress(rep.authorAddress, 4, 4) }}</span>
+                <span>@{{ getUserIdentity(rep.authorAddress).name }}</span>
                 <span>&middot;</span>
                 <span class="hover:underline">{{ formatRelativeTime(rep.createdAt) }}</span>
               </div>
@@ -410,6 +410,7 @@ import { useWallet } from '@/composables/useWallet';
 import { useTokenStore } from '@/composables/useTokenStore';
 import { useFeed } from '@/composables/useFeed';
 import { shortenAddress, formatRelativeTime, formatCompactUsd } from '@/lib/utils';
+import { getUserIdentity } from '@/lib/username';
 import { toast } from '@/components/ui/sonner';
 import type { FeedCalloutItem } from '@proto/shared-types';
 

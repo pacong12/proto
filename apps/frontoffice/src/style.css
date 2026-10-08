@@ -276,91 +276,92 @@ td {
 }
 
 /* ==========================================================================
-   PONS-INSPIRED CLEAN MONOCHROME SYSTEM WITH PINK #FC4198 ACCENT:
-   - Base Surface (Dark)   : #0b0b0b (Pons --p-bg)
-   - Card Surface (Dark)   : #151515 (Pons --p-surface)
-   - Card Raised (Dark)    : #1c1c1c (Pons --p-surface-raised)
-   - Borders (Dark)        : #222222
-   - Brand Accent Pink     : #FC4198
+   TRUE HIGH-CONTRAST MONOCHROME SYSTEM:
+   - Deep Black Background  : #000000 (Pure Obsidian)
+   - Pitch Black Cards      : #000000 (Zero muddy grays)
+   - Raised Surface         : #0a0a0c
+   - Crisp 1px Dark Borders : #18181b (Razor-sharp line)
+   - Crisp White Text       : #ffffff
+   - Secondary Silver Text  : #a1a1aa
    ========================================================================== */
 
 :root {
-  --background: #f5f5f7;
+  --background: #ffffff;
   --foreground: #09090b;
 
   --card: #ffffff;
   --card-foreground: #09090b;
-  --card-raised: #ffffff;
+  --card-raised: #fafafa;
 
   --popover: #ffffff;
   --popover-foreground: #09090b;
 
-  --border: #e5e5e7;
-  --input: #e5e5e7;
-  --ring: #FC4198;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #09090b;
 
-  --primary: #FC4198;
+  --primary: #09090b;
   --primary-foreground: #ffffff;
 
   --secondary: #f4f4f5;
   --secondary-foreground: #09090b;
 
-  --muted: #ebebee;
+  --muted: #f4f4f5;
   --muted-foreground: #71717a;
 
-  --accent: #ebebee;
+  --accent: #f4f4f5;
   --accent-foreground: #09090b;
 
   --destructive: #18181b;
   --destructive-foreground: #ffffff;
 
-  --brand: #FC4198;
-  --chart-1: #FC4198;
-  --chart-2: #FC4198;
+  --brand: #09090b;
+  --chart-1: #09090b;
+  --chart-2: #22c55e;
   --chart-3: #f59e0b;
   --chart-4: #8b5cf6;
-  --chart-5: #FC4198;
-  --bullish: #FC4198;
+  --chart-5: #09090b;
+  --bullish: #22c55e;
   --bearish: #ef4444;
 }
 
 .dark {
-  --background: #0b0b0b;
-  --foreground: #fafafa;
+  --background: #000000;
+  --foreground: #ffffff;
 
-  --card: #151515;
-  --card-foreground: #fafafa;
-  --card-raised: #1c1c1c;
+  --card: #000000;
+  --card-foreground: #ffffff;
+  --card-raised: #0a0a0c;
 
-  --popover: #151515;
-  --popover-foreground: #fafafa;
+  --popover: #0a0a0c;
+  --popover-foreground: #ffffff;
 
-  --border: #222222;
-  --input: #222222;
-  --ring: #FC4198;
+  --border: #18181b;
+  --input: #18181b;
+  --ring: #ffffff;
 
-  --primary: #FC4198;
-  --primary-foreground: #ffffff;
+  --primary: #ffffff;
+  --primary-foreground: #000000;
 
-  --secondary: #1c1c1c;
-  --secondary-foreground: #fafafa;
+  --secondary: #0a0a0c;
+  --secondary-foreground: #ffffff;
 
-  --muted: #1c1c1c;
-  --muted-foreground: #888888;
+  --muted: #0a0a0c;
+  --muted-foreground: #a1a1aa;
 
-  --accent: #1c1c1c;
-  --accent-foreground: #fafafa;
+  --accent: #0e0e11;
+  --accent-foreground: #ffffff;
 
-  --destructive: #27272a;
-  --destructive-foreground: #fafafa;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
 
-  --brand: #FC4198;
-  --chart-1: #FC4198;
-  --chart-2: #FC4198;
+  --brand: #ffffff;
+  --chart-1: #ffffff;
+  --chart-2: #22c55e;
   --chart-3: #f59e0b;
   --chart-4: #a855f7;
-  --chart-5: #FC4198;
-  --bullish: #FC4198;
+  --chart-5: #ffffff;
+  --bullish: #22c55e;
   --bearish: #ef4444;
 }
 

@@ -55,7 +55,7 @@
           <div
             v-for="entry in dividendEntries"
             :key="entry.tokenAddress"
-            class="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-muted/20 text-xs font-mono"
+            class="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-black text-xs font-mono"
           >
             <div>
               <span class="font-bold text-foreground">${{ entry.tokenSymbol }}</span>
@@ -85,7 +85,7 @@
           v-else-if="!dividendsLoading"
           title="No pending fee rewards"
           description="Hold tokens with Holder Fee Sharing enabled to accumulate passive trading yield."
-          class="py-6 border-none bg-muted/20"
+          class="py-6 border border-dashed border-border bg-black"
         >
           <template #icon>
             <Coins class="w-5 h-5 text-muted-foreground" />
@@ -136,7 +136,7 @@
         <Empty
           title="No active lockup schedules"
           description="Tokens deployed with vesting schedules will show linear countdowns and claim buttons here."
-          class="py-6 border-none bg-muted/20"
+          class="py-6 border border-dashed border-border bg-black"
         >
           <template #icon>
             <ShieldCheck class="w-5 h-5 text-muted-foreground" />

@@ -64,7 +64,7 @@
         <!-- Attached Image (if any) -->
         <div
           v-if="call.imageUrl"
-          class="rounded-xl overflow-hidden border border-border/60 max-h-72 cursor-pointer bg-muted/20"
+          class="rounded-xl overflow-hidden border border-border/60 max-h-72 cursor-pointer bg-black"
           @click="openImage(call.imageUrl)"
         >
           <img :src="resolveSafeUrl(call.imageUrl)" alt="Attachment" class="w-full h-full object-cover" />
@@ -72,7 +72,7 @@
 
         <!-- Embedded Mini Coin Widget Card -->
         <div
-          class="p-3.5 rounded-xl border border-border/80 bg-muted/30 hover:bg-muted/60 transition cursor-pointer flex items-center justify-between gap-3 text-xs"
+          class="p-3.5 rounded-xl border border-border bg-black hover:bg-zinc-950 transition cursor-pointer flex items-center justify-between gap-3 text-xs"
           @click="emit('navigate-token', call.tokenAddress)"
         >
           <div class="flex items-center gap-2.5 min-w-0">

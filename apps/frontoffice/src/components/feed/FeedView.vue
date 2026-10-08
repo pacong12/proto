@@ -15,7 +15,7 @@
           v-for="(tItem, idx) in hotTokens"
           :key="tItem.token.address"
           type="button"
-          class="flex items-center gap-2 px-3 py-1 rounded-xl border border-border/60 bg-muted/30 hover:bg-muted/70 hover:border-primary/40 transition cursor-pointer shrink-0 font-mono text-xs group"
+          class="flex items-center gap-2 px-3 py-1 rounded-xl border border-border bg-black hover:bg-zinc-950 hover:border-foreground/30 transition cursor-pointer shrink-0 font-mono text-xs group"
           @click="navigateToToken(tItem.token.address)"
         >
           <span class="text-[10px] text-muted-foreground font-bold">#{{ idx + 1 }}</span>
@@ -90,7 +90,7 @@
                   rows="3"
                   maxlength="500"
                   placeholder="Call a token or share alpha... (type $ to select a token, e.g. $SPIDER!)"
-                  class="w-full text-xs sm:text-sm p-3 rounded-xl border border-border/80 bg-muted/20 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary/60 resize-none leading-relaxed"
+                  class="w-full text-xs sm:text-sm p-3 rounded-xl border border-border bg-black text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground focus:border-border resize-none leading-relaxed"
                   @input="handleComposerInput"
                   @keydown="handleComposerKeydown"
                 />
@@ -113,7 +113,7 @@
                     :key="tItem.token.address"
                     type="button"
                     class="w-full flex items-center justify-between p-2 rounded-xl transition cursor-pointer text-left"
-                    :class="sIdx === selectedSuggestionIndex ? 'bg-primary/15 text-primary' : 'hover:bg-muted/70 text-foreground'"
+                    :class="sIdx === selectedSuggestionIndex ? 'bg-zinc-900 text-foreground font-bold' : 'hover:bg-zinc-950 text-foreground'"
                     @click="selectCashtagToken(tItem.token)"
                   >
                     <div class="flex items-center gap-2.5 min-w-0">
@@ -181,89 +181,6 @@
                 </div>
               </div>
 
-              <!-- Embedded Token Selector & Target MC Ribbon -->
-              <div class="flex flex-wrap items-center gap-2 pt-1 font-mono text-xs">
-                <!-- Dropdown Token Picker -->
-                <div class="relative">
-                  <button
-                    type="button"
-                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer select-none"
-                    :class="
-                      selectedToken
-                        ? 'bg-primary/10 border-primary/40 text-primary shadow-xs'
-                        : 'bg-muted/60 border-border text-muted-foreground hover:text-foreground'
-                    "
-                    @click="isTokenPickerOpen = !isTokenPickerOpen"
-                  >
-                    <Sparkles class="w-3.5 h-3.5 text-primary" />
-                    <span>{{ selectedToken ? `$${selectedToken.symbol}` : 'Select Token to Call' }}</span>
-                    <ChevronDown class="w-3 h-3 opacity-60" />
-                  </button>
-
-                  <!-- Token Dropdown -->
-                  <div
-                    v-if="isTokenPickerOpen"
-                    class="absolute left-0 top-full mt-2 w-72 p-2 bg-card border border-border rounded-2xl shadow-2xl z-40 space-y-2 font-mono text-xs"
-                  >
-                    <Input
-                      v-model="tokenSearchQuery"
-                      type="text"
-                      placeholder="Search ticker or name..."
-                      class="h-8 text-xs font-mono rounded-xl"
-                    />
-                    <div class="max-h-52 overflow-y-auto space-y-1 no-scrollbar">
-                      <button
-                        v-for="tItem in availableTokensList"
-                        :key="tItem.token.address"
-                        type="button"
-                        class="w-full flex items-center justify-between p-2 rounded-xl hover:bg-muted text-left transition cursor-pointer"
-                        @click="pickToken(tItem.token)"
-                      >
-                        <div class="flex items-center gap-2.5 min-w-0">
-                          <OptimizedImage
-                            :src="tItem.token.logo"
-                            :alt="tItem.token.name"
-                            :fallback-text="tItem.token.symbol"
-                            :width="22"
-                            :height="22"
-                            class="rounded-full shrink-0 border border-border/40"
-                          />
-                          <div class="min-w-0">
-                            <span class="font-bold text-foreground block truncate">
-                              ${{ tItem.token.symbol }}
-                            </span>
-                            <span class="text-[10px] text-muted-foreground truncate block font-sans">
-                              {{ tItem.token.name }}
-                            </span>
-                          </div>
-                        </div>
-                        <span class="text-[11px] text-muted-foreground font-mono font-bold">
-                          ${{ formatCompactUsd(tItem.marketData?.marketCapUsd || 4200) }}
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Price Target Chips -->
-                <div class="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
-                  <button
-                    v-for="target in ['$25K MC', '$50K MC', '$100K MC', '$500K MC', '$1M MC', 'Moon']"
-                    :key="target"
-                    type="button"
-                    class="px-2.5 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer whitespace-nowrap border font-mono"
-                    :class="
-                      composerTargetMcap === target
-                        ? 'bg-foreground text-background border-foreground shadow-2xs'
-                        : 'bg-muted/40 border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted'
-                    "
-                    @click="composerTargetMcap = target"
-                  >
-                    {{ target }}
-                  </button>
-                </div>
-              </div>
-
               <!-- Media Attachment Input -->
               <div v-if="showMediaInput" class="pt-1 font-mono">
                 <Input
@@ -274,33 +191,32 @@
                 />
               </div>
 
-              <!-- On-Chain Balance Verifier -->
+              <!-- On-Chain Balance Verifier (Holder Badge) -->
               <div
-                v-if="account && selectedToken && callerTokenBalance > 0"
+                v-if="account && selectedToken && callerPositionUsd >= 1.0"
                 class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-between gap-2 text-xs font-mono"
               >
                 <div class="flex items-center gap-1.5 min-w-0">
                   <ShieldCheck class="w-4 h-4 shrink-0 text-emerald-400" />
                   <span class="truncate">
-                    Verified Position: <strong>{{ callerTokenBalance.toLocaleString() }} ${{ selectedToken.symbol }}</strong>
+                    Verified Holder (${{ callerPositionUsd.toFixed(2) }}): <strong>{{ callerTokenBalance.toLocaleString() }} ${{ selectedToken.symbol }}</strong>
                   </span>
                 </div>
               </div>
 
               <div
-                v-else-if="account && selectedToken && callerTokenBalance <= 0 && !checkingBalance"
-                class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-500 flex items-center justify-between gap-2 text-xs"
+                v-else-if="account && selectedToken && callerPositionUsd < 1.0 && !checkingBalance"
+                class="p-2 rounded-xl bg-black border border-border text-muted-foreground flex items-center justify-between gap-2 text-xs font-sans"
               >
                 <div class="flex items-center gap-1.5 min-w-0">
-                  <AlertCircle class="w-4 h-4 shrink-0" />
-                  <span>
-                    You must hold a position in ${{ selectedToken.symbol }} to post a callout.
+                  <span class="text-[11px]">
+                    Mentioning ${{ selectedToken.symbol }} &middot; Hold $1+ to earn a Verified Holder badge.
                   </span>
                 </div>
                 <Button
                   size="sm"
                   variant="outline"
-                  class="h-6 px-2.5 text-[10px] border-amber-500 text-amber-500 hover:bg-amber-500/10 shrink-0 font-bold rounded-lg cursor-pointer"
+                  class="h-6 px-2 text-[10px] font-mono shrink-0 rounded-lg cursor-pointer border-border hover:bg-zinc-900"
                   @click="navigateToToken(selectedToken.address)"
                 >
                   Buy ${{ selectedToken.symbol }}
@@ -410,7 +326,7 @@
                       class="font-bold text-foreground text-xs sm:text-sm hover:underline cursor-pointer font-mono"
                       @click.stop="navigateToCaller(call.authorAddress)"
                     >
-                      {{ shortenAddress(call.authorAddress, 6, 4) }}
+                      {{ getUserIdentity(call.authorAddress).displayName }}
                     </span>
                     <CheckCircle2 class="w-3.5 h-3.5 fill-primary text-background shrink-0" />
 
@@ -445,13 +361,13 @@
             <!-- Quoted Callout Embed (Twitter / Pump.fun Hybrid Quote) -->
             <div
               v-if="call.quotedCallout"
-              class="rounded-xl border border-border/80 p-3 bg-muted/20 hover:bg-muted/40 transition text-xs space-y-1.5 cursor-pointer"
+              class="rounded-xl border border-border p-3 bg-black hover:bg-zinc-950 transition text-xs space-y-1.5 cursor-pointer"
               @click.stop="router.push(`/post/${call.quotedCallout.id}`)"
             >
               <div class="flex items-center gap-1.5">
                 <Jazzicon :address="call.quotedCallout.authorAddress" :size="16" class="rounded-full" />
                 <span class="font-bold text-foreground font-mono">
-                  {{ shortenAddress(call.quotedCallout.authorAddress, 6, 4) }}
+                  {{ getUserIdentity(call.quotedCallout.authorAddress).displayName }}
                 </span>
                 <span v-if="call.quotedCallout.tokenSymbol" class="text-primary font-bold font-mono">
                   ${{ call.quotedCallout.tokenSymbol }}
@@ -469,7 +385,7 @@
             <!-- Attached Media Image -->
             <div
               v-if="call.imageUrl"
-              class="rounded-xl overflow-hidden border border-border/60 max-h-72 cursor-pointer bg-muted/20"
+              class="rounded-xl overflow-hidden border border-border max-h-72 cursor-pointer bg-black"
               @click.stop="openImage(call.imageUrl)"
             >
               <img :src="resolveSafeUrl(call.imageUrl)" alt="Attachment" class="w-full h-full object-cover hover:scale-[1.01] transition-transform" />
@@ -477,7 +393,7 @@
 
             <!-- Signature Web3 Token Card Widget -->
             <div
-              class="p-3.5 rounded-xl border border-border/80 bg-muted/30 hover:bg-muted/60 transition cursor-pointer flex items-center justify-between gap-3 text-xs font-mono shadow-2xs"
+              class="p-3.5 rounded-xl border border-border bg-black hover:bg-zinc-950 transition cursor-pointer flex items-center justify-between gap-3 text-xs font-mono shadow-2xs"
               @click.stop="navigateToToken(call.tokenAddress)"
             >
               <div class="flex items-center gap-2.5 min-w-0">
@@ -809,6 +725,7 @@ import ShareModal from './ShareModal.vue';
 import ThreadModal from './ThreadModal.vue';
 import QuoteModal from './QuoteModal.vue';
 import { shortenAddress, formatRelativeTime, formatCompactUsd } from '@/lib/utils';
+import { getUserIdentity } from '@/lib/username';
 import { compressAndConvertToWebp } from '@/lib/image-optimizer';
 import { toast } from '@/components/ui/sonner';
 import type { FeedCalloutItem, LaunchedTokenEntity } from '@proto/shared-types';
@@ -948,6 +865,7 @@ const composerContent = ref('');
 const composerTargetMcap = ref('$100K MC');
 const composerImageUrl = ref('');
 const composerImagePreview = ref('');
+const pendingMediaFile = ref<File | null>(null);
 const mediaFileInputRef = ref<HTMLInputElement | null>(null);
 const isUploadingMedia = ref(false);
 const showMediaInput = ref(false);
@@ -982,33 +900,21 @@ async function processMediaFile(file: File): Promise<void> {
   }
 
   try {
-    isUploadingMedia.value = true;
+    // Generate instant local preview immediately (zero delay / no immediate network upload)
     const processed = await compressAndConvertToWebp(file, 1200, 0.85);
     composerImagePreview.value = processed.dataUrl;
-
-    const formData = new FormData();
-    formData.append('file', processed.file);
-    const res = await fetch('/api/ipfs/upload', {
-      method: 'POST',
-      body: formData,
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const ipfsUri = data.data?.cid ? `ipfs://${data.data.cid}` : data.data?.uri || data.data?.url || '';
-      if (ipfsUri) {
-        composerImageUrl.value = ipfsUri;
-      }
-    }
+    pendingMediaFile.value = processed.file;
   } catch (err) {
-    console.warn('[Feed] Image upload failed, retaining dataUrl preview:', err);
-  } finally {
-    isUploadingMedia.value = false;
+    console.warn('[Feed] Local compression failed, using direct object URL preview:', err);
+    composerImagePreview.value = URL.createObjectURL(file);
+    pendingMediaFile.value = file;
   }
 }
 
 function removeAttachedImage(): void {
   composerImagePreview.value = '';
   composerImageUrl.value = '';
+  pendingMediaFile.value = null;
   if (mediaFileInputRef.value) mediaFileInputRef.value.value = '';
 }
 
@@ -1171,12 +1077,41 @@ const hotTokens = computed(() => {
     .slice(0, 5);
 });
 
+function detectTokenFromContent(text: string): LaunchedTokenEntity | null {
+  const match = text.match(/\$([a-zA-Z0-9_]+)/);
+  if (!match) return null;
+  const symbol = match[1].toLowerCase();
+  const pool = networkTokens.value;
+  const found = pool.find(
+    (t) => t.token.symbol.toLowerCase() === symbol || t.token.name.toLowerCase() === symbol,
+  );
+  return found ? found.token : null;
+}
+
+watch(composerContent, (newVal) => {
+  const detected = detectTokenFromContent(newVal);
+  if (detected && (!selectedToken.value || selectedToken.value.address !== detected.address)) {
+    selectedToken.value = detected;
+    checkCallerPosition(detected.address);
+  } else if (!detected && !newVal.includes('$')) {
+    selectedToken.value = null;
+    callerTokenBalance.value = 0;
+  }
+});
+
+const callerPositionUsd = computed(() => {
+  if (!selectedToken.value || callerTokenBalance.value <= 0) return 0;
+  const item = networkTokens.value.find((t) => t.token.address === selectedToken.value?.address);
+  const price = item?.marketData?.priceUsd || 0;
+  return callerTokenBalance.value * price;
+});
+
 function pickToken(token: LaunchedTokenEntity): void {
   selectedToken.value = token;
   isTokenPickerOpen.value = false;
   checkCallerPosition(token.address);
   if (!composerContent.value) {
-    composerContent.value = `Calling $${token.symbol} - target ${composerTargetMcap.value}!`;
+    composerContent.value = `$${token.symbol} `;
   }
 }
 
@@ -1188,14 +1123,9 @@ async function submitCallout(): Promise<void> {
   const content = composerContent.value.trim();
   if (!content) return;
 
-  const targetToken = selectedToken.value || (networkTokens.value?.[0]?.token ?? null);
+  const targetToken = selectedToken.value || detectTokenFromContent(content) || (networkTokens.value?.[0]?.token ?? null);
   if (!targetToken) {
-    composerError.value = 'Please select a token to call.';
-    return;
-  }
-
-  if (callerTokenBalance.value <= 0) {
-    composerError.value = `You must hold a position in $${targetToken.symbol} to post a callout. Please buy tokens first!`;
+    composerError.value = 'Please mention a token (e.g. $TOKEN) or launch one first.';
     return;
   }
 
@@ -1203,11 +1133,41 @@ async function submitCallout(): Promise<void> {
   composerError.value = null;
 
   try {
+    let finalImageUrl = composerImageUrl.value.trim() || undefined;
+
+    // Upload pending media in background on submit
+    if (pendingMediaFile.value) {
+      isUploadingMedia.value = true;
+      try {
+        const formData = new FormData();
+        formData.append('file', pendingMediaFile.value);
+        const res = await fetch('/api/ipfs/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const ipfsUri =
+            data.data?.cid ? `ipfs://${data.data.cid}` : data.data?.uri || data.data?.url || '';
+          if (ipfsUri) {
+            finalImageUrl = ipfsUri;
+          }
+        }
+      } catch (uploadErr) {
+        console.warn('[Feed] IPFS upload on submit fallback:', uploadErr);
+        if (!finalImageUrl && composerImagePreview.value) {
+          finalImageUrl = composerImagePreview.value;
+        }
+      } finally {
+        isUploadingMedia.value = false;
+      }
+    }
+
     const created = await postCallout({
       tokenAddress: targetToken.address,
       authorAddress: account.value,
       content,
-      imageUrl: composerImageUrl.value.trim() || composerImagePreview.value.trim() || undefined,
+      imageUrl: finalImageUrl,
       targetMcap: composerTargetMcap.value,
     });
     if (created) {
@@ -1215,6 +1175,7 @@ async function submitCallout(): Promise<void> {
       composerContent.value = '';
       composerImageUrl.value = '';
       composerImagePreview.value = '';
+      pendingMediaFile.value = null;
       showMediaInput.value = false;
       await fetchFeed(account.value);
     }
@@ -1242,7 +1203,7 @@ function navigateToToken(address: string): void {
 
 function navigateToCaller(address: string): void {
   if (address) {
-    router.push(`/u/${address}`);
+    router.push(`/${getUserIdentity(address).name}`);
   }
 }
 

@@ -61,7 +61,7 @@ export const router = createRouter({
     },
     {
       path: '/u/:address?',
-      alias: ['/profile/:address?', '/user/:address?'],
+      alias: ['/profile/:address?', '/user/:address?', '/@:address?'],
       name: 'profile',
       component: () => import('@/pages/ProfilePage.vue'),
       props: true,
@@ -83,6 +83,13 @@ export const router = createRouter({
       alias: ['/cookies', '/cookie'],
       name: 'cookie-policy',
       component: () => import('@/pages/CookiePolicyPage.vue'),
+    },
+    // Direct username slug route (like X / Twitter: /:username)
+    {
+      path: '/:username([a-zA-Z0-9_#.-]+)',
+      name: 'user-profile-slug',
+      component: () => import('@/pages/ProfilePage.vue'),
+      props: (route) => ({ address: route.params.username }),
     },
     {
       path: '/:pathMatch(.*)*',

@@ -42,6 +42,7 @@ import {
   SelectLabel,
   SelectSeparator,
 } from '@/components/ui/select';
+import { getUserIdentity } from '@/lib/username';
 
 defineEmits<{
   (e: 'openSearch'): void;
@@ -137,8 +138,8 @@ function copyAddress() {
             :class="[
               'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
               isRouteActive('/launchpad')
-                ? 'bg-muted text-foreground'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                ? 'bg-black text-foreground border border-border font-bold'
+                : 'text-muted-foreground hover:text-foreground hover:bg-zinc-950',
             ]"
           >
             {{ t('explore') }}
@@ -149,8 +150,8 @@ function copyAddress() {
             :class="[
               'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
               isRouteActive('/launchpad/create')
-                ? 'bg-muted text-foreground'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                ? 'bg-black text-foreground border border-border font-bold'
+                : 'text-muted-foreground hover:text-foreground hover:bg-zinc-950',
             ]"
           >
             {{ t('create') }}
@@ -161,8 +162,8 @@ function copyAddress() {
             :class="[
               'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
               isRouteActive('/memestock')
-                ? 'bg-muted text-foreground'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                ? 'bg-black text-foreground border border-border font-bold'
+                : 'text-muted-foreground hover:text-foreground hover:bg-zinc-950',
             ]"
           >
             {{ t('memestock') }}
@@ -173,8 +174,8 @@ function copyAddress() {
             :class="[
               'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
               isRouteActive('/feed')
-                ? 'bg-muted text-foreground'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                ? 'bg-black text-foreground border border-border font-bold'
+                : 'text-muted-foreground hover:text-foreground hover:bg-zinc-950',
             ]"
           >
             {{ t('feed') }}
@@ -185,8 +186,8 @@ function copyAddress() {
             :class="[
               'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
               isRouteActive('/analytics')
-                ? 'bg-muted text-foreground'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                ? 'bg-black text-foreground border border-border font-bold'
+                : 'text-muted-foreground hover:text-foreground hover:bg-zinc-950',
             ]"
           >
             {{ t('analytics') }}
@@ -304,8 +305,8 @@ function copyAddress() {
               >
                 <Jazzicon :address="account" :size="16" class="rounded-full shrink-0" />
                 <span
-                  class="font-bold text-foreground text-[11px] sm:text-xs hidden min-[480px]:inline"
-                  >{{ formattedAddress }}</span
+                  class="font-bold text-foreground text-[11px] sm:text-xs hidden min-[480px]:inline truncate max-w-[140px]"
+                  >{{ getUserIdentity(account).name }}</span
                 >
               </Button>
             </DropdownMenuTrigger>
@@ -322,7 +323,7 @@ function copyAddress() {
                 <div class="truncate min-w-0 flex-1">
                   <div class="flex items-center justify-between gap-1">
                     <span class="text-xs font-bold text-foreground font-mono truncate">
-                      {{ formattedAddress }}
+                      {{ getUserIdentity(account).displayName }}
                     </span>
                     <span class="text-[11px] font-mono font-bold text-primary shrink-0">
                       {{ formattedBalance }}
@@ -543,7 +544,7 @@ function copyAddress() {
               <Jazzicon :address="account" :size="28" class="rounded-full shrink-0" />
               <div class="truncate">
                 <span class="text-xs font-mono font-bold text-foreground block truncate">{{
-                  formattedAddress
+                  getUserIdentity(account).displayName
                 }}</span>
                 <span class="text-[11px] font-mono text-primary font-semibold">{{
                   formattedBalance

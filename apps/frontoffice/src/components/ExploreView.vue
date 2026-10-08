@@ -71,12 +71,12 @@
 
           <div class="flex items-center gap-2 shrink-0">
             <span
-              class="text-[11px] font-mono font-semibold text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md"
+              class="text-[11px] font-mono font-semibold text-muted-foreground bg-black border border-border px-2 py-0.5 rounded-md"
             >
               {{ formatRelativeTime(item.token.createdAt) }}
             </span>
             <div
-              class="w-7 h-7 rounded-full bg-muted/70 group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center transition-colors text-muted-foreground"
+              class="w-7 h-7 rounded-full bg-black border border-border group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center transition-colors text-muted-foreground"
             >
               <ArrowRight class="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
             </div>
@@ -104,7 +104,7 @@
       <div
         class="grid grid-cols-2 sm:flex sm:items-center gap-4 sm:gap-6 font-mono text-xs w-full md:w-auto"
       >
-        <div class="p-3 sm:p-0 rounded-xl bg-muted/40 sm:bg-transparent">
+        <div class="p-3 sm:p-0 rounded-xl bg-black border border-border sm:border-0 sm:bg-transparent">
           <span
             class="text-muted-foreground text-[10px] uppercase tracking-wider block font-semibold"
           >
@@ -114,7 +114,7 @@
             ${{ totalVolume24hUsd.toLocaleString(undefined, { maximumFractionDigits: 0 }) }}
           </span>
         </div>
-        <div class="p-3 sm:p-0 rounded-xl bg-muted/40 sm:bg-transparent">
+        <div class="p-3 sm:p-0 rounded-xl bg-black border border-border sm:border-0 sm:bg-transparent">
           <span
             class="text-muted-foreground text-[10px] uppercase tracking-wider block font-semibold"
           >
@@ -124,7 +124,7 @@
             {{ totalTokensCount }}
           </span>
         </div>
-        <div class="p-3 sm:p-0 rounded-xl bg-muted/40 sm:bg-transparent col-span-2 sm:col-span-1">
+        <div class="p-3 sm:p-0 rounded-xl bg-black border border-border sm:border-0 sm:bg-transparent col-span-2 sm:col-span-1">
           <span
             class="text-muted-foreground text-[10px] uppercase tracking-wider block font-semibold"
           >
@@ -151,7 +151,7 @@
 
         <!-- Right Controls: View Mode Switcher (Pons-Style Pills) -->
         <div class="flex items-center gap-2 self-end sm:self-auto font-mono">
-          <div class="inline-flex items-center p-1 bg-muted/40 rounded-full border border-border gap-1">
+          <div class="inline-flex items-center p-1 bg-black rounded-full border border-border gap-1">
             <button
               type="button"
               @click="viewMode = 'table'"
@@ -308,7 +308,7 @@
                     </span>
                     <button
                       type="button"
-                      class="text-[10px] text-muted-foreground hover:text-foreground font-mono flex items-center gap-1 bg-muted/60 px-1.5 py-0.5 rounded transition cursor-pointer"
+                      class="text-[10px] text-muted-foreground hover:text-foreground font-mono flex items-center gap-1 bg-black border border-border px-1.5 py-0.5 rounded transition cursor-pointer"
                       title="Copy Contract Address"
                       @click.stop="copyAddress(item.token.address)"
                     >
@@ -326,7 +326,7 @@
 
             <!-- 2. PAIR (Native Currency Pair like Pons) -->
             <TableCell class="py-3.5 px-3 text-center">
-              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-border/70 bg-muted/30 text-[10px] font-mono font-bold text-muted-foreground">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-border bg-black text-[10px] font-mono font-bold text-muted-foreground">
                 <img
                   :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
                   alt=""
@@ -426,7 +426,7 @@
       <!-- Pagination in Table Footer -->
       <div
         v-if="filteredTokens.length > pageSize"
-        class="flex justify-center p-4 border-t border-border bg-muted/20"
+        class="flex justify-center p-4 border-t border-border bg-black"
       >
         <Pagination
           :current-page="currentPage"

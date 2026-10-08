@@ -78,7 +78,7 @@
         <!-- Metric Switcher Pills & Mode Toggle (Pons / Shadcn Segmented Controls) -->
         <div class="flex flex-wrap items-center gap-2 font-mono text-xs">
           <!-- Metric Selectors -->
-          <div class="inline-flex p-1 rounded-xl bg-muted/50 border border-border/70 gap-1">
+          <div class="inline-flex p-1 rounded-xl bg-black border border-border gap-1">
             <button
               v-for="m in metricOptions"
               :key="m.value"
@@ -87,7 +87,7 @@
               :class="
                 activeMetric === m.value
                   ? 'bg-foreground text-background shadow-2xs'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/70'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-zinc-900'
               "
               @click="activeMetric = m.value"
             >
@@ -96,7 +96,7 @@
           </div>
 
           <!-- Chart Style Mode (Area vs Bar) -->
-          <div class="inline-flex p-1 rounded-xl bg-muted/50 border border-border/70 gap-0.5">
+          <div class="inline-flex p-1 rounded-xl bg-black border border-border gap-0.5">
             <button
               type="button"
               class="p-1 rounded-lg transition cursor-pointer text-xs"
@@ -304,7 +304,7 @@
         <div
           v-for="c in contractEntries"
           :key="c.name"
-          class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-muted/20 hover:bg-muted/40 transition rounded-2xl border border-border/80 gap-2"
+          class="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-black hover:bg-zinc-950 transition rounded-2xl border border-border gap-2"
         >
           <div class="flex items-center gap-2.5">
             <span class="text-foreground font-bold">{{ c.name }}</span>

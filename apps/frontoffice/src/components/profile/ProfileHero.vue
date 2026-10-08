@@ -15,7 +15,7 @@
       />
       <div
         v-else
-        class="absolute inset-0 bg-muted/40"
+        class="absolute inset-0 bg-black"
       />
 
       <div
@@ -104,14 +104,16 @@
           <h1 class="text-xl sm:text-2xl font-black tracking-tight text-foreground font-mono">
             {{
               profileData.displayName ||
-              (profileAddress ? shortenAddress(profileAddress) : 'Anonymous Creator')
+              (profileAddress ? getUserIdentity(profileAddress).displayName : 'Anonymous Creator')
             }}
           </h1>
           <CheckCircle2 class="w-5 h-5 fill-primary text-background shrink-0" />
         </div>
 
-        <p class="text-xs font-mono text-muted-foreground">
-          @{{ profileAddress ? shortenAddress(profileAddress, 6, 4) : 'not-connected' }}
+        <p class="text-xs font-mono text-muted-foreground flex items-center gap-1.5">
+          <span>@{{ profileAddress ? getUserIdentity(profileAddress).name : 'not-connected' }}</span>
+          <span class="text-muted-foreground/40">&middot;</span>
+          <span>{{ profileAddress ? shortenAddress(profileAddress, 6, 4) : '' }}</span>
         </p>
 
         <p class="text-xs sm:text-sm text-foreground/90 max-w-2xl font-sans leading-relaxed">
@@ -162,6 +164,7 @@ import { Camera, Edit3, Share2, CheckCircle2, ExternalLink } from 'lucide-vue-ne
 import { Button } from '@/components/ui/button';
 import { Jazzicon } from '@/components/ui/avatar';
 import { shortenAddress } from '@/lib/utils';
+import { getUserIdentity } from '@/lib/username';
 import type { ProfileStorageData } from './types';
 import type { NetworkConfig } from '@proto/shared-types';
 
