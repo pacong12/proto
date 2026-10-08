@@ -15,6 +15,7 @@ import {
   type AutoscaleInfo,
 } from 'lightweight-charts';
 import { CandlestickChart, TrendingUp, Maximize2 } from 'lucide-vue-next';
+import ShadcnTradingLineChart from './ShadcnTradingLineChart.vue';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -550,10 +551,18 @@ function initChart() {
 // Controls
 // ---------------------------------------------------------------------------
 
+function onShadcnBarHover(bar: CandlePoint | null) {
+  hoveredBar.value = bar;
+}
+
 function toggleChartType(type: 'candles' | 'area') {
   if (chartType.value === type) return;
   chartType.value = type;
-  initChart();
+  if (type === 'candles') {
+    setTimeout(() => {
+      initChart();
+    }, 20);
+  }
 }
 
 function toggleLogScale() {
@@ -832,9 +841,27 @@ onUnmounted(() => destroyChart());
 
     <!-- Token Candlestick Chart Canvas (TradingView Lightweight Charts) -->
     <div
+      v-show="chartType === 'candles'"
       ref="chartContainer"
-      class="w-full rounded-2xl overflow-hidden border border-border bg-card shadow-xs"
+      class="w-full rounded-2xl overflow-hidden border border-border bg-black shadow-xs"
       :style="{ minHeight: `${props.height}px` }"
     />
+
+    <!-- Custom Shadcn Area / Line Chart with Glowing Gradient & Floating Tooltip -->
+    <div
+      v-if="chartType === 'area'"
+      class="w-full rounded-2xl overflow-hidden border border-border bg-black shadow-xs p-1"
+    >
+      <ShadcnTradingLineChart
+        :data="props.data"
+        :height="props.height"
+        :token-symbol="props.tokenSymbol"
+        :native-symbol="props.nativeSymbol"
+        :chart-mode="activeChartMode"
+        :currency-mode="activeCurrencyMode"
+        :multiplier="getModeMultiplier()"
+        @hover-bar="onShadcnBarHover"
+      />
+    </div>
   </div>
 </template>

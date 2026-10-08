@@ -26,40 +26,90 @@
     </div>
 
     <template v-else>
-      <!-- Breadcrumb Navigation (ubi.fun style) -->
-      <div class="flex items-center gap-2 text-xs font-mono text-muted-foreground">
-        <RouterLink to="/launchpad" class="hover:text-foreground transition font-medium">
-          Markets
-        </RouterLink>
-        <span>/</span>
-        <span class="text-foreground font-bold">{{ currentToken.name }}</span>
-      </div>
-
       <!-- ============================================================
-           ROW 1: UBI.FUN TOKEN HEADER & 4-METRIC STAT STRIP
+           PONS-INSPIRED UNIFIED TOKEN HEADER (app-token-head)
            ============================================================ -->
-      <div class="space-y-4">
-        <!-- Main Token Identity Row -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div class="flex items-center gap-3.5 min-w-0">
+      <header class="space-y-4 pb-2 border-b border-border/80">
+        <!-- Top Row: Back Navigation + Action Buttons -->
+        <div class="flex items-center justify-between gap-3 text-xs font-mono">
+          <RouterLink
+            to="/launchpad"
+            class="text-muted-foreground hover:text-foreground transition inline-flex items-center gap-1.5 font-medium group"
+          >
+            <ChevronLeft class="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
+            <span>Markets</span>
+            <span class="text-muted-foreground/40">/</span>
+            <span class="text-foreground font-bold truncate max-w-[200px] sm:max-w-none">{{ currentToken.name }}</span>
+          </RouterLink>
+
+          <!-- Top Action Controls (Callout, Share, Copy Link) -->
+          <div class="flex items-center gap-2">
+            <!-- Callout Button (pump.fun style) -->
+            <Button
+              variant="outline"
+              size="sm"
+              class="h-7 px-2.5 text-xs font-bold gap-1 rounded-xl border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer shadow-2xs font-mono"
+              @click="openCallModal"
+            >
+              <Megaphone class="w-3.5 h-3.5" />
+              <span class="hidden sm:inline">Call ${{ currentToken.symbol }}</span>
+              <span class="sm:hidden">Call</span>
+            </Button>
+
+            <!-- Share to X Button -->
+            <Button
+              variant="outline"
+              size="sm"
+              class="h-7 px-2.5 text-xs font-bold gap-1 rounded-xl border-border cursor-pointer font-mono"
+              @click="shareToX"
+            >
+              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+                />
+              </svg>
+              <span class="hidden sm:inline">Share</span>
+            </Button>
+
+            <!-- Copy Link Button -->
+            <Button
+              variant="outline"
+              size="sm"
+              class="h-7 px-2.5 text-xs font-bold gap-1 rounded-xl border-border cursor-pointer font-mono"
+              @click="copyTokenLink"
+            >
+              <Check v-if="linkCopied" class="w-3 h-3 text-emerald-500" />
+              <Copy v-else class="w-3 h-3" />
+              <span class="hidden sm:inline">{{ linkCopied ? 'Copied' : 'Copy link' }}</span>
+            </Button>
+          </div>
+        </div>
+
+        <!-- Main Identity & Live Figure Row -->
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <!-- Left: Artwork + Titles + Metadata Byline -->
+          <div class="flex items-center gap-3.5 sm:gap-4 min-w-0">
             <OptimizedImage
               :src="currentToken.logo"
               :alt="currentToken.name"
               :fallback-text="currentToken.symbol"
-              :width="48"
-              :height="48"
-              class="rounded-full border border-border object-cover ring-2 ring-border shadow-xs shrink-0"
+              :width="56"
+              :height="56"
+              class="rounded-full border border-border object-cover ring-2 ring-border shadow-xs shrink-0 w-12 h-12 sm:w-14 sm:h-14"
             />
-            <div class="min-w-0">
-              <div class="flex items-center gap-2.5 flex-wrap">
-                <h1 class="text-xl sm:text-2xl font-black tracking-tight text-foreground truncate">
+            <div class="min-w-0 space-y-1">
+              <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+                <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-foreground truncate">
                   {{ currentToken.name }}
                 </h1>
+                <span class="text-xs sm:text-sm font-bold font-mono text-muted-foreground">
+                  ${{ currentToken.symbol }}
+                </span>
                 <!-- Pin / Star Watchlist Button (Pons style) -->
                 <button
                   type="button"
                   class="p-1 rounded-lg transition-transform hover:scale-110 cursor-pointer select-none"
-                  :class="isPinned(currentToken.address) ? 'text-amber-400' : 'text-muted-foreground/40 hover:text-amber-400'"
+                  :class="isPinned(currentToken.address) ? 'text-amber-400' : 'text-muted-foreground/35 hover:text-amber-400'"
                   :title="isPinned(currentToken.address) ? 'Unpin coin' : 'Pin to Watchlist'"
                   @click.stop="togglePin(currentToken.address)"
                 >
@@ -72,21 +122,35 @@
                   :variant="currentMarketData.isGraduated ? 'default' : 'outline'"
                   class="text-[10px] font-mono h-4 px-1.5 border-border uppercase font-semibold"
                 >
-                  {{ currentMarketData.isGraduated ? 'Open Market' : 'Bonding Curve' }}
+                  {{ currentMarketData.isGraduated ? 'Graduated' : 'Bonding Curve' }}
                 </Badge>
-                <span class="text-xs sm:text-sm font-bold font-mono text-muted-foreground">
-                  ${{ currentToken.symbol }}
-                </span>
-                <span class="text-xs font-mono text-muted-foreground">
-                  · {{ formatRelativeTime(currentToken.createdAt) }}
-                </span>
               </div>
 
-              <!-- Contract Address Pill & Socials -->
-              <div class="flex items-center gap-2.5 mt-1.5 flex-wrap text-xs font-mono">
+              <!-- Metadata Byline (Pons-style clean strip) -->
+              <div class="flex items-center gap-2 flex-wrap text-xs font-mono text-muted-foreground">
+                <span v-if="currentToken.deployer" class="inline-flex items-center gap-1">
+                  <span>by</span>
+                  <a
+                    :href="`${explorerUrl}/address/${currentToken.deployer}`"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="hover:text-foreground underline decoration-dotted transition text-foreground"
+                    title="Dev Wallet"
+                  >
+                    {{ shortenAddress(currentToken.deployer, 6, 4) }}
+                  </a>
+                </span>
+                <span class="text-muted-foreground/50">·</span>
+                <span>{{ formatRelativeTime(currentToken.createdAt) }}</span>
+                <span class="text-muted-foreground/50">·</span>
+                <span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-md bg-muted/60 border border-border text-[11px] text-foreground font-semibold">
+                  {{ currencySymbol }} pair
+                </span>
+                <span class="text-muted-foreground/50">·</span>
+                <!-- Contract Address Pill -->
                 <button
                   type="button"
-                  class="flex items-center gap-1 bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground px-2 py-0.5 rounded-lg border border-border transition cursor-pointer text-[11px]"
+                  class="inline-flex items-center gap-1 hover:text-foreground transition cursor-pointer text-[11px]"
                   title="Copy Contract Address"
                   @click="copyAddress(currentToken.address)"
                 >
@@ -94,12 +158,11 @@
                   <Check v-if="copied" class="w-3 h-3 text-emerald-500" />
                   <Copy v-else class="w-3 h-3" />
                 </button>
-
                 <a
                   :href="`${explorerUrl}/token/${currentToken.address}`"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-muted-foreground hover:text-foreground p-0.5 transition"
+                  class="hover:text-foreground transition p-0.5"
                   title="View on Explorer"
                 >
                   <ExternalLink class="w-3.5 h-3.5" />
@@ -131,30 +194,13 @@
                   </svg>
                 </a>
 
-                <!-- Dev wallet attribution (lunch.fun style) -->
-                <span
-                  v-if="currentToken.deployer"
-                  class="text-muted-foreground text-[11px] flex items-center gap-1"
-                >
-                  <span>by</span>
-                  <a
-                    :href="`${explorerUrl}/address/${currentToken.deployer}`"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="hover:text-foreground underline decoration-dotted transition"
-                    title="Dev Wallet"
-                  >
-                    {{ shortenAddress(currentToken.deployer, 6, 4) }}
-                  </a>
-                </span>
-
                 <!-- Socials -->
                 <a
                   v-if="currentToken.socials?.twitter"
                   :href="currentToken.socials.twitter"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-muted-foreground hover:text-foreground transition p-0.5"
+                  class="hover:text-foreground transition p-0.5"
                   title="Twitter / X"
                 >
                   <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
@@ -168,7 +214,7 @@
                   :href="currentToken.socials.telegram"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-muted-foreground hover:text-foreground transition p-0.5"
+                  class="hover:text-foreground transition p-0.5"
                   title="Telegram"
                 >
                   <Send class="w-3.5 h-3.5" />
@@ -178,7 +224,7 @@
                   :href="currentToken.socials.website"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-muted-foreground hover:text-foreground transition p-0.5"
+                  class="hover:text-foreground transition p-0.5"
                   title="Website"
                 >
                   <Globe class="w-3.5 h-3.5" />
@@ -187,208 +233,67 @@
             </div>
           </div>
 
-          <!-- Right Action Controls (Callout, Share, Copy Link) -->
-          <div class="flex items-center gap-2 shrink-0 flex-wrap">
-            <!-- Callout Button (pump.fun style) -->
-            <Button
-              variant="outline"
-              size="sm"
-              class="h-8 px-3 text-xs font-bold gap-1.5 rounded-xl border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer shadow-2xs font-mono"
-              @click="openCallModal"
-            >
-              <Megaphone class="w-3.5 h-3.5" />
-              <span>Call ${{ currentToken.symbol }}</span>
-            </Button>
-
-            <!-- Share to X Button -->
-            <Button
-              variant="outline"
-              size="sm"
-              class="h-8 px-3 text-xs font-bold gap-1.5 rounded-xl border-border cursor-pointer"
-              @click="shareToX"
-            >
-              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                <path
-                  d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
-                />
-              </svg>
-              <span>Share</span>
-            </Button>
-
-            <!-- Copy Link Button -->
-            <Button
-              variant="outline"
-              size="sm"
-              class="h-8 px-3 text-xs font-bold gap-1.5 rounded-xl border-border cursor-pointer"
-              @click="copyTokenLink"
-            >
-              <Check v-if="linkCopied" class="w-3.5 h-3.5 text-emerald-500" />
-              <Copy v-else class="w-3.5 h-3.5" />
-              <span>{{ linkCopied ? 'Copied' : 'Copy link' }}</span>
-            </Button>
-          </div>
+          <!-- Right: Pons-style Large Clickable Live Figure -->
+          <button
+            type="button"
+            class="text-left md:text-right flex flex-col items-start md:items-end gap-0.5 cursor-pointer select-none group transition-opacity hover:opacity-90 self-start md:self-auto shrink-0 font-mono"
+            :title="`Click to toggle between Market Cap and Price display`"
+            @click="toggleHeaderFigure"
+          >
+            <span class="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
+              {{ primaryFigureMode === 'mcap' ? 'Market cap' : 'Token price' }}
+            </span>
+            <div class="flex items-baseline gap-2">
+              <span class="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
+                {{ primaryFigureValue }}
+              </span>
+              <span
+                class="text-xs font-bold px-1.5 py-0.5 rounded-full"
+                :class="
+                  (currentMarketData.priceChange24h ?? 0) >= 0
+                    ? 'text-emerald-500 bg-emerald-500/10 border border-emerald-500/20'
+                    : 'text-rose-500 bg-rose-500/10 border border-rose-500/20'
+                "
+              >
+                {{ (currentMarketData.priceChange24h ?? 0) >= 0 ? '+' : ''
+                }}{{ (currentMarketData.priceChange24h ?? 0).toFixed(2) }}%
+              </span>
+            </div>
+            <span class="text-[11px] text-muted-foreground group-hover:text-foreground transition underline decoration-dotted">
+              {{ secondaryFigureValue }}
+            </span>
+          </button>
         </div>
+      </header>
 
-        <!-- 4-Stat Metrics Cards Grid (ubi.fun exact style) -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 font-mono text-xs">
-          <div class="p-3.5 sm:p-4 rounded-2xl bg-card border border-border shadow-xs">
-            <span
-              class="text-muted-foreground text-[10px] uppercase tracking-wider block font-semibold"
-            >
-              Market cap
-            </span>
-            <span class="font-black text-lg sm:text-xl text-foreground block mt-1">
-              ${{ formatNumberCap(currentMarketData.marketCapUsd ?? 4200) }}
-            </span>
-          </div>
-
-          <div class="p-3.5 sm:p-4 rounded-2xl bg-card border border-border shadow-xs">
-            <span
-              class="text-muted-foreground text-[10px] uppercase tracking-wider block font-semibold"
-            >
-              Token price
-            </span>
-            <span class="font-black text-lg sm:text-xl text-foreground block mt-1 truncate">
-              {{ formatPriceUsd(currentMarketData.priceUsd) }}
-            </span>
-          </div>
-
-          <div class="p-3.5 sm:p-4 rounded-2xl bg-card border border-border shadow-xs">
-            <span
-              class="text-muted-foreground text-[10px] uppercase tracking-wider block font-semibold"
-            >
-              Volume · 24h
-            </span>
-            <span class="font-black text-lg sm:text-xl text-foreground block mt-1">
-              {{
-                (currentMarketData.volume24hUsd ?? 0) > 0
-                  ? formatCompactUsd(currentMarketData.volume24hUsd)
-                  : '—'
-              }}
-            </span>
-          </div>
-
-          <div class="p-3.5 sm:p-4 rounded-2xl bg-card border border-border shadow-xs">
-            <span
-              class="text-muted-foreground text-[10px] uppercase tracking-wider block font-semibold"
-            >
-              Change · 24h
-            </span>
-            <span
-              class="font-black text-lg sm:text-xl block mt-1"
-              :class="
-                (currentMarketData.priceChange24h ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'
-              "
-            >
-              {{ (currentMarketData.priceChange24h ?? 0) >= 0 ? '+' : ''
-              }}{{ (currentMarketData.priceChange24h ?? 0).toFixed(2) }}%
-            </span>
-          </div>
-        </div>
-
-        <!-- Security, Distribution & Trust Ribbon (lunch.fun style) -->
-        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 text-xs font-mono">
-          <div
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border shrink-0 shadow-2xs"
-            title="Supply held by top 10 holders"
-          >
-            <span class="text-muted-foreground text-[10px] uppercase font-bold tracking-wider"
-              >Top 10:</span
-            >
-            <span class="font-bold text-foreground">
-              {{ top10HoldingPercent > 0 ? top10HoldingPercent.toFixed(1) + '%' : '—' }}
-            </span>
-          </div>
-
-          <div
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border shrink-0 shadow-2xs"
-            title="Supply held by token creator"
-          >
-            <span class="text-muted-foreground text-[10px] uppercase font-bold tracking-wider"
-              >Dev Holds:</span
-            >
-            <span
-              class="font-bold"
-              :class="devHoldingPercent > 10 ? 'text-amber-500' : 'text-foreground'"
-            >
-              {{ devHoldingPercent.toFixed(1) }}%
-            </span>
-          </div>
-
-          <div
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border shrink-0 shadow-2xs"
-            title="Total unique token holders"
-          >
-            <span class="text-muted-foreground text-[10px] uppercase font-bold tracking-wider"
-              >Holders:</span
-            >
-            <span class="font-bold text-foreground">{{ holders.length.toLocaleString() }}</span>
-          </div>
-
-          <div
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border shrink-0 shadow-2xs"
-            title="Buy / Sell creator trading tax"
-          >
-            <span class="text-muted-foreground text-[10px] uppercase font-bold tracking-wider"
-              >Tax:</span
-            >
-            <span class="font-bold text-foreground">
-              {{ (onchainTaxConfig.buyTaxBps / 100).toFixed(0) }}% /
-              {{ (onchainTaxConfig.sellTaxBps / 100).toFixed(0) }}%
-            </span>
-          </div>
-
-          <div
-            v-if="burnedInfo.percent > 0"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border shrink-0 shadow-2xs"
-            title="Total burned supply"
-          >
-            <span class="text-muted-foreground text-[10px] uppercase font-bold tracking-wider"
-              >Burned:</span
-            >
-            <span class="font-bold text-rose-500">{{ burnedInfo.percent.toFixed(1) }}%</span>
-          </div>
-
-          <a
-            :href="`${explorerUrl}/token/${currentToken.address}#code`"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shrink-0 font-bold text-[11px] transition"
-            title="View contract source on explorer"
-          >
-            <Check class="w-3.5 h-3.5" />
-            <span>Verified</span>
-          </a>
-        </div>
-
-        <!-- Pending tax change warning - visible to all visitors -->
-        <PendingTaxBanner
-          v-if="hasPendingTax && pendingTax"
-          :pending="pendingTax"
-          :symbol="currentToken.symbol"
-        />
-      </div>
+      <!-- Pending tax change warning - visible to all visitors -->
+      <PendingTaxBanner
+        v-if="hasPendingTax && pendingTax"
+        :pending="pendingTax"
+        :symbol="currentToken.symbol"
+      />
 
       <!-- ============================================================
-           ROW 2: Main Trading Layout - Chart, Swap, & Tabs
+           HYBRID PONS X PROTO TRADING GRID
+           - Desktop: 2 Columns (Col 1: Chart, Facts, Tabs | Col 2: Sticky Swap Panel)
+           - Mobile: Responsive Stacking (Chart -> Swap Panel -> Facts -> Tabs)
            ============================================================ -->
-      <!-- Main Trading Grid: Responsive Order (Chart -> Swap -> Tabs on mobile; Chart+Tabs (left) & Swap (right) on desktop) -->
       <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start">
         <!-- 1. Chart Card (Col 1, Row 1 on xl) -->
         <div class="xl:col-start-1 xl:row-start-1 min-w-0 w-full space-y-6">
           <div class="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
             <!-- Chart Header with Live Price + Timeframes -->
             <div
-              class="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-border bg-card"
+              class="flex flex-wrap items-center justify-between gap-3 p-3.5 sm:p-4 border-b border-border bg-card font-mono text-xs"
             >
-              <div class="flex items-baseline gap-2.5">
+              <div class="flex items-baseline gap-2">
                 <span
-                  class="text-2xl sm:text-3xl font-black tracking-tight text-foreground font-mono"
+                  class="text-xl sm:text-2xl font-black tracking-tight text-foreground"
                 >
                   {{ activeChartHeaderPrice }}
                 </span>
                 <span
-                  class="text-xs font-mono font-bold px-2 py-0.5 rounded-full"
+                  class="text-[11px] font-bold px-1.5 py-0.5 rounded-full"
                   :class="
                     (currentMarketData.priceChange24h ?? 0) >= 0
                       ? 'text-emerald-500 bg-emerald-500/10 border border-emerald-500/20'
@@ -401,12 +306,12 @@
               </div>
 
               <!-- Timeframe switcher pills -->
-              <div class="flex items-center gap-1 bg-muted p-1 rounded-xl border border-border">
+              <div class="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border">
                 <button
                   v-for="res in resolutions"
                   :key="res.label"
                   type="button"
-                  class="px-2.5 py-1 text-xs font-mono font-bold rounded-lg transition-all cursor-pointer"
+                  class="px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer"
                   :class="
                     selectedResolution === res.seconds
                       ? 'bg-card text-foreground shadow-xs'
@@ -420,7 +325,7 @@
             </div>
 
             <!-- TradingChart wrapper -->
-            <div class="p-4 sm:p-5 bg-card">
+            <div class="p-3.5 sm:p-5 bg-card">
               <TradingChart
                 v-model:chart-mode="chartDisplayMode"
                 v-model:currency-mode="chartCurrencyMode"
@@ -443,101 +348,11 @@
           </div>
         </div>
 
-        <!-- 2. Swap Panel Column (Mobile: 2nd right under Chart! Desktop: Col 2, Row 1-2) -->
-        <div class="xl:col-start-2 xl:row-start-1 xl:row-span-2 w-full shrink-0 space-y-6">
+        <!-- 2. Sticky Swap Panel (Mobile: 2nd under Chart; Desktop: Col 2, Row 1-3) -->
+        <div class="xl:col-start-2 xl:row-start-1 xl:row-span-3 w-full shrink-0 xl:sticky xl:top-20 space-y-4">
           <div class="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
-            <!-- Graduation progress card -->
-            <div class="p-5 sm:p-6 border-b border-border space-y-2.5">
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs font-semibold text-foreground">
-                  {{ currentToken.version === 'v2' ? 'Bonding Curve' : 'Uniswap V3 Liquidity' }}
-                </span>
-                <span class="text-xs font-mono font-bold text-primary">
-                  {{ (currentMarketData.graduationProgress * 100).toFixed(1) }}%
-                </span>
-              </div>
-              <Progress
-                :model-value="currentMarketData.graduationProgress * 100"
-                class="h-1.5 mb-2"
-              />
-              <div class="flex justify-between text-[11px] font-mono text-muted-foreground">
-                <span>
-                  {{ currentMarketData.pairedPrincipalWeth }} /
-                  {{ currentMarketData.graduationThresholdWeth }} {{ currencySymbol }}
-                </span>
-                <span>{{
-                  currentMarketData.isGraduated
-                    ? 'Graduated'
-                    : `Need ${remainingToGraduate} ${currencySymbol}`
-                }}</span>
-              </div>
-              <!-- Graduation call-to-action banner -->
-              <div
-                v-if="currentToken.version === 'v2' && !currentMarketData.isGraduated"
-                class="mt-2 px-2.5 py-1.5 rounded-lg bg-muted border border-border text-[11px] font-mono flex items-center gap-1.5 text-foreground"
-              >
-                <Sparkles class="w-3.5 h-3.5 shrink-0" />
-                <span>Graduates to Uniswap v4 at 100%</span>
-              </div>
-              <div
-                v-else-if="currentMarketData.isGraduated"
-                class="mt-2 px-2.5 py-1.5 rounded-lg bg-muted border border-border text-[11px] font-mono flex items-center gap-1.5 text-foreground"
-              >
-                <Check class="w-3.5 h-3.5 shrink-0" />
-                <span>Liquidity locked in Uniswap DEX</span>
-              </div>
-            </div>
-
-            <!-- Post-Graduation Pool Details Card (lunch.fun style) -->
-            <div
-              v-if="currentMarketData.isGraduated && currentToken.poolAddress"
-              class="p-4 border-b border-border bg-muted/20 space-y-2 text-xs font-mono"
-            >
-              <div class="flex items-center justify-between font-bold text-foreground">
-                <span class="text-[10px] uppercase tracking-wider text-muted-foreground"
-                  >Uniswap Pool</span
-                >
-                <span class="text-emerald-500 flex items-center gap-1 text-[11px]">
-                  <Check class="w-3 h-3" />
-                  Locked
-                </span>
-              </div>
-              <div class="space-y-1 text-[11px]">
-                <div class="flex justify-between">
-                  <span class="text-muted-foreground">Pair</span>
-                  <div class="flex items-center gap-1">
-                    <span class="text-foreground">{{
-                      shortenAddress(currentToken.poolAddress, 6, 4)
-                    }}</span>
-                    <button
-                      type="button"
-                      class="text-muted-foreground hover:text-foreground cursor-pointer"
-                      title="Copy pair address"
-                      @click="copyAddress(currentToken.poolAddress)"
-                    >
-                      <Copy class="w-3 h-3" />
-                    </button>
-                    <a
-                      :href="`${explorerUrl}/address/${currentToken.poolAddress}`"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="text-muted-foreground hover:text-foreground"
-                    >
-                      <ExternalLink class="w-3 h-3" />
-                    </a>
-                  </div>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-muted-foreground">Locked {{ currencySymbol }}</span>
-                  <span class="font-bold text-foreground">
-                    {{ currentMarketData.pairedPrincipalWeth }} {{ currencySymbol }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
             <!-- Swap panel form wrapper -->
-            <div class="p-5 sm:p-6 space-y-4">
+            <div class="p-5 sm:p-6 space-y-4 font-mono">
               <!-- Wrong network warning banner -->
               <div
                 v-if="isConnected && activeNetwork.chainId !== tokenNetwork.chainId"
@@ -549,7 +364,7 @@
 
               <!-- Buy / Sell tabs + Slippage gear in ONE row -->
               <div class="flex items-center justify-between gap-3">
-                <div class="flex rounded-xl border border-border bg-muted p-1 w-44 shrink-0">
+                <div class="flex rounded-xl border border-border bg-muted/60 p-1 w-44 shrink-0">
                   <button
                     type="button"
                     class="flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer text-center"
@@ -812,8 +627,167 @@
           </div>
         </div>
 
-        <!-- 3. Bottom Tabs Card (Mobile: 3rd after Swap; Desktop: Col 1, Row 2) -->
+        <!-- 3. Bonding Curve & Protocol Facts Card (Pons app-facts style) -->
         <div class="xl:col-start-1 xl:row-start-2 min-w-0 w-full space-y-6">
+          <div class="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-xs font-mono">
+            <!-- Graduation Progress Bar Strip -->
+            <div class="space-y-2.5">
+              <div class="flex items-center justify-between text-xs">
+                <div class="flex items-center gap-2">
+                  <span class="font-bold text-foreground">
+                    {{ currentToken.version === 'v2' ? 'Bonding Curve Progress' : 'Uniswap Liquidity' }}
+                  </span>
+                  <Badge
+                    :variant="currentMarketData.isGraduated ? 'default' : 'outline'"
+                    class="text-[9px] h-4 px-1.5 uppercase font-mono"
+                  >
+                    {{ currentMarketData.isGraduated ? 'Graduated' : `${(currentMarketData.graduationProgress * 100).toFixed(1)}% filled` }}
+                  </Badge>
+                </div>
+                <span class="text-muted-foreground text-[11px]">
+                  {{ currentMarketData.pairedPrincipalWeth }} / {{ currentMarketData.graduationThresholdWeth }} {{ currencySymbol }}
+                </span>
+              </div>
+              <Progress :model-value="currentMarketData.graduationProgress * 100" class="h-2 rounded-full" />
+              <div class="flex items-center justify-between text-[11px] text-muted-foreground">
+                <span v-if="currentToken.version === 'v2' && !currentMarketData.isGraduated" class="flex items-center gap-1.5 text-foreground">
+                  <Sparkles class="w-3.5 h-3.5 text-primary" />
+                  <span>Graduates to Uniswap DEX at 100%</span>
+                </span>
+                <span v-else-if="currentMarketData.isGraduated" class="flex items-center gap-1.5 text-emerald-500 font-semibold">
+                  <Check class="w-3.5 h-3.5" />
+                  <span>Liquidity locked in Uniswap DEX</span>
+                </span>
+                <span>
+                  {{ currentMarketData.isGraduated ? 'Graduated' : `Need ${remainingToGraduate} ${currencySymbol}` }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Post-Graduation Pool Details Card (if graduated) -->
+            <div
+              v-if="currentMarketData.isGraduated && currentToken.poolAddress"
+              class="p-3.5 rounded-xl border border-border bg-muted/20 space-y-2 text-xs"
+            >
+              <div class="flex items-center justify-between font-bold text-foreground">
+                <span class="text-[10px] uppercase tracking-wider text-muted-foreground">Uniswap Pool</span>
+                <span class="text-emerald-500 flex items-center gap-1 text-[11px]">
+                  <Check class="w-3 h-3" />
+                  Locked
+                </span>
+              </div>
+              <div class="space-y-1 text-[11px]">
+                <div class="flex justify-between">
+                  <span class="text-muted-foreground">Pair</span>
+                  <div class="flex items-center gap-1">
+                    <span class="text-foreground">{{ shortenAddress(currentToken.poolAddress, 6, 4) }}</span>
+                    <button
+                      type="button"
+                      class="text-muted-foreground hover:text-foreground cursor-pointer"
+                      title="Copy pair address"
+                      @click="copyAddress(currentToken.poolAddress)"
+                    >
+                      <Copy class="w-3 h-3" />
+                    </button>
+                    <a
+                      :href="`${explorerUrl}/address/${currentToken.poolAddress}`"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="text-muted-foreground hover:text-foreground"
+                    >
+                      <ExternalLink class="w-3 h-3" />
+                    </a>
+                  </div>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-muted-foreground">Locked {{ currencySymbol }}</span>
+                  <span class="font-bold text-foreground">
+                    {{ currentMarketData.pairedPrincipalWeth }} {{ currencySymbol }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Protocol & Token Key Figures Grid (All stats preserved!) -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 pt-4 border-t border-border text-xs">
+              <div>
+                <span class="text-muted-foreground text-[10px] uppercase font-semibold block">Market Cap</span>
+                <span class="font-black text-foreground text-sm block mt-0.5">
+                  ${{ formatNumberCap(currentMarketData.marketCapUsd ?? 4200) }}
+                </span>
+              </div>
+              <div>
+                <span class="text-muted-foreground text-[10px] uppercase font-semibold block">Token Price</span>
+                <span class="font-black text-foreground text-sm block mt-0.5 truncate">
+                  {{ formatPriceUsd(currentMarketData.priceUsd) }}
+                </span>
+              </div>
+              <div>
+                <span class="text-muted-foreground text-[10px] uppercase font-semibold block">24h Volume</span>
+                <span class="font-black text-foreground text-sm block mt-0.5">
+                  {{ (currentMarketData.volume24hUsd ?? 0) > 0 ? formatCompactUsd(currentMarketData.volume24hUsd) : '—' }}
+                </span>
+              </div>
+              <div>
+                <span class="text-muted-foreground text-[10px] uppercase font-semibold block">Holders</span>
+                <span class="font-black text-foreground text-sm block mt-0.5">
+                  {{ holders.length.toLocaleString() }}
+                </span>
+              </div>
+              <div>
+                <span class="text-muted-foreground text-[10px] uppercase font-semibold block">Top 10 Supply</span>
+                <span class="font-black text-foreground text-sm block mt-0.5">
+                  {{ top10HoldingPercent > 0 ? top10HoldingPercent.toFixed(1) + '%' : '—' }}
+                </span>
+              </div>
+              <div>
+                <span class="text-muted-foreground text-[10px] uppercase font-semibold block">Dev Holds</span>
+                <span
+                  class="font-black text-sm block mt-0.5"
+                  :class="devHoldingPercent > 10 ? 'text-amber-500' : 'text-foreground'"
+                >
+                  {{ devHoldingPercent.toFixed(1) }}%
+                </span>
+              </div>
+            </div>
+
+            <!-- Trust & Secondary Badges (Preserved) -->
+            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1 text-[11px]">
+              <div
+                class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-muted/60 border border-border shrink-0"
+                title="Buy / Sell creator trading tax"
+              >
+                <span class="text-muted-foreground font-semibold">Tax:</span>
+                <span class="font-bold text-foreground">
+                  {{ (onchainTaxConfig.buyTaxBps / 100).toFixed(0) }}% / {{ (onchainTaxConfig.sellTaxBps / 100).toFixed(0) }}%
+                </span>
+              </div>
+
+              <div
+                v-if="burnedInfo.percent > 0"
+                class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-muted/60 border border-border shrink-0"
+                title="Total burned supply"
+              >
+                <span class="text-muted-foreground font-semibold">Burned:</span>
+                <span class="font-bold text-rose-500">{{ burnedInfo.percent.toFixed(1) }}%</span>
+              </div>
+
+              <a
+                :href="`${explorerUrl}/token/${currentToken.address}#code`"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shrink-0 font-bold transition"
+                title="View contract source on explorer"
+              >
+                <Check class="w-3.5 h-3.5" />
+                <span>Verified Contract</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Bottom Tabs Card (Mobile: 4th; Desktop: Col 1, Row 3) -->
+        <div class="xl:col-start-1 xl:row-start-3 min-w-0 w-full space-y-6">
           <div class="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
             <Tabs v-model="activeBottomTab" class="w-full">
               <!-- Tab headers -->
@@ -1903,6 +1877,7 @@ import {
   MessageCircle,
   BarChart2,
   Star,
+  ChevronLeft,
 } from 'lucide-vue-next';
 import { useSwap, SLIPPAGE_WARN_THRESHOLD, parseAmountToWei } from '../composables/useSwap';
 import { useWallet } from '../composables/useWallet';
@@ -2417,6 +2392,23 @@ const isBuy = computed(() => tradeTab.value === 'buy');
 const payInUsd = ref(false);
 const chartDisplayMode = ref<'price' | 'mcap'>('price');
 const chartCurrencyMode = ref<'usd' | 'native'>('usd');
+
+const primaryFigureMode = ref<'mcap' | 'price'>('mcap');
+function toggleHeaderFigure(): void {
+  primaryFigureMode.value = primaryFigureMode.value === 'mcap' ? 'price' : 'mcap';
+}
+const primaryFigureValue = computed(() => {
+  if (primaryFigureMode.value === 'mcap') {
+    return '$' + formatNumberCap(currentMarketData.value.marketCapUsd ?? 4200);
+  }
+  return formatPriceUsd(currentMarketData.value.priceUsd);
+});
+const secondaryFigureValue = computed(() => {
+  if (primaryFigureMode.value === 'mcap') {
+    return formatPriceUsd(currentMarketData.value.priceUsd) + ' price';
+  }
+  return '$' + formatNumberCap(currentMarketData.value.marketCapUsd ?? 4200) + ' mcap';
+});
 
 const activeChartHeaderPrice = computed(() => {
   if (chartDisplayMode.value === 'mcap') {
