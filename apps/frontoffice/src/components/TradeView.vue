@@ -88,21 +88,21 @@
         <!-- Main Identity & Live Figure Row -->
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <!-- Left: Artwork + Titles + Metadata Byline -->
-          <div class="flex items-center gap-3.5 sm:gap-4 min-w-0">
+          <div class="flex items-start gap-4 min-w-0">
             <OptimizedImage
               :src="currentToken.logo"
               :alt="currentToken.name"
               :fallback-text="currentToken.symbol"
-              :width="56"
-              :height="56"
-              class="rounded-full border border-border object-cover ring-2 ring-border shadow-xs shrink-0 w-12 h-12 sm:w-14 sm:h-14"
+              :width="64"
+              :height="64"
+              class="rounded-2xl border border-border object-cover ring-2 ring-border shadow-xs shrink-0 w-14 h-14 sm:w-16 sm:h-16"
             />
             <div class="min-w-0 space-y-1">
               <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap">
-                <h1 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-foreground truncate">
+                <h1 class="text-2xl sm:text-3xl font-black font-sans tracking-tight text-foreground truncate">
                   {{ currentToken.name }}
                 </h1>
-                <span class="text-xs sm:text-sm font-bold font-mono text-muted-foreground">
+                <span class="text-sm sm:text-base font-bold font-mono text-muted-foreground">
                   ${{ currentToken.symbol }}
                 </span>
                 <!-- Pin / Star Watchlist Button (Pons style) -->
@@ -126,31 +126,39 @@
                 </Badge>
               </div>
 
+              <!-- 1-2 Line Token Description (Easy to read font-sans) -->
+              <p
+                v-if="currentToken.description"
+                class="text-xs sm:text-sm text-muted-foreground font-sans line-clamp-2 max-w-2xl leading-relaxed"
+              >
+                {{ currentToken.description }}
+              </p>
+
               <!-- Metadata Byline (Pons-style clean strip) -->
-              <div class="flex items-center gap-2 flex-wrap text-xs font-mono text-muted-foreground">
+              <div class="flex items-center gap-2 flex-wrap text-xs font-sans text-muted-foreground pt-0.5">
                 <span v-if="currentToken.deployer" class="inline-flex items-center gap-1">
                   <span>by</span>
                   <a
                     :href="`${explorerUrl}/address/${currentToken.deployer}`"
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="hover:text-foreground underline decoration-dotted transition text-foreground"
+                    class="hover:text-foreground underline decoration-dotted transition text-foreground font-mono"
                     title="Dev Wallet"
                   >
                     {{ shortenAddress(currentToken.deployer, 6, 4) }}
                   </a>
                 </span>
                 <span class="text-muted-foreground/50">·</span>
-                <span>{{ formatRelativeTime(currentToken.createdAt) }}</span>
+                <span class="font-mono text-[11px]">{{ formatRelativeTime(currentToken.createdAt) }}</span>
                 <span class="text-muted-foreground/50">·</span>
-                <span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-md bg-muted/60 border border-border text-[11px] text-foreground font-semibold">
+                <span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-md bg-muted/60 border border-border text-[11px] text-foreground font-semibold font-mono">
                   {{ currencySymbol }} pair
                 </span>
                 <span class="text-muted-foreground/50">·</span>
                 <!-- Contract Address Pill -->
                 <button
                   type="button"
-                  class="inline-flex items-center gap-1 hover:text-foreground transition cursor-pointer text-[11px]"
+                  class="inline-flex items-center gap-1 hover:text-foreground transition cursor-pointer text-[11px] font-mono"
                   title="Copy Contract Address"
                   @click="copyAddress(currentToken.address)"
                 >
@@ -233,18 +241,27 @@
             </div>
           </div>
 
-          <!-- Right: Pons-style Large Clickable Live Figure -->
+          <!-- Right: Pons-style Large Clickable Live Figure with Flash Animation -->
           <button
             type="button"
-            class="text-left md:text-right flex flex-col items-start md:items-end gap-0.5 cursor-pointer select-none group transition-opacity hover:opacity-90 self-start md:self-auto shrink-0 font-mono"
+            class="text-left md:text-right flex flex-col items-start md:items-end gap-0.5 cursor-pointer select-none group transition-all self-start md:self-auto shrink-0 font-mono"
             :title="`Click to toggle between Market Cap and Price display`"
             @click="toggleHeaderFigure"
           >
-            <span class="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
+            <span class="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold font-sans">
               {{ primaryFigureMode === 'mcap' ? 'Market cap' : 'Token price' }}
             </span>
             <div class="flex items-baseline gap-2">
-              <span class="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
+              <span
+                class="text-2xl sm:text-3xl font-black tracking-tight transition-all duration-300"
+                :class="
+                  priceFlash === 'up'
+                    ? 'text-emerald-400 scale-105'
+                    : priceFlash === 'down'
+                      ? 'text-rose-400 scale-105'
+                      : 'text-foreground'
+                "
+              >
                 {{ primaryFigureValue }}
               </span>
               <span
@@ -282,60 +299,39 @@
         <!-- 1. Chart Card (Col 1, Row 1 on xl) -->
         <div class="xl:col-start-1 xl:row-start-1 min-w-0 w-full space-y-6">
           <div class="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
-            <!-- Chart Header with Live Price + Timeframes -->
+            <!-- Chart Header with Timeframe Pills -->
             <div
-              class="flex flex-wrap items-center justify-between gap-3 p-3.5 sm:p-4 border-b border-border bg-card font-mono text-xs"
+              class="flex items-center justify-between gap-3 px-3.5 py-2.5 border-b border-border/80 bg-card text-xs font-mono"
             >
-              <div class="flex items-baseline gap-2">
-                <span
-                  class="text-xl sm:text-2xl font-black tracking-tight text-foreground"
-                >
-                  {{ activeChartHeaderPrice }}
-                </span>
-                <span
-                  class="text-[11px] font-bold px-1.5 py-0.5 rounded-full"
-                  :class="
-                    (currentMarketData.priceChange24h ?? 0) >= 0
-                      ? 'text-emerald-500 bg-emerald-500/10 border border-emerald-500/20'
-                      : 'text-rose-500 bg-rose-500/10 border border-rose-500/20'
-                  "
-                >
-                  {{ (currentMarketData.priceChange24h ?? 0) >= 0 ? '+' : ''
-                  }}{{ (currentMarketData.priceChange24h ?? 0).toFixed(2) }}%
-                </span>
-              </div>
-
-              <!-- Timeframe switcher pills -->
-              <div class="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border">
-                <button
+              <!-- Timeframe switcher pills (Shadcn Buttons) -->
+              <div class="flex items-center gap-1 bg-muted/60 p-0.5 rounded-xl border border-border">
+                <Button
                   v-for="res in resolutions"
                   :key="res.label"
-                  type="button"
-                  class="px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer"
-                  :class="
-                    selectedResolution === res.seconds
-                      ? 'bg-card text-foreground shadow-xs'
-                      : 'text-muted-foreground hover:text-foreground'
-                  "
+                  size="sm"
+                  :variant="selectedResolution === res.seconds ? 'default' : 'ghost'"
+                  class="h-7 px-2.5 text-xs font-mono font-bold rounded-lg"
                   @click="changeResolution(res.seconds)"
                 >
                   {{ res.label }}
-                </button>
+                </Button>
               </div>
+
+              <!-- Pair Indicator -->
+              <span class="text-xs text-muted-foreground font-sans hidden sm:inline">
+                {{ currentToken.symbol }} / {{ currencySymbol }}
+              </span>
             </div>
 
-            <!-- TradingChart wrapper -->
-            <div class="p-3.5 sm:p-5 bg-card">
+            <!-- TradingChart wrapper (Full bleed, no nested padding/border) -->
+            <div class="w-full bg-card">
               <TradingChart
-                v-model:chart-mode="chartDisplayMode"
-                v-model:currency-mode="chartCurrencyMode"
                 :data="candlestickData"
+                :loading="candlesLoading"
                 :token-symbol="currentToken.symbol"
                 :token-address="currentToken.address"
                 :height="420"
                 :resolution="selectedResolution"
-                :native-symbol="currencySymbol"
-                :native-quote-price="quoteAssetPriceUsd"
                 :total-supply="
                   Number(
                     currentToken.totalSupply
@@ -349,7 +345,29 @@
         </div>
 
         <!-- 2. Sticky Swap Panel (Mobile: 2nd under Chart; Desktop: Col 2, Row 1-3) -->
-        <div class="xl:col-start-2 xl:row-start-1 xl:row-span-3 w-full shrink-0 xl:sticky xl:top-20 space-y-4">
+        <div
+          id="swap-panel-container"
+          class="xl:col-start-2 xl:row-start-1 xl:row-span-3 w-full shrink-0 xl:sticky xl:top-20 space-y-4"
+        >
+          <!-- User Position Card (Displayed when user holds tokens) -->
+          <div
+            v-if="isConnected && userHoldingTokensCount > 0"
+            class="p-3.5 rounded-2xl bg-card border border-border flex items-center justify-between text-xs font-sans shadow-xs"
+          >
+            <div class="space-y-0.5">
+              <span class="text-muted-foreground text-[11px] block">Your Holdings</span>
+              <span class="font-bold text-foreground font-mono text-sm">
+                {{ formatTokenBalance(userTokenBalance) }} ${{ currentToken.symbol }}
+              </span>
+            </div>
+            <div class="text-right space-y-0.5">
+              <span class="text-muted-foreground text-[11px] block">Current Value</span>
+              <span class="font-bold text-emerald-500 font-mono text-sm">
+                ${{ formatCompactUsd(userHoldingUsd) }}
+              </span>
+            </div>
+          </div>
+
           <div class="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
             <!-- Swap panel form wrapper -->
             <div class="p-5 sm:p-6 space-y-4 font-mono">
@@ -362,33 +380,33 @@
                 <span>Switch to {{ tokenNetwork.name }} to trade.</span>
               </div>
 
-              <!-- Buy / Sell tabs + Slippage gear in ONE row -->
+              <!-- Buy / Sell tabs + Slippage gear in ONE row (Semantic Colors) -->
               <div class="flex items-center justify-between gap-3">
-                <div class="flex rounded-xl border border-border bg-muted/60 p-1 w-44 shrink-0">
-                  <button
-                    type="button"
-                    class="flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer text-center"
+                <div class="inline-flex rounded-xl border border-border bg-muted/60 p-1 w-full gap-1">
+                  <Button
+                    size="sm"
+                    class="flex-1 h-8 text-xs font-sans font-bold rounded-lg transition-all"
                     :class="
                       isBuy
-                        ? 'bg-primary text-primary-foreground shadow-xs'
-                        : 'text-muted-foreground hover:text-foreground'
+                        ? 'bg-emerald-500 text-white shadow-sm hover:bg-emerald-600'
+                        : 'text-muted-foreground hover:text-foreground bg-transparent'
                     "
                     @click="tradeTab = 'buy'"
                   >
                     {{ t('buy') }}
-                  </button>
-                  <button
-                    type="button"
-                    class="flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer text-center"
+                  </Button>
+                  <Button
+                    size="sm"
+                    class="flex-1 h-8 text-xs font-sans font-bold rounded-lg transition-all"
                     :class="
                       !isBuy
-                        ? 'bg-primary text-primary-foreground shadow-xs'
-                        : 'text-muted-foreground hover:text-foreground'
+                        ? 'bg-rose-500 text-white shadow-sm hover:bg-rose-600'
+                        : 'text-muted-foreground hover:text-foreground bg-transparent'
                     "
                     @click="tradeTab = 'sell'"
                   >
                     {{ t('sell') }}
-                  </button>
+                  </Button>
                 </div>
 
                 <!-- Slippage Popover -->
@@ -461,7 +479,7 @@
 
               <!-- You Pay input -->
               <div class="space-y-2">
-                <div class="flex justify-between items-center text-xs text-muted-foreground">
+                <div class="flex justify-between items-center text-xs text-muted-foreground font-sans">
                   <div class="flex items-center gap-2">
                     <span>You pay</span>
                     <div
@@ -494,16 +512,8 @@
                       </button>
                     </div>
                   </div>
-                  <span
-                    class="font-mono flex items-center gap-1 cursor-pointer select-none hover:opacity-80 transition"
-                    :title="
-                      isBuy
-                        ? 'Click to fill max ' + currencySymbol
-                        : 'Click to fill max ' + currentToken.symbol
-                    "
-                    @click="applyPercentage(100)"
-                  >
-                    <span>Bal:</span>
+                  <div class="flex items-center gap-1.5 font-mono text-[11px]">
+                    <span class="text-muted-foreground">Bal:</span>
                     <span
                       v-if="!isBuy && isTokenBalanceLoading"
                       class="animate-pulse font-bold text-foreground"
@@ -512,8 +522,16 @@
                     <span v-else class="font-bold text-foreground">{{
                       isBuy ? formatEthBalance(balanceWei) : formatTokenBalance(userTokenBalance)
                     }}</span>
-                    <span>{{ isBuy ? currencySymbol : currentToken.symbol }}</span>
-                  </span>
+                    <span class="text-muted-foreground">{{ isBuy ? currencySymbol : currentToken.symbol }}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      class="h-5 px-1 text-[10px] font-bold text-primary hover:text-primary/80 uppercase font-mono"
+                      @click="applyPercentage(100)"
+                    >
+                      MAX
+                    </Button>
+                  </div>
                 </div>
                 <div class="relative">
                   <Input
@@ -521,63 +539,101 @@
                     type="number"
                     step="any"
                     placeholder="0.0"
-                    class="text-lg font-mono font-bold text-foreground bg-muted/40 border-input h-12 pr-16 rounded-xl"
+                    class="text-xl sm:text-2xl font-mono font-bold text-foreground bg-muted/40 border-input h-14 pr-20 rounded-xl"
                   />
-                  <span
-                    class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono font-semibold text-muted-foreground select-none"
-                  >
-                    {{ isBuy ? (payInUsd ? 'USD' : currencySymbol) : currentToken.symbol }}
-                  </span>
+                  <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-muted/80 px-2 py-1 rounded-lg border border-border">
+                    <span class="text-xs font-mono font-bold text-foreground">
+                      {{ isBuy ? (payInUsd ? 'USD' : currencySymbol) : currentToken.symbol }}
+                    </span>
+                  </div>
                 </div>
 
-                <!-- Quick buy presets (buy mode only) -->
+                <!-- Buy Mode: Preset nominals only -->
                 <div v-if="isBuy" class="grid grid-cols-4 gap-1.5 pt-0.5">
-                  <button
+                  <Button
                     v-for="presetVal in activeBuyPresets"
                     :key="presetVal"
-                    type="button"
-                    class="h-7 text-xs font-mono font-medium rounded-lg border border-border bg-muted/50 hover:bg-muted text-foreground transition cursor-pointer"
+                    variant="outline"
+                    size="sm"
+                    class="h-8 text-xs font-mono font-medium rounded-lg border-border hover:bg-muted"
                     @click="applyQuickBuy(presetVal)"
                   >
                     {{ payInUsd ? '$' + presetVal : presetVal }}
-                  </button>
+                  </Button>
                 </div>
 
-                <!-- Percentage buttons -->
-                <div class="grid grid-cols-4 gap-1.5 pt-0.5">
-                  <button
+                <!-- Sell Mode: Percentage buttons only -->
+                <div v-else class="grid grid-cols-4 gap-1.5 pt-0.5">
+                  <Button
                     v-for="percent in [25, 50, 75, 100]"
                     :key="percent"
-                    type="button"
-                    class="h-7 text-xs font-mono font-medium rounded-lg border border-border bg-muted/50 hover:bg-muted text-foreground transition cursor-pointer"
+                    variant="outline"
+                    size="sm"
+                    class="h-8 text-xs font-mono font-medium rounded-lg border-border hover:bg-muted"
                     @click="applyPercentage(percent)"
                   >
                     {{ percent === 100 ? 'Max' : `${percent}%` }}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
-              <!-- You receive output -->
+              <!-- You receive output (Clear output box with token logo, no duplicate symbols) -->
               <div class="space-y-1.5">
-                <div class="flex justify-between text-xs text-muted-foreground">
+                <div class="flex justify-between items-center text-xs text-muted-foreground font-sans">
                   <span>You receive (est.)</span>
-                  <span class="font-mono">{{ isBuy ? currentToken.symbol : currencySymbol }}</span>
                 </div>
                 <div
-                  class="w-full rounded-xl border border-border bg-muted/30 px-3.5 py-2.5 text-sm font-mono font-bold text-foreground min-h-[46px] flex items-center justify-between"
+                  class="w-full rounded-xl border border-border bg-muted/20 px-3.5 py-3 min-h-[52px] flex items-center justify-between gap-3"
                 >
-                  <span>{{ estimatedOutput }}</span>
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <OptimizedImage
+                      v-if="isBuy"
+                      :src="currentToken.logo"
+                      :alt="currentToken.name"
+                      :fallback-text="currentToken.symbol"
+                      :width="28"
+                      :height="28"
+                      class="rounded-full border border-border object-cover shrink-0 w-7 h-7"
+                    />
+                    <div v-else class="w-7 h-7 rounded-full bg-muted flex items-center justify-center font-mono text-[10px] font-bold border border-border shrink-0">
+                      {{ currencySymbol.slice(0, 3) }}
+                    </div>
+                    <span class="text-lg sm:text-xl font-mono font-bold text-foreground truncate">
+                      {{ estimatedOutputAmount }}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-1.5 bg-muted/80 px-2.5 py-1 rounded-lg border border-border shrink-0">
+                    <span class="font-mono text-xs text-foreground font-bold">
+                      {{ isBuy ? currentToken.symbol : currencySymbol }}
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <!-- Last price indicator (lunch.fun style) -->
-              <div
-                class="flex items-center justify-between text-[11px] font-mono text-muted-foreground pt-0.5 px-0.5"
-              >
-                <span>Last price</span>
-                <span class="font-bold text-foreground truncate">
-                  {{ formatPriceUsd(currentMarketData.priceUsd) }}
-                </span>
+              <!-- Transaction Summary Strip -->
+              <div class="pt-2 border-t border-border/60 space-y-1.5 text-xs font-sans">
+                <div class="flex items-center justify-between text-muted-foreground">
+                  <span>Price Impact</span>
+                  <span class="font-mono font-medium text-foreground">&lt; 0.1%</span>
+                </div>
+                <div class="flex items-center justify-between text-muted-foreground">
+                  <span>Slippage Tolerance</span>
+                  <span
+                    class="font-mono font-semibold"
+                    :class="slippage > SLIPPAGE_WARN_THRESHOLD ? 'text-amber-500' : 'text-foreground'"
+                  >
+                    {{ slippage }}%
+                  </span>
+                </div>
+                <div
+                  v-if="onchainTaxConfig.buyTaxBps > 0 || onchainTaxConfig.sellTaxBps > 0"
+                  class="flex items-center justify-between text-muted-foreground"
+                >
+                  <span>Trading Tax</span>
+                  <span class="font-mono font-medium text-foreground">
+                    {{ isBuy ? (onchainTaxConfig.buyTaxBps / 100) : (onchainTaxConfig.sellTaxBps / 100) }}%
+                  </span>
+                </div>
               </div>
 
               <!-- High-slippage inline warning (L-3 fix) -->
@@ -585,7 +641,7 @@
                 v-if="
                   slippage > SLIPPAGE_WARN_THRESHOLD &&
                   isConnected &&
-                  activeNetwork.chainId === tokenNetwork.chainId
+                  activeNetwork.chainId !== tokenNetwork.chainId
                 "
                 class="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-2.5 text-[11px] font-mono text-amber-500"
               >
@@ -596,10 +652,10 @@
                 </span>
               </div>
 
-              <!-- CTA Swap button -->
+              <!-- CTA Swap button with Semantic Colors -->
               <Button
                 v-if="!isConnected"
-                class="w-full font-bold h-11 cursor-pointer rounded-xl text-sm shadow-md"
+                class="w-full font-sans font-bold h-12 cursor-pointer rounded-xl text-sm shadow-md"
                 @click="openWallet"
               >
                 {{ t('connectWallet') }}
@@ -607,7 +663,7 @@
               <Button
                 v-else-if="activeNetwork.chainId !== tokenNetwork.chainId"
                 variant="outline"
-                class="w-full font-bold h-11 cursor-pointer rounded-xl text-sm border-amber-500 text-amber-500"
+                class="w-full font-sans font-bold h-12 cursor-pointer rounded-xl text-sm border-amber-500 text-amber-500"
                 @click="switchOrAddNetwork(tokenNetwork)"
               >
                 Switch to {{ tokenNetwork.name }}
@@ -615,8 +671,12 @@
               <Button
                 v-else
                 :disabled="isSwapDisabled"
-                class="w-full font-bold h-11 cursor-pointer rounded-xl text-sm transition shadow-md"
-                :variant="isBuy ? 'default' : 'destructive'"
+                class="w-full font-sans font-bold h-12 cursor-pointer rounded-xl text-sm transition shadow-md"
+                :class="
+                  isBuy
+                    ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20'
+                    : 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/20'
+                "
                 @click="handleSwap"
               >
                 <Loader2 v-if="isSwapping" class="w-4 h-4 mr-2 animate-spin" />
@@ -1850,6 +1910,34 @@
         @share="openShareModal"
         @reply-posted="onReplyPosted"
       />
+
+      <!-- Mobile Sticky Quick Trade Floating Dock (Mobile only: sm:hidden) -->
+      <div
+        class="fixed bottom-0 left-0 right-0 z-40 p-3 bg-black/95 backdrop-blur-lg border-t border-border flex items-center justify-between gap-3 sm:hidden shadow-2xl"
+      >
+        <div class="flex flex-col min-w-0 font-mono">
+          <span class="text-[10px] text-muted-foreground font-sans">Price</span>
+          <span class="text-sm font-bold text-foreground truncate">
+            {{ formatPriceUsd(currentMarketData.priceUsd) }}
+          </span>
+        </div>
+        <div class="flex items-center gap-2">
+          <Button
+            size="sm"
+            class="h-9 px-4 font-sans font-bold text-xs bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl shadow-xs"
+            @click="scrollToSwap('buy')"
+          >
+            Buy ${{ currentToken.symbol }}
+          </Button>
+          <Button
+            size="sm"
+            class="h-9 px-4 font-sans font-bold text-xs bg-rose-500 hover:bg-rose-600 text-white rounded-xl shadow-xs"
+            @click="scrollToSwap('sell')"
+          >
+            Sell
+          </Button>
+        </div>
+      </div>
     </template>
   </div>
 </template>
@@ -2430,8 +2518,27 @@ const copied = ref(false);
 const copiedId = ref<string | null>(null);
 const tokenLoading = ref(true);
 const activeBottomTab = ref<'callouts' | 'trades' | 'top-traders' | 'holders' | 'about'>(
-  'callouts',
+  'trades',
 );
+
+const priceFlash = ref<'up' | 'down' | null>(null);
+let flashTimeout: ReturnType<typeof setTimeout> | null = null;
+
+function triggerPriceFlash(direction: 'up' | 'down') {
+  priceFlash.value = direction;
+  if (flashTimeout) clearTimeout(flashTimeout);
+  flashTimeout = setTimeout(() => {
+    priceFlash.value = null;
+  }, 1200);
+}
+
+function scrollToSwap(tab: 'buy' | 'sell') {
+  tradeTab.value = tab;
+  const el = document.getElementById('swap-panel-container');
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
 
 const effectiveNativeInput = computed(() => {
   const input = parseFloat(amountIn.value) || 0;
@@ -2556,10 +2663,53 @@ const resolutions = [
   { label: '1d', seconds: 86400 },
 ];
 const selectedResolution = ref(3600);
+const candlesLoading = ref(false);
 const candlestickData = ref<
   Array<{ time: number; open: number; high: number; low: number; close: number; volume: number }>
 >([]);
-let liveCandleTimer: ReturnType<typeof setInterval> | null = null;
+let liveTimer: ReturnType<typeof setInterval> | null = null;
+let liveAbort: AbortController | null = null;
+const LIVE_MS = 4000;
+
+async function refreshLive() {
+  if (typeof document !== 'undefined' && document.hidden) return;
+  if (tokenLoading.value || !currentToken.value.address) return;
+  const addr = currentToken.value.address;
+
+  liveAbort?.abort();
+  liveAbort = new AbortController();
+  const { signal } = liveAbort;
+
+  try {
+    const res = await fetch(`/api/tokens/${addr}`, { signal });
+    const env = await res.json();
+    if (env.success && env.data && addr === currentToken.value.address) {
+      currentMarketData.value = env.data.marketData;
+    }
+  } catch (e) {
+    if ((e as Error).name === 'AbortError') return;
+  }
+
+  await fetchCandlesticks(addr, selectedResolution.value);
+  if (activeBottomTab.value === 'trades') {
+    fetchTrades(addr);
+  }
+}
+
+function onVisibility() {
+  if (typeof document === 'undefined') return;
+  if (document.hidden) {
+    if (liveTimer) {
+      clearInterval(liveTimer);
+      liveTimer = null;
+    }
+    liveAbort?.abort();
+  } else {
+    refreshLive();
+    if (liveTimer) clearInterval(liveTimer);
+    liveTimer = setInterval(refreshLive, LIVE_MS);
+  }
+}
 
 // -----------------------------------------------------------------------
 // Bonding curve AMM preview math
@@ -2618,9 +2768,9 @@ function computeCurveSellOutput(tokensIn: number): number {
   return grossEth * 0.99;
 }
 
-const estimatedOutput = computed(() => {
+const estimatedOutputAmount = computed(() => {
   const input = effectiveNativeInput.value;
-  if (input <= 0) return `0 ${isBuy.value ? currentToken.value.symbol : currencySymbol.value}`;
+  if (input <= 0) return '0';
 
   const isV2OnCurve = currentToken.value.version === 'v2' && !currentMarketData.value.isGraduated;
 
@@ -2628,14 +2778,18 @@ const estimatedOutput = computed(() => {
     const tokens = isV2OnCurve
       ? computeCurveBuyOutput(input)
       : input / (currentMarketData.value.priceInWeth || 0.000001);
-    return `${tokens.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${currentToken.value.symbol}`;
+    return tokens.toLocaleString(undefined, { maximumFractionDigits: 2 });
   } else {
     const weth = isV2OnCurve
       ? computeCurveSellOutput(input)
       : input * (currentMarketData.value.priceInWeth || 0);
     const decimals = currencySymbol.value === 'USDC' ? 2 : 6;
-    return `${weth.toFixed(decimals)} ${currencySymbol.value}`;
+    return weth.toFixed(decimals);
   }
+});
+
+const estimatedOutput = computed(() => {
+  return `${estimatedOutputAmount.value} ${isBuy.value ? currentToken.value.symbol : currencySymbol.value}`;
 });
 
 const swapButtonText = computed(() => {
@@ -2896,7 +3050,17 @@ async function fetchTrades(address: string) {
   try {
     const res = await fetch(`/api/tokens/${address}/trades?limit=50`);
     const envelope = await res.json();
-    trades.value = envelope.success && Array.isArray(envelope.data) ? envelope.data : [];
+    if (envelope.success && Array.isArray(envelope.data)) {
+      trades.value = envelope.data;
+      if (envelope.data.length > 0 && envelope.data[0].priceUsd > 0) {
+        const latestTrade = envelope.data[0];
+        if (latestTrade.priceUsd !== currentMarketData.value.priceUsd) {
+          currentMarketData.value.priceUsd = latestTrade.priceUsd;
+        }
+      }
+    } else {
+      trades.value = [];
+    }
   } catch {
     trades.value = [];
   } finally {
@@ -2992,10 +3156,12 @@ async function toggleLike(commentId: string) {
 // -----------------------------------------------------------------------
 async function fetchCandlesticks(address: string, resolutionSeconds = 60) {
   try {
+    candlesLoading.value = true;
     const res = await fetch(
       `/api/tokens/${address}/ohlcv?resolution=${resolutionSeconds}&fillGaps=true`,
     );
     const envelope = await res.json();
+    if (resolutionSeconds !== selectedResolution.value) return; // Discard stale timeframe response
     if (envelope.success && Array.isArray(envelope.data) && envelope.data.length > 0) {
       const parsed = envelope.data.map(
         (c: {
@@ -3076,6 +3242,8 @@ async function fetchCandlesticks(address: string, resolutionSeconds = 60) {
     candlestickData.value = [];
   } catch {
     candlestickData.value = [];
+  } finally {
+    candlesLoading.value = false;
   }
 }
 
@@ -3425,14 +3593,32 @@ watch(
 
 watch(
   () => [currentMarketData.value.priceUsd, currentMarketData.value.priceInWeth],
-  ([newPriceUsd]) => {
+  ([newPriceUsd], [oldPriceUsd]) => {
+    if (newPriceUsd && oldPriceUsd && Number(newPriceUsd) !== Number(oldPriceUsd)) {
+      triggerPriceFlash(Number(newPriceUsd) >= Number(oldPriceUsd) ? 'up' : 'down');
+    }
     if (Number(newPriceUsd) > 0 && candlestickData.value.length > 0) {
       const copy = [...candlestickData.value];
       const last = { ...copy[copy.length - 1] };
-      last.close = Number(newPriceUsd);
-      last.high = Math.max(last.high, Number(newPriceUsd));
-      last.low = Math.min(last.low, Number(newPriceUsd));
-      copy[copy.length - 1] = last;
+      const resolutionSeconds = selectedResolution.value || 60;
+      const nowSec = Math.floor(Date.now() / 1000);
+      const currentBucket = Math.floor(nowSec / resolutionSeconds) * resolutionSeconds;
+
+      if (last.time === currentBucket) {
+        last.close = Number(newPriceUsd);
+        last.high = Math.max(last.high, Number(newPriceUsd));
+        last.low = Math.min(last.low, Number(newPriceUsd));
+        copy[copy.length - 1] = last;
+      } else if (currentBucket > last.time) {
+        copy.push({
+          time: currentBucket,
+          open: last.close,
+          high: Math.max(last.close, Number(newPriceUsd)),
+          low: Math.min(last.close, Number(newPriceUsd)),
+          close: Number(newPriceUsd),
+          volume: 0,
+        });
+      }
       candlestickData.value = copy;
     }
   },
@@ -3447,18 +3633,21 @@ onMounted(async () => {
     await fetchUserTokenBalance();
   }
 
-  // Real-time chart & data poller: refreshes every 10 seconds to keep timeframe advancing to current second
-  liveCandleTimer = setInterval(() => {
-    if (currentToken.value.address && !tokenLoading.value) {
-      fetchCandlesticks(currentToken.value.address, selectedResolution.value);
-    }
-  }, 10000);
+  // Fast real-time chart & market poller (4 seconds, pauses on background tab, refreshes immediately on focus)
+  liveTimer = setInterval(refreshLive, LIVE_MS);
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', onVisibility);
+  }
 });
 
 onUnmounted(() => {
-  if (liveCandleTimer) {
-    clearInterval(liveCandleTimer);
-    liveCandleTimer = null;
+  if (liveTimer) {
+    clearInterval(liveTimer);
+    liveTimer = null;
+  }
+  liveAbort?.abort();
+  if (typeof document !== 'undefined') {
+    document.removeEventListener('visibilitychange', onVisibility);
   }
 });
 </script>
