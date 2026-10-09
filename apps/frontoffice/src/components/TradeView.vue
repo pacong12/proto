@@ -1300,15 +1300,16 @@
                   <p class="text-xs font-mono">No trading activity recorded yet.</p>
                 </div>
                 <div v-else class="overflow-x-auto rounded-2xl border border-border bg-black">
-                  <Table class="w-full text-left text-xs font-mono min-w-[520px] bg-black">
+                  <Table class="w-full text-left text-xs font-mono min-w-[640px] bg-black">
                     <TableHeader>
                       <TableRow class="border-b border-border text-muted-foreground bg-black hover:bg-black">
                         <TableHead class="py-2.5 px-3 font-semibold w-10 text-muted-foreground bg-black">#</TableHead>
                         <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">Trader</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">Tag</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Buy / Sell</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-center text-muted-foreground bg-black">Position</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Est. PnL</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Bought</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Sold</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Holding</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Realized PnL</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Total PnL</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1321,11 +1322,11 @@
                           #{{ (topTradersPage - 1) * topTradersPageSize + idx + 1 }}
                         </TableCell>
                         <TableCell class="py-2.5 px-3">
-                          <div class="flex items-center gap-1.5">
-                            <Jazzicon :address="trader.address" :size="14" />
+                          <div class="flex items-center gap-1.5 flex-wrap">
+                            <Jazzicon :address="trader.address" :size="16" class="shrink-0 rounded-full" />
                             <RouterLink
                               :to="'/' + getUserIdentity(trader.address).name"
-                              class="text-foreground font-medium hover:underline"
+                              class="text-foreground font-medium hover:underline truncate max-w-[130px] sm:max-w-none"
                             >
                               {{ truncateAddress(trader.address) }}
                             </RouterLink>
@@ -1337,30 +1338,65 @@
                             >
                               <Copy class="w-3 h-3" />
                             </button>
+
+                            <!-- GMGN-style Tag Icons directly next to name / address -->
+                            <div class="flex items-center gap-1 ml-0.5">
+                              <TraderTagBadge :tag="getTraderRoleTag(trader)" size="sm" />
+                              <TraderTagBadge :tag="getTraderPositionTag(trader.positionStatus)" size="sm" />
+                            </div>
                           </div>
                         </TableCell>
-                        <TableCell class="py-2.5 px-3">
-                          <TraderTagBadge :tag="getTraderRoleTag(trader)" size="sm" />
+                        <TableCell class="py-2.5 px-3 text-right">
+                          <span class="text-foreground font-medium font-mono">
+                            ${{ trader.buyVolumeUsd.toLocaleString() }}
+                          </span>
                         </TableCell>
                         <TableCell class="py-2.5 px-3 text-right">
-                          <span class="text-emerald-500 font-medium"
-                            >${{ trader.buyVolumeUsd.toLocaleString() }}</span
-                          >
-                          <span class="text-muted-foreground mx-1">/</span>
-                          <span class="text-rose-500 font-medium"
-                            >${{ trader.sellVolumeUsd.toLocaleString() }}</span
-                          >
+                          <span class="text-muted-foreground font-medium font-mono">
+                            ${{ trader.sellVolumeUsd.toLocaleString() }}
+                          </span>
                         </TableCell>
-                        <TableCell class="py-2.5 px-3 text-center">
-                          <TraderTagBadge :tag="getTraderPositionTag(trader.positionStatus)" size="sm" />
+                        <TableCell class="py-2.5 px-3 text-right">
+                          <div class="space-y-0.5 font-mono">
+                            <span class="text-foreground font-bold block">
+                              ${{ Math.round(getTraderHoldingUsd(trader)).toLocaleString() }}
+                            </span>
+                            <span class="text-[10px] text-muted-foreground block">
+                              {{ formatTokenNumber(trader.holdingAmountTokens || '0') }} {{ currentToken.symbol }}
+                            </span>
+                          </div>
                         </TableCell>
-                        <TableCell
-                          class="py-2.5 px-3 text-right font-bold"
-                          :class="trader.profitUsd >= 0 ? 'text-emerald-500' : 'text-rose-500'"
-                        >
-                          {{ trader.profitUsd >= 0 ? '+' : '-' }}${{
-                            Math.abs(trader.profitUsd).toLocaleString()
-                          }}
+                        <TableCell class="py-2.5 px-3 text-right">
+                          <div class="space-y-0.5 font-mono">
+                            <span
+                              class="font-bold block"
+                              :class="getTraderRealizedPnl(trader).usd >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                            >
+                              {{ getTraderRealizedPnl(trader).usd >= 0 ? '+' : '-' }}${{ Math.abs(getTraderRealizedPnl(trader).usd).toLocaleString() }}
+                            </span>
+                            <span
+                              class="text-[10px] block"
+                              :class="getTraderRealizedPnl(trader).pct >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                            >
+                              {{ getTraderRealizedPnl(trader).pct >= 0 ? '+' : '' }}{{ getTraderRealizedPnl(trader).pct.toFixed(1) }}%
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell class="py-2.5 px-3 text-right">
+                          <div class="space-y-0.5 font-mono">
+                            <span
+                              class="font-black text-sm block"
+                              :class="getTraderTotalPnl(trader).usd >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                            >
+                              {{ getTraderTotalPnl(trader).usd >= 0 ? '+' : '-' }}${{ Math.abs(getTraderTotalPnl(trader).usd).toLocaleString() }}
+                            </span>
+                            <span
+                              class="text-[10px] font-bold block"
+                              :class="getTraderTotalPnl(trader).pct >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                            >
+                              {{ getTraderTotalPnl(trader).pct >= 0 ? '+' : '' }}{{ getTraderTotalPnl(trader).pct.toFixed(1) }}%
+                            </span>
+                          </div>
                         </TableCell>
                       </TableRow>
                     </TableBody>
@@ -2944,6 +2980,53 @@ function getTraderPositionTag(status?: string): TraderTagType {
   if (status === 'clean_all') return 'sell_all';
   if (status === 'partial') return 'sell_partial';
   return 'buy_more';
+}
+
+function getTraderHoldingUsd(trader: { holdingAmountTokens?: string; positionStatus?: string }): number {
+  if (trader.positionStatus === 'clean_all') return 0;
+  const tokens = parseFloat(trader.holdingAmountTokens || '0');
+  const price = currentMarketData.value.priceUsd || 0;
+  return tokens * price;
+}
+
+function getTraderRealizedPnl(trader: {
+  buyVolumeUsd?: number;
+  sellVolumeUsd?: number;
+  avgCostUsd?: number;
+  holdingAmountTokens?: string;
+  positionStatus?: string;
+  profitUsd?: number;
+}): { usd: number; pct: number } {
+  const buy = trader.buyVolumeUsd || 0;
+  const sell = trader.sellVolumeUsd || 0;
+  if (trader.positionStatus === 'clean_all') {
+    const usd = sell - buy;
+    const pct = buy > 0 ? (usd / buy) * 100 : 0;
+    return { usd, pct };
+  }
+  if (sell > 0) {
+    const holdingCost = parseFloat(trader.holdingAmountTokens || '0') * (trader.avgCostUsd || 0);
+    const costOfSold = Math.max(0, buy - holdingCost);
+    const usd = Math.round(sell - costOfSold);
+    const pct = costOfSold > 0 ? (usd / costOfSold) * 100 : 0;
+    return { usd, pct };
+  }
+  return { usd: 0, pct: 0 };
+}
+
+function getTraderTotalPnl(trader: {
+  buyVolumeUsd?: number;
+  sellVolumeUsd?: number;
+  holdingAmountTokens?: string;
+  positionStatus?: string;
+}): { usd: number; pct: number } {
+  const buy = trader.buyVolumeUsd || 0;
+  const sell = trader.sellVolumeUsd || 0;
+  const holdingUsd = getTraderHoldingUsd(trader);
+  const totalValue = sell + holdingUsd;
+  const usd = Math.round(totalValue - buy);
+  const pct = buy > 0 ? (usd / buy) * 100 : 0;
+  return { usd, pct };
 }
 
 function getHolderBadge(addr: string): string | null {
