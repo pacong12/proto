@@ -6,9 +6,13 @@
     <div v-if="latestLaunches.length > 0" class="space-y-3">
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-xs uppercase tracking-widest font-mono font-bold text-muted-foreground flex items-center gap-2">
+          <h2
+            class="text-xs uppercase tracking-widest font-mono font-bold text-muted-foreground flex items-center gap-2"
+          >
             <span>New on {{ activeNetwork.name }}</span>
-            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-primary/10 text-primary border border-primary/20">
+            <span
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-primary/10 text-primary border border-primary/20"
+            >
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
               {{ activeNetwork.nativeCurrency.symbol }}
             </span>
@@ -40,7 +44,11 @@
             <button
               type="button"
               class="p-1 -ml-1 rounded-lg transition-transform hover:scale-110 cursor-pointer select-none shrink-0"
-              :class="isPinned(item.token.address) ? 'text-amber-400' : 'text-muted-foreground/35 hover:text-amber-400'"
+              :class="
+                isPinned(item.token.address)
+                  ? 'text-amber-400'
+                  : 'text-muted-foreground/35 hover:text-amber-400'
+              "
               :title="isPinned(item.token.address) ? 'Unpin coin' : 'Pin to Watchlist'"
               @click.stop="togglePin(item.token.address)"
             >
@@ -104,7 +112,9 @@
       <div
         class="grid grid-cols-2 sm:flex sm:items-center gap-4 sm:gap-6 font-mono text-xs w-full md:w-auto"
       >
-        <div class="p-3 sm:p-0 rounded-xl bg-black border border-border sm:border-0 sm:bg-transparent">
+        <div
+          class="p-3 sm:p-0 rounded-xl bg-black border border-border sm:border-0 sm:bg-transparent"
+        >
           <span
             class="text-muted-foreground text-[10px] uppercase tracking-wider block font-semibold"
           >
@@ -114,7 +124,9 @@
             ${{ totalVolume24hUsd.toLocaleString(undefined, { maximumFractionDigits: 0 }) }}
           </span>
         </div>
-        <div class="p-3 sm:p-0 rounded-xl bg-black border border-border sm:border-0 sm:bg-transparent">
+        <div
+          class="p-3 sm:p-0 rounded-xl bg-black border border-border sm:border-0 sm:bg-transparent"
+        >
           <span
             class="text-muted-foreground text-[10px] uppercase tracking-wider block font-semibold"
           >
@@ -124,7 +136,9 @@
             {{ totalTokensCount }}
           </span>
         </div>
-        <div class="p-3 sm:p-0 rounded-xl bg-black border border-border sm:border-0 sm:bg-transparent col-span-2 sm:col-span-1">
+        <div
+          class="p-3 sm:p-0 rounded-xl bg-black border border-border sm:border-0 sm:bg-transparent col-span-2 sm:col-span-1"
+        >
           <span
             class="text-muted-foreground text-[10px] uppercase tracking-wider block font-semibold"
           >
@@ -151,7 +165,9 @@
 
         <!-- Right Controls: View Mode Switcher (Pons-Style Pills) -->
         <div class="flex items-center gap-2 self-end sm:self-auto font-mono">
-          <div class="inline-flex items-center p-1 bg-black rounded-full border border-border gap-1">
+          <div
+            class="inline-flex items-center p-1 bg-black rounded-full border border-border gap-1"
+          >
             <button
               type="button"
               @click="viewMode = 'table'"
@@ -188,12 +204,11 @@
       >
         <!-- Filter Tabs -->
         <Tabs v-model="activeMarketTab" class="w-full md:w-auto">
-          <TabsList variant="line" class="overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0 w-auto">
-            <TabsTrigger
-              v-for="tab in marketTabs"
-              :key="tab.value"
-              :value="tab.value"
-            >
+          <TabsList
+            variant="line"
+            class="overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0 w-auto"
+          >
+            <TabsTrigger v-for="tab in marketTabs" :key="tab.value" :value="tab.value">
               {{ tab.label }}
             </TabsTrigger>
           </TabsList>
@@ -241,18 +256,41 @@
     >
       <Table class="text-xs font-mono min-w-[920px] bg-black">
         <TableHeader>
-          <TableRow class="border-b border-border text-muted-foreground uppercase tracking-wider text-[11px] bg-black hover:bg-black">
-            <TableHead class="py-3 px-4 font-semibold sticky left-0 z-20 bg-black text-muted-foreground">
+          <TableRow
+            class="border-b border-border text-muted-foreground uppercase tracking-wider text-[11px] bg-black hover:bg-black"
+          >
+            <TableHead
+              class="py-3 px-4 font-semibold sticky left-0 z-20 bg-black text-muted-foreground"
+            >
               COIN
             </TableHead>
-            <TableHead class="py-3 px-3 font-semibold text-center w-20 text-muted-foreground bg-black">PAIR</TableHead>
-            <TableHead class="py-3 px-4 font-semibold text-center w-24 text-muted-foreground bg-black">GRAPH</TableHead>
-            <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black">MARKET CAP</TableHead>
-            <TableHead class="py-3 px-4 font-semibold text-center w-36 text-muted-foreground bg-black">BONDING</TableHead>
-            <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black">AGE</TableHead>
-            <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black">VOLUME 24H</TableHead>
-            <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black">24H</TableHead>
-            <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black">ACTION</TableHead>
+            <TableHead
+              class="py-3 px-3 font-semibold text-center w-20 text-muted-foreground bg-black"
+              >PAIR</TableHead
+            >
+            <TableHead
+              class="py-3 px-4 font-semibold text-center w-24 text-muted-foreground bg-black"
+              >GRAPH</TableHead
+            >
+            <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black"
+              >MARKET CAP</TableHead
+            >
+            <TableHead
+              class="py-3 px-4 font-semibold text-center w-36 text-muted-foreground bg-black"
+              >BONDING</TableHead
+            >
+            <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black"
+              >AGE</TableHead
+            >
+            <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black"
+              >VOLUME 24H</TableHead
+            >
+            <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black"
+              >24H</TableHead
+            >
+            <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black"
+              >ACTION</TableHead
+            >
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -271,7 +309,11 @@
                 <button
                   type="button"
                   class="p-1 rounded-lg transition-transform hover:scale-110 cursor-pointer select-none shrink-0"
-                  :class="isPinned(item.token.address) ? 'text-amber-400' : 'text-muted-foreground/35 hover:text-amber-400'"
+                  :class="
+                    isPinned(item.token.address)
+                      ? 'text-amber-400'
+                      : 'text-muted-foreground/35 hover:text-amber-400'
+                  "
                   :title="isPinned(item.token.address) ? 'Unpin coin' : 'Pin to Watchlist'"
                   @click.stop="togglePin(item.token.address)"
                 >
@@ -291,7 +333,11 @@
                     class="rounded-full border border-border object-cover shrink-0 ring-1 ring-border group-hover:ring-primary/50 transition"
                   />
                   <img
-                    :src="tokenStore.getTokenNetwork(item.token.address).chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+                    :src="
+                      tokenStore.getTokenNetwork(item.token.address).chainId === 5042
+                        ? '/chains/arc.svg'
+                        : '/chains/robinhood.svg'
+                    "
                     :alt="tokenStore.getTokenNetwork(item.token.address).name"
                     :title="tokenStore.getTokenNetwork(item.token.address).name"
                     class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border border-black bg-black object-contain shadow-xs"
@@ -310,7 +356,9 @@
                     <span class="font-bold text-xs text-muted-foreground"
                       >${{ item.token.symbol }}</span
                     >
-                    <span class="text-muted-foreground/50 text-[10px] hidden sm:inline">&middot;</span>
+                    <span class="text-muted-foreground/50 text-[10px] hidden sm:inline"
+                      >&middot;</span
+                    >
                     <span class="text-[10px] text-muted-foreground truncate hidden sm:inline">
                       by {{ shortenAddress(item.token.deployer, 4, 3) }}
                     </span>
@@ -334,7 +382,9 @@
 
             <!-- 2. PAIR (Native Currency Pair like Pons) -->
             <TableCell class="py-3.5 px-3 text-center">
-              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-border bg-black text-[10px] font-mono font-bold text-muted-foreground">
+              <span
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-border bg-black text-[10px] font-mono font-bold text-muted-foreground"
+              >
                 <img
                   :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
                   alt=""
@@ -364,7 +414,9 @@
             </TableCell>
 
             <!-- 4. MARKET CAP -->
-            <TableCell class="py-3.5 px-4 text-right font-extrabold text-sm text-foreground font-mono">
+            <TableCell
+              class="py-3.5 px-4 text-right font-extrabold text-sm text-foreground font-mono"
+            >
               {{
                 (item.marketData?.marketCapUsd ?? 0) > 0
                   ? `$${formatNumberCap(item.marketData?.marketCapUsd ?? 0)}`
@@ -469,7 +521,11 @@
                     class="rounded-full border border-border object-cover shrink-0 ring-1 ring-border group-hover:ring-primary/50 transition"
                   />
                   <img
-                    :src="tokenStore.getTokenNetwork(item.token.address).chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+                    :src="
+                      tokenStore.getTokenNetwork(item.token.address).chainId === 5042
+                        ? '/chains/arc.svg'
+                        : '/chains/robinhood.svg'
+                    "
                     :alt="tokenStore.getTokenNetwork(item.token.address).name"
                     :title="tokenStore.getTokenNetwork(item.token.address).name"
                     class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-black bg-black object-contain shadow-xs"
@@ -494,7 +550,11 @@
                 <button
                   type="button"
                   class="p-1 rounded-lg transition-transform hover:scale-110 cursor-pointer select-none"
-                  :class="isPinned(item.token.address) ? 'text-amber-400' : 'text-muted-foreground/35 hover:text-amber-400'"
+                  :class="
+                    isPinned(item.token.address)
+                      ? 'text-amber-400'
+                      : 'text-muted-foreground/35 hover:text-amber-400'
+                  "
                   :title="isPinned(item.token.address) ? 'Unpin coin' : 'Pin to Watchlist'"
                   @click.stop="togglePin(item.token.address)"
                 >
@@ -506,7 +566,9 @@
                 <span
                   class="text-xs font-mono font-bold"
                   :class="
-                    (item.marketData?.priceChange24h ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'
+                    (item.marketData?.priceChange24h ?? 0) >= 0
+                      ? 'text-emerald-500'
+                      : 'text-rose-500'
                   "
                 >
                   {{ (item.marketData?.priceChange24h ?? 0) >= 0 ? '+' : ''

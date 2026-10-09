@@ -611,16 +611,18 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     return null;
   }
 
-  async getUserPositions(address: string): Promise<Array<{
-    tokenAddress: string;
-    name: string;
-    symbol: string;
-    logo?: string;
-    balance: number;
-    balanceFormatted: string;
-    priceUsd: number;
-    valueUsd: number;
-  }>> {
+  async getUserPositions(address: string): Promise<
+    Array<{
+      tokenAddress: string;
+      name: string;
+      symbol: string;
+      logo?: string;
+      balance: number;
+      balanceFormatted: string;
+      priceUsd: number;
+      valueUsd: number;
+    }>
+  > {
     const trades = await this.getTradesByTrader(address, 500);
     const byToken = new Map<string, { buy: number; sell: number }>();
     for (const tr of trades) {
@@ -719,14 +721,18 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
         this.db
           .prepare(`UPDATE comments SET replies_count = replies_count + 1 WHERE id = ?`)
           .run(comment.parentId);
-      } catch {}
+      } catch {
+        /* ignore missing parent */
+      }
     }
     if (comment.quotedCalloutId) {
       try {
         this.db
           .prepare(`UPDATE comments SET quotes_count = quotes_count + 1 WHERE id = ?`)
           .run(comment.quotedCalloutId);
-      } catch {}
+      } catch {
+        /* ignore missing quoted callout */
+      }
     }
   }
 
@@ -913,7 +919,9 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     return feedItems;
   }
 
-  private getSingleCallout(calloutId: string): import('@proto/shared-types').FeedCalloutItem | null {
+  private getSingleCallout(
+    calloutId: string,
+  ): import('@proto/shared-types').FeedCalloutItem | null {
     const stmt = this.db.prepare(`
       SELECT 
         c.id, c.token_address, c.author_address, c.content, c.image_url, 
@@ -927,7 +935,33 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       WHERE c.id = ?
       LIMIT 1
     `);
-    const r = stmt.get(calloutId) as any;
+    interface FeedCalloutRow {
+      id: string;
+      token_address: string;
+      author_address: string;
+      content: string;
+      image_url: string | null;
+      likes_count: number | null;
+      created_at: number;
+      target_mcap: string | null;
+      position_usd: number | null;
+      supply_percent: number | null;
+      profit_usd: number | null;
+      call_type: string | null;
+      parent_id: string | null;
+      quoted_callout_id: string | null;
+      reposts_count: number | null;
+      quotes_count: number | null;
+      replies_count: number | null;
+      views_count?: number | null;
+      token_name: string | null;
+      token_symbol: string | null;
+      token_logo: string | null;
+      token_market_cap: number | null;
+      token_price_usd: number | null;
+    }
+
+    const r = stmt.get(calloutId) as FeedCalloutRow | null;
     if (!r) return null;
 
     return {
@@ -980,7 +1014,9 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       this.db
         .prepare(`UPDATE comments SET views_count = views_count + 1 WHERE id = ?`)
         .run(calloutId);
-    } catch {}
+    } catch {
+      /* view count increment error is non-fatal */
+    }
 
     const root = this.getSingleCallout(calloutId);
     if (!root) return null;
@@ -1026,7 +1062,30 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       LIMIT 100
     `);
 
-    const replyRows = replyStmt.all(calloutId) as any[];
+    const replyRows = replyStmt.all(calloutId) as Array<{
+      id: string;
+      token_address: string;
+      author_address: string;
+      content: string;
+      image_url: string | null;
+      likes_count: number | null;
+      created_at: number;
+      target_mcap: string | null;
+      position_usd: number | null;
+      supply_percent: number | null;
+      profit_usd: number | null;
+      call_type: string | null;
+      parent_id: string | null;
+      quoted_callout_id: string | null;
+      reposts_count: number | null;
+      quotes_count: number | null;
+      replies_count: number | null;
+      token_name: string | null;
+      token_symbol: string | null;
+      token_logo: string | null;
+      token_market_cap: number | null;
+      token_price_usd: number | null;
+    }>;
     root.replies = replyRows.map((r) => ({
       id: r.id,
       tokenAddress: r.token_address,
@@ -1058,8 +1117,9 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
   }
 
   private runInTransaction<T>(fn: () => T): T {
-    if (typeof (this.db as any).transaction === 'function') {
-      return (this.db as any).transaction(fn)();
+    const bunDb = this.db as unknown as { transaction?: (fn: () => T) => () => T };
+    if (typeof bunDb.transaction === 'function') {
+      return bunDb.transaction(fn)();
     }
     this.db.run('BEGIN');
     try {
@@ -1069,7 +1129,9 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     } catch (e) {
       try {
         this.db.run('ROLLBACK');
-      } catch {}
+      } catch {
+        /* rollback is best-effort */
+      }
       throw e;
     }
   }

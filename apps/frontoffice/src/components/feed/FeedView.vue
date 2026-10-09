@@ -5,7 +5,9 @@
       v-if="hotTokens.length > 0"
       class="p-2 sm:p-2.5 rounded-2xl border border-border/80 bg-card/60 backdrop-blur-md flex items-center justify-between gap-3 overflow-x-auto no-scrollbar select-none text-xs shadow-2xs"
     >
-      <div class="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-primary/10 text-primary font-bold shrink-0 font-mono text-[11px] border border-primary/20">
+      <div
+        class="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-primary/10 text-primary font-bold shrink-0 font-mono text-[11px] border border-primary/20"
+      >
         <Flame class="w-3.5 h-3.5 fill-current" />
         <span>ALPHA RADAR</span>
       </div>
@@ -43,9 +45,12 @@
           </span>
           <span
             class="text-[11px] font-bold"
-            :class="(tItem.marketData?.priceChange24h ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+            :class="
+              (tItem.marketData?.priceChange24h ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'
+            "
           >
-            {{ (tItem.marketData?.priceChange24h ?? 0) >= 0 ? '+' : '' }}{{ (tItem.marketData?.priceChange24h ?? 0).toFixed(1) }}%
+            {{ (tItem.marketData?.priceChange24h ?? 0) >= 0 ? '+' : ''
+            }}{{ (tItem.marketData?.priceChange24h ?? 0).toFixed(1) }}%
           </span>
         </button>
       </div>
@@ -58,9 +63,14 @@
            ============================================================ -->
       <div class="space-y-4 min-w-0">
         <!-- 1. Feed Filter Tabs Bar + Multi-Chain Filter -->
-        <div class="px-3 pt-2 pb-1 border-b border-border bg-card/60 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div
+          class="px-3 pt-2 pb-1 border-b border-border bg-card/60 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+        >
           <Tabs v-model="activeFilter" class="w-auto">
-            <TabsList variant="line" class="font-mono text-xs overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0">
+            <TabsList
+              variant="line"
+              class="font-mono text-xs overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0"
+            >
               <TabsTrigger
                 v-for="flt in filterTabs"
                 :key="flt.key"
@@ -73,7 +83,9 @@
           </Tabs>
 
           <!-- Chain Filter (All Chains default / Robinhood / Arc) -->
-          <div class="flex items-center gap-1 font-mono text-[11px] self-end sm:self-auto pb-1 sm:pb-0">
+          <div
+            class="flex items-center gap-1 font-mono text-[11px] self-end sm:self-auto pb-1 sm:pb-0"
+          >
             <button
               v-for="chainOpt in [
                 {
@@ -103,7 +115,10 @@
               @click="setChainFilter(chainOpt.key as any)"
             >
               <!-- Overlapping chain icons for All Chains, or single icon -->
-              <span v-if="chainOpt.icons.length > 1" class="inline-flex items-center -space-x-1.5 shrink-0">
+              <span
+                v-if="chainOpt.icons.length > 1"
+                class="inline-flex items-center -space-x-1.5 shrink-0"
+              >
                 <img
                   v-for="(ic, icIdx) in chainOpt.icons"
                   :key="ic"
@@ -125,7 +140,9 @@
         </div>
 
         <!-- 2. Hybrid Alpha Terminal Composer -->
-        <div class="rounded-2xl border border-border/80 bg-card/90 shadow-2xs p-4 sm:p-5 space-y-3.5">
+        <div
+          class="rounded-2xl border border-border/80 bg-card/90 shadow-2xs p-4 sm:p-5 space-y-3.5"
+        >
           <div class="flex items-start gap-3">
             <div class="relative shrink-0">
               <Jazzicon
@@ -159,7 +176,9 @@
                   v-if="showCashtagSuggestions && cashtagSuggestions.length > 0"
                   class="absolute left-0 right-0 top-full mt-1 bg-card border border-border/90 rounded-2xl shadow-2xl p-2 z-50 space-y-1 font-mono text-xs max-h-56 overflow-y-auto"
                 >
-                  <div class="px-2 py-1 text-[10px] text-muted-foreground uppercase font-bold flex items-center justify-between border-b border-border/50">
+                  <div
+                    class="px-2 py-1 text-[10px] text-muted-foreground uppercase font-bold flex items-center justify-between border-b border-border/50"
+                  >
                     <span class="flex items-center gap-1">
                       <Sparkles class="w-3 h-3 text-primary" />
                       Select Token for Callout ${{ cashtagQuery || '' }}
@@ -172,7 +191,11 @@
                     :key="tItem.token.address"
                     type="button"
                     class="w-full flex items-center justify-between p-2 rounded-xl transition cursor-pointer text-left"
-                    :class="sIdx === selectedSuggestionIndex ? 'bg-zinc-900 text-foreground font-bold' : 'hover:bg-zinc-950 text-foreground'"
+                    :class="
+                      sIdx === selectedSuggestionIndex
+                        ? 'bg-zinc-900 text-foreground font-bold'
+                        : 'hover:bg-zinc-950 text-foreground'
+                    "
                     @click="selectCashtagToken(tItem.token)"
                   >
                     <div class="flex items-center gap-2.5 min-w-0">
@@ -200,9 +223,14 @@
                       </span>
                       <span
                         class="text-[10px] font-bold"
-                        :class="(tItem.marketData?.priceChange24h ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                        :class="
+                          (tItem.marketData?.priceChange24h ?? 0) >= 0
+                            ? 'text-emerald-500'
+                            : 'text-rose-500'
+                        "
                       >
-                        {{ (tItem.marketData?.priceChange24h ?? 0) >= 0 ? '+' : '' }}{{ (tItem.marketData?.priceChange24h ?? 0).toFixed(1) }}%
+                        {{ (tItem.marketData?.priceChange24h ?? 0) >= 0 ? '+' : ''
+                        }}{{ (tItem.marketData?.priceChange24h ?? 0).toFixed(1) }}%
                       </span>
                     </div>
                   </button>
@@ -258,7 +286,10 @@
                 <div class="flex items-center gap-1.5 min-w-0">
                   <ShieldCheck class="w-4 h-4 shrink-0 text-emerald-400" />
                   <span class="truncate">
-                    Verified Holder (${{ callerPositionUsd.toFixed(2) }}): <strong>{{ callerTokenBalance.toLocaleString() }} ${{ selectedToken.symbol }}</strong>
+                    Verified Holder (${{ callerPositionUsd.toFixed(2) }}):
+                    <strong
+                      >{{ callerTokenBalance.toLocaleString() }} ${{ selectedToken.symbol }}</strong
+                    >
                   </span>
                 </div>
               </div>
@@ -269,7 +300,8 @@
               >
                 <div class="flex items-center gap-1.5 min-w-0">
                   <span class="text-[11px]">
-                    Mentioning ${{ selectedToken.symbol }} &middot; Hold $1+ to earn a Verified Holder badge.
+                    Mentioning ${{ selectedToken.symbol }} &middot; Hold $1+ to earn a Verified
+                    Holder badge.
                   </span>
                 </div>
                 <Button
@@ -297,7 +329,9 @@
                   <button
                     type="button"
                     class="p-1.5 rounded-lg border border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground transition cursor-pointer flex items-center gap-1.5"
-                    :class="composerImagePreview ? 'border-primary/40 bg-primary/10 text-primary' : ''"
+                    :class="
+                      composerImagePreview ? 'border-primary/40 bg-primary/10 text-primary' : ''
+                    "
                     title="Upload photo from device (like Twitter)"
                     @click="triggerMediaUpload"
                   >
@@ -347,7 +381,10 @@
         </div>
 
         <!-- 3. Hybrid Timeline Cards (Card-based with X / Twitter conversation mechanics) -->
-        <div v-if="loading && callouts.length === 0" class="py-20 text-center text-muted-foreground font-mono">
+        <div
+          v-if="loading && callouts.length === 0"
+          class="py-20 text-center text-muted-foreground font-mono"
+        >
           <Loader2 class="w-7 h-7 animate-spin mx-auto mb-3 text-primary" />
           <p class="text-xs">Loading community alpha...</p>
         </div>
@@ -389,15 +426,9 @@
                     </span>
 
                     <!-- Caller Whale Badge with GMGN/Web3Icons SVG -->
-                    <TraderTagBadge
-                      v-if="isWhaleCaller(call)"
-                      tag="whale"
-                      size="sm"
-                    />
+                    <TraderTagBadge v-if="isWhaleCaller(call)" tag="whale" size="sm" />
                   </div>
-                  <span class="text-[10px] text-muted-foreground font-mono">
-                    Verified Caller
-                  </span>
+                  <span class="text-[10px] text-muted-foreground font-mono"> Verified Caller </span>
                 </div>
               </div>
 
@@ -409,7 +440,9 @@
             </div>
 
             <!-- Post Message Text with Styled Interactive Cashtags -->
-            <p class="text-xs sm:text-sm leading-relaxed text-foreground font-sans font-medium whitespace-pre-wrap break-words">
+            <p
+              class="text-xs sm:text-sm leading-relaxed text-foreground font-sans font-medium whitespace-pre-wrap break-words"
+            >
               <CashtagText :text="call.content" :tokens="allTokens" />
             </p>
 
@@ -420,11 +453,18 @@
               @click.stop="router.push(`/post/${call.quotedCallout.id}`)"
             >
               <div class="flex items-center gap-1.5">
-                <Jazzicon :address="call.quotedCallout.authorAddress" :size="16" class="rounded-full" />
+                <Jazzicon
+                  :address="call.quotedCallout.authorAddress"
+                  :size="16"
+                  class="rounded-full"
+                />
                 <span class="font-bold text-foreground font-mono">
                   {{ getUserIdentity(call.quotedCallout.authorAddress).displayName }}
                 </span>
-                <span v-if="call.quotedCallout.tokenSymbol" class="text-primary font-bold font-mono">
+                <span
+                  v-if="call.quotedCallout.tokenSymbol"
+                  class="text-primary font-bold font-mono"
+                >
                   ${{ call.quotedCallout.tokenSymbol }}
                 </span>
                 <span class="text-muted-foreground text-[10px]">&middot;</span>
@@ -443,7 +483,11 @@
               class="rounded-xl overflow-hidden border border-border max-h-72 cursor-pointer bg-black"
               @click.stop="openImage(call.imageUrl)"
             >
-              <img :src="resolveSafeUrl(call.imageUrl)" alt="Attachment" class="w-full h-full object-cover hover:scale-[1.01] transition-transform" />
+              <img
+                :src="resolveSafeUrl(call.imageUrl)"
+                alt="Attachment"
+                class="w-full h-full object-cover hover:scale-[1.01] transition-transform"
+              />
             </div>
 
             <!-- Signature Web3 Token Card Widget -->
@@ -478,7 +522,11 @@
                     <button
                       type="button"
                       class="p-0.5 rounded transition-transform hover:scale-110 cursor-pointer select-none"
-                      :class="isPinned(call.tokenAddress) ? 'text-amber-400' : 'text-muted-foreground/35 hover:text-amber-400'"
+                      :class="
+                        isPinned(call.tokenAddress)
+                          ? 'text-amber-400'
+                          : 'text-muted-foreground/35 hover:text-amber-400'
+                      "
                       :title="isPinned(call.tokenAddress) ? 'Unpin coin' : 'Pin to Watchlist'"
                       @click.stop="togglePin(call.tokenAddress)"
                     >
@@ -487,12 +535,19 @@
                         :class="isPinned(call.tokenAddress) ? 'fill-amber-400 text-amber-400' : ''"
                       />
                     </button>
-                    <span class="text-[10px] text-muted-foreground truncate hidden sm:inline font-sans">
+                    <span
+                      class="text-[10px] text-muted-foreground truncate hidden sm:inline font-sans"
+                    >
                       {{ call.tokenName }}
                     </span>
                   </div>
                   <div class="flex items-center gap-2 text-[10px] text-muted-foreground">
-                    <span>MC: <strong class="text-foreground">${{ formatCompactUsd(call.tokenMarketCapUsd ?? 4200) }}</strong></span>
+                    <span
+                      >MC:
+                      <strong class="text-foreground"
+                        >${{ formatCompactUsd(call.tokenMarketCapUsd ?? 4200) }}</strong
+                      ></span
+                    >
                     <span v-if="call.targetMcap" class="text-emerald-500 font-bold truncate">
                       Target: {{ call.targetMcap }}
                     </span>
@@ -503,13 +558,17 @@
               <!-- Caller Financial Position & Trade Button -->
               <div class="flex items-center gap-3 shrink-0 text-right">
                 <div>
-                  <span class="text-[9px] text-muted-foreground block uppercase font-bold">Position</span>
+                  <span class="text-[9px] text-muted-foreground block uppercase font-bold"
+                    >Position</span
+                  >
                   <span class="text-xs font-bold text-foreground">
                     {{ call.positionUsd ? `$${call.positionUsd.toFixed(1)}` : 'Holding' }}
                   </span>
                 </div>
                 <div v-if="call.profitUsd !== undefined">
-                  <span class="text-[9px] text-muted-foreground block uppercase font-bold">Profit</span>
+                  <span class="text-[9px] text-muted-foreground block uppercase font-bold"
+                    >Profit</span
+                  >
                   <span
                     class="text-xs font-bold"
                     :class="call.profitUsd >= 0 ? 'text-emerald-500' : 'text-rose-500'"
@@ -623,7 +682,9 @@
       <aside class="space-y-4 font-mono text-xs">
         <!-- Quick Search Pill -->
         <div class="relative w-full">
-          <Search class="w-3.5 h-3.5 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search
+            class="w-3.5 h-3.5 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2"
+          />
           <input
             v-model="searchQuery"
             type="text"
@@ -695,9 +756,14 @@
                 </span>
                 <span
                   class="text-[10px] font-bold"
-                  :class="(tItem.marketData?.priceChange24h ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                  :class="
+                    (tItem.marketData?.priceChange24h ?? 0) >= 0
+                      ? 'text-emerald-500'
+                      : 'text-rose-500'
+                  "
                 >
-                  {{ (tItem.marketData?.priceChange24h ?? 0) >= 0 ? '+' : '' }}{{ (tItem.marketData?.priceChange24h ?? 0).toFixed(1) }}%
+                  {{ (tItem.marketData?.priceChange24h ?? 0) >= 0 ? '+' : ''
+                  }}{{ (tItem.marketData?.priceChange24h ?? 0).toFixed(1) }}%
                 </span>
               </div>
             </div>
@@ -1205,7 +1271,10 @@ async function submitCallout(): Promise<void> {
   const content = composerContent.value.trim();
   if (!content) return;
 
-  const targetToken = selectedToken.value || detectTokenFromContent(content) || (networkTokens.value?.[0]?.token ?? null);
+  const targetToken =
+    selectedToken.value ||
+    detectTokenFromContent(content) ||
+    (networkTokens.value?.[0]?.token ?? null);
   if (!targetToken) {
     composerError.value = 'Please mention a token (e.g. $TOKEN) or launch one first.';
     return;
@@ -1229,8 +1298,9 @@ async function submitCallout(): Promise<void> {
         });
         if (res.ok) {
           const data = await res.json();
-          const ipfsUri =
-            data.data?.cid ? `ipfs://${data.data.cid}` : data.data?.uri || data.data?.url || '';
+          const ipfsUri = data.data?.cid
+            ? `ipfs://${data.data.cid}`
+            : data.data?.uri || data.data?.url || '';
           if (ipfsUri) {
             finalImageUrl = ipfsUri;
           }

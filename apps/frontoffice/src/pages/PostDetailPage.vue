@@ -17,9 +17,7 @@
           <h1 class="text-base font-bold tracking-tight text-foreground leading-none font-mono">
             Alpha Post
           </h1>
-          <span class="text-[10px] text-muted-foreground font-mono">
-            Community Signal Detail
-          </span>
+          <span class="text-[10px] text-muted-foreground font-mono"> Community Signal Detail </span>
         </div>
       </div>
 
@@ -51,7 +49,11 @@
         <AlertCircle class="w-6 h-6 text-destructive/70" />
       </template>
       <template #action>
-        <Button size="sm" class="rounded-xl px-5 cursor-pointer font-mono" @click="router.push('/feed')">
+        <Button
+          size="sm"
+          class="rounded-xl px-5 cursor-pointer font-mono"
+          @click="router.push('/feed')"
+        >
           Back to Feed
         </Button>
       </template>
@@ -64,7 +66,11 @@
         <!-- Author Row -->
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-3 min-w-0">
-            <Jazzicon :address="post.authorAddress" :size="44" class="shrink-0 rounded-full ring-1 ring-border" />
+            <Jazzicon
+              :address="post.authorAddress"
+              :size="44"
+              class="shrink-0 rounded-full ring-1 ring-border"
+            />
             <div class="min-w-0 leading-snug">
               <div class="flex items-center gap-1.5 flex-wrap">
                 <span
@@ -73,21 +79,20 @@
                 >
                   {{ getUserIdentity(post.authorAddress).displayName }}
                 </span>
-                <TraderTagBadge
-                  v-if="isWhaleCaller(post)"
-                  tag="whale"
-                  size="sm"
-                />
+                <TraderTagBadge v-if="isWhaleCaller(post)" tag="whale" size="sm" />
               </div>
               <span class="text-xs text-muted-foreground font-mono block truncate">
-                @{{ getUserIdentity(post.authorAddress).name }} &middot; {{ shortenAddress(post.authorAddress, 6, 4) }}
+                @{{ getUserIdentity(post.authorAddress).name }} &middot;
+                {{ shortenAddress(post.authorAddress, 6, 4) }}
               </span>
             </div>
           </div>
         </div>
 
         <!-- Post Body Text -->
-        <p class="text-base sm:text-lg leading-relaxed text-foreground font-sans whitespace-pre-wrap break-words">
+        <p
+          class="text-base sm:text-lg leading-relaxed text-foreground font-sans whitespace-pre-wrap break-words"
+        >
           <CashtagText :text="post.content" :tokens="allTokens" />
         </p>
 
@@ -121,7 +126,11 @@
           class="rounded-2xl overflow-hidden border border-border/70 max-h-[460px] cursor-pointer bg-muted/20"
           @click="openImage(post.imageUrl)"
         >
-          <img :src="resolveSafeUrl(post.imageUrl)" alt="Attachment" class="w-full h-full object-cover" />
+          <img
+            :src="resolveSafeUrl(post.imageUrl)"
+            alt="Attachment"
+            class="w-full h-full object-cover"
+          />
         </div>
 
         <!-- Embedded Coin Widget Card -->
@@ -166,7 +175,9 @@
 
           <div class="flex items-center gap-3 shrink-0 text-right">
             <div>
-              <span class="text-[9px] text-muted-foreground block uppercase font-bold">Position</span>
+              <span class="text-[9px] text-muted-foreground block uppercase font-bold"
+                >Position</span
+              >
               <span class="text-xs font-bold text-foreground">
                 {{ post.positionUsd ? `$${post.positionUsd.toFixed(1)}` : 'Holding' }}
               </span>
@@ -182,7 +193,9 @@
         </div>
 
         <!-- Timestamp & Views Ribbon -->
-        <div class="pt-2 text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap font-mono border-t border-border/50">
+        <div
+          class="pt-2 text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap font-mono border-t border-border/50"
+        >
           <span>{{ formatAbsoluteTime(post.createdAt) }}</span>
           <span>&middot;</span>
           <span class="font-bold text-foreground">{{ formatViews(post.viewsCount || 0) }}</span>
@@ -209,7 +222,9 @@
         </div>
 
         <!-- Action Bar (Reply, Repost, Like, Share) -->
-        <div class="flex items-center justify-around pt-1 text-muted-foreground border-t border-border/60 font-mono">
+        <div
+          class="flex items-center justify-around pt-1 text-muted-foreground border-t border-border/60 font-mono"
+        >
           <!-- 1. Reply -->
           <button
             type="button"
@@ -231,7 +246,9 @@
                 title="Repost"
               >
                 <Repeat class="w-4 h-4" />
-                <span class="text-xs">{{ (post.repostsCount || 0) + (post.quotesCount || 0) }}</span>
+                <span class="text-xs">{{
+                  (post.repostsCount || 0) + (post.quotesCount || 0)
+                }}</span>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="center" class="w-36 font-mono text-xs">
@@ -274,7 +291,9 @@
       </article>
 
       <!-- 2. Reply Composer Card -->
-      <div class="rounded-2xl border border-border/80 bg-card/85 p-4 sm:p-5 flex gap-3 sm:gap-3.5 items-start shadow-2xs">
+      <div
+        class="rounded-2xl border border-border/80 bg-card/85 p-4 sm:p-5 flex gap-3 sm:gap-3.5 items-start shadow-2xs"
+      >
         <Jazzicon
           :address="account || '0x0000000000000000000000000000000000000000'"
           :size="38"
@@ -310,7 +329,9 @@
 
       <!-- 3. Thread Replies Stream (Cards) -->
       <div class="rounded-2xl border border-border/80 bg-card/70 p-4 space-y-3 shadow-2xs">
-        <h3 class="font-bold text-xs font-mono text-foreground px-1 flex items-center justify-between">
+        <h3
+          class="font-bold text-xs font-mono text-foreground px-1 flex items-center justify-between"
+        >
           <span>Discussion & Replies ({{ replies.length }})</span>
         </h3>
 
@@ -332,7 +353,11 @@
             class="p-3.5 rounded-xl border border-border/60 bg-muted/20 hover:bg-muted/40 transition-colors flex gap-3 items-start"
           >
             <!-- Reply Avatar -->
-            <Jazzicon :address="rep.authorAddress" :size="34" class="shrink-0 rounded-full mt-0.5" />
+            <Jazzicon
+              :address="rep.authorAddress"
+              :size="34"
+              class="shrink-0 rounded-full mt-0.5"
+            />
 
             <!-- Reply Content & Actions -->
             <div class="flex-1 min-w-0 space-y-1.5">
@@ -348,7 +373,9 @@
                 <span class="hover:underline">{{ formatRelativeTime(rep.createdAt) }}</span>
               </div>
 
-              <p class="text-xs sm:text-sm leading-relaxed text-foreground font-sans whitespace-pre-wrap break-words">
+              <p
+                class="text-xs sm:text-sm leading-relaxed text-foreground font-sans whitespace-pre-wrap break-words"
+              >
                 <CashtagText :text="rep.content" :tokens="allTokens" />
               </p>
 
@@ -374,11 +401,7 @@
     </div>
 
     <!-- Modals -->
-    <ShareModal
-      :is-open="isShareModalOpen"
-      :call="post"
-      @close="isShareModalOpen = false"
-    />
+    <ShareModal :is-open="isShareModalOpen" :call="post" @close="isShareModalOpen = false" />
 
     <QuoteModal
       :is-open="isQuoteModalOpen"

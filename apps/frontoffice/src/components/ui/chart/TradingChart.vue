@@ -144,7 +144,8 @@ function formatData(raw: CandlePoint[]): Bar[] {
   if (!raw || raw.length === 0) return [];
   const byTime = new Map<number, Bar>();
   for (const item of raw) {
-    let t = typeof item.time === 'string' ? new Date(item.time).getTime() / 1000 : Number(item.time);
+    let t =
+      typeof item.time === 'string' ? new Date(item.time).getTime() / 1000 : Number(item.time);
     if (t > 2_000_000_000) t = t / 1000; // ms -> s
     t = Math.floor(t);
     const open = Number(item.open);
@@ -242,7 +243,10 @@ function autoscale(original: () => AutoscaleInfo | null): AutoscaleInfo | null {
   // Flat data: give it a readable band
   if (minValue === maxValue) {
     const pad = hi * 0.05 || 1e-6;
-    return { priceRange: { minValue: Math.max(0, lo - pad), maxValue: hi + pad }, margins: res.margins };
+    return {
+      priceRange: { minValue: Math.max(0, lo - pad), maxValue: hi + pad },
+      margins: res.margins,
+    };
   }
   if (!clipWicks.value) return res;
 
@@ -335,7 +339,12 @@ function initChart() {
       },
     },
     localization: { timeFormatter: formatTime }, // local timezone, not UTC
-    handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
+    handleScroll: {
+      mouseWheel: true,
+      pressedMouseMove: true,
+      horzTouchDrag: true,
+      vertTouchDrag: false,
+    },
     handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
   });
 
@@ -541,7 +550,11 @@ onUnmounted(() => {
     <!-- Toolbar: one row, big touch targets -->
     <div class="flex items-center justify-between gap-2 px-3 py-2 border-b border-border/80">
       <!-- Price / Market cap -->
-      <div class="flex items-center rounded-lg bg-muted p-0.5" role="group" aria-label="Chart value">
+      <div
+        class="flex items-center rounded-lg bg-muted p-0.5"
+        role="group"
+        aria-label="Chart value"
+      >
         <button
           v-for="m in [
             { v: 'mcap', l: 'Market cap' },
@@ -550,7 +563,11 @@ onUnmounted(() => {
           :key="m.v"
           type="button"
           class="h-8 cursor-pointer rounded-md px-3 text-xs font-semibold transition"
-          :class="valueMode === m.v ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'"
+          :class="
+            valueMode === m.v
+              ? 'bg-card text-foreground shadow-xs'
+              : 'text-muted-foreground hover:text-foreground'
+          "
           :aria-pressed="valueMode === m.v"
           @click="setMode(m.v)"
         >
@@ -562,7 +579,11 @@ onUnmounted(() => {
         <button
           type="button"
           class="grid h-8 w-8 cursor-pointer place-items-center rounded-md transition"
-          :class="chartType === 'candles' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'"
+          :class="
+            chartType === 'candles'
+              ? 'bg-muted text-foreground'
+              : 'text-muted-foreground hover:text-foreground'
+          "
           title="Candles"
           aria-label="Candles"
           :aria-pressed="chartType === 'candles'"
@@ -573,7 +594,11 @@ onUnmounted(() => {
         <button
           type="button"
           class="grid h-8 w-8 cursor-pointer place-items-center rounded-md transition"
-          :class="chartType === 'area' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'"
+          :class="
+            chartType === 'area'
+              ? 'bg-muted text-foreground'
+              : 'text-muted-foreground hover:text-foreground'
+          "
           title="Line"
           aria-label="Line"
           :aria-pressed="chartType === 'area'"
@@ -587,7 +612,9 @@ onUnmounted(() => {
         <button
           type="button"
           class="h-8 cursor-pointer rounded-md px-2 text-xs font-semibold transition"
-          :class="isLogScale ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'"
+          :class="
+            isLogScale ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
+          "
           title="Logarithmic scale"
           aria-label="Logarithmic scale"
           :aria-pressed="isLogScale"
@@ -598,7 +625,9 @@ onUnmounted(() => {
         <button
           type="button"
           class="grid h-8 w-8 cursor-pointer place-items-center rounded-md transition"
-          :class="clipWicks ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'"
+          :class="
+            clipWicks ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
+          "
           title="Ignore extreme wicks when scaling"
           aria-label="Ignore extreme wicks when scaling"
           :aria-pressed="clipWicks"
@@ -638,7 +667,9 @@ onUnmounted(() => {
         v-if="activeBar && !isEmpty"
         class="pointer-events-none absolute left-3 top-1 z-10 flex flex-col gap-0.5 text-xs tabular-nums"
       >
-        <span v-if="hoveredBar" class="text-muted-foreground">{{ formatTime(hoveredBar.time) }}</span>
+        <span v-if="hoveredBar" class="text-muted-foreground">{{
+          formatTime(hoveredBar.time)
+        }}</span>
         <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5">
           <span class="hidden text-muted-foreground sm:inline">
             O <span class="text-foreground">{{ formatY(activeBar.open) }}</span>
@@ -652,7 +683,10 @@ onUnmounted(() => {
           <span class="text-muted-foreground">
             C <span class="text-foreground">{{ formatY(activeBar.close) }}</span>
           </span>
-          <span class="font-semibold" :class="changePct >= 0 ? 'text-emerald-500' : 'text-rose-500'">
+          <span
+            class="font-semibold"
+            :class="changePct >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+          >
             {{ changePct >= 0 ? '+' : '' }}{{ changePct.toFixed(2) }}%
           </span>
           <span class="text-muted-foreground">

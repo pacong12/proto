@@ -13,17 +13,16 @@
         alt="Cover Banner"
         class="w-full h-full object-cover"
       />
-      <div
-        v-else
-        class="absolute inset-0 bg-black"
-      />
+      <div v-else class="absolute inset-0 bg-black" />
 
       <div
         v-if="isOwnProfile"
         class="absolute inset-0 bg-background/50 backdrop-blur-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none"
         title="Update header banner"
       >
-        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-card text-foreground shadow-xs border border-border pointer-events-auto">
+        <span
+          class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-card text-foreground shadow-xs border border-border pointer-events-auto"
+        >
           <Camera class="w-3.5 h-3.5 text-primary" />
           Update Banner
         </span>
@@ -32,7 +31,9 @@
 
     <!-- 2. Profile Details & Avatar Overlay -->
     <div class="px-5 pb-5 sm:px-7 sm:pb-7 pt-0 space-y-4 relative z-30">
-      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-10 sm:-mt-14 relative z-30">
+      <div
+        class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-10 sm:-mt-14 relative z-30"
+      >
         <!-- Avatar -->
         <div
           class="relative z-30 group w-20 h-20 sm:w-28 sm:h-28 rounded-full ring-4 ring-card bg-card overflow-hidden shrink-0 shadow-xl"
@@ -97,7 +98,9 @@
         </div>
 
         <p class="text-xs font-mono text-muted-foreground flex items-center gap-1.5">
-          <span>@{{ profileAddress ? getUserIdentity(profileAddress).name : 'not-connected' }}</span>
+          <span
+            >@{{ profileAddress ? getUserIdentity(profileAddress).name : 'not-connected' }}</span
+          >
           <span class="text-muted-foreground/40">&middot;</span>
           <span>{{ profileAddress ? shortenAddress(profileAddress, 6, 4) : '' }}</span>
         </p>

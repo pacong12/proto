@@ -39,7 +39,9 @@
             <ChevronLeft class="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
             <span>Markets</span>
             <span class="text-muted-foreground/40">/</span>
-            <span class="text-foreground font-bold truncate max-w-[200px] sm:max-w-none">{{ currentToken.name }}</span>
+            <span class="text-foreground font-bold truncate max-w-[200px] sm:max-w-none">{{
+              currentToken.name
+            }}</span>
           </RouterLink>
 
           <!-- Top Action Controls (Callout, Share, Copy Link) -->
@@ -107,7 +109,9 @@
             </div>
             <div class="min-w-0 space-y-1">
               <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap">
-                <h1 class="text-2xl sm:text-3xl font-black font-sans tracking-tight text-foreground truncate">
+                <h1
+                  class="text-2xl sm:text-3xl font-black font-sans tracking-tight text-foreground truncate"
+                >
                   {{ currentToken.name }}
                 </h1>
                 <span class="text-sm sm:text-base font-bold font-mono text-muted-foreground">
@@ -117,7 +121,11 @@
                 <button
                   type="button"
                   class="p-1 rounded-lg transition-transform hover:scale-110 cursor-pointer select-none"
-                  :class="isPinned(currentToken.address) ? 'text-amber-400' : 'text-muted-foreground/35 hover:text-amber-400'"
+                  :class="
+                    isPinned(currentToken.address)
+                      ? 'text-amber-400'
+                      : 'text-muted-foreground/35 hover:text-amber-400'
+                  "
                   :title="isPinned(currentToken.address) ? 'Unpin coin' : 'Pin to Watchlist'"
                   @click.stop="togglePin(currentToken.address)"
                 >
@@ -143,7 +151,9 @@
               </p>
 
               <!-- Metadata Byline (Pons-style clean strip) -->
-              <div class="flex items-center gap-2 flex-wrap text-xs font-sans text-muted-foreground pt-0.5">
+              <div
+                class="flex items-center gap-2 flex-wrap text-xs font-sans text-muted-foreground pt-0.5"
+              >
                 <span v-if="currentToken.deployer" class="inline-flex items-center gap-1">
                   <span>by</span>
                   <RouterLink
@@ -155,7 +165,9 @@
                   </RouterLink>
                 </span>
                 <span class="text-muted-foreground/50">·</span>
-                <span class="font-mono text-[11px]">{{ formatRelativeTime(currentToken.createdAt) }}</span>
+                <span class="font-mono text-[11px]">{{
+                  formatRelativeTime(currentToken.createdAt)
+                }}</span>
                 <span class="text-muted-foreground/50">·</span>
                 <span class="text-[11px] text-muted-foreground font-semibold font-mono">
                   {{ currencySymbol }} pair
@@ -254,7 +266,9 @@
             :title="`Click to toggle between Market Cap and Price display`"
             @click="toggleHeaderFigure"
           >
-            <span class="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold font-sans">
+            <span
+              class="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold font-sans"
+            >
               {{ primaryFigureMode === 'mcap' ? 'Market cap' : 'Token price' }}
             </span>
             <div class="flex items-baseline gap-2">
@@ -282,7 +296,9 @@
                 }}{{ (currentMarketData.priceChange24h ?? 0).toFixed(2) }}%
               </span>
             </div>
-            <span class="text-[11px] text-muted-foreground group-hover:text-foreground transition underline decoration-dotted">
+            <span
+              class="text-[11px] text-muted-foreground group-hover:text-foreground transition underline decoration-dotted"
+            >
               {{ secondaryFigureValue }}
             </span>
           </button>
@@ -485,7 +501,9 @@
 
               <!-- You Pay input -->
               <div class="space-y-2">
-                <div class="flex justify-between items-center text-xs text-muted-foreground font-sans">
+                <div
+                  class="flex justify-between items-center text-xs text-muted-foreground font-sans"
+                >
                   <div class="flex items-center gap-2">
                     <span>You pay</span>
                     <div
@@ -528,7 +546,9 @@
                     <span v-else class="font-bold text-foreground">{{
                       isBuy ? formatEthBalance(balanceWei) : formatTokenBalance(userTokenBalance)
                     }}</span>
-                    <span class="text-muted-foreground">{{ isBuy ? currencySymbol : currentToken.symbol }}</span>
+                    <span class="text-muted-foreground">{{
+                      isBuy ? currencySymbol : currentToken.symbol
+                    }}</span>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -547,7 +567,9 @@
                     placeholder="0.0"
                     class="text-sm sm:text-base font-mono font-semibold text-foreground bg-black border-input h-11 pr-20 rounded-xl"
                   />
-                  <div class="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-black px-2 py-1 rounded-lg border border-border">
+                  <div
+                    class="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-black px-2 py-1 rounded-lg border border-border"
+                  >
                     <span class="text-xs font-mono font-bold text-foreground">
                       {{ isBuy ? (payInUsd ? 'USD' : currencySymbol) : currentToken.symbol }}
                     </span>
@@ -585,7 +607,9 @@
 
               <!-- You receive output (Clear output box with token logo, no duplicate symbols) -->
               <div class="space-y-1.5">
-                <div class="flex justify-between items-center text-xs text-muted-foreground font-sans">
+                <div
+                  class="flex justify-between items-center text-xs text-muted-foreground font-sans"
+                >
                   <span>You receive (est.)</span>
                 </div>
                 <div
@@ -601,14 +625,21 @@
                       :height="24"
                       class="rounded-full border border-border object-cover shrink-0 w-6 h-6"
                     />
-                    <div v-else class="w-6 h-6 rounded-full bg-black flex items-center justify-center font-mono text-[9px] font-bold border border-border shrink-0">
+                    <div
+                      v-else
+                      class="w-6 h-6 rounded-full bg-black flex items-center justify-center font-mono text-[9px] font-bold border border-border shrink-0"
+                    >
                       {{ currencySymbol.slice(0, 3) }}
                     </div>
-                    <span class="text-sm sm:text-base font-mono font-semibold text-foreground truncate">
+                    <span
+                      class="text-sm sm:text-base font-mono font-semibold text-foreground truncate"
+                    >
                       {{ estimatedOutputAmount }}
                     </span>
                   </div>
-                  <div class="flex items-center gap-1 bg-black px-2 py-0.5 rounded-lg border border-border shrink-0">
+                  <div
+                    class="flex items-center gap-1 bg-black px-2 py-0.5 rounded-lg border border-border shrink-0"
+                  >
                     <span class="font-mono text-xs text-foreground font-bold">
                       {{ isBuy ? currentToken.symbol : currencySymbol }}
                     </span>
@@ -626,7 +657,9 @@
                   <span>Slippage Tolerance</span>
                   <span
                     class="font-mono font-semibold"
-                    :class="slippage > SLIPPAGE_WARN_THRESHOLD ? 'text-amber-500' : 'text-foreground'"
+                    :class="
+                      slippage > SLIPPAGE_WARN_THRESHOLD ? 'text-amber-500' : 'text-foreground'
+                    "
                   >
                     {{ slippage }}%
                   </span>
@@ -637,7 +670,9 @@
                 >
                   <span>Trading Tax</span>
                   <span class="font-mono font-medium text-foreground">
-                    {{ isBuy ? (onchainTaxConfig.buyTaxBps / 100) : (onchainTaxConfig.sellTaxBps / 100) }}%
+                    {{
+                      isBuy ? onchainTaxConfig.buyTaxBps / 100 : onchainTaxConfig.sellTaxBps / 100
+                    }}%
                   </span>
                 </div>
               </div>
@@ -695,37 +730,59 @@
 
         <!-- 3. Bonding Curve & Protocol Facts Card (Pons app-facts style) -->
         <div class="xl:col-start-1 xl:row-start-2 min-w-0 w-full space-y-6">
-          <div class="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-xs font-mono">
+          <div
+            class="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-xs font-mono"
+          >
             <!-- Graduation Progress Bar Strip -->
             <div class="space-y-2.5">
               <div class="flex items-center justify-between text-xs">
                 <div class="flex items-center gap-2">
                   <span class="font-bold text-foreground">
-                    {{ currentToken.version === 'v2' ? 'Bonding Curve Progress' : 'Uniswap Liquidity' }}
+                    {{
+                      currentToken.version === 'v2' ? 'Bonding Curve Progress' : 'Uniswap Liquidity'
+                    }}
                   </span>
                   <Badge
                     :variant="currentMarketData.isGraduated ? 'default' : 'outline'"
                     class="text-[9px] h-4 px-1.5 uppercase font-mono"
                   >
-                    {{ currentMarketData.isGraduated ? 'Graduated' : `${(currentMarketData.graduationProgress * 100).toFixed(1)}% filled` }}
+                    {{
+                      currentMarketData.isGraduated
+                        ? 'Graduated'
+                        : `${(currentMarketData.graduationProgress * 100).toFixed(1)}% filled`
+                    }}
                   </Badge>
                 </div>
                 <span class="text-muted-foreground text-[11px]">
-                  {{ currentMarketData.pairedPrincipalWeth }} / {{ currentMarketData.graduationThresholdWeth }} {{ currencySymbol }}
+                  {{ currentMarketData.pairedPrincipalWeth }} /
+                  {{ currentMarketData.graduationThresholdWeth }} {{ currencySymbol }}
                 </span>
               </div>
-              <Progress :model-value="currentMarketData.graduationProgress * 100" class="h-2 rounded-full" />
+              <Progress
+                :model-value="currentMarketData.graduationProgress * 100"
+                class="h-2 rounded-full"
+              />
               <div class="flex items-center justify-between text-[11px] text-muted-foreground">
-                <span v-if="currentToken.version === 'v2' && !currentMarketData.isGraduated" class="flex items-center gap-1.5 text-foreground">
+                <span
+                  v-if="currentToken.version === 'v2' && !currentMarketData.isGraduated"
+                  class="flex items-center gap-1.5 text-foreground"
+                >
                   <Sparkles class="w-3.5 h-3.5 text-primary" />
                   <span>Graduates to Uniswap DEX at 100%</span>
                 </span>
-                <span v-else-if="currentMarketData.isGraduated" class="flex items-center gap-1.5 text-emerald-500 font-semibold">
+                <span
+                  v-else-if="currentMarketData.isGraduated"
+                  class="flex items-center gap-1.5 text-emerald-500 font-semibold"
+                >
                   <Check class="w-3.5 h-3.5" />
                   <span>Liquidity locked in Uniswap DEX</span>
                 </span>
                 <span>
-                  {{ currentMarketData.isGraduated ? 'Graduated' : `Need ${remainingToGraduate} ${currencySymbol}` }}
+                  {{
+                    currentMarketData.isGraduated
+                      ? 'Graduated'
+                      : `Need ${remainingToGraduate} ${currencySymbol}`
+                  }}
                 </span>
               </div>
             </div>
@@ -736,7 +793,9 @@
               class="p-3.5 rounded-xl border border-border bg-black space-y-2 text-xs"
             >
               <div class="flex items-center justify-between font-bold text-foreground">
-                <span class="text-[10px] uppercase tracking-wider text-muted-foreground">Uniswap Pool</span>
+                <span class="text-[10px] uppercase tracking-wider text-muted-foreground"
+                  >Uniswap Pool</span
+                >
                 <span class="text-emerald-500 flex items-center gap-1 text-[11px]">
                   <Check class="w-3 h-3" />
                   Locked
@@ -746,7 +805,9 @@
                 <div class="flex justify-between">
                   <span class="text-muted-foreground">Pair</span>
                   <div class="flex items-center gap-1">
-                    <span class="text-foreground">{{ shortenAddress(currentToken.poolAddress, 6, 4) }}</span>
+                    <span class="text-foreground">{{
+                      shortenAddress(currentToken.poolAddress, 6, 4)
+                    }}</span>
                     <button
                       type="button"
                       class="text-muted-foreground hover:text-foreground cursor-pointer"
@@ -775,39 +836,57 @@
             </div>
 
             <!-- Protocol & Token Key Figures Grid (All stats preserved!) -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 pt-4 border-t border-border text-xs">
+            <div
+              class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 pt-4 border-t border-border text-xs"
+            >
               <div>
-                <span class="text-muted-foreground text-[10px] uppercase font-semibold block">Market Cap</span>
+                <span class="text-muted-foreground text-[10px] uppercase font-semibold block"
+                  >Market Cap</span
+                >
                 <span class="font-black text-foreground text-sm block mt-0.5">
                   ${{ formatNumberCap(currentMarketData.marketCapUsd ?? 4200) }}
                 </span>
               </div>
               <div>
-                <span class="text-muted-foreground text-[10px] uppercase font-semibold block">Token Price</span>
+                <span class="text-muted-foreground text-[10px] uppercase font-semibold block"
+                  >Token Price</span
+                >
                 <span class="font-black text-foreground text-sm block mt-0.5 truncate">
                   {{ formatPriceUsd(currentMarketData.priceUsd) }}
                 </span>
               </div>
               <div>
-                <span class="text-muted-foreground text-[10px] uppercase font-semibold block">24h Volume</span>
+                <span class="text-muted-foreground text-[10px] uppercase font-semibold block"
+                  >24h Volume</span
+                >
                 <span class="font-black text-foreground text-sm block mt-0.5">
-                  {{ (currentMarketData.volume24hUsd ?? 0) > 0 ? formatCompactUsd(currentMarketData.volume24hUsd) : '—' }}
+                  {{
+                    (currentMarketData.volume24hUsd ?? 0) > 0
+                      ? formatCompactUsd(currentMarketData.volume24hUsd)
+                      : '—'
+                  }}
                 </span>
               </div>
               <div>
-                <span class="text-muted-foreground text-[10px] uppercase font-semibold block">Holders</span>
+                <span class="text-muted-foreground text-[10px] uppercase font-semibold block"
+                  >Holders</span
+                >
                 <span class="font-black text-foreground text-sm block mt-0.5">
                   {{ holders.length.toLocaleString() }}
                 </span>
               </div>
               <div>
-                <span class="text-muted-foreground text-[10px] uppercase font-semibold block">Top 10 Supply</span>
+                <span class="text-muted-foreground text-[10px] uppercase font-semibold block"
+                  >Top 10 Supply</span
+                >
                 <span class="font-black text-foreground text-sm block mt-0.5">
                   {{ top10HoldingPercent > 0 ? top10HoldingPercent.toFixed(1) + '%' : '—' }}
                 </span>
               </div>
               <div>
-                <span class="text-muted-foreground text-[10px] uppercase font-semibold block">Dev Holds</span>
+                <span class="text-muted-foreground text-[10px] uppercase font-semibold block"
+                  >Dev Holds</span
+                >
                 <span
                   class="font-black text-sm block mt-0.5"
                   :class="devHoldingPercent > 10 ? 'text-amber-500' : 'text-foreground'"
@@ -825,7 +904,8 @@
               >
                 <span class="text-muted-foreground font-semibold">Tax:</span>
                 <span class="font-bold text-foreground">
-                  {{ (onchainTaxConfig.buyTaxBps / 100).toFixed(0) }}% / {{ (onchainTaxConfig.sellTaxBps / 100).toFixed(0) }}%
+                  {{ (onchainTaxConfig.buyTaxBps / 100).toFixed(0) }}% /
+                  {{ (onchainTaxConfig.sellTaxBps / 100).toFixed(0) }}%
                 </span>
               </div>
 
@@ -860,10 +940,7 @@
               <div
                 class="flex items-center justify-between border-b border-border px-3 sm:px-4 py-1.5 overflow-x-auto no-scrollbar gap-2"
               >
-                <TabsList
-                  variant="line"
-                  class="flex gap-4 sm:gap-6 border-b-0 w-auto"
-                >
+                <TabsList variant="line" class="flex gap-4 sm:gap-6 border-b-0 w-auto">
                   <TabsTrigger
                     v-for="tab in [
                       { value: 'callouts', label: 'Callouts' },
@@ -1190,15 +1267,38 @@
                 <div v-else class="overflow-x-auto rounded-2xl border border-border bg-black">
                   <Table class="w-full text-left text-xs font-mono min-w-[620px] bg-black">
                     <TableHeader>
-                      <TableRow class="border-b border-border text-muted-foreground bg-black hover:bg-black">
-                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">Time</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">Type</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Total (USD)</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">{{ currencySymbol }}</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Amount</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Price</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">Trader</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Tx</TableHead>
+                      <TableRow
+                        class="border-b border-border text-muted-foreground bg-black hover:bg-black"
+                      >
+                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black"
+                          >Time</TableHead
+                        >
+                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black"
+                          >Type</TableHead
+                        >
+                        <TableHead
+                          class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+                          >Total (USD)</TableHead
+                        >
+                        <TableHead
+                          class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+                          >{{ currencySymbol }}</TableHead
+                        >
+                        <TableHead
+                          class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+                          >Amount</TableHead
+                        >
+                        <TableHead
+                          class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+                          >Price</TableHead
+                        >
+                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black"
+                          >Trader</TableHead
+                        >
+                        <TableHead
+                          class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+                          >Tx</TableHead
+                        >
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1208,7 +1308,9 @@
                         class="hover:bg-zinc-900/40 transition-colors bg-black"
                       >
                         <!-- 1. Time / Age -->
-                        <TableCell class="py-2 px-3 whitespace-nowrap text-muted-foreground text-[11px]">
+                        <TableCell
+                          class="py-2 px-3 whitespace-nowrap text-muted-foreground text-[11px]"
+                        >
                           {{ formatRelativeTime(trade.timestamp) }}
                         </TableCell>
 
@@ -1231,28 +1333,43 @@
                           class="py-2 px-3 whitespace-nowrap text-right font-mono font-bold"
                           :class="trade.isBuy ? 'text-emerald-400' : 'text-rose-400'"
                         >
-                          ${{ Math.max(0.01, getTradeVolumeUsd(trade)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                          ${{
+                            Math.max(0.01, getTradeVolumeUsd(trade)).toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })
+                          }}
                         </TableCell>
 
                         <!-- 4. Native Volume (ETH / USDG) -->
-                        <TableCell class="py-2 px-3 whitespace-nowrap text-right text-muted-foreground font-mono">
+                        <TableCell
+                          class="py-2 px-3 whitespace-nowrap text-right text-muted-foreground font-mono"
+                        >
                           {{ parseFloat(trade.wethAmount || '0').toFixed(4) }}
                         </TableCell>
 
                         <!-- 5. Token Amount -->
-                        <TableCell class="py-2 px-3 whitespace-nowrap text-right text-foreground font-medium font-mono">
+                        <TableCell
+                          class="py-2 px-3 whitespace-nowrap text-right text-foreground font-medium font-mono"
+                        >
                           {{ formatTokenNumber(trade.tokenAmount) }}
                         </TableCell>
 
                         <!-- 6. Price (DEX Subscript notation) -->
-                        <TableCell class="py-2 px-3 whitespace-nowrap text-right text-foreground font-mono">
+                        <TableCell
+                          class="py-2 px-3 whitespace-nowrap text-right text-foreground font-mono"
+                        >
                           ${{ formatSubscriptPrice(trade.priceUsd) }}
                         </TableCell>
 
                         <!-- 7. Trader (With Jazzicon + Profile Link + GMGN Tags) -->
                         <TableCell class="py-2 px-3 whitespace-nowrap">
                           <div class="flex items-center gap-1.5 text-foreground">
-                            <Jazzicon :address="trade.trader" :size="14" class="shrink-0 rounded-full" />
+                            <Jazzicon
+                              :address="trade.trader"
+                              :size="14"
+                              class="shrink-0 rounded-full"
+                            />
                             <RouterLink
                               :to="'/' + getUserIdentity(trade.trader).name"
                               class="text-foreground font-medium hover:underline truncate max-w-[120px] sm:max-w-none"
@@ -1260,7 +1377,9 @@
                               {{ truncateAddress(trade.trader) }}
                             </RouterLink>
                             <TraderTagBadge
-                              v-if="trade.trader.toLowerCase() === currentToken.deployer?.toLowerCase()"
+                              v-if="
+                                trade.trader.toLowerCase() === currentToken.deployer?.toLowerCase()
+                              "
                               tag="dev"
                               size="sm"
                             />
@@ -1333,14 +1452,36 @@
                 <div v-else class="overflow-x-auto rounded-2xl border border-border bg-black">
                   <Table class="w-full text-left text-xs font-mono min-w-[640px] bg-black">
                     <TableHeader>
-                      <TableRow class="border-b border-border text-muted-foreground bg-black hover:bg-black">
-                        <TableHead class="py-2.5 px-3 font-semibold w-10 text-muted-foreground bg-black">#</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">Trader</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Bought</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Sold</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Holding</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Realized PnL</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Total PnL</TableHead>
+                      <TableRow
+                        class="border-b border-border text-muted-foreground bg-black hover:bg-black"
+                      >
+                        <TableHead
+                          class="py-2.5 px-3 font-semibold w-10 text-muted-foreground bg-black"
+                          >#</TableHead
+                        >
+                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black"
+                          >Trader</TableHead
+                        >
+                        <TableHead
+                          class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+                          >Bought</TableHead
+                        >
+                        <TableHead
+                          class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+                          >Sold</TableHead
+                        >
+                        <TableHead
+                          class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+                          >Holding</TableHead
+                        >
+                        <TableHead
+                          class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+                          >Realized PnL</TableHead
+                        >
+                        <TableHead
+                          class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+                          >Total PnL</TableHead
+                        >
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1354,7 +1495,11 @@
                         </TableCell>
                         <TableCell class="py-2.5 px-3">
                           <div class="flex items-center gap-1.5 flex-wrap">
-                            <Jazzicon :address="trader.address" :size="16" class="shrink-0 rounded-full" />
+                            <Jazzicon
+                              :address="trader.address"
+                              :size="16"
+                              class="shrink-0 rounded-full"
+                            />
                             <RouterLink
                               :to="'/' + getUserIdentity(trader.address).name"
                               class="text-foreground font-medium hover:underline truncate max-w-[130px] sm:max-w-none"
@@ -1373,7 +1518,10 @@
                             <!-- GMGN-style Tag Icons directly next to name / address -->
                             <div class="flex items-center gap-1 ml-0.5">
                               <TraderTagBadge :tag="getTraderRoleTag(trader)" size="sm" />
-                              <TraderTagBadge :tag="getTraderPositionTag(trader.positionStatus)" size="sm" />
+                              <TraderTagBadge
+                                :tag="getTraderPositionTag(trader.positionStatus)"
+                                size="sm"
+                              />
                             </div>
                           </div>
                         </TableCell>
@@ -1393,7 +1541,8 @@
                               ${{ Math.round(getTraderHoldingUsd(trader)).toLocaleString() }}
                             </span>
                             <span class="text-[10px] text-muted-foreground block">
-                              {{ formatTokenNumber(trader.holdingAmountTokens || '0') }} {{ currentToken.symbol }}
+                              {{ formatTokenNumber(trader.holdingAmountTokens || '0') }}
+                              {{ currentToken.symbol }}
                             </span>
                           </div>
                         </TableCell>
@@ -1401,15 +1550,26 @@
                           <div class="space-y-0.5 font-mono">
                             <span
                               class="font-bold block"
-                              :class="getTraderRealizedPnl(trader).usd >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                              :class="
+                                getTraderRealizedPnl(trader).usd >= 0
+                                  ? 'text-emerald-500'
+                                  : 'text-rose-500'
+                              "
                             >
-                              {{ getTraderRealizedPnl(trader).usd >= 0 ? '+' : '-' }}${{ Math.abs(getTraderRealizedPnl(trader).usd).toLocaleString() }}
+                              {{ getTraderRealizedPnl(trader).usd >= 0 ? '+' : '-' }}${{
+                                Math.abs(getTraderRealizedPnl(trader).usd).toLocaleString()
+                              }}
                             </span>
                             <span
                               class="text-[10px] block"
-                              :class="getTraderRealizedPnl(trader).pct >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                              :class="
+                                getTraderRealizedPnl(trader).pct >= 0
+                                  ? 'text-emerald-500'
+                                  : 'text-rose-500'
+                              "
                             >
-                              {{ getTraderRealizedPnl(trader).pct >= 0 ? '+' : '' }}{{ getTraderRealizedPnl(trader).pct.toFixed(1) }}%
+                              {{ getTraderRealizedPnl(trader).pct >= 0 ? '+' : ''
+                              }}{{ getTraderRealizedPnl(trader).pct.toFixed(1) }}%
                             </span>
                           </div>
                         </TableCell>
@@ -1417,15 +1577,26 @@
                           <div class="space-y-0.5 font-mono">
                             <span
                               class="font-black text-sm block"
-                              :class="getTraderTotalPnl(trader).usd >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                              :class="
+                                getTraderTotalPnl(trader).usd >= 0
+                                  ? 'text-emerald-500'
+                                  : 'text-rose-500'
+                              "
                             >
-                              {{ getTraderTotalPnl(trader).usd >= 0 ? '+' : '-' }}${{ Math.abs(getTraderTotalPnl(trader).usd).toLocaleString() }}
+                              {{ getTraderTotalPnl(trader).usd >= 0 ? '+' : '-' }}${{
+                                Math.abs(getTraderTotalPnl(trader).usd).toLocaleString()
+                              }}
                             </span>
                             <span
                               class="text-[10px] font-bold block"
-                              :class="getTraderTotalPnl(trader).pct >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                              :class="
+                                getTraderTotalPnl(trader).pct >= 0
+                                  ? 'text-emerald-500'
+                                  : 'text-rose-500'
+                              "
                             >
-                              {{ getTraderTotalPnl(trader).pct >= 0 ? '+' : '' }}{{ getTraderTotalPnl(trader).pct.toFixed(1) }}%
+                              {{ getTraderTotalPnl(trader).pct >= 0 ? '+' : ''
+                              }}{{ getTraderTotalPnl(trader).pct.toFixed(1) }}%
                             </span>
                           </div>
                         </TableCell>
@@ -1466,12 +1637,27 @@
                 <div v-else class="overflow-x-auto rounded-2xl border border-border bg-black">
                   <Table class="w-full text-left text-xs font-mono min-w-[500px] bg-black">
                     <TableHeader>
-                      <TableRow class="border-b border-border text-muted-foreground bg-black hover:bg-black">
-                        <TableHead class="py-2.5 px-3 font-semibold w-10 text-muted-foreground bg-black">#</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">Holder</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold w-44 text-muted-foreground bg-black">Share</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Balance</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-right w-8 text-muted-foreground bg-black"></TableHead>
+                      <TableRow
+                        class="border-b border-border text-muted-foreground bg-black hover:bg-black"
+                      >
+                        <TableHead
+                          class="py-2.5 px-3 font-semibold w-10 text-muted-foreground bg-black"
+                          >#</TableHead
+                        >
+                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black"
+                          >Holder</TableHead
+                        >
+                        <TableHead
+                          class="py-2.5 px-3 font-semibold w-44 text-muted-foreground bg-black"
+                          >Share</TableHead
+                        >
+                        <TableHead
+                          class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+                          >Balance</TableHead
+                        >
+                        <TableHead
+                          class="py-2.5 px-3 font-semibold text-right w-8 text-muted-foreground bg-black"
+                        ></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1505,12 +1691,19 @@
                               <Copy v-else class="w-3 h-3" />
                             </button>
                             <TraderTagBadge
-                              v-if="holder.address.toLowerCase() === currentToken.deployer?.toLowerCase()"
+                              v-if="
+                                holder.address.toLowerCase() ===
+                                currentToken.deployer?.toLowerCase()
+                              "
                               tag="dev"
                               size="sm"
                             />
                             <TraderTagBadge
-                              v-else-if="holder.percent >= 3.0 && holder.address.toLowerCase() !== ROBINHOOD_CHAIN.contracts.locker.toLowerCase()"
+                              v-else-if="
+                                holder.percent >= 3.0 &&
+                                holder.address.toLowerCase() !==
+                                  ROBINHOOD_CHAIN.contracts.locker.toLowerCase()
+                              "
                               tag="whale"
                               size="sm"
                             />
@@ -1847,8 +2040,12 @@
               <div class="flex items-center gap-2 min-w-0">
                 <AlertCircle class="w-4 h-4 shrink-0" />
                 <span class="text-[11px] font-sans">
-                  Anti-spam: You must hold at least $1.00 worth of ${{ currentToken.symbol }} to comment.
-                  <span v-if="userHoldingUsd > 0" class="block font-mono text-[10px] text-amber-400">
+                  Anti-spam: You must hold at least $1.00 worth of ${{ currentToken.symbol }} to
+                  comment.
+                  <span
+                    v-if="userHoldingUsd > 0"
+                    class="block font-mono text-[10px] text-amber-400"
+                  >
                     (Current: ${{ userHoldingUsd.toFixed(2) }})
                   </span>
                 </span>
@@ -2181,7 +2378,7 @@ const userHoldingUsd = computed(() => {
 const MIN_HOLD_USD_FOR_COMMENT = 1.0;
 const hasSufficientHoldingForComment = computed(() => {
   if (isCreator.value) return true;
-  return userHoldingUsd.value >= (MIN_HOLD_USD_FOR_COMMENT * 0.95);
+  return userHoldingUsd.value >= MIN_HOLD_USD_FOR_COMMENT * 0.95;
 });
 
 function openCallModal(): void {
@@ -2581,9 +2778,7 @@ const swapSuccessTx = ref<string | null>(null);
 const copied = ref(false);
 const copiedId = ref<string | null>(null);
 const tokenLoading = ref(true);
-const activeBottomTab = ref<'callouts' | 'trades' | 'top-traders' | 'holders' | 'about'>(
-  'trades',
-);
+const activeBottomTab = ref<'callouts' | 'trades' | 'top-traders' | 'holders' | 'about'>('trades');
 
 const priceFlash = ref<'up' | 'down' | null>(null);
 let flashTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -3011,7 +3206,8 @@ function getTraderRoleTag(trader: {
   if (trader.walletTag === 'kol') return 'kol';
   if (trader.walletTag === 'bundled') return 'bundled';
   if (trader.walletTag === 'first_buy') return 'first_buy';
-  if (trader.walletTag === 'smart_degen' || trader.walletTag === 'smart_money') return 'smart_money';
+  if (trader.walletTag === 'smart_degen' || trader.walletTag === 'smart_money')
+    return 'smart_money';
   return 'smart_money';
 }
 
@@ -3021,7 +3217,10 @@ function getTraderPositionTag(status?: string): TraderTagType {
   return 'buy_more';
 }
 
-function getTraderHoldingUsd(trader: { holdingAmountTokens?: string; positionStatus?: string }): number {
+function getTraderHoldingUsd(trader: {
+  holdingAmountTokens?: string;
+  positionStatus?: string;
+}): number {
   if (trader.positionStatus === 'clean_all') return 0;
   const tokens = parseFloat(trader.holdingAmountTokens || '0');
   const price = currentMarketData.value.priceUsd || 0;

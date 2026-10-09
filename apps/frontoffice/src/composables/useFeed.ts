@@ -48,7 +48,10 @@ export function useFeed() {
     }
   }
 
-  async function fetchUserPosts(userAddress: string, viewerAddress?: string): Promise<FeedCalloutItem[]> {
+  async function fetchUserPosts(
+    userAddress: string,
+    viewerAddress?: string,
+  ): Promise<FeedCalloutItem[]> {
     try {
       const params = new URLSearchParams();
       if (viewerAddress) params.set('viewer', viewerAddress);
@@ -57,7 +60,8 @@ export function useFeed() {
         `/api/feed?${params.toString()}`,
       );
       if (Array.isArray(res)) return res;
-      if (res && typeof res === 'object' && 'data' in res && Array.isArray(res.data)) return res.data;
+      if (res && typeof res === 'object' && 'data' in res && Array.isArray(res.data))
+        return res.data;
       return [];
     } catch {
       return [];

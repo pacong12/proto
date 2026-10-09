@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-  TooltipProvider,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 
 export type TraderTagType =
   | 'whale'
@@ -88,14 +83,19 @@ const tagMetaMap: Record<TraderTagType, TagMeta> = {
 };
 
 const resolvedTag = computed<TraderTagType>(() => {
-  const norm = String(props.tag || '').toLowerCase().trim().replace(/[-\s]/g, '_');
+  const norm = String(props.tag || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[-\s]/g, '_');
   if (norm === 'dev' || norm === 'developer' || norm === 'creator') return 'dev';
   if (norm === 'whale') return 'whale';
-  if (norm === 'first_buy' || norm === 'first' || norm === '1st_buy' || norm === '1st') return 'first_buy';
+  if (norm === 'first_buy' || norm === 'first' || norm === '1st_buy' || norm === '1st')
+    return 'first_buy';
   if (norm === 'sniper' || norm === 'sniped') return 'sniper';
   if (norm === 'smart' || norm === 'smart_money' || norm === 'smart_degen') return 'smart_money';
   if (norm === 'kol' || norm === 'caller' || norm === 'influencer') return 'kol';
-  if (norm === 'sell_all' || norm === 'clean_all' || norm === 'dumped' || norm === 'exited') return 'sell_all';
+  if (norm === 'sell_all' || norm === 'clean_all' || norm === 'dumped' || norm === 'exited')
+    return 'sell_all';
   if (norm === 'sell_partial' || norm === 'partial') return 'sell_partial';
   if (norm === 'buy_more' || norm === 'dca' || norm === 'holding') return 'buy_more';
   if (norm === 'bundled' || norm === 'bundle') return 'bundled';
@@ -162,8 +162,12 @@ const iconSizeClass = computed(() => {
             stroke-linejoin="round"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09" />
-            <path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z" />
+            <path
+              d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09"
+            />
+            <path
+              d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z"
+            />
             <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05" />
           </svg>
 
@@ -195,7 +199,9 @@ const iconSizeClass = computed(() => {
             stroke-linejoin="round"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <path d="M12 18V5m3 8a4.17 4.17 0 0 1-3-4a4.17 4.17 0 0 1-3 4m8.598-6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5" />
+            <path
+              d="M12 18V5m3 8a4.17 4.17 0 0 1-3-4a4.17 4.17 0 0 1-3 4m8.598-6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5"
+            />
             <path d="M17.997 5.125a4 4 0 0 1 2.526 5.77" />
             <path d="M18 18a4 4 0 0 0 2-7.464" />
             <path d="M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517" />
@@ -215,7 +221,9 @@ const iconSizeClass = computed(() => {
             stroke-linejoin="round"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <path d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" />
+            <path
+              d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"
+            />
             <path d="M6 14a12 12 0 0 0 2.4 7.2a2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14M8 6v8" />
           </svg>
 
@@ -280,14 +288,21 @@ const iconSizeClass = computed(() => {
             stroke-linejoin="round"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <path d="m12.83 2.18 8 4.36a1 1 0 0 1 0 1.76l-8 4.36a2 2 0 0 1-1.66 0l-8-4.36a1 1 0 0 1 0-1.76l8-4.36a2 2 0 0 1 1.66 0M2 12l8.83 4.81a2 2 0 0 0 1.66 0L21 12M2 17l8.83 4.81a2 2 0 0 0 1.66 0L21 17" />
+            <path
+              d="m12.83 2.18 8 4.36a1 1 0 0 1 0 1.76l-8 4.36a2 2 0 0 1-1.66 0l-8-4.36a1 1 0 0 1 0-1.76l8-4.36a2 2 0 0 1 1.66 0M2 12l8.83 4.81a2 2 0 0 0 1.66 0L21 12M2 17l8.83 4.81a2 2 0 0 0 1.66 0L21 17"
+            />
           </svg>
         </span>
       </TooltipTrigger>
 
-      <TooltipContent side="top" class="z-50 max-w-xs font-mono text-xs p-2 bg-black border border-border text-foreground shadow-2xl">
+      <TooltipContent
+        side="top"
+        class="z-50 max-w-xs font-mono text-xs p-2 bg-black border border-border text-foreground shadow-2xl"
+      >
         <p class="font-bold text-foreground">{{ meta.title }}</p>
-        <p class="text-[11px] text-muted-foreground font-sans mt-0.5 leading-snug">{{ meta.description }}</p>
+        <p class="text-[11px] text-muted-foreground font-sans mt-0.5 leading-snug">
+          {{ meta.description }}
+        </p>
       </TooltipContent>
     </Tooltip>
   </TooltipProvider>

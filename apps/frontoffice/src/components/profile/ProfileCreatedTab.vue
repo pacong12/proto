@@ -36,7 +36,11 @@
               class="rounded-lg border border-border"
             />
             <img
-              :src="getTokenNetwork(token.address).chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+              :src="
+                getTokenNetwork(token.address).chainId === 5042
+                  ? '/chains/arc.svg'
+                  : '/chains/robinhood.svg'
+              "
               :alt="getTokenNetwork(token.address).name"
               :title="getTokenNetwork(token.address).name"
               class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-black bg-black object-contain shadow-xs"
@@ -59,7 +63,9 @@
             <p class="text-xs font-mono text-muted-foreground mt-0.5 break-all sm:break-normal">
               {{ token.address }}
             </p>
-            <div class="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap font-mono">
+            <div
+              class="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap font-mono"
+            >
               <span>
                 Accrued:
                 <strong class="text-foreground font-mono">

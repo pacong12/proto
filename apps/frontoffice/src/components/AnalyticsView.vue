@@ -1,7 +1,9 @@
 <template>
   <div class="space-y-6 sm:space-y-7 max-w-7xl mx-auto font-sans">
     <!-- Top Header Ribbon -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-border/80">
+    <div
+      class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-border/80"
+    >
       <div>
         <div class="flex items-center gap-2.5">
           <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-foreground font-mono">
@@ -100,7 +102,11 @@
             <button
               type="button"
               class="p-1 rounded-lg transition cursor-pointer text-xs"
-              :class="chartMode === 'area' ? 'bg-card text-foreground shadow-2xs' : 'text-muted-foreground hover:text-foreground'"
+              :class="
+                chartMode === 'area'
+                  ? 'bg-card text-foreground shadow-2xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              "
               title="Smooth Area Chart"
               @click="chartMode = 'area'"
             >
@@ -109,7 +115,11 @@
             <button
               type="button"
               class="p-1 rounded-lg transition cursor-pointer text-xs"
-              :class="chartMode === 'bar' ? 'bg-card text-foreground shadow-2xs' : 'text-muted-foreground hover:text-foreground'"
+              :class="
+                chartMode === 'bar'
+                  ? 'bg-card text-foreground shadow-2xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              "
               title="Bar Chart"
               @click="chartMode = 'bar'"
             >
@@ -123,7 +133,13 @@
       <ShadcnAreaChart
         :data="currentChartData"
         :height="240"
-        :color="activeMetric === 'volume' ? 'var(--chart-2)' : activeMetric === 'launches' ? 'var(--chart-1)' : 'var(--chart-3)'"
+        :color="
+          activeMetric === 'volume'
+            ? 'var(--chart-2)'
+            : activeMetric === 'launches'
+              ? 'var(--chart-1)'
+              : 'var(--chart-3)'
+        "
         :gradient-id="`shadcn-${activeMetric}-gradient`"
         :is-currency="activeMetric !== 'launches'"
         :unit="activeMetric === 'launches' ? 'tokens' : ''"
@@ -138,9 +154,7 @@
           <Activity class="w-4 h-4 text-emerald-500" />
           {{ t('totalTradingVolume') }}
         </p>
-        <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">
-          ${{ formattedVolume }}
-        </p>
+        <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">${{ formattedVolume }}</p>
         <p class="text-[11px] text-muted-foreground mt-1 font-sans">
           Indexed 24h DEX & curve swaps
         </p>
@@ -154,9 +168,7 @@
         <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">
           {{ totalTokens.toLocaleString() }}
         </p>
-        <p class="text-[11px] text-muted-foreground mt-1 font-sans">
-          Fair launch tokens created
-        </p>
+        <p class="text-[11px] text-muted-foreground mt-1 font-sans">Fair launch tokens created</p>
       </Card>
 
       <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
@@ -164,12 +176,8 @@
           <Flame class="w-4 h-4 text-rose-500" />
           {{ t('protocolBuybackAndBurn') }}
         </p>
-        <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">
-          ${{ formattedBuyback }}
-        </p>
-        <p class="text-[11px] text-muted-foreground mt-1 font-sans">
-          Deflationary buybacks burned
-        </p>
+        <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">${{ formattedBuyback }}</p>
+        <p class="text-[11px] text-muted-foreground mt-1 font-sans">Deflationary buybacks burned</p>
       </Card>
 
       <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
@@ -180,9 +188,7 @@
         <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">
           {{ estimatedProtocolFees }} {{ activeNetwork.nativeCurrency.symbol }}
         </p>
-        <p class="text-[11px] text-muted-foreground mt-1 font-sans">
-          100% protocol fee retention
-        </p>
+        <p class="text-[11px] text-muted-foreground mt-1 font-sans">100% protocol fee retention</p>
       </Card>
     </div>
 
@@ -190,7 +196,9 @@
     <Card class="p-5 sm:p-7 rounded-3xl border border-border bg-card space-y-4 shadow-sm">
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-base sm:text-lg font-bold text-foreground font-mono flex items-center gap-2">
+          <h2
+            class="text-base sm:text-lg font-bold text-foreground font-mono flex items-center gap-2"
+          >
             <Zap class="w-4 h-4 text-amber-500 fill-amber-500" />
             <span>Top Coins on {{ activeNetwork.name }}</span>
           </h2>
@@ -204,26 +212,42 @@
           size="sm"
           class="h-8 px-3 text-xs font-mono font-bold rounded-xl cursor-pointer"
         >
-          <RouterLink to="/launchpad">
-            View All Coins
-          </RouterLink>
+          <RouterLink to="/launchpad"> View All Coins </RouterLink>
         </Button>
       </div>
 
-      <div v-if="topCoins.length === 0" class="py-12 text-center text-muted-foreground font-mono text-xs">
+      <div
+        v-if="topCoins.length === 0"
+        class="py-12 text-center text-muted-foreground font-mono text-xs"
+      >
         No active tokens indexed on this network yet.
       </div>
 
       <div v-else class="rounded-2xl border border-border/80 overflow-hidden bg-black">
         <Table class="text-xs font-mono bg-black">
           <TableHeader>
-            <TableRow class="border-b border-border/70 text-muted-foreground text-[11px] uppercase bg-black hover:bg-black">
-              <TableHead class="py-3 px-3 font-semibold w-12 text-center text-muted-foreground bg-black">#</TableHead>
-              <TableHead class="py-3 px-4 font-semibold text-muted-foreground bg-black">TOKEN</TableHead>
-              <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black">MARKET CAP</TableHead>
-              <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black">24H VOLUME</TableHead>
-              <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black">24H CHANGE</TableHead>
-              <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black">ACTION</TableHead>
+            <TableRow
+              class="border-b border-border/70 text-muted-foreground text-[11px] uppercase bg-black hover:bg-black"
+            >
+              <TableHead
+                class="py-3 px-3 font-semibold w-12 text-center text-muted-foreground bg-black"
+                >#</TableHead
+              >
+              <TableHead class="py-3 px-4 font-semibold text-muted-foreground bg-black"
+                >TOKEN</TableHead
+              >
+              <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black"
+                >MARKET CAP</TableHead
+              >
+              <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black"
+                >24H VOLUME</TableHead
+              >
+              <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black"
+                >24H CHANGE</TableHead
+              >
+              <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black"
+                >ACTION</TableHead
+              >
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -247,7 +271,9 @@
                     class="rounded-full border border-border/70 shrink-0"
                   />
                   <div>
-                    <span class="font-bold text-sm text-foreground group-hover:text-primary transition block">
+                    <span
+                      class="font-bold text-sm text-foreground group-hover:text-primary transition block"
+                    >
                       ${{ tItem.token.symbol }}
                     </span>
                     <span class="text-[11px] text-muted-foreground font-sans truncate block">
@@ -260,13 +286,22 @@
                 ${{ formatCompactUsd(tItem.marketData?.marketCapUsd || 4200) }}
               </TableCell>
               <TableCell class="py-3.5 px-4 text-right font-medium text-foreground">
-                {{ (tItem.marketData?.volume24hUsd ?? 0) > 0 ? formatCompactUsd(tItem.marketData?.volume24hUsd) : '$0' }}
+                {{
+                  (tItem.marketData?.volume24hUsd ?? 0) > 0
+                    ? formatCompactUsd(tItem.marketData?.volume24hUsd)
+                    : '$0'
+                }}
               </TableCell>
               <TableCell
                 class="py-3.5 px-4 text-right font-bold"
-                :class="(tItem.marketData?.priceChange24h ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                :class="
+                  (tItem.marketData?.priceChange24h ?? 0) >= 0
+                    ? 'text-emerald-500'
+                    : 'text-rose-500'
+                "
               >
-                {{ (tItem.marketData?.priceChange24h ?? 0) >= 0 ? '+' : '' }}{{ (tItem.marketData?.priceChange24h ?? 0).toFixed(1) }}%
+                {{ (tItem.marketData?.priceChange24h ?? 0) >= 0 ? '+' : ''
+                }}{{ (tItem.marketData?.priceChange24h ?? 0).toFixed(1) }}%
               </TableCell>
               <TableCell class="py-3.5 px-4 text-right">
                 <Button
@@ -496,7 +531,11 @@ const currentFigureSubtitle = computed(() => {
 // Top coins on this network
 const topCoins = computed(() => {
   return [...networkTokens.value]
-    .sort((a, b) => (b.marketData?.volume24hUsd ?? 0) - (a.marketData?.volume24hUsd ?? 0) || (b.marketData?.marketCapUsd ?? 0) - (a.marketData?.marketCapUsd ?? 0))
+    .sort(
+      (a, b) =>
+        (b.marketData?.volume24hUsd ?? 0) - (a.marketData?.volume24hUsd ?? 0) ||
+        (b.marketData?.marketCapUsd ?? 0) - (a.marketData?.marketCapUsd ?? 0),
+    )
     .slice(0, 5);
 });
 

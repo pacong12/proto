@@ -115,29 +115,17 @@
               variant="line"
               class="flex sm:inline-flex w-full sm:w-auto overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0 font-mono text-xs"
             >
-              <TabsTrigger
-                value="posts"
-              >
-                Posts & Calls ({{ userPosts.length }})
-              </TabsTrigger>
-              <TabsTrigger
-                value="created"
-              >
+              <TabsTrigger value="posts"> Posts & Calls ({{ userPosts.length }}) </TabsTrigger>
+              <TabsTrigger value="created">
                 {{ t('createdTokens') }} ({{ myLaunches.length }})
               </TabsTrigger>
-              <TabsTrigger
-                value="portfolio"
-              >
+              <TabsTrigger value="portfolio">
                 {{ t('portfolio') }} ({{ portfolioPositions.length }})
               </TabsTrigger>
-              <TabsTrigger
-                value="dividends"
-              >
+              <TabsTrigger value="dividends">
                 {{ t('dividendsAndVesting') }}
               </TabsTrigger>
-              <TabsTrigger
-                value="activity"
-              >
+              <TabsTrigger value="activity">
                 {{ t('activity') }} ({{ userActivities.length }})
               </TabsTrigger>
             </TabsList>
@@ -312,7 +300,12 @@ const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const { account, activeNetwork, openWallet } = useWallet();
-const { claimFees, setFeeRedirect, loading: loadingLaunchpad, error: launchpadError } = useLaunchpad();
+const {
+  claimFees,
+  setFeeRedirect,
+  loading: loadingLaunchpad,
+  error: launchpadError,
+} = useLaunchpad();
 const { fetchUserPosts, toggleLike, toggleRepost } = useFeed();
 const { tokens: allTokens, fetchTokens, getTokenNetwork } = useTokenStore();
 
@@ -765,7 +758,10 @@ async function fetchUserPositionsAndActivity() {
     const tokensList: Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }> =
       tokensJson?.success && Array.isArray(tokensJson.data) ? tokensJson.data : [];
 
-    const tokenMap = new Map<string, { token: LaunchedTokenEntity; marketData?: TokenMarketData | null }>();
+    const tokenMap = new Map<
+      string,
+      { token: LaunchedTokenEntity; marketData?: TokenMarketData | null }
+    >();
     for (const item of allTokens.value) {
       tokenMap.set(item.token.address.toLowerCase(), item);
     }
@@ -778,7 +774,7 @@ async function fetchUserPositionsAndActivity() {
       for (const tr of tradesJson.data) {
         if (tr.trader && tr.trader.toLowerCase() !== target) continue;
         const tMeta = tokenMap.get(tr.tokenAddress.toLowerCase());
-        const sym = tMeta ? tMeta.token.symbol : (tr.tokenSymbol || 'TOKEN');
+        const sym = tMeta ? tMeta.token.symbol : tr.tokenSymbol || 'TOKEN';
         activities.push({
           txHash: tr.transactionHash,
           isBuy: tr.isBuy,

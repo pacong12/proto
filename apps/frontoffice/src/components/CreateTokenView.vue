@@ -291,7 +291,8 @@
             <div class="flex items-center gap-2">
               <span class="font-bold font-mono">{{ t('advanced') }}</span>
               <span class="text-[10px] text-muted-foreground font-mono">
-                (Buy: {{ form.buyTax }}% &middot; Sell: {{ form.sellTax }}% &middot; Split: {{ totalSplit }}/100%)
+                (Buy: {{ form.buyTax }}% &middot; Sell: {{ form.sellTax }}% &middot; Split:
+                {{ totalSplit }}/100%)
               </span>
             </div>
             <ChevronDown
@@ -326,7 +327,8 @@
                 class="h-10 text-xs font-mono rounded-xl bg-muted/20"
               />
               <p class="text-[10px] text-muted-foreground font-mono">
-                Recipient for fee revenue and tax collections. Defaults to {{ account ? shortenAddress(account) : 'deployer' }}.
+                Recipient for fee revenue and tax collections. Defaults to
+                {{ account ? shortenAddress(account) : 'deployer' }}.
               </p>
             </div>
 
@@ -1514,7 +1516,9 @@ async function handleLaunch() {
   }
   if (totalSplit.value !== 100) {
     advancedOpen.value = true;
-    toast.error(`Revenue split allocation must equal 100% (currently ${totalSplit.value}%). Please auto-balance or adjust.`);
+    toast.error(
+      `Revenue split allocation must equal 100% (currently ${totalSplit.value}%). Please auto-balance or adjust.`,
+    );
     return;
   }
   isModalOpen.value = true;

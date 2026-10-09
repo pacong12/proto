@@ -19,7 +19,16 @@ describe('FeedView Component & Callouts Logic', () => {
   });
 
   it('validates useFeed composable initializes with clean state', () => {
-    const { callouts, loading, error, activeFilter, searchQuery, currentPage, toggleRepost, recordView } = useFeed();
+    const {
+      callouts,
+      loading,
+      error,
+      activeFilter,
+      searchQuery,
+      currentPage,
+      toggleRepost,
+      recordView,
+    } = useFeed();
     expect(callouts.value).toEqual([]);
     expect(loading.value).toBe(false);
     expect(error.value).toBeNull();

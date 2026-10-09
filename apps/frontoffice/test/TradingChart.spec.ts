@@ -12,7 +12,9 @@ describe('TradingChart & Candlestick Component', () => {
     expect(SimpleChart).toBeDefined();
     expect(ShadcnAreaChart).toBeDefined();
     expect(ShadcnTradingLineChart).toBeDefined();
-    expect(ShadcnTradingLineChart.__name || ShadcnTradingLineChart.name).toBe('ShadcnTradingLineChart');
+    expect(ShadcnTradingLineChart.__name || ShadcnTradingLineChart.name).toBe(
+      'ShadcnTradingLineChart',
+    );
   });
 
   it('verifies TradingChart component definition and props', () => {

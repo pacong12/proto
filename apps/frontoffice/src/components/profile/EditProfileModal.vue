@@ -16,7 +16,8 @@
       <div
         class="p-2.5 rounded-xl border border-border bg-muted/40 text-[11px] text-muted-foreground font-mono"
       >
-        Profile metadata and media are pinned to decentralized IPFS and stored for this wallet address.
+        Profile metadata and media are pinned to decentralized IPFS and stored for this wallet
+        address.
       </div>
 
       <form @submit.prevent="handleSave" class="space-y-4 py-2 font-sans">
@@ -151,7 +152,9 @@
               <div class="flex items-center gap-1.5 min-w-0">
                 <span
                   class="text-xs font-bold text-foreground truncate block flex-1 min-w-0 font-mono"
-                  :title="avatarFileName || (form.avatarUrl ? 'Custom Photo' : 'Upload from device')"
+                  :title="
+                    avatarFileName || (form.avatarUrl ? 'Custom Photo' : 'Upload from device')
+                  "
                 >
                   {{ avatarFileName || (form.avatarUrl ? 'Custom Photo' : 'Upload from device') }}
                 </span>
@@ -267,7 +270,10 @@
             class="cursor-pointer font-bold font-mono rounded-xl px-5"
             :disabled="isUploadingAvatar || isUploadingBanner"
           >
-            <Loader2 v-if="isUploadingAvatar || isUploadingBanner" class="w-3.5 h-3.5 mr-1.5 animate-spin" />
+            <Loader2
+              v-if="isUploadingAvatar || isUploadingBanner"
+              class="w-3.5 h-3.5 mr-1.5 animate-spin"
+            />
             <span>Save Profile</span>
           </Button>
         </DialogFooter>
@@ -405,7 +411,9 @@ async function processAvatarFile(file: File) {
     });
     if (res.ok) {
       const data = await res.json();
-      const ipfsUri = data.data?.cid ? `ipfs://${data.data.cid}` : data.data?.uri || data.data?.url || '';
+      const ipfsUri = data.data?.cid
+        ? `ipfs://${data.data.cid}`
+        : data.data?.uri || data.data?.url || '';
       if (ipfsUri) {
         form.value.avatarUrl = ipfsUri;
       }
@@ -472,7 +480,9 @@ async function processBannerFile(file: File) {
     });
     if (res.ok) {
       const data = await res.json();
-      const ipfsUri = data.data?.cid ? `ipfs://${data.data.cid}` : data.data?.uri || data.data?.url || '';
+      const ipfsUri = data.data?.cid
+        ? `ipfs://${data.data.cid}`
+        : data.data?.uri || data.data?.url || '';
       if (ipfsUri) {
         form.value.bannerUrl = ipfsUri;
       }

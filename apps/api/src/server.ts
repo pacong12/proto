@@ -38,6 +38,7 @@ import {
   TransactionIntent,
   type TokenCommentEntity,
   type TradeEventEntity,
+  type TokenTaxConfig,
   getUserIdentity,
   ok,
   err,
@@ -646,9 +647,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       address = resolved;
     }
 
-    const positions = repository.getUserPositions
-      ? await repository.getUserPositions(address)
-      : [];
+    const positions = repository.getUserPositions ? await repository.getUserPositions(address) : [];
     return replyJson(ok(positions), 200);
   }
 
@@ -747,7 +746,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         if (existing) {
           await repository.save({
             ...existing,
-            taxConfig: body.taxConfig as any,
+            taxConfig: body.taxConfig as TokenTaxConfig,
           });
         }
       }
@@ -888,7 +887,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       const imageUrl = body.imageUrl ? String(body.imageUrl).trim() : undefined;
       const targetMcap = body.targetMcap ? String(body.targetMcap).trim() : undefined;
       const parentId = body.parentId ? String(body.parentId).trim() : undefined;
-      const quotedCalloutId = body.quotedCalloutId ? String(body.quotedCalloutId).trim() : undefined;
+      const quotedCalloutId = body.quotedCalloutId
+        ? String(body.quotedCalloutId).trim()
+        : undefined;
       let positionUsd =
         typeof body.positionUsd === 'number' && !isNaN(body.positionUsd)
           ? body.positionUsd
@@ -990,7 +991,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
                   if (totalTokens > 0) {
                     supplyPercent = Math.min(100, Math.max(0, (tokenCount / totalTokens) * 100));
                   }
-                } catch {}
+                } catch {
+                  /* ignore invalid totalSupply string */
+                }
               }
             }
           } catch {
@@ -1098,9 +1101,12 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   if (viewMatch && req.method === 'POST') {
     const commentId = viewMatch[2];
     const viewsCount = (await repository.incrementCommentViews?.(commentId)) ?? 1;
-    return new Response(safeStringify({ success: true, data: { viewsCount }, timestamp: Date.now() }), {
-      headers,
-    });
+    return new Response(
+      safeStringify({ success: true, data: { viewsCount }, timestamp: Date.now() }),
+      {
+        headers,
+      },
+    );
   }
 
   // GET /api/callouts/:calloutId or /api/comments/:commentId -- get full thread & detail

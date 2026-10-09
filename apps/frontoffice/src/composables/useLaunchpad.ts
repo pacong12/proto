@@ -217,8 +217,14 @@ export function useLaunchpad() {
           (params.sellTaxPercent && params.sellTaxPercent > 0)
         ) {
           try {
-            const buyTaxBps = Math.min(1000, Math.max(0, Math.round((params.buyTaxPercent || 0) * 100)));
-            const sellTaxBps = Math.min(1000, Math.max(0, Math.round((params.sellTaxPercent || 0) * 100)));
+            const buyTaxBps = Math.min(
+              1000,
+              Math.max(0, Math.round((params.buyTaxPercent || 0) * 100)),
+            );
+            const sellTaxBps = Math.min(
+              1000,
+              Math.max(0, Math.round((params.sellTaxPercent || 0) * 100)),
+            );
             const recipient = (params.creatorTaxWallet as `0x${string}`) || account;
             const taxHash = await walletClient.writeContract({
               address: tokenAddr,
@@ -241,14 +247,22 @@ export function useLaunchpad() {
             body: JSON.stringify({
               txHash: hash,
               taxConfig: {
-                buyTaxBps: Math.min(1000, Math.max(0, Math.round((params.buyTaxPercent || 0) * 100))),
-                sellTaxBps: Math.min(1000, Math.max(0, Math.round((params.sellTaxPercent || 0) * 100))),
+                buyTaxBps: Math.min(
+                  1000,
+                  Math.max(0, Math.round((params.buyTaxPercent || 0) * 100)),
+                ),
+                sellTaxBps: Math.min(
+                  1000,
+                  Math.max(0, Math.round((params.sellTaxPercent || 0) * 100)),
+                ),
                 taxRecipient: (params.creatorTaxWallet as `0x${string}`) || account,
                 revenueSplit: params.revenueSplit,
               },
             }),
           });
-        } catch {}
+        } catch {
+          /* backend sync is best-effort */
+        }
 
         return {
           tokenAddress: tokenAddr,
@@ -487,8 +501,14 @@ export function useLaunchpad() {
           (params.sellTaxPercent && params.sellTaxPercent > 0)
         ) {
           try {
-            const buyTaxBps = Math.min(1000, Math.max(0, Math.round((params.buyTaxPercent || 0) * 100)));
-            const sellTaxBps = Math.min(1000, Math.max(0, Math.round((params.sellTaxPercent || 0) * 100)));
+            const buyTaxBps = Math.min(
+              1000,
+              Math.max(0, Math.round((params.buyTaxPercent || 0) * 100)),
+            );
+            const sellTaxBps = Math.min(
+              1000,
+              Math.max(0, Math.round((params.sellTaxPercent || 0) * 100)),
+            );
             const recipient = (params.creatorTaxWallet as `0x${string}`) || account;
             const taxHash = await walletClient.writeContract({
               address: tokenAddr,
@@ -511,14 +531,22 @@ export function useLaunchpad() {
             body: JSON.stringify({
               txHash: hash,
               taxConfig: {
-                buyTaxBps: Math.min(1000, Math.max(0, Math.round((params.buyTaxPercent || 0) * 100))),
-                sellTaxBps: Math.min(1000, Math.max(0, Math.round((params.sellTaxPercent || 0) * 100))),
+                buyTaxBps: Math.min(
+                  1000,
+                  Math.max(0, Math.round((params.buyTaxPercent || 0) * 100)),
+                ),
+                sellTaxBps: Math.min(
+                  1000,
+                  Math.max(0, Math.round((params.sellTaxPercent || 0) * 100)),
+                ),
                 taxRecipient: (params.creatorTaxWallet as `0x${string}`) || account,
                 revenueSplit: params.revenueSplit,
               },
             }),
           });
-        } catch {}
+        } catch {
+          /* backend sync is best-effort */
+        }
 
         return {
           tokenAddress: tokenAddr,

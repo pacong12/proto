@@ -10,7 +10,12 @@
         <PieChart class="w-6 h-6" />
       </template>
       <template #action>
-        <Button as-child size="sm" variant="outline" class="rounded-xl px-4 font-mono font-bold cursor-pointer">
+        <Button
+          as-child
+          size="sm"
+          variant="outline"
+          class="rounded-xl px-4 font-mono font-bold cursor-pointer"
+        >
           <RouterLink to="/launchpad">Explore Tokens</RouterLink>
         </Button>
       </template>
@@ -19,11 +24,21 @@
       <Table class="text-xs font-mono bg-black">
         <TableHeader>
           <TableRow class="border-b border-border text-muted-foreground bg-black hover:bg-black">
-            <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">Asset</TableHead>
-            <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Balance</TableHead>
-            <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Price (USD)</TableHead>
-            <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Value (USD)</TableHead>
-            <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Action</TableHead>
+            <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black"
+              >Asset</TableHead
+            >
+            <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+              >Balance</TableHead
+            >
+            <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+              >Price (USD)</TableHead
+            >
+            <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+              >Value (USD)</TableHead
+            >
+            <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+              >Action</TableHead
+            >
           </TableRow>
         </TableHeader>
         <TableBody>

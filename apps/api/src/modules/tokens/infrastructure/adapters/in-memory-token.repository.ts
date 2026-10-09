@@ -146,16 +146,18 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
     return null;
   }
 
-  async getUserPositions(address: string): Promise<Array<{
-    tokenAddress: string;
-    name: string;
-    symbol: string;
-    logo?: string;
-    balance: number;
-    balanceFormatted: string;
-    priceUsd: number;
-    valueUsd: number;
-  }>> {
+  async getUserPositions(address: string): Promise<
+    Array<{
+      tokenAddress: string;
+      name: string;
+      symbol: string;
+      logo?: string;
+      balance: number;
+      balanceFormatted: string;
+      priceUsd: number;
+      valueUsd: number;
+    }>
+  > {
     const trades = await this.getTradesByTrader(address, 500);
     const byToken = new Map<string, { buy: number; sell: number }>();
     for (const tr of trades) {
@@ -244,7 +246,7 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
     viewerAddress?: string,
     authorAddress?: string,
   ): Promise<import('@proto/shared-types').FeedCalloutItem[]> {
-    let allComments: import('@proto/shared-types').FeedCalloutItem[] = [];
+    const allComments: import('@proto/shared-types').FeedCalloutItem[] = [];
     const viewer = viewerAddress?.toLowerCase();
 
     for (const [tokenAddr, list] of this.comments.entries()) {
@@ -257,7 +259,9 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
         allComments.push({
           ...c,
           isLikedByViewer: viewer ? (this.commentLikes.get(c.id)?.has(viewer) ?? false) : false,
-          isRepostedByViewer: viewer ? (this.commentReposts.get(c.id)?.has(viewer) ?? false) : false,
+          isRepostedByViewer: viewer
+            ? (this.commentReposts.get(c.id)?.has(viewer) ?? false)
+            : false,
           viewsCount: this.commentViews.get(c.id) ?? c.viewsCount ?? 0,
           tokenName: token?.name,
           tokenSymbol: token?.symbol,
@@ -291,7 +295,9 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
         return {
           ...match,
           isLikedByViewer: viewer ? (this.commentLikes.get(match.id)?.has(viewer) ?? false) : false,
-          isRepostedByViewer: viewer ? (this.commentReposts.get(match.id)?.has(viewer) ?? false) : false,
+          isRepostedByViewer: viewer
+            ? (this.commentReposts.get(match.id)?.has(viewer) ?? false)
+            : false,
           tokenName: token?.name,
           tokenSymbol: token?.symbol,
           tokenLogo: token?.logo,

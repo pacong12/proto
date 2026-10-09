@@ -57,7 +57,9 @@
             @click="copyPostLink"
           >
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+              <div
+                class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center"
+              >
                 <Check v-if="copiedLink" class="w-4 h-4 text-primary" />
                 <Link2 v-else class="w-4 h-4" />
               </div>
@@ -80,7 +82,9 @@
             @click="shareOnX"
           >
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg bg-foreground text-background flex items-center justify-center">
+              <div
+                class="w-8 h-8 rounded-lg bg-foreground text-background flex items-center justify-center"
+              >
                 <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
                   <path
                     d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
@@ -105,7 +109,9 @@
             @click="showPnlCard = !showPnlCard"
           >
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+              <div
+                class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center"
+              >
                 <TrendingUp class="w-4 h-4" />
               </div>
               <div>
@@ -129,11 +135,17 @@
             class="p-4 rounded-2xl bg-card border-2 border-primary/40 text-card-foreground shadow-xl space-y-3 relative overflow-hidden"
           >
             <!-- Background Glow Accent (#FC4198) -->
-            <div class="absolute -top-12 -right-12 w-32 h-32 bg-primary/15 rounded-full blur-2xl pointer-events-none" />
+            <div
+              class="absolute -top-12 -right-12 w-32 h-32 bg-primary/15 rounded-full blur-2xl pointer-events-none"
+            />
 
             <!-- Brand Header -->
-            <div class="flex items-center justify-between relative z-10 border-b border-border pb-2">
-              <div class="flex items-center gap-1.5 font-bold tracking-wider text-[11px] text-primary">
+            <div
+              class="flex items-center justify-between relative z-10 border-b border-border pb-2"
+            >
+              <div
+                class="flex items-center gap-1.5 font-bold tracking-wider text-[11px] text-primary"
+              >
                 <Sparkles class="w-3.5 h-3.5" />
                 <span>PROTO ALPHA SIGNAL</span>
               </div>
@@ -164,7 +176,9 @@
               </div>
 
               <div class="text-right">
-                <span class="text-[9px] text-muted-foreground block uppercase font-bold">Target MC</span>
+                <span class="text-[9px] text-muted-foreground block uppercase font-bold"
+                  >Target MC</span
+                >
                 <span class="text-xs font-black text-primary">
                   {{ call.targetMcap || 'Moon' }}
                 </span>
@@ -172,9 +186,13 @@
             </div>
 
             <!-- Position & Profit Stats Ribbon -->
-            <div class="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-muted/50 border border-border relative z-10 font-mono">
+            <div
+              class="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-muted/50 border border-border relative z-10 font-mono"
+            >
               <div>
-                <span class="text-[9px] text-muted-foreground block uppercase">Caller Position</span>
+                <span class="text-[9px] text-muted-foreground block uppercase"
+                  >Caller Position</span
+                >
                 <span class="text-xs font-bold text-foreground">
                   {{ call.positionUsd ? `$${call.positionUsd.toFixed(1)}` : 'Verified Holder' }}
                 </span>
@@ -191,7 +209,9 @@
             </div>
 
             <!-- Card Footer -->
-            <div class="flex items-center justify-between text-[10px] text-muted-foreground relative z-10 pt-1 font-mono">
+            <div
+              class="flex items-center justify-between text-[10px] text-muted-foreground relative z-10 pt-1 font-mono"
+            >
               <span>by {{ shortenAddress(call.authorAddress, 6, 4) }}</span>
               <span>proto.it/launchpad</span>
             </div>

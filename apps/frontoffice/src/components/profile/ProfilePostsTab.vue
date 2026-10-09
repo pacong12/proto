@@ -32,17 +32,17 @@
         <!-- Card Header: Author + Verified + Time -->
         <div class="flex items-center justify-between gap-2">
           <div class="flex items-center gap-2.5 min-w-0">
-            <Jazzicon :address="call.authorAddress" :size="32" class="rounded-full ring-1 ring-border shrink-0" />
+            <Jazzicon
+              :address="call.authorAddress"
+              :size="32"
+              class="rounded-full ring-1 ring-border shrink-0"
+            />
             <div class="min-w-0 leading-tight">
               <div class="flex items-center gap-1.5">
                 <span class="font-bold text-foreground text-xs truncate">
                   {{ getUserIdentity(call.authorAddress).displayName }}
                 </span>
-                <TraderTagBadge
-                  v-if="isWhaleCaller(call)"
-                  tag="whale"
-                  size="sm"
-                />
+                <TraderTagBadge v-if="isWhaleCaller(call)" tag="whale" size="sm" />
               </div>
               <span class="text-[10px] text-muted-foreground">Verified Caller</span>
             </div>
@@ -54,7 +54,9 @@
         </div>
 
         <!-- Post Content with Cashtags -->
-        <p class="text-xs sm:text-sm leading-relaxed text-foreground font-sans font-medium whitespace-pre-wrap break-words">
+        <p
+          class="text-xs sm:text-sm leading-relaxed text-foreground font-sans font-medium whitespace-pre-wrap break-words"
+        >
           <CashtagText :text="call.content" :tokens="allTokens" />
         </p>
 
@@ -64,7 +66,11 @@
           class="rounded-xl overflow-hidden border border-border/60 max-h-72 cursor-pointer bg-black"
           @click="openImage(call.imageUrl)"
         >
-          <img :src="resolveSafeUrl(call.imageUrl)" alt="Attachment" class="w-full h-full object-cover" />
+          <img
+            :src="resolveSafeUrl(call.imageUrl)"
+            alt="Attachment"
+            class="w-full h-full object-cover"
+          />
         </div>
 
         <!-- Embedded Mini Coin Widget Card -->
@@ -83,7 +89,11 @@
                 class="rounded-full border border-border shrink-0"
               />
               <img
-                :src="getTokenNetwork(call.tokenAddress).chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+                :src="
+                  getTokenNetwork(call.tokenAddress).chainId === 5042
+                    ? '/chains/arc.svg'
+                    : '/chains/robinhood.svg'
+                "
                 :alt="getTokenNetwork(call.tokenAddress).name"
                 :title="getTokenNetwork(call.tokenAddress).name"
                 class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-black bg-black object-contain shadow-xs"
@@ -96,7 +106,12 @@
                 </span>
               </div>
               <div class="flex items-center gap-2 text-[10px] text-muted-foreground">
-                <span>MC: <strong class="text-foreground">${{ formatCompactUsd(call.tokenMarketCapUsd ?? 4200) }}</strong></span>
+                <span
+                  >MC:
+                  <strong class="text-foreground"
+                    >${{ formatCompactUsd(call.tokenMarketCapUsd ?? 4200) }}</strong
+                  ></span
+                >
                 <span v-if="call.targetMcap" class="text-emerald-500 font-bold truncate">
                   Target: {{ call.targetMcap }}
                 </span>
@@ -106,7 +121,9 @@
 
           <div class="flex items-center gap-3 shrink-0 text-right">
             <div>
-              <span class="text-[9px] text-muted-foreground block uppercase font-bold">Position</span>
+              <span class="text-[9px] text-muted-foreground block uppercase font-bold"
+                >Position</span
+              >
               <span class="text-xs font-bold text-foreground">
                 {{ call.positionUsd ? `$${call.positionUsd.toFixed(1)}` : 'Holding' }}
               </span>
@@ -122,7 +139,9 @@
         </div>
 
         <!-- Post Actions Bar -->
-        <div class="flex items-center justify-between pt-2 border-t border-border/60 text-xs text-muted-foreground font-mono">
+        <div
+          class="flex items-center justify-between pt-2 border-t border-border/60 text-xs text-muted-foreground font-mono"
+        >
           <!-- 1. Reply -->
           <button
             type="button"
@@ -172,7 +191,10 @@
           </button>
 
           <!-- 4. Total Views -->
-          <div class="flex items-center gap-1 text-muted-foreground select-none cursor-default" title="Views">
+          <div
+            class="flex items-center gap-1 text-muted-foreground select-none cursor-default"
+            title="Views"
+          >
             <BarChart2 class="w-3.5 h-3.5 opacity-70" />
             <span>{{ formatViews(call.viewsCount || 0) }}</span>
           </div>

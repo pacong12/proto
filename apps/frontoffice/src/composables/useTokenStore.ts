@@ -128,10 +128,14 @@ export function useTokenStore() {
   /**
    * Resolves the network config for any token entity or contract address.
    */
-  function getTokenNetwork(tokenOrAddress: string | LaunchedTokenEntity | null | undefined): NetworkConfig {
+  function getTokenNetwork(
+    tokenOrAddress: string | LaunchedTokenEntity | null | undefined,
+  ): NetworkConfig {
     if (!tokenOrAddress) return ROBINHOOD_NETWORK;
     if (typeof tokenOrAddress === 'string') {
-      const match = tokens.value.find((t) => t.token.address.toLowerCase() === tokenOrAddress.toLowerCase());
+      const match = tokens.value.find(
+        (t) => t.token.address.toLowerCase() === tokenOrAddress.toLowerCase(),
+      );
       if (match) return isArcToken(match.token) ? ARC_NETWORK : ROBINHOOD_NETWORK;
       return ROBINHOOD_NETWORK;
     }

@@ -6,7 +6,9 @@
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <Coins class="w-4 h-4 text-primary" />
-            <h3 class="text-sm font-bold text-foreground font-mono">Holder Fee Sharing Dividends</h3>
+            <h3 class="text-sm font-bold text-foreground font-mono">
+              Holder Fee Sharing Dividends
+            </h3>
           </div>
           <Button
             v-if="isOwnProfile"
@@ -23,7 +25,8 @@
         </div>
 
         <p class="text-xs text-muted-foreground font-sans leading-relaxed">
-          Pro-rata trading fee rewards accrued from tokens you hold that enabled Holder Fee Sharing. 100% on-chain and non-custodial.
+          Pro-rata trading fee rewards accrued from tokens you hold that enabled Holder Fee Sharing.
+          100% on-chain and non-custodial.
         </p>
 
         <!-- Total + Claim All -->
@@ -111,7 +114,8 @@
         </div>
 
         <p class="text-xs text-muted-foreground font-sans leading-relaxed">
-          Smart contract vault for locked founder, advisor, and team token allocations. Tokens release linearly per second.
+          Smart contract vault for locked founder, advisor, and team token allocations. Tokens
+          release linearly per second.
         </p>
 
         <div class="flex items-end justify-between pt-3 border-t border-border/60">

@@ -64,9 +64,7 @@ const parsedParts = computed<Part[]>(() => {
 
     const fullTag = match[0];
     const symbol = fullTag.slice(1).toUpperCase();
-    const matchedToken = props.tokens?.find(
-      (t) => t.token.symbol.toUpperCase() === symbol,
-    );
+    const matchedToken = props.tokens?.find((t) => t.token.symbol.toUpperCase() === symbol);
 
     parts.push({
       text: fullTag,

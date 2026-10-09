@@ -298,7 +298,9 @@ function formatDisplayPrice(val: number): string {
 </script>
 
 <template>
-  <div class="shadcn-trading-chart relative w-full select-none bg-black rounded-2xl overflow-hidden">
+  <div
+    class="shadcn-trading-chart relative w-full select-none bg-black rounded-2xl overflow-hidden"
+  >
     <!-- Empty state -->
     <div
       v-if="data.length === 0"
@@ -484,7 +486,9 @@ function formatDisplayPrice(val: number): string {
       >
         <div class="space-y-1">
           <!-- Time Row -->
-          <div class="text-[10px] text-muted-foreground font-semibold flex items-center justify-between gap-3">
+          <div
+            class="text-[10px] text-muted-foreground font-semibold flex items-center justify-between gap-3"
+          >
             <span>{{ formatFullTime(activePoint.data.timestamp) }}</span>
             <Badge
               v-if="activePoint.data.open > 0"
@@ -492,7 +496,12 @@ function formatDisplayPrice(val: number): string {
               class="px-1 py-0 h-3.5 text-[9px] font-mono font-bold leading-none"
             >
               {{ activePoint.data.close >= activePoint.data.open ? '+' : ''
-              }}{{ (((activePoint.data.close - activePoint.data.open) / activePoint.data.open) * 100).toFixed(2) }}%
+              }}{{
+                (
+                  ((activePoint.data.close - activePoint.data.open) / activePoint.data.open) *
+                  100
+                ).toFixed(2)
+              }}%
             </Badge>
           </div>
 
@@ -505,7 +514,10 @@ function formatDisplayPrice(val: number): string {
           </div>
 
           <!-- Volume Row (if present) -->
-          <div v-if="activePoint.data.volume > 0" class="flex items-baseline justify-between gap-4 pt-0.5 border-t border-border/50 text-[10px]">
+          <div
+            v-if="activePoint.data.volume > 0"
+            class="flex items-baseline justify-between gap-4 pt-0.5 border-t border-border/50 text-[10px]"
+          >
             <span class="text-muted-foreground">Volume:</span>
             <span class="text-foreground font-semibold">
               ${{ formatCompactUsd(activePoint.data.volume) }}

@@ -613,7 +613,11 @@ function copyAddress() {
                 size="sm"
                 variant="outline"
                 class="h-7 px-2.5 text-[11px] font-mono font-bold cursor-pointer border-border"
-                :class="activeNetwork.chainId === net.chainId ? 'bg-primary text-primary-foreground border-primary' : ''"
+                :class="
+                  activeNetwork.chainId === net.chainId
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : ''
+                "
                 @click="handleChainSelect(net.chainId)"
               >
                 {{ net.chainId === 5042 ? 'Arc' : 'Robinhood' }}

@@ -29,7 +29,11 @@
           <!-- Author Header -->
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2.5 min-w-0">
-              <Jazzicon :address="targetCall.authorAddress" :size="30" class="shrink-0 rounded-full" />
+              <Jazzicon
+                :address="targetCall.authorAddress"
+                :size="30"
+                class="shrink-0 rounded-full"
+              />
               <div class="min-w-0 leading-tight">
                 <span class="font-bold text-foreground text-xs hover:underline cursor-pointer">
                   {{ shortenAddress(targetCall.authorAddress, 6, 4) }}
@@ -43,7 +47,9 @@
           </div>
 
           <!-- Root Content with Cashtags -->
-          <p class="text-xs sm:text-sm leading-relaxed text-foreground font-sans font-medium whitespace-pre-wrap break-words">
+          <p
+            class="text-xs sm:text-sm leading-relaxed text-foreground font-sans font-medium whitespace-pre-wrap break-words"
+          >
             <CashtagText :text="targetCall.content" :tokens="tokens" />
           </p>
 
@@ -77,7 +83,11 @@
             class="rounded-xl overflow-hidden border border-border bg-muted/20 max-h-60 cursor-pointer"
             @click="openImage(targetCall.imageUrl)"
           >
-            <img :src="resolveSafeUrl(targetCall.imageUrl)" alt="Attachment" class="w-full h-full object-cover" />
+            <img
+              :src="resolveSafeUrl(targetCall.imageUrl)"
+              alt="Attachment"
+              class="w-full h-full object-cover"
+            />
           </div>
 
           <!-- Mini Coin Widget Card -->
@@ -104,7 +114,9 @@
             </div>
 
             <div class="text-right shrink-0">
-              <span class="text-[9px] text-muted-foreground block uppercase font-bold">Position</span>
+              <span class="text-[9px] text-muted-foreground block uppercase font-bold"
+                >Position</span
+              >
               <span class="text-xs font-bold text-foreground">
                 {{ targetCall.positionUsd ? `$${targetCall.positionUsd.toFixed(1)}` : 'Holding' }}
               </span>
@@ -112,7 +124,9 @@
           </div>
 
           <!-- Action bar -->
-          <div class="flex items-center justify-between pt-2 border-t border-border/60 text-[11px] text-muted-foreground">
+          <div
+            class="flex items-center justify-between pt-2 border-t border-border/60 text-[11px] text-muted-foreground"
+          >
             <button
               type="button"
               class="flex items-center gap-1.5 hover:text-rose-500 transition cursor-pointer"
@@ -197,7 +211,9 @@
               </span>
             </div>
 
-            <p class="text-xs text-foreground font-sans font-medium whitespace-pre-wrap break-words">
+            <p
+              class="text-xs text-foreground font-sans font-medium whitespace-pre-wrap break-words"
+            >
               <CashtagText :text="rep.content" :tokens="tokens" />
             </p>
 
@@ -259,16 +275,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import {
-  MessageCircle,
-  X,
-  Heart,
-  Repeat,
-  Share2,
-  BarChart2,
-  Send,
-  Loader2,
-} from 'lucide-vue-next';
+import { MessageCircle, X, Heart, Repeat, Share2, BarChart2, Send, Loader2 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
 import { Jazzicon } from '@/components/ui/avatar';

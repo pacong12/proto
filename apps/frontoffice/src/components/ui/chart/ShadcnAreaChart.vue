@@ -181,7 +181,10 @@ function formatValue(val: number): string {
   <div class="shadcn-chart-root w-full select-none font-sans">
     <div class="relative w-full overflow-hidden">
       <!-- Empty state -->
-      <div v-if="data.length === 0" class="flex items-center justify-center h-48 text-muted-foreground font-mono text-xs">
+      <div
+        v-if="data.length === 0"
+        class="flex items-center justify-center h-48 text-muted-foreground font-mono text-xs"
+      >
         No chart data available for this range.
       </div>
 

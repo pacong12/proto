@@ -17,9 +17,7 @@
           variant="default"
           class="h-8 px-4 font-bold text-xs cursor-pointer font-mono rounded-xl mt-2"
         >
-          <RouterLink to="/launchpad">
-            Explore Tokens & Trade
-          </RouterLink>
+          <RouterLink to="/launchpad"> Explore Tokens & Trade </RouterLink>
         </Button>
       </template>
     </Empty>
@@ -28,13 +26,31 @@
     <div v-else class="rounded-2xl border border-border bg-black overflow-hidden shadow-xs">
       <Table class="text-xs font-mono bg-black">
         <TableHeader>
-          <TableRow class="border-b border-border/80 bg-black text-muted-foreground text-[11px] hover:bg-black">
-            <TableHead class="py-3 px-4 font-semibold uppercase text-muted-foreground bg-black">Action</TableHead>
-            <TableHead class="py-3 px-4 font-semibold uppercase text-muted-foreground bg-black">Token</TableHead>
-            <TableHead class="py-3 px-4 font-semibold text-right uppercase text-muted-foreground bg-black">Amount ({{ nativeCurrencySymbol }})</TableHead>
-            <TableHead class="py-3 px-4 font-semibold text-right uppercase text-muted-foreground bg-black">Tokens</TableHead>
-            <TableHead class="py-3 px-4 font-semibold text-right uppercase text-muted-foreground bg-black">Time</TableHead>
-            <TableHead class="py-3 px-4 font-semibold text-right uppercase text-muted-foreground bg-black">Tx Hash</TableHead>
+          <TableRow
+            class="border-b border-border/80 bg-black text-muted-foreground text-[11px] hover:bg-black"
+          >
+            <TableHead class="py-3 px-4 font-semibold uppercase text-muted-foreground bg-black"
+              >Action</TableHead
+            >
+            <TableHead class="py-3 px-4 font-semibold uppercase text-muted-foreground bg-black"
+              >Token</TableHead
+            >
+            <TableHead
+              class="py-3 px-4 font-semibold text-right uppercase text-muted-foreground bg-black"
+              >Amount ({{ nativeCurrencySymbol }})</TableHead
+            >
+            <TableHead
+              class="py-3 px-4 font-semibold text-right uppercase text-muted-foreground bg-black"
+              >Tokens</TableHead
+            >
+            <TableHead
+              class="py-3 px-4 font-semibold text-right uppercase text-muted-foreground bg-black"
+              >Time</TableHead
+            >
+            <TableHead
+              class="py-3 px-4 font-semibold text-right uppercase text-muted-foreground bg-black"
+              >Tx Hash</TableHead
+            >
           </TableRow>
         </TableHeader>
         <TableBody>
