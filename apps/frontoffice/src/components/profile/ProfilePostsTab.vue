@@ -38,13 +38,11 @@
                 <span class="font-bold text-foreground text-xs truncate">
                   {{ getUserIdentity(call.authorAddress).displayName }}
                 </span>
-                <Badge
+                <TraderTagBadge
                   v-if="isWhaleCaller(call)"
-                  variant="outline"
-                  class="text-[9px] px-1.5 py-0 h-4 bg-indigo-500/10 text-indigo-400 border-indigo-500/30 font-bold"
-                >
-                  WHALE
-                </Badge>
+                  tag="whale"
+                  size="sm"
+                />
               </div>
               <span class="text-[10px] text-muted-foreground">Verified Caller</span>
             </div>
@@ -214,7 +212,7 @@ import {
   Share2,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Badge, TraderTagBadge } from '@/components/ui/badge';
 import { Empty } from '@/components/ui/empty';
 import { getUserIdentity } from '@/lib/username';
 import {

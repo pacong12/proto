@@ -329,15 +329,12 @@
                       {{ getUserIdentity(call.authorAddress).displayName }}
                     </span>
 
-                    <!-- Caller Whale Badge -->
-                    <Badge
+                    <!-- Caller Whale Badge with GMGN/Web3Icons SVG -->
+                    <TraderTagBadge
                       v-if="isWhaleCaller(call)"
-                      variant="outline"
-                      class="text-[9px] px-1.5 py-0 h-4 bg-indigo-500/10 text-indigo-400 border-indigo-500/30 font-bold font-mono"
-                      title="Whale Caller: Holds >= 1.0% token supply or >= $500 position"
-                    >
-                      WHALE{{ call.supplyPercent ? ` (${call.supplyPercent.toFixed(1)}%)` : '' }}
-                    </Badge>
+                      tag="whale"
+                      size="sm"
+                    />
                   </div>
                   <span class="text-[10px] text-muted-foreground font-mono">
                     Verified Caller
@@ -707,7 +704,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { Badge, TraderTagBadge } from '@/components/ui/badge';
 import { Pagination } from '@/components/ui/pagination';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {

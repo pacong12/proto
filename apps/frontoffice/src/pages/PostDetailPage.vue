@@ -73,6 +73,11 @@
                 >
                   {{ getUserIdentity(post.authorAddress).displayName }}
                 </span>
+                <TraderTagBadge
+                  v-if="isWhaleCaller(post)"
+                  tag="whale"
+                  size="sm"
+                />
               </div>
               <span class="text-xs text-muted-foreground font-mono block truncate">
                 @{{ getUserIdentity(post.authorAddress).name }} &middot; {{ shortenAddress(post.authorAddress, 6, 4) }}
@@ -392,7 +397,7 @@ import {
   BarChart2,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Badge, TraderTagBadge } from '@/components/ui/badge';
 import { Empty } from '@/components/ui/empty';
 import {
   DropdownMenu,
@@ -405,7 +410,7 @@ import { Jazzicon } from '@/components/ui/avatar';
 import { CashtagText, ShareModal, QuoteModal } from '@/components/feed';
 import { useWallet } from '@/composables/useWallet';
 import { useTokenStore } from '@/composables/useTokenStore';
-import { useFeed } from '@/composables/useFeed';
+import { useFeed, isWhaleCaller } from '@/composables/useFeed';
 import { shortenAddress, formatRelativeTime, formatCompactUsd } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { toast } from '@/components/ui/sonner';
