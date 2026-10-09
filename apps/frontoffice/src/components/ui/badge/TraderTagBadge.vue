@@ -1,5 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from '@/components/ui/tooltip';
 
 export type TraderTagType =
   | 'whale'
@@ -15,67 +21,69 @@ export type TraderTagType =
 
 interface Props {
   tag: TraderTagType | string;
-  label?: string;
-  size?: 'sm' | 'md';
-  iconOnly?: boolean;
+  size?: 'sm' | 'md' | 'lg';
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  label: '',
   size: 'sm',
-  iconOnly: false,
 });
 
-const configMap: Record<TraderTagType, { label: string; tooltip: string; classes: string }> = {
-  dev: {
-    label: 'Dev',
-    tooltip: 'Token Creator / Developer',
-    classes: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
-  },
+interface TagMeta {
+  title: string;
+  description: string;
+  colorClass: string;
+}
+
+const tagMetaMap: Record<TraderTagType, TagMeta> = {
   whale: {
-    label: 'Whale',
-    tooltip: 'Whale Trader (High volume / large holding)',
-    classes: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',
+    title: 'Whale',
+    description: 'High volume trader (Holding >= 1.0% supply or >= $2,000 position)',
+    colorClass: 'text-cyan-400 hover:text-cyan-300',
+  },
+  dev: {
+    title: 'Token Creator',
+    description: 'Developer / Deployer of this token',
+    colorClass: 'text-amber-400 hover:text-amber-300',
   },
   first_buy: {
-    label: '1st Buy',
-    tooltip: 'First buyer on token bonding curve',
-    classes: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
+    title: 'First Buyer',
+    description: 'Earliest buyer after token creation on bonding curve',
+    colorClass: 'text-yellow-400 hover:text-yellow-300',
   },
   sniper: {
-    label: 'Sniper',
-    tooltip: 'Block 0/1 Sniper Bot or Fast Buyer',
-    classes: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+    title: 'Sniper',
+    description: 'Fast buyer / bot entering within block 0/1 of launch',
+    colorClass: 'text-rose-400 hover:text-rose-300',
   },
   smart_money: {
-    label: 'Smart',
-    tooltip: 'Smart Money (High realized profit / smart degen)',
-    classes: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+    title: 'Smart Money',
+    description: 'High realized profit trader ($500+ net gain)',
+    colorClass: 'text-emerald-400 hover:text-emerald-300',
   },
   kol: {
-    label: 'KOL',
-    tooltip: 'Key Opinion Leader / Verified Caller',
-    classes: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
+    title: 'KOL / Influencer',
+    description: 'Key Opinion Leader / Verified community caller',
+    colorClass: 'text-purple-400 hover:text-purple-300',
   },
   sell_all: {
-    label: 'Sold All',
-    tooltip: 'Exited position 100% (Clean all)',
-    classes: 'bg-red-500/15 text-red-400 border-red-500/30',
+    title: 'Sold All',
+    description: 'Exited position completely (100% sold / clean all)',
+    colorClass: 'text-red-500 hover:text-red-400',
   },
   sell_partial: {
-    label: 'Sold Part',
-    tooltip: 'Took partial profit (Holding balance remains)',
-    classes: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
+    title: 'Sold Partial',
+    description: 'Took partial profits (Token balance still held)',
+    colorClass: 'text-orange-400 hover:text-orange-300',
   },
   buy_more: {
-    label: 'Buy More',
-    tooltip: 'Accumulating / DCA into position',
-    classes: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+    title: 'Accumulating',
+    description: 'Holding position and buying more (DCA)',
+    colorClass: 'text-emerald-400 hover:text-emerald-300',
   },
   bundled: {
-    label: 'Bundled',
-    tooltip: 'Bundled launch transaction / Multi-wallet group',
-    classes: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30',
+    title: 'Bundled',
+    description: 'Part of a bundled multi-wallet launch transaction',
+    colorClass: 'text-indigo-400 hover:text-indigo-300',
   },
 };
 
@@ -94,189 +102,193 @@ const resolvedTag = computed<TraderTagType>(() => {
   return 'smart_money';
 });
 
-const currentConfig = computed(() => {
-  const cfg = configMap[resolvedTag.value] || configMap.smart_money;
-  return {
-    label: props.label || cfg.label,
-    tooltip: cfg.tooltip,
-    classes: cfg.classes,
-  };
+const meta = computed(() => tagMetaMap[resolvedTag.value] || tagMetaMap.smart_money);
+
+const iconSizeClass = computed(() => {
+  if (props.size === 'lg') return 'w-5 h-5';
+  if (props.size === 'md') return 'w-4 h-4';
+  return 'w-3.5 h-3.5';
 });
 </script>
 
 <template>
-  <span
-    class="inline-flex items-center gap-1 rounded-md border font-mono font-bold uppercase tracking-wider select-none shrink-0"
-    :class="[
-      currentConfig.classes,
-      size === 'sm' ? 'px-1.5 py-0.5 text-[9px] h-4.5' : 'px-2 py-0.5 text-[10px] h-5',
-    ]"
-    :title="currentConfig.tooltip"
-  >
-    <!-- 1. DEV ICON (Code Brackets terminal) -->
-    <svg
-      v-if="resolvedTag === 'dev'"
-      class="w-3 h-3 shrink-0"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2.2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <polyline points="16 18 22 12 16 6" />
-      <polyline points="8 6 2 12 8 18" />
-    </svg>
+  <TooltipProvider :delay-duration="100">
+    <Tooltip>
+      <TooltipTrigger as-child>
+        <span
+          class="inline-flex items-center justify-center cursor-help shrink-0 transition-transform hover:scale-110 select-none p-0.5"
+          :class="meta.colorClass"
+          :aria-label="meta.title"
+        >
+          <!-- 1. WHALE (Official Web3Icons WHALE.svg: https://www.web3icons.io/tokens/WHALE) -->
+          <svg
+            v-if="resolvedTag === 'whale'"
+            :class="iconSizeClass"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M3 12q0-.285.017-.563H3V9.75h15.96a7.315 7.315 0 0 0-7.523-5.041V3.017A9 9 0 0 1 21 12a9 9 0 0 1-18 0m1.687 0q0-.285.022-.563h1.129a6.188 6.188 0 0 0 6.715 6.726v-1.697a4.5 4.5 0 0 1-5.018-5.029H19.29q.021.278.021.563a7.312 7.312 0 1 1-14.625 0M12 15.375a1.125 1.125 0 1 0 0-2.25a1.125 1.125 0 0 0 0 2.25"
+              clip-rule="evenodd"
+            />
+          </svg>
 
-    <!-- 2. WHALE ICON (Web3 Icons Whale Vector) -->
-    <svg
-      v-else-if="resolvedTag === 'whale'"
-      class="w-3 h-3 shrink-0"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-    >
-      <path
-        fill-rule="evenodd"
-        d="M2.5 13.5C2.5 9.2 6 5.8 10.5 5.8C14 5.8 17 7.8 18.5 10.2C20 9.2 21.5 8.8 22.5 8.8C22 10.8 21 12.2 19.5 13.2C20 15.2 18.5 17.8 14.5 17.8C9 17.8 2.5 16.5 2.5 13.5ZM11.5 9C10.9 9 10.5 9.4 10.5 10C10.5 10.6 10.9 11 11.5 11C12.1 11 12.5 10.6 12.5 10C12.5 9.4 12.1 9 11.5 9Z"
-        clip-rule="evenodd"
-      />
-      <circle cx="8" cy="3.5" r="1" />
-      <circle cx="10.5" cy="2.5" r="1" />
-      <circle cx="13" cy="3.5" r="1" />
-    </svg>
+          <!-- 2. DEV (Official Lucide Code-2) -->
+          <svg
+            v-else-if="resolvedTag === 'dev'"
+            :class="iconSizeClass"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path d="m18 16 4-4-4-4M6 8l-4 4 4 4m8.5-12-5 16" />
+          </svg>
 
-    <!-- 3. FIRST BUY ICON (Rocket / 1st Lightning) -->
-    <svg
-      v-else-if="resolvedTag === 'first_buy'"
-      class="w-3 h-3 shrink-0"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2.2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-    </svg>
+          <!-- 3. FIRST BUY (Official Lucide Rocket) -->
+          <svg
+            v-else-if="resolvedTag === 'first_buy'"
+            :class="iconSizeClass"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09" />
+            <path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z" />
+            <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05" />
+          </svg>
 
-    <!-- 4. SNIPER ICON (Crosshair Target Scope) -->
-    <svg
-      v-else-if="resolvedTag === 'sniper'"
-      class="w-3 h-3 shrink-0"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2.2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <circle cx="12" cy="12" r="9" />
-      <line x1="12" y1="2" x2="12" y2="6" />
-      <line x1="12" y1="18" x2="12" y2="22" />
-      <line x1="2" y1="12" x2="6" y2="12" />
-      <line x1="18" y1="12" x2="22" y2="12" />
-      <circle cx="12" cy="12" r="2" fill="currentColor" />
-    </svg>
+          <!-- 4. SNIPER (Official Lucide Crosshair) -->
+          <svg
+            v-else-if="resolvedTag === 'sniper'"
+            :class="iconSizeClass"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M22 12h-4M6 12H2m10-6V2m0 20v-4" />
+          </svg>
 
-    <!-- 5. SMART MONEY ICON (Diamond Gem) -->
-    <svg
-      v-else-if="resolvedTag === 'smart_money'"
-      class="w-3 h-3 shrink-0"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2.2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <path d="M6 3h12l4 6-10 12L2 9z" />
-      <path d="M2 9h20" />
-      <path d="M10 3l2 6 2-6" />
-      <path d="M6 3l6 18" />
-      <path d="M18 3l-6 18" />
-    </svg>
+          <!-- 5. SMART MONEY (Official Lucide Brain) -->
+          <svg
+            v-else-if="resolvedTag === 'smart_money'"
+            :class="iconSizeClass"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path d="M12 18V5m3 8a4.17 4.17 0 0 1-3-4a4.17 4.17 0 0 1-3 4m8.598-6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5" />
+            <path d="M17.997 5.125a4 4 0 0 1 2.526 5.77" />
+            <path d="M18 18a4 4 0 0 0 2-7.464" />
+            <path d="M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517" />
+            <path d="M6 18a4 4 0 0 1-2-7.464" />
+            <path d="M6.003 5.125a4 4 0 0 0-2.526 5.77" />
+          </svg>
 
-    <!-- 6. KOL / CALLER ICON (Megaphone) -->
-    <svg
-      v-else-if="resolvedTag === 'kol'"
-      class="w-3 h-3 shrink-0"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2.2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <path d="m3 11 18-5v12L3 13v-2z" />
-      <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
-    </svg>
+          <!-- 6. KOL (Official Lucide Megaphone) -->
+          <svg
+            v-else-if="resolvedTag === 'kol'"
+            :class="iconSizeClass"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" />
+            <path d="M6 14a12 12 0 0 0 2.4 7.2a2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14M8 6v8" />
+          </svg>
 
-    <!-- 7. SELL ALL ICON (Exit Door / Dump Out) -->
-    <svg
-      v-else-if="resolvedTag === 'sell_all'"
-      class="w-3 h-3 shrink-0"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2.2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-      <polyline points="16 17 21 12 16 7" />
-      <line x1="21" y1="12" x2="9" y2="12" />
-    </svg>
+          <!-- 7. SELL ALL (Official Lucide Log-Out) -->
+          <svg
+            v-else-if="resolvedTag === 'sell_all'"
+            :class="iconSizeClass"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path d="m16 17 5-5-5-5m5 5H9m0 9H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          </svg>
 
-    <!-- 8. SELL PARTIAL ICON (Scissors / Split Profit) -->
-    <svg
-      v-else-if="resolvedTag === 'sell_partial'"
-      class="w-3 h-3 shrink-0"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2.2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <circle cx="6" cy="6" r="3" />
-      <circle cx="6" cy="18" r="3" />
-      <line x1="20" y1="4" x2="8.12" y2="15.88" />
-      <line x1="14.47" y1="14.48" x2="20" y2="20" />
-      <line x1="8.12" y1="8.12" x2="12" y2="12" />
-    </svg>
+          <!-- 8. SELL PARTIAL (Official Lucide Scissors) -->
+          <svg
+            v-else-if="resolvedTag === 'sell_partial'"
+            :class="iconSizeClass"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle cx="6" cy="6" r="3" />
+            <path d="M8.12 8.12 12 12m8-8L8.12 15.88" />
+            <circle cx="6" cy="18" r="3" />
+            <path d="m14.8 14.8 5.2 5.2" />
+          </svg>
 
-    <!-- 9. BUY MORE ICON (Accumulate / Cart Plus) -->
-    <svg
-      v-else-if="resolvedTag === 'buy_more'"
-      class="w-3 h-3 shrink-0"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2.2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <line x1="12" y1="5" x2="12" y2="19" />
-      <line x1="5" y1="12" x2="19" y2="12" />
-    </svg>
+          <!-- 9. BUY MORE (Official Lucide Plus-Circle) -->
+          <svg
+            v-else-if="resolvedTag === 'buy_more'"
+            :class="iconSizeClass"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M8 12h8m-4-4v8" />
+          </svg>
 
-    <!-- 10. BUNDLED ICON (Multi-Wallet 3-Layer Bundle) -->
-    <svg
-      v-else-if="resolvedTag === 'bundled'"
-      class="w-3 h-3 shrink-0"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2.2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <path d="m16.5 9.4 4.5-2.8L12 2 3 6.6l4.5 2.8" />
-      <path d="M3 12.5 12 17l9-4.5" />
-      <path d="M3 17.5 12 22l9-4.5" />
-    </svg>
+          <!-- 10. BUNDLED (Official Lucide Layers) -->
+          <svg
+            v-else-if="resolvedTag === 'bundled'"
+            :class="iconSizeClass"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path d="m12.83 2.18 8 4.36a1 1 0 0 1 0 1.76l-8 4.36a2 2 0 0 1-1.66 0l-8-4.36a1 1 0 0 1 0-1.76l8-4.36a2 2 0 0 1 1.66 0M2 12l8.83 4.81a2 2 0 0 0 1.66 0L21 12M2 17l8.83 4.81a2 2 0 0 0 1.66 0L21 17" />
+          </svg>
+        </span>
+      </TooltipTrigger>
 
-    <!-- Text Label -->
-    <span v-if="!iconOnly">{{ currentConfig.label }}</span>
-  </span>
+      <TooltipContent side="top" class="z-50 max-w-xs font-mono text-xs p-2 bg-black border border-border text-foreground shadow-2xl">
+        <p class="font-bold text-foreground">{{ meta.title }}</p>
+        <p class="text-[11px] text-muted-foreground font-sans mt-0.5 leading-snug">{{ meta.description }}</p>
+      </TooltipContent>
+    </Tooltip>
+  </TooltipProvider>
 </template>
