@@ -19,14 +19,22 @@
           @click="navigateToToken(tItem.token.address)"
         >
           <span class="text-[10px] text-muted-foreground font-bold">#{{ idx + 1 }}</span>
-          <OptimizedImage
-            :src="tItem.token.logo"
-            :alt="tItem.token.name"
-            :fallback-text="tItem.token.symbol"
-            :width="18"
-            :height="18"
-            class="rounded-full shrink-0 border border-border/50"
-          />
+          <div class="relative shrink-0">
+            <OptimizedImage
+              :src="tItem.token.logo"
+              :alt="tItem.token.name"
+              :fallback-text="tItem.token.symbol"
+              :width="18"
+              :height="18"
+              class="rounded-full shrink-0 border border-border/50"
+            />
+            <img
+              :src="getChainIcon(tItem.token.address)"
+              :alt="getChainName(tItem.token.address)"
+              :title="getChainName(tItem.token.address)"
+              class="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full border border-black bg-black object-contain shadow-xs"
+            />
+          </div>
           <span class="font-black text-foreground group-hover:text-primary transition-colors">
             ${{ tItem.token.symbol }}
           </span>
@@ -49,9 +57,9 @@
            LEFT: Social Alpha Stream (Hybrid Timeline)
            ============================================================ -->
       <div class="space-y-4 min-w-0">
-        <!-- 1. Feed Filter Tabs Bar (Shadcn Tabs variant="line") -->
-        <div class="px-3 pt-2 pb-0 border-b border-border bg-card/60 rounded-2xl">
-          <Tabs v-model="activeFilter" class="w-full">
+        <!-- 1. Feed Filter Tabs Bar + Multi-Chain Filter -->
+        <div class="px-3 pt-2 pb-1 border-b border-border bg-card/60 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <Tabs v-model="activeFilter" class="w-auto">
             <TabsList variant="line" class="font-mono text-xs overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0">
               <TabsTrigger
                 v-for="flt in filterTabs"
@@ -63,6 +71,29 @@
               </TabsTrigger>
             </TabsList>
           </Tabs>
+
+          <!-- Chain Filter (All Chains default / Robinhood / Arc) -->
+          <div class="flex items-center gap-1 font-mono text-[11px] self-end sm:self-auto pb-1 sm:pb-0">
+            <button
+              v-for="chainOpt in [
+                { key: 'all', label: 'All Chains' },
+                { key: 'robinhood', label: 'Robinhood', icon: '/chains/robinhood.svg' },
+                { key: 'arc', label: 'Arc', icon: '/chains/arc.svg' },
+              ]"
+              :key="chainOpt.key"
+              type="button"
+              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border transition cursor-pointer select-none"
+              :class="
+                selectedChainFilter === chainOpt.key
+                  ? 'bg-foreground text-background border-foreground font-bold'
+                  : 'bg-black border border-border text-muted-foreground hover:text-foreground'
+              "
+              @click="setChainFilter(chainOpt.key as any)"
+            >
+              <img v-if="chainOpt.icon" :src="chainOpt.icon" class="w-3 h-3 object-contain rounded-full" />
+              <span>{{ chainOpt.label }}</span>
+            </button>
+          </div>
         </div>
 
         <!-- 2. Hybrid Alpha Terminal Composer -->
@@ -393,16 +424,26 @@
               @click.stop="navigateToToken(call.tokenAddress)"
             >
               <div class="flex items-center gap-2.5 min-w-0">
-                <OptimizedImage
-                  :src="call.tokenLogo"
-                  :alt="call.tokenName || 'Token'"
-                  :fallback-text="call.tokenSymbol || 'TOK'"
-                  :width="36"
-                  :height="36"
-                  class="rounded-full border border-border/70 shrink-0 shadow-2xs"
-                />
+                <!-- Token Logo with Chain Icon directly attached to corner (no badge!) -->
+                <div class="relative shrink-0">
+                  <OptimizedImage
+                    :src="call.tokenLogo"
+                    :alt="call.tokenName || 'Token'"
+                    :fallback-text="call.tokenSymbol || 'TOK'"
+                    :width="36"
+                    :height="36"
+                    class="rounded-full border border-border/70 shrink-0 shadow-2xs"
+                  />
+                  <img
+                    :src="getChainIcon(call.tokenAddress)"
+                    :alt="getChainName(call.tokenAddress)"
+                    :title="getChainName(call.tokenAddress)"
+                    class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-black bg-black object-contain shadow-xs"
+                  />
+                </div>
+
                 <div class="min-w-0 leading-tight space-y-0.5">
-                  <div class="flex items-center gap-1.5">
+                  <div class="flex items-center gap-1.5 flex-wrap">
                     <span class="font-black text-foreground text-xs sm:text-sm">
                       ${{ call.tokenSymbol || 'TOKEN' }}
                     </span>
@@ -418,23 +459,6 @@
                         :class="isPinned(call.tokenAddress) ? 'fill-amber-400 text-amber-400' : ''"
                       />
                     </button>
-                    <!-- GMGN Chain Badge -->
-                    <span
-                      class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[9px] font-mono font-bold"
-                      :class="
-                        getTokenNetwork(call.tokenAddress).chainId === 5042
-                          ? 'bg-sky-500/10 text-sky-400 border-sky-500/30'
-                          : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                      "
-                      :title="getTokenNetwork(call.tokenAddress).name"
-                    >
-                      <img
-                        :src="getTokenNetwork(call.tokenAddress).chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
-                        :alt="getTokenNetwork(call.tokenAddress).name"
-                        class="w-2.5 h-2.5 object-contain"
-                      />
-                      {{ getTokenNetwork(call.tokenAddress).chainId === 5042 ? 'ARC' : 'RH' }}
-                    </span>
                     <span class="text-[10px] text-muted-foreground truncate hidden sm:inline font-sans">
                       {{ call.tokenName }}
                     </span>
@@ -611,14 +635,22 @@
                 <span class="text-[10px] font-bold text-muted-foreground w-4 text-center">
                   #{{ idx + 1 }}
                 </span>
-                <OptimizedImage
-                  :src="tItem.token.logo"
-                  :alt="tItem.token.name"
-                  :fallback-text="tItem.token.symbol"
-                  :width="26"
-                  :height="26"
-                  class="rounded-full shrink-0 border border-border/60"
-                />
+                <div class="relative shrink-0">
+                  <OptimizedImage
+                    :src="tItem.token.logo"
+                    :alt="tItem.token.name"
+                    :fallback-text="tItem.token.symbol"
+                    :width="26"
+                    :height="26"
+                    class="rounded-full shrink-0 border border-border/60"
+                  />
+                  <img
+                    :src="getChainIcon(tItem.token.address)"
+                    :alt="getChainName(tItem.token.address)"
+                    :title="getChainName(tItem.token.address)"
+                    class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border border-black bg-black object-contain shadow-xs"
+                  />
+                </div>
                 <div class="min-w-0">
                   <span class="font-black text-foreground text-xs block">
                     ${{ tItem.token.symbol }}
@@ -752,10 +784,37 @@ const {
   toggleRepost,
 } = useFeed();
 
-// Centralized network-filtered callouts (driven by Navbar active network)
+type ChainFilterType = 'all' | 'robinhood' | 'arc';
+const selectedChainFilter = ref<ChainFilterType>('all');
+
+function setChainFilter(key: ChainFilterType) {
+  selectedChainFilter.value = key;
+  currentPage.value = 1;
+}
+
+function getChainIcon(tokenAddress: string): string {
+  const net = getTokenNetwork(tokenAddress);
+  return net.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg';
+}
+
+function getChainName(tokenAddress: string): string {
+  const net = getTokenNetwork(tokenAddress);
+  return net.name;
+}
+
+// Multi-chain smart feed stream (shows all chains by default with instant filter)
 const networkCallouts = computed(() => {
-  if (allTokens.value.length === 0) return filteredCallouts.value;
-  return filteredCallouts.value.filter((c) => isTokenOnActiveNetwork(c.tokenAddress));
+  const base = filteredCallouts.value;
+  if (selectedChainFilter.value === 'all') {
+    return base;
+  }
+  if (selectedChainFilter.value === 'robinhood') {
+    return base.filter((c) => getTokenNetwork(c.tokenAddress).chainId === 4663);
+  }
+  if (selectedChainFilter.value === 'arc') {
+    return base.filter((c) => getTokenNetwork(c.tokenAddress).chainId === 5042);
+  }
+  return base;
 });
 
 const paginatedCallouts = computed(() => {

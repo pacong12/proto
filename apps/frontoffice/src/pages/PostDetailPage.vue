@@ -130,14 +130,22 @@
           @click="router.push(`/launchpad/${post.tokenAddress}`)"
         >
           <div class="flex items-center gap-2.5 min-w-0">
-            <OptimizedImage
-              :src="post.tokenLogo"
-              :alt="post.tokenName || 'Token'"
-              :fallback-text="post.tokenSymbol || 'TOK'"
-              :width="36"
-              :height="36"
-              class="rounded-full border border-border/70 shrink-0"
-            />
+            <div class="relative shrink-0">
+              <OptimizedImage
+                :src="post.tokenLogo"
+                :alt="post.tokenName || 'Token'"
+                :fallback-text="post.tokenSymbol || 'TOK'"
+                :width="36"
+                :height="36"
+                class="rounded-full border border-border/70 shrink-0"
+              />
+              <img
+                :src="getChainIcon(post.tokenAddress)"
+                :alt="getChainName(post.tokenAddress)"
+                :title="getChainName(post.tokenAddress)"
+                class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border border-black bg-black object-contain shadow-xs"
+              />
+            </div>
             <div class="min-w-0 leading-tight">
               <div class="flex items-center gap-1.5">
                 <span class="font-black text-foreground text-sm">
@@ -419,8 +427,18 @@ import type { FeedCalloutItem } from '@proto/shared-types';
 const route = useRoute();
 const router = useRouter();
 const { account, openWallet } = useWallet();
-const { tokens: allTokens, fetchTokens } = useTokenStore();
+const { tokens: allTokens, fetchTokens, getTokenNetwork } = useTokenStore();
 const { toggleLike, toggleRepost, recordView } = useFeed();
+
+function getChainIcon(tokenAddress: string): string {
+  const net = getTokenNetwork(tokenAddress);
+  return net.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg';
+}
+
+function getChainName(tokenAddress: string): string {
+  const net = getTokenNetwork(tokenAddress);
+  return net.name;
+}
 
 const calloutId = computed(() => String(route.params.id || route.params.detail || ''));
 const post = ref<FeedCalloutItem | null>(null);
