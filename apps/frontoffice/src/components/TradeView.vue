@@ -1227,6 +1227,16 @@
                           <div class="flex items-center gap-1.5 text-foreground">
                             <Jazzicon :address="trade.trader" :size="14" />
                             <span>{{ truncateAddress(trade.trader) }}</span>
+                            <TraderTagBadge
+                              v-if="trade.trader.toLowerCase() === currentToken.deployer?.toLowerCase()"
+                              tag="dev"
+                              size="sm"
+                            />
+                            <TraderTagBadge
+                              v-else-if="trade.priceUsd * parseFloat(trade.tokenAmount || '0') >= 2000"
+                              tag="whale"
+                              size="sm"
+                            />
                             <button
                               type="button"
                               aria-label="Copy trader address"
@@ -1330,18 +1340,7 @@
                           </div>
                         </TableCell>
                         <TableCell class="py-2.5 px-3">
-                          <Badge
-                            :variant="
-                              trader.isDev
-                                ? 'default'
-                                : trader.walletTag === 'smart_degen'
-                                  ? 'outline'
-                                  : 'secondary'
-                            "
-                            class="text-[9px] px-1.5 py-0 uppercase h-4 font-mono"
-                          >
-                            {{ trader.isDev ? 'Dev' : trader.walletTag }}
-                          </Badge>
+                          <TraderTagBadge :tag="getTraderRoleTag(trader)" size="sm" />
                         </TableCell>
                         <TableCell class="py-2.5 px-3 text-right">
                           <span class="text-emerald-500 font-medium"
@@ -1353,24 +1352,7 @@
                           >
                         </TableCell>
                         <TableCell class="py-2.5 px-3 text-center">
-                          <Badge
-                            :variant="
-                              trader.positionStatus === 'holding'
-                                ? 'default'
-                                : trader.positionStatus === 'clean_all'
-                                  ? 'destructive'
-                                  : 'outline'
-                            "
-                            class="text-[9px] px-1.5 py-0 uppercase h-4 font-mono"
-                          >
-                            {{
-                              trader.positionStatus === 'holding'
-                                ? 'Holding'
-                                : trader.positionStatus === 'clean_all'
-                                  ? 'Exited'
-                                  : 'Partial'
-                            }}
-                          </Badge>
+                          <TraderTagBadge :tag="getTraderPositionTag(trader.positionStatus)" size="sm" />
                         </TableCell>
                         <TableCell
                           class="py-2.5 px-3 text-right font-bold"
@@ -1455,8 +1437,18 @@
                               />
                               <Copy v-else class="w-3 h-3" />
                             </button>
+                            <TraderTagBadge
+                              v-if="holder.address.toLowerCase() === currentToken.deployer?.toLowerCase()"
+                              tag="dev"
+                              size="sm"
+                            />
+                            <TraderTagBadge
+                              v-else-if="holder.percent >= 3.0 && holder.address.toLowerCase() !== ROBINHOOD_CHAIN.contracts.locker.toLowerCase()"
+                              tag="whale"
+                              size="sm"
+                            />
                             <Badge
-                              v-if="getHolderBadge(holder.address)"
+                              v-else-if="getHolderBadge(holder.address)"
                               variant="outline"
                               class="text-[9px] px-1.5 py-0 h-4 border-border text-muted-foreground font-mono"
                             >
@@ -1956,7 +1948,7 @@ import { useLaunchpad } from '../composables/useLaunchpad';
 import { useTaxConfig } from '../composables/useTaxConfig';
 import { getPublicClient } from '../lib/viem-client';
 import { toast } from '@/components/ui/sonner';
-import { Badge } from '@/components/ui/badge';
+import { Badge, TraderTagBadge, type TraderTagType } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -2930,6 +2922,28 @@ function formatTokenBalance(wei: bigint): string {
 function truncateAddress(addr: string): string {
   if (!addr) return '';
   return getUserIdentity(addr).displayName;
+}
+
+function getTraderRoleTag(trader: {
+  isDev?: boolean;
+  walletTag?: string;
+  buyVolumeUsd?: number;
+  firstBuyTimestamp?: number;
+}): TraderTagType {
+  if (trader.isDev) return 'dev';
+  if ((trader.buyVolumeUsd ?? 0) >= 2000 || trader.walletTag === 'whale') return 'whale';
+  if (trader.walletTag === 'sniper') return 'sniper';
+  if (trader.walletTag === 'kol') return 'kol';
+  if (trader.walletTag === 'bundled') return 'bundled';
+  if (trader.walletTag === 'first_buy') return 'first_buy';
+  if (trader.walletTag === 'smart_degen' || trader.walletTag === 'smart_money') return 'smart_money';
+  return 'smart_money';
+}
+
+function getTraderPositionTag(status?: string): TraderTagType {
+  if (status === 'clean_all') return 'sell_all';
+  if (status === 'partial') return 'sell_partial';
+  return 'buy_more';
 }
 
 function getHolderBadge(addr: string): string | null {

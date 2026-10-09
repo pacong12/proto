@@ -73,7 +73,6 @@
                 >
                   {{ getUserIdentity(post.authorAddress).displayName }}
                 </span>
-                <CheckCircle2 class="w-4 h-4 fill-primary text-background shrink-0" />
               </div>
               <span class="text-xs text-muted-foreground font-mono block truncate">
                 @{{ getUserIdentity(post.authorAddress).name }} &middot; {{ shortenAddress(post.authorAddress, 6, 4) }}
@@ -331,7 +330,6 @@
                 >
                   {{ getUserIdentity(rep.authorAddress).displayName }}
                 </span>
-                <CheckCircle2 class="w-3.5 h-3.5 fill-primary text-background shrink-0" />
                 <span>@{{ getUserIdentity(rep.authorAddress).name }}</span>
                 <span>&middot;</span>
                 <span class="hover:underline">{{ formatRelativeTime(rep.createdAt) }}</span>
@@ -391,7 +389,6 @@ import {
   Share2,
   Loader2,
   AlertCircle,
-  CheckCircle2,
   BarChart2,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';

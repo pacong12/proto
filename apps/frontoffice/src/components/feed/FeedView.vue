@@ -328,7 +328,6 @@
                     >
                       {{ getUserIdentity(call.authorAddress).displayName }}
                     </span>
-                    <CheckCircle2 class="w-3.5 h-3.5 fill-primary text-background shrink-0" />
 
                     <!-- Caller Whale Badge -->
                     <Badge
@@ -697,7 +696,6 @@ import {
   ChevronDown,
   MessageCircle,
   Image as ImageIcon,
-  CheckCircle2,
   AlertCircle,
   Megaphone,
   Flame,

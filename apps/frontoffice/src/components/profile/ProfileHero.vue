@@ -107,7 +107,6 @@
               (profileAddress ? getUserIdentity(profileAddress).displayName : 'Anonymous Creator')
             }}
           </h1>
-          <CheckCircle2 class="w-5 h-5 fill-primary text-background shrink-0" />
         </div>
 
         <p class="text-xs font-mono text-muted-foreground flex items-center gap-1.5">
@@ -160,7 +159,7 @@
 </template>
 
 <script setup lang="ts">
-import { Camera, Edit3, Share2, CheckCircle2, ExternalLink } from 'lucide-vue-next';
+import { Camera, Edit3, Share2, ExternalLink } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Jazzicon } from '@/components/ui/avatar';
 import { shortenAddress } from '@/lib/utils';

@@ -36,9 +36,8 @@
             <div class="min-w-0 leading-tight">
               <div class="flex items-center gap-1.5">
                 <span class="font-bold text-foreground text-xs truncate">
-                  {{ shortenAddress(call.authorAddress, 6, 4) }}
+                  {{ getUserIdentity(call.authorAddress).displayName }}
                 </span>
-                <CheckCircle2 class="w-3.5 h-3.5 fill-primary text-background shrink-0" />
                 <Badge
                   v-if="isWhaleCaller(call)"
                   variant="outline"
@@ -213,11 +212,11 @@ import {
   Heart,
   BarChart2,
   Share2,
-  CheckCircle2,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Empty } from '@/components/ui/empty';
+import { getUserIdentity } from '@/lib/username';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
