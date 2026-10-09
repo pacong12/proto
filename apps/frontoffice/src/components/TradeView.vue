@@ -1180,15 +1180,16 @@
                   <p class="text-xs font-mono">No trades match this filter.</p>
                 </div>
                 <div v-else class="overflow-x-auto rounded-2xl border border-border bg-black">
-                  <Table class="w-full text-left text-xs font-mono min-w-[540px] bg-black">
+                  <Table class="w-full text-left text-xs font-mono min-w-[620px] bg-black">
                     <TableHeader>
                       <TableRow class="border-b border-border text-muted-foreground bg-black hover:bg-black">
+                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">Time</TableHead>
                         <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">Type</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">Price</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">{{ currencySymbol }}</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">{{ currentToken.symbol }}</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Total (USD)</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">{{ currencySymbol }}</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Amount</TableHead>
+                        <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Price</TableHead>
                         <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">Trader</TableHead>
-                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">Age</TableHead>
                         <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">Tx</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -1198,42 +1199,65 @@
                         :key="trade.id || trade.transactionHash"
                         class="hover:bg-zinc-900/40 transition-colors bg-black"
                       >
+                        <!-- 1. Time / Age -->
+                        <TableCell class="py-2 px-3 whitespace-nowrap text-muted-foreground text-[11px]">
+                          {{ formatRelativeTime(trade.timestamp) }}
+                        </TableCell>
+
+                        <!-- 2. Type (GMGN Style BUY / SELL pill) -->
                         <TableCell class="py-2 px-3 whitespace-nowrap">
                           <span
-                            class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider border border-border"
+                            class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider border select-none"
                             :class="
                               trade.isBuy
-                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                                : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                                ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
                             "
                           >
                             {{ trade.isBuy ? 'BUY' : 'SELL' }}
                           </span>
                         </TableCell>
-                        <TableCell class="py-2 px-3 whitespace-nowrap text-foreground font-medium">
-                          ${{
-                            trade.priceUsd < 0.0001
-                              ? trade.priceUsd.toFixed(8)
-                              : trade.priceUsd.toFixed(4)
-                          }}
+
+                        <!-- 3. Total (USD) -->
+                        <TableCell
+                          class="py-2 px-3 whitespace-nowrap text-right font-mono font-bold"
+                          :class="trade.isBuy ? 'text-emerald-400' : 'text-rose-400'"
+                        >
+                          ${{ Math.max(0.01, getTradeVolumeUsd(trade)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                         </TableCell>
-                        <TableCell class="py-2 px-3 whitespace-nowrap text-foreground">
-                          {{ parseFloat(trade.wethAmount).toFixed(4) }}
+
+                        <!-- 4. Native Volume (ETH / USDG) -->
+                        <TableCell class="py-2 px-3 whitespace-nowrap text-right text-muted-foreground font-mono">
+                          {{ parseFloat(trade.wethAmount || '0').toFixed(4) }}
                         </TableCell>
-                        <TableCell class="py-2 px-3 whitespace-nowrap text-foreground font-medium">
+
+                        <!-- 5. Token Amount -->
+                        <TableCell class="py-2 px-3 whitespace-nowrap text-right text-foreground font-medium font-mono">
                           {{ formatTokenNumber(trade.tokenAmount) }}
                         </TableCell>
+
+                        <!-- 6. Price (DEX Subscript notation) -->
+                        <TableCell class="py-2 px-3 whitespace-nowrap text-right text-foreground font-mono">
+                          ${{ formatSubscriptPrice(trade.priceUsd) }}
+                        </TableCell>
+
+                        <!-- 7. Trader (With Jazzicon + Profile Link + GMGN Tags) -->
                         <TableCell class="py-2 px-3 whitespace-nowrap">
                           <div class="flex items-center gap-1.5 text-foreground">
-                            <Jazzicon :address="trade.trader" :size="14" />
-                            <span>{{ truncateAddress(trade.trader) }}</span>
+                            <Jazzicon :address="trade.trader" :size="14" class="shrink-0 rounded-full" />
+                            <RouterLink
+                              :to="'/' + getUserIdentity(trade.trader).name"
+                              class="text-foreground font-medium hover:underline truncate max-w-[120px] sm:max-w-none"
+                            >
+                              {{ truncateAddress(trade.trader) }}
+                            </RouterLink>
                             <TraderTagBadge
                               v-if="trade.trader.toLowerCase() === currentToken.deployer?.toLowerCase()"
                               tag="dev"
                               size="sm"
                             />
                             <TraderTagBadge
-                              v-else-if="trade.priceUsd * parseFloat(trade.tokenAmount || '0') >= 2000"
+                              v-else-if="getTradeVolumeUsd(trade) >= 2000"
                               tag="whale"
                               size="sm"
                             />
@@ -1251,9 +1275,8 @@
                             </button>
                           </div>
                         </TableCell>
-                        <TableCell class="py-2 px-3 whitespace-nowrap text-muted-foreground">
-                          {{ formatRelativeTime(trade.timestamp) }}
-                        </TableCell>
+
+                        <!-- 8. Tx -->
                         <TableCell class="py-2 px-3 whitespace-nowrap text-right">
                           <a
                             :href="`${explorerUrl}/tx/${trade.transactionHash}`"
@@ -2021,6 +2044,7 @@ import {
   formatRelativeTime,
   formatCompactUsd,
   formatPriceUsd,
+  formatSubscriptPrice,
 } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import {
@@ -2955,6 +2979,13 @@ function formatTokenBalance(wei: bigint): string {
   if (val >= 0.0001) return val.toFixed(4);
   return val.toFixed(6);
 }
+function getTradeVolumeUsd(trade: LiveTrade): number {
+  const byTokens = parseFloat(trade.tokenAmount || '0') * (trade.priceUsd || 0);
+  if (byTokens > 0) return byTokens;
+  const ethRate = quoteAssetPriceUsd.value || 2700;
+  return parseFloat(trade.wethAmount || '0') * ethRate;
+}
+
 function truncateAddress(addr: string): string {
   if (!addr) return '';
   return getUserIdentity(addr).displayName;
