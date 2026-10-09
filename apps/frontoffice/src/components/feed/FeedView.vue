@@ -76,21 +76,49 @@
           <div class="flex items-center gap-1 font-mono text-[11px] self-end sm:self-auto pb-1 sm:pb-0">
             <button
               v-for="chainOpt in [
-                { key: 'all', label: 'All Chains' },
-                { key: 'robinhood', label: 'Robinhood', icon: '/chains/robinhood.svg' },
-                { key: 'arc', label: 'Arc', icon: '/chains/arc.svg' },
+                {
+                  key: 'all',
+                  label: 'All Chains',
+                  icons: ['/chains/robinhood.svg', '/chains/arc.svg'],
+                },
+                {
+                  key: 'robinhood',
+                  label: 'Robinhood',
+                  icons: ['/chains/robinhood.svg'],
+                },
+                {
+                  key: 'arc',
+                  label: 'Arc',
+                  icons: ['/chains/arc.svg'],
+                },
               ]"
               :key="chainOpt.key"
               type="button"
-              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border transition cursor-pointer select-none"
+              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition cursor-pointer select-none"
               :class="
                 selectedChainFilter === chainOpt.key
-                  ? 'bg-foreground text-background border-foreground font-bold'
-                  : 'bg-black border border-border text-muted-foreground hover:text-foreground'
+                  ? 'bg-foreground text-background border-foreground font-bold shadow-2xs'
+                  : 'bg-black border border-border text-muted-foreground hover:text-foreground hover:bg-zinc-950'
               "
               @click="setChainFilter(chainOpt.key as any)"
             >
-              <img v-if="chainOpt.icon" :src="chainOpt.icon" class="w-3 h-3 object-contain rounded-full" />
+              <!-- Overlapping chain icons for All Chains, or single icon -->
+              <span v-if="chainOpt.icons.length > 1" class="inline-flex items-center -space-x-1.5 shrink-0">
+                <img
+                  v-for="(ic, icIdx) in chainOpt.icons"
+                  :key="ic"
+                  :src="ic"
+                  alt=""
+                  class="w-3.5 h-3.5 object-contain rounded-full border border-background bg-black"
+                  :style="{ zIndex: chainOpt.icons.length - icIdx }"
+                />
+              </span>
+              <img
+                v-else
+                :src="chainOpt.icons[0]"
+                alt=""
+                class="w-3.5 h-3.5 object-contain rounded-full shrink-0"
+              />
               <span>{{ chainOpt.label }}</span>
             </button>
           </div>
