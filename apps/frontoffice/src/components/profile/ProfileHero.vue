@@ -20,35 +20,22 @@
 
       <div
         v-if="isOwnProfile"
-        class="absolute inset-0 bg-background/50 backdrop-blur-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+        class="absolute inset-0 bg-background/50 backdrop-blur-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none"
         title="Update header banner"
       >
-        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-card text-foreground shadow-xs border border-border">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-card text-foreground shadow-xs border border-border pointer-events-auto">
           <Camera class="w-3.5 h-3.5 text-primary" />
           Update Banner
-        </span>
-      </div>
-
-      <div class="absolute top-3 right-3 flex items-center gap-2 z-20">
-        <span
-          class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-background/80 backdrop-blur-md border border-border/80 text-foreground"
-        >
-          <img
-            :src="activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
-            :alt="activeNetwork.name"
-            class="w-3.5 h-3.5 object-contain"
-          />
-          {{ activeNetwork.name }}
         </span>
       </div>
     </div>
 
     <!-- 2. Profile Details & Avatar Overlay -->
-    <div class="px-5 pb-5 sm:px-7 sm:pb-7 pt-0 space-y-4">
-      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-10 sm:-mt-14">
+    <div class="px-5 pb-5 sm:px-7 sm:pb-7 pt-0 space-y-4 relative z-30">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-10 sm:-mt-14 relative z-30">
         <!-- Avatar -->
         <div
-          class="relative group w-20 h-20 sm:w-28 sm:h-28 rounded-full ring-4 ring-card bg-card overflow-hidden shrink-0 shadow-xl"
+          class="relative z-30 group w-20 h-20 sm:w-28 sm:h-28 rounded-full ring-4 ring-card bg-card overflow-hidden shrink-0 shadow-xl"
           :class="isOwnProfile ? 'cursor-pointer' : ''"
           @click="isOwnProfile && emit('edit')"
         >

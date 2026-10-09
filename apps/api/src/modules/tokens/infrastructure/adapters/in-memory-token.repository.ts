@@ -4,6 +4,7 @@ import {
   TradeEventEntity,
   CandlestickEntity,
   TokenCommentEntity,
+  getUserIdentity,
 } from '@proto/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import {
@@ -118,6 +119,74 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
       if (match) return match;
     }
     return null;
+  }
+
+  async findAddressByIdentity(nameOrSlug: string): Promise<string | null> {
+    const q = nameOrSlug.toLowerCase().trim().replace(/^@/, '');
+    if (!q) return null;
+    if (/^0x[a-f0-9]{40}$/i.test(q)) return q.toLowerCase();
+
+    const addrs = new Set<string>();
+    for (const t of this.tokens.values()) addrs.add(t.deployer.toLowerCase());
+    for (const list of this.trades.values()) {
+      for (const tr of list) addrs.add(tr.trader.toLowerCase());
+    }
+
+    for (const addr of addrs) {
+      const id = getUserIdentity(addr);
+      if (
+        id.name.toLowerCase() === q ||
+        id.displayName.toLowerCase() === q ||
+        id.slug.toLowerCase() === q ||
+        id.tag.toLowerCase() === q
+      ) {
+        return addr;
+      }
+    }
+    return null;
+  }
+
+  async getUserPositions(address: string): Promise<Array<{
+    tokenAddress: string;
+    name: string;
+    symbol: string;
+    logo?: string;
+    balance: number;
+    balanceFormatted: string;
+    priceUsd: number;
+    valueUsd: number;
+  }>> {
+    const trades = await this.getTradesByTrader(address, 500);
+    const byToken = new Map<string, { buy: number; sell: number }>();
+    for (const tr of trades) {
+      const addr = tr.tokenAddress.toLowerCase();
+      const cur = byToken.get(addr) || { buy: 0, sell: 0 };
+      const amt = parseFloat(tr.tokenAmount || '0');
+      if (tr.isBuy) cur.buy += amt;
+      else cur.sell += amt;
+      byToken.set(addr, cur);
+    }
+    const positions = [];
+    for (const [addr, stats] of byToken.entries()) {
+      const net = stats.buy - stats.sell;
+      if (net > 0) {
+        const token = await this.findByAddress(addr as `0x${string}`);
+        const md = await this.getMarketData(addr as `0x${string}`);
+        const price = md?.priceUsd || 0;
+        positions.push({
+          tokenAddress: addr,
+          name: token?.name || 'Token',
+          symbol: token?.symbol || 'TOK',
+          logo: token?.logo || '',
+          balance: net,
+          balanceFormatted: net.toLocaleString(undefined, { maximumFractionDigits: 2 }),
+          priceUsd: price,
+          valueUsd: net * price,
+        });
+      }
+    }
+    positions.sort((a, b) => b.valueUsd - a.valueUsd);
+    return positions;
   }
 
   async findByPoolAddress(poolAddress: `0x${string}`): Promise<LaunchedTokenEntity | null> {

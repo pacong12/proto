@@ -89,14 +89,22 @@
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <!-- Left: Artwork + Titles + Metadata Byline -->
           <div class="flex items-start gap-4 min-w-0">
-            <OptimizedImage
-              :src="currentToken.logo"
-              :alt="currentToken.name"
-              :fallback-text="currentToken.symbol"
-              :width="64"
-              :height="64"
-              class="rounded-2xl border border-border object-cover ring-2 ring-border shadow-xs shrink-0 w-14 h-14 sm:w-16 sm:h-16"
-            />
+            <div class="relative shrink-0">
+              <OptimizedImage
+                :src="currentToken.logo"
+                :alt="currentToken.name"
+                :fallback-text="currentToken.symbol"
+                :width="64"
+                :height="64"
+                class="rounded-2xl border border-border object-cover ring-2 ring-border shadow-xs shrink-0 w-14 h-14 sm:w-16 sm:h-16"
+              />
+              <img
+                :src="tokenNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+                :alt="tokenNetwork.name"
+                :title="tokenNetwork.name"
+                class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-black bg-black object-contain shadow-xs"
+              />
+            </div>
             <div class="min-w-0 space-y-1">
               <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap">
                 <h1 class="text-2xl sm:text-3xl font-black font-sans tracking-tight text-foreground truncate">
@@ -149,7 +157,7 @@
                 <span class="text-muted-foreground/50">·</span>
                 <span class="font-mono text-[11px]">{{ formatRelativeTime(currentToken.createdAt) }}</span>
                 <span class="text-muted-foreground/50">·</span>
-                <span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-md bg-black border border-border text-[11px] text-foreground font-semibold font-mono">
+                <span class="text-[11px] text-muted-foreground font-semibold font-mono">
                   {{ currencySymbol }} pair
                 </span>
                 <span class="text-muted-foreground/50">·</span>

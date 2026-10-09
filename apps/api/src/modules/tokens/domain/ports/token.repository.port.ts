@@ -39,6 +39,17 @@ export interface TokenRepositoryPort {
   getTradesByTrader?(trader: string, limit?: number): Promise<TradeEventEntity[]>;
   getTradesSince?(sinceMs: number): Promise<TradeEventEntity[]>;
   findTradeByHash?(txHash: string): Promise<TradeEventEntity | null>;
+  findAddressByIdentity?(nameOrSlug: string): Promise<string | null>;
+  getUserPositions?(address: string): Promise<Array<{
+    tokenAddress: string;
+    name: string;
+    symbol: string;
+    logo?: string;
+    balance: number;
+    balanceFormatted: string;
+    priceUsd: number;
+    valueUsd: number;
+  }>>;
 
   // Discussion comments & sentiment voting
   saveComment?(comment: TokenCommentEntity): Promise<void>;

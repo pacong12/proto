@@ -281,14 +281,22 @@
                   />
                 </button>
 
-                <OptimizedImage
-                  :src="item.token.logo"
-                  :alt="item.token.name"
-                  :fallback-text="item.token.symbol"
-                  :width="36"
-                  :height="36"
-                  class="rounded-full border border-border object-cover shrink-0 ring-1 ring-border group-hover:ring-primary/50 transition"
-                />
+                <div class="relative shrink-0">
+                  <OptimizedImage
+                    :src="item.token.logo"
+                    :alt="item.token.name"
+                    :fallback-text="item.token.symbol"
+                    :width="36"
+                    :height="36"
+                    class="rounded-full border border-border object-cover shrink-0 ring-1 ring-border group-hover:ring-primary/50 transition"
+                  />
+                  <img
+                    :src="tokenStore.getTokenNetwork(item.token.address).chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+                    :alt="tokenStore.getTokenNetwork(item.token.address).name"
+                    :title="tokenStore.getTokenNetwork(item.token.address).name"
+                    class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border border-black bg-black object-contain shadow-xs"
+                  />
+                </div>
 
                 <div class="min-w-0 truncate">
                   <div class="flex items-center gap-1.5 truncate">
@@ -451,14 +459,22 @@
           <div class="space-y-3">
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-3 min-w-0">
-                <OptimizedImage
-                  :src="item.token.logo"
-                  :alt="item.token.name"
-                  :fallback-text="item.token.symbol"
-                  :width="42"
-                  :height="42"
-                  class="rounded-full border border-border object-cover shrink-0 ring-1 ring-border group-hover:ring-primary/50 transition"
-                />
+                <div class="relative shrink-0">
+                  <OptimizedImage
+                    :src="item.token.logo"
+                    :alt="item.token.name"
+                    :fallback-text="item.token.symbol"
+                    :width="42"
+                    :height="42"
+                    class="rounded-full border border-border object-cover shrink-0 ring-1 ring-border group-hover:ring-primary/50 transition"
+                  />
+                  <img
+                    :src="tokenStore.getTokenNetwork(item.token.address).chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+                    :alt="tokenStore.getTokenNetwork(item.token.address).name"
+                    :title="tokenStore.getTokenNetwork(item.token.address).name"
+                    class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-black bg-black object-contain shadow-xs"
+                  />
+                </div>
                 <div class="truncate">
                   <h3
                     class="font-bold text-sm text-foreground group-hover:text-primary transition truncate"

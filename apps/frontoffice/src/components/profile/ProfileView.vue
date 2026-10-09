@@ -275,7 +275,7 @@ import { useTokenStore } from '@/composables/useTokenStore';
 import { useHolderDividends } from '@/composables/useHolderDividends';
 import { walletAddress } from '@/lib/wallet-store';
 import { getPublicClient } from '@/lib/viem-client';
-import { resolveUserAddress, getUserIdentity } from '@/lib/username';
+import { resolveUserAddress, getUserIdentity, registerUserIdentity } from '@/lib/username';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
@@ -314,7 +314,7 @@ const route = useRoute();
 const { account, activeNetwork, openWallet } = useWallet();
 const { claimFees, setFeeRedirect, loading: loadingLaunchpad, error: launchpadError } = useLaunchpad();
 const { fetchUserPosts, toggleLike, toggleRepost } = useFeed();
-const { tokens: allTokens } = useTokenStore();
+const { tokens: allTokens, fetchTokens, getTokenNetwork } = useTokenStore();
 
 function isAddressValid(addr: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(addr.trim());
@@ -338,12 +338,63 @@ const routeParam = computed(() => {
 
 const hasRouteParam = computed(() => !!routeParam.value);
 
+const resolvedAddressFromApi = ref<string | null>(null);
+
+async function resolveTargetUser(param: string) {
+  if (!param) {
+    resolvedAddressFromApi.value = null;
+    return;
+  }
+  if (isAddressValid(param)) {
+    const clean = param.toLowerCase();
+    resolvedAddressFromApi.value = clean;
+    registerUserIdentity(clean);
+    return;
+  }
+
+  // 1. Check local registry & known deployers/traders
+  const known = allTokens.value.map((t) => t.token.deployer).filter(Boolean);
+  const local = resolveUserAddress(param, known);
+  if (local) {
+    resolvedAddressFromApi.value = local.toLowerCase();
+    return;
+  }
+
+  // 2. Query backend API
+  try {
+    const res = await fetch(`/api/users/${encodeURIComponent(param)}`);
+    const env = await res.json();
+    if (env.success && env.data?.address) {
+      const addr = env.data.address.toLowerCase();
+      registerUserIdentity(addr);
+      resolvedAddressFromApi.value = addr;
+    } else {
+      resolvedAddressFromApi.value = null;
+    }
+  } catch {
+    resolvedAddressFromApi.value = null;
+  }
+}
+
+watch(
+  routeParam,
+  async (newParam) => {
+    if (newParam) {
+      await resolveTargetUser(newParam);
+    }
+  },
+  { immediate: true },
+);
+
 // Profile to display: target route param address (e.g. /u/:address, /:username, or /profile/:username) or connected wallet
 const targetAccount = computed<string | null>(() => {
   const param = routeParam.value;
   if (param) {
     if (isAddressValid(param)) {
       return param.toLowerCase();
+    }
+    if (resolvedAddressFromApi.value) {
+      return resolvedAddressFromApi.value;
     }
     const known = allTokens.value.map((t) => t.token.deployer).filter(Boolean);
     const resolved = resolveUserAddress(param, known);
@@ -701,18 +752,23 @@ async function fetchUserPositionsAndActivity() {
   }
 
   try {
-    const [tradesRes, tokensRes] = await Promise.all([
+    const [tradesRes, tokensRes, portfolioRes] = await Promise.all([
       fetch(`/api/trades?trader=${target}&limit=100`).catch(() => null),
       fetch('/api/tokens?limit=100').catch(() => null),
+      fetch(`/api/users/${target}/portfolio`).catch(() => null),
     ]);
 
     const tradesJson = tradesRes?.ok ? await tradesRes.json().catch(() => null) : null;
     const tokensJson = tokensRes?.ok ? await tokensRes.json().catch(() => null) : null;
+    const portfolioJson = portfolioRes?.ok ? await portfolioRes.json().catch(() => null) : null;
 
     const tokensList: Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }> =
       tokensJson?.success && Array.isArray(tokensJson.data) ? tokensJson.data : [];
 
-    const tokenMap = new Map<string, { token: LaunchedTokenEntity; marketData: TokenMarketData }>();
+    const tokenMap = new Map<string, { token: LaunchedTokenEntity; marketData?: TokenMarketData | null }>();
+    for (const item of allTokens.value) {
+      tokenMap.set(item.token.address.toLowerCase(), item);
+    }
     for (const item of tokensList) {
       tokenMap.set(item.token.address.toLowerCase(), item);
     }
@@ -736,8 +792,13 @@ async function fetchUserPositionsAndActivity() {
 
     userActivities.value = activities;
 
-    const client = getPublicClient(activeNetwork.value.chainId);
+    // Collect candidate addresses from all sources
     const candidateAddresses = new Set<string>();
+    if (tradesJson?.success && Array.isArray(tradesJson.data)) {
+      for (const tr of tradesJson.data) {
+        if (tr.tokenAddress) candidateAddresses.add(tr.tokenAddress.toLowerCase());
+      }
+    }
     for (const item of tokensList) {
       candidateAddresses.add(item.token.address.toLowerCase());
     }
@@ -745,26 +806,39 @@ async function fetchUserPositionsAndActivity() {
       candidateAddresses.add(launch.address.toLowerCase());
     }
 
+    // Default portfolio positions from indexer
+    const indexedPositionsMap = new Map<string, PortfolioPosition>();
+    if (portfolioJson?.success && Array.isArray(portfolioJson.data)) {
+      for (const pos of portfolioJson.data) {
+        indexedPositionsMap.set(pos.tokenAddress.toLowerCase(), pos);
+      }
+    }
+
+    // Try on-chain balances with per-token network resilience
     const candidateList = Array.from(candidateAddresses);
     const balancePromises = candidateList.map(async (addr) => {
       const meta = tokenMap.get(addr);
-      if (!meta) return null;
+      const chainId = meta
+        ? getTokenNetwork(meta.token.address).chainId
+        : activeNetwork.value.chainId;
+      const client = getPublicClient(chainId);
+
       try {
         const bal = (await client.readContract({
-          address: meta.token.address as `0x${string}`,
+          address: addr as `0x${string}`,
           abi: erc20Abi,
           functionName: 'balanceOf',
           args: [target as `0x${string}`],
         })) as bigint;
 
         if (bal > 0n) {
-          const decimals = meta.token.decimals || 18;
+          const decimals = meta?.token.decimals || 18;
           const num = Number(bal) / 10 ** decimals;
-          const price = meta.marketData?.priceUsd || 0;
+          const price = meta?.marketData?.priceUsd || 0;
           return {
-            tokenAddress: meta.token.address,
-            name: meta.token.name,
-            symbol: meta.token.symbol,
+            tokenAddress: addr,
+            name: meta?.token.name || 'Token',
+            symbol: meta?.token.symbol || 'TOK',
             balanceFormatted: num.toLocaleString(undefined, {
               maximumFractionDigits: 2,
             }),
@@ -773,20 +847,32 @@ async function fetchUserPositionsAndActivity() {
           };
         }
       } catch {
-        return null;
+        // Fallback to indexed position if on-chain call reverts
+        return indexedPositionsMap.get(addr) || null;
       }
       return null;
     });
 
     const settled = await Promise.allSettled(balancePromises);
-    const validPositions: PortfolioPosition[] = [];
+    const validPositionsMap = new Map<string, PortfolioPosition>();
+
+    // Merge on-chain verified positions
     for (const res of settled) {
       if (res.status === 'fulfilled' && res.value) {
-        validPositions.push(res.value);
+        validPositionsMap.set(res.value.tokenAddress.toLowerCase(), res.value);
       }
     }
-    validPositions.sort((a, b) => b.valueUsd - a.valueUsd);
-    portfolioPositions.value = validPositions;
+
+    // Also include any indexed positions that weren't checked or where on-chain reverted
+    for (const [addr, pos] of indexedPositionsMap.entries()) {
+      if (!validPositionsMap.has(addr)) {
+        validPositionsMap.set(addr, pos);
+      }
+    }
+
+    const finalPositions = Array.from(validPositionsMap.values());
+    finalPositions.sort((a, b) => b.valueUsd - a.valueUsd);
+    portfolioPositions.value = finalPositions;
   } catch {
     // Non-blocking
   }
@@ -827,7 +913,8 @@ watch(
   },
 );
 
-onMounted(() => {
+onMounted(async () => {
+  fetchTokens().catch(() => {});
   loadLocalProfile();
   refreshAllData();
 });

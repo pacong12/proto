@@ -26,14 +26,22 @@
         class="bg-card border-border p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
       >
         <div class="flex items-start gap-3.5">
-          <OptimizedImage
-            :src="token.logo"
-            :alt="token.name"
-            :fallback-text="token.symbol"
-            :width="48"
-            :height="48"
-            class="rounded-lg border border-border"
-          />
+          <div class="relative shrink-0">
+            <OptimizedImage
+              :src="token.logo"
+              :alt="token.name"
+              :fallback-text="token.symbol"
+              :width="48"
+              :height="48"
+              class="rounded-lg border border-border"
+            />
+            <img
+              :src="getTokenNetwork(token.address).chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+              :alt="getTokenNetwork(token.address).name"
+              :title="getTokenNetwork(token.address).name"
+              class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-black bg-black object-contain shadow-xs"
+            />
+          </div>
 
           <div>
             <div class="flex items-center gap-2 flex-wrap">
@@ -109,7 +117,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
+import { useTokenStore } from '@/composables/useTokenStore';
 import type { MyLaunchItem } from './types';
+
+const { getTokenNetwork } = useTokenStore();
 
 defineProps<{
   myLaunches: MyLaunchItem[];

@@ -38,6 +38,7 @@ import {
   TransactionIntent,
   type TokenCommentEntity,
   type TradeEventEntity,
+  getUserIdentity,
   ok,
   err,
 } from '@proto/shared-types';
@@ -612,6 +613,62 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       await cache.set(cacheKey, res, 10); // Cache for 10s
     }
     return replyJson(res, 200, { 'x-cache': 'MISS' });
+  }
+
+  // GET /api/users/resolve?query=:query
+  if (url.pathname === '/api/users/resolve' && req.method === 'GET') {
+    const q = url.searchParams.get('query') || '';
+    if (!q) {
+      return replyError('INVALID_PARAM', 'query is required', 400);
+    }
+    const resolvedAddress = repository.findAddressByIdentity
+      ? await repository.findAddressByIdentity(q)
+      : null;
+    if (!resolvedAddress) {
+      return replyJson(err('USER_NOT_FOUND', 'User identity could not be resolved'), 404);
+    }
+    const identity = getUserIdentity(resolvedAddress);
+    return replyJson(ok({ address: resolvedAddress, identity }), 200);
+  }
+
+  // GET /api/users/:identifier/portfolio
+  const userPortfolioMatch = url.pathname.match(/^\/api\/users\/([a-zA-Z0-9_#.-]+)\/portfolio$/);
+  if (userPortfolioMatch && req.method === 'GET') {
+    const identifier = userPortfolioMatch[1];
+    let address = identifier;
+    if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+      const resolved = repository.findAddressByIdentity
+        ? await repository.findAddressByIdentity(address)
+        : null;
+      if (!resolved) {
+        return replyJson(err('USER_NOT_FOUND', 'User identity could not be resolved'), 404);
+      }
+      address = resolved;
+    }
+
+    const positions = repository.getUserPositions
+      ? await repository.getUserPositions(address)
+      : [];
+    return replyJson(ok(positions), 200);
+  }
+
+  // GET /api/users/:identifier
+  const userMatch = url.pathname.match(/^\/api\/users\/([a-zA-Z0-9_#.-]+)$/);
+  if (userMatch && req.method === 'GET') {
+    const identifier = userMatch[1];
+    let address = identifier;
+    if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+      const resolved = repository.findAddressByIdentity
+        ? await repository.findAddressByIdentity(address)
+        : null;
+      if (!resolved) {
+        return replyJson(err('USER_NOT_FOUND', 'User identity could not be resolved'), 404);
+      }
+      address = resolved;
+    }
+
+    const identity = getUserIdentity(address);
+    return replyJson(ok({ address, identity }), 200);
   }
 
   // GET /api/trades (global recent protocol trades or trades by trader)

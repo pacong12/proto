@@ -73,34 +73,26 @@
           @click="emit('navigate-token', call.tokenAddress)"
         >
           <div class="flex items-center gap-2.5 min-w-0">
-            <OptimizedImage
-              :src="call.tokenLogo"
-              :alt="call.tokenName || 'Token'"
-              :fallback-text="call.tokenSymbol || 'TOK'"
-              :width="32"
-              :height="32"
-              class="rounded-full border border-border shrink-0"
-            />
+            <div class="relative shrink-0">
+              <OptimizedImage
+                :src="call.tokenLogo"
+                :alt="call.tokenName || 'Token'"
+                :fallback-text="call.tokenSymbol || 'TOK'"
+                :width="32"
+                :height="32"
+                class="rounded-full border border-border shrink-0"
+              />
+              <img
+                :src="getTokenNetwork(call.tokenAddress).chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+                :alt="getTokenNetwork(call.tokenAddress).name"
+                :title="getTokenNetwork(call.tokenAddress).name"
+                class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-black bg-black object-contain shadow-xs"
+              />
+            </div>
             <div class="min-w-0 leading-tight space-y-0.5">
               <div class="flex items-center gap-1.5">
                 <span class="font-black text-foreground text-xs sm:text-sm">
                   ${{ call.tokenSymbol || 'TOKEN' }}
-                </span>
-                <!-- GMGN Chain Badge -->
-                <span
-                  class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[9px] font-mono font-bold"
-                  :class="
-                    getTokenNetwork(call.tokenAddress).chainId === 5042
-                      ? 'bg-sky-500/10 text-sky-400 border-sky-500/30'
-                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                  "
-                >
-                  <img
-                    :src="getTokenNetwork(call.tokenAddress).chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
-                    :alt="getTokenNetwork(call.tokenAddress).name"
-                    class="w-2.5 h-2.5 object-contain"
-                  />
-                  {{ getTokenNetwork(call.tokenAddress).chainId === 5042 ? 'ARC' : 'RH' }}
                 </span>
               </div>
               <div class="flex items-center gap-2 text-[10px] text-muted-foreground">

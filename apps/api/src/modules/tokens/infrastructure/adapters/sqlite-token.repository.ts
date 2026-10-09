@@ -8,6 +8,7 @@ import {
   TradeEventEntity,
   CandlestickEntity,
   TokenCommentEntity,
+  getUserIdentity,
 } from '@proto/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import {
@@ -581,6 +582,88 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     `);
     const row = stmt.get(txHash) as TradeRow | null;
     return row ? this.mapRowToTrade(row) : null;
+  }
+
+  async findAddressByIdentity(nameOrSlug: string): Promise<string | null> {
+    const q = nameOrSlug.toLowerCase().trim().replace(/^@/, '');
+    if (!q) return null;
+    if (/^0x[a-f0-9]{40}$/i.test(q)) return q.toLowerCase();
+
+    // Query all distinct addresses in trades and tokens
+    const stmt = this.db.prepare(`
+      SELECT DISTINCT trader AS addr FROM trades WHERE trader IS NOT NULL AND trader != ''
+      UNION
+      SELECT DISTINCT deployer AS addr FROM tokens WHERE deployer IS NOT NULL AND deployer != ''
+    `);
+    const rows = stmt.all() as Array<{ addr: string }>;
+    for (const r of rows) {
+      if (!r.addr) continue;
+      const id = getUserIdentity(r.addr);
+      if (
+        id.name.toLowerCase() === q ||
+        id.displayName.toLowerCase() === q ||
+        id.slug.toLowerCase() === q ||
+        id.tag.toLowerCase() === q
+      ) {
+        return r.addr.toLowerCase();
+      }
+    }
+    return null;
+  }
+
+  async getUserPositions(address: string): Promise<Array<{
+    tokenAddress: string;
+    name: string;
+    symbol: string;
+    logo?: string;
+    balance: number;
+    balanceFormatted: string;
+    priceUsd: number;
+    valueUsd: number;
+  }>> {
+    const trades = await this.getTradesByTrader(address, 500);
+    const byToken = new Map<string, { buy: number; sell: number }>();
+    for (const tr of trades) {
+      const addr = tr.tokenAddress.toLowerCase();
+      const cur = byToken.get(addr) || { buy: 0, sell: 0 };
+      const amt = parseFloat(tr.tokenAmount || '0');
+      if (tr.isBuy) cur.buy += amt;
+      else cur.sell += amt;
+      byToken.set(addr, cur);
+    }
+
+    const positions: Array<{
+      tokenAddress: string;
+      name: string;
+      symbol: string;
+      logo?: string;
+      balance: number;
+      balanceFormatted: string;
+      priceUsd: number;
+      valueUsd: number;
+    }> = [];
+
+    for (const [addr, stats] of byToken.entries()) {
+      const net = stats.buy - stats.sell;
+      if (net > 0) {
+        const token = await this.findByAddress(addr as `0x${string}`);
+        const md = await this.getMarketData(addr as `0x${string}`);
+        const price = md?.priceUsd || 0;
+        positions.push({
+          tokenAddress: addr,
+          name: token?.name || 'Token',
+          symbol: token?.symbol || 'TOK',
+          logo: token?.logo || '',
+          balance: net,
+          balanceFormatted: net.toLocaleString(undefined, { maximumFractionDigits: 2 }),
+          priceUsd: price,
+          valueUsd: net * price,
+        });
+      }
+    }
+
+    positions.sort((a, b) => b.valueUsd - a.valueUsd);
+    return positions;
   }
 
   async findByPoolAddress(poolAddress: `0x${string}`): Promise<LaunchedTokenEntity | null> {
