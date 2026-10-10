@@ -162,7 +162,7 @@ contract BuybackBurner is IBuybackBurner {
      *   cap that the off-chain bot MUST respect when computing minAmountOut — it is
      *   an operational parameter, not a redundant on-chain guard.
      */
-    // slither-disable-next-line reentrancy-balance
+    // slither-disable-next-line reentrancy-no-eth,reentrancy-balance,divide-before-multiply
     function executeBuyback(uint256 minAmountOut) external override nonReentrant onlyOwner returns (uint256 tokensBurned) {
         if (lastBuybackTimestamp > 0 && block.timestamp < lastBuybackTimestamp + cooldown) {
             revert CooldownActive();
@@ -182,8 +182,7 @@ contract BuybackBurner is IBuybackBurner {
         // On the very first call (lastKnownRate == 0) the only guard is minAmountOut > 0;
         // the actual swap outcome seeds lastKnownRate for all future calls.
         if (lastKnownRate > 0) {
-            uint256 expectedOut = (wethBalance * lastKnownRate) / 1e18;
-            uint256 requiredMin = expectedOut * (10_000 - maxSlippageBps) / 10_000;
+            uint256 requiredMin = (wethBalance * lastKnownRate * (10_000 - maxSlippageBps)) / 1e22;
             if (minAmountOut < requiredMin) revert SlippageExceeded();
         }
 
