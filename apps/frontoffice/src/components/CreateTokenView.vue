@@ -3,43 +3,12 @@
     <div>
       <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t('launchToken') }}</h1>
       <p class="text-sm mt-1 text-muted-foreground">
-        {{ selectedVersion === 'v2' ? t('v2Subtitle') : t('v1Subtitle') }}
+        {{ t('v2Subtitle') }}
       </p>
     </div>
 
     <!-- Form container using Shadcn Card -->
     <Card class="p-4 sm:p-8 lg:p-10 border border-border bg-card shadow-sm rounded-3xl">
-      <!-- Dual Launch Architecture Tabs (v2 / v1) -->
-      <div class="mb-8 p-1.5 bg-black rounded-2xl flex gap-2 border border-border">
-        <Button
-          type="button"
-          @click="selectedVersion = 'v2'"
-          :variant="selectedVersion === 'v2' ? 'default' : 'ghost'"
-          size="sm"
-          class="flex-1 text-xs font-semibold transition-all cursor-pointer"
-        >
-          <span>{{ t('v2BondingCurveTab') }}</span>
-        </Button>
-        <Button
-          type="button"
-          @click="!isArcNetwork && (selectedVersion = 'v1')"
-          :variant="selectedVersion === 'v1' ? 'default' : 'ghost'"
-          :disabled="isArcNetwork"
-          :title="isArcNetwork ? 'Arc Network uses V2 Bonding Curve architecture' : ''"
-          size="sm"
-          class="flex-1 text-xs font-semibold transition-all"
-          :class="isArcNetwork ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'"
-        >
-          <span>{{ t('v1DirectPoolTab') }}</span>
-          <span
-            v-if="isArcNetwork"
-            class="ml-2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border"
-          >
-            V2 Only
-          </span>
-        </Button>
-      </div>
-
       <form @submit.prevent="handleLaunch" class="space-y-7">
         <!-- Top Info Section: Image on the side + Name, Ticker, Description -->
         <div class="flex flex-col sm:flex-row gap-6 sm:gap-8 items-start">
@@ -236,11 +205,9 @@
 
           <p class="text-[11px] text-muted-foreground">
             {{
-              selectedVersion === 'v2'
-                ? activeNetwork.chainId === 5042
-                  ? 'Graduates once the curve raises 69,000 USDC into Uniswap liquidity.'
-                  : t('v2GraduatesHint')
-                : t('v1PairsHint')
+              activeNetwork.chainId === 5042
+                ? 'Graduates once the curve raises 69,000 USDC into Uniswap liquidity.'
+                : t('v2GraduatesHint')
             }}
           </p>
         </div>
@@ -1395,18 +1362,6 @@ function updateShare(key: keyof RevenueSplit, val: unknown): void {
   revenueSplit.value[key] = Math.min(requested, maxAllowed);
 }
 
-const selectedVersion = ref<'v1' | 'v2'>('v2');
-const isArcNetwork = computed(() => activeNetwork.value.chainId === ARC_CHAIN.chainId);
-
-watch(
-  () => activeNetwork.value.chainId,
-  (chainId) => {
-    if (chainId === ARC_CHAIN.chainId) {
-      selectedVersion.value = 'v2';
-    }
-  },
-  { immediate: true },
-);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const selectedFileName = ref('');
 const imagePreview = ref('');
@@ -1522,25 +1477,22 @@ async function handleLaunch() {
     return;
   }
   isModalOpen.value = true;
-  const result = await launchToken(
-    {
-      name: form.value.name.trim(),
-      symbol: form.value.symbol.trim().toUpperCase(),
-      description: form.value.description.trim(),
-      logo: form.value.logo.trim(),
-      socials: {
-        website: form.value.website.trim(),
-        twitter: form.value.twitter.trim(),
-        telegram: form.value.telegram.trim(),
-      },
-      initialBuyAmountEth: String(form.value.initialBuyEth || '0').trim(),
-      buyTaxPercent: parseFloat(form.value.buyTax || '0'),
-      sellTaxPercent: parseFloat(form.value.sellTax || '0'),
-      creatorTaxWallet: form.value.creatorWallet.trim() || undefined,
-      revenueSplit: { ...revenueSplit.value },
+  const result = await launchToken({
+    name: form.value.name.trim(),
+    symbol: form.value.symbol.trim().toUpperCase(),
+    description: form.value.description.trim(),
+    logo: form.value.logo.trim(),
+    socials: {
+      website: form.value.website.trim(),
+      twitter: form.value.twitter.trim(),
+      telegram: form.value.telegram.trim(),
     },
-    selectedVersion.value,
-  );
+    initialBuyAmountEth: String(form.value.initialBuyEth || '0').trim(),
+    buyTaxPercent: parseFloat(form.value.buyTax || '0'),
+    sellTaxPercent: parseFloat(form.value.sellTax || '0'),
+    creatorTaxWallet: form.value.creatorWallet.trim() || undefined,
+    revenueSplit: { ...revenueSplit.value },
+  });
 
   if (result) {
     emit('tokenCreated', result.tokenAddress);

@@ -386,9 +386,6 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
       cfg.chainId === ROBINHOOD_CHAIN.chainId
         ? ('0xbA42499Cfe59abc05120A100EEc4f859F476034F' as Address)
         : undefined,
-      cfg.chainId === ROBINHOOD_CHAIN.chainId
-        ? ('0xcC547D4EC0eF85FE506D2b2EEe02Be3620178B16' as Address)
-        : undefined,
     ].filter((f): f is Address => Boolean(f && f !== '0x0000000000000000000000000000000000000000'));
 
     for (const factory of factories) {

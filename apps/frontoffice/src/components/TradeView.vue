@@ -3768,9 +3768,6 @@ async function loadTokenData(address: `0x${string}`) {
           network.chainId === 4663
             ? ('0xbA42499Cfe59abc05120A100EEc4f859F476034F' as `0x${string}`)
             : undefined,
-          network.chainId === 4663
-            ? ('0xcC547D4EC0eF85FE506D2b2EEe02Be3620178B16' as `0x${string}`)
-            : undefined,
         ].filter((f): f is `0x${string}` =>
           Boolean(f && f !== '0x0000000000000000000000000000000000000000'),
         );
