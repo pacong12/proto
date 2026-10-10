@@ -61,7 +61,7 @@ describe('IPFS Service & Controller', () => {
       const result = await uploadFile(buffer, 'logo.png', 'image/png');
 
       expect(result.cid.startsWith('bafybei')).toBe(true);
-      expect(result.url).toBe(`https://ipfs.io/ipfs/${result.cid}`);
+      expect(result.url).toBe(`/api/ipfs/${result.cid}`);
       expect(result.uri).toBe(`ipfs://${result.cid}`);
     });
   });

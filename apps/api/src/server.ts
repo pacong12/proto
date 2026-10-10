@@ -38,6 +38,8 @@ import {
   TransactionIntent,
   type TokenCommentEntity,
   type TradeEventEntity,
+  type TokenTaxConfig,
+  getUserIdentity,
   ok,
   err,
 } from '@proto/shared-types';
@@ -178,7 +180,7 @@ function scheduleRobinhoodPoll(): void {
       }
     }
     scheduleRobinhoodPoll();
-  }, 5_000);
+  }, 60_000);
 }
 let arcPolling = false;
 function scheduleArcPoll(): void {
@@ -194,11 +196,11 @@ function scheduleArcPoll(): void {
       }
     }
     scheduleArcPoll();
-  }, 5_000);
+  }, 60_000);
 }
 scheduleRobinhoodPoll();
-// Stagger Arc chain by 2.5s to avoid simultaneous RPC bursts
-setTimeout(scheduleArcPoll, 2_500);
+// Stagger Arc chain by 30s to avoid simultaneous RPC bursts
+setTimeout(scheduleArcPoll, 30_000);
 
 function safeStringify(value: unknown): string {
   return JSON.stringify(value, (_, v) => (typeof v === 'bigint' ? v.toString() : v));
@@ -614,6 +616,60 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     return replyJson(res, 200, { 'x-cache': 'MISS' });
   }
 
+  // GET /api/users/resolve?query=:query
+  if (url.pathname === '/api/users/resolve' && req.method === 'GET') {
+    const q = url.searchParams.get('query') || '';
+    if (!q) {
+      return replyError('INVALID_PARAM', 'query is required', 400);
+    }
+    const resolvedAddress = repository.findAddressByIdentity
+      ? await repository.findAddressByIdentity(q)
+      : null;
+    if (!resolvedAddress) {
+      return replyJson(err('USER_NOT_FOUND', 'User identity could not be resolved'), 404);
+    }
+    const identity = getUserIdentity(resolvedAddress);
+    return replyJson(ok({ address: resolvedAddress, identity }), 200);
+  }
+
+  // GET /api/users/:identifier/portfolio
+  const userPortfolioMatch = url.pathname.match(/^\/api\/users\/([a-zA-Z0-9_#.-]+)\/portfolio$/);
+  if (userPortfolioMatch && req.method === 'GET') {
+    const identifier = userPortfolioMatch[1];
+    let address = identifier;
+    if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+      const resolved = repository.findAddressByIdentity
+        ? await repository.findAddressByIdentity(address)
+        : null;
+      if (!resolved) {
+        return replyJson(err('USER_NOT_FOUND', 'User identity could not be resolved'), 404);
+      }
+      address = resolved;
+    }
+
+    const positions = repository.getUserPositions ? await repository.getUserPositions(address) : [];
+    return replyJson(ok(positions), 200);
+  }
+
+  // GET /api/users/:identifier
+  const userMatch = url.pathname.match(/^\/api\/users\/([a-zA-Z0-9_#.-]+)$/);
+  if (userMatch && req.method === 'GET') {
+    const identifier = userMatch[1];
+    let address = identifier;
+    if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+      const resolved = repository.findAddressByIdentity
+        ? await repository.findAddressByIdentity(address)
+        : null;
+      if (!resolved) {
+        return replyJson(err('USER_NOT_FOUND', 'User identity could not be resolved'), 404);
+      }
+      address = resolved;
+    }
+
+    const identity = getUserIdentity(address);
+    return replyJson(ok({ address, identity }), 200);
+  }
+
   // GET /api/trades (global recent protocol trades or trades by trader)
   if (url.pathname === '/api/trades' && req.method === 'GET') {
     const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') ?? '30', 10)));
@@ -674,15 +730,25 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   if (syncMatch && req.method === 'POST') {
     const address = syncMatch[1] as `0x${string}`;
     try {
-      let body: { txHash?: string } = {};
+      let body: { txHash?: string; taxConfig?: unknown } = {};
       try {
-        body = await parseJsonBody<{ txHash?: string }>(req, 4096);
+        body = await parseJsonBody<{ txHash?: string; taxConfig?: unknown }>(req, 4096);
       } catch {
         // optional body
       }
 
       if (body.txHash && body.txHash.startsWith('0x') && body.txHash.length === 66) {
         await indexTradeFromReceipt(body.txHash as `0x${string}`, address);
+      }
+
+      if (body.taxConfig && typeof body.taxConfig === 'object') {
+        const existing = await repository.findByAddress(address);
+        if (existing) {
+          await repository.save({
+            ...existing,
+            taxConfig: body.taxConfig as TokenTaxConfig,
+          });
+        }
       }
 
       Promise.allSettled([robinhoodPoller.pollEvents(), arcPoller.pollEvents()]);
@@ -780,6 +846,18 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     return replyEnvelope(res);
   }
 
+  // GET /api/feed or /api/callouts — global community callouts across all tokens
+  if ((url.pathname === '/api/feed' || url.pathname === '/api/callouts') && req.method === 'GET') {
+    const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') ?? '50', 10)));
+    const offset = Math.max(0, parseInt(url.searchParams.get('offset') ?? '0', 10));
+    const viewer = url.searchParams.get('viewer') || undefined;
+    const author = url.searchParams.get('author') || undefined;
+    const callouts = (await repository.getFeedCallouts?.(limit, offset, viewer, author)) || [];
+    return new Response(safeStringify({ success: true, data: callouts, timestamp: Date.now() }), {
+      headers,
+    });
+  }
+
   // GET & POST /api/tokens/:address/comments
   const commentsMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/comments$/);
   if (commentsMatch && req.method === 'GET') {
@@ -798,10 +876,26 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         content?: string;
         authorAddress?: string;
         imageUrl?: string;
+        targetMcap?: string;
+        positionUsd?: number;
+        callType?: 'call' | 'comment';
+        parentId?: string;
+        quotedCalloutId?: string;
       }>(req, 32_768);
       const content = String(body.content || '').trim();
       const authorAddress = String(body.authorAddress || '').trim();
       const imageUrl = body.imageUrl ? String(body.imageUrl).trim() : undefined;
+      const targetMcap = body.targetMcap ? String(body.targetMcap).trim() : undefined;
+      const parentId = body.parentId ? String(body.parentId).trim() : undefined;
+      const quotedCalloutId = body.quotedCalloutId
+        ? String(body.quotedCalloutId).trim()
+        : undefined;
+      let positionUsd =
+        typeof body.positionUsd === 'number' && !isNaN(body.positionUsd)
+          ? body.positionUsd
+          : undefined;
+      let supplyPercent: number | undefined;
+      const callType = body.callType === 'comment' ? 'comment' : 'call';
       if (!content || content.length > 500) {
         return replyError(
           'INVALID_COMMENT',
@@ -827,6 +921,99 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         }
       }
 
+      // Callout position check: callers must hold a position in the token to post a callout
+      if (callType === 'call') {
+        let hasPosition = false;
+        let verifiedPositionUsd = positionUsd ?? 0;
+
+        // 1. Check if caller already verified position value
+        if (positionUsd && positionUsd > 0) {
+          hasPosition = true;
+        }
+
+        // 2. Check indexed holders from repository (fast local DB lookup)
+        if (!hasPosition) {
+          try {
+            const holders = await repository.getHolders(address);
+            const inHolders = holders.some(
+              (h) =>
+                h.address.toLowerCase() === authorAddress.toLowerCase() &&
+                parseFloat(h.balance) > 0,
+            );
+            if (inHolders) {
+              hasPosition = true;
+            }
+          } catch {
+            // Non-blocking
+          }
+        }
+
+        // 3. Fallback: on-chain verification with strict 1s timeout to avoid RPC latency
+        if (!hasPosition) {
+          try {
+            const token = await repository.findByAddress(address as `0x${string}`);
+            const chain = token
+              ? chainRegistry.resolveForToken(token)
+              : chainRegistry.getChainByParam(undefined);
+
+            const rpcTimeout = new Promise<bigint>((_, reject) =>
+              setTimeout(() => reject(new Error('RPC_TIMEOUT')), 1000),
+            );
+
+            const balPromise = chain.client.readContract({
+              address: address as `0x${string}`,
+              abi: [
+                {
+                  name: 'balanceOf',
+                  type: 'function',
+                  stateMutability: 'view',
+                  inputs: [{ name: 'account', type: 'address' }],
+                  outputs: [{ name: '', type: 'uint256' }],
+                },
+              ],
+              functionName: 'balanceOf',
+              args: [authorAddress as `0x${string}`],
+            }) as Promise<bigint>;
+
+            const balWei = await Promise.race([balPromise, rpcTimeout]);
+
+            if (balWei > 0n) {
+              hasPosition = true;
+              const decimals = token?.decimals ?? 18;
+              const tokenCount = Number(balWei) / 10 ** decimals;
+              const mkt = await repository.getMarketData(address as `0x${string}`);
+              const price = mkt?.priceUsd ?? 0;
+              verifiedPositionUsd = tokenCount * price;
+
+              if (token?.totalSupply) {
+                try {
+                  const totalTokens = Number(BigInt(token.totalSupply)) / 10 ** decimals;
+                  if (totalTokens > 0) {
+                    supplyPercent = Math.min(100, Math.max(0, (tokenCount / totalTokens) * 100));
+                  }
+                } catch {
+                  /* ignore invalid totalSupply string */
+                }
+              }
+            }
+          } catch {
+            // Non-blocking
+          }
+        }
+
+        if (!hasPosition) {
+          return replyError(
+            'NO_TOKEN_POSITION',
+            'You must hold a position in this token to post a callout. Please buy tokens first.',
+            400,
+          );
+        }
+
+        if (verifiedPositionUsd > 0) {
+          positionUsd = verifiedPositionUsd;
+        }
+      }
+
       const comment: TokenCommentEntity = {
         id: crypto.randomUUID(),
         tokenAddress: address,
@@ -835,6 +1022,15 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         imageUrl,
         likesCount: 0,
         createdAt: Date.now(),
+        targetMcap,
+        positionUsd,
+        supplyPercent,
+        callType,
+        parentId,
+        quotedCalloutId,
+        repostsCount: 0,
+        quotesCount: 0,
+        repliesCount: 0,
       };
 
       await repository.saveComment?.(comment);
@@ -850,12 +1046,13 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     }
   }
 
-  // POST /api/tokens/:address/comments/:commentId/like
-  const commentLikeMatch = url.pathname.match(
+  // POST /api/comments/:commentId/like OR /api/tokens/:address/comments/:commentId/like
+  const directLikeMatch = url.pathname.match(/^\/api\/comments\/([^/]+)\/like$/);
+  const tokenLikeMatch = url.pathname.match(
     /^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/comments\/([^/]+)\/like$/,
   );
-  if (commentLikeMatch && req.method === 'POST') {
-    const commentId = commentLikeMatch[2];
+  if ((directLikeMatch || tokenLikeMatch) && req.method === 'POST') {
+    const commentId = directLikeMatch ? directLikeMatch[1] : tokenLikeMatch![2];
     try {
       const body = await parseJsonBody<{ userAddress?: string }>(req, 2048);
       const userAddress = String(body.userAddress || '').trim();
@@ -877,46 +1074,53 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     }
   }
 
-  // GET & POST /api/tokens/:address/votes (or /vote)
-  const votesMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/votes?$/);
-  if (votesMatch && req.method === 'GET') {
-    const address = votesMatch[1];
-    const viewer = url.searchParams.get('viewer') || undefined;
-    const summary = (await repository.getVotes?.(address, viewer)) || {
-      tokenAddress: address,
-      bullishCount: 0,
-      bearishCount: 0,
-      totalVotes: 0,
-      bullishPercent: 50,
-    };
-    return new Response(safeStringify({ success: true, data: summary, timestamp: Date.now() }), {
-      headers,
-    });
-  }
-
-  if (votesMatch && req.method === 'POST') {
-    const address = votesMatch[1];
+  // POST /api/comments/:commentId/repost
+  const repostMatch = url.pathname.match(/^\/api\/comments\/([^/]+)\/repost$/);
+  if (repostMatch && req.method === 'POST') {
+    const commentId = repostMatch[1];
     try {
-      const body = await parseJsonBody<{ userAddress?: string; voteType?: string }>(req, 2048);
+      const body = await parseJsonBody<{ userAddress?: string }>(req, 2048);
       const userAddress = String(body.userAddress || '').trim();
-      const voteType = String(body.voteType || '').toLowerCase();
       if (!userAddress || !/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
-        return replyError('INVALID_ADDRESS', 'Valid Ethereum address required to vote', 400);
+        return replyError('INVALID_ADDRESS', 'Valid Ethereum address required to repost', 400);
       }
-      if (voteType !== 'bullish' && voteType !== 'bearish') {
-        return replyError('INVALID_VOTE', 'Vote type must be "bullish" or "bearish"', 400);
-      }
-      await repository.saveVote?.(address, userAddress, voteType as 'bullish' | 'bearish');
-      const summary = await repository.getVotes?.(address, userAddress);
-      return new Response(safeStringify({ success: true, data: summary, timestamp: Date.now() }), {
+      const result = (await repository.toggleCommentRepost?.(commentId, userAddress)) ?? {
+        reposted: false,
+        repostsCount: 0,
+      };
+      return new Response(safeStringify({ success: true, data: result, timestamp: Date.now() }), {
         headers,
       });
-    } catch (e) {
-      if ((e as Error)?.message === 'PAYLOAD_TOO_LARGE') {
-        return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
-      }
-      return replyError('VOTE_ERROR', 'Failed to record vote', 400);
+    } catch {
+      return replyError('REPOST_ERROR', 'Failed to process repost', 400);
     }
+  }
+
+  // POST /api/comments/:commentId/view OR /api/callouts/:calloutId/view -- record view impression
+  const viewMatch = url.pathname.match(/^\/api\/(callouts|comments)\/([a-zA-Z0-9_-]+)\/view$/);
+  if (viewMatch && req.method === 'POST') {
+    const commentId = viewMatch[2];
+    const viewsCount = (await repository.incrementCommentViews?.(commentId)) ?? 1;
+    return new Response(
+      safeStringify({ success: true, data: { viewsCount }, timestamp: Date.now() }),
+      {
+        headers,
+      },
+    );
+  }
+
+  // GET /api/callouts/:calloutId or /api/comments/:commentId -- get full thread & detail
+  const calloutDetailMatch = url.pathname.match(/^\/api\/(callouts|comments)\/([a-zA-Z0-9_-]+)$/);
+  if (calloutDetailMatch && req.method === 'GET') {
+    const calloutId = calloutDetailMatch[2];
+    const viewer = url.searchParams.get('viewer') || undefined;
+    const item = await repository.getCalloutThread?.(calloutId, viewer);
+    if (!item) {
+      return replyError('NOT_FOUND', 'Callout not found', 404);
+    }
+    return new Response(safeStringify({ success: true, data: item, timestamp: Date.now() }), {
+      headers,
+    });
   }
 
   // GET /api/tokens/:address
@@ -1174,6 +1378,29 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       return replyJson(res, status);
     } catch {
       return replyError('UPLOAD_ERROR', 'Failed to process upload', 500);
+    }
+  }
+
+  // GET & HEAD /api/ipfs/:cid
+  const ipfsGetMatch = url.pathname.match(/^\/api\/ipfs\/([a-zA-Z0-9]+)$/);
+  if (ipfsGetMatch && (req.method === 'GET' || req.method === 'HEAD')) {
+    try {
+      const cid = ipfsGetMatch[1];
+      const file = await ipfsService.getFile(cid);
+      if (!file) {
+        return replyError('FILE_NOT_FOUND', 'IPFS file not found', 404);
+      }
+      return new Response(req.method === 'HEAD' ? null : new Uint8Array(file.data), {
+        status: 200,
+        headers: {
+          'Content-Type': file.mimeType,
+          'Content-Length': file.data.byteLength.toString(),
+          'Cache-Control': 'public, max-age=31536000, immutable',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    } catch {
+      return replyError('FETCH_ERROR', 'Failed to retrieve IPFS file', 500);
     }
   }
 
@@ -1632,6 +1859,7 @@ export const server =
   typeof Bun !== 'undefined'
     ? Bun.serve({
         port: PORT,
+        hostname: '0.0.0.0',
         fetch: handleRequest,
       })
     : {

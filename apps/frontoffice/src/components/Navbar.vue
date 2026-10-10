@@ -42,6 +42,7 @@ import {
   SelectLabel,
   SelectSeparator,
 } from '@/components/ui/select';
+import { getUserIdentity } from '@/lib/username';
 
 defineEmits<{
   (e: 'openSearch'): void;
@@ -73,9 +74,24 @@ watch(
   },
 );
 
+const userProfileUrl = computed(() => {
+  if (account.value) {
+    return `/${getUserIdentity(account.value).name}`;
+  }
+  return '/launchpad';
+});
+
 function isRouteActive(path: string) {
   if (path === '/launchpad') {
-    return route.path === '/launchpad' || route.path === '/';
+    return route.path === '/launchpad' || route.path === '/' || route.path === '/explore';
+  }
+  if (path === '/profile') {
+    const userPath = account.value ? `/${getUserIdentity(account.value).name}` : '';
+    return (
+      route.path.startsWith('/profile') ||
+      route.path.startsWith('/u') ||
+      (Boolean(userPath) && route.path === userPath)
+    );
   }
   return route.path.startsWith(path);
 }
@@ -134,8 +150,8 @@ function copyAddress() {
             :class="[
               'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
               isRouteActive('/launchpad')
-                ? 'bg-muted text-foreground'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                ? 'bg-black text-foreground border border-border font-bold'
+                : 'text-muted-foreground hover:text-foreground hover:bg-zinc-950',
             ]"
           >
             {{ t('explore') }}
@@ -146,8 +162,8 @@ function copyAddress() {
             :class="[
               'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
               isRouteActive('/launchpad/create')
-                ? 'bg-muted text-foreground'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                ? 'bg-black text-foreground border border-border font-bold'
+                : 'text-muted-foreground hover:text-foreground hover:bg-zinc-950',
             ]"
           >
             {{ t('create') }}
@@ -158,11 +174,23 @@ function copyAddress() {
             :class="[
               'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
               isRouteActive('/memestock')
-                ? 'bg-muted text-foreground'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                ? 'bg-black text-foreground border border-border font-bold'
+                : 'text-muted-foreground hover:text-foreground hover:bg-zinc-950',
             ]"
           >
             {{ t('memestock') }}
+          </RouterLink>
+
+          <RouterLink
+            to="/feed"
+            :class="[
+              'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
+              isRouteActive('/feed')
+                ? 'bg-black text-foreground border border-border font-bold'
+                : 'text-muted-foreground hover:text-foreground hover:bg-zinc-950',
+            ]"
+          >
+            {{ t('feed') }}
           </RouterLink>
 
           <RouterLink
@@ -170,8 +198,8 @@ function copyAddress() {
             :class="[
               'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
               isRouteActive('/analytics')
-                ? 'bg-muted text-foreground'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                ? 'bg-black text-foreground border border-border font-bold'
+                : 'text-muted-foreground hover:text-foreground hover:bg-zinc-950',
             ]"
           >
             {{ t('analytics') }}
@@ -289,8 +317,8 @@ function copyAddress() {
               >
                 <Jazzicon :address="account" :size="16" class="rounded-full shrink-0" />
                 <span
-                  class="font-bold text-foreground text-[11px] sm:text-xs hidden min-[480px]:inline"
-                  >{{ formattedAddress }}</span
+                  class="font-bold text-foreground text-[11px] sm:text-xs hidden min-[480px]:inline truncate max-w-[140px]"
+                  >{{ getUserIdentity(account).name }}</span
                 >
               </Button>
             </DropdownMenuTrigger>
@@ -307,7 +335,7 @@ function copyAddress() {
                 <div class="truncate min-w-0 flex-1">
                   <div class="flex items-center justify-between gap-1">
                     <span class="text-xs font-bold text-foreground font-mono truncate">
-                      {{ formattedAddress }}
+                      {{ getUserIdentity(account).displayName }}
                     </span>
                     <span class="text-[11px] font-mono font-bold text-primary shrink-0">
                       {{ formattedBalance }}
@@ -325,7 +353,7 @@ function copyAddress() {
 
               <DropdownMenuItem as-child>
                 <RouterLink
-                  to="/profile"
+                  :to="userProfileUrl"
                   class="flex items-center gap-2.5 w-full cursor-pointer text-foreground px-3 py-2.5 text-xs rounded-xl hover:bg-muted transition"
                 >
                   <User class="w-4 h-4" />
@@ -480,6 +508,19 @@ function copyAddress() {
         </RouterLink>
 
         <RouterLink
+          to="/feed"
+          @click="mobileMenuOpen = false"
+          :class="[
+            'flex items-center gap-2.5 py-2.5 px-3 rounded-xl text-sm font-semibold transition',
+            isRouteActive('/feed')
+              ? 'bg-muted text-foreground font-bold'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
+          ]"
+        >
+          {{ t('feed') }}
+        </RouterLink>
+
+        <RouterLink
           to="/analytics"
           @click="mobileMenuOpen = false"
           :class="[
@@ -493,7 +534,7 @@ function copyAddress() {
         </RouterLink>
 
         <RouterLink
-          to="/profile"
+          :to="userProfileUrl"
           @click="mobileMenuOpen = false"
           :class="[
             'flex items-center gap-2.5 py-2.5 px-3 rounded-xl text-sm font-semibold transition',
@@ -515,7 +556,7 @@ function copyAddress() {
               <Jazzicon :address="account" :size="28" class="rounded-full shrink-0" />
               <div class="truncate">
                 <span class="text-xs font-mono font-bold text-foreground block truncate">{{
-                  formattedAddress
+                  getUserIdentity(account).displayName
                 }}</span>
                 <span class="text-[11px] font-mono text-primary font-semibold">{{
                   formattedBalance
@@ -551,9 +592,39 @@ function copyAddress() {
           <span>{{ isConnecting ? t('connecting') : t('connectWallet') }}</span>
         </Button>
 
-        <!-- Theme & Language Row in Mobile Drawer -->
         <!-- Theme & Language Section in Mobile Drawer -->
         <div class="space-y-2.5 pt-1">
+          <!-- Network Switcher Card in Mobile Drawer -->
+          <div
+            class="flex items-center justify-between p-2.5 rounded-xl border border-border bg-card"
+          >
+            <div class="flex items-center gap-2 text-xs font-semibold text-foreground">
+              <img
+                :src="activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+                :alt="activeNetwork.name"
+                class="w-4 h-4 rounded-xs object-contain shrink-0"
+              />
+              <span>{{ activeNetwork.name }}</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <Button
+                v-for="net in Object.values(SUPPORTED_CHAINS)"
+                :key="net.chainId"
+                size="sm"
+                variant="outline"
+                class="h-7 px-2.5 text-[11px] font-mono font-bold cursor-pointer border-border"
+                :class="
+                  activeNetwork.chainId === net.chainId
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : ''
+                "
+                @click="handleChainSelect(net.chainId)"
+              >
+                {{ net.chainId === 5042 ? 'Arc' : 'Robinhood' }}
+              </Button>
+            </div>
+          </div>
+
           <!-- Theme Card -->
           <div
             class="flex items-center justify-between p-2.5 rounded-xl border border-border bg-card"

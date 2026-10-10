@@ -42,7 +42,6 @@ function parseInitialBuyWei(val: string | number | undefined | null): bigint {
   }
 }
 import {
-  ARC_CHAIN,
   getNetworkConfig,
   launchpadFactoryAbi,
   launchpadV2FactoryAbi,
@@ -84,175 +83,11 @@ export function useLaunchpad() {
   }
 
   // ---------------------------------------------------------------------------
-  // V1: Launch via Uniswap V3 direct pool
-  // ---------------------------------------------------------------------------
-
-  async function launchTokenV1(params: {
-    name: string;
-    symbol: string;
-    logo: string;
-    description: string;
-    socials: TokenSocials;
-    initialBuyAmountEth?: string;
-    buyTaxPercent?: number;
-    sellTaxPercent?: number;
-    creatorTaxWallet?: string;
-  }): Promise<{ tokenAddress: `0x${string}`; poolAddress: `0x${string}` } | null> {
-    loading.value = true;
-    error.value = null;
-    launchStep.value = 'validating';
-    launchTxHash.value = null;
-    launchTokenAddress.value = null;
-
-    try {
-      const walletClient = await getWalletClient();
-      if (!walletClient) throw new Error('No Web3 wallet detected');
-
-      const [account] = await walletClient.getAddresses();
-      if (!account) throw new Error('Please connect your wallet');
-
-      let activeChainId = walletChainId.value ?? undefined;
-      try {
-        const clientChainId = await walletClient.getChainId();
-        if (clientChainId) {
-          activeChainId = clientChainId;
-          walletChainId.value = clientChainId;
-        }
-      } catch {
-        // Fall back to walletChainId.value
-      }
-
-      const network = getNetworkConfig(activeChainId);
-      if (
-        !network.contracts.factory ||
-        network.contracts.factory === '0x0000000000000000000000000000000000000000'
-      ) {
-        throw new Error(`Factory contract not deployed on ${network.name}`);
-      }
-
-      // On all EVM chains (including Arc Network), native msg.value uses 18 decimals
-      // (1e18 native wei = 1.0 token / 1.0 USDC) per Circle Arc EVM differences specification.
-      const initialBuyWei = parseInitialBuyWei(params.initialBuyAmountEth);
-      const totalValue = network.launchConfig.launchFeeWei + initialBuyWei;
-
-      launchStep.value = 'awaiting_signature';
-
-      const hash = await walletClient.writeContract({
-        address: network.contracts.factory,
-        abi: launchpadFactoryAbi,
-        functionName: 'launchToken',
-        args: [
-          params.name,
-          params.symbol,
-          params.logo,
-          params.description,
-          {
-            twitter: params.socials.twitter ?? '',
-            telegram: params.socials.telegram ?? '',
-            discord: params.socials.discord ?? '',
-            website: params.socials.website ?? '',
-            farcaster: params.socials.farcaster ?? '',
-          },
-          initialBuyWei,
-        ],
-        value: totalValue,
-        account,
-        chain: walletClient.chain,
-      });
-
-      launchTxHash.value = hash;
-      launchStep.value = 'confirming';
-
-      const publicClient = getPublicClient(network.chainId);
-      let receipt;
-      try {
-        receipt = await publicClient.waitForTransactionReceipt({
-          hash,
-          timeout: 60_000,
-          retryCount: 15,
-          retryDelay: 1500,
-        });
-      } catch {
-        try {
-          receipt = await publicClient.getTransactionReceipt({ hash });
-        } catch {
-          // Still waiting
-        }
-        if (!receipt) {
-          throw new Error(
-            `Transaction broadcasted with hash ${hash}. Waiting for block confirmation is taking longer than expected. Check block explorer.`,
-          );
-        }
-      }
-
-      if (receipt.status === 'reverted') {
-        throw new Error(
-          `Transaction reverted on-chain (status: reverted). Hash: ${hash}. Block: ${receipt.blockNumber}. Check launch fee and gas.`,
-        );
-      }
-
-      launchStep.value = 'indexing';
-
-      // 1. Primary: parse via viem parseEventLogs
-      const v1Events = parseEventLogs({
-        abi: launchpadFactoryAbi,
-        logs: receipt.logs,
-        eventName: 'TokenLaunched',
-      });
-
-      if (v1Events.length > 0) {
-        launchStep.value = 'success';
-        launchTokenAddress.value = v1Events[0].args.token;
-        return {
-          tokenAddress: v1Events[0].args.token,
-          poolAddress: v1Events[0].args.pool,
-        };
-      }
-
-      // 2. Secondary fallback: check each log individually
-      for (const log of receipt.logs) {
-        try {
-          const decoded = decodeEventLog({
-            abi: launchpadFactoryAbi,
-            eventName: 'TokenLaunched',
-            topics: log.topics,
-            data: log.data,
-          });
-          if (decoded?.args?.token) {
-            launchStep.value = 'success';
-            launchTokenAddress.value = decoded.args.token;
-            return {
-              tokenAddress: decoded.args.token,
-              poolAddress: decoded.args.pool,
-            };
-          }
-        } catch {
-          // Continue searching logs
-        }
-      }
-
-      console.error('[LaunchpadV1] TokenLaunched not found. Receipt logs:', receipt.logs);
-      throw new Error(`TokenLaunched event not found in transaction receipt. Hash: ${hash}`);
-    } catch (err) {
-      if (isUserRejection(err)) {
-        launchStep.value = 'idle';
-        error.value = null;
-      } else {
-        launchStep.value = 'error';
-        error.value = (err as Error).message;
-      }
-      return null;
-    } finally {
-      loading.value = false;
-    }
-  }
-
-  // ---------------------------------------------------------------------------
   // V2: Launch via Bonding Curve (graduates to Uniswap V4)
   // Uses launchpadV2FactoryAbi from shared-types as the single source of truth (fix HIGH-03).
   // ---------------------------------------------------------------------------
 
-  async function launchTokenV2(params: {
+  async function launchToken(params: {
     name: string;
     symbol: string;
     logo: string;
@@ -263,7 +98,17 @@ export function useLaunchpad() {
     buyTaxPercent?: number;
     sellTaxPercent?: number;
     creatorTaxWallet?: string;
-  }): Promise<{ tokenAddress: `0x${string}`; curveAddress: `0x${string}` } | null> {
+    revenueSplit?: {
+      creator: number;
+      buyback: number;
+      holders: number;
+      growth: number;
+    };
+  }): Promise<{
+    tokenAddress: `0x${string}`;
+    curveAddress: `0x${string}`;
+    poolAddress?: `0x${string}`;
+  } | null> {
     loading.value = true;
     error.value = null;
     launchStep.value = 'validating';
@@ -427,9 +272,64 @@ export function useLaunchpad() {
         const curveAddr = launchEv.args.curve as `0x${string}`;
         launchStep.value = 'success';
         launchTokenAddress.value = tokenAddr;
+
+        // Apply advanced trading tax configuration if specified
+        if (
+          (params.buyTaxPercent && params.buyTaxPercent > 0) ||
+          (params.sellTaxPercent && params.sellTaxPercent > 0)
+        ) {
+          try {
+            const buyTaxBps = Math.min(
+              1000,
+              Math.max(0, Math.round((params.buyTaxPercent || 0) * 100)),
+            );
+            const sellTaxBps = Math.min(
+              1000,
+              Math.max(0, Math.round((params.sellTaxPercent || 0) * 100)),
+            );
+            const recipient = (params.creatorTaxWallet as `0x${string}`) || account;
+            const taxHash = await walletClient.writeContract({
+              address: tokenAddr,
+              abi: launchpadTokenAbi,
+              functionName: 'proposeTaxConfig',
+              args: [buyTaxBps, sellTaxBps, recipient],
+              account,
+              chain: walletClient.chain,
+            });
+            await publicClient.waitForTransactionReceipt({ hash: taxHash });
+          } catch (taxErr) {
+            console.warn('[LaunchpadV2] Post-launch proposeTaxConfig skipped or deferred:', taxErr);
+          }
+        }
+
+        try {
+          await fetch(`/api/tokens/${tokenAddr}/sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              txHash: hash,
+              taxConfig: {
+                buyTaxBps: Math.min(
+                  1000,
+                  Math.max(0, Math.round((params.buyTaxPercent || 0) * 100)),
+                ),
+                sellTaxBps: Math.min(
+                  1000,
+                  Math.max(0, Math.round((params.sellTaxPercent || 0) * 100)),
+                ),
+                taxRecipient: (params.creatorTaxWallet as `0x${string}`) || account,
+                revenueSplit: params.revenueSplit,
+              },
+            }),
+          });
+        } catch {
+          /* backend sync is best-effort */
+        }
+
         return {
           tokenAddress: tokenAddr,
           curveAddress: curveAddr,
+          poolAddress: curveAddr,
         };
       }
 
@@ -455,6 +355,7 @@ export function useLaunchpad() {
             return {
               tokenAddress: tokenAddr,
               curveAddress: curveAddr,
+              poolAddress: curveAddr,
             };
           }
         } catch {
@@ -492,45 +393,6 @@ export function useLaunchpad() {
     } finally {
       loading.value = false;
     }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Router: delegate to V1 or V2 based on the requested version
-  // ---------------------------------------------------------------------------
-
-  async function launchToken(
-    params: {
-      name: string;
-      symbol: string;
-      logo: string;
-      description: string;
-      socials: TokenSocials;
-      initialBuyAmountEth?: string;
-      minInitialTokensOut?: bigint;
-      buyTaxPercent?: number;
-      sellTaxPercent?: number;
-      creatorTaxWallet?: string;
-    },
-    version: 'v1' | 'v2' = 'v2',
-  ) {
-    let activeChainId = walletChainId.value ?? undefined;
-    try {
-      const walletClient = await getWalletClient();
-      if (walletClient) {
-        const clientChainId = await walletClient.getChainId();
-        if (clientChainId) activeChainId = clientChainId;
-      }
-    } catch {
-      // Non-blocking
-    }
-
-    const network = getNetworkConfig(activeChainId);
-    // Arc Network only supports V2 Bonding Curve
-    if (network.chainId === ARC_CHAIN.chainId || version === 'v2') {
-      const res = await launchTokenV2(params);
-      return res ? { tokenAddress: res.tokenAddress, poolAddress: res.curveAddress } : null;
-    }
-    return launchTokenV1(params);
   }
 
   // ---------------------------------------------------------------------------

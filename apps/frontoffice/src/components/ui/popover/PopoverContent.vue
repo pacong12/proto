@@ -26,7 +26,7 @@ const forwarded = useForwardPropsEmits(props, emits);
       v-bind="forwarded"
       :class="
         cn(
-          'z-50 w-72 rounded-2xl border border-zinc-800 bg-zinc-950 p-4 text-zinc-100 shadow-2xl outline-none backdrop-blur-md animate-in fade-in zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2',
+          'z-50 w-72 rounded-2xl border border-border bg-popover p-4 text-popover-foreground shadow-2xl outline-none backdrop-blur-md animate-in fade-in zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2',
           props.class,
         )
       "

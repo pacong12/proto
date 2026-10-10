@@ -55,3 +55,7 @@ apps/docs/.vitepress/cache/
 
 # Personal reports & spreadsheets
 *.xlsx
+
+# Uploaded IPFS files
+uploads/
+apps/api/uploads/

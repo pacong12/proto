@@ -49,7 +49,7 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:3011',
+        target: process.env.VITE_API_PROXY_TARGET ?? 'http://127.0.0.1:3011',
         changeOrigin: true,
       },
     },

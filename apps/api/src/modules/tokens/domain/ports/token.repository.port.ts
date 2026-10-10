@@ -4,7 +4,6 @@ import {
   TradeEventEntity,
   CandlestickEntity,
   TokenCommentEntity,
-  TokenVotesSummary,
 } from '@proto/shared-types';
 
 export interface TokenRepositoryPort {
@@ -40,18 +39,40 @@ export interface TokenRepositoryPort {
   getTradesByTrader?(trader: string, limit?: number): Promise<TradeEventEntity[]>;
   getTradesSince?(sinceMs: number): Promise<TradeEventEntity[]>;
   findTradeByHash?(txHash: string): Promise<TradeEventEntity | null>;
+  findAddressByIdentity?(nameOrSlug: string): Promise<string | null>;
+  getUserPositions?(address: string): Promise<
+    Array<{
+      tokenAddress: string;
+      name: string;
+      symbol: string;
+      logo?: string;
+      balance: number;
+      balanceFormatted: string;
+      priceUsd: number;
+      valueUsd: number;
+    }>
+  >;
 
   // Discussion comments & sentiment voting
   saveComment?(comment: TokenCommentEntity): Promise<void>;
   getComments?(tokenAddress: string, viewerAddress?: string): Promise<TokenCommentEntity[]>;
+  getFeedCallouts?(
+    limit?: number,
+    offset?: number,
+    viewerAddress?: string,
+    authorAddress?: string,
+  ): Promise<import('@proto/shared-types').FeedCalloutItem[]>;
+  getCalloutThread?(
+    calloutId: string,
+    viewerAddress?: string,
+  ): Promise<import('@proto/shared-types').FeedCalloutItem | null>;
   toggleCommentLike?(
     commentId: string,
     userAddress: string,
   ): Promise<{ liked: boolean; likesCount: number }>;
-  saveVote?(
-    tokenAddress: string,
+  toggleCommentRepost?(
+    commentId: string,
     userAddress: string,
-    voteType: 'bullish' | 'bearish',
-  ): Promise<void>;
-  getVotes?(tokenAddress: string, viewerAddress?: string): Promise<TokenVotesSummary>;
+  ): Promise<{ reposted: boolean; repostsCount: number }>;
+  incrementCommentViews?(commentId: string): Promise<number>;
 }

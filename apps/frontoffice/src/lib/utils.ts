@@ -63,6 +63,25 @@ export function formatPriceUsd(price: number | string | undefined | null): strin
   return `$${num.toFixed(11)}`;
 }
 
+const SUB_DIGITS = '₀₁₂₃₄₅₆₇₈₉';
+export function toSubscript(num: number): string {
+  return String(num).replace(/\d/g, (d) => SUB_DIGITS[Number(d)]);
+}
+
+/**
+ * Format small token spot price in clean DEX subscript notation (e.g. 0.0₆1234).
+ */
+export function formatSubscriptPrice(v: number): string {
+  if (!isFinite(v) || v === 0) return '0';
+  if (v >= 1000) return v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  if (v >= 1) return v.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  if (v >= 0.0001) return v.toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
+  const [mantissa, exponent] = v.toExponential(3).split('e');
+  const zeros = Math.abs(Number(exponent)) - 1;
+  const sig = mantissa.replace('.', '').replace(/0+$/, '');
+  return `0.0${toSubscript(zeros)}${sig}`;
+}
+
 /**
  * Format token quantities compactly (e.g. 1.25M, 450.00K).
  */

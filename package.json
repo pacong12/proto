@@ -7,6 +7,9 @@
     "packages/*",
     "apps/*"
   ],
+  "overrides": {
+    "source-map-js": "^1.2.2"
+  },
   "scripts": {
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",

@@ -135,6 +135,29 @@ const launchpadTokenV2Abi = [
       { name: 'farcaster', type: 'string' },
     ],
   },
+  {
+    name: 'taxConfig',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [
+      { name: 'buyTaxBps', type: 'uint16' },
+      { name: 'sellTaxBps', type: 'uint16' },
+      { name: 'taxRecipient', type: 'address' },
+    ],
+  },
+  {
+    name: 'pendingTaxConfig',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [
+      { name: 'buyTaxBps', type: 'uint16' },
+      { name: 'sellTaxBps', type: 'uint16' },
+      { name: 'taxRecipient', type: 'address' },
+      { name: 'validAfter', type: 'uint256' },
+    ],
+  },
 ] as const;
 
 function makeViemChain(cfg: NetworkConfig): Chain {
@@ -212,6 +235,8 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
         graduationTarget,
         graduated,
         creator,
+        taxRaw,
+        pendingRaw,
       ] = await Promise.all([
         client.readContract({
           address: tokenAddress,
@@ -280,9 +305,37 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
           abi: bondingCurveAbi,
           functionName: 'creator',
         }),
+        client
+          .readContract({
+            address: tokenAddress,
+            abi: launchpadTokenV2Abi,
+            functionName: 'taxConfig',
+          })
+          .catch(() => [0, 0, '0x0000000000000000000000000000000000000000'] as const),
+        client
+          .readContract({
+            address: tokenAddress,
+            abi: launchpadTokenV2Abi,
+            functionName: 'pendingTaxConfig',
+          })
+          .catch(() => [0, 0, '0x0000000000000000000000000000000000000000', 0n] as const),
       ]);
 
       const [twitter, telegram, discord, website, farcaster] = socialsRaw as string[];
+
+      const buyTaxBps = Number(taxRaw[0]) || Number(pendingRaw[0]) || undefined;
+      const sellTaxBps = Number(taxRaw[1]) || Number(pendingRaw[1]) || undefined;
+      const taxRecipient =
+        taxRaw[2] !== '0x0000000000000000000000000000000000000000'
+          ? (taxRaw[2] as `0x${string}`)
+          : pendingRaw[2] !== '0x0000000000000000000000000000000000000000'
+            ? (pendingRaw[2] as `0x${string}`)
+            : undefined;
+
+      const taxConfig =
+        buyTaxBps !== undefined || sellTaxBps !== undefined || taxRecipient
+          ? { buyTaxBps, sellTaxBps, taxRecipient }
+          : undefined;
 
       return {
         address: tokenAddress,
@@ -293,6 +346,7 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
         logo: (logo as string) || '',
         description: (description as string) || '',
         socials: { twitter, telegram, discord, website, farcaster },
+        taxConfig,
         deployer: creator as `0x${string}`,
         pairedToken: networkConfig.contracts.weth as `0x${string}`,
         poolAddress: curveAddress as `0x${string}`,
@@ -331,9 +385,6 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
       cfg.contracts.factory,
       cfg.chainId === ROBINHOOD_CHAIN.chainId
         ? ('0xbA42499Cfe59abc05120A100EEc4f859F476034F' as Address)
-        : undefined,
-      cfg.chainId === ROBINHOOD_CHAIN.chainId
-        ? ('0xcC547D4EC0eF85FE506D2b2EEe02Be3620178B16' as Address)
         : undefined,
     ].filter((f): f is Address => Boolean(f && f !== '0x0000000000000000000000000000000000000000'));
 

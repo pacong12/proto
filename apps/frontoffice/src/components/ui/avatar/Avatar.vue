@@ -11,7 +11,7 @@ const props = defineProps<AvatarRootProps & { class?: HTMLAttributes['class'] }>
     v-bind="props"
     :class="
       cn(
-        'relative flex h-8 w-8 shrink-0 overflow-hidden rounded-full border border-zinc-800 bg-zinc-900',
+        'relative flex h-8 w-8 shrink-0 overflow-hidden rounded-full border border-border bg-card',
         props.class,
       )
     "

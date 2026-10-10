@@ -10,6 +10,12 @@ export interface TokenTaxConfig {
   buyTaxBps?: number; // Base points (100 = 1%)
   sellTaxBps?: number;
   taxRecipient?: `0x${string}`;
+  revenueSplit?: {
+    creator: number;
+    buyback: number;
+    holders: number;
+    growth: number;
+  };
 }
 export type LaunchVersion = 'v1' | 'v2';
 
@@ -110,15 +116,29 @@ export interface TokenCommentEntity {
   content: string;
   imageUrl?: string;
   likesCount: number;
+  repostsCount?: number;
+  quotesCount?: number;
+  repliesCount?: number;
+  viewsCount?: number;
+  parentId?: string;
+  quotedCalloutId?: string;
+  quotedCallout?: FeedCalloutItem;
   createdAt: number;
   isLikedByViewer?: boolean;
+  isRepostedByViewer?: boolean;
+  targetMcap?: string;
+  positionUsd?: number;
+  supplyPercent?: number;
+  profitUsd?: number;
+  callType?: 'call' | 'comment';
 }
 
-export interface TokenVotesSummary {
-  tokenAddress: string;
-  bullishCount: number;
-  bearishCount: number;
-  totalVotes: number;
-  bullishPercent: number;
-  viewerVote?: 'bullish' | 'bearish';
+export interface FeedCalloutItem extends TokenCommentEntity {
+  tokenName?: string;
+  tokenSymbol?: string;
+  tokenLogo?: string;
+  tokenMarketCapUsd?: number;
+  tokenPriceUsd?: number;
+  holdersCount?: number;
+  replies?: FeedCalloutItem[];
 }
