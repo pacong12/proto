@@ -276,6 +276,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { MessageCircle, X, Heart, Repeat, Share2, BarChart2, Send, Loader2 } from 'lucide-vue-next';
+import { apiFetch } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
 import { Jazzicon } from '@/components/ui/avatar';
@@ -325,8 +326,10 @@ async function loadThreadData(calloutId: string): Promise<void> {
   loadingThread.value = true;
   try {
     const viewerParam = props.account ? `?viewer=${props.account}` : '';
-    const res = await fetch(`/api/callouts/${calloutId}${viewerParam}`);
-    const data = await res.json();
+    const data = await apiFetch<{
+      success: boolean;
+      data: { replies?: import('@proto/shared-types').FeedCalloutItem[] };
+    }>(`/api/callouts/${calloutId}${viewerParam}`);
     if (data.success && data.data) {
       replies.value = data.data.replies || [];
     } else {
@@ -348,7 +351,11 @@ async function submitReply(): Promise<void> {
 
   isSubmittingReply.value = true;
   try {
-    const res = await fetch(`/api/tokens/${props.targetCall.tokenAddress}/comments`, {
+    const data = await apiFetch<{
+      success: boolean;
+      data: import('@proto/shared-types').FeedCalloutItem;
+      message?: string;
+    }>(`/api/tokens/${props.targetCall.tokenAddress}/comments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -358,7 +365,6 @@ async function submitReply(): Promise<void> {
         callType: 'comment',
       }),
     });
-    const data = await res.json();
     if (data.success && data.data) {
       toast.success('Reply posted!');
       replyText.value = '';
@@ -380,12 +386,14 @@ async function handleLikeReply(replyId: string): Promise<void> {
     return;
   }
   try {
-    const res = await fetch(`/api/comments/${replyId}/like`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userAddress: props.account }),
-    });
-    const data = await res.json();
+    const data = await apiFetch<{ success: boolean; data: { likesCount: number; liked: boolean } }>(
+      `/api/comments/${replyId}/like`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userAddress: props.account }),
+      },
+    );
     if (data.success && data.data) {
       const rep = replies.value.find((r) => r.id === replyId);
       if (rep) {

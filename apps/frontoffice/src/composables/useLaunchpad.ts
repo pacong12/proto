@@ -1,5 +1,6 @@
 import { ref } from 'vue';
 import { decodeEventLog, parseEventLogs, parseEther, type TransactionReceipt } from 'viem';
+import { apiFetch } from '@/lib/api-client';
 
 /**
  * Return true when the error originates from the user explicitly rejecting
@@ -303,7 +304,7 @@ export function useLaunchpad() {
         }
 
         try {
-          await fetch(`/api/tokens/${tokenAddr}/sync`, {
+          await apiFetch<unknown>(`/api/tokens/${tokenAddr}/sync`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

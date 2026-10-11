@@ -212,6 +212,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { Plus, Loader2, AlertCircle, RefreshCw, Search } from 'lucide-vue-next';
+import { apiFetch } from '@/lib/api-client';
 import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -313,8 +314,11 @@ async function fetchTokens() {
   loading.value = true;
   apiError.value = null;
   try {
-    const res = await fetch('/api/tokens');
-    const envelope = await res.json();
+    const envelope = await apiFetch<{
+      success: boolean;
+      data: Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }>;
+      error?: { message?: string };
+    }>('/api/tokens');
     if (envelope.success && Array.isArray(envelope.data)) {
       items.value = envelope.data;
     } else {

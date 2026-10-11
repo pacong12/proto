@@ -65,10 +65,10 @@ export const robinhoodClient: PublicClient = createClientForNetwork(ROBINHOOD_CH
 export const arcClient: PublicClient = createClientForNetwork(ARC_CHAIN);
 export const publicClient: PublicClient = robinhoodClient; // Backward compatibility alias
 
-const PORT = parseInt(
-  process.env.PORT ?? process.env.API_PORT ?? (process.env.NODE_ENV === 'test' ? '0' : '3001'),
-  10,
-);
+const PORT =
+  process.env.NODE_ENV === 'test'
+    ? 0
+    : parseInt(process.env.PORT ?? process.env.API_PORT ?? '3001', 10);
 
 const redisUrl = process.env.REDIS_URL || undefined;
 const redisCache = new RedisCacheAdapter(redisUrl, logger);
@@ -140,7 +140,7 @@ async function checkRateLimit(
   ip: string,
   limit = 120,
   windowMs = 60_000,
-  tier: 'api' | 'crawler' | 'upload' = 'api',
+  tier: 'api' | 'crawler' | 'upload' | 'terminal' = 'api',
 ): Promise<boolean> {
   const key = `ratelimit:${tier}:${ip}`;
   try {
@@ -161,34 +161,56 @@ function safeTokenCompare(a: string, b: string): boolean {
 }
 
 // Start background event poller worker loop for both Robinhood and Arc chains.
-// 60-second interval: one block ~2s on Robinhood/Arc so 60s = ~30 blocks missed max.
+//
+// Strategy: adaptive polling with getLogs (HTTP-only RPC — no WebSocket available).
+//
+// Why getLogs polling and not watchContractEvent / WebSocket:
+//   - Both RPC endpoints (Robinhood, Arc) expose HTTP only; no wss:// available.
+//   - viem watchContractEvent over HTTP is identical to getLogs polling internally,
+//     but lacks lastPolledBlock tracking (events lost on restart) and batching.
+//   - getLogs polling is reliable, idempotent, and retries the same block range
+//     on failure without permanently skipping data.
+//
+// Adaptive interval:
+//   - Base: 10s when idle (no events found last cycle) → low RPC load
+//   - Active: 3s when events were found last cycle → fast catch-up
+//   - Robinhood block time ~88ms (L2); Arc ~500ms.
+//     10s idle = safe margin; 3s active = ~34 Robinhood blocks / ~6 Arc blocks per cycle,
+//     well within MAX_BLOCK_RANGE=50 so no block-drop clamping on active chains.
+//
 // Chains are staggered by 5s to avoid simultaneous RPC bursts.
-// Poller loops use recursive setTimeout so a slow RPC cycle cannot overlap the next one.
-// A boolean lock prevents concurrent executions if setTimeout fires while the previous run
-// is still active (should not happen with recursive pattern, but guards against edge cases).
+// Recursive setTimeout (not setInterval) ensures a slow RPC cycle never overlaps the next.
+const POLL_INTERVAL_IDLE_MS = 10_000; // no events found → back off
+const POLL_INTERVAL_ACTIVE_MS = 3_000; // events found    → stay responsive
+
 let robinhoodPolling = false;
+let robinhoodPollIntervalMs = POLL_INTERVAL_IDLE_MS;
 function scheduleRobinhoodPoll(): void {
   setTimeout(async () => {
     if (!robinhoodPolling) {
       robinhoodPolling = true;
       try {
-        await robinhoodPoller.pollEvents();
+        const found = await robinhoodPoller.pollEvents();
+        // Tighten interval when there is active trading; relax when idle
+        robinhoodPollIntervalMs = found > 0 ? POLL_INTERVAL_ACTIVE_MS : POLL_INTERVAL_IDLE_MS;
       } catch {
-        /* non-fatal */
+        /* non-fatal — lastPolledBlock not advanced, next cycle retries */
       } finally {
         robinhoodPolling = false;
       }
     }
     scheduleRobinhoodPoll();
-  }, 60_000);
+  }, robinhoodPollIntervalMs);
 }
 let arcPolling = false;
+let arcPollIntervalMs = POLL_INTERVAL_IDLE_MS;
 function scheduleArcPoll(): void {
   setTimeout(async () => {
     if (!arcPolling) {
       arcPolling = true;
       try {
-        await arcPoller.pollEvents();
+        const found = await arcPoller.pollEvents();
+        arcPollIntervalMs = found > 0 ? POLL_INTERVAL_ACTIVE_MS : POLL_INTERVAL_IDLE_MS;
       } catch {
         /* non-fatal */
       } finally {
@@ -196,7 +218,7 @@ function scheduleArcPoll(): void {
       }
     }
     scheduleArcPoll();
-  }, 60_000);
+  }, arcPollIntervalMs);
 }
 scheduleRobinhoodPoll();
 // Stagger Arc chain by 30s to avoid simultaneous RPC bursts
@@ -315,6 +337,11 @@ async function indexTradeFromReceipt(
       };
 
       await repository.saveTrade(trade);
+      // Invalidate caches so next poll immediately gets fresh data after a new trade
+      await Promise.allSettled([
+        cache.del(`token:detail:${tokenAddress.toLowerCase()}`),
+        cache.delPrefix(`token:holders:${tokenAddress.toLowerCase()}`),
+      ]);
       if (token.version === 'v2' && priceUsd > 0) {
         const mkt = await repository.getMarketData(token.address);
         if (mkt) {
@@ -328,6 +355,8 @@ async function indexTradeFromReceipt(
             marketCapUsd: priceUsd * supplyTokens,
             fdvUsd: priceUsd * supplyTokens,
           });
+          // Invalidate cached detail so price update is visible on next SSE/poll cycle
+          await cache.del(`token:detail:${tokenAddress.toLowerCase()}`);
         }
       }
     } catch {
@@ -834,8 +863,17 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   if (holdersMatch && req.method === 'GET') {
     const address = holdersMatch[1];
     const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') ?? '50', 10)));
+    const holdersCacheKey = `token:holders:${address.toLowerCase()}:${limit}`;
+    const holdersCached = await cache.get<unknown>(holdersCacheKey);
+    if (holdersCached) {
+      return replyEnvelope(
+        holdersCached as { success: boolean; error?: { code?: string } | null },
+        { 'x-cache': 'HIT' },
+      );
+    }
     const res = await tokenController.getHolders(address, limit);
-    return replyEnvelope(res);
+    if (res.success) await cache.set(holdersCacheKey, res, 10); // 10s — holders change only on new trades
+    return replyEnvelope(res, { 'x-cache': 'MISS' });
   }
 
   // GET /api/tokens/:address/ohlcv
@@ -1157,8 +1195,87 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     });
   }
 
+  // GET /api/tokens/:address/stream — Server-Sent Events for realtime market data push.
+  // Browser connects once; server pushes a `data:` frame whenever priceUsd, marketCapUsd,
+  // or graduationProgress changes (polled from DB every 2s, frame sent only on delta).
+  // Rate-limited under the existing 'terminal' tier (600 req/min per IP).
+  // Closes cleanly when the client disconnects via req.signal abort.
+  const streamMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/stream$/);
+  if (streamMatch && req.method === 'GET') {
+    const streamAddress = streamMatch[1].toLowerCase() as `0x${string}`;
+    let sseController: ReadableStreamDefaultController<Uint8Array> | null = null;
+    let sseTimer: ReturnType<typeof setTimeout> | null = null;
+    let lastPriceUsd = -1;
+    let lastMarketCapUsd = -1;
+    let lastGradProgress = -1;
+    const encoder = new TextEncoder();
+
+    function scheduleSsePoll(): void {
+      sseTimer = setTimeout(async () => {
+        if (!sseController) return;
+        try {
+          const mkt = await repository.getMarketData(streamAddress);
+          if (
+            mkt &&
+            (mkt.priceUsd !== lastPriceUsd ||
+              mkt.marketCapUsd !== lastMarketCapUsd ||
+              mkt.graduationProgress !== lastGradProgress)
+          ) {
+            lastPriceUsd = mkt.priceUsd;
+            lastMarketCapUsd = mkt.marketCapUsd ?? lastMarketCapUsd;
+            lastGradProgress = mkt.graduationProgress;
+            const frame = `data: ${JSON.stringify({ marketData: mkt })}\n\n`;
+            sseController.enqueue(encoder.encode(frame));
+          }
+          scheduleSsePoll();
+        } catch {
+          // Non-fatal — SSE connection will be cleaned up on close
+        }
+      }, 2000);
+    }
+
+    const sseStream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        sseController = controller;
+        // Initial ping so browser knows the connection is live
+        controller.enqueue(encoder.encode(': ping\n\n'));
+        scheduleSsePoll();
+      },
+      cancel() {
+        if (sseTimer) {
+          clearTimeout(sseTimer);
+          sseTimer = null;
+        }
+        sseController = null;
+      },
+    });
+
+    // Abort SSE when browser navigates away / closes tab
+    if (req.signal) {
+      req.signal.addEventListener('abort', () => {
+        if (sseTimer) {
+          clearTimeout(sseTimer);
+          sseTimer = null;
+        }
+        sseController = null;
+      });
+    }
+
+    return new Response(sseStream, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-store',
+        Connection: 'keep-alive',
+        'Access-Control-Allow-Origin': corsOrigin,
+        'X-Accel-Buffering': 'no', // disable Nginx buffering for SSE
+      },
+    });
+  }
+
   // GET /api/tokens/:address
   const tokenMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})$/);
+
   if (tokenMatch && req.method === 'GET') {
     const address = tokenMatch[1];
     const cacheKey = `token:detail:${address.toLowerCase()}`;
@@ -1171,7 +1288,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
     const res = await tokenController.getToken(address);
     if (res.success) {
-      await cache.set(cacheKey, res, 15); // Cache for 15s
+      await cache.set(cacheKey, res, 3); // Cache for 3s — aligned with 5s EventPoller cycle
     }
     return replyEnvelope(res, { 'x-cache': 'MISS' });
   }

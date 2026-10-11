@@ -299,6 +299,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Avatar, Jazzicon } from '@/components/ui/avatar';
 import { compressAndConvertToWebp } from '@/lib/image-optimizer';
+import { uploadFile } from '@/lib/api-client';
 import type { ProfileStorageData } from './types';
 
 const props = defineProps<{
@@ -403,20 +404,15 @@ async function processAvatarFile(file: File) {
     form.value.avatarUrl = processed.dataUrl;
 
     // Pin file to IPFS storage
-    const formData = new FormData();
-    formData.append('file', processed.file);
-    const res = await fetch('/api/ipfs/upload', {
-      method: 'POST',
-      body: formData,
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const ipfsUri = data.data?.cid
-        ? `ipfs://${data.data.cid}`
-        : data.data?.uri || data.data?.url || '';
-      if (ipfsUri) {
-        form.value.avatarUrl = ipfsUri;
-      }
+    const data = await uploadFile<{ data?: { cid?: string; uri?: string; url?: string } }>(
+      '/api/ipfs/upload',
+      processed.file,
+    );
+    const ipfsUri = data.data?.cid
+      ? `ipfs://${data.data.cid}`
+      : data.data?.uri || data.data?.url || '';
+    if (ipfsUri) {
+      form.value.avatarUrl = ipfsUri;
     }
   } catch (err) {
     console.warn('[Profile] Avatar upload failed, retaining dataUrl preview:', err);
@@ -472,20 +468,15 @@ async function processBannerFile(file: File) {
     form.value.bannerUrl = processed.dataUrl;
 
     // Pin banner to IPFS storage
-    const formData = new FormData();
-    formData.append('file', processed.file);
-    const res = await fetch('/api/ipfs/upload', {
-      method: 'POST',
-      body: formData,
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const ipfsUri = data.data?.cid
-        ? `ipfs://${data.data.cid}`
-        : data.data?.uri || data.data?.url || '';
-      if (ipfsUri) {
-        form.value.bannerUrl = ipfsUri;
-      }
+    const data = await uploadFile<{ data?: { cid?: string; uri?: string; url?: string } }>(
+      '/api/ipfs/upload',
+      processed.file,
+    );
+    const ipfsUri = data.data?.cid
+      ? `ipfs://${data.data.cid}`
+      : data.data?.uri || data.data?.url || '';
+    if (ipfsUri) {
+      form.value.bannerUrl = ipfsUri;
     }
   } catch (err) {
     console.warn('[Profile] Banner upload failed, retaining dataUrl preview:', err);

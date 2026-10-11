@@ -2211,6 +2211,7 @@ import {
   ChevronLeft,
 } from 'lucide-vue-next';
 import { useSwap, SLIPPAGE_WARN_THRESHOLD, parseAmountToWei } from '../composables/useSwap';
+import { useTokenStream } from '../composables/useTokenStream';
 import { useWallet } from '../composables/useWallet';
 import { useLaunchpad } from '../composables/useLaunchpad';
 import { useTaxConfig } from '../composables/useTaxConfig';
@@ -2268,6 +2269,7 @@ import {
   type TokenMarketData,
   type TokenCommentEntity,
   type FeedCalloutItem,
+  type TradeEventEntity,
 } from '@proto/shared-types';
 
 const props = defineProps<{
@@ -2417,7 +2419,11 @@ async function handlePostCallout(): Promise<void> {
   isPostingCall.value = true;
   callError.value = null;
   try {
-    const res = await fetch(`/api/tokens/${currentToken.value.address}/comments`, {
+    const res = await apiFetch<{
+      success: boolean;
+      data: unknown;
+      error?: { message?: string };
+    }>(`/api/tokens/${currentToken.value.address}/comments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -2429,13 +2435,13 @@ async function handlePostCallout(): Promise<void> {
         callType: 'call',
       }),
     });
-    const envelope = await res.json();
+    const envelope = res;
     if (envelope.success && envelope.data) {
-      toast.success(`Called $${currentToken.value.symbol}! 📢`);
+      toast.success(`Called $${currentToken.value.symbol}!`);
 
       if (callShareToX.value && typeof window !== 'undefined') {
         const tweetText = encodeURIComponent(
-          `I just called $${currentToken.value.symbol} at ${formatCompactUsd(currentMarketData.value.marketCapUsd || 4200)} MC (Target: ${callTargetMcap.value}) on @proto_protocol! 🚀\n\n"${content.slice(0, 100)}"\n\n${window.location.href}`,
+          `I just called $${currentToken.value.symbol} at ${formatCompactUsd(currentMarketData.value.marketCapUsd || 4200)} MC (Target: ${callTargetMcap.value}) on @proto_protocol!\n\n"${content.slice(0, 100)}"\n\n${window.location.href}`,
         );
         window.open(
           `https://twitter.com/intent/tweet?text=${tweetText}`,
@@ -2509,7 +2515,7 @@ function shareCalloutToX(cmt: TokenCommentEntity) {
   if (typeof window !== 'undefined') {
     const target = cmt.targetMcap ? `(Target: ${cmt.targetMcap}) ` : '';
     const text = encodeURIComponent(
-      `Check out this call on $${currentToken.value.symbol} ${target}on @proto_protocol! 📢\n\n"${cmt.content.slice(0, 120)}"\n\n${window.location.href}`,
+      `Check out this call on $${currentToken.value.symbol} ${target}on @proto_protocol!\n\n"${cmt.content.slice(0, 120)}"\n\n${window.location.href}`,
     );
     window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank', 'noopener,noreferrer');
   }
@@ -2966,7 +2972,46 @@ const candlestickData = ref<
 let livePollTimer: ReturnType<typeof setTimeout> | null = null;
 let livePollActive = false;
 let liveAbort: AbortController | null = null;
-const LIVE_POLL_INTERVAL_MS = 2000;
+
+// ---------------------------------------------------------------------------
+// SSE — primary realtime channel for market data.
+// Polling loop below remains active as fallback for candlesticks + tab data.
+// ---------------------------------------------------------------------------
+const {
+  streamMarketData,
+  isStreamConnected: _sseConnected,
+  connect: connectStream,
+  disconnect: disconnectStream,
+} = useTokenStream(() => currentToken.value.address);
+
+// Merge SSE market data into local reactive state using the same delta-check
+// as refreshLive() to avoid spurious Vue reactivity updates.
+watch(streamMarketData, (incoming) => {
+  if (!incoming) return;
+  const curr = currentMarketData.value;
+  const changed =
+    incoming.priceUsd !== curr.priceUsd ||
+    incoming.priceInWeth !== curr.priceInWeth ||
+    incoming.marketCapUsd !== curr.marketCapUsd ||
+    incoming.volume24hUsd !== curr.volume24hUsd ||
+    incoming.isGraduated !== curr.isGraduated ||
+    incoming.graduationProgress !== curr.graduationProgress;
+  if (changed) currentMarketData.value = incoming;
+});
+
+/** Returns the poll interval in ms based on the currently selected chart resolution.
+ * Coarser timeframes update less frequently — the candle bucket does not change
+ * until the next period boundary anyway, so polling faster is pure waste.
+ * When SSE is connected this poll loop only refreshes candlesticks + tab data,
+ * NOT market price (that comes through the stream).
+ */
+function getLivePollIntervalMs(): number {
+  const res = selectedResolution.value;
+  if (res <= 1) return 3_000; // 1-second chart — stay near-realtime
+  if (res <= 60) return 5_000; // 1-minute chart
+  if (res <= 300) return 15_000; // 5-minute chart
+  return 30_000; // 15m / 1h / 4h / 1d — coarse; save server load
+}
 
 async function refreshLive() {
   if (livePollActive) return;
@@ -3005,15 +3050,18 @@ async function refreshLive() {
     if ((e as Error).name === 'AbortError') return;
   }
 
-  // Silent poll: no loading spinner, only merge the latest candle in-place
-  await fetchCandlesticks(addr, selectedResolution.value, true);
-  if (activeBottomTab.value === 'trades') {
-    await fetchTrades(addr, true);
-  } else if (activeBottomTab.value === 'top-traders') {
-    await fetchTopTraders(addr, true);
-  } else if (activeBottomTab.value === 'holders') {
-    await fetchHolders(addr, true);
-  }
+  // Fire candlestick + active-tab fetches in parallel to halve per-cycle latency.
+  // Each function is already guard-wrapped with silent=true (no spinner, merge-only).
+  const tabFetch =
+    activeBottomTab.value === 'trades'
+      ? fetchTrades(addr, true)
+      : activeBottomTab.value === 'top-traders'
+        ? fetchTopTraders(addr, true)
+        : activeBottomTab.value === 'holders'
+          ? fetchHolders(addr, true)
+          : Promise.resolve();
+
+  await Promise.allSettled([fetchCandlesticks(addr, selectedResolution.value, true), tabFetch]);
 
   livePollActive = false;
 }
@@ -3027,7 +3075,7 @@ function scheduleNextLivePoll() {
   livePollTimer = setTimeout(async () => {
     await refreshLive();
     scheduleNextLivePoll();
-  }, LIVE_POLL_INTERVAL_MS);
+  }, getLivePollIntervalMs());
 }
 
 function onVisibility() {
@@ -3385,7 +3433,7 @@ function copyTokenLink() {
 function shareToX() {
   if (typeof window !== 'undefined') {
     const text = encodeURIComponent(
-      `Trading $${currentToken.value.symbol} on @proto_protocol on ${tokenNetwork.value.name}! 🚀\n${window.location.href}`,
+      `Trading $${currentToken.value.symbol} on @proto_protocol on ${tokenNetwork.value.name}!\n${window.location.href}`,
     );
     window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank', 'noopener,noreferrer');
   }
@@ -3429,9 +3477,9 @@ async function fetchUserTokenBalance(force = false) {
           functionName: 'balanceOf',
           args: [currentAcc as `0x${string}`],
         }) as Promise<bigint>,
-        fetch(`/api/tokens/${tokenAddr}/balance?account=${currentAcc}`)
-          .then((r) => r.json())
-          .catch(() => null),
+        apiFetch<{ success: boolean; data: { balanceWei: string } } | null>(
+          `/api/tokens/${tokenAddr}/balance?account=${currentAcc}`,
+        ).catch(() => null),
       ]);
 
       let resolvedBal: bigint | null = null;
@@ -3464,7 +3512,7 @@ async function fetchUserTokenBalance(force = false) {
 async function fetchTrades(address: string, silent = false) {
   if (!silent) tradesLoading.value = true;
   try {
-    const envelope = await apiFetch<{ success: boolean; data: TradeEventEntity[] }>(
+    const envelope = await apiFetch<{ success: boolean; data: LiveTrade[] }>(
       `/api/tokens/${address}/trades?limit=50`,
     );
     if (envelope.success && Array.isArray(envelope.data)) {
@@ -3557,8 +3605,9 @@ async function fetchCallouts(address: string) {
   calloutsLoading.value = true;
   try {
     const viewerParam = account.value ? `?viewer=${account.value}` : '';
-    const res = await fetch(`/api/tokens/${address}/comments${viewerParam}`);
-    const envelope = await res.json();
+    const envelope = await apiFetch<{ success: boolean; data: FeedCalloutItem[] }>(
+      `/api/tokens/${address}/comments${viewerParam}`,
+    );
     if (envelope.success && Array.isArray(envelope.data)) {
       callouts.value = envelope.data;
     }
@@ -3575,15 +3624,14 @@ async function toggleLike(commentId: string) {
     return;
   }
   try {
-    const res = await fetch(
-      `/api/tokens/${currentToken.value.address}/comments/${commentId}/like`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userAddress: account.value }),
-      },
-    );
-    const envelope = await res.json();
+    const envelope = await apiFetch<{
+      success: boolean;
+      data: { liked: boolean; likesCount: number };
+    }>(`/api/tokens/${currentToken.value.address}/comments/${commentId}/like`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userAddress: account.value }),
+    });
     if (envelope.success && envelope.data) {
       const call = callouts.value.find((c) => c.id === commentId);
       if (call) {
@@ -3838,8 +3886,8 @@ async function handleSwap() {
         },
       );
 
-      // Trigger immediate background sync
-      fetch(`/api/tokens/${currentToken.value.address}/sync`, {
+      // Trigger immediate background sync — fire-and-forget, non-blocking
+      apiFetch<unknown>(`/api/tokens/${currentToken.value.address}/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ txHash }),
@@ -3869,7 +3917,7 @@ async function handleSwap() {
     });
 
     try {
-      await fetch(`/api/tokens/${currentToken.value.address}/sync`, {
+      await apiFetch<unknown>(`/api/tokens/${currentToken.value.address}/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ txHash: hash }),
@@ -3913,8 +3961,10 @@ async function loadTokenData(address: `0x${string}`) {
   let loaded = false;
 
   try {
-    const res = await fetch(`/api/tokens/${address}`);
-    const envelope = await res.json();
+    const envelope = await apiFetch<{
+      success: boolean;
+      data: { token: LaunchedTokenEntity; marketData: TokenMarketData };
+    }>(`/api/tokens/${address}`);
     if (envelope.success && envelope.data) {
       currentToken.value = envelope.data.token;
       currentMarketData.value = envelope.data.marketData;
@@ -4122,6 +4172,9 @@ onMounted(async () => {
     await fetchUserTokenBalance();
   }
 
+  // Open SSE stream first so market price arrives via push;
+  // poll loop handles candlesticks + tab data as complementary channel.
+  connectStream();
   scheduleNextLivePoll();
   if (typeof document !== 'undefined') {
     document.addEventListener('visibilitychange', onVisibility);
@@ -4129,6 +4182,9 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  // Close SSE connection before poll cleanup so no stale frame arrives
+  // after the component has been torn down.
+  disconnectStream();
   if (livePollTimer) {
     clearTimeout(livePollTimer);
     livePollTimer = null;

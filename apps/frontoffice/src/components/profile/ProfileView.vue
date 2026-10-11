@@ -291,6 +291,7 @@ import {
   type FeedCalloutItem,
   type LaunchedTokenEntity,
   type TokenMarketData,
+  type TradeEventEntity,
 } from '@proto/shared-types';
 import { apiFetch } from '@/lib/api-client';
 
@@ -750,13 +751,16 @@ async function fetchUserPositionsAndActivity() {
 
   try {
     const [tradesJson, tokensJson, portfolioJson] = await Promise.all([
-      apiFetch<{ success: boolean; data: unknown[] }>(
+      apiFetch<{ success: boolean; data: TradeEventEntity[] }>(
         `/api/trades?trader=${target}&limit=100`,
       ).catch(() => null),
-      apiFetch<{ success: boolean; data: unknown[] }>('/api/tokens?limit=100').catch(() => null),
-      apiFetch<{ success: boolean; data: unknown[] }>(`/api/users/${target}/portfolio`).catch(
-        () => null,
-      ),
+      apiFetch<{
+        success: boolean;
+        data: Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }>;
+      }>('/api/tokens?limit=100').catch(() => null),
+      apiFetch<{ success: boolean; data: PortfolioPosition[] }>(
+        `/api/users/${target}/portfolio`,
+      ).catch(() => null),
     ]);
     const tokensList: Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }> =
       tokensJson?.success && Array.isArray(tokensJson.data) ? tokensJson.data : [];
@@ -777,7 +781,9 @@ async function fetchUserPositionsAndActivity() {
       for (const tr of tradesJson.data) {
         if (tr.trader && tr.trader.toLowerCase() !== target) continue;
         const tMeta = tokenMap.get(tr.tokenAddress.toLowerCase());
-        const sym = tMeta ? tMeta.token.symbol : tr.tokenSymbol || 'TOKEN';
+        const sym = tMeta
+          ? tMeta.token.symbol
+          : ((tr as TradeEventEntity & { tokenSymbol?: string }).tokenSymbol ?? 'TOKEN');
         activities.push({
           txHash: tr.transactionHash,
           isBuy: tr.isBuy,

@@ -416,6 +416,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { apiFetch } from '@/lib/api-client';
 import {
   ArrowLeft,
   Heart,
@@ -515,8 +516,10 @@ async function loadPost(): Promise<void> {
   loading.value = true;
   try {
     const viewerParam = account.value ? `?viewer=${account.value}` : '';
-    const res = await fetch(`/api/callouts/${targetId}${viewerParam}`);
-    const data = await res.json();
+    const data = await apiFetch<{
+      success: boolean;
+      data: import('@proto/shared-types').FeedCalloutItem;
+    }>(`/api/callouts/${targetId}${viewerParam}`);
     if (data.success && data.data) {
       post.value = data.data;
       replies.value = data.data.replies || [];
@@ -582,7 +585,11 @@ async function submitReply(): Promise<void> {
 
   isSubmittingReply.value = true;
   try {
-    const res = await fetch(`/api/tokens/${post.value.tokenAddress}/comments`, {
+    const data = await apiFetch<{
+      success: boolean;
+      data: import('@proto/shared-types').FeedCalloutItem;
+      message?: string;
+    }>(`/api/tokens/${post.value.tokenAddress}/comments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -592,7 +599,6 @@ async function submitReply(): Promise<void> {
         callType: 'comment',
       }),
     });
-    const data = await res.json();
     if (data.success && data.data) {
       toast.success('Reply posted!');
       replyContent.value = '';

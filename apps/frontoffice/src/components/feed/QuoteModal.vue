@@ -108,6 +108,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { Quote, X, AlertCircle, Loader2 } from 'lucide-vue-next';
+import { apiFetch } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Jazzicon } from '@/components/ui/avatar';
 import { shortenAddress, formatRelativeTime } from '@/lib/utils';
@@ -136,10 +137,9 @@ watch(
     if (props.targetCall && props.account && props.isOpen) {
       checkingBalance.value = true;
       try {
-        const res = await fetch(
+        const data = await apiFetch<{ success: boolean; data: { balance?: string | number } }>(
           `/api/tokens/${props.targetCall.tokenAddress}/balance?account=${props.account}`,
         );
-        const data = await res.json();
         if (data.success && data.data) {
           callerBalance.value = Number(data.data.balance || 0);
         } else {
@@ -164,7 +164,11 @@ async function submitQuote(): Promise<void> {
 
   isSubmitting.value = true;
   try {
-    const res = await fetch(`/api/tokens/${props.targetCall.tokenAddress}/comments`, {
+    const data = await apiFetch<{
+      success: boolean;
+      data: import('@proto/shared-types').FeedCalloutItem;
+      message?: string;
+    }>(`/api/tokens/${props.targetCall.tokenAddress}/comments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -174,7 +178,6 @@ async function submitQuote(): Promise<void> {
         callType: 'call',
       }),
     });
-    const data = await res.json();
     if (data.success && data.data) {
       toast.success('Quote posted!');
       quoteContent.value = '';

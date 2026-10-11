@@ -1,6 +1,6 @@
 import { LaunchedTokenEntity, TokenMarketData, ARC_CHAIN } from '@proto/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
-import { ViemChainIndexerAdapter } from '../../infrastructure/adapters/viem-chain-indexer.adapter';
+import { ChainIndexerPort } from '../../domain/ports/chain.indexer.port';
 import { PriceFeedPort } from '../../domain/ports/price-feed.port';
 import { CalculatePricingUseCase } from './calculate-pricing.use-case';
 
@@ -12,7 +12,7 @@ export interface TokenWithMarketData {
 export class GetTokensUseCase {
   constructor(
     private readonly tokenRepository: TokenRepositoryPort,
-    private readonly chainIndexer?: ViemChainIndexerAdapter,
+    private readonly chainIndexer?: ChainIndexerPort,
     private readonly priceFeed?: PriceFeedPort,
     private readonly calculatePricing?: CalculatePricingUseCase,
   ) {}

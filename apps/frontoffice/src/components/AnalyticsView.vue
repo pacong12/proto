@@ -406,6 +406,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { apiFetch } from '@/lib/api-client';
 import {
   RefreshCw,
   ExternalLink,
@@ -570,8 +571,17 @@ async function fetchAnalytics() {
   loading.value = true;
   fetchError.value = null;
   try {
-    const res = await fetch('/api/analytics');
-    const envelope = await res.json();
+    const envelope = await apiFetch<{
+      success: boolean;
+      data: {
+        totalVolume: number;
+        totalTokens: number;
+        totalBuyback: string | number;
+        volumeHistory?: ChartDataPoint[];
+        tokenHistory?: ChartDataPoint[];
+      };
+      error?: { message?: string };
+    }>('/api/analytics');
     if (envelope.success && envelope.data) {
       totalVolume.value = envelope.data.totalVolume;
       totalTokens.value = envelope.data.totalTokens;

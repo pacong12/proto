@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue';
+import { ref, computed, type Ref, type ComputedRef } from 'vue';
 import type { FeedCalloutItem } from '@proto/shared-types';
 import { apiFetch } from '@/lib/api-client';
 
@@ -13,15 +13,15 @@ export function isWhaleCaller(call: { positionUsd?: number; supplyPercent?: numb
 }
 
 export function useFeed(): {
-  callouts: ReturnType<typeof ref<FeedCalloutItem[]>>;
-  loading: ReturnType<typeof ref<boolean>>;
-  error: ReturnType<typeof ref<string | null>>;
-  activeFilter: ReturnType<typeof ref<FeedFilterType>>;
-  searchQuery: ReturnType<typeof ref<string>>;
-  currentPage: ReturnType<typeof ref<number>>;
+  callouts: Ref<FeedCalloutItem[]>;
+  loading: Ref<boolean>;
+  error: Ref<string | null>;
+  activeFilter: Ref<FeedFilterType>;
+  searchQuery: Ref<string>;
+  currentPage: Ref<number>;
   pageSize: number;
-  filteredCallouts: ReturnType<typeof import('vue').computed<FeedCalloutItem[]>>;
-  paginatedCallouts: ReturnType<typeof import('vue').computed<FeedCalloutItem[]>>;
+  filteredCallouts: ComputedRef<FeedCalloutItem[]>;
+  paginatedCallouts: ComputedRef<FeedCalloutItem[]>;
   fetchFeed: (viewerAddress?: string, authorAddress?: string) => Promise<void>;
   fetchUserPosts: (userAddress: string, viewerAddress?: string) => Promise<FeedCalloutItem[]>;
   postCallout: (params: {

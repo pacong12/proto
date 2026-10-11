@@ -202,6 +202,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { Search, Loader2, ExternalLink, X } from 'lucide-vue-next';
+import { apiFetch } from '@/lib/api-client';
 import { useI18n } from '@/lib/i18n';
 import { useWallet } from '@/composables/useWallet';
 import { useTokenStore } from '@/composables/useTokenStore';
@@ -246,8 +247,9 @@ watch(query, (val) => {
     searchingTx.value = true;
     txLookupDebounce = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/trades/${q}`);
-        const env = await res.json();
+        const env = await apiFetch<{ success: boolean; data: TradeEventEntity }>(
+          `/api/trades/${q}`,
+        );
         if (env.success && env.data) {
           matchedTrade.value = env.data;
         }

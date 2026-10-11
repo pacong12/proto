@@ -1131,6 +1131,7 @@ import {
 } from 'lucide-vue-next';
 import { useLaunchpad } from '../composables/useLaunchpad';
 import { useWallet } from '../composables/useWallet';
+import { uploadFile } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -1413,14 +1414,11 @@ async function processImageFile(file: File) {
     const processed = await compressAndConvertToWebp(file, 512, 0.85);
     imagePreview.value = processed.dataUrl;
 
-    const formData = new FormData();
-    formData.append('file', processed.file);
-
-    const res = await fetch('/api/ipfs/upload', {
-      method: 'POST',
-      body: formData,
-    });
-    const data = await res.json();
+    const data = await uploadFile<{
+      success: boolean;
+      data?: { cid?: string; uri?: string; url?: string };
+      error?: { message?: string };
+    }>('/api/ipfs/upload', processed.file);
     const logoUri =
       (data.data?.cid ? `ipfs://${data.data.cid}` : '') || data.data?.uri || data.data?.url || '';
     if (data.success && logoUri) {
