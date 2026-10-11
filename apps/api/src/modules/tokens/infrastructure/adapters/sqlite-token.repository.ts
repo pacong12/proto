@@ -530,7 +530,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       endTime: Date.now(),
       fillGaps,
       maxCandles: 1000,
-      fallbackPrice: mkt?.priceUsd || (token?.version === 'v2' ? 0.0000042 : 0),
+      fallbackPrice: mkt?.priceUsd || 0.0000042,
     });
   }
 

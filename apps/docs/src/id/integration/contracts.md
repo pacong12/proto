@@ -9,7 +9,7 @@ Untuk menjaga transparansi dan keamanan, seluruh smart contract launchpad Proto 
 | Nama Kontrak                          | Alamat                                       | Fungsi                                            |
 | :------------------------------------ | :------------------------------------------- | :------------------------------------------------ |
 | **Launchpad Factory (Bonding Curve)** | `0xbA42499Cfe59abc05120A100EEc4f859F476034F` | Meluncurkan token & mengelola kurva bonding aktif |
-| **Liquidity Locker**                  | `0xf60664BEadbcBe25aFFdae0e7E2a41a819c81FCe` | Mengunci NFT posisi LP secara permanen            |
+| **Liquidity Locker**                  | `0x070233B6F46ccD61CA2B7bc1E13520c3fE4614E4` | Mengunci NFT posisi LP secara permanen            |
 | **Uniswap V3 Factory**                | `0x1f7d7550B1b028f7571E69A784071F0205FD2EfA` | Registri pool terdesentralisasi kanonikal         |
 | **Position Manager**                  | `0x73991a25C818Bf1f1128dEAaB1492D45638DE0D3` | Pengelola posisi likuiditas terkonsentrasi        |
 | **Swap Router**                       | `0xCaf681a66D020601342297493863E78C959E5cb2` | Rute pertukaran transaksi exact-input             |
