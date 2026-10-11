@@ -49,7 +49,15 @@ import {
   resolveCorsOrigin,
   buildSecurityHeaders,
   resolveRateLimitTier,
+  deriveEnvelopeStatus,
 } from './core';
+import {
+  GetTradesUseCase,
+  GetRecentTradesUseCase,
+  GetTopTradersUseCase,
+  GetCandlesticksUseCase,
+  TradeController,
+} from './modules/trades';
 
 function createClientForNetwork(cfg: NetworkConfig) {
   const c = defineChain({
@@ -107,6 +115,18 @@ const tokenController = new TokenController(
   getTokenByAddressUseCase,
   repository,
   priceFeed,
+);
+
+const getTradesUseCase = new GetTradesUseCase(repository);
+const getRecentTradesUseCase = new GetRecentTradesUseCase(repository);
+const getTopTradersUseCase = new GetTopTradersUseCase(repository, repository, priceFeed);
+const getCandlesticksUseCase = new GetCandlesticksUseCase(repository, repository);
+
+export const tradeController = new TradeController(
+  getTradesUseCase,
+  getRecentTradesUseCase,
+  getTopTradersUseCase,
+  getCandlesticksUseCase,
 );
 
 const securityGateService = new SecurityGateService();
@@ -407,13 +427,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     );
 
   const envelopeStatus = (env: { success: boolean; error?: { code?: string } | null }): number => {
-    if (env.success) return 200;
-    const code = env.error?.code ?? '';
-    if (code === 'TOKEN_NOT_FOUND' || code === 'INVALID_ADDRESS' || code === 'NOT_FOUND')
-      return 404;
-    if (code === 'INVALID_INPUT' || code === 'INVALID_INTENT' || code === 'VALIDATION_ERROR')
-      return 400;
-    return 500;
+    return deriveEnvelopeStatus(env);
   };
 
   const replyEnvelope = (
@@ -649,35 +663,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   // GET /api/trades (global recent protocol trades or trades by trader)
   if (url.pathname === '/api/trades' && req.method === 'GET') {
     const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') ?? '30', 10)));
-    const trader = url.searchParams.get('trader');
-    if (trader) {
-      if (!/^0x[a-fA-F0-9]{40}$/.test(trader)) {
-        return replyError('INVALID_PARAM', 'trader must be a valid 20-byte hex address', 400);
-      }
-      const cacheKey = `protocol:trades:trader:${trader.toLowerCase()}:${limit}`;
-      const cached = await cache.get<unknown>(cacheKey);
-      if (cached) {
-        return replyJson(cached, 200, { 'x-cache': 'HIT' });
-      }
-
-      const trades = repository.getTradesByTrader
-        ? await repository.getTradesByTrader(trader, limit)
-        : [];
-      const payload = ok(trades);
-      await cache.set(cacheKey, payload, 5); // 5s cache
-      return replyJson(payload, 200, { 'x-cache': 'MISS' });
-    }
-
-    const cacheKey = `protocol:trades:recent:${limit}`;
-    const cached = await cache.get<unknown>(cacheKey);
-    if (cached) {
-      return replyJson(cached, 200, { 'x-cache': 'HIT' });
-    }
-
-    const recentTrades = repository.getRecentTrades ? await repository.getRecentTrades(limit) : [];
-    const payload = ok(recentTrades);
-    await cache.set(cacheKey, payload, 5); // 5s cache
-    return replyJson(payload, 200, { 'x-cache': 'MISS' });
+    const trader = url.searchParams.get('trader') || undefined;
+    const res = await tradeController.getRecentTrades(trader, limit);
+    return replyEnvelope(res, { 'Cache-Control': 'public, max-age=2' });
   }
 
   // GET /api/trades/:txHash (lookup trade by transaction hash)
@@ -697,7 +685,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     // Clamp limit/offset to prevent unbounded DB allocations.
     const limit = Math.min(200, Math.max(1, parseInt(url.searchParams.get('limit') ?? '50', 10)));
     const offset = Math.max(0, parseInt(url.searchParams.get('offset') ?? '0', 10));
-    const res = await tokenController.getTrades(address, limit, offset);
+    const res = await tradeController.getTrades(address, limit, offset);
     return replyEnvelope(res, {
       'Cache-Control': 'public, max-age=1, stale-while-revalidate=2',
     });
@@ -813,7 +801,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const address = ohlcvMatch[1];
     const resolution = parseInt(url.searchParams.get('resolution') ?? '1', 10);
     const fillGaps = url.searchParams.get('fillGaps') !== 'false';
-    const res = await tokenController.getCandlesticks(address, resolution, fillGaps);
+    const res = await tradeController.getCandlesticks(address, resolution, fillGaps);
     return replyEnvelope(res, {
       'Cache-Control': 'public, max-age=1, stale-while-revalidate=2',
     });
@@ -823,7 +811,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   if (topTradersMatch && req.method === 'GET') {
     const address = topTradersMatch[1];
     const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') ?? '20', 10)));
-    const res = await tokenController.getTopTraders(address, limit);
+    const res = await tradeController.getTopTraders(address, limit);
     return replyEnvelope(res, {
       'Cache-Control': 'public, max-age=1, stale-while-revalidate=2',
     });
