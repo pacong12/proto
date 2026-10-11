@@ -3031,7 +3031,9 @@ const estimatedOutputAmount = computed(() => {
   const input = effectiveNativeInput.value;
   if (input <= 0) return '0';
 
-  const isV2OnCurve = currentToken.value.version === 'v2' && !currentMarketData.value.isGraduated;
+  const isV2OnCurve =
+    (currentToken.value.version === 'v2' || Boolean(currentToken.value.curveAddress)) &&
+    !currentMarketData.value.isGraduated;
 
   if (isBuy.value) {
     const tokens = isV2OnCurve
@@ -3596,7 +3598,9 @@ async function handleSwap() {
   swapSuccessTx.value = null;
   let expectedAmountOut: bigint | undefined;
   const input = effectiveNativeInput.value;
-  const isV2OnCurve = currentToken.value.version === 'v2' && !currentMarketData.value.isGraduated;
+  const isV2OnCurve =
+    (currentToken.value.version === 'v2' || Boolean(currentToken.value.curveAddress)) &&
+    !currentMarketData.value.isGraduated;
 
   if (input > 0 && currentMarketData.value.priceInWeth > 0) {
     if (isBuy.value) {
@@ -3625,7 +3629,6 @@ async function handleSwap() {
           : amountIn.value,
     slippagePercent: slippage.value,
     expectedAmountOut,
-    version: currentToken.value.version,
     curveAddress: currentToken.value.curveAddress,
     isGraduated: currentMarketData.value.isGraduated,
     chainId: tokenNetwork.value.chainId,

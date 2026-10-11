@@ -12,7 +12,6 @@ export interface MyLaunchItem {
   name: string;
   symbol: string;
   logo?: string;
-  version?: 'v1' | 'v2';
   unclaimedWeth: string;
   redirect: string | null;
 }

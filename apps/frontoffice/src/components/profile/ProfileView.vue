@@ -695,7 +695,7 @@ async function fetchMyLaunches() {
               // Non-blocking
             }
 
-            if (item.token.version !== 'v2') {
+            if (item.marketData?.isGraduated) {
               try {
                 const { result } = await publicClient.simulateContract({
                   address: lockerAddr,
@@ -718,7 +718,6 @@ async function fetchMyLaunches() {
             name: item.token.name,
             symbol: item.token.symbol,
             logo: item.token.logo,
-            version: item.token.version ?? 'v2',
             unclaimedWeth,
             redirect,
           };

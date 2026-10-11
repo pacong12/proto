@@ -63,7 +63,6 @@ export function useSwap() {
     slippagePercent?: number;
     amountOutMinimum?: bigint;
     expectedAmountOut?: bigint;
-    version?: 'v1' | 'v2';
     curveAddress?: `0x${string}`;
     isGraduated?: boolean;
     chainId?: number;
