@@ -649,4 +649,9 @@ export const bondingCurveAbi = [
     name: 'ZeroAddress',
     inputs: [],
   },
+  {
+    type: 'error',
+    name: 'ZeroReserve',
+    inputs: [],
+  },
 ] as const;

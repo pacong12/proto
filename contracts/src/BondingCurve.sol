@@ -3,6 +3,8 @@ pragma solidity ^0.8.24;
 
 import {ILaunchpadToken} from "./interfaces/ILaunchpadToken.sol";
 import {PoolKey, PoolIdLibrary, IPoolManager} from "./interfaces/IUniswapV4.sol";
+import {CurveMath} from "./libraries/CurveMath.sol";
+import {AntiSnipeLogic} from "./libraries/AntiSnipeLogic.sol";
 
 /**
  * @title BondingCurve
@@ -153,47 +155,23 @@ contract BondingCurve {
      *      universally regardless of who the recipient is.
      */
     function currentSnipeTaxBps() public view returns (uint256) {
-        uint256 elapsed = block.timestamp - launchTime;
-        if (elapsed >= 3) return 0;
-        if (elapsed <= 0) return 9900;
-        if (elapsed <= 1) return 2500;
-        return 300;
+        return AntiSnipeLogic.calculateSnipeTaxBps(launchTime, block.timestamp);
     }
 
     /**
      * @notice Tokens out and platform fee for a given ETH input.
      */
     function getAmountOutBuy(uint256 ethIn) public view returns (uint256 tokenOut, uint256 feeEth) {
-        if (ethIn == 0) return (0, 0);
-        feeEth = (ethIn * 100) / BPS;
-        uint256 netEth = ethIn - feeEth;
-
-        uint256 currentK = virtualEthReserve * virtualTokenReserve;
-        uint256 newEthReserve = virtualEthReserve + netEth;
-        uint256 newTokenReserve = currentK / newEthReserve;
-
-        tokenOut = virtualTokenReserve - newTokenReserve;
         uint256 available = token.balanceOf(address(this));
-        if (available > POOL_RESERVE_SUPPLY) {
-            uint256 curveAvailable = available - POOL_RESERVE_SUPPLY;
-            if (tokenOut > curveAvailable) {
-                tokenOut = curveAvailable;
-            }
-        }
+        uint256 curveAvailable = available > POOL_RESERVE_SUPPLY ? available - POOL_RESERVE_SUPPLY : 0;
+        return CurveMath.getAmountOutBuy(ethIn, virtualEthReserve, virtualTokenReserve, curveAvailable);
     }
 
     /**
      * @notice ETH out and platform fee for a given token input.
      */
     function getAmountOutSell(uint256 tokenIn) public view returns (uint256 ethOut, uint256 feeEth) {
-        if (tokenIn == 0) return (0, 0);
-        uint256 currentK = virtualEthReserve * virtualTokenReserve;
-        uint256 newTokenReserve = virtualTokenReserve + tokenIn;
-        uint256 newEthReserve = currentK / newTokenReserve;
-
-        uint256 grossEth = virtualEthReserve - newEthReserve;
-        feeEth = (grossEth * 100) / BPS;
-        ethOut = grossEth > feeEth ? grossEth - feeEth : 0;
+        return CurveMath.getAmountOutSell(tokenIn, virtualEthReserve, virtualTokenReserve);
     }
 
     // ---------------------------------------------------------------------------
@@ -345,24 +323,12 @@ contract BondingCurve {
      *      Uses Babylonian integer sqrt.
      */
     function _computeSqrtPriceX96(uint256 ethReserve, uint256 tokenReserve) internal pure returns (uint160) {
-        require(tokenReserve > 0, "zero tokenReserve");
-        uint256 sqrtNum = _sqrt(ethReserve);
-        uint256 sqrtDen = _sqrt(tokenReserve);
-        require(sqrtDen > 0, "zero sqrtDen");
-        uint256 result = (sqrtNum << 96) / sqrtDen;
-        // forge-lint: disable-next-line(unsafe-typecast)
-        return uint160(result);
+        return CurveMath.computeSqrtPriceX96(ethReserve, tokenReserve);
     }
 
     /// @notice Babylonian integer square root (floor).
     function _sqrt(uint256 x) internal pure returns (uint256 y) {
-        if (x <= 0) return 0;
-        y = x;
-        uint256 z = (x >> 1) + 1;
-        while (z < y) {
-            y = z;
-            z = (x / z + z) >> 1;
-        }
+        return CurveMath.sqrt(x);
     }
 
     /**

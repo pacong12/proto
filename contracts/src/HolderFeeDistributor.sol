@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {ILaunchpadToken} from "./interfaces/ILaunchpadToken.sol";
 import {IWETH} from "./interfaces/IUniswapV3.sol";
+import {FeeMath} from "./libraries/FeeMath.sol";
 
 /**
  * @title HolderFeeDistributor
@@ -110,7 +111,7 @@ contract HolderFeeDistributor {
     function earned(address token, address holder) public view returns (uint256) {
         uint256 liveBalance = ILaunchpadToken(token).balanceOf(holder);
         uint256 snap = snapshotBalance[token][holder];
-        uint256 balance = snap < liveBalance ? snap : liveBalance;
+        uint256 balance = FeeMath.calculateEffectiveBalance(snap, liveBalance);
         uint256 cum = tokenFeeStates[token].rewardPerTokenCumulative;
         uint256 paid = userRewardPerTokenPaid[token][holder];
 

@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {ILiquidityLocker} from "./interfaces/ILiquidityLocker.sol";
 import {INonfungiblePositionManager, IWETH} from "./interfaces/IUniswapV3.sol";
 import {ILaunchpadToken} from "./interfaces/ILaunchpadToken.sol";
+import {FeeMath} from "./libraries/FeeMath.sol";
 
 /**
  * @title LiquidityLocker
@@ -196,11 +197,14 @@ contract LiquidityLocker is ILiquidityLocker {
         });
 
         uint256 protocolSharePercent = tokenProtocolFeeShares[token];
-        dist.protocolTokenFee = (dist.totalTokenFee * protocolSharePercent) / 100;
-        dist.protocolWethFee = (dist.totalWethFee * protocolSharePercent) / 100;
-
-        dist.creatorTokenFee = dist.totalTokenFee - dist.protocolTokenFee;
-        dist.creatorWethFee = dist.totalWethFee - dist.protocolWethFee;
+        (dist.creatorTokenFee, dist.protocolTokenFee) = FeeMath.calculateLockerSplit(
+            dist.totalTokenFee,
+            protocolSharePercent
+        );
+        (dist.creatorWethFee, dist.protocolWethFee) = FeeMath.calculateLockerSplit(
+            dist.totalWethFee,
+            protocolSharePercent
+        );
 
         dist.creatorRecipient = redirect != address(0) ? redirect : tokenDeployers[token];
 
