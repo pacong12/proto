@@ -43,6 +43,13 @@ import {
   ok,
   err,
 } from '@proto/shared-types';
+import {
+  safeStringify,
+  parseJsonBody,
+  resolveCorsOrigin,
+  buildSecurityHeaders,
+  resolveRateLimitTier,
+} from './core';
 
 function createClientForNetwork(cfg: NetworkConfig) {
   const c = defineChain({
@@ -224,9 +231,6 @@ scheduleRobinhoodPoll();
 // Stagger Arc chain by 30s to avoid simultaneous RPC bursts
 setTimeout(scheduleArcPoll, 30_000);
 
-function safeStringify(value: unknown): string {
-  return JSON.stringify(value, (_, v) => (typeof v === 'bigint' ? v.toString() : v));
-}
 const TRADE_EVENT = parseAbiItem(
   'event Trade(address indexed trader, bool indexed isBuy, uint256 ethAmount, uint256 tokenAmount, uint256 feeEth)',
 );
@@ -365,68 +369,16 @@ async function indexTradeFromReceipt(
   }
 }
 
-/**
- * Strict bounded JSON body parser. Enforces content-length limits before and after
- * buffering to prevent JSON bombing / Memory Exhaustion (DoS) attacks.
- */
-async function parseJsonBody<T>(req: Request, maxBytes = 65_536): Promise<T> {
-  const cl = req.headers.get('content-length');
-  if (cl && parseInt(cl, 10) > maxBytes) {
-    throw new Error('PAYLOAD_TOO_LARGE');
-  }
-  const text = await req.text();
-  if (text.length > maxBytes) {
-    throw new Error('PAYLOAD_TOO_LARGE');
-  }
-  return JSON.parse(text) as T;
-}
-
 async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   const url = new URL(req.url);
-
-  // M-05 fix: restrict CORS to known origins instead of wildcard.
-  // Public crawler endpoints (/dex/*, /api/v1/*) always allow wildcard CORS (*)
-  // so external aggregators (DEX Screener, GeckoTerminal, GMGN) are never blocked (Fix H-3).
-  const isPublicCrawlerPath =
-    url.pathname.startsWith('/dex/') || url.pathname.startsWith('/api/v1/');
 
   const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || '')
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean);
   const requestOrigin = req.headers.get('origin') || '';
-
-  let corsOrigin = '';
-  const isLocalhost =
-    requestOrigin.startsWith('http://localhost:') ||
-    requestOrigin.startsWith('http://127.0.0.1:') ||
-    requestOrigin.startsWith('http://[::1]:');
-
-  if (isPublicCrawlerPath) {
-    // Public aggregator routes: open to all origins by spec requirement
-    corsOrigin = '*';
-  } else if (process.env.NODE_ENV !== 'production' && isLocalhost) {
-    // Development: always permit local frontoffice instances regardless of port
-    corsOrigin = requestOrigin;
-  } else if (allowedOrigins.length > 0) {
-    // Production: reflect origin only if it is explicitly allow-listed
-    corsOrigin = allowedOrigins.includes(requestOrigin) ? requestOrigin : '';
-  } else if (isLocalhost) {
-    corsOrigin = requestOrigin;
-  }
-
-  const headers = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    Vary: 'Origin',
-    'X-Content-Type-Options': 'nosniff',
-    'X-Frame-Options': 'DENY',
-    'Referrer-Policy': 'strict-origin-when-cross-origin',
-    'Content-Security-Policy': "default-src 'self'",
-    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-  };
+  const corsOrigin = resolveCorsOrigin(url.pathname, requestOrigin, allowedOrigins);
+  const headers = buildSecurityHeaders(corsOrigin);
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers });
@@ -454,11 +406,6 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       { status, headers: { ...headers, ...extraHeaders } },
     );
 
-  // Rate Limiting: 120 req / minute per IP for standard routes, 600 req / minute for DEX crawlers (Fix H-2).
-  // Healthcheck & root probe are exempt from rate limiting for monitoring availability.
-
-  // Helper: convert an ApiEnvelope to the correct HTTP status code.
-  // Controllers return envelopes with success:false but no HTTP status — derive it here.
   const envelopeStatus = (env: { success: boolean; error?: { code?: string } | null }): number => {
     if (env.success) return 200;
     const code = env.error?.code ?? '';
@@ -479,23 +426,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     });
 
   const isHealthProbe = url.pathname === '/health' || url.pathname === '/';
-  // Upload endpoints get a tighter per-IP bucket to prevent OOM from concurrent large uploads.
-  const isUploadPath = url.pathname === '/api/ipfs/upload';
-  const isLiveTerminalRead = url.pathname.startsWith('/api/tokens/') && req.method === 'GET';
-  const rateTier = isPublicCrawlerPath
-    ? 'crawler'
-    : isUploadPath
-      ? 'upload'
-      : isLiveTerminalRead
-        ? 'terminal'
-        : 'api';
-  const maxRequests = isPublicCrawlerPath
-    ? 600
-    : isUploadPath
-      ? 10
-      : isLiveTerminalRead
-        ? 600
-        : 300;
+  const { tier: rateTier, maxRequests } = resolveRateLimitTier(url.pathname, req.method);
   if (!isHealthProbe && !(await checkRateLimit(clientIp, maxRequests, 60_000, rateTier))) {
     return replyError('RATE_LIMIT_EXCEEDED', 'Too many requests, please slow down.', 429);
   }
