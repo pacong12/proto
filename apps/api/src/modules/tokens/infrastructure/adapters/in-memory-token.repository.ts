@@ -4,7 +4,7 @@ import {
   TradeEventEntity,
   CandlestickEntity,
   TokenCommentEntity,
-  TokenVotesSummary,
+  getUserIdentity,
 } from '@proto/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import {
@@ -121,6 +121,76 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
     return null;
   }
 
+  async findAddressByIdentity(nameOrSlug: string): Promise<string | null> {
+    const q = nameOrSlug.toLowerCase().trim().replace(/^@/, '');
+    if (!q) return null;
+    if (/^0x[a-f0-9]{40}$/i.test(q)) return q.toLowerCase();
+
+    const addrs = new Set<string>();
+    for (const t of this.tokens.values()) addrs.add(t.deployer.toLowerCase());
+    for (const list of this.trades.values()) {
+      for (const tr of list) addrs.add(tr.trader.toLowerCase());
+    }
+
+    for (const addr of addrs) {
+      const id = getUserIdentity(addr);
+      if (
+        id.name.toLowerCase() === q ||
+        id.displayName.toLowerCase() === q ||
+        id.slug.toLowerCase() === q ||
+        id.tag.toLowerCase() === q
+      ) {
+        return addr;
+      }
+    }
+    return null;
+  }
+
+  async getUserPositions(address: string): Promise<
+    Array<{
+      tokenAddress: string;
+      name: string;
+      symbol: string;
+      logo?: string;
+      balance: number;
+      balanceFormatted: string;
+      priceUsd: number;
+      valueUsd: number;
+    }>
+  > {
+    const trades = await this.getTradesByTrader(address, 500);
+    const byToken = new Map<string, { buy: number; sell: number }>();
+    for (const tr of trades) {
+      const addr = tr.tokenAddress.toLowerCase();
+      const cur = byToken.get(addr) || { buy: 0, sell: 0 };
+      const amt = parseFloat(tr.tokenAmount || '0');
+      if (tr.isBuy) cur.buy += amt;
+      else cur.sell += amt;
+      byToken.set(addr, cur);
+    }
+    const positions = [];
+    for (const [addr, stats] of byToken.entries()) {
+      const net = stats.buy - stats.sell;
+      if (net > 0) {
+        const token = await this.findByAddress(addr as `0x${string}`);
+        const md = await this.getMarketData(addr as `0x${string}`);
+        const price = md?.priceUsd || 0;
+        positions.push({
+          tokenAddress: addr,
+          name: token?.name || 'Token',
+          symbol: token?.symbol || 'TOK',
+          logo: token?.logo || '',
+          balance: net,
+          balanceFormatted: net.toLocaleString(undefined, { maximumFractionDigits: 2 }),
+          priceUsd: price,
+          valueUsd: net * price,
+        });
+      }
+    }
+    positions.sort((a, b) => b.valueUsd - a.valueUsd);
+    return positions;
+  }
+
   async findByPoolAddress(poolAddress: `0x${string}`): Promise<LaunchedTokenEntity | null> {
     const target = poolAddress.toLowerCase();
     for (const token of this.tokens.values()) {
@@ -148,12 +218,13 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
 
   private comments = new Map<string, TokenCommentEntity[]>();
   private commentLikes = new Map<string, Set<string>>();
-  private votes = new Map<string, Map<string, 'bullish' | 'bearish'>>();
+  private commentReposts = new Map<string, Set<string>>();
+  private commentViews = new Map<string, number>();
 
   async saveComment(comment: TokenCommentEntity): Promise<void> {
     const key = comment.tokenAddress.toLowerCase();
     const existing = this.comments.get(key) ?? [];
-    existing.unshift(comment);
+    existing.unshift({ ...comment, viewsCount: comment.viewsCount || 0 });
     this.comments.set(key, existing);
   }
 
@@ -164,7 +235,79 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
     return list.map((c) => ({
       ...c,
       isLikedByViewer: viewer ? (this.commentLikes.get(c.id)?.has(viewer) ?? false) : false,
+      isRepostedByViewer: viewer ? (this.commentReposts.get(c.id)?.has(viewer) ?? false) : false,
+      viewsCount: this.commentViews.get(c.id) ?? c.viewsCount ?? 0,
     }));
+  }
+
+  async getFeedCallouts(
+    limit = 50,
+    offset = 0,
+    viewerAddress?: string,
+    authorAddress?: string,
+  ): Promise<import('@proto/shared-types').FeedCalloutItem[]> {
+    const allComments: import('@proto/shared-types').FeedCalloutItem[] = [];
+    const viewer = viewerAddress?.toLowerCase();
+
+    for (const [tokenAddr, list] of this.comments.entries()) {
+      const token = this.tokens.get(tokenAddr);
+      const mkt = this.marketData.get(tokenAddr);
+      for (const c of list) {
+        if (authorAddress && c.authorAddress.toLowerCase() !== authorAddress.toLowerCase()) {
+          continue;
+        }
+        allComments.push({
+          ...c,
+          isLikedByViewer: viewer ? (this.commentLikes.get(c.id)?.has(viewer) ?? false) : false,
+          isRepostedByViewer: viewer
+            ? (this.commentReposts.get(c.id)?.has(viewer) ?? false)
+            : false,
+          viewsCount: this.commentViews.get(c.id) ?? c.viewsCount ?? 0,
+          tokenName: token?.name,
+          tokenSymbol: token?.symbol,
+          tokenLogo: token?.logo,
+          tokenMarketCapUsd: mkt?.marketCapUsd,
+          tokenPriceUsd: mkt?.priceUsd,
+        });
+      }
+    }
+
+    allComments.sort((a, b) => b.createdAt - a.createdAt);
+    return allComments.slice(offset, offset + limit);
+  }
+
+  async incrementCommentViews(commentId: string): Promise<number> {
+    const current = (this.commentViews.get(commentId) ?? 0) + 1;
+    this.commentViews.set(commentId, current);
+    return current;
+  }
+
+  async getCalloutThread(
+    calloutId: string,
+    viewerAddress?: string,
+  ): Promise<import('@proto/shared-types').FeedCalloutItem | null> {
+    for (const [tokenAddr, list] of this.comments.entries()) {
+      const match = list.find((c) => c.id === calloutId);
+      if (match) {
+        const token = this.tokens.get(tokenAddr);
+        const mkt = this.marketData.get(tokenAddr);
+        const viewer = viewerAddress?.toLowerCase();
+        return {
+          ...match,
+          isLikedByViewer: viewer ? (this.commentLikes.get(match.id)?.has(viewer) ?? false) : false,
+          isRepostedByViewer: viewer
+            ? (this.commentReposts.get(match.id)?.has(viewer) ?? false)
+            : false,
+          tokenName: token?.name,
+          tokenSymbol: token?.symbol,
+          tokenLogo: token?.logo,
+          tokenMarketCapUsd: mkt?.marketCapUsd,
+          tokenPriceUsd: mkt?.priceUsd,
+          replies: [],
+        };
+      }
+    }
+    return null;
   }
 
   async toggleCommentLike(
@@ -192,40 +335,28 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
     return { liked: !liked, likesCount };
   }
 
-  async saveVote(
-    tokenAddress: string,
+  async toggleCommentRepost(
+    commentId: string,
     userAddress: string,
-    voteType: 'bullish' | 'bearish',
-  ): Promise<void> {
-    const tokenKey = tokenAddress.toLowerCase();
-    let tokenVoteMap = this.votes.get(tokenKey);
-    if (!tokenVoteMap) {
-      tokenVoteMap = new Map();
-      this.votes.set(tokenKey, tokenVoteMap);
+  ): Promise<{ reposted: boolean; repostsCount: number }> {
+    const user = userAddress.toLowerCase();
+    let set = this.commentReposts.get(commentId);
+    if (!set) {
+      set = new Set<string>();
+      this.commentReposts.set(commentId, set);
     }
-    tokenVoteMap.set(userAddress.toLowerCase(), voteType);
-  }
-
-  async getVotes(tokenAddress: string, viewerAddress?: string): Promise<TokenVotesSummary> {
-    const tokenKey = tokenAddress.toLowerCase();
-    const tokenVoteMap = this.votes.get(tokenKey) ?? new Map();
-    let bullishCount = 0;
-    let bearishCount = 0;
-    for (const v of tokenVoteMap.values()) {
-      if (v === 'bullish') bullishCount++;
-      else if (v === 'bearish') bearishCount++;
+    const reposted = set.has(user);
+    if (reposted) {
+      set.delete(user);
+    } else {
+      set.add(user);
     }
-    const totalVotes = bullishCount + bearishCount;
-    const bullishPercent = totalVotes > 0 ? Math.round((bullishCount / totalVotes) * 100) : 50;
-    const viewer = viewerAddress?.toLowerCase();
-    const viewerVote = viewer ? tokenVoteMap.get(viewer) : undefined;
-    return {
-      tokenAddress,
-      bullishCount,
-      bearishCount,
-      totalVotes,
-      bullishPercent,
-      viewerVote,
-    };
+    const repostsCount = set.size;
+    // update comment in list
+    for (const list of this.comments.values()) {
+      const match = list.find((c) => c.id === commentId);
+      if (match) match.repostsCount = repostsCount;
+    }
+    return { reposted: !reposted, repostsCount };
   }
 }

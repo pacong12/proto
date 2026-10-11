@@ -5,9 +5,7 @@ proto is the premier multi-chain launchpad for fixed-supply tokens. Explore new 
 
 ## Products & Features
 - Explore newest token launches on Robinhood Chain and Arc Network
-- Dual Launch Architectures:
-  - **v1**: Direct Uniswap V3 locked liquidity pool
-  - **v2**: Constant-Product bonding curve with automatic graduation (4.2 ETH / 8,400 USDC)
+- Constant-Product bonding curve with automatic graduation to permanently locked liquidity
 - Decentralized trading interface with live charts and real-time order books
 - Built-in metadata storage pinned to IPFS
 

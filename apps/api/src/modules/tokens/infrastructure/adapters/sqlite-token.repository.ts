@@ -8,7 +8,7 @@ import {
   TradeEventEntity,
   CandlestickEntity,
   TokenCommentEntity,
-  TokenVotesSummary,
+  getUserIdentity,
 } from '@proto/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import {
@@ -298,9 +298,35 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
         content TEXT NOT NULL,
         image_url TEXT,
         likes_count INTEGER DEFAULT 0,
-        created_at INTEGER NOT NULL
+        created_at INTEGER NOT NULL,
+        target_mcap TEXT,
+        position_usd REAL,
+        call_type TEXT,
+        supply_percent REAL
       );
     `);
+
+    // Safe additive migrations for comments
+    const commentMigrations = [
+      'ALTER TABLE comments ADD COLUMN target_mcap TEXT',
+      'ALTER TABLE comments ADD COLUMN position_usd REAL',
+      'ALTER TABLE comments ADD COLUMN profit_usd REAL',
+      'ALTER TABLE comments ADD COLUMN call_type TEXT',
+      'ALTER TABLE comments ADD COLUMN parent_id TEXT',
+      'ALTER TABLE comments ADD COLUMN quoted_callout_id TEXT',
+      'ALTER TABLE comments ADD COLUMN reposts_count INTEGER DEFAULT 0',
+      'ALTER TABLE comments ADD COLUMN quotes_count INTEGER DEFAULT 0',
+      'ALTER TABLE comments ADD COLUMN replies_count INTEGER DEFAULT 0',
+      'ALTER TABLE comments ADD COLUMN views_count INTEGER DEFAULT 0',
+      'ALTER TABLE comments ADD COLUMN supply_percent REAL',
+    ];
+    for (const sql of commentMigrations) {
+      try {
+        this.db.run(sql);
+      } catch {
+        /* column already exists */
+      }
+    }
 
     this.db.run(`
       CREATE INDEX IF NOT EXISTS idx_comments_token ON comments (token_address, created_at DESC);
@@ -316,12 +342,11 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     `);
 
     this.db.run(`
-      CREATE TABLE IF NOT EXISTS token_votes (
-        token_address TEXT NOT NULL,
+      CREATE TABLE IF NOT EXISTS comment_reposts (
+        comment_id TEXT NOT NULL,
         user_address TEXT NOT NULL,
-        vote_type TEXT NOT NULL CHECK (vote_type IN ('bullish', 'bearish')),
         created_at INTEGER NOT NULL,
-        PRIMARY KEY (token_address, user_address)
+        PRIMARY KEY (comment_id, user_address)
       );
     `);
   }
@@ -559,6 +584,90 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     return row ? this.mapRowToTrade(row) : null;
   }
 
+  async findAddressByIdentity(nameOrSlug: string): Promise<string | null> {
+    const q = nameOrSlug.toLowerCase().trim().replace(/^@/, '');
+    if (!q) return null;
+    if (/^0x[a-f0-9]{40}$/i.test(q)) return q.toLowerCase();
+
+    // Query all distinct addresses in trades and tokens
+    const stmt = this.db.prepare(`
+      SELECT DISTINCT trader AS addr FROM trades WHERE trader IS NOT NULL AND trader != ''
+      UNION
+      SELECT DISTINCT deployer AS addr FROM tokens WHERE deployer IS NOT NULL AND deployer != ''
+    `);
+    const rows = stmt.all() as Array<{ addr: string }>;
+    for (const r of rows) {
+      if (!r.addr) continue;
+      const id = getUserIdentity(r.addr);
+      if (
+        id.name.toLowerCase() === q ||
+        id.displayName.toLowerCase() === q ||
+        id.slug.toLowerCase() === q ||
+        id.tag.toLowerCase() === q
+      ) {
+        return r.addr.toLowerCase();
+      }
+    }
+    return null;
+  }
+
+  async getUserPositions(address: string): Promise<
+    Array<{
+      tokenAddress: string;
+      name: string;
+      symbol: string;
+      logo?: string;
+      balance: number;
+      balanceFormatted: string;
+      priceUsd: number;
+      valueUsd: number;
+    }>
+  > {
+    const trades = await this.getTradesByTrader(address, 500);
+    const byToken = new Map<string, { buy: number; sell: number }>();
+    for (const tr of trades) {
+      const addr = tr.tokenAddress.toLowerCase();
+      const cur = byToken.get(addr) || { buy: 0, sell: 0 };
+      const amt = parseFloat(tr.tokenAmount || '0');
+      if (tr.isBuy) cur.buy += amt;
+      else cur.sell += amt;
+      byToken.set(addr, cur);
+    }
+
+    const positions: Array<{
+      tokenAddress: string;
+      name: string;
+      symbol: string;
+      logo?: string;
+      balance: number;
+      balanceFormatted: string;
+      priceUsd: number;
+      valueUsd: number;
+    }> = [];
+
+    for (const [addr, stats] of byToken.entries()) {
+      const net = stats.buy - stats.sell;
+      if (net > 0) {
+        const token = await this.findByAddress(addr as `0x${string}`);
+        const md = await this.getMarketData(addr as `0x${string}`);
+        const price = md?.priceUsd || 0;
+        positions.push({
+          tokenAddress: addr,
+          name: token?.name || 'Token',
+          symbol: token?.symbol || 'TOK',
+          logo: token?.logo || '',
+          balance: net,
+          balanceFormatted: net.toLocaleString(undefined, { maximumFractionDigits: 2 }),
+          priceUsd: price,
+          valueUsd: net * price,
+        });
+      }
+    }
+
+    positions.sort((a, b) => b.valueUsd - a.valueUsd);
+    return positions;
+  }
+
   async findByPoolAddress(poolAddress: `0x${string}`): Promise<LaunchedTokenEntity | null> {
     const stmt = this.db.prepare(
       `SELECT * FROM tokens WHERE LOWER(poolAddress) = LOWER(?) LIMIT 1`,
@@ -581,8 +690,12 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
 
   async saveComment(comment: TokenCommentEntity): Promise<void> {
     const stmt = this.db.prepare(`
-      INSERT INTO comments (id, token_address, author_address, content, image_url, likes_count, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO comments (
+        id, token_address, author_address, content, image_url, likes_count, created_at,
+        target_mcap, position_usd, profit_usd, call_type, parent_id, quoted_callout_id,
+        reposts_count, quotes_count, replies_count
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     stmt.run(
       comment.id,
@@ -592,13 +705,41 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       comment.imageUrl ?? null,
       comment.likesCount || 0,
       comment.createdAt,
+      comment.targetMcap ?? null,
+      comment.positionUsd ?? null,
+      comment.profitUsd ?? null,
+      comment.callType ?? 'call',
+      comment.parentId ?? null,
+      comment.quotedCalloutId ?? null,
+      comment.repostsCount || 0,
+      comment.quotesCount || 0,
+      comment.repliesCount || 0,
     );
+
+    if (comment.parentId) {
+      try {
+        this.db
+          .prepare(`UPDATE comments SET replies_count = replies_count + 1 WHERE id = ?`)
+          .run(comment.parentId);
+      } catch {
+        /* ignore missing parent */
+      }
+    }
+    if (comment.quotedCalloutId) {
+      try {
+        this.db
+          .prepare(`UPDATE comments SET quotes_count = quotes_count + 1 WHERE id = ?`)
+          .run(comment.quotedCalloutId);
+      } catch {
+        /* ignore missing quoted callout */
+      }
+    }
   }
 
   async getComments(tokenAddress: string, viewerAddress?: string): Promise<TokenCommentEntity[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM comments
-      WHERE LOWER(token_address) = LOWER(?)
+      WHERE LOWER(token_address) = LOWER(?) AND (parent_id IS NULL OR parent_id = '')
       ORDER BY created_at DESC
       LIMIT 100
     `);
@@ -610,10 +751,22 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       image_url: string | null;
       likes_count: number;
       created_at: number;
+      target_mcap: string | null;
+      position_usd: number | null;
+      profit_usd: number | null;
+      call_type: string | null;
+      parent_id: string | null;
+      quoted_callout_id: string | null;
+      reposts_count: number | null;
+      quotes_count: number | null;
+      replies_count: number | null;
+      views_count: number | null;
+      supply_percent: number | null;
     }
     const rows = stmt.all(tokenAddress) as CommentRow[];
 
     let viewerLikedIds = new Set<string>();
+    let viewerRepostedIds = new Set<string>();
     if (viewerAddress) {
       const likeStmt = this.db.prepare(`
         SELECT comment_id FROM comment_likes
@@ -621,6 +774,13 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       `);
       const likeRows = likeStmt.all(viewerAddress) as Array<{ comment_id: string }>;
       viewerLikedIds = new Set(likeRows.map((r) => r.comment_id));
+
+      const repostStmt = this.db.prepare(`
+        SELECT comment_id FROM comment_reposts
+        WHERE LOWER(user_address) = LOWER(?)
+      `);
+      const repostRows = repostStmt.all(viewerAddress) as Array<{ comment_id: string }>;
+      viewerRepostedIds = new Set(repostRows.map((r) => r.comment_id));
     }
 
     return rows.map((r) => ({
@@ -632,7 +792,390 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       likesCount: Number(r.likes_count || 0),
       createdAt: Number(r.created_at),
       isLikedByViewer: viewerLikedIds.has(r.id),
+      isRepostedByViewer: viewerRepostedIds.has(r.id),
+      targetMcap: r.target_mcap ?? undefined,
+      positionUsd: r.position_usd != null ? Number(r.position_usd) : undefined,
+      supplyPercent: r.supply_percent != null ? Number(r.supply_percent) : undefined,
+      profitUsd: r.profit_usd != null ? Number(r.profit_usd) : undefined,
+      callType: (r.call_type as 'call' | 'comment') ?? 'call',
+      parentId: r.parent_id ?? undefined,
+      quotedCalloutId: r.quoted_callout_id ?? undefined,
+      repostsCount: Number(r.reposts_count || 0),
+      quotesCount: Number(r.quotes_count || 0),
+      repliesCount: Number(r.replies_count || 0),
+      viewsCount: Number(r.views_count || 0),
     }));
+  }
+
+  async getFeedCallouts(
+    limit = 50,
+    offset = 0,
+    viewerAddress?: string,
+    authorAddress?: string,
+  ): Promise<import('@proto/shared-types').FeedCalloutItem[]> {
+    let sql = `
+      SELECT 
+        c.id, c.token_address, c.author_address, c.content, c.image_url, 
+        c.likes_count, c.created_at, c.target_mcap, c.position_usd, c.profit_usd, c.call_type,
+        c.parent_id, c.quoted_callout_id, c.reposts_count, c.quotes_count, c.replies_count, c.views_count, c.supply_percent,
+        t.name as token_name, t.symbol as token_symbol, t.logo as token_logo,
+        m.marketCapUsd as token_market_cap, m.priceUsd as token_price_usd
+      FROM comments c
+      LEFT JOIN tokens t ON LOWER(t.address) = LOWER(c.token_address)
+      LEFT JOIN market_data m ON LOWER(m.address) = LOWER(c.token_address)
+      WHERE (c.parent_id IS NULL OR c.parent_id = '')
+    `;
+    const params: (string | number)[] = [];
+    if (authorAddress) {
+      sql += ` AND LOWER(c.author_address) = LOWER(?)`;
+      params.push(authorAddress);
+    }
+    sql += ` ORDER BY c.created_at DESC LIMIT ? OFFSET ?`;
+    params.push(limit, offset);
+
+    const stmt = this.db.prepare(sql);
+    interface FeedRow {
+      id: string;
+      token_address: string;
+      author_address: string;
+      content: string;
+      image_url: string | null;
+      likes_count: number;
+      created_at: number;
+      target_mcap: string | null;
+      position_usd: number | null;
+      profit_usd: number | null;
+      call_type: string | null;
+      parent_id: string | null;
+      quoted_callout_id: string | null;
+      reposts_count: number | null;
+      quotes_count: number | null;
+      replies_count: number | null;
+      views_count: number | null;
+      supply_percent: number | null;
+      token_name: string | null;
+      token_symbol: string | null;
+      token_logo: string | null;
+      token_market_cap: number | null;
+      token_price_usd: number | null;
+    }
+
+    const rows = stmt.all(...params) as FeedRow[];
+
+    let viewerLikedIds = new Set<string>();
+    let viewerRepostedIds = new Set<string>();
+    if (viewerAddress) {
+      const likeStmt = this.db.prepare(`
+        SELECT comment_id FROM comment_likes
+        WHERE LOWER(user_address) = LOWER(?)
+      `);
+      const likeRows = likeStmt.all(viewerAddress) as Array<{ comment_id: string }>;
+      viewerLikedIds = new Set(likeRows.map((r) => r.comment_id));
+
+      const repostStmt = this.db.prepare(`
+        SELECT comment_id FROM comment_reposts
+        WHERE LOWER(user_address) = LOWER(?)
+      `);
+      const repostRows = repostStmt.all(viewerAddress) as Array<{ comment_id: string }>;
+      viewerRepostedIds = new Set(repostRows.map((r) => r.comment_id));
+    }
+
+    const feedItems: import('@proto/shared-types').FeedCalloutItem[] = rows.map((r) => ({
+      id: r.id,
+      tokenAddress: r.token_address,
+      authorAddress: r.author_address,
+      content: r.content,
+      imageUrl: r.image_url ?? undefined,
+      likesCount: Number(r.likes_count || 0),
+      createdAt: Number(r.created_at),
+      isLikedByViewer: viewerLikedIds.has(r.id),
+      isRepostedByViewer: viewerRepostedIds.has(r.id),
+      targetMcap: r.target_mcap ?? undefined,
+      positionUsd: r.position_usd != null ? Number(r.position_usd) : undefined,
+      supplyPercent: r.supply_percent != null ? Number(r.supply_percent) : undefined,
+      profitUsd: r.profit_usd != null ? Number(r.profit_usd) : undefined,
+      callType: (r.call_type as 'call' | 'comment') ?? 'call',
+      parentId: r.parent_id ?? undefined,
+      quotedCalloutId: r.quoted_callout_id ?? undefined,
+      repostsCount: Number(r.reposts_count || 0),
+      quotesCount: Number(r.quotes_count || 0),
+      repliesCount: Number(r.replies_count || 0),
+      viewsCount: Number(r.views_count || 0),
+      tokenName: r.token_name ?? undefined,
+      tokenSymbol: r.token_symbol ?? undefined,
+      tokenLogo: r.token_logo ?? undefined,
+      tokenMarketCapUsd: r.token_market_cap != null ? Number(r.token_market_cap) : undefined,
+      tokenPriceUsd: r.token_price_usd != null ? Number(r.token_price_usd) : undefined,
+    }));
+
+    // Populate quotes if any exist
+    for (const item of feedItems) {
+      if (item.quotedCalloutId) {
+        const quoted = this.getSingleCallout(item.quotedCalloutId);
+        if (quoted) item.quotedCallout = quoted;
+      }
+    }
+
+    return feedItems;
+  }
+
+  private getSingleCallout(
+    calloutId: string,
+  ): import('@proto/shared-types').FeedCalloutItem | null {
+    const stmt = this.db.prepare(`
+      SELECT 
+        c.id, c.token_address, c.author_address, c.content, c.image_url, 
+        c.likes_count, c.created_at, c.target_mcap, c.position_usd, c.profit_usd, c.call_type,
+        c.parent_id, c.quoted_callout_id, c.reposts_count, c.quotes_count, c.replies_count, c.views_count, c.supply_percent,
+        t.name as token_name, t.symbol as token_symbol, t.logo as token_logo,
+        m.marketCapUsd as token_market_cap, m.priceUsd as token_price_usd
+      FROM comments c
+      LEFT JOIN tokens t ON LOWER(t.address) = LOWER(c.token_address)
+      LEFT JOIN market_data m ON LOWER(m.address) = LOWER(c.token_address)
+      WHERE c.id = ?
+      LIMIT 1
+    `);
+    interface FeedCalloutRow {
+      id: string;
+      token_address: string;
+      author_address: string;
+      content: string;
+      image_url: string | null;
+      likes_count: number | null;
+      created_at: number;
+      target_mcap: string | null;
+      position_usd: number | null;
+      supply_percent: number | null;
+      profit_usd: number | null;
+      call_type: string | null;
+      parent_id: string | null;
+      quoted_callout_id: string | null;
+      reposts_count: number | null;
+      quotes_count: number | null;
+      replies_count: number | null;
+      views_count?: number | null;
+      token_name: string | null;
+      token_symbol: string | null;
+      token_logo: string | null;
+      token_market_cap: number | null;
+      token_price_usd: number | null;
+    }
+
+    const r = stmt.get(calloutId) as FeedCalloutRow | null;
+    if (!r) return null;
+
+    return {
+      id: r.id,
+      tokenAddress: r.token_address,
+      authorAddress: r.author_address,
+      content: r.content,
+      imageUrl: r.image_url ?? undefined,
+      likesCount: Number(r.likes_count || 0),
+      createdAt: Number(r.created_at),
+      targetMcap: r.target_mcap ?? undefined,
+      positionUsd: r.position_usd != null ? Number(r.position_usd) : undefined,
+      supplyPercent: r.supply_percent != null ? Number(r.supply_percent) : undefined,
+      profitUsd: r.profit_usd != null ? Number(r.profit_usd) : undefined,
+      callType: (r.call_type as 'call' | 'comment') ?? 'call',
+      parentId: r.parent_id ?? undefined,
+      quotedCalloutId: r.quoted_callout_id ?? undefined,
+      repostsCount: Number(r.reposts_count || 0),
+      quotesCount: Number(r.quotes_count || 0),
+      repliesCount: Number(r.replies_count || 0),
+      viewsCount: Number(r.views_count || 0),
+      tokenName: r.token_name ?? undefined,
+      tokenSymbol: r.token_symbol ?? undefined,
+      tokenLogo: r.token_logo ?? undefined,
+      tokenMarketCapUsd: r.token_market_cap != null ? Number(r.token_market_cap) : undefined,
+      tokenPriceUsd: r.token_price_usd != null ? Number(r.token_price_usd) : undefined,
+    };
+  }
+
+  async incrementCommentViews(commentId: string): Promise<number> {
+    try {
+      this.db
+        .prepare(`UPDATE comments SET views_count = views_count + 1 WHERE id = ?`)
+        .run(commentId);
+      const row = this.db
+        .prepare(`SELECT views_count FROM comments WHERE id = ?`)
+        .get(commentId) as { views_count: number } | null;
+      return row ? Number(row.views_count) : 1;
+    } catch {
+      return 1;
+    }
+  }
+
+  async getCalloutThread(
+    calloutId: string,
+    viewerAddress?: string,
+  ): Promise<import('@proto/shared-types').FeedCalloutItem | null> {
+    // Automatically increment views on thread detail fetch
+    try {
+      this.db
+        .prepare(`UPDATE comments SET views_count = views_count + 1 WHERE id = ?`)
+        .run(calloutId);
+    } catch {
+      /* view count increment error is non-fatal */
+    }
+
+    const root = this.getSingleCallout(calloutId);
+    if (!root) return null;
+
+    let viewerLikedIds = new Set<string>();
+    let viewerRepostedIds = new Set<string>();
+    if (viewerAddress) {
+      const likeStmt = this.db.prepare(`
+        SELECT comment_id FROM comment_likes
+        WHERE LOWER(user_address) = LOWER(?)
+      `);
+      const likeRows = likeStmt.all(viewerAddress) as Array<{ comment_id: string }>;
+      viewerLikedIds = new Set(likeRows.map((r) => r.comment_id));
+
+      const repostStmt = this.db.prepare(`
+        SELECT comment_id FROM comment_reposts
+        WHERE LOWER(user_address) = LOWER(?)
+      `);
+      const repostRows = repostStmt.all(viewerAddress) as Array<{ comment_id: string }>;
+      viewerRepostedIds = new Set(repostRows.map((r) => r.comment_id));
+    }
+
+    root.isLikedByViewer = viewerLikedIds.has(root.id);
+    root.isRepostedByViewer = viewerRepostedIds.has(root.id);
+    if (root.quotedCalloutId) {
+      const quoted = this.getSingleCallout(root.quotedCalloutId);
+      if (quoted) root.quotedCallout = quoted;
+    }
+
+    // Fetch replies in chronological order
+    const replyStmt = this.db.prepare(`
+      SELECT 
+        c.id, c.token_address, c.author_address, c.content, c.image_url, 
+        c.likes_count, c.created_at, c.target_mcap, c.position_usd, c.profit_usd, c.call_type,
+        c.parent_id, c.quoted_callout_id, c.reposts_count, c.quotes_count, c.replies_count, c.supply_percent,
+        t.name as token_name, t.symbol as token_symbol, t.logo as token_logo,
+        m.marketCapUsd as token_market_cap, m.priceUsd as token_price_usd
+      FROM comments c
+      LEFT JOIN tokens t ON LOWER(t.address) = LOWER(c.token_address)
+      LEFT JOIN market_data m ON LOWER(m.address) = LOWER(c.token_address)
+      WHERE c.parent_id = ?
+      ORDER BY c.created_at ASC
+      LIMIT 100
+    `);
+
+    const replyRows = replyStmt.all(calloutId) as Array<{
+      id: string;
+      token_address: string;
+      author_address: string;
+      content: string;
+      image_url: string | null;
+      likes_count: number | null;
+      created_at: number;
+      target_mcap: string | null;
+      position_usd: number | null;
+      supply_percent: number | null;
+      profit_usd: number | null;
+      call_type: string | null;
+      parent_id: string | null;
+      quoted_callout_id: string | null;
+      reposts_count: number | null;
+      quotes_count: number | null;
+      replies_count: number | null;
+      token_name: string | null;
+      token_symbol: string | null;
+      token_logo: string | null;
+      token_market_cap: number | null;
+      token_price_usd: number | null;
+    }>;
+    root.replies = replyRows.map((r) => ({
+      id: r.id,
+      tokenAddress: r.token_address,
+      authorAddress: r.author_address,
+      content: r.content,
+      imageUrl: r.image_url ?? undefined,
+      likesCount: Number(r.likes_count || 0),
+      createdAt: Number(r.created_at),
+      isLikedByViewer: viewerLikedIds.has(r.id),
+      isRepostedByViewer: viewerRepostedIds.has(r.id),
+      targetMcap: r.target_mcap ?? undefined,
+      positionUsd: r.position_usd != null ? Number(r.position_usd) : undefined,
+      supplyPercent: r.supply_percent != null ? Number(r.supply_percent) : undefined,
+      profitUsd: r.profit_usd != null ? Number(r.profit_usd) : undefined,
+      callType: (r.call_type as 'call' | 'comment') ?? 'comment',
+      parentId: r.parent_id ?? undefined,
+      quotedCalloutId: r.quoted_callout_id ?? undefined,
+      repostsCount: Number(r.reposts_count || 0),
+      quotesCount: Number(r.quotes_count || 0),
+      repliesCount: Number(r.replies_count || 0),
+      tokenName: r.token_name ?? undefined,
+      tokenSymbol: r.token_symbol ?? undefined,
+      tokenLogo: r.token_logo ?? undefined,
+      tokenMarketCapUsd: r.token_market_cap != null ? Number(r.token_market_cap) : undefined,
+      tokenPriceUsd: r.token_price_usd != null ? Number(r.token_price_usd) : undefined,
+    }));
+
+    return root;
+  }
+
+  private runInTransaction<T>(fn: () => T): T {
+    const bunDb = this.db as unknown as { transaction?: (fn: () => T) => () => T };
+    if (typeof bunDb.transaction === 'function') {
+      return bunDb.transaction(fn)();
+    }
+    this.db.run('BEGIN');
+    try {
+      const res = fn();
+      this.db.run('COMMIT');
+      return res;
+    } catch (e) {
+      try {
+        this.db.run('ROLLBACK');
+      } catch {
+        /* rollback is best-effort */
+      }
+      throw e;
+    }
+  }
+
+  async toggleCommentRepost(
+    commentId: string,
+    userAddress: string,
+  ): Promise<{ reposted: boolean; repostsCount: number }> {
+    return this.runInTransaction(() => {
+      const checkStmt = this.db.prepare(`
+        SELECT 1 FROM comment_reposts
+        WHERE comment_id = ? AND LOWER(user_address) = LOWER(?)
+        LIMIT 1
+      `);
+      const existing = checkStmt.get(commentId, userAddress);
+
+      if (existing) {
+        this.db
+          .prepare(
+            `DELETE FROM comment_reposts WHERE comment_id = ? AND LOWER(user_address) = LOWER(?)`,
+          )
+          .run(commentId, userAddress);
+        this.db
+          .prepare(`UPDATE comments SET reposts_count = MAX(0, reposts_count - 1) WHERE id = ?`)
+          .run(commentId);
+        const countRow = this.db
+          .prepare(`SELECT reposts_count FROM comments WHERE id = ?`)
+          .get(commentId) as { reposts_count: number } | null;
+        return { reposted: false, repostsCount: countRow ? Number(countRow.reposts_count) : 0 };
+      } else {
+        this.db
+          .prepare(
+            `INSERT OR REPLACE INTO comment_reposts (comment_id, user_address, created_at) VALUES (?, ?, ?)`,
+          )
+          .run(commentId, userAddress.toLowerCase(), Date.now());
+        this.db
+          .prepare(`UPDATE comments SET reposts_count = reposts_count + 1 WHERE id = ?`)
+          .run(commentId);
+        const countRow = this.db
+          .prepare(`SELECT reposts_count FROM comments WHERE id = ?`)
+          .get(commentId) as { reposts_count: number } | null;
+        return { reposted: true, repostsCount: countRow ? Number(countRow.reposts_count) : 1 };
+      }
+    });
   }
 
   async toggleCommentLike(
@@ -642,7 +1185,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     // Wrap in an immediate transaction to eliminate the TOCTOU race between the
     // SELECT-check and the DELETE/INSERT+UPDATE pair. Without this, two concurrent
     // requests from the same user can both pass the check and double-insert the like.
-    return this.db.transaction(() => {
+    return this.runInTransaction(() => {
       const checkStmt = this.db.prepare(`
         SELECT 1 FROM comment_likes
         WHERE comment_id = ? AND LOWER(user_address) = LOWER(?)
@@ -677,61 +1220,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
           .get(commentId) as { likes_count: number } | null;
         return { liked: true, likesCount: countRow ? Number(countRow.likes_count) : 1 };
       }
-    })() as { liked: boolean; likesCount: number };
-  }
-
-  async saveVote(
-    tokenAddress: string,
-    userAddress: string,
-    voteType: 'bullish' | 'bearish',
-  ): Promise<void> {
-    const stmt = this.db.prepare(`
-      INSERT OR REPLACE INTO token_votes (token_address, user_address, vote_type, created_at)
-      VALUES (?, ?, ?, ?)
-    `);
-    stmt.run(tokenAddress.toLowerCase(), userAddress.toLowerCase(), voteType, Date.now());
-  }
-
-  async getVotes(tokenAddress: string, viewerAddress?: string): Promise<TokenVotesSummary> {
-    const countStmt = this.db.prepare(`
-      SELECT
-        SUM(CASE WHEN vote_type = 'bullish' THEN 1 ELSE 0 END) as bullish,
-        SUM(CASE WHEN vote_type = 'bearish' THEN 1 ELSE 0 END) as bearish,
-        COUNT(*) as total
-      FROM token_votes
-      WHERE LOWER(token_address) = LOWER(?)
-    `);
-    const counts = countStmt.get(tokenAddress) as {
-      bullish: number | null;
-      bearish: number | null;
-      total: number | null;
-    } | null;
-    const bullishCount = Number(counts?.bullish || 0);
-    const bearishCount = Number(counts?.bearish || 0);
-    const totalVotes = Number(counts?.total || 0);
-    const bullishPercent = totalVotes > 0 ? Math.round((bullishCount / totalVotes) * 100) : 50;
-
-    let viewerVote: 'bullish' | 'bearish' | undefined;
-    if (viewerAddress) {
-      const viewerStmt = this.db.prepare(`
-        SELECT vote_type FROM token_votes
-        WHERE LOWER(token_address) = LOWER(?) AND LOWER(user_address) = LOWER(?)
-        LIMIT 1
-      `);
-      const row = viewerStmt.get(tokenAddress, viewerAddress) as {
-        vote_type: 'bullish' | 'bearish';
-      } | null;
-      if (row) viewerVote = row.vote_type;
-    }
-
-    return {
-      tokenAddress,
-      bullishCount,
-      bearishCount,
-      totalVotes,
-      bullishPercent,
-      viewerVote,
-    };
+    });
   }
 
   close(): void {

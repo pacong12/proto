@@ -16,7 +16,6 @@ Proporciona uma experiência segura e transparente para qualquer pessoa criar e 
 
 ## Dois Modelos de Lançamento
 
-| Modelo               | Funcionamento                                                                                                                                | Ideal para                                                 |
-| :------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------- |
-| **v1 Direct Pool**   | Lançamento direto em um pool Uniswap V3 com 100% da liquidez permanentemente bloqueada.                                                      | Projetos que exigem profundidade DEX total desde o início. |
-| **v2 Bonding Curve** | Começa em uma curva de preço algorítmica ($x \cdot y = k$) e migra automaticamente para a Uniswap ao atingir a meta (4.2 ETH ou 8.400 USDC). | Tokens de comunidade e memes.                              |
+| Modelo               | Funcionamento                                                                                                                                | Ideal para                    |
+| :------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------- |
+| **v2 Bonding Curve** | Começa em uma curva de preço algorítmica ($x \cdot y = k$) e migra automaticamente para a Uniswap ao atingir a meta (4.2 ETH ou 8.400 USDC). | Tokens de comunidade e memes. |

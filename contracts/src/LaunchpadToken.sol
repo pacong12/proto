@@ -211,6 +211,7 @@ contract LaunchpadToken is ILaunchpadToken {
     }
 
     /// @notice Finalise a pending tax configuration change after the 24-hour timelock.
+    // slither-disable-next-line incorrect-equality
     function acceptTaxConfig() external {
         if (msg.sender != deployer) revert Unauthorized();
         PendingTaxConfig memory pending = _pendingTaxConfig;
@@ -228,6 +229,7 @@ contract LaunchpadToken is ILaunchpadToken {
     }
 
     /// @notice Cancel a pending tax configuration proposal before it takes effect.
+    // slither-disable-next-line incorrect-equality
     function cancelTaxConfig() external {
         if (msg.sender != deployer) revert Unauthorized();
         if (_pendingTaxConfig.validAfter == 0) revert NoPendingTaxConfig();

@@ -6,29 +6,27 @@
 
 ## 1. Robinhood Chain (Chain ID: 4663)
 
-| 合约名称                            | 合约地址                                     | 核心功能                         |
-| :---------------------------------- | :------------------------------------------- | :------------------------------- |
-| **Launchpad Factory (v1 直接池)**   | `0xcC547D4EC0eF85FE506D2b2EEe02Be3620178B16` | 部署代币并注入 Uniswap V3 流动性 |
-| **Launchpad Factory (v2 联合曲线)** | `0xbA42499Cfe59abc05120A100EEc4f859F476034F` | 部署代币并开启链上联合曲线       |
-| **Liquidity Locker**                | `0xf60664BEadbcBe25aFFdae0e7E2a41a819c81FCe` | 永久锁定 Uniswap V3 LP NFT 仓位  |
-| **Uniswap V3 Factory**              | `0x1f7d7550B1b028f7571E69A784071F0205FD2EfA` | 官方去中心化交易池注册表         |
-| **Position Manager**                | `0x73991a25C818Bf1f1128dEAaB1492D45638DE0D3` | 集中流动性头寸管理合约           |
-| **Swap Router**                     | `0xCaf681a66D020601342297493863E78C959E5cb2` | 去中心化交易精确输入路由合约     |
-| **Wrapped Ether (WETH)**            | `0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73` | 官方原生封装 Ether 代币          |
+| 合约名称                         | 合约地址                                     | 核心功能                        |
+| :------------------------------- | :------------------------------------------- | :------------------------------ |
+| **Launchpad Factory (联合曲线)** | `0xbA42499Cfe59abc05120A100EEc4f859F476034F` | 部署代币并开启链上联合曲线      |
+| **Liquidity Locker**             | `0xf60664BEadbcBe25aFFdae0e7E2a41a819c81FCe` | 永久锁定 Uniswap V3 LP NFT 仓位 |
+| **Uniswap V3 Factory**           | `0x1f7d7550B1b028f7571E69A784071F0205FD2EfA` | 官方去中心化交易池注册表        |
+| **Position Manager**             | `0x73991a25C818Bf1f1128dEAaB1492D45638DE0D3` | 集中流动性头寸管理合约          |
+| **Swap Router**                  | `0xCaf681a66D020601342297493863E78C959E5cb2` | 去中心化交易精确输入路由合约    |
+| **Wrapped Ether (WETH)**         | `0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73` | 官方原生封装 Ether 代币         |
 
 ---
 
 ## 2. Arc Network (主网, Chain ID: 5042)
 
-| 合约名称                            | 合约地址                                     | 核心功能                             |
-| :---------------------------------- | :------------------------------------------- | :----------------------------------- |
-| **Launchpad Factory (v1 直接池)**   | `0xED31e7ec603651803784196003903aCa05550552` | 部署代币并注入 Uniswap V3 流动性     |
-| **Launchpad Factory (v2 联合曲线)** | `0x2ae8BE8C8F19665396b362859d51bdec09e59AEa` | 部署代币并开启链上联合曲线           |
-| **Liquidity Locker**                | `0x9909ac8759dB233f546b644EF2CBDE1b3Af1dCE0` | 永久锁定 Uniswap V3 LP NFT 仓位      |
-| **Uniswap V3 Factory**              | `0xf0db7b58379503491d857dB50AC9ece64c653918` | 官方去中心化交易池注册表             |
-| **Position Manager**                | `0x39654A85A4C05127f5Fd6ED22CAeC077A0fB1377` | 集中流动性头寸管理合约               |
-| **Swap Router**                     | `0x53BF6B0684Ec7eF91e1387Da3D1a1769bC5A6F77` | 去中心化交易精确输入路由合约         |
-| **Native Payment Token (USDC)**     | `0x3600000000000000000000000000000000000000` | 原生 Gas 与基准交易对货币 (6 位精度) |
+| 合约名称                         | 合约地址                                     | 核心功能                             |
+| :------------------------------- | :------------------------------------------- | :----------------------------------- |
+| **Launchpad Factory (联合曲线)** | `0xf94d16c9E90fCd55b75D318d0104269146612abF` | 部署代币并开启链上联合曲线           |
+| **Liquidity Locker**             | `0x9909ac8759dB233f546b644EF2CBDE1b3Af1dCE0` | 永久锁定 Uniswap V3 LP NFT 仓位      |
+| **Uniswap V3 Factory**           | `0xf0db7b58379503491d857dB50AC9ece64c653918` | 官方去中心化交易池注册表             |
+| **Position Manager**             | `0x39654A85A4C05127f5Fd6ED22CAeC077A0fB1377` | 集中流动性头寸管理合约               |
+| **Swap Router**                  | `0x53BF6B0684Ec7eF91e1387Da3D1a1769bC5A6F77` | 去中心化交易精确输入路由合约         |
+| **Native Payment Token (USDC)**  | `0x3600000000000000000000000000000000000000` | 原生 Gas 与基准交易对货币 (6 位精度) |
 
 ---
 

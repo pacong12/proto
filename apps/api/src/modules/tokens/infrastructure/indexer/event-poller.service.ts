@@ -254,29 +254,31 @@ export class EventPollerService {
         const tokenAmountNum = Number(tokenAmount) / 1e18;
 
         let priceUsd = 0;
-        try {
-          const [vEth, vToken] = await Promise.all([
-            this.client.readContract({
-              address: log.address,
-              abi: bondingCurveAbi,
-              functionName: 'virtualEthReserve',
-            }) as Promise<bigint>,
-            this.client.readContract({
-              address: log.address,
-              abi: bondingCurveAbi,
-              functionName: 'virtualTokenReserve',
-            }) as Promise<bigint>,
-          ]);
-          if (vToken > 0n) {
-            priceUsd = (Number(vEth) / Number(vToken)) * quotePriceUsd;
-          }
-        } catch {
-          // fallback
+        if (tokenAmountNum > 0) {
+          const priceNative = ethAmountNum / tokenAmountNum;
+          priceUsd = priceNative * quotePriceUsd;
         }
 
         if (priceUsd <= 0) {
-          const priceNative = tokenAmountNum > 0 ? ethAmountNum / tokenAmountNum : 0;
-          priceUsd = priceNative * quotePriceUsd;
+          try {
+            const [vEth, vToken] = await Promise.all([
+              this.client.readContract({
+                address: log.address,
+                abi: bondingCurveAbi,
+                functionName: 'virtualEthReserve',
+              }) as Promise<bigint>,
+              this.client.readContract({
+                address: log.address,
+                abi: bondingCurveAbi,
+                functionName: 'virtualTokenReserve',
+              }) as Promise<bigint>,
+            ]);
+            if (vToken > 0n) {
+              priceUsd = (Number(vEth) / Number(vToken)) * quotePriceUsd;
+            }
+          } catch {
+            // fallback
+          }
         }
 
         const blockNumber = log.blockNumber ?? 0n;

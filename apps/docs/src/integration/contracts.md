@@ -6,29 +6,27 @@ For transparency and safety, all Proto launchpad contracts across supported netw
 
 ## 1. Robinhood Chain (Chain ID: 4663)
 
-| Contract Name                            | Address                                      | Function                                     |
-| :--------------------------------------- | :------------------------------------------- | :------------------------------------------- |
-| **Launchpad Factory (v1 Direct Pool)**   | `0xcC547D4EC0eF85FE506D2b2EEe02Be3620178B16` | Deploys tokens and seeds Uniswap V3 pools    |
-| **Launchpad Factory (v2 Bonding Curve)** | `0xbA42499Cfe59abc05120A100EEc4f859F476034F` | Deploys tokens and active bonding curves     |
-| **Liquidity Locker**                     | `0xf60664BEadbcBe25aFFdae0e7E2a41a819c81FCe` | Holds and permanently locks LP position NFTs |
-| **Uniswap V3 Factory**                   | `0x1f7d7550B1b028f7571E69A784071F0205FD2EfA` | Canonical decentralized pool registry        |
-| **Position Manager**                     | `0x73991a25C818Bf1f1128dEAaB1492D45638DE0D3` | Concentrated liquidity position NFT manager  |
-| **Swap Router**                          | `0xCaf681a66D020601342297493863E78C959E5cb2` | Direct trade and exact-input swap routing    |
-| **Wrapped Ether (WETH)**                 | `0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73` | Canonical wrapped native Ether token         |
+| Contract Name                         | Address                                      | Function                                     |
+| :------------------------------------ | :------------------------------------------- | :------------------------------------------- |
+| **Launchpad Factory (Bonding Curve)** | `0xbA42499Cfe59abc05120A100EEc4f859F476034F` | Deploys tokens and active bonding curves     |
+| **Liquidity Locker**                  | `0xf60664BEadbcBe25aFFdae0e7E2a41a819c81FCe` | Holds and permanently locks LP position NFTs |
+| **Uniswap V3 Factory**                | `0x1f7d7550B1b028f7571E69A784071F0205FD2EfA` | Canonical decentralized pool registry        |
+| **Position Manager**                  | `0x73991a25C818Bf1f1128dEAaB1492D45638DE0D3` | Concentrated liquidity position NFT manager  |
+| **Swap Router**                       | `0xCaf681a66D020601342297493863E78C959E5cb2` | Direct trade and exact-input swap routing    |
+| **Wrapped Ether (WETH)**              | `0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73` | Canonical wrapped native Ether token         |
 
 ---
 
 ## 2. Arc Network (Mainnet, Chain ID: 5042)
 
-| Contract Name                            | Address                                      | Function                                     |
-| :--------------------------------------- | :------------------------------------------- | :------------------------------------------- |
-| **Launchpad Factory (v1 Direct Pool)**   | `0xED31e7ec603651803784196003903aCa05550552` | Deploys tokens and seeds Uniswap V3 pools    |
-| **Launchpad Factory (v2 Bonding Curve)** | `0x2ae8BE8C8F19665396b362859d51bdec09e59AEa` | Deploys tokens and active bonding curves     |
-| **Liquidity Locker**                     | `0x9909ac8759dB233f546b644EF2CBDE1b3Af1dCE0` | Holds and permanently locks LP position NFTs |
-| **Uniswap V3 Factory**                   | `0xf0db7b58379503491d857dB50AC9ece64c653918` | Canonical decentralized pool registry        |
-| **Position Manager**                     | `0x39654A85A4C05127f5Fd6ED22CAeC077A0fB1377` | Concentrated liquidity position NFT manager  |
-| **Swap Router**                          | `0x53BF6B0684Ec7eF91e1387Da3D1a1769bC5A6F77` | Direct trade and exact-input swap routing    |
-| **Native Payment Token (USDC)**          | `0x3600000000000000000000000000000000000000` | Native gas and base pair currency (6 dec)    |
+| Contract Name                         | Address                                      | Function                                     |
+| :------------------------------------ | :------------------------------------------- | :------------------------------------------- |
+| **Launchpad Factory (Bonding Curve)** | `0xf94d16c9E90fCd55b75D318d0104269146612abF` | Deploys tokens and active bonding curves     |
+| **Liquidity Locker**                  | `0x9909ac8759dB233f546b644EF2CBDE1b3Af1dCE0` | Holds and permanently locks LP position NFTs |
+| **Uniswap V3 Factory**                | `0xf0db7b58379503491d857dB50AC9ece64c653918` | Canonical decentralized pool registry        |
+| **Position Manager**                  | `0x39654A85A4C05127f5Fd6ED22CAeC077A0fB1377` | Concentrated liquidity position NFT manager  |
+| **Swap Router**                       | `0x53BF6B0684Ec7eF91e1387Da3D1a1769bC5A6F77` | Direct trade and exact-input swap routing    |
+| **Native Payment Token (USDC)**       | `0x3600000000000000000000000000000000000000` | Native gas and base pair currency (6 dec)    |
 
 ## Security Audits
 

@@ -23,16 +23,16 @@ export const ROBINHOOD_NETWORK: NetworkConfig = {
   ),
   contracts: {
     factory: getEnv(
-      'ROBINHOOD_FACTORY_ADDRESS',
-      getEnv('LAUNCHPAD_FACTORY_ADDRESS', '0xcC547D4EC0eF85FE506D2b2EEe02Be3620178B16'),
+      'ROBINHOOD_FACTORY_V2_ADDRESS',
+      getEnv('ROBINHOOD_FACTORY_ADDRESS', '0xbA42499Cfe59abc05120A100EEc4f859F476034F'),
     ) as `0x${string}`,
     factoryV2: getEnv(
       'ROBINHOOD_FACTORY_V2_ADDRESS',
-      getEnv('LAUNCHPAD_V2_FACTORY_ADDRESS', '0xbA42499Cfe59abc05120A100EEc4f859F476034F'),
+      getEnv('ROBINHOOD_FACTORY_ADDRESS', '0xbA42499Cfe59abc05120A100EEc4f859F476034F'),
     ) as `0x${string}`,
     locker: getEnv(
       'ROBINHOOD_LOCKER_ADDRESS',
-      getEnv('LIQUIDITY_LOCKER_ADDRESS', '0xf60664BEadbcBe25aFFdae0e7E2a41a819c81FCe'),
+      getEnv('LIQUIDITY_LOCKER_ADDRESS', '0x070233B6F46ccD61CA2B7bc1E13520c3fE4614E4'),
     ) as `0x${string}`,
     // Not yet deployed to Robinhood mainnet. Fill in the address once deployed.
     holderFeeDistributor: '0x0000000000000000000000000000000000000000' as `0x${string}`,

@@ -9,7 +9,6 @@ import {
 } from 'viem';
 import {
   ROBINHOOD_CHAIN,
-  launchpadFactoryAbi,
   launchpadV2FactoryAbi,
   robinhoodLaunchpadV2Abi,
   launchpadTokenAbi,
@@ -86,44 +85,6 @@ function extractRobinhoodV2LaunchData(receipt: TransactionReceipt): ChainLaunchR
   return null;
 }
 
-function extractRobinhoodV1LaunchData(receipt: TransactionReceipt): ChainLaunchResult | null {
-  try {
-    const v1Events = parseEventLogs({
-      abi: launchpadFactoryAbi,
-      logs: receipt.logs,
-      eventName: 'TokenLaunched',
-    });
-    if (v1Events.length > 0) {
-      return {
-        tokenAddress: v1Events[0].args.token,
-        poolAddress: v1Events[0].args.pool,
-      };
-    }
-  } catch {
-    // fallback
-  }
-
-  for (const log of receipt.logs) {
-    try {
-      const decoded = decodeEventLog({
-        abi: launchpadFactoryAbi,
-        eventName: 'TokenLaunched',
-        topics: log.topics,
-        data: log.data,
-      });
-      if (decoded?.args?.token) {
-        return {
-          tokenAddress: decoded.args.token,
-          poolAddress: decoded.args.pool,
-        };
-      }
-    } catch {
-      // continue
-    }
-  }
-  return null;
-}
-
 export class RobinhoodChainAdapter implements ChainAdapter {
   readonly network = ROBINHOOD_CHAIN;
   readonly chainId = ROBINHOOD_CHAIN.chainId;
@@ -136,184 +97,113 @@ export class RobinhoodChainAdapter implements ChainAdapter {
     account: `0x${string}`,
     onHashEmitted?: (hash: `0x${string}`) => void,
   ): Promise<ChainLaunchResult | null> {
-    const targetFactory = this.network.contracts.factoryV2;
-    const isV2 = Boolean(
-      targetFactory && targetFactory !== '0x0000000000000000000000000000000000000000',
-    );
+    const targetFactory = this.network.contracts.factoryV2 ?? this.network.contracts.factory;
+    if (!targetFactory || targetFactory === '0x0000000000000000000000000000000000000000') {
+      throw new Error(`Factory contract not deployed on ${this.network.name}`);
+    }
 
-    if (isV2) {
-      const isPonsLegacy =
-        targetFactory!.toLowerCase() === '0x7ed598bcef8bd9edd8c97a195c6d13f40801ec7e';
+    const isPonsLegacy =
+      targetFactory.toLowerCase() === '0x7ed598bcef8bd9edd8c97a195c6d13f40801ec7e';
 
-      let hash: `0x${string}`;
-      if (isPonsLegacy) {
-        // Legacy Pons contract support if explicitly configured
-        hash = await walletClient.writeContract({
-          address: targetFactory!,
-          abi: robinhoodLaunchpadV2Abi,
-          functionName: 'launchToken',
-          args: [
-            {
-              name: params.name,
-              symbol: params.symbol,
-              logo: params.logo,
-              description: params.description,
-              socials: {
-                twitter: params.socials.twitter ?? '',
-                telegram: params.socials.telegram ?? '',
-                discord: params.socials.discord ?? '',
-                website: params.socials.website ?? '',
-                farcaster: params.socials.farcaster ?? '',
-              },
-              creatorFeeRecipient: account,
-              feeConfig: 0,
-              isFair: false,
-              b1: '0x0000000000000000000000000000000000000000000000000000000000000000',
-              b2: '0x0000000000000000000000000000000000000000000000000000000000000000',
+    let hash: `0x${string}`;
+    if (isPonsLegacy) {
+      // Legacy Pons contract support if explicitly configured
+      hash = await walletClient.writeContract({
+        address: targetFactory,
+        abi: robinhoodLaunchpadV2Abi,
+        functionName: 'launchToken',
+        args: [
+          {
+            name: params.name,
+            symbol: params.symbol,
+            logo: params.logo,
+            description: params.description,
+            socials: {
+              twitter: params.socials.twitter ?? '',
+              telegram: params.socials.telegram ?? '',
+              discord: params.socials.discord ?? '',
+              website: params.socials.website ?? '',
+              farcaster: params.socials.farcaster ?? '',
             },
-            0n,
-            '0x0000000000000000000000000000000000000000',
-          ],
-          value: this.network.launchConfig.launchFeeWei,
-          account,
-          chain: walletClient.chain,
-        });
-      } else {
-        // Proto Canonical LaunchpadV2Factory on Robinhood Chain
-        const initialBuyWei = parseInitialBuyWei(params.initialBuyAmountEth);
-        const totalValue = this.network.launchConfig.launchFeeWei + initialBuyWei;
-
-        hash = await walletClient.writeContract({
-          address: targetFactory!,
-          abi: launchpadV2FactoryAbi,
-          functionName: 'launchTokenV2',
-          args: [
-            params.name,
-            params.symbol,
-            params.logo,
-            params.description,
-            params.socials.twitter ?? '',
-            params.socials.telegram ?? '',
-            params.socials.website ?? '',
-            params.minInitialTokensOut ?? 0n,
-          ],
-          value: totalValue,
-          account,
-          chain: walletClient.chain,
-        });
-      }
-
-      onHashEmitted?.(hash);
-      const receipt = await waitForReceiptWithFallback(publicClient, hash, walletClient);
-      if (!receipt) return null;
-      if (receipt.status === 'reverted') {
-        throw new Error(
-          `Transaction reverted on-chain. Hash: ${hash}. Block: ${receipt.blockNumber}.`,
-        );
-      }
-      const launchResult = extractRobinhoodV2LaunchData(receipt);
-      if (
-        launchResult &&
-        ((params.buyTaxPercent && params.buyTaxPercent > 0) ||
-          (params.sellTaxPercent && params.sellTaxPercent > 0))
-      ) {
-        try {
-          const buyTaxBps = Math.min(
-            1000,
-            Math.max(0, Math.round((params.buyTaxPercent || 0) * 100)),
-          );
-          const sellTaxBps = Math.min(
-            1000,
-            Math.max(0, Math.round((params.sellTaxPercent || 0) * 100)),
-          );
-          const recipient = params.creatorTaxWallet || account;
-          const taxHash = await walletClient.writeContract({
-            address: launchResult.tokenAddress,
-            abi: launchpadTokenAbi,
-            functionName: 'proposeTaxConfig',
-            args: [buyTaxBps, sellTaxBps, recipient],
-            account,
-            chain: walletClient.chain,
-          });
-          await waitForReceiptWithFallback(publicClient, taxHash, walletClient);
-        } catch (taxErr) {
-          console.warn(
-            '[RobinhoodAdapter] Post-launch proposeTaxConfig skipped or deferred:',
-            taxErr,
-          );
-        }
-      }
-      return launchResult;
+            creatorFeeRecipient: account,
+            feeConfig: 0,
+            isFair: false,
+            b1: '0x0000000000000000000000000000000000000000000000000000000000000000',
+            b2: '0x0000000000000000000000000000000000000000000000000000000000000000',
+          },
+          0n,
+          '0x0000000000000000000000000000000000000000',
+        ],
+        value: this.network.launchConfig.launchFeeWei,
+        account,
+        chain: walletClient.chain,
+      });
     } else {
-      // Robinhood V1 Launch
+      // Proto Canonical LaunchpadV2Factory on Robinhood Chain
       const initialBuyWei = parseInitialBuyWei(params.initialBuyAmountEth);
       const totalValue = this.network.launchConfig.launchFeeWei + initialBuyWei;
 
-      const hash = await walletClient.writeContract({
-        address: this.network.contracts.factory,
-        abi: launchpadFactoryAbi,
-        functionName: 'launchToken',
+      hash = await walletClient.writeContract({
+        address: targetFactory,
+        abi: launchpadV2FactoryAbi,
+        functionName: 'launchTokenV2',
         args: [
           params.name,
           params.symbol,
           params.logo,
           params.description,
-          {
-            twitter: params.socials.twitter ?? '',
-            telegram: params.socials.telegram ?? '',
-            discord: params.socials.discord ?? '',
-            website: params.socials.website ?? '',
-            farcaster: params.socials.farcaster ?? '',
-          },
-          initialBuyWei,
+          params.socials.twitter ?? '',
+          params.socials.telegram ?? '',
+          params.socials.website ?? '',
+          params.minInitialTokensOut ?? 0n,
         ],
         value: totalValue,
         account,
         chain: walletClient.chain,
       });
+    }
 
-      onHashEmitted?.(hash);
-      const receipt = await waitForReceiptWithFallback(publicClient, hash, walletClient);
-      if (!receipt) return null;
-      if (receipt.status === 'reverted') {
-        throw new Error(
-          `Transaction reverted on-chain. Hash: ${hash}. Block: ${receipt.blockNumber}.`,
+    onHashEmitted?.(hash);
+    const receipt = await waitForReceiptWithFallback(publicClient, hash, walletClient);
+    if (!receipt) return null;
+    if (receipt.status === 'reverted') {
+      throw new Error(
+        `Transaction reverted on-chain. Hash: ${hash}. Block: ${receipt.blockNumber}.`,
+      );
+    }
+    const launchResult = extractRobinhoodV2LaunchData(receipt);
+    if (
+      launchResult &&
+      ((params.buyTaxPercent && params.buyTaxPercent > 0) ||
+        (params.sellTaxPercent && params.sellTaxPercent > 0))
+    ) {
+      try {
+        const buyTaxBps = Math.min(
+          1000,
+          Math.max(0, Math.round((params.buyTaxPercent || 0) * 100)),
+        );
+        const sellTaxBps = Math.min(
+          1000,
+          Math.max(0, Math.round((params.sellTaxPercent || 0) * 100)),
+        );
+        const recipient = params.creatorTaxWallet || account;
+        const taxHash = await walletClient.writeContract({
+          address: launchResult.tokenAddress,
+          abi: launchpadTokenAbi,
+          functionName: 'proposeTaxConfig',
+          args: [buyTaxBps, sellTaxBps, recipient],
+          account,
+          chain: walletClient.chain,
+        });
+        await waitForReceiptWithFallback(publicClient, taxHash, walletClient);
+      } catch (taxErr) {
+        console.warn(
+          '[RobinhoodAdapter] Post-launch proposeTaxConfig skipped or deferred:',
+          taxErr,
         );
       }
-      const v1Result = extractRobinhoodV1LaunchData(receipt);
-      if (
-        v1Result &&
-        ((params.buyTaxPercent && params.buyTaxPercent > 0) ||
-          (params.sellTaxPercent && params.sellTaxPercent > 0))
-      ) {
-        try {
-          const buyTaxBps = Math.min(
-            1000,
-            Math.max(0, Math.round((params.buyTaxPercent || 0) * 100)),
-          );
-          const sellTaxBps = Math.min(
-            1000,
-            Math.max(0, Math.round((params.sellTaxPercent || 0) * 100)),
-          );
-          const recipient = params.creatorTaxWallet || account;
-          const taxHash = await walletClient.writeContract({
-            address: v1Result.tokenAddress,
-            abi: launchpadTokenAbi,
-            functionName: 'proposeTaxConfig',
-            args: [buyTaxBps, sellTaxBps, recipient],
-            account,
-            chain: walletClient.chain,
-          });
-          await waitForReceiptWithFallback(publicClient, taxHash, walletClient);
-        } catch (taxErr) {
-          console.warn(
-            '[RobinhoodAdapter] Post-launch V1 proposeTaxConfig skipped or deferred:',
-            taxErr,
-          );
-        }
-      }
-      return v1Result;
     }
+    return launchResult;
   }
 
   async executeSwap(

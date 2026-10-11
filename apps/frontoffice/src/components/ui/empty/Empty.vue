@@ -19,21 +19,21 @@ const props = withDefaults(defineProps<Props>(), {
   <div
     :class="
       cn(
-        'flex flex-col items-center justify-center p-8 text-center rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/30 text-zinc-400 space-y-3',
+        'flex flex-col items-center justify-center p-8 text-center rounded-2xl border border-dashed border-border bg-card/50 text-muted-foreground space-y-3',
         props.class,
       )
     "
   >
-    <div class="rounded-full bg-zinc-800/80 p-3 text-zinc-500">
+    <div class="rounded-full bg-muted p-3 text-muted-foreground">
       <slot name="icon">
         <PackageOpen class="h-6 w-6" />
       </slot>
     </div>
     <div class="space-y-1">
-      <h4 class="text-sm font-semibold text-zinc-200">
+      <h4 class="text-sm font-semibold text-foreground font-mono">
         {{ props.title }}
       </h4>
-      <p class="text-xs text-zinc-500 max-w-sm">
+      <p class="text-xs text-muted-foreground max-w-sm font-sans">
         {{ props.description }}
       </p>
     </div>

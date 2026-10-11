@@ -68,9 +68,9 @@ async function runLoadBenchmark() {
     `${baseUrl}/api/tokens?limit=20`,
     `${baseUrl}/api/tokens?limit=20&sort=volume`,
     `${baseUrl}/api/analytics`,
-    `${baseUrl}/api/tokens/0xcC547D4EC0eF85FE506D2b2EEe02Be3620178B16`,
-    `${baseUrl}/api/tokens/0xcC547D4EC0eF85FE506D2b2EEe02Be3620178B16/trades?limit=50`,
-    `${baseUrl}/api/tokens/0xcC547D4EC0eF85FE506D2b2EEe02Be3620178B16/ohlcv?resolution=60`,
+    `${baseUrl}/api/tokens/0xbA42499Cfe59abc05120A100EEc4f859F476034F`,
+    `${baseUrl}/api/tokens/0xbA42499Cfe59abc05120A100EEc4f859F476034F/trades?limit=50`,
+    `${baseUrl}/api/tokens/0xbA42499Cfe59abc05120A100EEc4f859F476034F/ohlcv?resolution=60`,
   ];
 
   const results: BenchResult[] = [];

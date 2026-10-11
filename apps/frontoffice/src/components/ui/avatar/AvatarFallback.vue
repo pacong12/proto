@@ -11,7 +11,7 @@ const props = defineProps<AvatarFallbackProps & { class?: HTMLAttributes['class'
     v-bind="props"
     :class="
       cn(
-        'flex h-full w-full items-center justify-center rounded-full bg-zinc-800 text-xs font-mono font-bold text-emerald-400',
+        'flex h-full w-full items-center justify-center rounded-full bg-muted text-xs font-mono font-bold text-foreground',
         props.class,
       )
     "

@@ -285,4 +285,91 @@ describe('SqliteTokenRepository', () => {
     );
     expect(notFound).toBeNull();
   });
+
+  it('saves comments with callout metadata and returns in getFeedCallouts', async () => {
+    await repository.save(sampleToken);
+    await repository.saveComment({
+      id: 'call-sample-1',
+      tokenAddress: sampleToken.address,
+      authorAddress: '0x3333333333333333333333333333333333333333',
+      content: 'Strong accumulation, looking for 5x!',
+      targetMcap: '$500K MC',
+      positionUsd: 120,
+      callType: 'call',
+      likesCount: 2,
+      createdAt: Date.now(),
+    });
+
+    const comments = await repository.getComments(sampleToken.address);
+    expect(comments).toHaveLength(1);
+    expect(comments[0].targetMcap).toBe('$500K MC');
+    expect(comments[0].positionUsd).toBe(120);
+
+    const feed = await repository.getFeedCallouts(10, 0);
+    expect(feed.length).toBeGreaterThanOrEqual(1);
+    expect(feed[0].tokenSymbol).toBe('PROTO');
+    expect(feed[0].tokenName).toBe('Proto Token');
+  });
+
+  it('supports threaded replies, reposts, quotes, and view tracking', async () => {
+    await repository.save(sampleToken);
+    const rootCallId = 'call-root-1';
+    await repository.saveComment({
+      id: rootCallId,
+      tokenAddress: sampleToken.address,
+      authorAddress: '0x3333333333333333333333333333333333333333',
+      content: 'LFG $PROTO looking prime!',
+      targetMcap: '$1M MC',
+      positionUsd: 500,
+      callType: 'call',
+      likesCount: 5,
+      createdAt: Date.now() - 1000,
+    });
+
+    // Test repost toggle
+    const viewer = '0x4444444444444444444444444444444444444444';
+    const repResult = await repository.toggleCommentRepost(rootCallId, viewer);
+    expect(repResult.reposted).toBe(true);
+    expect(repResult.repostsCount).toBe(1);
+
+    // Test quote post
+    const quoteId = 'call-quote-1';
+    await repository.saveComment({
+      id: quoteId,
+      tokenAddress: sampleToken.address,
+      authorAddress: viewer,
+      content: 'I agree with this thesis, added more $PROTO!',
+      quotedCalloutId: rootCallId,
+      callType: 'call',
+      likesCount: 0,
+      createdAt: Date.now() - 500,
+    });
+
+    // Test thread reply
+    const replyId = 'reply-1';
+    await repository.saveComment({
+      id: replyId,
+      tokenAddress: sampleToken.address,
+      authorAddress: '0x5555555555555555555555555555555555555555',
+      content: 'What is your target timeframe?',
+      parentId: rootCallId,
+      callType: 'comment',
+      likesCount: 0,
+      createdAt: Date.now(),
+    });
+
+    // Test view increment
+    const newViews = await repository.incrementCommentViews(rootCallId);
+    expect(newViews).toBeGreaterThanOrEqual(1);
+
+    // Test getCalloutThread
+    const thread = await repository.getCalloutThread(rootCallId, viewer);
+    expect(thread).not.toBeNull();
+    expect(thread?.id).toBe(rootCallId);
+    expect(thread?.isRepostedByViewer).toBe(true);
+    expect(thread?.replies).toBeDefined();
+    expect(thread?.replies?.length).toBe(1);
+    expect(thread?.replies?.[0].content).toBe('What is your target timeframe?');
+    expect(thread?.viewsCount).toBeGreaterThanOrEqual(1);
+  });
 });

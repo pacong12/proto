@@ -3,43 +3,12 @@
     <div>
       <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t('launchToken') }}</h1>
       <p class="text-sm mt-1 text-muted-foreground">
-        {{ selectedVersion === 'v2' ? t('v2Subtitle') : t('v1Subtitle') }}
+        {{ t('v2Subtitle') }}
       </p>
     </div>
 
     <!-- Form container using Shadcn Card -->
     <Card class="p-4 sm:p-8 lg:p-10 border border-border bg-card shadow-sm rounded-3xl">
-      <!-- Dual Launch Architecture Tabs (v2 / v1) -->
-      <div class="mb-8 p-1.5 bg-muted rounded-2xl flex gap-2 border border-border">
-        <Button
-          type="button"
-          @click="selectedVersion = 'v2'"
-          :variant="selectedVersion === 'v2' ? 'default' : 'ghost'"
-          size="sm"
-          class="flex-1 text-xs font-semibold transition-all cursor-pointer"
-        >
-          <span>{{ t('v2BondingCurveTab') }}</span>
-        </Button>
-        <Button
-          type="button"
-          @click="!isArcNetwork && (selectedVersion = 'v1')"
-          :variant="selectedVersion === 'v1' ? 'default' : 'ghost'"
-          :disabled="isArcNetwork"
-          :title="isArcNetwork ? 'Arc Network uses V2 Bonding Curve architecture' : ''"
-          size="sm"
-          class="flex-1 text-xs font-semibold transition-all"
-          :class="isArcNetwork ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'"
-        >
-          <span>{{ t('v1DirectPoolTab') }}</span>
-          <span
-            v-if="isArcNetwork"
-            class="ml-2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border"
-          >
-            V2 Only
-          </span>
-        </Button>
-      </div>
-
       <form @submit.prevent="handleLaunch" class="space-y-7">
         <!-- Top Info Section: Image on the side + Name, Ticker, Description -->
         <div class="flex flex-col sm:flex-row gap-6 sm:gap-8 items-start">
@@ -236,11 +205,9 @@
 
           <p class="text-[11px] text-muted-foreground">
             {{
-              selectedVersion === 'v2'
-                ? activeNetwork.chainId === 5042
-                  ? 'Graduates once the curve raises 69,000 USDC into Uniswap liquidity.'
-                  : t('v2GraduatesHint')
-                : t('v1PairsHint')
+              activeNetwork.chainId === 5042
+                ? 'Graduates once the curve raises 69,000 USDC into Uniswap liquidity.'
+                : t('v2GraduatesHint')
             }}
           </p>
         </div>
@@ -288,7 +255,13 @@
             @click="advancedOpen = !advancedOpen"
             class="w-full flex items-center justify-between px-5 py-4 h-auto text-xs font-semibold transition hover:bg-muted/40 cursor-pointer rounded-none"
           >
-            <span>{{ t('advanced') }}</span>
+            <div class="flex items-center gap-2">
+              <span class="font-bold font-mono">{{ t('advanced') }}</span>
+              <span class="text-[10px] text-muted-foreground font-mono">
+                (Buy: {{ form.buyTax }}% &middot; Sell: {{ form.sellTax }}% &middot; Split:
+                {{ totalSplit }}/100%)
+              </span>
+            </div>
             <ChevronDown
               class="w-3.5 h-3.5 transition-transform duration-200 opacity-60"
               :class="advancedOpen ? 'rotate-180' : ''"
@@ -298,22 +271,31 @@
           <div v-show="advancedOpen" class="p-6 sm:p-7 space-y-7 border-t border-border">
             <!-- Connected Creator Wallet -->
             <div class="space-y-2">
-              <div class="flex items-center gap-1.5">
-                <Label class="text-xs font-semibold">{{ t('creatorWallet') }}</Label>
-                <InfoTooltip
-                  text="Receives creator fees, initial token supply allocations, and governance permissions. Defaults to the deployer wallet if left blank."
-                />
-              </div>
-              <div
-                class="flex items-center justify-between p-3.5 sm:p-4 rounded-xl border border-border bg-muted/30 font-mono text-xs"
-              >
-                <span class="truncate">{{ account || t('connectWallet') }}</span>
-                <span class="text-[10px] text-muted-foreground shrink-0 font-mono"
-                  >Deployer (msg.sender)</span
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                  <Label class="text-xs font-semibold">{{ t('creatorWallet') }}</Label>
+                  <InfoTooltip
+                    text="Receives creator fees, trading taxes, and governance permissions. Defaults to your connected wallet if left blank."
+                  />
+                </div>
+                <button
+                  v-if="account && form.creatorWallet !== account"
+                  type="button"
+                  class="text-[10px] text-primary hover:underline font-mono cursor-pointer"
+                  @click="form.creatorWallet = account"
                 >
+                  Use Connected Wallet
+                </button>
               </div>
-              <p class="text-[10px] text-muted-foreground">
-                {{ t('creatorWalletDesc') }}
+              <Input
+                v-model="form.creatorWallet"
+                type="text"
+                :placeholder="account || '0x... (defaults to deployer)'"
+                class="h-10 text-xs font-mono rounded-xl bg-muted/20"
+              />
+              <p class="text-[10px] text-muted-foreground font-mono">
+                Recipient for fee revenue and tax collections. Defaults to
+                {{ account ? shortenAddress(account) : 'deployer' }}.
               </p>
             </div>
 
@@ -355,11 +337,11 @@
                   />
                   <div class="flex items-center gap-1.5 pt-1">
                     <Button
-                      v-for="p in [1, 2, 5, 10]"
+                      v-for="p in [0, 1, 2, 5, 10]"
                       :key="p"
                       type="button"
                       size="sm"
-                      :variant="form.buyTax === String(p) ? 'default' : 'outline'"
+                      :variant="parseFloat(form.buyTax || '0') === p ? 'default' : 'outline'"
                       class="flex-1 h-7 text-xs font-mono p-0 cursor-pointer"
                       @click="form.buyTax = String(p)"
                     >
@@ -393,11 +375,11 @@
                   />
                   <div class="flex items-center gap-1.5 pt-1">
                     <Button
-                      v-for="p in [1, 2, 5, 10]"
+                      v-for="p in [0, 1, 2, 5, 10]"
                       :key="p"
                       type="button"
                       size="sm"
-                      :variant="form.sellTax === String(p) ? 'destructive' : 'outline'"
+                      :variant="parseFloat(form.sellTax || '0') === p ? 'destructive' : 'outline'"
                       class="flex-1 h-7 text-xs font-mono p-0 cursor-pointer"
                       @click="form.sellTax = String(p)"
                     >
@@ -420,13 +402,25 @@
                   </div>
                   <p class="text-[11px] text-muted-foreground">Fee allocation (must total 100%)</p>
                 </div>
-                <Badge
-                  :variant="totalSplit === 100 ? 'default' : 'outline'"
-                  class="font-mono text-xs"
-                  :class="totalSplit !== 100 ? 'border-amber-500 text-amber-500' : ''"
-                >
-                  {{ totalSplit }}/100%
-                </Badge>
+                <div class="flex items-center gap-2">
+                  <Button
+                    v-if="totalSplit !== 100"
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    class="h-6 px-2 text-[10px] font-mono border-amber-500/50 text-amber-500 hover:bg-amber-500/10 cursor-pointer"
+                    @click="autoBalanceSplit"
+                  >
+                    Auto-balance
+                  </Button>
+                  <Badge
+                    :variant="totalSplit === 100 ? 'default' : 'outline'"
+                    class="font-mono text-xs"
+                    :class="totalSplit !== 100 ? 'border-amber-500 text-amber-500' : ''"
+                  >
+                    {{ totalSplit }}/100%
+                  </Badge>
+                </div>
               </div>
 
               <!-- Quick Presets with Shadcn Button -->
@@ -516,52 +510,52 @@
                       fill="transparent"
                       class="text-muted/60"
                     />
-                    <!-- 1. Creator segment (Emerald #10B981) -->
+                    <!-- 1. Creator segment (Emerald var(--chart-2)) -->
                     <circle
                       v-if="revenueSplit.creator > 0"
                       cx="50"
                       cy="50"
                       r="38"
-                      stroke="#10b981"
+                      stroke="var(--chart-2)"
                       stroke-width="12"
                       fill="transparent"
                       :stroke-dasharray="`${creatorStroke} ${donutCircumference}`"
                       :stroke-dashoffset="creatorOffset"
                       class="transition-all duration-300"
                     />
-                    <!-- 2. Buyback & Burn segment (Rose #F43F5E) -->
+                    <!-- 2. Buyback & Burn segment (Rose var(--bearish)) -->
                     <circle
                       v-if="revenueSplit.buyback > 0"
                       cx="50"
                       cy="50"
                       r="38"
-                      stroke="#f43f5e"
+                      stroke="var(--bearish)"
                       stroke-width="12"
                       fill="transparent"
                       :stroke-dasharray="`${buybackStroke} ${donutCircumference}`"
                       :stroke-dashoffset="buybackOffset"
                       class="transition-all duration-300"
                     />
-                    <!-- 3. Holders segment (Violet #8B5CF6) -->
+                    <!-- 3. Holders segment (Violet var(--chart-4)) -->
                     <circle
                       v-if="revenueSplit.holders > 0"
                       cx="50"
                       cy="50"
                       r="38"
-                      stroke="#8b5cf6"
+                      stroke="var(--chart-4)"
                       stroke-width="12"
                       fill="transparent"
                       :stroke-dasharray="`${holdersStroke} ${donutCircumference}`"
                       :stroke-dashoffset="holdersOffset"
                       class="transition-all duration-300"
                     />
-                    <!-- 4. Growth segment (Sky #0EA5E9) -->
+                    <!-- 4. Growth segment (Sky var(--chart-1)) -->
                     <circle
                       v-if="revenueSplit.growth > 0"
                       cx="50"
                       cy="50"
                       r="38"
-                      stroke="#0ea5e9"
+                      stroke="var(--chart-1)"
                       stroke-width="12"
                       fill="transparent"
                       :stroke-dasharray="`${growthStroke} ${donutCircumference}`"
@@ -733,7 +727,7 @@
 
             <!-- Anti-Snipe Notice -->
             <div
-              class="p-4 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground space-y-1.5"
+              class="p-4 rounded-xl border border-border bg-black text-xs text-muted-foreground space-y-1.5"
             >
               <div class="font-semibold text-foreground flex items-center gap-1">
                 <span>Fair Launch Anti-Snipe Safeguard</span>
@@ -752,7 +746,7 @@
         <!-- Form Footer Rate & Submit Button -->
         <div class="pt-6 border-t border-border space-y-4">
           <!-- Launch Cost Summary Breakdown -->
-          <div class="rounded-2xl border border-border bg-muted/40 p-4 space-y-3 text-xs font-mono">
+          <div class="rounded-2xl border border-border bg-black p-4 space-y-3 text-xs font-mono">
             <div class="flex items-center justify-between text-muted-foreground">
               <span>{{ t('platformCreationFee') }}</span>
               <span class="font-bold text-foreground flex items-center gap-1.5">
@@ -1154,6 +1148,8 @@ import {
 } from '@/components/ui/dialog';
 import { useI18n } from '@/lib/i18n';
 import { compressAndConvertToWebp } from '@/lib/image-optimizer';
+import { shortenAddress } from '@/lib/utils';
+import { toast } from '@/components/ui/sonner';
 import { ARC_CHAIN } from '@proto/shared-types';
 
 const { t } = useI18n();
@@ -1342,6 +1338,19 @@ function applySplitPreset(creator: number, buyback: number, holders: number, gro
   revenueSplit.value = { creator, buyback, holders, growth };
 }
 
+function autoBalanceSplit() {
+  const currentTotal = totalSplit.value;
+  if (currentTotal === 100) return;
+  const diff = 100 - currentTotal;
+  if (revenueSplit.value.holders + diff >= 0 && revenueSplit.value.holders + diff <= 100) {
+    revenueSplit.value.holders += diff;
+  } else if (revenueSplit.value.creator + diff >= 0 && revenueSplit.value.creator + diff <= 100) {
+    revenueSplit.value.creator += diff;
+  } else {
+    revenueSplit.value = { creator: 50, buyback: 0, holders: 50, growth: 0 };
+  }
+}
+
 function updateShare(key: keyof RevenueSplit, val: unknown): void {
   const allKeys: (keyof RevenueSplit)[] = ['creator', 'buyback', 'holders', 'growth'];
   const otherKeys = allKeys.filter((k) => k !== key);
@@ -1353,18 +1362,6 @@ function updateShare(key: keyof RevenueSplit, val: unknown): void {
   revenueSplit.value[key] = Math.min(requested, maxAllowed);
 }
 
-const selectedVersion = ref<'v1' | 'v2'>('v2');
-const isArcNetwork = computed(() => activeNetwork.value.chainId === ARC_CHAIN.chainId);
-
-watch(
-  () => activeNetwork.value.chainId,
-  (chainId) => {
-    if (chainId === ARC_CHAIN.chainId) {
-      selectedVersion.value = 'v2';
-    }
-  },
-  { immediate: true },
-);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const selectedFileName = ref('');
 const imagePreview = ref('');
@@ -1472,26 +1469,30 @@ async function handleLaunch() {
     await switchOrAddNetwork(activeNetwork.value);
     return;
   }
-  if (totalSplit.value !== 100) return;
+  if (totalSplit.value !== 100) {
+    advancedOpen.value = true;
+    toast.error(
+      `Revenue split allocation must equal 100% (currently ${totalSplit.value}%). Please auto-balance or adjust.`,
+    );
+    return;
+  }
   isModalOpen.value = true;
-  const result = await launchToken(
-    {
-      name: form.value.name.trim(),
-      symbol: form.value.symbol.trim().toUpperCase(),
-      description: form.value.description.trim(),
-      logo: form.value.logo.trim(),
-      socials: {
-        website: form.value.website.trim(),
-        twitter: form.value.twitter.trim(),
-        telegram: form.value.telegram.trim(),
-      },
-      initialBuyAmountEth: String(form.value.initialBuyEth || '0').trim(),
-      buyTaxPercent: parseFloat(form.value.buyTax || '0'),
-      sellTaxPercent: parseFloat(form.value.sellTax || '0'),
-      creatorTaxWallet: form.value.creatorWallet.trim() || undefined,
+  const result = await launchToken({
+    name: form.value.name.trim(),
+    symbol: form.value.symbol.trim().toUpperCase(),
+    description: form.value.description.trim(),
+    logo: form.value.logo.trim(),
+    socials: {
+      website: form.value.website.trim(),
+      twitter: form.value.twitter.trim(),
+      telegram: form.value.telegram.trim(),
     },
-    selectedVersion.value,
-  );
+    initialBuyAmountEth: String(form.value.initialBuyEth || '0').trim(),
+    buyTaxPercent: parseFloat(form.value.buyTax || '0'),
+    sellTaxPercent: parseFloat(form.value.sellTax || '0'),
+    creatorTaxWallet: form.value.creatorWallet.trim() || undefined,
+    revenueSplit: { ...revenueSplit.value },
+  });
 
   if (result) {
     emit('tokenCreated', result.tokenAddress);

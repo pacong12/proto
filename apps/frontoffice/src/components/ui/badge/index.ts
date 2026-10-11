@@ -21,3 +21,4 @@ export const badgeVariants = cva(
 
 export type BadgeVariants = VariantProps<typeof badgeVariants>;
 export { default as Badge } from './Badge.vue';
+export { default as TraderTagBadge, type TraderTagType } from './TraderTagBadge.vue';

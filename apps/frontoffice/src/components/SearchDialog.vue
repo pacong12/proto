@@ -138,12 +138,6 @@
                     <span class="text-xs font-mono text-muted-foreground">
                       ${{ item.token.symbol }}
                     </span>
-                    <Badge
-                      :variant="item.token.version === 'v2' ? 'outline' : 'secondary'"
-                      class="text-[9px] px-1 py-0 h-3.5 font-mono uppercase"
-                    >
-                      {{ item.token.version === 'v2' ? 'v2' : 'v1' }}
-                    </Badge>
                   </div>
                   <p class="text-[11px] font-mono text-muted-foreground truncate mt-0.5">
                     {{ item.token.address }}

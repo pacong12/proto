@@ -1,0 +1,11 @@
+export { default as ProfileView } from './ProfileView.vue';
+export { default as ProfileHero } from './ProfileHero.vue';
+export { default as ProfileStats } from './ProfileStats.vue';
+export { default as ProfilePostsTab } from './ProfilePostsTab.vue';
+export { default as ProfileCreatedTab } from './ProfileCreatedTab.vue';
+export { default as ProfilePortfolioTab } from './ProfilePortfolioTab.vue';
+export { default as ProfileDividendsTab } from './ProfileDividendsTab.vue';
+export { default as ProfileActivityTab } from './ProfileActivityTab.vue';
+export { default as EditProfileModal } from './EditProfileModal.vue';
+export { default as CtoRedirectModal } from './CtoRedirectModal.vue';
+export * from './types';

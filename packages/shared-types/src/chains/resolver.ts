@@ -27,6 +27,7 @@ export function isArcToken(token?: TokenAddressPair | null, activeChainId?: numb
     curve === arcFactory ||
     curve === arcFactoryV2 ||
     curve === ARC_PROTO_CURVE_ADDRESS.toLowerCase() ||
+    pool === '0x00689b589add3ee1995e26e7f4e5cbf262486eb4' ||
     (token.version === 'v2' && activeChainId === ARC_NETWORK.chainId)
   );
 }

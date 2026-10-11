@@ -12,5 +12,7 @@ const props = defineProps<{
 }>();
 
 const route = useRoute();
-const targetAddress = computed(() => props.address || (route.params.address as string) || '');
+const targetAddress = computed(
+  () => props.address || (route.params.address as string) || (route.params.id as string) || '',
+);
 </script>

@@ -1,4 +1,30 @@
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
+
+function getUploadDir(): string {
+  const dir = process.env.UPLOADS_DIR || path.resolve(process.cwd(), 'uploads');
+  if (!fs.existsSync(dir)) {
+    try {
+      fs.mkdirSync(dir, { recursive: true });
+    } catch {
+      // Directory creation fallback if already exists
+    }
+  }
+  return dir;
+}
+
+function saveLocalFile(cid: string, buf: Buffer, mimeType: string, fileName: string): void {
+  try {
+    const dir = getUploadDir();
+    const filePath = path.join(dir, cid);
+    fs.writeFileSync(filePath, buf);
+    const metaPath = path.join(dir, `${cid}.meta.json`);
+    fs.writeFileSync(metaPath, JSON.stringify({ mimeType, fileName, timestamp: Date.now() }));
+  } catch (err) {
+    console.warn('[IPFS] Failed to persist file locally:', err);
+  }
+}
 
 const BASE32_ALPHABET = 'abcdefghijklmnopqrstuvwxyz234567';
 
@@ -66,6 +92,7 @@ export async function uploadFile(
         const data = (await response.json()) as { IpfsHash?: string };
         if (data && data.IpfsHash) {
           const cid = data.IpfsHash;
+          saveLocalFile(cid, buf, mimeType, fileName);
           const gateway = process.env.IPFS_GATEWAY || 'https://gateway.pinata.cloud/ipfs/';
           const cleanGateway = gateway.endsWith('/') ? gateway : `${gateway}/`;
           return {
@@ -86,7 +113,8 @@ export async function uploadFile(
 
   // Deterministic fallback (offline or Pinata failure)
   const cid = generateDeterministicCid(buf);
-  const gateway = process.env.IPFS_GATEWAY || 'https://ipfs.io/ipfs/';
+  saveLocalFile(cid, buf, mimeType, fileName);
+  const gateway = process.env.IPFS_GATEWAY || '/api/ipfs/';
   const cleanGateway = gateway.endsWith('/') ? gateway : `${gateway}/`;
 
   return {
@@ -103,5 +131,56 @@ export class IpfsService {
     mimeType: string,
   ): Promise<{ cid: string; url: string; uri: string }> {
     return uploadFile(fileBuffer, fileName, mimeType);
+  }
+
+  async getFile(cid: string): Promise<{ data: Buffer; mimeType: string } | null> {
+    const cleanCid = cid.replace(/[^a-zA-Z0-9]/g, '');
+    if (!cleanCid) return null;
+
+    const dir = getUploadDir();
+    const filePath = path.join(dir, cleanCid);
+    if (fs.existsSync(filePath)) {
+      try {
+        const data = fs.readFileSync(filePath);
+        let mimeType = 'image/webp';
+        const metaPath = path.join(dir, `${cleanCid}.meta.json`);
+        if (fs.existsSync(metaPath)) {
+          try {
+            const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+            if (meta.mimeType) mimeType = meta.mimeType;
+          } catch {
+            // Use default webp mime type
+          }
+        }
+        return { data, mimeType };
+      } catch (err) {
+        console.warn(`[IPFS] Error reading local file ${cleanCid}:`, err);
+      }
+    }
+
+    // Remote fallback: fetch from working public gateways and cache locally
+    const gateways = [
+      `https://ipfs.filebase.io/ipfs/${cleanCid}`,
+      `https://4everland.io/ipfs/${cleanCid}`,
+      `https://gateway.pinata.cloud/ipfs/${cleanCid}`,
+      `https://cloudflare-ipfs.com/ipfs/${cleanCid}`,
+    ];
+
+    for (const gw of gateways) {
+      try {
+        const res = await fetch(gw, { signal: AbortSignal.timeout(5000) });
+        if (res.ok) {
+          const ab = await res.arrayBuffer();
+          const buf = Buffer.from(ab);
+          const mime = res.headers.get('content-type') || 'image/webp';
+          saveLocalFile(cleanCid, buf, mime, `${cleanCid}.bin`);
+          return { data: buf, mimeType: mime };
+        }
+      } catch {
+        // Fallback to next gateway
+      }
+    }
+
+    return null;
   }
 }

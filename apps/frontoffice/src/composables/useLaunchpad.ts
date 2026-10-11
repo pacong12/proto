@@ -42,12 +42,11 @@ function parseInitialBuyWei(val: string | number | undefined | null): bigint {
   }
 }
 import {
-  ARC_CHAIN,
   getNetworkConfig,
-  launchpadFactoryAbi,
   launchpadV2FactoryAbi,
   robinhoodLaunchpadV2Abi,
   launchpadTokenAbi,
+  bondingCurveAbi,
   liquidityLockerAbi,
   type LaunchedTokenEntity,
   type TokenMarketData,
@@ -84,175 +83,11 @@ export function useLaunchpad() {
   }
 
   // ---------------------------------------------------------------------------
-  // V1: Launch via Uniswap V3 direct pool
-  // ---------------------------------------------------------------------------
-
-  async function launchTokenV1(params: {
-    name: string;
-    symbol: string;
-    logo: string;
-    description: string;
-    socials: TokenSocials;
-    initialBuyAmountEth?: string;
-    buyTaxPercent?: number;
-    sellTaxPercent?: number;
-    creatorTaxWallet?: string;
-  }): Promise<{ tokenAddress: `0x${string}`; poolAddress: `0x${string}` } | null> {
-    loading.value = true;
-    error.value = null;
-    launchStep.value = 'validating';
-    launchTxHash.value = null;
-    launchTokenAddress.value = null;
-
-    try {
-      const walletClient = await getWalletClient();
-      if (!walletClient) throw new Error('No Web3 wallet detected');
-
-      const [account] = await walletClient.getAddresses();
-      if (!account) throw new Error('Please connect your wallet');
-
-      let activeChainId = walletChainId.value ?? undefined;
-      try {
-        const clientChainId = await walletClient.getChainId();
-        if (clientChainId) {
-          activeChainId = clientChainId;
-          walletChainId.value = clientChainId;
-        }
-      } catch {
-        // Fall back to walletChainId.value
-      }
-
-      const network = getNetworkConfig(activeChainId);
-      if (
-        !network.contracts.factory ||
-        network.contracts.factory === '0x0000000000000000000000000000000000000000'
-      ) {
-        throw new Error(`Factory contract not deployed on ${network.name}`);
-      }
-
-      // On all EVM chains (including Arc Network), native msg.value uses 18 decimals
-      // (1e18 native wei = 1.0 token / 1.0 USDC) per Circle Arc EVM differences specification.
-      const initialBuyWei = parseInitialBuyWei(params.initialBuyAmountEth);
-      const totalValue = network.launchConfig.launchFeeWei + initialBuyWei;
-
-      launchStep.value = 'awaiting_signature';
-
-      const hash = await walletClient.writeContract({
-        address: network.contracts.factory,
-        abi: launchpadFactoryAbi,
-        functionName: 'launchToken',
-        args: [
-          params.name,
-          params.symbol,
-          params.logo,
-          params.description,
-          {
-            twitter: params.socials.twitter ?? '',
-            telegram: params.socials.telegram ?? '',
-            discord: params.socials.discord ?? '',
-            website: params.socials.website ?? '',
-            farcaster: params.socials.farcaster ?? '',
-          },
-          initialBuyWei,
-        ],
-        value: totalValue,
-        account,
-        chain: walletClient.chain,
-      });
-
-      launchTxHash.value = hash;
-      launchStep.value = 'confirming';
-
-      const publicClient = getPublicClient(network.chainId);
-      let receipt;
-      try {
-        receipt = await publicClient.waitForTransactionReceipt({
-          hash,
-          timeout: 60_000,
-          retryCount: 15,
-          retryDelay: 1500,
-        });
-      } catch {
-        try {
-          receipt = await publicClient.getTransactionReceipt({ hash });
-        } catch {
-          // Still waiting
-        }
-        if (!receipt) {
-          throw new Error(
-            `Transaction broadcasted with hash ${hash}. Waiting for block confirmation is taking longer than expected. Check block explorer.`,
-          );
-        }
-      }
-
-      if (receipt.status === 'reverted') {
-        throw new Error(
-          `Transaction reverted on-chain (status: reverted). Hash: ${hash}. Block: ${receipt.blockNumber}. Check launch fee and gas.`,
-        );
-      }
-
-      launchStep.value = 'indexing';
-
-      // 1. Primary: parse via viem parseEventLogs
-      const v1Events = parseEventLogs({
-        abi: launchpadFactoryAbi,
-        logs: receipt.logs,
-        eventName: 'TokenLaunched',
-      });
-
-      if (v1Events.length > 0) {
-        launchStep.value = 'success';
-        launchTokenAddress.value = v1Events[0].args.token;
-        return {
-          tokenAddress: v1Events[0].args.token,
-          poolAddress: v1Events[0].args.pool,
-        };
-      }
-
-      // 2. Secondary fallback: check each log individually
-      for (const log of receipt.logs) {
-        try {
-          const decoded = decodeEventLog({
-            abi: launchpadFactoryAbi,
-            eventName: 'TokenLaunched',
-            topics: log.topics,
-            data: log.data,
-          });
-          if (decoded?.args?.token) {
-            launchStep.value = 'success';
-            launchTokenAddress.value = decoded.args.token;
-            return {
-              tokenAddress: decoded.args.token,
-              poolAddress: decoded.args.pool,
-            };
-          }
-        } catch {
-          // Continue searching logs
-        }
-      }
-
-      console.error('[LaunchpadV1] TokenLaunched not found. Receipt logs:', receipt.logs);
-      throw new Error(`TokenLaunched event not found in transaction receipt. Hash: ${hash}`);
-    } catch (err) {
-      if (isUserRejection(err)) {
-        launchStep.value = 'idle';
-        error.value = null;
-      } else {
-        launchStep.value = 'error';
-        error.value = (err as Error).message;
-      }
-      return null;
-    } finally {
-      loading.value = false;
-    }
-  }
-
-  // ---------------------------------------------------------------------------
   // V2: Launch via Bonding Curve (graduates to Uniswap V4)
   // Uses launchpadV2FactoryAbi from shared-types as the single source of truth (fix HIGH-03).
   // ---------------------------------------------------------------------------
 
-  async function launchTokenV2(params: {
+  async function launchToken(params: {
     name: string;
     symbol: string;
     logo: string;
@@ -263,7 +98,17 @@ export function useLaunchpad() {
     buyTaxPercent?: number;
     sellTaxPercent?: number;
     creatorTaxWallet?: string;
-  }): Promise<{ tokenAddress: `0x${string}`; curveAddress: `0x${string}` } | null> {
+    revenueSplit?: {
+      creator: number;
+      buyback: number;
+      holders: number;
+      growth: number;
+    };
+  }): Promise<{
+    tokenAddress: `0x${string}`;
+    curveAddress: `0x${string}`;
+    poolAddress?: `0x${string}`;
+  } | null> {
     loading.value = true;
     error.value = null;
     launchStep.value = 'validating';
@@ -427,9 +272,64 @@ export function useLaunchpad() {
         const curveAddr = launchEv.args.curve as `0x${string}`;
         launchStep.value = 'success';
         launchTokenAddress.value = tokenAddr;
+
+        // Apply advanced trading tax configuration if specified
+        if (
+          (params.buyTaxPercent && params.buyTaxPercent > 0) ||
+          (params.sellTaxPercent && params.sellTaxPercent > 0)
+        ) {
+          try {
+            const buyTaxBps = Math.min(
+              1000,
+              Math.max(0, Math.round((params.buyTaxPercent || 0) * 100)),
+            );
+            const sellTaxBps = Math.min(
+              1000,
+              Math.max(0, Math.round((params.sellTaxPercent || 0) * 100)),
+            );
+            const recipient = (params.creatorTaxWallet as `0x${string}`) || account;
+            const taxHash = await walletClient.writeContract({
+              address: tokenAddr,
+              abi: launchpadTokenAbi,
+              functionName: 'proposeTaxConfig',
+              args: [buyTaxBps, sellTaxBps, recipient],
+              account,
+              chain: walletClient.chain,
+            });
+            await publicClient.waitForTransactionReceipt({ hash: taxHash });
+          } catch (taxErr) {
+            console.warn('[LaunchpadV2] Post-launch proposeTaxConfig skipped or deferred:', taxErr);
+          }
+        }
+
+        try {
+          await fetch(`/api/tokens/${tokenAddr}/sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              txHash: hash,
+              taxConfig: {
+                buyTaxBps: Math.min(
+                  1000,
+                  Math.max(0, Math.round((params.buyTaxPercent || 0) * 100)),
+                ),
+                sellTaxBps: Math.min(
+                  1000,
+                  Math.max(0, Math.round((params.sellTaxPercent || 0) * 100)),
+                ),
+                taxRecipient: (params.creatorTaxWallet as `0x${string}`) || account,
+                revenueSplit: params.revenueSplit,
+              },
+            }),
+          });
+        } catch {
+          /* backend sync is best-effort */
+        }
+
         return {
           tokenAddress: tokenAddr,
           curveAddress: curveAddr,
+          poolAddress: curveAddr,
         };
       }
 
@@ -455,6 +355,7 @@ export function useLaunchpad() {
             return {
               tokenAddress: tokenAddr,
               curveAddress: curveAddr,
+              poolAddress: curveAddr,
             };
           }
         } catch {
@@ -462,23 +363,7 @@ export function useLaunchpad() {
         }
       }
 
-      // 3. Tertiary fallback: if deployed as V1
-      const v1Events = parseEventLogs({
-        abi: launchpadFactoryAbi,
-        logs: receipt.logs,
-        eventName: 'TokenLaunched',
-      });
-
-      if (v1Events.length > 0) {
-        launchStep.value = 'success';
-        launchTokenAddress.value = v1Events[0].args.token;
-        return {
-          tokenAddress: v1Events[0].args.token,
-          curveAddress: v1Events[0].args.pool as `0x${string}`,
-        };
-      }
-
-      console.error('[LaunchpadV2] TokenLaunched not found in V2 receipt. Logs:', receipt.logs);
+      console.error('[Launchpad] TokenLaunched not found in receipt. Logs:', receipt.logs);
       throw new Error(`TokenLaunched event not found in transaction receipt. Hash: ${hash}`);
     } catch (err) {
       if (isUserRejection(err)) {
@@ -495,45 +380,6 @@ export function useLaunchpad() {
   }
 
   // ---------------------------------------------------------------------------
-  // Router: delegate to V1 or V2 based on the requested version
-  // ---------------------------------------------------------------------------
-
-  async function launchToken(
-    params: {
-      name: string;
-      symbol: string;
-      logo: string;
-      description: string;
-      socials: TokenSocials;
-      initialBuyAmountEth?: string;
-      minInitialTokensOut?: bigint;
-      buyTaxPercent?: number;
-      sellTaxPercent?: number;
-      creatorTaxWallet?: string;
-    },
-    version: 'v1' | 'v2' = 'v2',
-  ) {
-    let activeChainId = walletChainId.value ?? undefined;
-    try {
-      const walletClient = await getWalletClient();
-      if (walletClient) {
-        const clientChainId = await walletClient.getChainId();
-        if (clientChainId) activeChainId = clientChainId;
-      }
-    } catch {
-      // Non-blocking
-    }
-
-    const network = getNetworkConfig(activeChainId);
-    // Arc Network only supports V2 Bonding Curve
-    if (network.chainId === ARC_CHAIN.chainId || version === 'v2') {
-      const res = await launchTokenV2(params);
-      return res ? { tokenAddress: res.tokenAddress, poolAddress: res.curveAddress } : null;
-    }
-    return launchTokenV1(params);
-  }
-
-  // ---------------------------------------------------------------------------
   // Read: fetch token details from chain
   // ---------------------------------------------------------------------------
 
@@ -541,110 +387,105 @@ export function useLaunchpad() {
     try {
       const client = getPublicClient();
       const network = getNetworkConfig(walletChainId.value ?? undefined);
+      const factoryAddress = network.contracts.factoryV2 ?? network.contracts.factory;
 
-      const [
-        name,
-        symbol,
-        logo,
-        description,
-        pool,
-        graduation,
-        restrictionsEndBlock,
-        launchBlock,
-        launched,
-      ] = await Promise.all([
-        client.readContract({
-          address: tokenAddress,
-          abi: launchpadTokenAbi,
-          functionName: 'name',
-        }),
-        client.readContract({
-          address: tokenAddress,
-          abi: launchpadTokenAbi,
-          functionName: 'symbol',
-        }),
-        client.readContract({
-          address: tokenAddress,
-          abi: launchpadTokenAbi,
-          functionName: 'logo',
-        }),
-        client.readContract({
-          address: tokenAddress,
-          abi: launchpadTokenAbi,
-          functionName: 'description',
-        }),
-        client.readContract({
-          address: tokenAddress,
-          abi: launchpadTokenAbi,
-          functionName: 'liquidityPool',
-        }),
-        client.readContract({
-          address: network.contracts.factory,
-          abi: launchpadFactoryAbi,
-          functionName: 'graduationStatus',
-          args: [tokenAddress],
-        }),
-        client
-          .readContract({
+      const [name, symbol, logo, description, launchRecord, restrictionsEndBlock, launchBlock] =
+        await Promise.all([
+          client.readContract({
             address: tokenAddress,
             abi: launchpadTokenAbi,
-            functionName: 'restrictionsEndBlock',
-          })
-          .catch(() => 0n),
-        client
-          .readContract({
+            functionName: 'name',
+          }),
+          client.readContract({
             address: tokenAddress,
             abi: launchpadTokenAbi,
-            functionName: 'launchBlock',
-          })
-          .catch(() => 0n),
-        client
-          .readContract({
-            address: network.contracts.factory,
-            abi: launchpadFactoryAbi,
-            functionName: 'getLaunchedToken',
-            args: [tokenAddress],
-          })
-          .catch(() => null),
-      ]);
+            functionName: 'symbol',
+          }),
+          client.readContract({
+            address: tokenAddress,
+            abi: launchpadTokenAbi,
+            functionName: 'logo',
+          }),
+          client.readContract({
+            address: tokenAddress,
+            abi: launchpadTokenAbi,
+            functionName: 'description',
+          }),
+          client
+            .readContract({
+              address: factoryAddress,
+              abi: launchpadV2FactoryAbi,
+              functionName: 'launches',
+              args: [tokenAddress],
+            })
+            .catch(() => null),
+          client
+            .readContract({
+              address: tokenAddress,
+              abi: launchpadTokenAbi,
+              functionName: 'restrictionsEndBlock',
+            })
+            .catch(() => 0n),
+          client
+            .readContract({
+              address: tokenAddress,
+              abi: launchpadTokenAbi,
+              functionName: 'launchBlock',
+            })
+            .catch(() => 0n),
+        ]);
 
-      const [pairedPrincipal, threshold, graduated] = graduation;
+      const curveAddress =
+        launchRecord && launchRecord[1] !== '0x0000000000000000000000000000000000000000'
+          ? (launchRecord[1] as `0x${string}`)
+          : null;
+      const deployer =
+        launchRecord && launchRecord[2] !== '0x0000000000000000000000000000000000000000'
+          ? (launchRecord[2] as `0x${string}`)
+          : tokenAddress;
+
+      let graduated = launchRecord ? Boolean(launchRecord[4]) : false;
+      let totalRaisedWei = 0n;
+      let targetWei = network.launchConfigV2?.graduationTargetWei ?? 4_200_000_000_000_000_000n;
+
+      if (curveAddress) {
+        try {
+          const [raised, target, grad] = await Promise.all([
+            client
+              .readContract({
+                address: curveAddress,
+                abi: bondingCurveAbi,
+                functionName: 'totalEthRaised',
+              })
+              .catch(() => 0n),
+            client
+              .readContract({
+                address: curveAddress,
+                abi: bondingCurveAbi,
+                functionName: 'graduationTarget',
+              })
+              .catch(() => targetWei),
+            client
+              .readContract({
+                address: curveAddress,
+                abi: bondingCurveAbi,
+                functionName: 'graduated',
+              })
+              .catch(() => graduated),
+          ]);
+          totalRaisedWei = raised;
+          targetWei = target;
+          graduated = grad;
+        } catch {
+          // ignore
+        }
+      }
+
       const progress =
-        Number(threshold) > 0 ? Math.min(1.0, Number(pairedPrincipal) / Number(threshold)) : 0;
+        Number(targetWei) > 0 ? Math.min(1.0, Number(totalRaisedWei) / Number(targetWei)) : 0;
 
-      const sqrtPriceX96Result = await client
-        .readContract({
-          address: pool as `0x${string}`,
-          abi: [
-            {
-              name: 'slot0',
-              type: 'function',
-              stateMutability: 'view',
-              inputs: [],
-              outputs: [
-                { name: 'sqrtPriceX96', type: 'uint160' },
-                { name: 'tick', type: 'int24' },
-                { name: 'observationIndex', type: 'uint16' },
-                { name: 'observationCardinality', type: 'uint16' },
-                { name: 'observationCardinalityNext', type: 'uint16' },
-                { name: 'feeProtocol', type: 'uint8' },
-                { name: 'unlocked', type: 'bool' },
-              ],
-            },
-          ],
-          functionName: 'slot0',
-        })
-        .catch(() => [2505414483750479299401734n, 0, 0, 0, 0, 0, true] as const);
-
-      const sqrtPriceX96 = sqrtPriceX96Result[0] as bigint;
-      const ratio = Number(sqrtPriceX96) / 2 ** 96;
-      const token1PerToken0 = ratio * ratio;
-      // isToken0 is read from the factory record; fall back to true for display purposes.
-      // The API endpoint provides the authoritative value for trade routing.
-      const isToken0 = launched ? Boolean(launched.isToken0) : true;
-      const positionId = launched ? BigInt(launched.positionId) : 0n;
-      const priceInWeth = token1PerToken0;
       const ethPriceUsd = await getLiveEthPriceUsd();
+      const priceInWeth = 0.0000042;
       const priceUsd = priceInWeth * ethPriceUsd;
       const supplyTokens = 1_000_000_000;
       const marketCapUsd = priceUsd * supplyTokens;
@@ -659,12 +500,13 @@ export function useLaunchpad() {
           logo,
           description,
           socials: {},
-          deployer: launched?.deployer ?? tokenAddress,
-          pairedToken: launched?.pairedToken ?? network.contracts.weth,
-          poolAddress: pool,
-          isToken0,
-          poolFee: launched?.poolFee ?? network.launchConfig.poolFee,
-          positionId,
+          deployer,
+          pairedToken: network.contracts.weth,
+          poolAddress: curveAddress ?? tokenAddress,
+          curveAddress: curveAddress ?? undefined,
+          isToken0: false,
+          poolFee: 10000,
+          positionId: 0n,
           restrictionsEndBlock: restrictionsEndBlock as bigint,
           launchBlock: launchBlock as bigint,
           createdAt: Date.now(),
@@ -675,8 +517,8 @@ export function useLaunchpad() {
           priceUsd,
           marketCapUsd,
           fdvUsd: marketCapUsd,
-          pairedPrincipalWeth: (Number(pairedPrincipal) / 1e18).toFixed(4),
-          graduationThresholdWeth: '4.2',
+          pairedPrincipalWeth: (Number(totalRaisedWei) / 1e18).toFixed(4),
+          graduationThresholdWeth: (Number(targetWei) / 1e18).toFixed(1),
           graduationProgress: progress,
           isGraduated: graduated,
           volume24hUsd: 0,
@@ -782,31 +624,19 @@ export function useLaunchpad() {
   } | null {
     try {
       const v2Events = parseEventLogs({
-        abi: launchpadV2FactoryAbi,
+        abi: [...launchpadV2FactoryAbi, ...robinhoodLaunchpadV2Abi],
         logs: receipt.logs,
-        eventName: 'TokenLaunchedV2',
       });
-      if (v2Events.length > 0) {
+      const launchEv = v2Events.find(
+        (e) => e.eventName === 'TokenLaunched' || e.eventName === 'TokenLaunchedV2',
+      );
+      if (launchEv && 'token' in launchEv.args) {
+        const tokenAddr = launchEv.args.token as `0x${string}`;
+        const curveAddr = (launchEv.args as { curve?: `0x${string}` }).curve ?? tokenAddr;
         return {
-          tokenAddress: v2Events[0].args.token,
-          curveAddress: v2Events[0].args.curve,
-          poolAddress: v2Events[0].args.curve,
-        };
-      }
-    } catch {
-      // fallback
-    }
-
-    try {
-      const v1Events = parseEventLogs({
-        abi: launchpadFactoryAbi,
-        logs: receipt.logs,
-        eventName: 'TokenLaunched',
-      });
-      if (v1Events.length > 0) {
-        return {
-          tokenAddress: v1Events[0].args.token,
-          poolAddress: v1Events[0].args.pool,
+          tokenAddress: tokenAddr,
+          curveAddress: curveAddr,
+          poolAddress: curveAddr,
         };
       }
     } catch {
@@ -815,33 +645,23 @@ export function useLaunchpad() {
 
     for (const log of receipt.logs) {
       try {
-        const decodedV2 = decodeEventLog({
-          abi: launchpadV2FactoryAbi,
+        const decoded = decodeEventLog({
+          abi: [...launchpadV2FactoryAbi, ...robinhoodLaunchpadV2Abi],
           topics: log.topics,
           data: log.data,
         });
-        if (decodedV2?.args && 'token' in decodedV2.args) {
+        if (
+          decoded &&
+          (decoded.eventName === 'TokenLaunched' || decoded.eventName === 'TokenLaunchedV2') &&
+          decoded.args &&
+          'token' in decoded.args
+        ) {
+          const tokenAddr = decoded.args.token as `0x${string}`;
+          const curveAddr = (decoded.args as { curve?: `0x${string}` }).curve ?? tokenAddr;
           return {
-            tokenAddress: decodedV2.args.token as `0x${string}`,
-            curveAddress: (decodedV2.args as { curve?: `0x${string}` }).curve,
-            poolAddress: (decodedV2.args as { curve?: `0x${string}` }).curve,
-          };
-        }
-      } catch {
-        // continue
-      }
-
-      try {
-        const decodedV1 = decodeEventLog({
-          abi: launchpadFactoryAbi,
-          eventName: 'TokenLaunched',
-          topics: log.topics,
-          data: log.data,
-        });
-        if (decodedV1?.args?.token) {
-          return {
-            tokenAddress: decodedV1.args.token,
-            poolAddress: decodedV1.args.pool,
+            tokenAddress: tokenAddr,
+            curveAddress: curveAddr,
+            poolAddress: curveAddr,
           };
         }
       } catch {

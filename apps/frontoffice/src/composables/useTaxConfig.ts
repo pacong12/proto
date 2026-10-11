@@ -69,7 +69,7 @@ export function useTaxConfig() {
         };
       }
     } catch {
-      // Non-blocking: token may not implement pendingTaxConfig (e.g. V1 tokens)
+      // Non-blocking: token may not implement pendingTaxConfig
       pending.value = null;
     } finally {
       loading.value = false;

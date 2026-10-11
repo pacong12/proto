@@ -11,3 +11,5 @@ contracts/cache
 *.lock
 *.d.ts
 components.d.ts
+uploads/
+apps/api/uploads/
