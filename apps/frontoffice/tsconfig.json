@@ -11,6 +11,7 @@
     "paths": {
       "@/*": ["src/*"],
       "@proto/shared-types": ["../../packages/shared-types/src/index.ts"],
+      "@proto/contracts-abi": ["../../packages/contracts-abi/src/index.ts"],
       "@proto/math-sdk": ["../../packages/math-sdk/src/index.ts"]
     }
   },

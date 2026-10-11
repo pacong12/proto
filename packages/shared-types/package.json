@@ -8,6 +8,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@proto/contracts-abi": "*",
     "viem": "^2.23.0"
   },
   "devDependencies": {

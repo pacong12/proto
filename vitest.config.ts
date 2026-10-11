@@ -19,6 +19,7 @@ export default defineConfig({
       vue: path.resolve(__dirname, './apps/frontoffice/node_modules/vue'),
       '@': path.resolve(__dirname, './apps/frontoffice/src'),
       '@proto/shared-types': path.resolve(__dirname, './packages/shared-types/src/index.ts'),
+      '@proto/contracts-abi': path.resolve(__dirname, './packages/contracts-abi/src/index.ts'),
       '@proto/math-sdk': path.resolve(__dirname, './packages/math-sdk/src/index.ts'),
       'bun:sqlite': path.resolve(__dirname, './apps/api/test/mocks/bun-sqlite-shim.ts'),
     },
