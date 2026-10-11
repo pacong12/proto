@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import {
   createChart,
   CandlestickSeries,
   HistogramSeries,
   AreaSeries,
+  createTextWatermark,
+  createSeriesMarkers,
   PriceScaleMode,
   CrosshairMode,
   ColorType,
@@ -21,6 +23,7 @@ import {
   Minimize,
   ScanLine,
   ChevronsRight,
+  ZoomOut,
   Loader2,
 } from 'lucide-vue-next';
 
@@ -35,6 +38,15 @@ export interface CandlePoint {
   low: number;
   close: number;
   volume?: number;
+}
+
+export interface ChartMarker {
+  time: number | string;
+  position?: 'aboveBar' | 'belowBar' | 'inBar';
+  color?: string;
+  shape?: 'arrowUp' | 'arrowDown' | 'circle' | 'square';
+  text?: string;
+  size?: number;
 }
 
 interface Bar {
@@ -54,6 +66,8 @@ interface Props {
   resolution?: number;
   loading?: boolean; // parent sets true while fetching a new timeframe
   totalSupply?: number; // used for the Market Cap mode (price x supply)
+  isGraduated?: boolean; // true if already graduated to DEX
+  markers?: ChartMarker[]; // optional trade buy/sell markers
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -63,6 +77,8 @@ const props = withDefaults(defineProps<Props>(), {
   resolution: 60,
   loading: false,
   totalSupply: 1_000_000_000,
+  isGraduated: false,
+  markers: () => [],
 });
 
 // ---------------------------------------------------------------------------
@@ -76,6 +92,8 @@ let chart: IChartApi | null = null;
 let mainSeries: ISeriesApi<'Candlestick'> | ISeriesApi<'Area'> | null = null;
 let volumeSeries: ISeriesApi<'Histogram'> | null = null;
 let themeObserver: MutationObserver | null = null;
+let watermarkPlugin: any = null;
+let markersPlugin: any = null;
 
 // Bars currently drawn (already scaled for the active mode). Read by autoscale.
 let shownBars: Bar[] = [];
@@ -84,7 +102,12 @@ let lastLen = 0;
 let lastLastTime: number | null = null;
 
 const PREF_KEY = 'trading-chart:prefs';
-function loadPrefs(): { type?: string; mode?: string; log?: boolean; clip?: boolean } {
+function loadPrefs(): {
+  type?: string;
+  mode?: string;
+  log?: boolean;
+  clip?: boolean;
+} {
   try {
     return JSON.parse(localStorage.getItem(PREF_KEY) || '{}');
   } catch {
@@ -98,6 +121,7 @@ const valueMode = ref<'price' | 'mcap'>(prefs.mode === 'price' ? 'price' : 'mcap
 const isLogScale = ref(!!prefs.log);
 const clipWicks = ref(prefs.clip !== false);
 const isFullscreen = ref(false);
+
 const isAwayFromLatest = ref(false);
 const hoveredBar = ref<Bar | null>(null);
 
@@ -120,12 +144,6 @@ function savePrefs() {
 // ---------------------------------------------------------------------------
 // Colors (single source of truth: matching --bull/--bear)
 // ---------------------------------------------------------------------------
-
-function getCssVar(name: string, fallback: string): string {
-  if (typeof window === 'undefined') return fallback;
-  const val = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  return val || fallback;
-}
 
 const BULL = '#22c55e';
 const BEAR = '#ef4444';
@@ -177,6 +195,89 @@ function scaleBars(bars: Bar[]): Bar[] {
     low: b.low * s,
     close: b.close * s,
   }));
+}
+
+// ---------------------------------------------------------------------------
+// Watermark (subtle background token branding)
+// ---------------------------------------------------------------------------
+
+function updateWatermark() {
+  if (!chart || !props.tokenSymbol) return;
+  const dark = isDark();
+  const text = props.tokenSymbol.toUpperCase();
+  const color = dark ? 'rgba(255, 255, 255, 0.035)' : 'rgba(0, 0, 0, 0.035)';
+
+  try {
+    const panes = chart.panes();
+    if (!panes || panes.length === 0) return;
+    const firstPane = panes[0];
+
+    if (!watermarkPlugin) {
+      watermarkPlugin = createTextWatermark(firstPane, {
+        horzAlign: 'center',
+        vertAlign: 'center',
+        lines: [
+          {
+            text,
+            color,
+            fontSize: 54,
+            fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
+            fontStyle: 'bold',
+          },
+        ],
+      });
+    } else {
+      watermarkPlugin.applyOptions({
+        lines: [
+          {
+            text,
+            color,
+            fontSize: 54,
+            fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
+            fontStyle: 'bold',
+          },
+        ],
+      });
+    }
+  } catch {
+    // Graceful fallback if pane watermark is unsupported
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Series Markers (Trade Execution & Alpha Indicators)
+// ---------------------------------------------------------------------------
+
+function updateMarkers() {
+  if (!mainSeries) return;
+  try {
+    const raw = props.markers || [];
+    if (raw.length > 0) {
+      const formattedMarkers = raw.map((m) => {
+        let t = typeof m.time === 'string' ? new Date(m.time).getTime() / 1000 : Number(m.time);
+        if (t > 2_000_000_000) t = t / 1000;
+        t = Math.floor(t);
+        return {
+          time: t as Time,
+          position: m.position || (m.shape === 'arrowDown' ? 'aboveBar' : 'belowBar'),
+          color: m.color || (m.shape === 'arrowDown' ? BEAR : BULL),
+          shape: m.shape || (m.position === 'aboveBar' ? 'arrowDown' : 'arrowUp'),
+          text: m.text,
+          size: m.size ?? 1,
+        };
+      });
+
+      if (!markersPlugin) {
+        markersPlugin = createSeriesMarkers(mainSeries as any, formattedMarkers as any);
+      } else {
+        markersPlugin.setMarkers(formattedMarkers);
+      }
+    } else if (markersPlugin) {
+      markersPlugin.setMarkers([]);
+    }
+  } catch {
+    // Graceful fallback
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -261,6 +362,9 @@ function autoscale(original: () => AutoscaleInfo | null): AutoscaleInfo | null {
 // Chart construction
 // ---------------------------------------------------------------------------
 
+// True after initChart() completes — guards sync() from running before ready
+let chartReady = false;
+
 function themeOptions() {
   const dark = isDark();
   const line = dark ? 'rgba(63,63,70,0.35)' : 'rgba(228,228,231,0.7)';
@@ -270,6 +374,7 @@ function themeOptions() {
       textColor: dark ? '#a1a1aa' : '#52525b',
       fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
       fontSize: 12,
+      attributionLogo: false, // remove TradingView watermark logo
     },
     grid: { vertLines: { color: line }, horzLines: { color: line } },
     crosshair: {
@@ -311,6 +416,7 @@ function createMainSeries() {
 
 function initChart() {
   if (!chartContainer.value) return;
+  chartReady = false;
   destroyChart();
 
   chart = createChart(chartContainer.value, {
@@ -354,9 +460,11 @@ function initChart() {
     lastValueVisible: false,
     priceLineVisible: false,
   });
-  volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
+  volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
 
   createMainSeries();
+  updateWatermark();
+  updateMarkers();
 
   chart.subscribeCrosshairMove((param) => {
     if (!param?.time || !mainSeries) {
@@ -384,16 +492,37 @@ function initChart() {
     isAwayFromLatest.value = !!range && shownBars.length > 0 && range.to < shownBars.length - 3;
   });
 
-  themeObserver = new MutationObserver(() => chart?.applyOptions(themeOptions()));
+  themeObserver = new MutationObserver(() => {
+    chart?.applyOptions(themeOptions());
+    updateWatermark();
+  });
   themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
   lastKey = '';
+  chartReady = true;
   sync(formatted.value, true);
 }
 
 function destroyChart() {
+  chartReady = false;
   themeObserver?.disconnect();
   themeObserver = null;
+  if (markersPlugin) {
+    try {
+      markersPlugin.detach();
+    } catch {
+      // ignore
+    }
+    markersPlugin = null;
+  }
+  if (watermarkPlugin) {
+    try {
+      watermarkPlugin.detach();
+    } catch {
+      // ignore
+    }
+    watermarkPlugin = null;
+  }
   if (chart) {
     chart.remove();
     chart = null;
@@ -418,7 +547,7 @@ const toVol = (b: Bar) => ({
 });
 
 function sync(base: Bar[], forceFull = false) {
-  if (!chart || !mainSeries || !volumeSeries) return;
+  if (!chartReady || !chart || !mainSeries || !volumeSeries) return;
   const bars = scaleBars(base);
   shownBars = bars;
 
@@ -443,6 +572,8 @@ function sync(base: Bar[], forceFull = false) {
     showLatest(bars.length);
   }
 
+  updateMarkers();
+
   lastKey = key;
   lastLen = bars.length;
   lastLastTime = bars.length ? Number(bars[bars.length - 1].time) : null;
@@ -458,12 +589,32 @@ function showLatest(total: number) {
 }
 
 watch(formatted, (bars) => {
-  if (!chart) {
-    if (chartContainer.value) initChart();
+  // Chart not yet mounted: init once the DOM is ready, then sync
+  if (!chartReady) {
+    if (chartContainer.value) {
+      nextTick(() => {
+        if (!chartReady) initChart();
+      });
+    }
     return;
   }
   sync(bars);
 });
+
+watch(
+  () => props.markers,
+  () => {
+    updateMarkers();
+  },
+  { deep: true },
+);
+
+watch(
+  () => props.tokenSymbol,
+  () => {
+    updateWatermark();
+  },
+);
 
 // ---------------------------------------------------------------------------
 // Toolbar actions
@@ -472,9 +623,18 @@ watch(formatted, (bars) => {
 function setChartType(type: 'candles' | 'area') {
   if (chartType.value === type || !chart || !mainSeries) return;
   chartType.value = type;
+  if (markersPlugin) {
+    try {
+      markersPlugin.detach();
+    } catch {
+      // ignore
+    }
+    markersPlugin = null;
+  }
   chart.removeSeries(mainSeries); // keep zoom, only swap the series
   createMainSeries();
   sync(formatted.value, true);
+  updateMarkers();
   savePrefs();
 }
 
@@ -501,6 +661,10 @@ function toggleClip() {
   clipWicks.value = !clipWicks.value;
   mainSeries?.applyOptions({ autoscaleInfoProvider: autoscale } as any); // forces a rescale
   savePrefs();
+}
+
+function fitContent() {
+  chart?.timeScale().fitContent();
 }
 
 function goLatest() {
@@ -599,19 +763,31 @@ onUnmounted(() => {
               ? 'bg-muted text-foreground'
               : 'text-muted-foreground hover:text-foreground'
           "
-          title="Line"
-          aria-label="Line"
+          title="Line / Area"
+          aria-label="Line / Area"
           :aria-pressed="chartType === 'area'"
           @click="setChartType('area')"
         >
           <TrendingUp class="h-4 w-4" />
         </button>
 
-        <span class="mx-1 h-4 w-px bg-border" />
+        <button
+          type="button"
+          class="grid h-8 w-8 cursor-pointer place-items-center rounded-md transition"
+          :class="
+            clipWicks ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
+          "
+          title="Ignore outlier wicks"
+          aria-label="Ignore outlier wicks"
+          :aria-pressed="clipWicks"
+          @click="toggleClip"
+        >
+          <ScanLine class="h-4 w-4" />
+        </button>
 
         <button
           type="button"
-          class="h-8 cursor-pointer rounded-md px-2 text-xs font-semibold transition"
+          class="hidden sm:grid h-8 w-8 cursor-pointer place-items-center rounded-md text-xs font-mono font-bold transition"
           :class="
             isLogScale ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
           "
@@ -620,26 +796,24 @@ onUnmounted(() => {
           :aria-pressed="isLogScale"
           @click="toggleLog"
         >
-          Log
+          LOG
         </button>
+
         <button
           type="button"
-          class="grid h-8 w-8 cursor-pointer place-items-center rounded-md transition"
-          :class="
-            clipWicks ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
-          "
-          title="Ignore extreme wicks when scaling"
-          aria-label="Ignore extreme wicks when scaling"
-          :aria-pressed="clipWicks"
-          @click="toggleClip"
+          class="hidden sm:grid h-8 w-8 cursor-pointer place-items-center rounded-md text-muted-foreground transition hover:text-foreground"
+          title="Fit content"
+          aria-label="Fit content"
+          @click="fitContent"
         >
-          <ScanLine class="h-4 w-4" />
+          <ZoomOut class="h-4 w-4" />
         </button>
+
         <button
           type="button"
           class="grid h-8 w-8 cursor-pointer place-items-center rounded-md text-muted-foreground transition hover:text-foreground"
-          :title="isFullscreen ? 'Exit full screen' : 'Full screen'"
-          :aria-label="isFullscreen ? 'Exit full screen' : 'Full screen'"
+          :title="isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'"
+          :aria-label="isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'"
           @click="toggleFullscreen"
         >
           <Minimize v-if="isFullscreen" class="h-4 w-4" />
@@ -648,87 +822,69 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Chart canvas (full-bleed: the parent card owns the border) -->
+    <!-- Chart Canvas Area (relative container) -->
     <div
-      class="relative w-full"
-      :class="isFullscreen ? 'min-h-0 flex-1' : 'h-[300px] sm:h-[var(--chart-h)]'"
-      :style="{ '--chart-h': `${height}px` }"
+      class="relative w-full overflow-hidden"
+      :style="{ height: isFullscreen ? 'calc(100% - 49px)' : `${height}px` }"
     >
-      <div
-        ref="chartContainer"
-        class="absolute inset-0 transition-opacity"
-        :class="loading && !isEmpty ? 'opacity-50' : 'opacity-100'"
-        role="img"
-        :aria-label="`${tokenSymbol} ${valueMode === 'mcap' ? 'market cap' : 'price'} chart`"
-      />
+      <div ref="chartContainer" class="h-full w-full" />
 
-      <!-- Legend overlay (top-left, inside chart) -->
+      <!-- In-chart OHLC legend (Top-left inside chart canvas) -->
       <div
-        v-if="activeBar && !isEmpty"
-        class="pointer-events-none absolute left-3 top-1 z-10 flex flex-col gap-0.5 text-xs tabular-nums"
+        class="pointer-events-none absolute left-3 top-3 z-10 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs text-muted-foreground"
       >
-        <span v-if="hoveredBar" class="text-muted-foreground">{{
-          formatTime(hoveredBar.time)
-        }}</span>
-        <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5">
-          <span class="hidden text-muted-foreground sm:inline">
-            O <span class="text-foreground">{{ formatY(activeBar.open) }}</span>
-          </span>
-          <span class="hidden text-muted-foreground sm:inline">
-            H <span class="text-foreground">{{ formatY(activeBar.high) }}</span>
-          </span>
-          <span class="hidden text-muted-foreground sm:inline">
-            L <span class="text-foreground">{{ formatY(activeBar.low) }}</span>
-          </span>
-          <span class="text-muted-foreground">
-            C <span class="text-foreground">{{ formatY(activeBar.close) }}</span>
-          </span>
-          <span
-            class="font-semibold"
-            :class="changePct >= 0 ? 'text-emerald-500' : 'text-rose-500'"
-          >
-            {{ changePct >= 0 ? '+' : '' }}{{ changePct.toFixed(2) }}%
-          </span>
-          <span class="text-muted-foreground">
-            Vol <span class="text-foreground">{{ formatCompact(activeBar.volume) }}</span>
-          </span>
-        </div>
+        <span v-if="activeBar" class="font-semibold text-foreground">
+          {{ activeBar.close >= activeBar.open ? '▲' : '▼' }}
+        </span>
+        <span v-if="activeBar">
+          O: <span class="text-foreground">{{ formatY(activeBar.open) }}</span>
+        </span>
+        <span v-if="activeBar">
+          H: <span class="text-foreground">{{ formatY(activeBar.high) }}</span>
+        </span>
+        <span v-if="activeBar">
+          L: <span class="text-foreground">{{ formatY(activeBar.low) }}</span>
+        </span>
+        <span v-if="activeBar">
+          C: <span class="text-foreground">{{ formatY(activeBar.close) }}</span>
+        </span>
+        <span
+          v-if="activeBar"
+          :class="activeBar.close >= activeBar.open ? 'text-bullish' : 'text-bearish'"
+        >
+          {{ changePct >= 0 ? '+' : '' }}{{ changePct.toFixed(2) }}%
+        </span>
+        <span v-if="activeBar && activeBar.volume" class="hidden sm:inline">
+          Vol: <span class="text-foreground">${{ formatCompact(activeBar.volume) }}</span>
+        </span>
       </div>
 
-      <!-- Back to latest -->
+      <!-- Loading overlay for timeframe switching -->
+      <div
+        v-if="loading"
+        class="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-card/60 backdrop-blur-[2px]"
+      >
+        <Loader2 class="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+
+      <!-- Empty state -->
+      <div
+        v-if="isEmpty && !loading"
+        class="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-1 text-muted-foreground"
+      >
+        <span class="text-xs font-mono">No trades in this resolution yet</span>
+      </div>
+
+      <!-- Return to Latest Button -->
       <button
         v-if="isAwayFromLatest"
         type="button"
-        class="absolute bottom-10 right-16 z-10 flex h-8 cursor-pointer items-center gap-1 rounded-full border border-border bg-card px-3 text-xs font-semibold text-foreground shadow-xs transition hover:bg-muted"
+        class="absolute bottom-4 right-14 z-20 flex cursor-pointer items-center gap-1 rounded-full border border-border bg-card/90 px-3 py-1.5 text-xs font-semibold text-foreground shadow-md backdrop-blur-xs transition hover:bg-muted"
         @click="goLatest"
       >
-        Latest
+        <span>Latest</span>
         <ChevronsRight class="h-3.5 w-3.5" />
       </button>
-
-      <!-- Discreet loading spinner badge (no intrusive bar line) -->
-      <div
-        v-if="loading && !isEmpty"
-        class="absolute top-2 right-2 z-20 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-xs text-[10px] text-muted-foreground border border-border/40 pointer-events-none"
-      >
-        <Loader2 class="w-3 h-3 animate-spin text-muted-foreground" />
-      </div>
-      <div
-        v-if="loading && isEmpty"
-        class="absolute inset-0 z-20 flex items-center justify-center gap-2 text-sm text-muted-foreground"
-      >
-        <Loader2 class="h-4 w-4 animate-spin" />
-        Loading candles
-      </div>
-
-      <!-- Empty -->
-      <div
-        v-else-if="isEmpty"
-        class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-1 text-center"
-      >
-        <p class="text-sm font-semibold text-foreground">No trades yet</p>
-        <p class="text-xs text-muted-foreground">The chart appears after the first buy or sell.</p>
-      </div>
     </div>
   </div>
 </template>

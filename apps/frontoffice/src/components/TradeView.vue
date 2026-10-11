@@ -361,6 +361,8 @@
                       : 1000000000,
                   )
                 "
+                :is-graduated="currentMarketData.isGraduated"
+                :markers="chartTradeMarkers"
               />
             </div>
           </div>
@@ -2733,6 +2735,22 @@ const remainingToGraduate = computed(() => {
   );
   const diff = Math.max(0, target - current);
   return currencySymbol.value === 'USDC' ? diff.toFixed(0) : diff.toFixed(3);
+});
+
+const chartTradeMarkers = computed(() => {
+  if (!trades.value || trades.value.length === 0) return [];
+  return trades.value.slice(0, 20).map((t) => {
+    let ts = t.timestamp;
+    if (ts > 2_000_000_000) ts = Math.floor(ts / 1000);
+    return {
+      time: ts,
+      position: (t.isBuy ? 'belowBar' : 'aboveBar') as 'belowBar' | 'aboveBar',
+      color: t.isBuy ? '#22c55e' : '#ef4444',
+      shape: (t.isBuy ? 'arrowUp' : 'arrowDown') as 'arrowUp' | 'arrowDown',
+      text: t.isBuy ? 'B' : 'S',
+      size: 1,
+    };
+  });
 });
 
 // Trade state
