@@ -2967,7 +2967,8 @@ async function refreshLive() {
     if ((e as Error).name === 'AbortError') return;
   }
 
-  await fetchCandlesticks(addr, selectedResolution.value);
+  // Silent poll: no loading spinner, only merge the latest candle in-place
+  await fetchCandlesticks(addr, selectedResolution.value, true);
   if (activeBottomTab.value === 'trades') {
     fetchTrades(addr);
   }
@@ -3514,60 +3515,121 @@ async function toggleLike(commentId: string) {
 // Multi-Timeframe Candlestick Engine (1m, 5m, 15m, 1h, 4h, 1d)
 // Continuous timeline from token release to now
 // -----------------------------------------------------------------------
-async function fetchCandlesticks(address: string, resolutionSeconds = 60) {
+async function fetchCandlesticks(address: string, resolutionSeconds = 60, silent = false) {
+  // silent=true → live poll: no loading spinner, only merge last 1-2 candles in-place
+  // silent=false → full load: show spinner, replace entire dataset
+  type CandleRow = {
+    time: number;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    volume: number;
+  };
+
+  function parseCandleRow(c: {
+    timestamp: number;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    volume?: number;
+  }): CandleRow {
+    return {
+      time: Math.floor(c.timestamp / 1000),
+      open: c.open,
+      high: c.high,
+      low: c.low,
+      close: c.close,
+      volume: c.volume ?? 0,
+    };
+  }
+
+  function patchLivePrice(rows: CandleRow[], priceUsd: number, resolution: number): void {
+    // Patch the current open bucket with live price without creating a new array reference
+    if (rows.length === 0 || priceUsd <= 0) return;
+    const nowSec = Math.floor(Date.now() / 1000);
+    const currentBucket = Math.floor(nowSec / resolution) * resolution;
+    const last = rows[rows.length - 1];
+    if (last.time === currentBucket) {
+      last.close = priceUsd;
+      last.high = Math.max(last.high, priceUsd);
+      last.low = Math.min(last.low, priceUsd);
+    } else if (currentBucket > last.time) {
+      rows.push({
+        time: currentBucket,
+        open: last.close,
+        high: Math.max(last.close, priceUsd),
+        low: Math.min(last.close, priceUsd),
+        close: priceUsd,
+        volume: 0,
+      });
+    }
+  }
+
   try {
-    candlesLoading.value = true;
+    if (!silent) candlesLoading.value = true;
     const res = await fetch(
       `/api/tokens/${address}/ohlcv?resolution=${resolutionSeconds}&fillGaps=true`,
     );
     const envelope = await res.json();
     if (resolutionSeconds !== selectedResolution.value) return; // Discard stale timeframe response
+
     if (envelope.success && Array.isArray(envelope.data) && envelope.data.length > 0) {
-      const parsed = envelope.data.map(
-        (c: {
-          timestamp: number;
-          open: number;
-          high: number;
-          low: number;
-          close: number;
-          volume?: number;
-        }) => ({
-          time: Math.floor(c.timestamp / 1000),
-          open: c.open,
-          high: c.high,
-          low: c.low,
-          close: c.close,
-          volume: c.volume ?? 0,
-        }),
-      );
+      const incoming: CandleRow[] = envelope.data.map(parseCandleRow);
+      const livePrice = currentMarketData.value.priceUsd;
+      patchLivePrice(incoming, livePrice, resolutionSeconds);
 
-      if (currentMarketData.value.priceUsd > 0) {
-        const last = parsed[parsed.length - 1];
-        const nowSec = Math.floor(Date.now() / 1000);
-        const currentBucket = Math.floor(nowSec / resolutionSeconds) * resolutionSeconds;
+      if (silent && candlestickData.value.length > 0) {
+        // Incremental merge: only update/append the last 1-2 bars — no full setData() on chart
+        const existing = candlestickData.value;
+        const lastIncoming = incoming[incoming.length - 1];
+        const secondLastIncoming = incoming.length > 1 ? incoming[incoming.length - 2] : null;
+        let changed = false;
 
-        if (last.time === currentBucket) {
-          last.close = currentMarketData.value.priceUsd;
-          last.high = Math.max(last.high, currentMarketData.value.priceUsd);
-          last.low = Math.min(last.low, currentMarketData.value.priceUsd);
-        } else if (currentBucket > last.time) {
-          parsed.push({
-            time: currentBucket,
-            open: last.close,
-            high: Math.max(last.close, currentMarketData.value.priceUsd),
-            low: Math.min(last.close, currentMarketData.value.priceUsd),
-            close: currentMarketData.value.priceUsd,
-            volume: 0,
-          });
+        // Update second-to-last if it closed a new bucket
+        if (secondLastIncoming) {
+          const idx = existing.findIndex((b) => b.time === secondLastIncoming.time);
+          if (idx === -1) {
+            existing.push(secondLastIncoming);
+            changed = true;
+          } else if (
+            existing[idx].close !== secondLastIncoming.close ||
+            existing[idx].volume !== secondLastIncoming.volume
+          ) {
+            existing[idx] = secondLastIncoming;
+            changed = true;
+          }
         }
+
+        // Update or append the latest (open) bucket
+        const lastIdx = existing.findIndex((b) => b.time === lastIncoming.time);
+        if (lastIdx === -1) {
+          existing.push(lastIncoming);
+          changed = true;
+        } else if (
+          existing[lastIdx].close !== lastIncoming.close ||
+          existing[lastIdx].high !== lastIncoming.high ||
+          existing[lastIdx].low !== lastIncoming.low ||
+          existing[lastIdx].volume !== lastIncoming.volume
+        ) {
+          existing[lastIdx] = lastIncoming;
+          changed = true;
+        }
+
+        // Shallow-copy the array to trigger Vue reactivity only when content changed
+        if (changed) {
+          candlestickData.value = [...existing];
+        }
+      } else {
+        // Full replace on initial load or timeframe change
+        candlestickData.value = incoming;
       }
-      candlestickData.value = [...parsed];
       return;
     }
 
-    // Strictly real data fallback (0 dummy / synthetic data):
-    // If the indexer has no trade records yet, render the real creation baseline price
-    if (currentMarketData.value.priceUsd > 0) {
+    // No trade data: synthesize a baseline from creation price
+    if (!silent && currentMarketData.value.priceUsd > 0) {
       const tokenCreatedSec = currentToken.value.createdAt
         ? Math.floor(currentToken.value.createdAt / 1000)
         : Math.floor(Date.now() / 1000) - 3600;
@@ -3576,34 +3638,21 @@ async function fetchCandlesticks(address: string, resolutionSeconds = 60) {
       const end = Math.floor(nowSec / resolutionSeconds) * resolutionSeconds;
       const price = currentMarketData.value.priceUsd;
 
-      const realBaseline = [
-        {
-          time: start,
-          open: price,
-          high: price,
-          low: price,
-          close: price,
-          volume: 0,
-        },
+      const baseline: CandleRow[] = [
+        { time: start, open: price, high: price, low: price, close: price, volume: 0 },
       ];
       if (end > start) {
-        realBaseline.push({
-          time: end,
-          open: price,
-          high: price,
-          low: price,
-          close: price,
-          volume: 0,
-        });
+        baseline.push({ time: end, open: price, high: price, low: price, close: price, volume: 0 });
       }
-      candlestickData.value = realBaseline;
+      candlestickData.value = baseline;
       return;
     }
-    candlestickData.value = [];
+
+    if (!silent) candlestickData.value = [];
   } catch {
-    candlestickData.value = [];
+    if (!silent) candlestickData.value = [];
   } finally {
-    candlesLoading.value = false;
+    if (!silent) candlesLoading.value = false;
   }
 }
 
@@ -3729,7 +3778,7 @@ async function handleSwap() {
       updateBalance(),
       fetchUserTokenBalance(true),
       fetchTrades(currentToken.value.address),
-      fetchCandlesticks(currentToken.value.address, selectedResolution.value),
+      fetchCandlesticks(currentToken.value.address, selectedResolution.value, true),
       fetchHolders(currentToken.value.address),
       fetchTopTraders(currentToken.value.address),
     ]);
@@ -3741,7 +3790,7 @@ async function handleSwap() {
           updateBalance(),
           fetchUserTokenBalance(true),
           fetchTrades(currentToken.value.address),
-          fetchCandlesticks(currentToken.value.address, selectedResolution.value),
+          fetchCandlesticks(currentToken.value.address, selectedResolution.value, true),
         ]);
       }, i * 2000);
     }
@@ -3952,32 +4001,9 @@ watch(
 watch(
   () => [currentMarketData.value.priceUsd, currentMarketData.value.priceInWeth],
   ([newPriceUsd], [oldPriceUsd]) => {
+    // Trigger price flash animation only — candle update is handled inside fetchCandlesticks(silent)
     if (newPriceUsd && oldPriceUsd && Number(newPriceUsd) !== Number(oldPriceUsd)) {
       triggerPriceFlash(Number(newPriceUsd) >= Number(oldPriceUsd) ? 'up' : 'down');
-    }
-    if (Number(newPriceUsd) > 0 && candlestickData.value.length > 0) {
-      const copy = [...candlestickData.value];
-      const last = { ...copy[copy.length - 1] };
-      const resolutionSeconds = selectedResolution.value || 60;
-      const nowSec = Math.floor(Date.now() / 1000);
-      const currentBucket = Math.floor(nowSec / resolutionSeconds) * resolutionSeconds;
-
-      if (last.time === currentBucket) {
-        last.close = Number(newPriceUsd);
-        last.high = Math.max(last.high, Number(newPriceUsd));
-        last.low = Math.min(last.low, Number(newPriceUsd));
-        copy[copy.length - 1] = last;
-      } else if (currentBucket > last.time) {
-        copy.push({
-          time: currentBucket,
-          open: last.close,
-          high: Math.max(last.close, Number(newPriceUsd)),
-          low: Math.min(last.close, Number(newPriceUsd)),
-          close: Number(newPriceUsd),
-          volume: 0,
-        });
-      }
-      candlestickData.value = copy;
     }
   },
 );

@@ -552,24 +552,34 @@ function sync(base: Bar[], forceFull = false) {
   shownBars = bars;
 
   const key = `${props.tokenAddress}|${props.resolution}|${valueMode.value}|${chartType.value}`;
+  const keyChanged = key !== lastKey;
+
+  // canAppend: same context, same or +1/+2 bars, last bar time matches
   const canAppend =
     !forceFull &&
-    key === lastKey &&
+    !keyChanged &&
     lastLen > 0 &&
     bars.length >= lastLen &&
     bars.length - lastLen <= 2 &&
     Number(bars[lastLen - 1]?.time) === lastLastTime;
 
   if (canAppend) {
-    // Zoom and scroll stay untouched; only the live candle (and new ones) change
+    // Only update the last candle(s) in-place — scroll position untouched
     for (let i = lastLen - 1; i < bars.length; i++) {
       (mainSeries as ISeriesApi<'Candlestick'>).update(toMain(bars[i]) as any);
       volumeSeries.update(toVol(bars[i]));
     }
-  } else {
+  } else if (keyChanged || forceFull || lastLen === 0) {
+    // Full replace only when token/resolution/mode changed, or first load
     (mainSeries as ISeriesApi<'Candlestick'>).setData(bars.map(toMain) as any);
     volumeSeries.setData(bars.map(toVol));
     showLatest(bars.length);
+  } else {
+    // Same context, non-append delta (shouldn't normally happen with silent merge) — still update last bar
+    for (let i = Math.max(0, lastLen - 1); i < bars.length; i++) {
+      (mainSeries as ISeriesApi<'Candlestick'>).update(toMain(bars[i]) as any);
+      volumeSeries.update(toVol(bars[i]));
+    }
   }
 
   updateMarkers();
