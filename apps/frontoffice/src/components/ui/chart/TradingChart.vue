@@ -551,7 +551,7 @@ function sync(base: Bar[], forceFull = false) {
   const bars = scaleBars(base);
   shownBars = bars;
 
-  const key = `${props.tokenAddress}|${props.resolution}|${valueMode.value}|${chartType.value}`;
+  const key = `${props.tokenAddress}|${props.resolution}|${valueMode.value}|${chartType.value}|${props.totalSupply}`;
   const keyChanged = key !== lastKey;
 
   // canAppend: same context, same or +1/+2 bars, last bar time matches
@@ -591,11 +591,14 @@ function sync(base: Bar[], forceFull = false) {
 
 function showLatest(total: number) {
   if (!chart || total <= 0) return;
-  if (total <= 20) {
-    chart.timeScale().fitContent();
-  } else {
-    chart.timeScale().setVisibleLogicalRange({ from: Math.max(-1, total - 60), to: total + 4 });
-  }
+  requestAnimationFrame(() => {
+    if (!chart) return;
+    if (total <= 20) {
+      chart.timeScale().fitContent();
+    } else {
+      chart.timeScale().setVisibleLogicalRange({ from: Math.max(-1, total - 60), to: total + 4 });
+    }
+  });
 }
 
 watch(formatted, (bars) => {
@@ -623,6 +626,35 @@ watch(
   () => props.tokenSymbol,
   () => {
     updateWatermark();
+  },
+);
+
+watch(
+  () => props.totalSupply,
+  () => {
+    if (!chartReady) return;
+    lastKey = '';
+    lastLen = 0;
+    lastLastTime = null;
+    sync(formatted.value, true);
+  },
+);
+
+/**
+ * Force a full chart reset when the resolution (timeframe) changes.
+ * The key inside sync() already handles this via keyChanged, but watching
+ * resolution explicitly ensures the time-scale resets and fitContent() fires
+ * even when the data array length happens to be the same across timeframes.
+ */
+watch(
+  () => props.resolution,
+  () => {
+    if (!chartReady) return;
+    // Reset lastKey so the next sync() treats it as a new context unconditionally
+    lastKey = '';
+    lastLen = 0;
+    lastLastTime = null;
+    sync(formatted.value, true);
   },
 );
 

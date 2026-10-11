@@ -355,11 +355,12 @@
                 :height="420"
                 :resolution="selectedResolution"
                 :total-supply="
-                  Number(
-                    currentToken.totalSupply
-                      ? BigInt(currentToken.totalSupply) / 10n ** 18n
-                      : 1000000000,
-                  )
+                  currentToken.totalSupply && BigInt(currentToken.totalSupply) > 0n
+                    ? Number(
+                        BigInt(currentToken.totalSupply) /
+                          10n ** BigInt(currentToken.decimals || 18),
+                      )
+                    : 1000000000
                 "
                 :is-graduated="currentMarketData.isGraduated"
                 :markers="chartTradeMarkers"
@@ -2187,6 +2188,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { parseAbi, parseEther, erc20Abi } from 'viem';
 import { useI18n } from '@/lib/i18n';
+import { apiFetch } from '@/lib/api-client';
 import {
   ArrowUpDown,
   Copy,
@@ -2939,7 +2941,23 @@ const resolutions = [
   { label: '4h', seconds: 14400 },
   { label: '1d', seconds: 86400 },
 ];
-const selectedResolution = ref(3600);
+const TIMEFRAME_STORAGE_KEY = 'proto_chart_resolution';
+
+function loadSavedResolution(): number {
+  if (typeof window === 'undefined') return 60;
+  try {
+    const val = localStorage.getItem(TIMEFRAME_STORAGE_KEY);
+    if (val) {
+      const num = parseInt(val, 10);
+      if ([60, 300, 900, 3600, 14400, 86400].includes(num)) return num;
+    }
+  } catch {
+    // Ignore storage errors
+  }
+  return 60; // 1m default for responsive memecoin action
+}
+
+const selectedResolution = ref(loadSavedResolution());
 const candlesLoading = ref(false);
 const candlestickData = ref<
   Array<{ time: number; open: number; high: number; low: number; close: number; volume: number }>
@@ -3569,10 +3587,17 @@ async function fetchCandlesticks(address: string, resolutionSeconds = 60, silent
 
   try {
     if (!silent) candlesLoading.value = true;
-    const res = await fetch(
-      `/api/tokens/${address}/ohlcv?resolution=${resolutionSeconds}&fillGaps=true`,
-    );
-    const envelope = await res.json();
+    const envelope = await apiFetch<{
+      success: boolean;
+      data: Array<{
+        timestamp: number;
+        open: number;
+        high: number;
+        low: number;
+        close: number;
+        volume?: number;
+      }>;
+    }>(`/api/tokens/${address}/ohlcv?resolution=${resolutionSeconds}&fillGaps=true`);
     if (resolutionSeconds !== selectedResolution.value) return; // Discard stale timeframe response
 
     if (envelope.success && Array.isArray(envelope.data) && envelope.data.length > 0) {
@@ -3657,7 +3682,16 @@ async function fetchCandlesticks(address: string, resolutionSeconds = 60, silent
 }
 
 async function changeResolution(seconds: number) {
+  if (seconds === selectedResolution.value) return;
   selectedResolution.value = seconds;
+  try {
+    localStorage.setItem(TIMEFRAME_STORAGE_KEY, String(seconds));
+  } catch {
+    // Ignore storage errors
+  }
+  // Clear stale data immediately so TradingChart receives empty array → full reset on new data
+  candlestickData.value = [];
+  candlesLoading.value = true;
   await fetchCandlesticks(currentToken.value.address, seconds);
 }
 
@@ -3922,12 +3956,13 @@ async function loadTokenData(address: `0x${string}`) {
 
               const raisedEth = Number(raised) / 1e18;
               const targetEth = Number(target) / 1e18;
+              const supplyTokens = Number(totalSupply) / 10 ** (Number(decimals) || 18);
               currentMarketData.value = {
                 address,
                 priceInWeth: spotPrice,
                 priceUsd,
-                marketCapUsd: priceUsd * 1_000_000_000,
-                fdvUsd: priceUsd * 1_000_000_000,
+                marketCapUsd: priceUsd * supplyTokens,
+                fdvUsd: priceUsd * supplyTokens,
                 pairedPrincipalWeth: raisedEth.toFixed(4),
                 graduationThresholdWeth: targetEth.toFixed(2),
                 graduationProgress: targetEth > 0 ? (raisedEth / targetEth) * 100 : 0,

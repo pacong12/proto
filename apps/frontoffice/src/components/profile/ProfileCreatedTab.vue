@@ -53,13 +53,24 @@
                 {{ token.name }}
               </h3>
               <span class="text-xs font-mono text-muted-foreground">${{ token.symbol }}</span>
-              <Badge variant="outline" class="text-[9px] px-1.5 py-0 h-4 font-mono uppercase">
-                Curve
-              </Badge>
             </div>
-            <p class="text-xs font-mono text-muted-foreground mt-0.5 break-all sm:break-normal">
-              {{ token.address }}
-            </p>
+            <!-- CA copy button -->
+            <button
+              type="button"
+              class="flex items-center gap-1.5 mt-1 font-mono text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer group"
+              :title="'Copy contract address: ' + token.address"
+              @click.stop="copyCA(token.address)"
+            >
+              <span class="break-all sm:break-normal">{{ token.address }}</span>
+              <Check
+                v-if="copiedCA === token.address"
+                class="w-3.5 h-3.5 text-emerald-500 shrink-0"
+              />
+              <Copy
+                v-else
+                class="w-3.5 h-3.5 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity"
+              />
+            </button>
             <div
               class="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap font-mono"
             >
@@ -73,13 +84,15 @@
                   }}
                 </strong>
               </span>
-              <span>•</span>
-              <span>
-                Redirect:
-                <strong class="font-mono text-foreground">
-                  {{ token.redirect ? `${token.redirect.slice(0, 6)}...` : 'None (Self)' }}
-                </strong>
-              </span>
+              <template v-if="token.redirect">
+                <span>•</span>
+                <span>
+                  Redirect:
+                  <strong class="font-mono text-foreground">
+                    {{ token.redirect.slice(0, 6) }}...{{ token.redirect.slice(-4) }}
+                  </strong>
+                </span>
+              </template>
             </div>
           </div>
         </div>
@@ -112,9 +125,9 @@
 </template>
 
 <script setup lang="ts">
-import { Loader2, ArrowDownToLine, Share2, Rocket } from 'lucide-vue-next';
+import { ref } from 'vue';
+import { Loader2, ArrowDownToLine, Share2, Rocket, Copy, Check } from 'lucide-vue-next';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
@@ -136,4 +149,15 @@ const emit = defineEmits<{
   (e: 'claim', address: string): void;
   (e: 'cto', address: string): void;
 }>();
+
+const copiedCA = ref<string | null>(null);
+
+function copyCA(address: string): void {
+  if (typeof navigator === 'undefined') return;
+  navigator.clipboard.writeText(address);
+  copiedCA.value = address;
+  setTimeout(() => {
+    copiedCA.value = null;
+  }, 2000);
+}
 </script>

@@ -359,9 +359,15 @@
                     <span class="text-muted-foreground/50 text-[10px] hidden sm:inline"
                       >&middot;</span
                     >
-                    <span class="text-[10px] text-muted-foreground truncate hidden sm:inline">
-                      by {{ shortenAddress(item.token.deployer, 4, 3) }}
-                    </span>
+                    <button
+                      v-if="item.token.deployer"
+                      type="button"
+                      class="text-[10px] text-muted-foreground hover:text-foreground font-mono truncate hidden sm:inline cursor-pointer transition-colors hover:underline underline-offset-2"
+                      :title="`View profile: ${getUserIdentity(item.token.deployer).displayName}`"
+                      @click.stop="navigateToDeployer(item.token.deployer)"
+                    >
+                      by {{ getUserIdentity(item.token.deployer).displayName }}
+                    </button>
                     <button
                       type="button"
                       class="text-[10px] text-muted-foreground hover:text-foreground font-mono flex items-center gap-1 bg-black border border-border px-1.5 py-0.5 rounded transition cursor-pointer"
@@ -541,6 +547,17 @@
                     <span>${{ item.token.symbol }}</span>
                     <span>&middot;</span>
                     <span>{{ formatRelativeTime(item.token.createdAt) }}</span>
+                    <template v-if="item.token.deployer">
+                      <span>&middot;</span>
+                      <button
+                        type="button"
+                        class="hover:text-foreground transition-colors hover:underline underline-offset-2 cursor-pointer truncate max-w-[120px]"
+                        :title="`View profile: ${getUserIdentity(item.token.deployer).displayName}`"
+                        @click.stop="navigateToDeployer(item.token.deployer)"
+                      >
+                        {{ getUserIdentity(item.token.deployer).displayName }}
+                      </button>
+                    </template>
                   </div>
                 </div>
               </div>
@@ -648,6 +665,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import {
   Plus,
   Loader2,
@@ -680,7 +698,9 @@ import { useI18n } from '@/lib/i18n';
 import { useWallet } from '@/composables/useWallet';
 import { useTokenStore } from '@/composables/useTokenStore';
 import { shortenAddress, formatRelativeTime, formatCompactUsd } from '@/lib/utils';
+import { getUserIdentity } from '@/lib/username';
 
+const router = useRouter();
 const { t } = useI18n();
 const { activeNetwork } = useWallet();
 
@@ -747,6 +767,15 @@ const apiError = ref<string | null>(null);
 const currentPage = ref(1);
 const pageSize = 15;
 const copiedAddress = ref<string | null>(null);
+
+/**
+ * Navigate to the deployer's public profile page using their deterministic username.
+ * Uses the same routing convention as FeedView (/:username).
+ */
+function navigateToDeployer(deployerAddress: string): void {
+  if (!deployerAddress) return;
+  router.push(`/${getUserIdentity(deployerAddress).name}`);
+}
 
 function copyAddress(address: string) {
   if (typeof navigator !== 'undefined') {

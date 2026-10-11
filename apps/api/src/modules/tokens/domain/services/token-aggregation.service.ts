@@ -67,13 +67,13 @@ export function aggregateCandlesticks(
   const endBucket = Math.floor(rawEnd / bucketDurationMs) * bucketDurationMs;
 
   const maxBars = options.maxCandles ?? 1000;
-  const minBars = Math.min(30, maxBars);
   if (startBucket > endBucket) {
     startBucket = endBucket;
   }
-  // Ensure we have at least 30 bars of visual context so higher timeframes (1h, 4h, 1d) don't appear as a single lonely dot
-  if ((endBucket - startBucket) / bucketDurationMs < minBars) {
-    startBucket = Math.max(0, endBucket - minBars * bucketDurationMs);
+  // When options.startTime is provided (token creation time), never synthesize phantom bars
+  // prior to the token's on-chain birth. Only pad visual context if no explicit release time is known.
+  if (!options.startTime && (endBucket - startBucket) / bucketDurationMs < 30) {
+    startBucket = Math.max(0, endBucket - 30 * bucketDurationMs);
   }
   if ((endBucket - startBucket) / bucketDurationMs > maxBars) {
     startBucket = endBucket - maxBars * bucketDurationMs;
