@@ -9,7 +9,7 @@
       <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">
         {{ totalClaimableWeth }} {{ nativeCurrencySymbol }}
       </p>
-      <p class="text-[11px] text-muted-foreground mt-1 font-sans">v1 locker fees only</p>
+      <p class="text-[11px] text-muted-foreground mt-1 font-sans">Locker fees</p>
     </Card>
 
     <!-- Stat 2: Created Tokens -->

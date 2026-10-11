@@ -8,7 +8,7 @@ describe('TradeView Uniswap v4 & V3 DEX Badges', () => {
     expect(TradeView.__name).toBe('TradeView');
   });
 
-  it('renders Uniswap v4 badge for V2 launches and Uniswap V3 for V1 launches', () => {
+  it('renders Uniswap badge on graduation and trading views', () => {
     expect(TradeView).toHaveProperty('setup');
     expect(typeof TradeView.setup).toBe('function');
   });

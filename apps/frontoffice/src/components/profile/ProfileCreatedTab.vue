@@ -53,11 +53,8 @@
                 {{ token.name }}
               </h3>
               <span class="text-xs font-mono text-muted-foreground">${{ token.symbol }}</span>
-              <Badge
-                :variant="token.version === 'v2' ? 'outline' : 'secondary'"
-                class="text-[9px] px-1.5 py-0 h-4 font-mono uppercase"
-              >
-                {{ token.version === 'v2' ? 'v2 Curve' : 'v1 Direct' }}
+              <Badge variant="outline" class="text-[9px] px-1.5 py-0 h-4 font-mono uppercase">
+                Curve
               </Badge>
             </div>
             <p class="text-xs font-mono text-muted-foreground mt-0.5 break-all sm:break-normal">
@@ -71,9 +68,7 @@
                 <strong class="text-foreground font-mono">
                   {{
                     token.unclaimedWeth === '—'
-                      ? token.version === 'v2'
-                        ? 'v2 curve'
-                        : '—'
+                      ? 'Curve'
                       : `${token.unclaimedWeth} ${nativeCurrencySymbol}`
                   }}
                 </strong>

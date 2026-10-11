@@ -14,14 +14,7 @@ Navigate to [proto.family](https://proto.family) and click **Connect Wallet** in
 
 Click **Create** or navigate directly to `/launchpad/create`.
 
-### 3. Choose Your Launch Model
-
-Select between:
-
-- **v2 Bonding Curve (Recommended)**: Starts on an interactive bonding curve where price rises steadily with volume, then automatically graduates to Uniswap once 4.2 ETH is raised.
-- **v1 Direct Pool**: Seeds a full Uniswap V3 pool immediately with permanent liquidity lock.
-
-### 4. Fill in Token Details
+### 3. Fill in Token Details
 
 Enter the essential information for your token:
 
@@ -30,7 +23,7 @@ Enter the essential information for your token:
 - **Description**: A short introduction describing your token, purpose, or community vision.
 - **Token Logo**: Upload an image file (PNG, JPG, SVG, or WebP). Proto automatically compresses your picture and securely pins it to IPFS.
 
-### 5. Add Community Links (Optional)
+### 4. Add Community Links (Optional)
 
 You can include official links so traders can verify and join your project:
 
@@ -38,11 +31,11 @@ You can include official links so traders can verify and join your project:
 - Official X (Twitter) handle
 - Community Telegram link
 
-### 6. Initial Buy (Optional)
+### 5. Initial Buy (Optional)
 
 If you wish to purchase an initial allocation as the creator at the launch price, enter the desired ETH amount.
 
-### 7. Confirm & Deploy
+### 6. Confirm & Deploy
 
 Click **Launch Token** and confirm the transaction in your wallet:
 

@@ -14,14 +14,7 @@ Kunjungi [proto.family](https://proto.family) dan klik **Connect Wallet** di bil
 
 Klik menu **Create** atau navigasikan langsung ke `/launchpad/create`.
 
-### 3. Tentukan Model Peluncuran
-
-Pilih antara:
-
-- **v2 Bonding Curve (Direkomendasikan)**: Dimulai di kurva harga interaktif di mana harga naik seiring volume pembelian, lalu otomatis lulus ke Uniswap setelah target tercapai.
-- **v1 Direct Pool**: Langsung mencetak pool Uniswap V3 dengan likuiditas yang terkunci permanen.
-
-### 4. Lengkapi Informasi Token
+### 3. Lengkapi Informasi Token
 
 Masukkan data esensial untuk token Anda:
 
@@ -30,7 +23,7 @@ Masukkan data esensial untuk token Anda:
 - **Deskripsi**: Penjelasan singkat tentang visi, komunitas, atau tujuan token Anda.
 - **Logo Token**: Unggah file gambar (PNG, JPG, SVG, atau WebP). Sistem secara otomatis mengompres gambar dan menyematkannya ke IPFS.
 
-### 5. Tautan Media Sosial (Opsional)
+### 4. Tautan Media Sosial (Opsional)
 
 Sertakan tautan resmi agar para trader dapat memverifikasi komunitas Anda:
 
@@ -38,11 +31,11 @@ Sertakan tautan resmi agar para trader dapat memverifikasi komunitas Anda:
 - Akun resmi X (Twitter)
 - Tautan grup Telegram komunitas
 
-### 6. Pembelian Awal / Developer Buy (Opsional)
+### 5. Pembelian Awal / Developer Buy (Opsional)
 
 Jika Anda ingin memiliki alokasi awal sebagai kreator pada harga terendah peluncuran, masukkan nominal pembelian yang diinginkan.
 
-### 7. Konfirmasi & Peluncuran
+### 6. Konfirmasi & Peluncuran
 
 Klik **Launch Token** dan konfirmasikan transaksi melalui dompet Web3 Anda:
 

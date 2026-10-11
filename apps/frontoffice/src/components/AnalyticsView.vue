@@ -540,9 +540,8 @@ const topCoins = computed(() => {
 });
 
 const contractEntries = computed(() => [
-  { name: 'Launchpad Factory (v1 Direct Pool)', address: activeNetwork.value.contracts.factory },
   {
-    name: 'Launchpad Factory (v2 Bonding Curve)',
+    name: 'Launchpad Factory (Bonding Curve)',
     address: activeNetwork.value.contracts.factoryV2 || activeNetwork.value.contracts.factory,
   },
   { name: 'Liquidity Locker', address: activeNetwork.value.contracts.locker },

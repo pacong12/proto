@@ -18,5 +18,4 @@ Es bietet eine sichere und transparente Plattform, auf der jeder digitale Vermö
 
 | Modell               | Funktionsweise                                                                                                                                          | Ideal für                                                 |
 | :------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------ | :-------------------------------------------------------- |
-| **v1 Direct Pool**   | Direkter Start in einen Uniswap V3-Pool mit 100% dauerhaft gesperrter Liquidität.                                                                       | Projekte, die sofort volle DEX-Tiefe benötigen.           |
 | **v2 Bonding Curve** | Startet auf einer dynamischen Preiskurve ($x \cdot y = k$) und migriert automatisch zu Uniswap, sobald das Ziel (4.2 ETH oder 8.400 USDC) erreicht ist. | Community- und Meme-Token mit schrittweiser Preisfindung. |

@@ -718,7 +718,7 @@ async function fetchMyLaunches() {
             name: item.token.name,
             symbol: item.token.symbol,
             logo: item.token.logo,
-            version: item.token.version ?? 'v1',
+            version: item.token.version ?? 'v2',
             unclaimedWeth,
             redirect,
           };

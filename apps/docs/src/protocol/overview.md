@@ -19,14 +19,9 @@ In typical crypto launchpads, everyday users face multiple common risks:
 
 ---
 
-## Two Simple Launch Models
+## Launch Architecture: Pure Bonding Curve
 
-Depending on your project's goals, Proto lets you choose between two launch models:
-
-| Model                | How It Works                                                                                                                                                                                                                 | Ideal For                                                                                |
-| :------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------- |
-| **v1 Direct Pool**   | Launches instantly into an active Uniswap V3 liquidity pool with 100% of non-creator supply locked on day one.                                                                                                               | Projects wanting immediate full DEX depth from the very first block.                     |
-| **v2 Bonding Curve** | Starts on a dynamic price curve. 800M tokens are sold gradually as buyers enter. Once the graduation target (4.2 ETH on Robinhood or 8,400 USDC on Arc) is raised, the market automatically graduates to full DEX liquidity. | Community projects, meme tokens, and social experiments wanting gradual price discovery. |
+Proto tokens launch on a dynamic price curve. 800M tokens are sold gradually as buyers enter. Once the graduation target (4.2 ETH on Robinhood or 69,000 USDC on Arc) is raised, the market automatically graduates to permanently locked DEX liquidity.
 
 ---
 

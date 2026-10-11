@@ -19,14 +19,9 @@ Pada launchpad konvensional, pengguna sering kali menghadapi berbagai risiko umu
 
 ---
 
-## Dua Model Peluncuran yang Sederhana
+## Model Peluncuran: Kurva Bonding (Bonding Curve)
 
-Sesuai dengan kebutuhan proyek Anda, Proto menyediakan dua model peluncuran:
-
-| Model                | Cara Kerja                                                                                                                                                                                                          | Cocok Untuk                                                                                    |
-| :------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------- |
-| **v1 Direct Pool**   | Meluncur langsung ke pool likuiditas Uniswap V3 aktif dengan 100% pasokan non-kreator terkunci sejak hari pertama.                                                                                                  | Proyek yang menginginkan kedalaman DEX penuh sejak blok peluncuran pertama.                    |
-| **v2 Bonding Curve** | Dimulai pada kurva harga dinamis. 800 juta token diperdagangkan secara bertahap. Ketika target kelulusan (4.2 ETH di Robinhood atau 8.400 USDC di Arc) tercapai, pasar otomatis bermigrasi ke likuiditas DEX penuh. | Proyek komunitas, token meme, dan eksperimen sosial yang menginginkan penemuan harga bertahap. |
+Proto menggunakan arsitektur kurva bonding dinamis. Sebanyak 800 juta token diperdagangkan secara bertahap saat pembeli masuk. Ketika target kelulusan (4.2 ETH di Robinhood Chain atau 69.000 USDC di Arc Network) tercapai, pasar otomatis bermigrasi dan meluncurkan likuiditas DEX yang terkunci secara permanen.
 
 ---
 
