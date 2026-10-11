@@ -17,6 +17,12 @@ export interface TokenTaxConfig {
     growth: number;
   };
 }
+/**
+ * Launch architecture version.
+ * - `'v2'` — Pure Bonding Curve (active, all new tokens)
+ * - `'v1'` — @deprecated Direct Uniswap V3 pool (legacy only; no new tokens created with V1)
+ *            Kept in the type so existing DB rows with `version: 'v1'` can still be read.
+ */
 export type LaunchVersion = 'v1' | 'v2';
 
 export interface LaunchedTokenEntity {

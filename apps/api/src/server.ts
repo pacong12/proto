@@ -1047,9 +1047,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   }
 
   // POST /api/comments/:commentId/like OR /api/tokens/:address/comments/:commentId/like
-  const directLikeMatch = url.pathname.match(/^\/api\/comments\/([^/]+)\/like$/);
+  const directLikeMatch = url.pathname.match(/^\/api\/comments\/([a-zA-Z0-9_-]+)\/like$/);
   const tokenLikeMatch = url.pathname.match(
-    /^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/comments\/([^/]+)\/like$/,
+    /^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/comments\/([a-zA-Z0-9_-]+)\/like$/,
   );
   if ((directLikeMatch || tokenLikeMatch) && req.method === 'POST') {
     const commentId = directLikeMatch ? directLikeMatch[1] : tokenLikeMatch![2];
@@ -1075,7 +1075,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   }
 
   // POST /api/comments/:commentId/repost
-  const repostMatch = url.pathname.match(/^\/api\/comments\/([^/]+)\/repost$/);
+  const repostMatch = url.pathname.match(/^\/api\/comments\/([a-zA-Z0-9_-]+)\/repost$/);
   if (repostMatch && req.method === 'POST') {
     const commentId = repostMatch[1];
     try {

@@ -611,6 +611,17 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     return null;
   }
 
+  /**
+   * Returns estimated token positions for a trader derived from indexed trade history.
+   *
+   * @remarks
+   * **Off-chain estimate only.** Balance is computed as
+   * `sum(buy tokenAmount) - sum(sell tokenAmount)` across the last 500 indexed trades.
+   * This will under-report positions for wallets that:
+   * - received tokens via transfer (not a swap indexed by the poller)
+   * - traded before the indexer start block
+   * Use on-chain `balanceOf()` for authoritative balance when precision is required.
+   */
   async getUserPositions(address: string): Promise<
     Array<{
       tokenAddress: string;
