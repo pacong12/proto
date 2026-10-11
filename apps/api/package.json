@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@proto/shared-types": "*",
+    "@proto/math-sdk": "*",
     "ioredis": "^6.0.0",
     "viem": "^2.23.0"
   },

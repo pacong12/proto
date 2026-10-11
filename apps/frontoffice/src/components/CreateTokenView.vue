@@ -1152,6 +1152,15 @@ import { compressAndConvertToWebp } from '@/lib/image-optimizer';
 import { shortenAddress } from '@/lib/utils';
 import { toast } from '@/components/ui/sonner';
 import { ARC_CHAIN } from '@proto/shared-types';
+import {
+  type RevenueSplit,
+  calculateTotalSplit,
+  calculateMaxShare,
+  clampShare,
+  autoBalanceSplit as autoBalanceRevenueSplit,
+  calculateDonutSegments,
+  calculateLaunchTotalDue,
+} from '@proto/math-sdk';
 
 const { t } = useI18n();
 const emit = defineEmits<{
@@ -1253,16 +1262,9 @@ const launchFeeFormatted = computed(() => {
 const totalPairDue = computed(() => {
   const buyAmount = parseFloat(form.value.initialBuyEth) || 0;
   const fee = parseFloat(launchFeeFormatted.value) || 0;
-  const total = fee + buyAmount;
+  const total = calculateLaunchTotalDue(fee, buyAmount);
   return `${total.toFixed(currencySymbol.value === 'USDC' ? 2 : 4)} ${currencySymbol.value}`;
 });
-
-interface RevenueSplit {
-  creator: number;
-  buyback: number;
-  holders: number;
-  growth: number;
-}
 
 const revenueSplit = ref<RevenueSplit>({
   creator: 50,
@@ -1271,96 +1273,37 @@ const revenueSplit = ref<RevenueSplit>({
   growth: 0,
 });
 
-const totalSplit = computed(() => {
-  return (
-    Number(revenueSplit.value.creator || 0) +
-    Number(revenueSplit.value.buyback || 0) +
-    Number(revenueSplit.value.holders || 0) +
-    Number(revenueSplit.value.growth || 0)
-  );
-});
+const totalSplit = computed(() => calculateTotalSplit(revenueSplit.value));
 
-const donutRadius = 38;
-const donutCircumference = 2 * Math.PI * donutRadius; // 238.761
+const donutData = computed(() => calculateDonutSegments(revenueSplit.value, 38));
+const donutCircumference = computed(() => donutData.value.circumference);
 
-const creatorStroke = computed(
-  () => (Number(revenueSplit.value.creator || 0) / 100) * donutCircumference,
-);
-const buybackStroke = computed(
-  () => (Number(revenueSplit.value.buyback || 0) / 100) * donutCircumference,
-);
-const holdersStroke = computed(
-  () => (Number(revenueSplit.value.holders || 0) / 100) * donutCircumference,
-);
-const growthStroke = computed(
-  () => (Number(revenueSplit.value.growth || 0) / 100) * donutCircumference,
-);
+const creatorStroke = computed(() => donutData.value.segments.creator.stroke);
+const buybackStroke = computed(() => donutData.value.segments.buyback.stroke);
+const holdersStroke = computed(() => donutData.value.segments.holders.stroke);
+const growthStroke = computed(() => donutData.value.segments.growth.stroke);
 
 const creatorOffset = 0;
-const buybackOffset = computed(() => -creatorStroke.value);
-const holdersOffset = computed(() => -(creatorStroke.value + buybackStroke.value));
-const growthOffset = computed(
-  () => -(creatorStroke.value + buybackStroke.value + holdersStroke.value),
-);
+const buybackOffset = computed(() => donutData.value.segments.buyback.offset);
+const holdersOffset = computed(() => donutData.value.segments.holders.offset);
+const growthOffset = computed(() => donutData.value.segments.growth.offset);
 
-const maxCreator = computed(() => {
-  const others =
-    Number(revenueSplit.value.buyback || 0) +
-    Number(revenueSplit.value.holders || 0) +
-    Number(revenueSplit.value.growth || 0);
-  return Math.max(0, 100 - others);
-});
-
-const maxBuyback = computed(() => {
-  const others =
-    Number(revenueSplit.value.creator || 0) +
-    Number(revenueSplit.value.holders || 0) +
-    Number(revenueSplit.value.growth || 0);
-  return Math.max(0, 100 - others);
-});
-
-const maxHolders = computed(() => {
-  const others =
-    Number(revenueSplit.value.creator || 0) +
-    Number(revenueSplit.value.buyback || 0) +
-    Number(revenueSplit.value.growth || 0);
-  return Math.max(0, 100 - others);
-});
-
-const maxGrowth = computed(() => {
-  const others =
-    Number(revenueSplit.value.creator || 0) +
-    Number(revenueSplit.value.buyback || 0) +
-    Number(revenueSplit.value.holders || 0);
-  return Math.max(0, 100 - others);
-});
+const maxCreator = computed(() => calculateMaxShare(revenueSplit.value, 'creator'));
+const maxBuyback = computed(() => calculateMaxShare(revenueSplit.value, 'buyback'));
+const maxHolders = computed(() => calculateMaxShare(revenueSplit.value, 'holders'));
+const maxGrowth = computed(() => calculateMaxShare(revenueSplit.value, 'growth'));
 
 function applySplitPreset(creator: number, buyback: number, holders: number, growth: number) {
   revenueSplit.value = { creator, buyback, holders, growth };
 }
 
 function autoBalanceSplit() {
-  const currentTotal = totalSplit.value;
-  if (currentTotal === 100) return;
-  const diff = 100 - currentTotal;
-  if (revenueSplit.value.holders + diff >= 0 && revenueSplit.value.holders + diff <= 100) {
-    revenueSplit.value.holders += diff;
-  } else if (revenueSplit.value.creator + diff >= 0 && revenueSplit.value.creator + diff <= 100) {
-    revenueSplit.value.creator += diff;
-  } else {
-    revenueSplit.value = { creator: 50, buyback: 0, holders: 50, growth: 0 };
-  }
+  revenueSplit.value = autoBalanceRevenueSplit(revenueSplit.value);
 }
 
 function updateShare(key: keyof RevenueSplit, val: unknown): void {
-  const allKeys: (keyof RevenueSplit)[] = ['creator', 'buyback', 'holders', 'growth'];
-  const otherKeys = allKeys.filter((k) => k !== key);
-  const others = otherKeys.reduce((sum, k) => sum + Number(revenueSplit.value[k] || 0), 0);
-  const maxAllowed = Math.max(0, 100 - others);
-  const requested = Math.max(0, Math.round(Number(val) || 0));
-
-  // Each share stops where the others leave off; no ghost slider movement
-  revenueSplit.value[key] = Math.min(requested, maxAllowed);
+  const requested = Math.round(Number(val) || 0);
+  revenueSplit.value[key] = clampShare(requested, revenueSplit.value, key);
 }
 
 const fileInputRef = ref<HTMLInputElement | null>(null);

@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import { decodeEventLog, parseEventLogs, parseEther, type TransactionReceipt } from 'viem';
 import { apiFetch } from '@/lib/api-client';
+import { taxPercentToBps } from '@proto/math-sdk';
 
 /**
  * Return true when the error originates from the user explicitly rejecting
@@ -280,14 +281,8 @@ export function useLaunchpad() {
           (params.sellTaxPercent && params.sellTaxPercent > 0)
         ) {
           try {
-            const buyTaxBps = Math.min(
-              1000,
-              Math.max(0, Math.round((params.buyTaxPercent || 0) * 100)),
-            );
-            const sellTaxBps = Math.min(
-              1000,
-              Math.max(0, Math.round((params.sellTaxPercent || 0) * 100)),
-            );
+            const buyTaxBps = taxPercentToBps(params.buyTaxPercent || 0);
+            const sellTaxBps = taxPercentToBps(params.sellTaxPercent || 0);
             const recipient = (params.creatorTaxWallet as `0x${string}`) || account;
             const taxHash = await walletClient.writeContract({
               address: tokenAddr,
@@ -310,14 +305,8 @@ export function useLaunchpad() {
             body: JSON.stringify({
               txHash: hash,
               taxConfig: {
-                buyTaxBps: Math.min(
-                  1000,
-                  Math.max(0, Math.round((params.buyTaxPercent || 0) * 100)),
-                ),
-                sellTaxBps: Math.min(
-                  1000,
-                  Math.max(0, Math.round((params.sellTaxPercent || 0) * 100)),
-                ),
+                buyTaxBps: taxPercentToBps(params.buyTaxPercent || 0),
+                sellTaxBps: taxPercentToBps(params.sellTaxPercent || 0),
                 taxRecipient: (params.creatorTaxWallet as `0x${string}`) || account,
                 revenueSplit: params.revenueSplit,
               },

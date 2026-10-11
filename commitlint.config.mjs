@@ -46,6 +46,7 @@ export default {
         'observability',
         'security',
         'shared-types',
+        'math-sdk',
         'infra',
         'deps',
         'docs',
