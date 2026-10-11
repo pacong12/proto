@@ -74,7 +74,7 @@ const props = withDefaults(defineProps<Props>(), {
   tokenSymbol: '',
   tokenAddress: '',
   height: 420,
-  resolution: 60,
+  resolution: 1,
   loading: false,
   totalSupply: 1_000_000_000,
   isGraduated: false,
@@ -312,11 +312,13 @@ function formatY(v: number): string {
 }
 
 function formatTime(t: Time): string {
+  const isSubMinute = (props.resolution ?? 1) < 60;
   return new Date(Number(t) * 1000).toLocaleString(undefined, {
     day: '2-digit',
     month: 'short',
     hour: '2-digit',
     minute: '2-digit',
+    ...(isSubMinute ? { second: '2-digit' } : {}),
   });
 }
 
@@ -431,14 +433,19 @@ function initChart() {
     timeScale: {
       borderVisible: false,
       timeVisible: true,
-      secondsVisible: false,
+      secondsVisible: (props.resolution ?? 1) < 60,
       rightOffset: 6,
       barSpacing: 14,
       minBarSpacing: 3,
       tickMarkFormatter: (t: Time, type: TickMarkType) => {
         const d = new Date(Number(t) * 1000);
-        if (type === TickMarkType.Time || type === TickMarkType.TimeWithSeconds)
-          return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        if (type === TickMarkType.Time || type === TickMarkType.TimeWithSeconds) {
+          return d.toLocaleTimeString(undefined, {
+            hour: '2-digit',
+            minute: '2-digit',
+            ...((props.resolution ?? 1) < 60 ? { second: '2-digit' } : {}),
+          });
+        }
         if (type === TickMarkType.Year) return String(d.getFullYear());
         if (type === TickMarkType.Month) return d.toLocaleDateString(undefined, { month: 'short' });
         return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
@@ -648,8 +655,11 @@ watch(
  */
 watch(
   () => props.resolution,
-  () => {
-    if (!chartReady) return;
+  (newRes) => {
+    if (!chartReady || !chart) return;
+    chart.timeScale().applyOptions({
+      secondsVisible: (newRes ?? 1) < 60,
+    });
     // Reset lastKey so the next sync() treats it as a new context unconditionally
     lastKey = '';
     lastLen = 0;

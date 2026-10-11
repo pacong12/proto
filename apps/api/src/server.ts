@@ -824,7 +824,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   const ohlcvMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/ohlcv$/);
   if (ohlcvMatch && req.method === 'GET') {
     const address = ohlcvMatch[1];
-    const resolution = parseInt(url.searchParams.get('resolution') ?? '60', 10);
+    const resolution = parseInt(url.searchParams.get('resolution') ?? '1', 10);
     const fillGaps = url.searchParams.get('fillGaps') !== 'false';
     const res = await tokenController.getCandlesticks(address, resolution, fillGaps);
     return replyEnvelope(res);

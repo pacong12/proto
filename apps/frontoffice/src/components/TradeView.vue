@@ -2934,6 +2934,7 @@ watch(callouts, (list) => {
 
 // Resolution & candle data
 const resolutions = [
+  { label: '1s', seconds: 1 },
   { label: '1m', seconds: 60 },
   { label: '5m', seconds: 300 },
   { label: '15m', seconds: 900 },
@@ -2944,17 +2945,17 @@ const resolutions = [
 const TIMEFRAME_STORAGE_KEY = 'proto_chart_resolution';
 
 function loadSavedResolution(): number {
-  if (typeof window === 'undefined') return 60;
+  if (typeof window === 'undefined') return 1;
   try {
     const val = localStorage.getItem(TIMEFRAME_STORAGE_KEY);
     if (val) {
       const num = parseInt(val, 10);
-      if ([60, 300, 900, 3600, 14400, 86400].includes(num)) return num;
+      if ([1, 60, 300, 900, 3600, 14400, 86400].includes(num)) return num;
     }
   } catch {
     // Ignore storage errors
   }
-  return 60; // 1m default for responsive memecoin action
+  return 1; // 1s default for real-time sub-second memecoin action
 }
 
 const selectedResolution = ref(loadSavedResolution());
@@ -2964,7 +2965,7 @@ const candlestickData = ref<
 >([]);
 let liveTimer: ReturnType<typeof setInterval> | null = null;
 let liveAbort: AbortController | null = null;
-const LIVE_MS = 4000;
+const LIVE_MS = 1000;
 
 async function refreshLive() {
   if (typeof document !== 'undefined' && document.hidden) return;
@@ -3533,7 +3534,7 @@ async function toggleLike(commentId: string) {
 // Multi-Timeframe Candlestick Engine (1m, 5m, 15m, 1h, 4h, 1d)
 // Continuous timeline from token release to now
 // -----------------------------------------------------------------------
-async function fetchCandlesticks(address: string, resolutionSeconds = 60, silent = false) {
+async function fetchCandlesticks(address: string, resolutionSeconds = 1, silent = false) {
   // silent=true → live poll: no loading spinner, only merge last 1-2 candles in-place
   // silent=false → full load: show spinner, replace entire dataset
   type CandleRow = {
@@ -3644,6 +3645,9 @@ async function fetchCandlesticks(address: string, resolutionSeconds = 60, silent
 
         // Shallow-copy the array to trigger Vue reactivity only when content changed
         if (changed) {
+          if (existing.length > 1000) {
+            existing.splice(0, existing.length - 1000);
+          }
           candlestickData.value = [...existing];
         }
       } else {

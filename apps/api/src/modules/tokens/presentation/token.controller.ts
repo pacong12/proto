@@ -277,14 +277,14 @@ export class TokenController {
 
   async getCandlesticks(
     address: string,
-    resolutionSeconds = 60,
+    resolutionSeconds = 1,
     fillGaps = false,
   ): Promise<ApiEnvelope<CandlestickEntity[]>> {
     if (!address.startsWith('0x') || address.length !== 42) {
       return err('INVALID_ADDRESS', 'Token address must be a valid 42-character hex string');
     }
 
-    const VALID_RESOLUTIONS = [60, 300, 900, 3600, 14400, 86400];
+    const VALID_RESOLUTIONS = [1, 60, 300, 900, 3600, 14400, 86400];
     if (!VALID_RESOLUTIONS.includes(resolutionSeconds)) {
       return err(
         'INVALID_RESOLUTION',

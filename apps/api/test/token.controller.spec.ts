@@ -144,8 +144,12 @@ describe('TokenController Unit Tests', () => {
   });
 
   it('getCandlesticks returns array for valid resolution', async () => {
-    const res = await controller.getCandlesticks(testAddress, 60);
-    expect(res.success).toBe(true);
-    expect(Array.isArray(res.data)).toBe(true);
+    const res60 = await controller.getCandlesticks(testAddress, 60);
+    expect(res60.success).toBe(true);
+    expect(Array.isArray(res60.data)).toBe(true);
+
+    const res1 = await controller.getCandlesticks(testAddress, 1);
+    expect(res1.success).toBe(true);
+    expect(Array.isArray(res1.data)).toBe(true);
   });
 });
