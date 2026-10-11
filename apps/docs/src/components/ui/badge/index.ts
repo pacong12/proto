@@ -5,11 +5,13 @@ export const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-emerald-500 text-black shadow',
-        secondary: 'border-transparent bg-zinc-800 text-zinc-100',
-        destructive: 'border-transparent bg-rose-500 text-white shadow',
-        outline: 'text-zinc-300 border-zinc-800',
-        graduated: 'border-emerald-800 bg-emerald-950 text-emerald-400',
+        default: 'border-transparent bg-foreground text-background shadow-xs',
+        secondary: 'border-border bg-secondary text-secondary-foreground',
+        destructive: 'border-transparent bg-destructive text-destructive-foreground shadow-xs',
+        outline: 'text-foreground border-border bg-background',
+        graduated: 'border-border bg-muted text-foreground',
+        bullish: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
+        bearish: 'border-rose-500/30 bg-rose-500/10 text-rose-400',
       },
     },
     defaultVariants: {

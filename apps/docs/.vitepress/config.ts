@@ -9,13 +9,14 @@ export default defineConfig({
   srcDir: './src',
   outDir: './dist',
   cleanUrls: true,
+  appearance: 'dark',
   sitemap: {
     hostname: 'https://docs.proto.family',
   },
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
     ['link', { rel: 'manifest', href: '/manifest.json' }],
-    ['meta', { name: 'theme-color', content: '#10b981' }],
+    ['meta', { name: 'theme-color', content: '#000000' }],
     ['meta', { 'http-equiv': 'X-Content-Type-Options', content: 'nosniff' }],
     ['meta', { 'http-equiv': 'X-Frame-Options', content: 'DENY' }],
     ['meta', { name: 'referrer', content: 'strict-origin-when-cross-origin' }],
@@ -483,6 +484,7 @@ export default defineConfig({
   },
 
   themeConfig: {
+    logo: '/favicon.svg',
     siteTitle: 'Proto Guide',
     search: {
       provider: 'local',
