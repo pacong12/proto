@@ -2977,10 +2977,26 @@ async function refreshLive() {
   const { signal } = liveAbort;
 
   try {
-    const res = await fetch(`/api/tokens/${addr}`, { signal });
-    const env = await res.json();
+    const env = await apiFetch<{
+      success: boolean;
+      data: { token: LaunchedTokenEntity; marketData: TokenMarketData };
+    }>(`/api/tokens/${addr}`, { signal });
     if (env.success && env.data && addr === currentToken.value.address) {
-      currentMarketData.value = env.data.marketData;
+      const incomingMkt = env.data.marketData;
+      if (incomingMkt) {
+        const curr = currentMarketData.value;
+        const changed =
+          incomingMkt.priceUsd !== curr.priceUsd ||
+          incomingMkt.priceInWeth !== curr.priceInWeth ||
+          incomingMkt.marketCapUsd !== curr.marketCapUsd ||
+          incomingMkt.volume24hUsd !== curr.volume24hUsd ||
+          incomingMkt.isGraduated !== curr.isGraduated ||
+          incomingMkt.graduationProgress !== curr.graduationProgress;
+
+        if (changed) {
+          currentMarketData.value = incomingMkt;
+        }
+      }
     }
   } catch (e) {
     if ((e as Error).name === 'AbortError') return;
@@ -2989,7 +3005,11 @@ async function refreshLive() {
   // Silent poll: no loading spinner, only merge the latest candle in-place
   await fetchCandlesticks(addr, selectedResolution.value, true);
   if (activeBottomTab.value === 'trades') {
-    fetchTrades(addr);
+    await fetchTrades(addr, true);
+  } else if (activeBottomTab.value === 'top-traders') {
+    await fetchTopTraders(addr, true);
+  } else if (activeBottomTab.value === 'holders') {
+    await fetchHolders(addr, true);
   }
 }
 
@@ -3425,59 +3445,89 @@ async function fetchUserTokenBalance(force = false) {
   return balanceFetchPromise;
 }
 
-async function fetchTrades(address: string) {
-  tradesLoading.value = true;
+async function fetchTrades(address: string, silent = false) {
+  if (!silent) tradesLoading.value = true;
   try {
-    const res = await fetch(`/api/tokens/${address}/trades?limit=50`);
-    const envelope = await res.json();
+    const envelope = await apiFetch<{ success: boolean; data: TradeEventEntity[] }>(
+      `/api/tokens/${address}/trades?limit=50`,
+    );
     if (envelope.success && Array.isArray(envelope.data)) {
-      trades.value = envelope.data;
-      if (envelope.data.length > 0 && envelope.data[0].priceUsd > 0) {
-        const latestTrade = envelope.data[0];
-        if (latestTrade.priceUsd !== currentMarketData.value.priceUsd) {
-          currentMarketData.value.priceUsd = latestTrade.priceUsd;
-        }
+      const incoming = envelope.data;
+      const current = trades.value;
+      const isDifferent =
+        incoming.length !== current.length ||
+        (incoming.length > 0 && current.length > 0 && incoming[0].id !== current[0].id);
+
+      if (isDifferent) {
+        trades.value = incoming;
       }
-    } else {
+    } else if (!silent) {
       trades.value = [];
     }
   } catch {
-    trades.value = [];
+    if (!silent) trades.value = [];
   } finally {
-    tradesLoading.value = false;
+    if (!silent) tradesLoading.value = false;
   }
 }
 
-async function fetchHolders(address: string) {
-  holdersLoading.value = true;
+async function fetchHolders(address: string, silent = false) {
+  if (!silent) holdersLoading.value = true;
   try {
-    const res = await fetch(`/api/tokens/${address}/holders?limit=50`);
-    const envelope = await res.json();
-    holders.value = envelope.success && Array.isArray(envelope.data) ? envelope.data : [];
+    const envelope = await apiFetch<{ success: boolean; data: TokenHolder[] }>(
+      `/api/tokens/${address}/holders?limit=50`,
+    );
+    if (envelope.success && Array.isArray(envelope.data)) {
+      const incoming = envelope.data;
+      const current = holders.value;
+      const isDifferent =
+        incoming.length !== current.length ||
+        (incoming.length > 0 && current.length > 0 && incoming[0].address !== current[0].address);
+
+      if (isDifferent) {
+        holders.value = incoming;
+      }
+    } else if (!silent) {
+      holders.value = [];
+    }
   } catch {
-    holders.value = [];
+    if (!silent) holders.value = [];
   } finally {
-    holdersLoading.value = false;
+    if (!silent) holdersLoading.value = false;
   }
 }
 
-async function fetchTopTraders(address: string) {
-  topTradersLoading.value = true;
+async function fetchTopTraders(address: string, silent = false) {
+  if (!silent) topTradersLoading.value = true;
   try {
-    const res = await fetch(`/api/tokens/${address}/top-traders?limit=20`);
-    const envelope = await res.json();
-    topTraders.value = envelope.success && Array.isArray(envelope.data) ? envelope.data : [];
+    const envelope = await apiFetch<{ success: boolean; data: typeof topTraders.value }>(
+      `/api/tokens/${address}/top-traders?limit=20`,
+    );
+    if (envelope.success && Array.isArray(envelope.data)) {
+      const incoming = envelope.data;
+      const current = topTraders.value;
+      const isDifferent =
+        incoming.length !== current.length ||
+        (incoming.length > 0 && current.length > 0 && incoming[0].address !== current[0].address);
+
+      if (isDifferent) {
+        topTraders.value = incoming;
+      }
+    } else if (!silent) {
+      topTraders.value = [];
+    }
   } catch {
-    topTraders.value = [];
+    if (!silent) topTraders.value = [];
   } finally {
-    topTradersLoading.value = false;
+    if (!silent) topTradersLoading.value = false;
   }
 }
 
 async function fetchDevActivity(address: string) {
   try {
-    const res = await fetch(`/api/tokens/${address}/dev-activity`);
-    const envelope = await res.json();
+    const envelope = await apiFetch<{ success: boolean; data: typeof devInfo.value }>(
+      `/api/tokens/${address}/dev-activity`,
+    );
     if (envelope.success && envelope.data) devInfo.value = envelope.data;
   } catch {
     // non-blocking
@@ -3815,10 +3865,10 @@ async function handleSwap() {
     await Promise.allSettled([
       updateBalance(),
       fetchUserTokenBalance(true),
-      fetchTrades(currentToken.value.address),
+      fetchTrades(currentToken.value.address, true),
       fetchCandlesticks(currentToken.value.address, selectedResolution.value, true),
-      fetchHolders(currentToken.value.address),
-      fetchTopTraders(currentToken.value.address),
+      fetchHolders(currentToken.value.address, true),
+      fetchTopTraders(currentToken.value.address, true),
     ]);
 
     // Fast realtime sync poll for 6s in background
@@ -3827,7 +3877,7 @@ async function handleSwap() {
         await Promise.allSettled([
           updateBalance(),
           fetchUserTokenBalance(true),
-          fetchTrades(currentToken.value.address),
+          fetchTrades(currentToken.value.address, true),
           fetchCandlesticks(currentToken.value.address, selectedResolution.value, true),
         ]);
       }, i * 2000);

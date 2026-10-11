@@ -127,19 +127,25 @@ export class TokenController {
         {
           buyUsd: number;
           sellUsd: number;
-          buyTokens: bigint;
-          sellTokens: bigint;
+          buyTokens: number;
+          sellTokens: number;
           trades: number;
           firstBuyTs: number;
           firstBuyPrice: number;
         }
       >();
 
-      const ethPrice = await this.priceFeed.getEthPriceUsd();
       // Multi-chain: Arc tokens use USDC quote (always $1.00)
       const isArcToken =
         token?.pairedToken?.toLowerCase() === ARC_CHAIN.contracts.weth.toLowerCase();
-      const quotePrice = isArcToken ? 1.0 : ethPrice;
+      let quotePrice = 1.0;
+      if (!isArcToken) {
+        try {
+          quotePrice = await this.priceFeed.getEthPriceUsd();
+        } catch {
+          quotePrice = 2500; // resilient fallback when oracle rate limits
+        }
+      }
       // Trades are sorted newest first, sort chronological to determine first buy
       const chronologicalTrades = [...trades].sort((a, b) => a.timestamp - b.timestamp);
 
@@ -148,32 +154,29 @@ export class TokenController {
         const cur = traderMap.get(trader) || {
           buyUsd: 0,
           sellUsd: 0,
-          buyTokens: 0n,
-          sellTokens: 0n,
+          buyTokens: 0,
+          sellTokens: 0,
           trades: 0,
           firstBuyTs: t.timestamp,
           firstBuyPrice: 0,
         };
 
         const valUsd = parseFloat(t.wethAmount || '0') * quotePrice;
-        let tokenAmountWei = 0n;
-        try {
-          tokenAmountWei = BigInt(t.tokenAmount || '0');
-        } catch {
-          tokenAmountWei = 0n;
+        let tokenAmount = parseFloat(t.tokenAmount || '0');
+        if (isNaN(tokenAmount) || tokenAmount < 0) {
+          tokenAmount = 0;
         }
 
         if (t.isBuy) {
           cur.buyUsd += valUsd;
-          cur.buyTokens += tokenAmountWei;
-          if (cur.firstBuyPrice === 0 && tokenAmountWei > 0n) {
-            const tokens = Number(tokenAmountWei) / 1e18;
-            cur.firstBuyPrice = tokens > 0 ? valUsd / tokens : 0;
+          cur.buyTokens += tokenAmount;
+          if (cur.firstBuyPrice === 0 && tokenAmount > 0) {
+            cur.firstBuyPrice = valUsd / tokenAmount;
             cur.firstBuyTs = t.timestamp;
           }
         } else {
           cur.sellUsd += valUsd;
-          cur.sellTokens += tokenAmountWei;
+          cur.sellTokens += tokenAmount;
         }
         cur.trades += 1;
         traderMap.set(trader, cur);
@@ -187,15 +190,12 @@ export class TokenController {
         else if (profitUsd > 500) walletTag = 'smart_degen';
         else if (stats.trades >= 5) walletTag = 'active';
 
-        const totalBuyTokensNum = Number(stats.buyTokens) / 1e18;
-        const avgCostUsd = totalBuyTokensNum > 0 ? stats.buyUsd / totalBuyTokensNum : 0;
-
-        const remainingTokens =
-          stats.buyTokens > stats.sellTokens ? stats.buyTokens - stats.sellTokens : 0n;
+        const avgCostUsd = stats.buyTokens > 0 ? stats.buyUsd / stats.buyTokens : 0;
+        const remainingTokens = Math.max(0, stats.buyTokens - stats.sellTokens);
 
         let positionStatus: 'holding' | 'partial' | 'clean_all' = 'holding';
-        if (stats.sellTokens > 0n) {
-          if (remainingTokens === 0n) {
+        if (stats.sellTokens > 0) {
+          if (remainingTokens <= 0.0001) {
             positionStatus = 'clean_all';
           } else {
             positionStatus = 'partial';
@@ -213,7 +213,7 @@ export class TokenController {
           firstBuyTimestamp: stats.firstBuyTs,
           firstBuyPriceUsd: stats.firstBuyPrice,
           avgCostUsd,
-          holdingAmountTokens: (Number(remainingTokens) / 1e18).toFixed(2),
+          holdingAmountTokens: remainingTokens.toFixed(2),
           positionStatus,
         };
       });

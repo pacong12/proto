@@ -318,12 +318,15 @@ async function indexTradeFromReceipt(
       if (token.version === 'v2' && priceUsd > 0) {
         const mkt = await repository.getMarketData(token.address);
         if (mkt) {
+          const supplyTokens = token.totalSupply
+            ? Number(BigInt(token.totalSupply) / 10n ** BigInt(token.decimals || 18))
+            : 1_000_000_000;
           await repository.saveMarketData({
             ...mkt,
             priceUsd,
             priceInWeth: priceUsd / quotePriceUsd,
-            marketCapUsd: priceUsd * 1_000_000_000,
-            fdvUsd: priceUsd * 1_000_000_000,
+            marketCapUsd: priceUsd * supplyTokens,
+            fdvUsd: priceUsd * supplyTokens,
           });
         }
       }
