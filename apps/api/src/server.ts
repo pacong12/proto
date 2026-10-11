@@ -1014,6 +1014,17 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         }
       }
 
+      // Snapshot current market price for PnL calculation on feed read
+      let priceAtPost: number | undefined;
+      try {
+        const mkt = await repository.getMarketData(address as `0x${string}`);
+        if (mkt?.priceUsd && mkt.priceUsd > 0) {
+          priceAtPost = mkt.priceUsd;
+        }
+      } catch {
+        // Non-blocking — PnL display degrades gracefully without entry price
+      }
+
       const comment: TokenCommentEntity = {
         id: crypto.randomUUID(),
         tokenAddress: address,
@@ -1025,6 +1036,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         targetMcap,
         positionUsd,
         supplyPercent,
+        priceAtPost,
         callType,
         parentId,
         quotedCalloutId,

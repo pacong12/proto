@@ -858,7 +858,6 @@ const paginatedTokens = computed(() => {
 });
 
 onMounted(async () => {
-  loadPinnedTokens();
   if (typeof window !== 'undefined' && window.innerWidth < 768) {
     viewMode.value = 'grid';
   }

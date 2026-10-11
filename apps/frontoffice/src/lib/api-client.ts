@@ -67,3 +67,34 @@ export async function apiFetch<T>(endpoint: string, options?: RequestInit): Prom
 
   return (await res.json()) as T;
 }
+
+/**
+ * Upload a file (multipart/form-data) to the API.
+ * Does NOT set Content-Type so the browser auto-generates the multipart boundary.
+ * Returns the parsed JSON response.
+ */
+export async function uploadFile<T>(endpoint: string, file: File, fieldName = 'file'): Promise<T> {
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = `${API_BASE_URL}${cleanEndpoint}`;
+  const formData = new FormData();
+  formData.append(fieldName, file);
+
+  let res: Response;
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30_000);
+    res = await fetch(url, { method: 'POST', body: formData, signal: controller.signal });
+    clearTimeout(timeoutId);
+  } catch (networkErr) {
+    if ((networkErr as Error).name === 'AbortError') {
+      throw new ApiError(408, 'Upload timed out. Please try again.');
+    }
+    throw new ApiError(0, `Network error: ${(networkErr as Error).message}`);
+  }
+
+  if (!res.ok) {
+    throw new ApiError(res.status, `Upload failed: ${res.statusText}`);
+  }
+
+  return (await res.json()) as T;
+}

@@ -287,10 +287,12 @@ import {
 import { erc20Abi } from 'viem';
 import {
   liquidityLockerAbi,
+  UNDEPLOYED,
   type FeedCalloutItem,
   type LaunchedTokenEntity,
   type TokenMarketData,
 } from '@proto/shared-types';
+import { apiFetch } from '@/lib/api-client';
 
 const props = defineProps<{
   address?: string;
@@ -355,8 +357,9 @@ async function resolveTargetUser(param: string) {
 
   // 2. Query backend API
   try {
-    const res = await fetch(`/api/users/${encodeURIComponent(param)}`);
-    const env = await res.json();
+    const env = await apiFetch<{ success: boolean; data?: { address: string } }>(
+      `/api/users/${encodeURIComponent(param)}`,
+    );
     if (env.success && env.data?.address) {
       const addr = env.data.address.toLowerCase();
       registerUserIdentity(addr);
@@ -364,7 +367,8 @@ async function resolveTargetUser(param: string) {
     } else {
       resolvedAddressFromApi.value = null;
     }
-  } catch {
+  } catch (e) {
+    console.warn('[ProfileView] Failed to resolve user identity from API:', (e as Error).message);
     resolvedAddressFromApi.value = null;
   }
 }
@@ -496,7 +500,8 @@ async function loadUserPosts(): Promise<void> {
   loadingPosts.value = true;
   try {
     userPosts.value = await fetchUserPosts(target, connectedAccount.value || undefined);
-  } catch {
+  } catch (e) {
+    console.warn('[ProfileView] Failed to load user posts:', (e as Error).message);
     userPosts.value = [];
   } finally {
     loadingPosts.value = false;
@@ -614,7 +619,7 @@ const {
 
 function getDistributorAddress(): `0x${string}` {
   const addr = activeNetwork.value.contracts.holderFeeDistributor;
-  return (addr ?? '0x0000000000000000000000000000000000000000') as `0x${string}`;
+  return (addr ?? UNDEPLOYED) as `0x${string}`;
 }
 
 async function refreshDividends() {
@@ -665,15 +670,14 @@ async function fetchMyLaunches() {
   }
   loadingLaunches.value = true;
   try {
-    const res = await fetch(`/api/tokens?deployer=${target}`);
-    const envelope = (await res.json()) as {
+    const envelope = await apiFetch<{
       success: boolean;
       data: Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }>;
-    };
+    }>(`/api/tokens?deployer=${target}`);
     if (envelope.success && Array.isArray(envelope.data)) {
       const publicClient = getPublicClient(activeNetwork.value.chainId);
       const lockerAddr = activeNetwork.value.contracts.locker;
-      const hasLocker = lockerAddr && lockerAddr !== '0x0000000000000000000000000000000000000000';
+      const hasLocker = lockerAddr && lockerAddr !== UNDEPLOYED;
 
       const launches = await Promise.all(
         envelope.data.map(async (item) => {
@@ -688,7 +692,7 @@ async function fetchMyLaunches() {
                 functionName: 'feeRedirects',
                 args: [item.token.address as `0x${string}`],
               })) as string;
-              if (r && r !== '0x0000000000000000000000000000000000000000') {
+              if (r && r !== UNDEPLOYED) {
                 redirect = r;
               }
             } catch {
@@ -727,7 +731,8 @@ async function fetchMyLaunches() {
     } else {
       myLaunches.value = [];
     }
-  } catch {
+  } catch (e) {
+    console.warn('[ProfileView] Failed to load launches:', (e as Error).message);
     myLaunches.value = [];
   } finally {
     loadingLaunches.value = false;
@@ -744,16 +749,15 @@ async function fetchUserPositionsAndActivity() {
   }
 
   try {
-    const [tradesRes, tokensRes, portfolioRes] = await Promise.all([
-      fetch(`/api/trades?trader=${target}&limit=100`).catch(() => null),
-      fetch('/api/tokens?limit=100').catch(() => null),
-      fetch(`/api/users/${target}/portfolio`).catch(() => null),
+    const [tradesJson, tokensJson, portfolioJson] = await Promise.all([
+      apiFetch<{ success: boolean; data: unknown[] }>(
+        `/api/trades?trader=${target}&limit=100`,
+      ).catch(() => null),
+      apiFetch<{ success: boolean; data: unknown[] }>('/api/tokens?limit=100').catch(() => null),
+      apiFetch<{ success: boolean; data: unknown[] }>(`/api/users/${target}/portfolio`).catch(
+        () => null,
+      ),
     ]);
-
-    const tradesJson = tradesRes?.ok ? await tradesRes.json().catch(() => null) : null;
-    const tokensJson = tokensRes?.ok ? await tokensRes.json().catch(() => null) : null;
-    const portfolioJson = portfolioRes?.ok ? await portfolioRes.json().catch(() => null) : null;
-
     const tokensList: Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }> =
       tokensJson?.success && Array.isArray(tokensJson.data) ? tokensJson.data : [];
 
@@ -868,8 +872,8 @@ async function fetchUserPositionsAndActivity() {
     const finalPositions = Array.from(validPositionsMap.values());
     finalPositions.sort((a, b) => b.valueUsd - a.valueUsd);
     portfolioPositions.value = finalPositions;
-  } catch {
-    // Non-blocking
+  } catch (e) {
+    console.warn('[ProfileView] Failed to fetch portfolio positions:', (e as Error).message);
   }
 }
 

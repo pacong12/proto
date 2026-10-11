@@ -319,6 +319,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       'ALTER TABLE comments ADD COLUMN replies_count INTEGER DEFAULT 0',
       'ALTER TABLE comments ADD COLUMN views_count INTEGER DEFAULT 0',
       'ALTER TABLE comments ADD COLUMN supply_percent REAL',
+      'ALTER TABLE comments ADD COLUMN price_at_post REAL',
     ];
     for (const sql of commentMigrations) {
       try {
@@ -704,9 +705,9 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       INSERT INTO comments (
         id, token_address, author_address, content, image_url, likes_count, created_at,
         target_mcap, position_usd, profit_usd, call_type, parent_id, quoted_callout_id,
-        reposts_count, quotes_count, replies_count
+        reposts_count, quotes_count, replies_count, price_at_post
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     stmt.run(
       comment.id,
@@ -725,6 +726,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       comment.repostsCount || 0,
       comment.quotesCount || 0,
       comment.repliesCount || 0,
+      comment.priceAtPost ?? null,
     );
 
     if (comment.parentId) {
@@ -773,6 +775,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       replies_count: number | null;
       views_count: number | null;
       supply_percent: number | null;
+      price_at_post: number | null;
     }
     const rows = stmt.all(tokenAddress) as CommentRow[];
 
@@ -808,6 +811,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       positionUsd: r.position_usd != null ? Number(r.position_usd) : undefined,
       supplyPercent: r.supply_percent != null ? Number(r.supply_percent) : undefined,
       profitUsd: r.profit_usd != null ? Number(r.profit_usd) : undefined,
+      priceAtPost: r.price_at_post != null ? Number(r.price_at_post) : undefined,
       callType: (r.call_type as 'call' | 'comment') ?? 'call',
       parentId: r.parent_id ?? undefined,
       quotedCalloutId: r.quoted_callout_id ?? undefined,
@@ -828,7 +832,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       SELECT 
         c.id, c.token_address, c.author_address, c.content, c.image_url, 
         c.likes_count, c.created_at, c.target_mcap, c.position_usd, c.profit_usd, c.call_type,
-        c.parent_id, c.quoted_callout_id, c.reposts_count, c.quotes_count, c.replies_count, c.views_count, c.supply_percent,
+        c.parent_id, c.quoted_callout_id, c.reposts_count, c.quotes_count, c.replies_count, c.views_count, c.supply_percent, c.price_at_post,
         t.name as token_name, t.symbol as token_symbol, t.logo as token_logo,
         m.marketCapUsd as token_market_cap, m.priceUsd as token_price_usd
       FROM comments c
@@ -864,6 +868,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       replies_count: number | null;
       views_count: number | null;
       supply_percent: number | null;
+      price_at_post: number | null;
       token_name: string | null;
       token_symbol: string | null;
       token_logo: string | null;
@@ -905,6 +910,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       positionUsd: r.position_usd != null ? Number(r.position_usd) : undefined,
       supplyPercent: r.supply_percent != null ? Number(r.supply_percent) : undefined,
       profitUsd: r.profit_usd != null ? Number(r.profit_usd) : undefined,
+      priceAtPost: r.price_at_post != null ? Number(r.price_at_post) : undefined,
       callType: (r.call_type as 'call' | 'comment') ?? 'call',
       parentId: r.parent_id ?? undefined,
       quotedCalloutId: r.quoted_callout_id ?? undefined,
@@ -937,7 +943,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       SELECT 
         c.id, c.token_address, c.author_address, c.content, c.image_url, 
         c.likes_count, c.created_at, c.target_mcap, c.position_usd, c.profit_usd, c.call_type,
-        c.parent_id, c.quoted_callout_id, c.reposts_count, c.quotes_count, c.replies_count, c.views_count, c.supply_percent,
+        c.parent_id, c.quoted_callout_id, c.reposts_count, c.quotes_count, c.replies_count, c.views_count, c.supply_percent, c.price_at_post,
         t.name as token_name, t.symbol as token_symbol, t.logo as token_logo,
         m.marketCapUsd as token_market_cap, m.priceUsd as token_price_usd
       FROM comments c
@@ -958,6 +964,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       position_usd: number | null;
       supply_percent: number | null;
       profit_usd: number | null;
+      price_at_post: number | null;
       call_type: string | null;
       parent_id: string | null;
       quoted_callout_id: string | null;
@@ -987,6 +994,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       positionUsd: r.position_usd != null ? Number(r.position_usd) : undefined,
       supplyPercent: r.supply_percent != null ? Number(r.supply_percent) : undefined,
       profitUsd: r.profit_usd != null ? Number(r.profit_usd) : undefined,
+      priceAtPost: r.price_at_post != null ? Number(r.price_at_post) : undefined,
       callType: (r.call_type as 'call' | 'comment') ?? 'call',
       parentId: r.parent_id ?? undefined,
       quotedCalloutId: r.quoted_callout_id ?? undefined,

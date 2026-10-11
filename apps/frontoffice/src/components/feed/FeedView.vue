@@ -89,21 +89,21 @@
             <button
               v-for="chainOpt in [
                 {
-                  key: 'all',
+                  key: 'all' as ChainFilterType,
                   label: 'All Chains',
                   icons: ['/chains/robinhood.svg', '/chains/arc.svg'],
                 },
                 {
-                  key: 'robinhood',
+                  key: 'robinhood' as ChainFilterType,
                   label: 'Robinhood',
                   icons: ['/chains/robinhood.svg'],
                 },
                 {
-                  key: 'arc',
+                  key: 'arc' as ChainFilterType,
                   label: 'Arc',
                   icons: ['/chains/arc.svg'],
                 },
-              ]"
+              ] as const"
               :key="chainOpt.key"
               type="button"
               class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition cursor-pointer select-none"
@@ -112,7 +112,7 @@
                   ? 'bg-foreground text-background border-foreground font-bold shadow-2xs'
                   : 'bg-black border border-border text-muted-foreground hover:text-foreground hover:bg-zinc-950'
               "
-              @click="setChainFilter(chainOpt.key as any)"
+              @click="setChainFilter(chainOpt.key)"
             >
               <!-- Overlapping chain icons for All Chains, or single icon -->
               <span
@@ -555,27 +555,67 @@
                 </div>
               </div>
 
-              <!-- Caller Financial Position & Trade Button -->
-              <div class="flex items-center gap-3 shrink-0 text-right">
-                <div>
-                  <span class="text-[9px] text-muted-foreground block uppercase font-bold"
-                    >Position</span
+              <!-- Caller Financial Position + Live PnL Badge -->
+              <div class="flex items-center gap-2 shrink-0 text-right">
+                <!-- PnL badge: show when priceAtPost + tokenPriceUsd both available -->
+                <div
+                  v-if="
+                    call.priceAtPost &&
+                    call.priceAtPost > 0 &&
+                    call.tokenPriceUsd &&
+                    call.tokenPriceUsd > 0
+                  "
+                  class="flex flex-col items-end gap-0.5"
+                  :title="`Entry price: $${call.priceAtPost.toPrecision(4)} → Current: $${call.tokenPriceUsd.toPrecision(4)}`"
+                >
+                  <!-- Live PnL % row -->
+                  <span
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-black font-mono tabular-nums border"
+                    :class="
+                      callPnlPct(call) >= 0
+                        ? 'bg-emerald-950/60 border-emerald-700/40 text-emerald-400'
+                        : 'bg-rose-950/60 border-rose-700/40 text-rose-400'
+                    "
                   >
-                  <span class="text-xs font-bold text-foreground">
-                    {{ call.positionUsd ? `$${call.positionUsd.toFixed(1)}` : 'Holding' }}
+                    <TrendingUp v-if="callPnlPct(call) >= 0" class="w-3 h-3" />
+                    <TrendingDown v-else class="w-3 h-3" />
+                    {{ callPnlPct(call) >= 0 ? '+' : '' }}{{ callPnlPct(call).toFixed(1) }}%
+                  </span>
+                  <!-- Position size + abs PnL row -->
+                  <span
+                    class="text-[9px] font-mono text-muted-foreground tabular-nums leading-none"
+                  >
+                    <span v-if="call.positionUsd && call.positionUsd > 0"
+                      >${{ formatCompactUsd(call.positionUsd) }}</span
+                    >
+                    <span
+                      v-if="callPnlUsd(call) !== null"
+                      :class="callPnlUsd(call)! >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                    >
+                      {{ call.positionUsd ? ' · ' : '' }}{{ callPnlUsd(call)! >= 0 ? '+' : '' }}${{
+                        callPnlUsd(call)!.toFixed(1)
+                      }}
+                    </span>
                   </span>
                 </div>
-                <div v-if="call.profitUsd !== undefined">
-                  <span class="text-[9px] text-muted-foreground block uppercase font-bold"
-                    >Profit</span
-                  >
+
+                <!-- Fallback: plain position + profit when no priceAtPost -->
+                <div
+                  v-else-if="call.positionUsd || call.profitUsd !== undefined"
+                  class="flex flex-col items-end gap-0.5"
+                >
+                  <span v-if="call.positionUsd" class="text-xs font-bold text-foreground font-mono">
+                    ${{ formatCompactUsd(call.positionUsd) }}
+                  </span>
                   <span
-                    class="text-xs font-bold"
+                    v-if="call.profitUsd !== undefined"
+                    class="text-[11px] font-bold font-mono"
                     :class="call.profitUsd >= 0 ? 'text-emerald-500' : 'text-rose-500'"
                   >
                     {{ call.profitUsd >= 0 ? '+' : '' }}${{ call.profitUsd.toFixed(1) }}
                   </span>
                 </div>
+
                 <Button
                   size="sm"
                   class="h-7 px-3 text-xs font-bold rounded-lg cursor-pointer bg-primary text-primary-foreground hover:opacity-90 shadow-2xs"
@@ -806,7 +846,9 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useWallet } from '@/composables/useWallet';
 import { useTokenStore } from '@/composables/useTokenStore';
+import { usePinnedTokens } from '@/composables/usePinnedTokens';
 import { useFeed, isWhaleCaller, type FeedFilterType } from '@/composables/useFeed';
+import { uploadFile } from '@/lib/api-client';
 import {
   Search,
   Loader2,
@@ -826,6 +868,8 @@ import {
   X,
   Link2,
   Star,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
@@ -876,6 +920,7 @@ const {
   postCallout,
   toggleLike,
   toggleRepost,
+  fetchCallerBalance,
 } = useFeed();
 
 type ChainFilterType = 'all' | 'robinhood' | 'arc';
@@ -889,6 +934,40 @@ function setChainFilter(key: ChainFilterType) {
 function getChainIcon(tokenAddress: string): string {
   const net = getTokenNetwork(tokenAddress);
   return net.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg';
+}
+
+/**
+ * Unrealized PnL percentage for a callout.
+ * = (currentPrice - entryPrice) / entryPrice * 100
+ * Returns 0 when either price is unavailable.
+ */
+function callPnlPct(call: { priceAtPost?: number; tokenPriceUsd?: number }): number {
+  if (!call.priceAtPost || call.priceAtPost <= 0 || !call.tokenPriceUsd || call.tokenPriceUsd <= 0)
+    return 0;
+  return ((call.tokenPriceUsd - call.priceAtPost) / call.priceAtPost) * 100;
+}
+
+/**
+ * Unrealized PnL in USD for a callout.
+ * = positionUsd * (currentPrice / entryPrice - 1)
+ * Returns null when position size or prices are unavailable.
+ */
+function callPnlUsd(call: {
+  priceAtPost?: number;
+  tokenPriceUsd?: number;
+  positionUsd?: number;
+}): number | null {
+  if (
+    !call.priceAtPost ||
+    call.priceAtPost <= 0 ||
+    !call.tokenPriceUsd ||
+    call.tokenPriceUsd <= 0 ||
+    !call.positionUsd ||
+    call.positionUsd <= 0
+  )
+    return null;
+  const ratio = call.tokenPriceUsd / call.priceAtPost;
+  return call.positionUsd * (ratio - 1);
 }
 
 function getChainName(tokenAddress: string): string {
@@ -926,37 +1005,8 @@ watch(activeNetwork, () => {
   }
 });
 
-// Watchlist Pin Feature (Pons style with localStorage persistence)
-const pinnedTokens = ref<Set<string>>(new Set());
-
-function loadPinnedTokens() {
-  if (typeof window === 'undefined') return;
-  try {
-    const raw = localStorage.getItem('proto_pinned_tokens');
-    if (raw) {
-      pinnedTokens.value = new Set(JSON.parse(raw));
-    }
-  } catch {}
-}
-
-function togglePin(address: string) {
-  if (!address) return;
-  const lower = address.toLowerCase();
-  const next = new Set(pinnedTokens.value);
-  if (next.has(lower)) {
-    next.delete(lower);
-  } else {
-    next.add(lower);
-  }
-  pinnedTokens.value = next;
-  try {
-    localStorage.setItem('proto_pinned_tokens', JSON.stringify(Array.from(next)));
-  } catch {}
-}
-
-function isPinned(address: string): boolean {
-  return pinnedTokens.value.has(address.toLowerCase());
-}
+// Watchlist Pin Feature — shared singleton composable (FE-02)
+const { pinnedTokens, togglePin, isPinned } = usePinnedTokens();
 
 // Social Modals state
 const isShareModalOpen = ref(false);
@@ -1177,15 +1227,7 @@ async function checkCallerPosition(tokenAddress: string): Promise<void> {
   }
   checkingBalance.value = true;
   try {
-    const res = await fetch(`/api/tokens/${tokenAddress}/balance?account=${account.value}`);
-    const data = await res.json();
-    if (data.success && data.data) {
-      callerTokenBalance.value = Number(data.data.balance || 0);
-    } else {
-      callerTokenBalance.value = 0;
-    }
-  } catch {
-    callerTokenBalance.value = 0;
+    callerTokenBalance.value = await fetchCallerBalance(tokenAddress, account.value);
   } finally {
     checkingBalance.value = false;
   }
@@ -1290,20 +1332,15 @@ async function submitCallout(): Promise<void> {
     if (pendingMediaFile.value) {
       isUploadingMedia.value = true;
       try {
-        const formData = new FormData();
-        formData.append('file', pendingMediaFile.value);
-        const res = await fetch('/api/ipfs/upload', {
-          method: 'POST',
-          body: formData,
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const ipfsUri = data.data?.cid
-            ? `ipfs://${data.data.cid}`
-            : data.data?.uri || data.data?.url || '';
-          if (ipfsUri) {
-            finalImageUrl = ipfsUri;
-          }
+        const data = await uploadFile<{
+          success: boolean;
+          data?: { cid?: string; uri?: string; url?: string };
+        }>('/api/ipfs/upload', pendingMediaFile.value);
+        const ipfsUri = data.data?.cid
+          ? `ipfs://${data.data.cid}`
+          : data.data?.uri || data.data?.url || '';
+        if (ipfsUri) {
+          finalImageUrl = ipfsUri;
         }
       } catch (uploadErr) {
         console.warn('[Feed] IPFS upload on submit fallback:', uploadErr);
@@ -1376,7 +1413,6 @@ function openImage(url?: string): void {
 }
 
 onMounted(async () => {
-  loadPinnedTokens();
   await Promise.allSettled([fetchFeed(account.value || undefined), fetchTokens()]);
   if (networkTokens.value?.length > 0 && !selectedToken.value) {
     selectedToken.value = networkTokens.value[0].token;

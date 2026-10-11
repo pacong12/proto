@@ -136,6 +136,12 @@ export interface TokenCommentEntity {
   positionUsd?: number;
   supplyPercent?: number;
   profitUsd?: number;
+  /**
+   * Token price (USD) at the moment the callout was submitted.
+   * Used by the feed to display live unrealized PnL vs current price.
+   * Stored once at write time; never mutated on read.
+   */
+  priceAtPost?: number;
   callType?: 'call' | 'comment';
 }
 

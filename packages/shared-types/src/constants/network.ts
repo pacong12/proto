@@ -1,3 +1,10 @@
+/**
+ * Sentinel for a contract that has not yet been deployed on a given network.
+ * Code that reads a contract address must check for this value and skip the call.
+ * Never substitute a mainnet address for a missing deployment.
+ */
+export const UNDEPLOYED = '0x0000000000000000000000000000000000000000' as const;
+
 export interface NetworkConfig {
   chainId: number;
   name: string;
