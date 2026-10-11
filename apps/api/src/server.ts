@@ -452,8 +452,21 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   const isHealthProbe = url.pathname === '/health' || url.pathname === '/';
   // Upload endpoints get a tighter per-IP bucket to prevent OOM from concurrent large uploads.
   const isUploadPath = url.pathname === '/api/ipfs/upload';
-  const rateTier = isPublicCrawlerPath ? 'crawler' : isUploadPath ? 'upload' : 'api';
-  const maxRequests = isPublicCrawlerPath ? 600 : isUploadPath ? 10 : 120;
+  const isLiveTerminalRead = url.pathname.startsWith('/api/tokens/') && req.method === 'GET';
+  const rateTier = isPublicCrawlerPath
+    ? 'crawler'
+    : isUploadPath
+      ? 'upload'
+      : isLiveTerminalRead
+        ? 'terminal'
+        : 'api';
+  const maxRequests = isPublicCrawlerPath
+    ? 600
+    : isUploadPath
+      ? 10
+      : isLiveTerminalRead
+        ? 600
+        : 300;
   if (!isHealthProbe && !(await checkRateLimit(clientIp, maxRequests, 60_000, rateTier))) {
     return replyError('RATE_LIMIT_EXCEEDED', 'Too many requests, please slow down.', 429);
   }
@@ -725,7 +738,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const limit = Math.min(200, Math.max(1, parseInt(url.searchParams.get('limit') ?? '50', 10)));
     const offset = Math.max(0, parseInt(url.searchParams.get('offset') ?? '0', 10));
     const res = await tokenController.getTrades(address, limit, offset);
-    return replyEnvelope(res);
+    return replyEnvelope(res, {
+      'Cache-Control': 'public, max-age=1, stale-while-revalidate=2',
+    });
   }
 
   // POST /api/tokens/:address/sync — trigger immediate on-demand blockchain event polling & receipt indexing
@@ -830,7 +845,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const resolution = parseInt(url.searchParams.get('resolution') ?? '1', 10);
     const fillGaps = url.searchParams.get('fillGaps') !== 'false';
     const res = await tokenController.getCandlesticks(address, resolution, fillGaps);
-    return replyEnvelope(res);
+    return replyEnvelope(res, {
+      'Cache-Control': 'public, max-age=1, stale-while-revalidate=2',
+    });
   }
   // GET /api/tokens/:address/top-traders
   const topTradersMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/top-traders$/);
@@ -838,7 +855,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const address = topTradersMatch[1];
     const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') ?? '20', 10)));
     const res = await tokenController.getTopTraders(address, limit);
-    return replyEnvelope(res);
+    return replyEnvelope(res, {
+      'Cache-Control': 'public, max-age=1, stale-while-revalidate=2',
+    });
   }
 
   // GET /api/tokens/:address/dev-activity

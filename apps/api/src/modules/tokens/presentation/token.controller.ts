@@ -18,6 +18,28 @@ import { TokenRepositoryPort } from '../domain/ports/token.repository.port';
 import { PriceFeedPort } from '../domain/ports/price-feed.port';
 
 export class TokenController {
+  private readonly topTradersCache = new Map<
+    string,
+    {
+      data: Array<{
+        address: string;
+        buyVolumeUsd: number;
+        sellVolumeUsd: number;
+        totalTrades: number;
+        profitUsd: number;
+        isDev: boolean;
+        walletTag: string;
+        firstBuyTimestamp: number;
+        firstBuyPriceUsd: number;
+        avgCostUsd: number;
+        holdingAmountTokens: string;
+        positionStatus: 'holding' | 'partial' | 'clean_all';
+      }>;
+      timestamp: number;
+      tradeCount: number;
+    }
+  >();
+
   constructor(
     private readonly getTokensUseCase: GetTokensUseCase,
     private readonly getTokenByAddressUseCase: GetTokenByAddressUseCase,
@@ -118,9 +140,16 @@ export class TokenController {
     }
 
     try {
+      const cleanAddress = address.toLowerCase();
       const token = await this.tokenRepository.findByAddress(address as `0x${string}`);
       const devAddress = (token?.deployer || '').toLowerCase();
       const trades = await this.tokenRepository.getTrades(address as `0x${string}`, 500, 0);
+
+      // Return cached aggregation if trades count has not changed and TTL is active
+      const cached = this.topTradersCache.get(cleanAddress);
+      if (cached && cached.tradeCount === trades.length && Date.now() - cached.timestamp < 3000) {
+        return ok(cached.data.slice(0, limit));
+      }
 
       const traderMap = new Map<
         string,
@@ -218,7 +247,20 @@ export class TokenController {
         };
       });
 
-      list.sort((a, b) => b.buyVolumeUsd + b.sellVolumeUsd - (a.buyVolumeUsd + a.sellVolumeUsd));
+      list.sort((a, b) => {
+        const volA = a.buyVolumeUsd + a.sellVolumeUsd;
+        const volB = b.buyVolumeUsd + b.sellVolumeUsd;
+        if (volB !== volA) return volB - volA;
+        if (b.totalTrades !== a.totalTrades) return b.totalTrades - a.totalTrades;
+        return a.address.localeCompare(b.address);
+      });
+
+      this.topTradersCache.set(cleanAddress, {
+        data: list,
+        timestamp: Date.now(),
+        tradeCount: trades.length,
+      });
+
       return ok(list.slice(0, limit));
     } catch (error) {
       return err('FETCH_TOP_TRADERS_FAILED', (error as Error).message);

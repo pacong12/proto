@@ -2963,15 +2963,18 @@ const candlesLoading = ref(false);
 const candlestickData = ref<
   Array<{ time: number; open: number; high: number; low: number; close: number; volume: number }>
 >([]);
-let liveTimer: ReturnType<typeof setInterval> | null = null;
+let livePollTimer: ReturnType<typeof setTimeout> | null = null;
+let livePollActive = false;
 let liveAbort: AbortController | null = null;
-const LIVE_MS = 1000;
+const LIVE_POLL_INTERVAL_MS = 2000;
 
 async function refreshLive() {
+  if (livePollActive) return;
   if (typeof document !== 'undefined' && document.hidden) return;
   if (tokenLoading.value || !currentToken.value.address) return;
   const addr = currentToken.value.address;
 
+  livePollActive = true;
   liveAbort?.abort();
   liveAbort = new AbortController();
   const { signal } = liveAbort;
@@ -3011,20 +3014,33 @@ async function refreshLive() {
   } else if (activeBottomTab.value === 'holders') {
     await fetchHolders(addr, true);
   }
+
+  livePollActive = false;
+}
+
+function scheduleNextLivePoll() {
+  if (livePollTimer) {
+    clearTimeout(livePollTimer);
+    livePollTimer = null;
+  }
+  if (typeof document !== 'undefined' && document.hidden) return;
+  livePollTimer = setTimeout(async () => {
+    await refreshLive();
+    scheduleNextLivePoll();
+  }, LIVE_POLL_INTERVAL_MS);
 }
 
 function onVisibility() {
   if (typeof document === 'undefined') return;
   if (document.hidden) {
-    if (liveTimer) {
-      clearInterval(liveTimer);
-      liveTimer = null;
+    if (livePollTimer) {
+      clearTimeout(livePollTimer);
+      livePollTimer = null;
     }
     liveAbort?.abort();
+    livePollActive = false;
   } else {
-    refreshLive();
-    if (liveTimer) clearInterval(liveTimer);
-    liveTimer = setInterval(refreshLive, LIVE_MS);
+    refreshLive().then(() => scheduleNextLivePoll());
   }
 }
 
@@ -4106,19 +4122,19 @@ onMounted(async () => {
     await fetchUserTokenBalance();
   }
 
-  // Fast real-time chart & market poller (4 seconds, pauses on background tab, refreshes immediately on focus)
-  liveTimer = setInterval(refreshLive, LIVE_MS);
+  scheduleNextLivePoll();
   if (typeof document !== 'undefined') {
     document.addEventListener('visibilitychange', onVisibility);
   }
 });
 
 onUnmounted(() => {
-  if (liveTimer) {
-    clearInterval(liveTimer);
-    liveTimer = null;
+  if (livePollTimer) {
+    clearTimeout(livePollTimer);
+    livePollTimer = null;
   }
   liveAbort?.abort();
+  livePollActive = false;
   if (typeof document !== 'undefined') {
     document.removeEventListener('visibilitychange', onVisibility);
   }
