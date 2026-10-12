@@ -2271,6 +2271,12 @@ import {
   type FeedCalloutItem,
   type TradeEventEntity,
 } from '@proto/shared-types';
+import {
+  calculateCurveBuyOutput,
+  calculateCurveSellOutput,
+  calculateRealizedPnl,
+  calculateTraderTotalPnl,
+} from '@proto/math-sdk';
 
 const props = defineProps<{
   tokenAddress?: string;
@@ -3126,27 +3132,13 @@ function getVirtualReserves() {
 function computeCurveBuyOutput(ethIn: number): number {
   if (ethIn <= 0) return 0;
   const { vEth, vToken } = getVirtualReserves();
-  // 1% fee deducted before AMM calculation (matches contract: fee = ethIn * 100 / 10000)
-  const netEth = ethIn * 0.99;
-  const k = vEth * vToken;
-  const newEthReserve = vEth + netEth;
-  const newTokenReserve = k / newEthReserve;
-  const rawOut = Math.max(0, vToken - newTokenReserve);
-  // Cap to curve-available supply: contract checks balanceOf(curve) - POOL_RESERVE_SUPPLY
-  // We approximate: remaining curve supply = vToken (decreases as tokens are bought)
-  // Conservative cap: don't show more than what the virtual reserve can deliver
-  return Math.min(rawOut, vToken);
+  return calculateCurveBuyOutput(ethIn, vEth, vToken);
 }
 
 function computeCurveSellOutput(tokensIn: number): number {
   if (tokensIn <= 0) return 0;
   const { vEth, vToken } = getVirtualReserves();
-  const k = vEth * vToken;
-  const newTokenReserve = vToken + tokensIn;
-  const newEthReserve = k / newTokenReserve;
-  // 1% fee taken from gross ETH out (matches contract: feeEth = grossEth * 100 / 10000)
-  const grossEth = Math.max(0, vEth - newEthReserve);
-  return grossEth * 0.99;
+  return calculateCurveSellOutput(tokensIn, vEth, vToken);
 }
 
 const estimatedOutputAmount = computed(() => {
@@ -3359,21 +3351,13 @@ function getTraderRealizedPnl(trader: {
   positionStatus?: string;
   profitUsd?: number;
 }): { usd: number; pct: number } {
-  const buy = trader.buyVolumeUsd || 0;
-  const sell = trader.sellVolumeUsd || 0;
-  if (trader.positionStatus === 'clean_all') {
-    const usd = sell - buy;
-    const pct = buy > 0 ? (usd / buy) * 100 : 0;
-    return { usd, pct };
-  }
-  if (sell > 0) {
-    const holdingCost = parseFloat(trader.holdingAmountTokens || '0') * (trader.avgCostUsd || 0);
-    const costOfSold = Math.max(0, buy - holdingCost);
-    const usd = Math.round(sell - costOfSold);
-    const pct = costOfSold > 0 ? (usd / costOfSold) * 100 : 0;
-    return { usd, pct };
-  }
-  return { usd: 0, pct: 0 };
+  return calculateRealizedPnl({
+    buyVolumeUsd: trader.buyVolumeUsd || 0,
+    sellVolumeUsd: trader.sellVolumeUsd || 0,
+    remainingTokens: parseFloat(trader.holdingAmountTokens || '0'),
+    avgCostUsd: trader.avgCostUsd || 0,
+    isCleanAll: trader.positionStatus === 'clean_all',
+  });
 }
 
 function getTraderTotalPnl(trader: {
@@ -3382,13 +3366,11 @@ function getTraderTotalPnl(trader: {
   holdingAmountTokens?: string;
   positionStatus?: string;
 }): { usd: number; pct: number } {
-  const buy = trader.buyVolumeUsd || 0;
-  const sell = trader.sellVolumeUsd || 0;
-  const holdingUsd = getTraderHoldingUsd(trader);
-  const totalValue = sell + holdingUsd;
-  const usd = Math.round(totalValue - buy);
-  const pct = buy > 0 ? (usd / buy) * 100 : 0;
-  return { usd, pct };
+  return calculateTraderTotalPnl(
+    trader.buyVolumeUsd || 0,
+    trader.sellVolumeUsd || 0,
+    getTraderHoldingUsd(trader),
+  );
 }
 
 function getHolderBadge(addr: string): string | null {

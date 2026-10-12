@@ -849,6 +849,7 @@ import { useTokenStore } from '@/composables/useTokenStore';
 import { usePinnedTokens } from '@/composables/usePinnedTokens';
 import { useFeed, isWhaleCaller, type FeedFilterType } from '@/composables/useFeed';
 import { uploadFile } from '@/lib/api-client';
+import { calculateUnrealizedPnl } from '@proto/math-sdk';
 import {
   Search,
   Loader2,
@@ -942,9 +943,7 @@ function getChainIcon(tokenAddress: string): string {
  * Returns 0 when either price is unavailable.
  */
 function callPnlPct(call: { priceAtPost?: number; tokenPriceUsd?: number }): number {
-  if (!call.priceAtPost || call.priceAtPost <= 0 || !call.tokenPriceUsd || call.tokenPriceUsd <= 0)
-    return 0;
-  return ((call.tokenPriceUsd - call.priceAtPost) / call.priceAtPost) * 100;
+  return calculateUnrealizedPnl(call.priceAtPost ?? 0, call.tokenPriceUsd ?? 0).pnlPct;
 }
 
 /**
@@ -957,17 +956,8 @@ function callPnlUsd(call: {
   tokenPriceUsd?: number;
   positionUsd?: number;
 }): number | null {
-  if (
-    !call.priceAtPost ||
-    call.priceAtPost <= 0 ||
-    !call.tokenPriceUsd ||
-    call.tokenPriceUsd <= 0 ||
-    !call.positionUsd ||
-    call.positionUsd <= 0
-  )
-    return null;
-  const ratio = call.tokenPriceUsd / call.priceAtPost;
-  return call.positionUsd * (ratio - 1);
+  return calculateUnrealizedPnl(call.priceAtPost ?? 0, call.tokenPriceUsd ?? 0, call.positionUsd)
+    .pnlUsd;
 }
 
 function getChainName(tokenAddress: string): string {
