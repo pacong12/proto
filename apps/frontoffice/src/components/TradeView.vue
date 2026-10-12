@@ -733,206 +733,18 @@
 
         <!-- 3. Bonding Curve & Protocol Facts Card (Pons app-facts style) -->
         <div class="xl:col-start-1 xl:row-start-2 min-w-0 w-full space-y-6">
-          <div
-            class="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-xs font-mono"
-          >
-            <!-- Graduation Progress Bar Strip -->
-            <div class="space-y-2.5">
-              <div class="flex items-center justify-between text-xs">
-                <div class="flex items-center gap-2">
-                  <span class="font-bold text-foreground">
-                    {{
-                      currentToken.version === 'v2' ? 'Bonding Curve Progress' : 'Uniswap Liquidity'
-                    }}
-                  </span>
-                  <Badge
-                    :variant="currentMarketData.isGraduated ? 'default' : 'outline'"
-                    class="text-[9px] h-4 px-1.5 uppercase font-mono"
-                  >
-                    {{
-                      currentMarketData.isGraduated
-                        ? 'Graduated'
-                        : `${(currentMarketData.graduationProgress * 100).toFixed(1)}% filled`
-                    }}
-                  </Badge>
-                </div>
-                <span class="text-muted-foreground text-[11px]">
-                  {{ currentMarketData.pairedPrincipalWeth }} /
-                  {{ currentMarketData.graduationThresholdWeth }} {{ currencySymbol }}
-                </span>
-              </div>
-              <Progress
-                :model-value="currentMarketData.graduationProgress * 100"
-                class="h-2 rounded-full"
-              />
-              <div class="flex items-center justify-between text-[11px] text-muted-foreground">
-                <span
-                  v-if="currentToken.version === 'v2' && !currentMarketData.isGraduated"
-                  class="flex items-center gap-1.5 text-foreground"
-                >
-                  <Sparkles class="w-3.5 h-3.5 text-primary" />
-                  <span>Graduates to Uniswap DEX at 100%</span>
-                </span>
-                <span
-                  v-else-if="currentMarketData.isGraduated"
-                  class="flex items-center gap-1.5 text-emerald-500 font-semibold"
-                >
-                  <Check class="w-3.5 h-3.5" />
-                  <span>Liquidity locked in Uniswap DEX</span>
-                </span>
-                <span>
-                  {{
-                    currentMarketData.isGraduated
-                      ? 'Graduated'
-                      : `Need ${remainingToGraduate} ${currencySymbol}`
-                  }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Post-Graduation Pool Details Card (if graduated) -->
-            <div
-              v-if="currentMarketData.isGraduated && currentToken.poolAddress"
-              class="p-3.5 rounded-xl border border-border bg-black space-y-2 text-xs"
-            >
-              <div class="flex items-center justify-between font-bold text-foreground">
-                <span class="text-[10px] uppercase tracking-wider text-muted-foreground"
-                  >Uniswap Pool</span
-                >
-                <span class="text-emerald-500 flex items-center gap-1 text-[11px]">
-                  <Check class="w-3 h-3" />
-                  Locked
-                </span>
-              </div>
-              <div class="space-y-1 text-[11px]">
-                <div class="flex justify-between">
-                  <span class="text-muted-foreground">Pair</span>
-                  <div class="flex items-center gap-1">
-                    <span class="text-foreground">{{
-                      shortenAddress(currentToken.poolAddress, 6, 4)
-                    }}</span>
-                    <button
-                      type="button"
-                      class="text-muted-foreground hover:text-foreground cursor-pointer"
-                      title="Copy pair address"
-                      @click="copyAddress(currentToken.poolAddress)"
-                    >
-                      <Copy class="w-3 h-3" />
-                    </button>
-                    <a
-                      :href="`${explorerUrl}/address/${currentToken.poolAddress}`"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="text-muted-foreground hover:text-foreground"
-                    >
-                      <ExternalLink class="w-3 h-3" />
-                    </a>
-                  </div>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-muted-foreground">Locked {{ currencySymbol }}</span>
-                  <span class="font-bold text-foreground">
-                    {{ currentMarketData.pairedPrincipalWeth }} {{ currencySymbol }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Protocol & Token Key Figures Grid (All stats preserved!) -->
-            <div
-              class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 pt-4 border-t border-border text-xs"
-            >
-              <div>
-                <span class="text-muted-foreground text-[10px] uppercase font-semibold block"
-                  >Market Cap</span
-                >
-                <span class="font-black text-foreground text-sm block mt-0.5">
-                  ${{ formatNumberCap(currentMarketData.marketCapUsd ?? 4200) }}
-                </span>
-              </div>
-              <div>
-                <span class="text-muted-foreground text-[10px] uppercase font-semibold block"
-                  >Token Price</span
-                >
-                <span class="font-black text-foreground text-sm block mt-0.5 truncate">
-                  {{ formatPriceUsd(currentMarketData.priceUsd) }}
-                </span>
-              </div>
-              <div>
-                <span class="text-muted-foreground text-[10px] uppercase font-semibold block"
-                  >24h Volume</span
-                >
-                <span class="font-black text-foreground text-sm block mt-0.5">
-                  {{
-                    (currentMarketData.volume24hUsd ?? 0) > 0
-                      ? formatCompactUsd(currentMarketData.volume24hUsd)
-                      : '—'
-                  }}
-                </span>
-              </div>
-              <div>
-                <span class="text-muted-foreground text-[10px] uppercase font-semibold block"
-                  >Holders</span
-                >
-                <span class="font-black text-foreground text-sm block mt-0.5">
-                  {{ holders.length.toLocaleString() }}
-                </span>
-              </div>
-              <div>
-                <span class="text-muted-foreground text-[10px] uppercase font-semibold block"
-                  >Top 10 Supply</span
-                >
-                <span class="font-black text-foreground text-sm block mt-0.5">
-                  {{ top10HoldingPercent > 0 ? top10HoldingPercent.toFixed(1) + '%' : '—' }}
-                </span>
-              </div>
-              <div>
-                <span class="text-muted-foreground text-[10px] uppercase font-semibold block"
-                  >Dev Holds</span
-                >
-                <span
-                  class="font-black text-sm block mt-0.5"
-                  :class="devHoldingPercent > 10 ? 'text-amber-500' : 'text-foreground'"
-                >
-                  {{ devHoldingPercent.toFixed(1) }}%
-                </span>
-              </div>
-            </div>
-
-            <!-- Trust & Secondary Badges (Preserved) -->
-            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1 text-[11px]">
-              <div
-                class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black border border-border shrink-0"
-                title="Buy / Sell creator trading tax"
-              >
-                <span class="text-muted-foreground font-semibold">Tax:</span>
-                <span class="font-bold text-foreground">
-                  {{ (onchainTaxConfig.buyTaxBps / 100).toFixed(0) }}% /
-                  {{ (onchainTaxConfig.sellTaxBps / 100).toFixed(0) }}%
-                </span>
-              </div>
-
-              <div
-                v-if="burnedInfo.percent > 0"
-                class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black border border-border shrink-0"
-                title="Total burned supply"
-              >
-                <span class="text-muted-foreground font-semibold">Burned:</span>
-                <span class="font-bold text-rose-500">{{ burnedInfo.percent.toFixed(1) }}%</span>
-              </div>
-
-              <a
-                :href="`${explorerUrl}/token/${currentToken.address}#code`"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shrink-0 font-bold transition"
-                title="View contract source on explorer"
-              >
-                <Check class="w-3.5 h-3.5" />
-                <span>Verified Contract</span>
-              </a>
-            </div>
-          </div>
+          <BondingCurveStats
+            :current-token="currentToken"
+            :current-market-data="currentMarketData"
+            :currency-symbol="currencySymbol"
+            :explorer-url="explorerUrl"
+            :holders-count="holders.length"
+            :top10-holding-percent="top10HoldingPercent"
+            :dev-holding-percent="devHoldingPercent"
+            :onchain-tax-config="onchainTaxConfig"
+            :burned-info="burnedInfo"
+            @copy-pair="copyAddress"
+          />
         </div>
 
         <!-- 4. Bottom Tabs Card (Mobile: 4th; Desktop: Col 1, Row 3) -->
@@ -1049,7 +861,7 @@
                           :to="'/' + getUserIdentity(cmt.authorAddress).name"
                           class="text-xs font-mono font-bold text-foreground hover:underline"
                         >
-                          {{ truncateAddress(cmt.authorAddress) }}
+                          {{ getUserIdentity(cmt.authorAddress).displayName }}
                         </RouterLink>
                         <Badge
                           v-if="
@@ -1204,560 +1016,36 @@
 
               <!-- Tab: Live Trades -->
               <TabsContent value="trades" class="mt-0 max-h-[340px] overflow-y-auto">
-                <!-- Order flow filters & stats (lunch.fun style) -->
-                <div
-                  v-if="trades.length > 0"
-                  class="flex flex-wrap items-center justify-between gap-2 p-2.5 sm:px-4 border-b border-border bg-black text-xs font-mono"
-                >
-                  <div class="flex items-center gap-1.5">
-                    <button
-                      v-for="flt in [
-                        { key: 'all', label: `All (${trades.length})` },
-                        { key: 'buy', label: `Buys (${orderFlowStats.buyCount})` },
-                        { key: 'sell', label: `Sells (${orderFlowStats.sellCount})` },
-                      ]"
-                      :key="flt.key"
-                      type="button"
-                      class="px-2 py-0.5 rounded-lg text-[11px] font-bold transition cursor-pointer"
-                      :class="
-                        tradeFilter === flt.key
-                          ? 'bg-foreground text-background shadow-2xs'
-                          : 'bg-black border border-border hover:bg-zinc-900 text-muted-foreground hover:text-foreground'
-                      "
-                      @click="
-                        tradeFilter = flt.key as any;
-                        tradesPage = 1;
-                      "
-                    >
-                      {{ flt.label }}
-                    </button>
-                  </div>
-                  <div class="text-[11px] font-bold">
-                    <span class="text-muted-foreground">Net: </span>
-                    <span
-                      :class="
-                        orderFlowStats.netVolumeUsd >= 0 ? 'text-emerald-500' : 'text-rose-500'
-                      "
-                    >
-                      {{ orderFlowStats.netVolumeUsd >= 0 ? '+' : '' }}${{
-                        Math.abs(orderFlowStats.netVolumeUsd).toLocaleString(undefined, {
-                          maximumFractionDigits: 1,
-                        })
-                      }}
-                    </span>
-                  </div>
-                </div>
-
-                <div
-                  v-if="tradesLoading && trades.length === 0"
-                  class="py-16 text-center text-muted-foreground"
-                >
-                  <Loader2 class="w-4 h-4 animate-spin mx-auto mb-2 text-emerald-500" />
-                  <span class="text-xs">Loading trades...</span>
-                </div>
-                <div
-                  v-else-if="trades.length === 0"
-                  class="py-16 text-center text-muted-foreground"
-                >
-                  <p class="text-xs font-mono">No trades recorded yet.</p>
-                </div>
-                <div
-                  v-else-if="filteredTrades.length === 0"
-                  class="py-16 text-center text-muted-foreground"
-                >
-                  <p class="text-xs font-mono">No trades match this filter.</p>
-                </div>
-                <div v-else class="overflow-x-auto rounded-2xl border border-border bg-black">
-                  <Table class="w-full text-left text-xs font-mono min-w-[620px] bg-black">
-                    <TableHeader>
-                      <TableRow
-                        class="border-b border-border text-muted-foreground bg-black hover:bg-black"
-                      >
-                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black"
-                          >Time</TableHead
-                        >
-                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black"
-                          >Type</TableHead
-                        >
-                        <TableHead
-                          class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
-                          >Total (USD)</TableHead
-                        >
-                        <TableHead
-                          class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
-                          >{{ currencySymbol }}</TableHead
-                        >
-                        <TableHead
-                          class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
-                          >Amount</TableHead
-                        >
-                        <TableHead
-                          class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
-                          >Price</TableHead
-                        >
-                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black"
-                          >Trader</TableHead
-                        >
-                        <TableHead
-                          class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
-                          >Tx</TableHead
-                        >
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow
-                        v-for="trade in paginatedTrades"
-                        :key="trade.id || trade.transactionHash"
-                        class="hover:bg-zinc-900/40 transition-colors bg-black"
-                      >
-                        <!-- 1. Time / Age -->
-                        <TableCell
-                          class="py-2 px-3 whitespace-nowrap text-muted-foreground text-[11px]"
-                        >
-                          {{ formatRelativeTime(trade.timestamp) }}
-                        </TableCell>
-
-                        <!-- 2. Type (GMGN Style BUY / SELL pill) -->
-                        <TableCell class="py-2 px-3 whitespace-nowrap">
-                          <span
-                            class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider border select-none"
-                            :class="
-                              trade.isBuy
-                                ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                                : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
-                            "
-                          >
-                            {{ trade.isBuy ? 'BUY' : 'SELL' }}
-                          </span>
-                        </TableCell>
-
-                        <!-- 3. Total (USD) -->
-                        <TableCell
-                          class="py-2 px-3 whitespace-nowrap text-right font-mono font-bold"
-                          :class="trade.isBuy ? 'text-emerald-400' : 'text-rose-400'"
-                        >
-                          ${{
-                            Math.max(0.01, getTradeVolumeUsd(trade)).toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })
-                          }}
-                        </TableCell>
-
-                        <!-- 4. Native Volume (ETH / USDG) -->
-                        <TableCell
-                          class="py-2 px-3 whitespace-nowrap text-right text-muted-foreground font-mono"
-                        >
-                          {{ parseFloat(trade.wethAmount || '0').toFixed(4) }}
-                        </TableCell>
-
-                        <!-- 5. Token Amount -->
-                        <TableCell
-                          class="py-2 px-3 whitespace-nowrap text-right text-foreground font-medium font-mono"
-                        >
-                          {{ formatTokenNumber(trade.tokenAmount) }}
-                        </TableCell>
-
-                        <!-- 6. Price (DEX Subscript notation) -->
-                        <TableCell
-                          class="py-2 px-3 whitespace-nowrap text-right text-foreground font-mono"
-                        >
-                          ${{ formatSubscriptPrice(trade.priceUsd) }}
-                        </TableCell>
-
-                        <!-- 7. Trader (With Jazzicon + Profile Link + GMGN Tags) -->
-                        <TableCell class="py-2 px-3 whitespace-nowrap">
-                          <div class="flex items-center gap-1.5 text-foreground">
-                            <Jazzicon
-                              :address="trade.trader"
-                              :size="14"
-                              class="shrink-0 rounded-full"
-                            />
-                            <RouterLink
-                              :to="'/' + getUserIdentity(trade.trader).name"
-                              class="text-foreground font-medium hover:underline truncate max-w-[120px] sm:max-w-none"
-                            >
-                              {{ truncateAddress(trade.trader) }}
-                            </RouterLink>
-                            <TraderTagBadge
-                              v-if="
-                                trade.trader.toLowerCase() === currentToken.deployer?.toLowerCase()
-                              "
-                              tag="dev"
-                              size="sm"
-                            />
-                            <TraderTagBadge
-                              v-else-if="getTradeVolumeUsd(trade) >= 2000"
-                              tag="whale"
-                              size="sm"
-                            />
-                            <button
-                              type="button"
-                              aria-label="Copy trader address"
-                              class="text-muted-foreground hover:text-foreground transition cursor-pointer"
-                              @click="copyText(trade.trader, trade.id + '-trader')"
-                            >
-                              <Check
-                                v-if="copiedId === trade.id + '-trader'"
-                                class="w-3 h-3 text-emerald-400"
-                              />
-                              <Copy v-else class="w-3 h-3" />
-                            </button>
-                          </div>
-                        </TableCell>
-
-                        <!-- 8. Tx -->
-                        <TableCell class="py-2 px-3 whitespace-nowrap text-right">
-                          <a
-                            :href="`${explorerUrl}/tx/${trade.transactionHash}`"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label="View transaction on explorer"
-                            class="text-muted-foreground hover:text-foreground transition-colors inline-flex items-center"
-                          >
-                            <ExternalLink class="w-3 h-3" />
-                          </a>
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-
-                  <!-- Trades Pagination -->
-                  <div
-                    v-if="filteredTrades.length > tradesPageSize"
-                    class="py-3 border-t border-border flex justify-center bg-black"
-                  >
-                    <Pagination
-                      :total="filteredTrades.length"
-                      :items-per-page="tradesPageSize"
-                      :page="tradesPage"
-                      @update:page="tradesPage = $event"
-                    />
-                  </div>
-                </div>
+                <TradesTable
+                  :trades="trades"
+                  :loading="tradesLoading"
+                  :currency-symbol="currencySymbol"
+                  :deployer="currentToken.deployer"
+                  :quote-asset-price-usd="quoteAssetPriceUsd"
+                  :explorer-url="explorerUrl"
+                />
               </TabsContent>
 
               <!-- Tab: Top Traders -->
               <TabsContent value="top-traders" class="mt-0 max-h-[340px] overflow-y-auto">
-                <div
-                  v-if="topTradersLoading && topTraders.length === 0"
-                  class="py-16 text-center text-muted-foreground"
-                >
-                  <Loader2 class="w-4 h-4 animate-spin mx-auto mb-2 text-emerald-500" />
-                  <span class="text-xs">Loading traders...</span>
-                </div>
-                <div
-                  v-else-if="topTraders.length === 0"
-                  class="py-16 text-center text-muted-foreground"
-                >
-                  <p class="text-xs font-mono">No trading activity recorded yet.</p>
-                </div>
-                <div v-else class="overflow-x-auto rounded-2xl border border-border bg-black">
-                  <Table class="w-full text-left text-xs font-mono min-w-[640px] bg-black">
-                    <TableHeader>
-                      <TableRow
-                        class="border-b border-border text-muted-foreground bg-black hover:bg-black"
-                      >
-                        <TableHead
-                          class="py-2.5 px-3 font-semibold w-10 text-muted-foreground bg-black"
-                          >#</TableHead
-                        >
-                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black"
-                          >Trader</TableHead
-                        >
-                        <TableHead
-                          class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
-                          >Bought</TableHead
-                        >
-                        <TableHead
-                          class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
-                          >Sold</TableHead
-                        >
-                        <TableHead
-                          class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
-                          >Holding</TableHead
-                        >
-                        <TableHead
-                          class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
-                          >Realized PnL</TableHead
-                        >
-                        <TableHead
-                          class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
-                          >Total PnL</TableHead
-                        >
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow
-                        v-for="(trader, idx) in paginatedTopTraders"
-                        :key="trader.address"
-                        class="hover:bg-zinc-900/40 transition-colors bg-black"
-                      >
-                        <TableCell class="py-2.5 px-3 text-muted-foreground font-bold">
-                          #{{ (topTradersPage - 1) * topTradersPageSize + idx + 1 }}
-                        </TableCell>
-                        <TableCell class="py-2.5 px-3">
-                          <div class="flex items-center gap-1.5 flex-wrap">
-                            <Jazzicon
-                              :address="trader.address"
-                              :size="16"
-                              class="shrink-0 rounded-full"
-                            />
-                            <RouterLink
-                              :to="'/' + getUserIdentity(trader.address).name"
-                              class="text-foreground font-medium hover:underline truncate max-w-[130px] sm:max-w-none"
-                            >
-                              {{ truncateAddress(trader.address) }}
-                            </RouterLink>
-                            <button
-                              type="button"
-                              aria-label="Copy trader address"
-                              class="text-muted-foreground hover:text-foreground transition cursor-pointer"
-                              @click="copyText(trader.address, `trader-${trader.address}`)"
-                            >
-                              <Copy class="w-3 h-3" />
-                            </button>
-
-                            <!-- GMGN-style Tag Icons directly next to name / address -->
-                            <div class="flex items-center gap-1 ml-0.5">
-                              <TraderTagBadge :tag="getTraderRoleTag(trader)" size="sm" />
-                              <TraderTagBadge
-                                :tag="getTraderPositionTag(trader.positionStatus)"
-                                size="sm"
-                              />
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell class="py-2.5 px-3 text-right">
-                          <span class="text-foreground font-medium font-mono">
-                            ${{ trader.buyVolumeUsd.toLocaleString() }}
-                          </span>
-                        </TableCell>
-                        <TableCell class="py-2.5 px-3 text-right">
-                          <span class="text-muted-foreground font-medium font-mono">
-                            ${{ trader.sellVolumeUsd.toLocaleString() }}
-                          </span>
-                        </TableCell>
-                        <TableCell class="py-2.5 px-3 text-right">
-                          <div class="space-y-0.5 font-mono">
-                            <span class="text-foreground font-bold block">
-                              ${{ Math.round(getTraderHoldingUsd(trader)).toLocaleString() }}
-                            </span>
-                            <span class="text-[10px] text-muted-foreground block">
-                              {{ formatTokenNumber(trader.holdingAmountTokens || '0') }}
-                              {{ currentToken.symbol }}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell class="py-2.5 px-3 text-right">
-                          <div class="space-y-0.5 font-mono">
-                            <span
-                              class="font-bold block"
-                              :class="
-                                getTraderRealizedPnl(trader).usd >= 0
-                                  ? 'text-emerald-500'
-                                  : 'text-rose-500'
-                              "
-                            >
-                              {{ getTraderRealizedPnl(trader).usd >= 0 ? '+' : '-' }}${{
-                                Math.abs(getTraderRealizedPnl(trader).usd).toLocaleString()
-                              }}
-                            </span>
-                            <span
-                              class="text-[10px] block"
-                              :class="
-                                getTraderRealizedPnl(trader).pct >= 0
-                                  ? 'text-emerald-500'
-                                  : 'text-rose-500'
-                              "
-                            >
-                              {{ getTraderRealizedPnl(trader).pct >= 0 ? '+' : ''
-                              }}{{ getTraderRealizedPnl(trader).pct.toFixed(1) }}%
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell class="py-2.5 px-3 text-right">
-                          <div class="space-y-0.5 font-mono">
-                            <span
-                              class="font-black text-sm block"
-                              :class="
-                                getTraderTotalPnl(trader).usd >= 0
-                                  ? 'text-emerald-500'
-                                  : 'text-rose-500'
-                              "
-                            >
-                              {{ getTraderTotalPnl(trader).usd >= 0 ? '+' : '-' }}${{
-                                Math.abs(getTraderTotalPnl(trader).usd).toLocaleString()
-                              }}
-                            </span>
-                            <span
-                              class="text-[10px] font-bold block"
-                              :class="
-                                getTraderTotalPnl(trader).pct >= 0
-                                  ? 'text-emerald-500'
-                                  : 'text-rose-500'
-                              "
-                            >
-                              {{ getTraderTotalPnl(trader).pct >= 0 ? '+' : ''
-                              }}{{ getTraderTotalPnl(trader).pct.toFixed(1) }}%
-                            </span>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-
-                  <!-- Top Traders Pagination -->
-                  <div
-                    v-if="topTraders.length > topTradersPageSize"
-                    class="py-3 border-t border-border flex justify-center bg-black"
-                  >
-                    <Pagination
-                      :total="topTraders.length"
-                      :items-per-page="topTradersPageSize"
-                      :page="topTradersPage"
-                      @update:page="topTradersPage = $event"
-                    />
-                  </div>
-                </div>
+                <TopTradersTable
+                  :top-traders="topTraders"
+                  :loading="topTradersLoading"
+                  :token-symbol="currentToken.symbol"
+                  :token-price-usd="currentMarketData.priceUsd"
+                />
               </TabsContent>
 
               <!-- Tab: Holders -->
               <TabsContent value="holders" class="mt-0 max-h-[340px] overflow-y-auto">
-                <div
-                  v-if="holdersLoading && holders.length === 0"
-                  class="py-16 text-center text-muted-foreground"
-                >
-                  <Loader2 class="w-4 h-4 animate-spin mx-auto mb-2 text-emerald-500" />
-                  <span class="text-xs">Loading holders...</span>
-                </div>
-                <div
-                  v-else-if="holders.length === 0"
-                  class="py-16 text-center text-muted-foreground"
-                >
-                  <p class="text-xs font-mono">No holder data available.</p>
-                </div>
-                <div v-else class="overflow-x-auto rounded-2xl border border-border bg-black">
-                  <Table class="w-full text-left text-xs font-mono min-w-[500px] bg-black">
-                    <TableHeader>
-                      <TableRow
-                        class="border-b border-border text-muted-foreground bg-black hover:bg-black"
-                      >
-                        <TableHead
-                          class="py-2.5 px-3 font-semibold w-10 text-muted-foreground bg-black"
-                          >#</TableHead
-                        >
-                        <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black"
-                          >Holder</TableHead
-                        >
-                        <TableHead
-                          class="py-2.5 px-3 font-semibold w-44 text-muted-foreground bg-black"
-                          >Share</TableHead
-                        >
-                        <TableHead
-                          class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
-                          >Balance</TableHead
-                        >
-                        <TableHead
-                          class="py-2.5 px-3 font-semibold text-right w-8 text-muted-foreground bg-black"
-                        ></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow
-                        v-for="(holder, idx) in paginatedHolders"
-                        :key="holder.address"
-                        class="hover:bg-zinc-900/40 transition-colors bg-black"
-                      >
-                        <TableCell class="py-2.5 px-3 text-muted-foreground font-bold">
-                          #{{ (holdersPage - 1) * holdersPageSize + idx + 1 }}
-                        </TableCell>
-                        <TableCell class="py-2.5 px-3 whitespace-nowrap">
-                          <div class="flex items-center gap-1.5">
-                            <Jazzicon :address="holder.address" :size="14" />
-                            <RouterLink
-                              :to="'/' + getUserIdentity(holder.address).name"
-                              class="text-foreground font-medium hover:underline"
-                            >
-                              {{ truncateAddress(holder.address) }}
-                            </RouterLink>
-                            <button
-                              type="button"
-                              aria-label="Copy holder address"
-                              class="text-muted-foreground hover:text-foreground transition cursor-pointer"
-                              @click="copyText(holder.address, 'holder-' + idx)"
-                            >
-                              <Check
-                                v-if="copiedId === 'holder-' + idx"
-                                class="w-3 h-3 text-emerald-400"
-                              />
-                              <Copy v-else class="w-3 h-3" />
-                            </button>
-                            <TraderTagBadge
-                              v-if="
-                                holder.address.toLowerCase() ===
-                                currentToken.deployer?.toLowerCase()
-                              "
-                              tag="dev"
-                              size="sm"
-                            />
-                            <TraderTagBadge
-                              v-else-if="
-                                holder.percent >= 3.0 &&
-                                holder.address.toLowerCase() !==
-                                  ROBINHOOD_CHAIN.contracts.locker.toLowerCase()
-                              "
-                              tag="whale"
-                              size="sm"
-                            />
-                            <Badge
-                              v-else-if="getHolderBadge(holder.address)"
-                              variant="outline"
-                              class="text-[9px] px-1.5 py-0 h-4 border-border text-muted-foreground font-mono"
-                            >
-                              {{ getHolderBadge(holder.address) }}
-                            </Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell class="py-2.5 px-3 whitespace-nowrap">
-                          <div class="flex items-center gap-2">
-                            <span class="text-foreground font-semibold w-12 text-right shrink-0">
-                              {{ holder.percent.toFixed(2) }}%
-                            </span>
-                            <Progress :model-value="holder.percent" class="h-1.5 w-28" />
-                          </div>
-                        </TableCell>
-                        <TableCell class="py-2.5 px-3 whitespace-nowrap text-right text-foreground">
-                          {{ formatTokenNumber(holder.balance) }}
-                        </TableCell>
-                        <TableCell class="py-2.5 px-3 whitespace-nowrap text-right">
-                          <a
-                            :href="`${explorerUrl}/address/${holder.address}`"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label="View holder on explorer"
-                            class="text-muted-foreground hover:text-foreground transition-colors inline-flex items-center"
-                          >
-                            <ExternalLink class="w-3 h-3" />
-                          </a>
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-
-                  <!-- Holders Pagination -->
-                  <div
-                    v-if="holders.length > holdersPageSize"
-                    class="py-3 border-t border-border flex justify-center bg-black"
-                  >
-                    <Pagination
-                      :total="holders.length"
-                      :items-per-page="holdersPageSize"
-                      :page="holdersPage"
-                      @update:page="holdersPage = $event"
-                    />
-                  </div>
-                </div>
+                <HoldersTable
+                  :holders="holders"
+                  :loading="holdersLoading"
+                  :deployer="currentToken.deployer"
+                  :locker-address="ROBINHOOD_CHAIN.contracts.locker"
+                  :pool-address="currentToken.poolAddress"
+                  :explorer-url="explorerUrl"
+                />
               </TabsContent>
 
               <!-- Tab: About -->
@@ -2248,6 +1536,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { TradingChart } from '@/components/ui/chart';
 import { CashtagText, ShareModal, ThreadModal } from '@/components/feed';
+import { TradesTable, TopTradersTable, HoldersTable, BondingCurveStats } from './trade';
 import {
   shortenAddress,
   formatTokenNumber,
@@ -2850,40 +2139,6 @@ const activeBuyPresets = computed(() => {
 // Trades
 const trades = ref<LiveTrade[]>([]);
 const tradesLoading = ref(false);
-const tradeFilter = ref<'all' | 'buy' | 'sell'>('all');
-
-const filteredTrades = computed(() => {
-  if (tradeFilter.value === 'all') return trades.value;
-  return trades.value.filter((t) => (tradeFilter.value === 'buy' ? t.isBuy : !t.isBuy));
-});
-
-const orderFlowStats = computed(() => {
-  let buyCount = 0;
-  let sellCount = 0;
-  let buyVolume = 0;
-  let sellVolume = 0;
-
-  for (const t of trades.value) {
-    const isB = t.isBuy;
-    const val = Number(t.wethAmount || 0);
-    if (isB) {
-      buyCount++;
-      buyVolume += val;
-    } else {
-      sellCount++;
-      sellVolume += val;
-    }
-  }
-
-  const netVolumeEth = buyVolume - sellVolume;
-  const netVolumeUsd = netVolumeEth * (quoteAssetPriceUsd.value || 1);
-
-  return {
-    buyCount,
-    sellCount,
-    netVolumeUsd,
-  };
-});
 
 const userTokenBalance = ref<bigint>(0n);
 const isTokenBalanceLoading = ref(false);
@@ -2897,28 +2152,7 @@ const customSlippageInput = ref('');
 const callouts = ref<TokenCommentEntity[]>([]);
 const calloutsLoading = ref(false);
 
-// Pagination state for bottom tabs (Trades, Top Traders, Holders, Callouts)
-const tradesPage = ref(1);
-const tradesPageSize = 10;
-const paginatedTrades = computed(() => {
-  const start = (tradesPage.value - 1) * tradesPageSize;
-  return filteredTrades.value.slice(start, start + tradesPageSize);
-});
-
-const topTradersPage = ref(1);
-const topTradersPageSize = 10;
-const paginatedTopTraders = computed(() => {
-  const start = (topTradersPage.value - 1) * topTradersPageSize;
-  return topTraders.value.slice(start, start + topTradersPageSize);
-});
-
-const holdersPage = ref(1);
-const holdersPageSize = 10;
-const paginatedHolders = computed(() => {
-  const start = (holdersPage.value - 1) * holdersPageSize;
-  return holders.value.slice(start, start + holdersPageSize);
-});
-
+// Pagination state for Callouts bottom tab
 const calloutsPage = ref(1);
 const calloutsPageSize = 10;
 const paginatedCallouts = computed(() => {
@@ -2926,19 +2160,6 @@ const paginatedCallouts = computed(() => {
   return callouts.value.slice(start, start + calloutsPageSize);
 });
 
-// Reset current page when lists update and exceed max pages
-watch(filteredTrades, (list) => {
-  const max = Math.max(1, Math.ceil(list.length / tradesPageSize));
-  if (tradesPage.value > max) tradesPage.value = 1;
-});
-watch(topTraders, (list) => {
-  const max = Math.max(1, Math.ceil(list.length / topTradersPageSize));
-  if (topTradersPage.value > max) topTradersPage.value = 1;
-});
-watch(holders, (list) => {
-  const max = Math.max(1, Math.ceil(list.length / holdersPageSize));
-  if (holdersPage.value > max) holdersPage.value = 1;
-});
 watch(callouts, (list) => {
   const max = Math.max(1, Math.ceil(list.length / calloutsPageSize));
   if (calloutsPage.value > max) calloutsPage.value = 1;
@@ -3297,88 +2518,6 @@ function formatTokenBalance(wei: bigint): string {
   if (val >= 1) return val.toFixed(2);
   if (val >= 0.0001) return val.toFixed(4);
   return val.toFixed(6);
-}
-function getTradeVolumeUsd(trade: LiveTrade): number {
-  const byTokens = parseFloat(trade.tokenAmount || '0') * (trade.priceUsd || 0);
-  if (byTokens > 0) return byTokens;
-  const ethRate = quoteAssetPriceUsd.value || 2700;
-  return parseFloat(trade.wethAmount || '0') * ethRate;
-}
-
-function truncateAddress(addr: string): string {
-  if (!addr) return '';
-  return getUserIdentity(addr).displayName;
-}
-
-function getTraderRoleTag(trader: {
-  isDev?: boolean;
-  walletTag?: string;
-  buyVolumeUsd?: number;
-  firstBuyTimestamp?: number;
-}): TraderTagType {
-  if (trader.isDev) return 'dev';
-  if ((trader.buyVolumeUsd ?? 0) >= 2000 || trader.walletTag === 'whale') return 'whale';
-  if (trader.walletTag === 'sniper') return 'sniper';
-  if (trader.walletTag === 'kol') return 'kol';
-  if (trader.walletTag === 'bundled') return 'bundled';
-  if (trader.walletTag === 'first_buy') return 'first_buy';
-  if (trader.walletTag === 'smart_degen' || trader.walletTag === 'smart_money')
-    return 'smart_money';
-  return 'smart_money';
-}
-
-function getTraderPositionTag(status?: string): TraderTagType {
-  if (status === 'clean_all') return 'sell_all';
-  if (status === 'partial') return 'sell_partial';
-  return 'buy_more';
-}
-
-function getTraderHoldingUsd(trader: {
-  holdingAmountTokens?: string;
-  positionStatus?: string;
-}): number {
-  if (trader.positionStatus === 'clean_all') return 0;
-  const tokens = parseFloat(trader.holdingAmountTokens || '0');
-  const price = currentMarketData.value.priceUsd || 0;
-  return tokens * price;
-}
-
-function getTraderRealizedPnl(trader: {
-  buyVolumeUsd?: number;
-  sellVolumeUsd?: number;
-  avgCostUsd?: number;
-  holdingAmountTokens?: string;
-  positionStatus?: string;
-  profitUsd?: number;
-}): { usd: number; pct: number } {
-  return calculateRealizedPnl({
-    buyVolumeUsd: trader.buyVolumeUsd || 0,
-    sellVolumeUsd: trader.sellVolumeUsd || 0,
-    remainingTokens: parseFloat(trader.holdingAmountTokens || '0'),
-    avgCostUsd: trader.avgCostUsd || 0,
-    isCleanAll: trader.positionStatus === 'clean_all',
-  });
-}
-
-function getTraderTotalPnl(trader: {
-  buyVolumeUsd?: number;
-  sellVolumeUsd?: number;
-  holdingAmountTokens?: string;
-  positionStatus?: string;
-}): { usd: number; pct: number } {
-  return calculateTraderTotalPnl(
-    trader.buyVolumeUsd || 0,
-    trader.sellVolumeUsd || 0,
-    getTraderHoldingUsd(trader),
-  );
-}
-
-function getHolderBadge(addr: string): string | null {
-  const lower = addr.toLowerCase();
-  if (lower === ROBINHOOD_CHAIN.contracts.locker.toLowerCase()) return 'LP Locker';
-  if (lower === currentToken.value.deployer?.toLowerCase()) return 'Creator';
-  if (lower === currentToken.value.poolAddress?.toLowerCase()) return 'Pool';
-  return null;
 }
 
 function copyText(text: string, id: string) {
