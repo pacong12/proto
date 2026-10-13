@@ -196,16 +196,18 @@ contract BondingCurve {
         if (recipient == address(0)) revert ZeroAddress();
 
         (tokensOut, ) = getAmountOutBuy(msg.value);
-        if (tokensOut < minTokensOut) revert InsufficientOutput();
 
         uint256 grossTokensOut = tokensOut;
         uint256 snipeFeeTokens = 0;
-        uint256 snipeBps = currentSnipeTaxBps();
+        // CRIT-01 fix: Factory calling buyFor during launchTokenV2 executes the creator's
+        // legitimate initial buy. Exempt factory calls from the 99% decaying anti-snipe tax.
+        // Third-party callers (snipers/traders) cannot impersonate the factory.
+        uint256 snipeBps = (msg.sender == factory) ? 0 : currentSnipeTaxBps();
         if (snipeBps > 0) {
             snipeFeeTokens = (grossTokensOut * snipeBps) / BPS;
             tokensOut = grossTokensOut - snipeFeeTokens;
         }
-
+        if (tokensOut < minTokensOut) revert InsufficientOutput();
         uint256 fee = (msg.value * 100) / BPS;
         uint256 netEth = msg.value - fee;
 

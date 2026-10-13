@@ -129,15 +129,20 @@ contract HolderFeeDistributor {
 
 
     /**
-     * @notice Snapshot the caller's current balance into the reward accounting system.
-     * @dev Allows a holder to register their balance before rewards are deposited,
-     *      ensuring they will earn from subsequent deposits. Without calling checkpoint
-     *      (or claimReward), a holder with snapshotBalance == 0 earns nothing from
-     *      historical accumulation — only future deposits after their first checkpoint.
-     *      Any address may checkpoint any holder; snapshotting another holder is safe
-     *      because it can only increase their tracked balance, never decrease it.
+     * @notice Snapshot caller's balance into the reward accounting system.
+     */
+    function checkpoint(address token) external nonReentrant {
+        _updateReward(token, msg.sender);
+    }
+
+    /**
+     * @notice Snapshot specified holder's balance into reward accounting.
+     * @dev CRIT-02 fix: restricted to the holder themselves or the locker contract.
+     *      Unrestricted third-party checkpointing allowed attackers to force-checkpoint
+     *      a holder whose balance had temporarily dropped, wiping their accrued rewards.
      */
     function checkpoint(address token, address holder) external nonReentrant {
+        if (msg.sender != holder && msg.sender != locker) revert Unauthorized();
         _updateReward(token, holder);
     }
     /**
