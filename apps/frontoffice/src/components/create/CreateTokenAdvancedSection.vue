@@ -318,8 +318,8 @@
               <div
                 class="flex items-center justify-between text-[10px] text-muted-foreground font-mono"
               >
-                <span>max {{ maxCreator }}%: the other shares leave this much</span>
-                <span>{{ revenueSplit.creator }}/{{ maxCreator }}%</span>
+                <span>Creator revenue share</span>
+                <span>{{ revenueSplit.creator }}%</span>
               </div>
             </div>
 
@@ -348,8 +348,8 @@
               <div
                 class="flex items-center justify-between text-[10px] text-muted-foreground font-mono"
               >
-                <span>max {{ maxBuyback }}%: the other shares leave this much</span>
-                <span>{{ revenueSplit.buyback }}/{{ maxBuyback }}%</span>
+                <span>Deflationary buyback share</span>
+                <span>{{ revenueSplit.buyback }}%</span>
               </div>
             </div>
 
@@ -378,8 +378,8 @@
               <div
                 class="flex items-center justify-between text-[10px] text-muted-foreground font-mono"
               >
-                <span>max {{ maxHolders }}%: the other shares leave this much</span>
-                <span>{{ revenueSplit.holders }}/{{ maxHolders }}%</span>
+                <span>Holder dividend share</span>
+                <span>{{ revenueSplit.holders }}%</span>
               </div>
             </div>
 
@@ -408,8 +408,8 @@
               <div
                 class="flex items-center justify-between text-[10px] text-muted-foreground font-mono"
               >
-                <span>max {{ maxGrowth }}%: the other shares leave this much</span>
-                <span>{{ revenueSplit.growth }}/{{ maxGrowth }}%</span>
+                <span>Liquidity injection share</span>
+                <span>{{ revenueSplit.growth }}%</span>
               </div>
             </div>
 
@@ -467,9 +467,8 @@ import { shortenAddress } from '@/lib/utils';
 import {
   type RevenueSplit,
   calculateTotalSplit,
-  calculateMaxShare,
-  clampShare,
   autoBalanceSplit,
+  adjustShareDynamically,
   calculateDonutSegments,
 } from '@proto/math-sdk';
 
@@ -506,11 +505,6 @@ const totalSplit = computed(() => calculateTotalSplit(props.revenueSplit));
 
 const donutData = computed(() => calculateDonutSegments(props.revenueSplit, 38));
 
-const maxCreator = computed(() => calculateMaxShare(props.revenueSplit, 'creator'));
-const maxBuyback = computed(() => calculateMaxShare(props.revenueSplit, 'buyback'));
-const maxHolders = computed(() => calculateMaxShare(props.revenueSplit, 'holders'));
-const maxGrowth = computed(() => calculateMaxShare(props.revenueSplit, 'growth'));
-
 function isPreset(c: number, b: number, h: number, g: number): boolean {
   const s = props.revenueSplit;
   return s.creator === c && s.buyback === b && s.holders === h && s.growth === g;
@@ -526,8 +520,7 @@ function handleAutoBalance() {
 
 function updatePillar(key: keyof RevenueSplit, val: unknown) {
   const requested = Math.round(Number(val) || 0);
-  const next = { ...props.revenueSplit };
-  next[key] = clampShare(requested, props.revenueSplit, key);
+  const next = adjustShareDynamically(props.revenueSplit, key, requested);
   emit('update:revenueSplit', next);
 }
 </script>

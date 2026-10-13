@@ -275,19 +275,22 @@ export function useLaunchpad() {
         launchStep.value = 'success';
         launchTokenAddress.value = tokenAddr;
 
+        const syncPayload = {
+          txHash: hash,
+          chain: network.chainId,
+          taxConfig: {
+            buyTaxBps: taxPercentToBps(params.buyTaxPercent || 0),
+            sellTaxBps: taxPercentToBps(params.sellTaxPercent || 0),
+            taxRecipient: (params.creatorTaxWallet as `0x${string}`) || account,
+            revenueSplit: params.revenueSplit,
+          },
+        };
+
         try {
           await apiFetch<unknown>(`/api/tokens/${tokenAddr}/sync`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              txHash: hash,
-              taxConfig: {
-                buyTaxBps: taxPercentToBps(params.buyTaxPercent || 0),
-                sellTaxBps: taxPercentToBps(params.sellTaxPercent || 0),
-                taxRecipient: (params.creatorTaxWallet as `0x${string}`) || account,
-                revenueSplit: params.revenueSplit,
-              },
-            }),
+            body: JSON.stringify(syncPayload),
           });
         } catch {
           /* backend sync is best-effort */
@@ -319,6 +322,26 @@ export function useLaunchpad() {
             const curveAddr = decoded.args.curve as `0x${string}`;
             launchStep.value = 'success';
             launchTokenAddress.value = tokenAddr;
+
+            try {
+              await apiFetch<unknown>(`/api/tokens/${tokenAddr}/sync`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  txHash: hash,
+                  chain: network.chainId,
+                  taxConfig: {
+                    buyTaxBps: taxPercentToBps(params.buyTaxPercent || 0),
+                    sellTaxBps: taxPercentToBps(params.sellTaxPercent || 0),
+                    taxRecipient: (params.creatorTaxWallet as `0x${string}`) || account,
+                    revenueSplit: params.revenueSplit,
+                  },
+                }),
+              });
+            } catch {
+              /* backend sync is best-effort */
+            }
+
             return {
               tokenAddress: tokenAddr,
               curveAddress: curveAddr,

@@ -321,7 +321,7 @@
               isUploadingIpfs ||
               (isConnected &&
                 isCorrectNetwork &&
-                (!form.name.trim() || !form.symbol.trim() || totalSplit !== 100))
+                (!form.name.trim() || !form.symbol.trim() || (hasTax && totalSplit !== 100)))
             "
             class="w-full font-bold py-3.5 text-base h-12 rounded-xl shadow-md cursor-pointer transition active:scale-[0.99]"
             size="lg"
@@ -336,7 +336,7 @@
                     ? t('connectWallet')
                     : !isCorrectNetwork
                       ? `Switch to ${activeNetwork.name}`
-                      : totalSplit !== 100
+                      : hasTax && totalSplit !== 100
                         ? `Allocation must total 100% (${totalSplit}%)`
                         : `${t('launchTokenBtn')} (${totalPairDue})`
             }}
@@ -503,6 +503,12 @@ const revenueSplit = ref<RevenueSplit>({
 });
 
 const totalSplit = computed(() => calculateTotalSplit(revenueSplit.value));
+
+const hasTax = computed(() => {
+  const buy = parseFloat(form.value.buyTax || '0');
+  const sell = parseFloat(form.value.sellTax || '0');
+  return buy > 0 || sell > 0;
+});
 
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const selectedFileName = ref('');
