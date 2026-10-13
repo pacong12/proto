@@ -155,9 +155,7 @@
           {{ t('totalTradingVolume') }}
         </p>
         <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">${{ formattedVolume }}</p>
-        <p class="text-[11px] text-muted-foreground mt-1 font-sans">
-          Indexed 24h DEX & curve swaps
-        </p>
+        <p class="text-xs text-muted-foreground mt-1">Indexed 24h DEX & curve swaps</p>
       </Card>
 
       <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
@@ -168,7 +166,7 @@
         <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">
           {{ totalTokens.toLocaleString() }}
         </p>
-        <p class="text-[11px] text-muted-foreground mt-1 font-sans">Fair launch tokens created</p>
+        <p class="text-xs text-muted-foreground mt-1">Fair launch tokens created</p>
       </Card>
 
       <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
@@ -177,7 +175,7 @@
           {{ t('protocolBuybackAndBurn') }}
         </p>
         <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">${{ formattedBuyback }}</p>
-        <p class="text-[11px] text-muted-foreground mt-1 font-sans">Deflationary buybacks burned</p>
+        <p class="text-xs text-muted-foreground mt-1">Deflationary buybacks burned</p>
       </Card>
 
       <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
@@ -188,7 +186,7 @@
         <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">
           {{ estimatedProtocolFees }} {{ activeNetwork.nativeCurrency.symbol }}
         </p>
-        <p class="text-[11px] text-muted-foreground mt-1 font-sans">100% protocol fee retention</p>
+        <p class="text-xs text-muted-foreground mt-1">100% protocol fee retention</p>
       </Card>
     </div>
 
@@ -224,10 +222,10 @@
       </div>
 
       <div v-else class="rounded-2xl border border-border/80 overflow-hidden bg-black">
-        <Table class="text-xs font-mono bg-black">
+        <Table class="text-xs bg-black">
           <TableHeader>
             <TableRow
-              class="border-b border-border/70 text-muted-foreground text-[11px] uppercase bg-black hover:bg-black"
+              class="border-b border-border/70 text-muted-foreground text-xs uppercase bg-black hover:bg-black"
             >
               <TableHead
                 class="py-3 px-3 font-semibold w-12 text-center text-muted-foreground bg-black"
@@ -276,7 +274,7 @@
                     >
                       ${{ tItem.token.symbol }}
                     </span>
-                    <span class="text-[11px] text-muted-foreground font-sans truncate block">
+                    <span class="text-xs text-muted-foreground truncate block">
                       {{ tItem.token.name }}
                     </span>
                   </div>
@@ -346,23 +344,21 @@
             <Badge
               v-if="isContractDeployed(c.address)"
               variant="secondary"
-              class="text-[9px] py-0 px-1.5 font-mono font-bold bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+              class="text-xs py-0.5 px-2 font-mono font-bold bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
             >
               ACTIVE
             </Badge>
             <Badge
               v-else
               variant="outline"
-              class="text-[9px] py-0 px-1.5 font-mono text-muted-foreground"
+              class="text-xs py-0.5 px-2 font-mono text-muted-foreground"
             >
               PENDING
             </Badge>
           </div>
 
           <div class="flex items-center gap-2">
-            <span
-              class="text-foreground font-mono select-all break-all sm:break-normal text-[11px] sm:text-xs"
-            >
+            <span class="text-foreground font-mono select-all break-all sm:break-normal text-xs">
               {{ c.address }}
             </span>
 

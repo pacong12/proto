@@ -199,7 +199,7 @@
                   {{ (item.marketData.priceChange24h ?? 0) >= 0 ? '+' : ''
                   }}{{ (item.marketData.priceChange24h ?? 0).toFixed(1) }}%
                 </span>
-                <Badge v-if="item.marketData.isGraduated" variant="secondary" class="text-[10px]">
+                <Badge v-if="item.marketData.isGraduated" variant="secondary" class="text-xs">
                   {{ t('graduated') }}
                 </Badge>
               </div>
@@ -212,7 +212,7 @@
               }}
             </p>
 
-            <div class="flex items-center gap-2 flex-wrap text-[10px] font-mono">
+            <div class="flex items-center gap-2 flex-wrap text-xs font-mono">
               <TaxTooltip
                 :buy-tax-bps="item.token.taxConfig?.buyTaxBps"
                 :sell-tax-bps="item.token.taxConfig?.sellTaxBps"
@@ -238,13 +238,13 @@
           <div class="mt-5 pt-4 border-t border-border space-y-2">
             <div class="grid grid-cols-2 gap-2 text-xs">
               <div>
-                <span class="text-[10px] text-muted-foreground block">MARKET CAP</span>
+                <span class="text-xs text-muted-foreground block font-semibold">MARKET CAP</span>
                 <span class="font-bold font-mono text-foreground">
                   {{ formatCompactUsd(item.marketData.marketCapUsd) }}
                 </span>
               </div>
               <div class="text-right">
-                <span class="text-[10px] text-muted-foreground block">VOLUME 24H</span>
+                <span class="text-xs text-muted-foreground block font-semibold">VOLUME 24H</span>
                 <span class="font-semibold font-mono text-muted-foreground">
                   {{
                     (item.marketData.volume24hUsd || 0) > 0

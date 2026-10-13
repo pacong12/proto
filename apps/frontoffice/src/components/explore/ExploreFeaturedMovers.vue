@@ -53,16 +53,14 @@
             <TaxTooltip
               :buy-tax-bps="item.token.taxConfig?.buyTaxBps"
               :sell-tax-bps="item.token.taxConfig?.sellTaxBps"
-              custom-class="text-[10px]"
+              custom-class="text-xs"
             />
           </div>
-          <div
-            class="flex items-center gap-1.5 text-[11px] font-mono font-semibold text-muted-foreground truncate"
-          >
+          <div class="flex items-center gap-1.5 text-xs text-muted-foreground truncate">
             <span>${{ item.token.symbol }}</span>
             <span
               v-if="(item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0"
-              class="text-sky-400 text-[10px]"
+              class="text-sky-400 text-xs"
             >
               &middot; {{ item.token.taxConfig?.revenueSplit?.holders }}% Divs
             </span>
@@ -72,7 +70,7 @@
 
       <div class="flex items-center gap-2 shrink-0">
         <span
-          class="text-[11px] font-mono font-semibold text-muted-foreground bg-black border border-border px-2 py-0.5 rounded-md"
+          class="text-xs font-medium text-muted-foreground bg-black border border-border px-2 py-0.5 rounded-md"
         >
           {{ formatRelativeTime(item.token.createdAt) }}
         </span>

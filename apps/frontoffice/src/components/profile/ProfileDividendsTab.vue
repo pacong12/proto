@@ -30,7 +30,7 @@
         <!-- Total + Claim All -->
         <div class="flex items-end justify-between pt-3 border-t border-border/60">
           <div>
-            <span class="text-[10px] text-muted-foreground uppercase font-mono block">
+            <span class="text-xs text-muted-foreground uppercase font-mono block">
               Total Claimable
             </span>
             <p class="text-xl font-bold font-mono text-foreground">
@@ -106,7 +106,7 @@
             <Lock class="w-4 h-4 text-foreground" />
             <h3 class="text-sm font-bold text-foreground">Linear Vesting Vault</h3>
           </div>
-          <Badge variant="outline" class="text-[9px] font-mono text-muted-foreground">
+          <Badge variant="outline" class="text-xs font-mono text-muted-foreground">
             Non-Custodial
           </Badge>
         </div>
@@ -118,7 +118,7 @@
 
         <div class="flex items-end justify-between pt-3 border-t border-border/60">
           <div>
-            <span class="text-[10px] text-muted-foreground uppercase font-mono block">
+            <span class="text-xs text-muted-foreground uppercase font-mono block">
               Vested Balance
             </span>
             <p class="text-xl font-bold font-mono text-foreground">

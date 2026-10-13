@@ -10,9 +10,6 @@
           >
             COIN
           </TableHead>
-          <TableHead class="py-3 px-3 font-semibold text-center w-20 text-muted-foreground bg-black"
-            >PAIR</TableHead
-          >
           <TableHead class="py-3 px-4 font-semibold text-center w-24 text-muted-foreground bg-black"
             >GRAPH</TableHead
           >
@@ -99,13 +96,11 @@
                   <span class="font-bold text-xs text-muted-foreground"
                     >${{ item.token.symbol }}</span
                   >
-                  <span class="text-muted-foreground/50 text-[10px] hidden sm:inline"
-                    >&middot;</span
-                  >
+                  <span class="text-muted-foreground/50 text-xs hidden sm:inline">&middot;</span>
                   <button
                     v-if="item.token.deployer"
                     type="button"
-                    class="text-[10px] text-muted-foreground hover:text-foreground font-mono truncate hidden sm:inline cursor-pointer transition-colors hover:underline underline-offset-2"
+                    class="text-xs text-muted-foreground hover:text-foreground font-mono truncate hidden sm:inline cursor-pointer transition-colors hover:underline underline-offset-2"
                     :title="`View profile: ${getUserIdentity(item.token.deployer).displayName}`"
                     @click.stop="navigateToDeployer(item.token.deployer)"
                   >
@@ -113,7 +108,7 @@
                   </button>
                   <button
                     type="button"
-                    class="text-[10px] text-muted-foreground hover:text-foreground font-mono flex items-center gap-1 bg-black border border-border px-1.5 py-0.5 rounded transition cursor-pointer"
+                    class="text-xs text-muted-foreground hover:text-foreground font-mono flex items-center gap-1 bg-black border border-border px-1.5 py-0.5 rounded transition cursor-pointer"
                     title="Copy Contract Address"
                     @click.stop="copyAddress(item.token.address)"
                   >
@@ -127,11 +122,11 @@
                   <TaxTooltip
                     :buy-tax-bps="item.token.taxConfig?.buyTaxBps"
                     :sell-tax-bps="item.token.taxConfig?.sellTaxBps"
-                    custom-class="text-[10px]"
+                    custom-class="text-xs"
                   />
                   <span
                     v-if="(item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0"
-                    class="text-[9px] text-sky-400 font-mono px-1 py-0.5 rounded border border-sky-500/20 bg-sky-500/5"
+                    class="text-xs text-sky-400 font-mono px-1.5 py-0.5 rounded border border-sky-500/20 bg-sky-500/5"
                     title="Holder Fee Sharing Enabled"
                   >
                     {{ item.token.taxConfig?.revenueSplit?.holders }}% Divs
@@ -139,20 +134,6 @@
                 </div>
               </div>
             </div>
-          </TableCell>
-
-          <!-- 2. PAIR (Native Currency Pair like Pons) -->
-          <TableCell class="py-3.5 px-3 text-center">
-            <span
-              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-border bg-black text-[10px] font-mono font-bold text-muted-foreground"
-            >
-              <img
-                :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
-                alt=""
-                class="w-3 h-3 rounded-full object-contain"
-              />
-              {{ currencySymbol }}
-            </span>
           </TableCell>
 
           <!-- 3. GRAPH (Mini SVG Sparkline curve) -->
@@ -188,7 +169,7 @@
           <!-- 5. BONDING / PROGRESS -->
           <TableCell class="py-3.5 px-4">
             <div class="space-y-1.5 max-w-[130px] mx-auto font-mono text-center">
-              <div class="flex items-center justify-between text-[10px]">
+              <div class="flex items-center justify-between text-xs">
                 <span class="text-muted-foreground">
                   {{ item.marketData?.isGraduated ? 'Graduated' : 'Curve' }}
                 </span>

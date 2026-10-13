@@ -219,11 +219,11 @@ function copyAddress() {
           aria-label="Search"
         >
           <Search class="w-3.5 h-3.5" />
-          <span class="hidden sm:inline font-mono">{{
+          <span class="hidden sm:inline">{{
             t('searchPlaceholder') ? 'Search...' : 'Search'
           }}</span>
           <kbd
-            class="hidden sm:inline font-mono text-[10px] bg-muted border border-border px-1.5 py-0.5 rounded-md"
+            class="hidden sm:inline font-mono text-xs bg-muted border border-border px-1.5 py-0.5 rounded-md"
           >
             ⌘K
           </kbd>
@@ -235,7 +235,7 @@ function copyAddress() {
           @update:model-value="handleChainSelect"
         >
           <SelectTrigger
-            class="h-9 px-2 sm:px-3 gap-1.5 sm:gap-2 w-auto text-xs font-mono border-border bg-card hover:bg-muted cursor-pointer text-foreground rounded-xl shrink-0"
+            class="h-9 px-2 sm:px-3 gap-1.5 sm:gap-2 w-auto text-xs border-border bg-card hover:bg-muted cursor-pointer text-foreground rounded-xl shrink-0"
           >
             <div class="flex items-center gap-1.5 sm:gap-2">
               <img
@@ -253,7 +253,7 @@ function copyAddress() {
             class="w-64 bg-card border border-border p-2 shadow-2xl rounded-2xl"
           >
             <SelectLabel
-              class="text-[11px] font-mono uppercase tracking-wider text-muted-foreground px-3 py-1.5"
+              class="text-xs uppercase tracking-wider text-muted-foreground px-3 py-1.5 font-semibold"
             >
               Select Network
             </SelectLabel>
@@ -262,7 +262,7 @@ function copyAddress() {
               v-for="net in Object.values(SUPPORTED_CHAINS)"
               :key="net.chainId"
               :value="String(net.chainId)"
-              class="cursor-pointer text-xs font-mono py-2.5 px-3 hover:bg-muted rounded-xl transition my-0.5"
+              class="cursor-pointer text-xs py-2.5 px-3 hover:bg-muted rounded-xl transition my-0.5"
             >
               <div class="flex items-center gap-3">
                 <img
@@ -313,11 +313,11 @@ function copyAddress() {
               <Button
                 variant="outline"
                 size="sm"
-                class="h-9 px-2 sm:px-3 gap-1.5 sm:gap-2 text-xs font-mono border-border bg-card hover:bg-muted cursor-pointer rounded-xl shrink-0"
+                class="h-9 px-2 sm:px-3 gap-1.5 sm:gap-2 text-xs border-border bg-card hover:bg-muted cursor-pointer rounded-xl shrink-0"
               >
                 <Jazzicon :address="account" :size="16" class="rounded-full shrink-0" />
                 <span
-                  class="font-bold text-foreground text-[11px] sm:text-xs hidden min-[480px]:inline truncate max-w-[140px]"
+                  class="font-bold text-foreground text-xs hidden min-[480px]:inline truncate max-w-[140px]"
                   >{{ getUserIdentity(account).name }}</span
                 >
               </Button>
@@ -337,12 +337,12 @@ function copyAddress() {
                     <span class="text-xs font-bold text-foreground font-mono truncate">
                       {{ getUserIdentity(account).displayName }}
                     </span>
-                    <span class="text-[11px] font-mono font-bold text-primary shrink-0">
+                    <span class="text-xs font-mono font-bold text-primary shrink-0">
                       {{ formattedBalance }}
                     </span>
                   </div>
                   <span
-                    class="block text-[10px] font-mono text-muted-foreground truncate mt-0.5"
+                    class="block text-xs font-mono text-muted-foreground truncate mt-0.5"
                     :title="account || ''"
                   >
                     {{ account }}
@@ -390,9 +390,7 @@ function copyAddress() {
                   <Moon v-else class="w-4 h-4 text-primary" />
                   <span>{{ isDark ? 'Light Theme' : 'Dark Theme' }}</span>
                 </div>
-                <span class="text-[10px] font-mono text-muted-foreground capitalize">{{
-                  mode
-                }}</span>
+                <span class="text-xs text-muted-foreground capitalize">{{ mode }}</span>
               </DropdownMenuItem>
 
               <!-- Language Submenu using DropdownMenuPortal (Scroll-Free 2-Column Grid) -->
@@ -404,7 +402,7 @@ function copyAddress() {
                     <Globe class="w-4 h-4 text-muted-foreground" />
                     <span>Language</span>
                   </div>
-                  <span class="text-[10px] text-primary font-bold uppercase font-mono mr-1">{{
+                  <span class="text-xs text-primary font-bold uppercase mr-1">{{
                     currentLocaleOption.code
                   }}</span>
                 </DropdownMenuSubTrigger>
@@ -647,7 +645,7 @@ function copyAddress() {
           <!-- Language Horizontal Scroll Bar -->
           <div class="space-y-1.5">
             <div
-              class="flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-muted-foreground px-0.5"
+              class="flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted-foreground px-0.5 font-semibold"
             >
               <Globe class="w-3.5 h-3.5" />
               <span>Language</span>
@@ -666,7 +664,7 @@ function copyAddress() {
                 "
               >
                 <span>{{ l.flag }}</span>
-                <span class="text-[11px]">{{ l.name }}</span>
+                <span class="text-xs">{{ l.name }}</span>
               </button>
             </div>
           </div>

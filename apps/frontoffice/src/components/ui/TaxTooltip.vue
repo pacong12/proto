@@ -3,12 +3,12 @@
     <Tooltip>
       <TooltipTrigger as-child>
         <span
-          class="font-mono cursor-help transition-colors select-none inline-flex items-center"
+          class="cursor-help transition-colors select-none inline-flex items-center"
           :class="[
             isZeroTax
               ? 'text-muted-foreground/60 hover:text-muted-foreground'
               : 'text-foreground font-semibold hover:text-primary',
-            customClass || 'text-[11px]',
+            customClass || 'text-xs',
           ]"
         >
           {{ buyTaxDisplay }}%/{{ sellTaxDisplay }}%
@@ -16,7 +16,7 @@
       </TooltipTrigger>
       <TooltipContent
         side="top"
-        class="text-[11px] font-mono p-2 space-y-1 bg-popover border border-border shadow-md"
+        class="text-xs p-2.5 space-y-1 bg-popover border border-border shadow-md"
       >
         <p class="font-bold text-foreground">Trading Taxes</p>
         <p class="text-muted-foreground">
@@ -25,7 +25,7 @@
         <p class="text-muted-foreground">
           Sell Tax: <span class="text-rose-400 font-semibold">{{ sellTaxDisplay }}%</span>
         </p>
-        <p v-if="isZeroTax" class="text-[10px] text-emerald-500 pt-0.5 border-t border-border/50">
+        <p v-if="isZeroTax" class="text-xs text-emerald-500 pt-0.5 border-t border-border/50">
           Zero tax fair launch
         </p>
       </TooltipContent>

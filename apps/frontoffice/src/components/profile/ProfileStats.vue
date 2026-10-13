@@ -9,7 +9,7 @@
       <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">
         {{ totalClaimableWeth }} {{ nativeCurrencySymbol }}
       </p>
-      <p class="text-[11px] text-muted-foreground mt-1 font-sans">Locker fees</p>
+      <p class="text-xs text-muted-foreground mt-1">Locker fees</p>
     </Card>
 
     <!-- Stat 2: Created Tokens -->
@@ -21,7 +21,7 @@
       <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">
         {{ createdTokensCount }}
       </p>
-      <p class="text-[11px] text-muted-foreground mt-1 font-sans">
+      <p class="text-xs text-muted-foreground mt-1">
         {{ isOwnProfile ? 'Deployed by your wallet' : 'Deployed by this creator' }}
       </p>
     </Card>
@@ -35,7 +35,7 @@
       <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">
         {{ activePositionsCount }}
       </p>
-      <p class="text-[11px] text-muted-foreground mt-1 font-sans">Tokens currently held</p>
+      <p class="text-xs text-muted-foreground mt-1">Tokens currently held</p>
     </Card>
 
     <!-- Stat 4: Total Trades -->
@@ -47,7 +47,7 @@
       <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">
         {{ totalTradesCount }}
       </p>
-      <p class="text-[11px] text-muted-foreground mt-1 font-sans">Buys & Sells recorded</p>
+      <p class="text-xs text-muted-foreground mt-1">Buys & Sells recorded</p>
     </Card>
   </div>
 </template>

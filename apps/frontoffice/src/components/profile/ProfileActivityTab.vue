@@ -27,7 +27,7 @@
       <Table class="text-xs font-mono bg-black">
         <TableHeader>
           <TableRow
-            class="border-b border-border/80 bg-black text-muted-foreground text-[11px] hover:bg-black"
+            class="border-b border-border/80 bg-black text-muted-foreground text-xs hover:bg-black"
           >
             <TableHead class="py-3 px-4 font-semibold uppercase text-muted-foreground bg-black"
               >Action</TableHead
@@ -62,7 +62,7 @@
             <TableCell class="py-3 px-4">
               <Badge
                 :variant="act.isBuy ? 'default' : 'destructive'"
-                class="text-[9px] uppercase px-2 py-0.5 font-mono font-bold"
+                class="text-xs uppercase px-2 py-0.5 font-mono font-bold"
               >
                 {{ act.isBuy ? 'BUY' : 'SELL' }}
               </Badge>
@@ -76,7 +76,7 @@
             <TableCell class="py-3 px-4 text-right text-foreground font-mono">
               {{ act.tokenAmount }}
             </TableCell>
-            <TableCell class="py-3 px-4 text-right text-muted-foreground font-mono text-[11px]">
+            <TableCell class="py-3 px-4 text-right text-muted-foreground font-mono text-xs">
               {{ formatRelativeTime(act.timestamp) }}
             </TableCell>
             <TableCell class="py-3 px-4 text-right font-mono text-xs">

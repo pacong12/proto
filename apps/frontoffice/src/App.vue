@@ -77,7 +77,7 @@
           <h4 class="text-xs font-semibold uppercase tracking-wider text-foreground">
             {{ t('network') }}
           </h4>
-          <ul class="space-y-1.5 text-xs text-muted-foreground font-mono">
+          <ul class="space-y-1.5 text-xs text-muted-foreground">
             <li>{{ activeNetwork.name }} ({{ activeNetwork.chainId }})</li>
             <li>Uniswap V3 Factory (1% Fee)</li>
             <li>Direct Permanent Lock</li>
@@ -107,7 +107,7 @@
               </RouterLink>
             </li>
           </ul>
-          <p class="text-[11px] leading-relaxed text-muted-foreground pt-2">
+          <p class="text-xs leading-relaxed text-muted-foreground pt-2">
             {{ t('footerDisclaimer') }}
           </p>
         </div>
@@ -122,7 +122,7 @@
             href="https://x.com/protodotfun"
             target="_blank"
             rel="noopener noreferrer"
-            class="hover:text-foreground transition font-mono flex items-center gap-1"
+            class="hover:text-foreground transition flex items-center gap-1 font-medium"
           >
             <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
               <path

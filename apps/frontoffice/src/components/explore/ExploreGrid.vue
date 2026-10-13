@@ -37,7 +37,7 @@
                   {{ item.token.name }}
                 </h3>
                 <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <span class="font-mono font-semibold">${{ item.token.symbol }}</span>
+                  <span class="font-semibold">${{ item.token.symbol }}</span>
                   <span>&middot;</span>
                   <span>{{ formatRelativeTime(item.token.createdAt) }}</span>
                   <template v-if="item.token.deployer">
@@ -74,7 +74,7 @@
                 />
               </button>
               <span
-                class="text-xs font-mono font-bold"
+                class="text-xs font-bold"
                 :class="
                   (item.marketData?.priceChange24h ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'
                 "
@@ -88,13 +88,13 @@
           <!-- Price & MCap -->
           <div class="grid grid-cols-2 gap-2 pt-2 border-t border-border text-xs">
             <div>
-              <span class="text-[10px] text-muted-foreground block">MARKET CAP</span>
+              <span class="text-xs text-muted-foreground block font-semibold">MARKET CAP</span>
               <span class="font-bold text-sm text-foreground">
                 ${{ formatNumberCap(item.marketData?.marketCapUsd ?? 4200) }}
               </span>
             </div>
             <div class="text-right">
-              <span class="text-[10px] text-muted-foreground block">VOLUME 24H</span>
+              <span class="text-xs text-muted-foreground block font-semibold">VOLUME 24H</span>
               <span class="font-semibold text-muted-foreground">
                 {{
                   (item.marketData?.volume24hUsd ?? 0) > 0
@@ -106,7 +106,7 @@
           </div>
 
           <!-- Token Features & Taxes -->
-          <div class="flex items-center gap-2 flex-wrap pt-1 font-mono text-[10px]">
+          <div class="flex items-center gap-2 flex-wrap pt-1 text-xs">
             <TaxTooltip
               :buy-tax-bps="item.token.taxConfig?.buyTaxBps"
               :sell-tax-bps="item.token.taxConfig?.sellTaxBps"
@@ -136,9 +136,9 @@
 
           <!-- Bonding Progress -->
           <div class="space-y-1 pt-1">
-            <div class="flex justify-between text-[10px]">
+            <div class="flex justify-between text-xs">
               <span class="text-muted-foreground">Bonding Curve</span>
-              <span class="font-bold font-mono text-emerald-500">
+              <span class="font-bold text-emerald-500">
                 {{ ((item.marketData?.graduationProgress ?? 0) * 100).toFixed(1) }}%
               </span>
             </div>

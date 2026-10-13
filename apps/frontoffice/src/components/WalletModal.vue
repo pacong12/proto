@@ -47,14 +47,12 @@
           class="p-4 rounded-xl bg-muted/30 border border-border space-y-3"
         >
           <div class="flex items-center justify-between">
-            <span
-              class="text-[11px] font-mono text-muted-foreground uppercase tracking-wider font-semibold"
-            >
+            <span class="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
               {{ t('connectedAccount') }}
             </span>
             <Badge
               :variant="isCorrectNetwork ? 'default' : 'destructive'"
-              class="text-[10px] font-mono"
+              class="text-xs font-mono"
             >
               {{ isCorrectNetwork ? activeNetwork.name : t('switchToRobinhood') }}
             </Badge>
@@ -68,7 +66,7 @@
                 <span class="font-mono text-xs font-bold block truncate text-foreground">
                   {{ account }}
                 </span>
-                <span class="font-mono text-[11px] text-foreground font-semibold">
+                <span class="font-mono text-xs text-foreground font-semibold">
                   {{ formattedBalance }}
                 </span>
               </div>
@@ -84,7 +82,7 @@
             >
               <Check v-if="copied" class="w-3 h-3 text-foreground" />
               <Copy v-else class="w-3 h-3" />
-              <span class="text-[10px] font-mono">{{ copied ? 'Copied' : 'Copy' }}</span>
+              <span class="text-xs font-mono">{{ copied ? 'Copied' : 'Copy' }}</span>
             </Button>
           </div>
 
@@ -114,7 +112,7 @@
           <!-- Multi-Chain Network Selector (Robinhood & Arc) with Shadcn Select -->
           <div class="space-y-1.5 pt-2 border-t border-border">
             <span
-              class="text-[10px] font-mono text-muted-foreground uppercase tracking-wider block"
+              class="text-xs uppercase tracking-wider text-muted-foreground block font-semibold"
             >
               Active Network
             </span>
@@ -141,7 +139,7 @@
                 class="w-[--radix-select-trigger-width] min-w-[280px] bg-card border border-border p-1.5 shadow-lg"
               >
                 <SelectLabel
-                  class="text-[10px] font-mono uppercase tracking-wider text-muted-foreground px-2 py-1"
+                  class="text-xs uppercase tracking-wider text-muted-foreground px-2 py-1 font-semibold"
                 >
                   Select Network
                 </SelectLabel>
@@ -171,15 +169,10 @@
         <!-- 2. Detected Wallet Providers Section -->
         <div class="space-y-2">
           <div class="flex items-center justify-between px-1">
-            <span
-              class="text-[11px] font-mono text-muted-foreground uppercase tracking-wider font-semibold"
-            >
+            <span class="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
               {{ isConnected ? 'Switch Provider' : 'Available Wallets' }}
             </span>
-            <span
-              v-if="scanning"
-              class="text-[10px] font-mono text-muted-foreground flex items-center gap-1"
-            >
+            <span v-if="scanning" class="text-xs text-muted-foreground flex items-center gap-1">
               <Loader2 class="w-3 h-3 animate-spin text-foreground" />
               <span>{{ t('scanningForWallets') }}</span>
             </span>
@@ -206,7 +199,7 @@
                     <span class="text-xs font-semibold block truncate text-foreground">
                       {{ wallet.name }}
                     </span>
-                    <span class="block text-[10px] font-mono text-muted-foreground truncate">
+                    <span class="block text-xs text-muted-foreground truncate">
                       {{ wallet.rdns ?? 'Browser extension' }}
                     </span>
                   </div>
@@ -215,7 +208,7 @@
                 <div class="shrink-0 flex items-center gap-2">
                   <span
                     v-if="isWalletActive(wallet)"
-                    class="text-[10px] font-mono font-bold text-foreground bg-muted border border-border px-2 py-0.5 rounded-full"
+                    class="text-xs font-mono font-bold text-foreground bg-muted border border-border px-2 py-0.5 rounded-full"
                   >
                     Active
                   </span>

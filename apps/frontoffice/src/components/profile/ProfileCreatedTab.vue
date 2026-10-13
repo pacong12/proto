@@ -56,11 +56,11 @@
               <TaxTooltip
                 :buy-tax-bps="token.taxConfig?.buyTaxBps"
                 :sell-tax-bps="token.taxConfig?.sellTaxBps"
-                custom-class="text-[10px]"
+                custom-class="text-xs"
               />
               <span
                 v-if="(token.taxConfig?.revenueSplit?.holders ?? 0) > 0"
-                class="text-[9px] text-sky-400 font-mono px-1.5 py-0.5 rounded border border-sky-500/20 bg-sky-500/5"
+                class="text-xs text-sky-400 font-mono px-1.5 py-0.5 rounded border border-sky-500/20 bg-sky-500/5"
                 title="Holder Fee Sharing Enabled"
               >
                 {{ token.taxConfig?.revenueSplit?.holders }}% Divs
@@ -69,7 +69,7 @@
             <!-- CA copy button -->
             <button
               type="button"
-              class="flex items-center gap-1.5 mt-1 font-mono text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer group"
+              class="flex items-center gap-1.5 mt-1 font-mono text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer group"
               :title="'Copy contract address: ' + token.address"
               @click.stop="copyCA(token.address)"
             >

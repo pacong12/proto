@@ -50,9 +50,7 @@
         <div
           class="p-3 sm:p-0 rounded-xl bg-black border border-border sm:border-0 sm:bg-transparent"
         >
-          <span
-            class="text-muted-foreground text-[10px] uppercase tracking-wider block font-semibold"
-          >
+          <span class="text-muted-foreground text-xs uppercase tracking-wider block font-semibold">
             24h Volume
           </span>
           <span class="font-extrabold text-sm sm:text-base text-foreground">
@@ -62,9 +60,7 @@
         <div
           class="p-3 sm:p-0 rounded-xl bg-black border border-border sm:border-0 sm:bg-transparent"
         >
-          <span
-            class="text-muted-foreground text-[10px] uppercase tracking-wider block font-semibold"
-          >
+          <span class="text-muted-foreground text-xs uppercase tracking-wider block font-semibold">
             Total Coins
           </span>
           <span class="font-extrabold text-sm sm:text-base text-foreground">

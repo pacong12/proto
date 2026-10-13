@@ -8,7 +8,7 @@
         :title="`Current language: ${currentLocaleOption.name}`"
       >
         <span class="text-sm leading-none">{{ currentLocaleOption.flag }}</span>
-        <span class="font-mono uppercase">{{ currentLocaleOption.code }}</span>
+        <span class="uppercase font-semibold">{{ currentLocaleOption.code }}</span>
       </Button>
     </DropdownMenuTrigger>
 
@@ -17,7 +17,7 @@
       class="w-48 p-1 bg-card border border-border shadow-xl rounded-xl"
     >
       <DropdownMenuLabel
-        class="text-[11px] text-muted-foreground px-2 py-1 uppercase tracking-wider font-semibold"
+        class="text-xs text-muted-foreground px-2 py-1 uppercase tracking-wider font-semibold"
       >
         Select Language
       </DropdownMenuLabel>
@@ -36,7 +36,7 @@
           <span class="text-sm leading-none">{{ item.flag }}</span>
           <span>{{ item.nativeName }}</span>
         </div>
-        <span class="text-[10px] font-mono text-muted-foreground uppercase">{{ item.code }}</span>
+        <span class="text-xs text-muted-foreground uppercase font-medium">{{ item.code }}</span>
       </DropdownMenuItem>
     </DropdownMenuContent>
   </DropdownMenu>

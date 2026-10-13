@@ -83,7 +83,7 @@
     <div class="space-y-2.5 pt-3 border-t border-border font-mono text-xs">
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+          <p class="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
             Trading Taxes &amp; Fees
           </p>
           <p class="text-xs text-foreground mt-0.5">
@@ -124,30 +124,30 @@
         v-if="currentToken.taxConfig?.revenueSplit"
         class="space-y-1.5 pt-2 border-t border-border/60"
       >
-        <p class="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+        <p class="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
           Tax Revenue Split Allocation
         </p>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
           <div class="p-2 rounded-lg bg-muted/40 border border-border">
-            <span class="text-muted-foreground block text-[9px]">Creator</span>
+            <span class="text-muted-foreground block text-xs">Creator</span>
             <span class="font-bold text-foreground"
               >{{ currentToken.taxConfig.revenueSplit.creator }}%</span
             >
           </div>
           <div class="p-2 rounded-lg bg-muted/40 border border-border">
-            <span class="text-muted-foreground block text-[9px]">Buyback</span>
+            <span class="text-muted-foreground block text-xs">Buyback</span>
             <span class="font-bold text-foreground"
               >{{ currentToken.taxConfig.revenueSplit.buyback }}%</span
             >
           </div>
           <div class="p-2 rounded-lg bg-muted/40 border border-border">
-            <span class="text-muted-foreground block text-[9px]">Holders</span>
+            <span class="text-muted-foreground block text-xs">Holders</span>
             <span class="font-bold text-foreground"
               >{{ currentToken.taxConfig.revenueSplit.holders }}%</span
             >
           </div>
           <div class="p-2 rounded-lg bg-muted/40 border border-border">
-            <span class="text-muted-foreground block text-[9px]">Growth</span>
+            <span class="text-muted-foreground block text-xs">Growth</span>
             <span class="font-bold text-foreground"
               >{{ currentToken.taxConfig.revenueSplit.growth }}%</span
             >

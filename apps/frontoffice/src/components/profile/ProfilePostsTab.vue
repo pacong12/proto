@@ -44,11 +44,11 @@
                 </span>
                 <TraderTagBadge v-if="isWhaleCaller(call)" tag="whale" size="sm" />
               </div>
-              <span class="text-[10px] text-muted-foreground">Verified Caller</span>
+              <span class="text-xs text-muted-foreground">Verified Caller</span>
             </div>
           </div>
 
-          <span class="text-[10px] text-muted-foreground">
+          <span class="text-xs text-muted-foreground">
             {{ formatRelativeTime(call.createdAt) }}
           </span>
         </div>
@@ -105,7 +105,7 @@
                   ${{ call.tokenSymbol || 'TOKEN' }}
                 </span>
               </div>
-              <div class="flex items-center gap-2 text-[10px] text-muted-foreground">
+              <div class="flex items-center gap-2 text-xs text-muted-foreground">
                 <span
                   >MC:
                   <strong class="text-foreground"
@@ -121,9 +121,7 @@
 
           <div class="flex items-center gap-3 shrink-0 text-right">
             <div>
-              <span class="text-[9px] text-muted-foreground block uppercase font-bold"
-                >Position</span
-              >
+              <span class="text-xs text-muted-foreground block uppercase font-bold">Position</span>
               <span class="text-xs font-bold text-foreground">
                 {{ call.positionUsd ? `$${call.positionUsd.toFixed(1)}` : 'Holding' }}
               </span>

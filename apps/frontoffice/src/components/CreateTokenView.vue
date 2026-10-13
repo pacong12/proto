@@ -67,7 +67,7 @@
                   <UploadCloud class="w-5 h-5 text-muted-foreground" />
                 </div>
                 <span class="text-xs font-semibold text-foreground">Upload Logo</span>
-                <span class="text-[10px] text-muted-foreground leading-tight"
+                <span class="text-xs text-muted-foreground leading-tight"
                   >PNG, JPG, WEBP (Max 5MB)</span
                 >
               </div>
@@ -76,7 +76,7 @@
             <!-- Minimal Uploading Spinner Indicator -->
             <div
               v-if="isUploadingIpfs"
-              class="flex items-center gap-1.5 text-[11px] font-mono text-amber-500 pt-0.5"
+              class="flex items-center gap-1.5 text-xs text-amber-500 pt-0.5"
             >
               <Loader2 class="w-3 h-3 animate-spin shrink-0" />
               <span>{{ t('pinningIpfs') }}</span>
@@ -85,7 +85,7 @@
             <!-- IPFS Ready Indicator -->
             <div
               v-else-if="form.logo"
-              class="flex items-center gap-1.5 text-[11px] font-mono text-emerald-500 pt-0.5"
+              class="flex items-center gap-1.5 text-xs text-emerald-500 pt-0.5"
             >
               <Check class="w-3 h-3 shrink-0" />
               <span>{{ t('ipfsReady') }}</span>
@@ -94,7 +94,7 @@
             <!-- Image Error -->
             <div
               v-if="imageError"
-              class="text-[11px] text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2"
+              class="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2"
             >
               {{ imageError }}
             </div>
@@ -180,7 +180,7 @@
         <!-- Paired Asset (Tied to active network selected in navigation) -->
         <div class="space-y-2 pt-1">
           <div class="flex items-center justify-between">
-            <span class="text-[11px] font-mono text-muted-foreground">
+            <span class="text-xs text-muted-foreground">
               {{ activeNetwork.name }}
             </span>
           </div>
@@ -200,12 +200,10 @@
               />
               <span class="font-bold text-sm text-foreground">{{ currencySymbol }}</span>
             </div>
-            <span class="text-[11px] font-mono text-muted-foreground">
-              Locked on {{ activeNetwork.name }}
-            </span>
+            <span class="text-xs text-muted-foreground"> Locked on {{ activeNetwork.name }} </span>
           </div>
 
-          <p class="text-[11px] text-muted-foreground">
+          <p class="text-xs text-muted-foreground">
             {{
               activeNetwork.chainId === 5042
                 ? 'Graduates once the curve raises 69,000 USDC into Uniswap liquidity.'
@@ -217,7 +215,7 @@
         <!-- Developer buy -->
         <div class="space-y-2 pt-1">
           <div class="flex justify-between items-center">
-            <span class="text-[11px] text-muted-foreground font-mono">
+            <span class="text-xs text-muted-foreground">
               {{ t('boughtInLaunchNotice') }}
             </span>
           </div>
@@ -299,7 +297,7 @@
             </div>
 
             <div class="pt-3 border-t border-border flex items-center justify-between">
-              <span class="font-bold text-foreground uppercase tracking-wider text-[11px]">
+              <span class="font-bold text-foreground uppercase tracking-wider text-xs">
                 {{ t('totalDue') }}
               </span>
               <span class="text-sm font-bold text-foreground flex items-center gap-1.5 font-mono">

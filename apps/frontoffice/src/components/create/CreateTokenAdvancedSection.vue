@@ -7,8 +7,8 @@
       class="w-full flex items-center justify-between px-5 py-4 h-auto text-xs font-semibold transition hover:bg-muted/40 cursor-pointer rounded-none"
     >
       <div class="flex items-center gap-2">
-        <span class="font-bold font-mono">{{ t('advanced') }}</span>
-        <span class="text-[10px] text-muted-foreground font-mono">
+        <span class="font-bold">{{ t('advanced') }}</span>
+        <span class="text-xs text-muted-foreground font-mono">
           (Buy: {{ buyTax }}% &middot; Sell: {{ sellTax }}% &middot; Split: {{ totalSplit }}/100%)
         </span>
       </div>
@@ -31,7 +31,7 @@
           <button
             v-if="account && creatorWallet !== account"
             type="button"
-            class="text-[10px] text-primary hover:underline font-mono cursor-pointer"
+            class="text-xs text-primary hover:underline cursor-pointer"
             @click="$emit('update:creatorWallet', account)"
           >
             Use Connected Wallet
@@ -44,7 +44,7 @@
           class="h-10 text-xs font-mono rounded-xl bg-muted/20"
           @update:model-value="$emit('update:creatorWallet', String($event))"
         />
-        <p class="text-[10px] text-muted-foreground font-mono">
+        <p class="text-xs text-muted-foreground">
           Recipient for fee revenue and tax collections. Defaults to
           {{ account ? shortenAddress(account) : 'deployer' }}.
         </p>
@@ -59,7 +59,7 @@
               text="Initial tax configured here is activated immediately upon token launch. Defaults to 0% for pure meme coins. Post-launch changes will require a 24-hour timelock to protect holders."
             />
           </div>
-          <span class="text-[10px] font-mono text-muted-foreground">Default: 0% (Max 10%)</span>
+          <span class="text-xs text-muted-foreground">Default: 0% (Max 10%)</span>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
           <!-- Buy Tax with Slider -->
@@ -154,7 +154,7 @@
               type="button"
               size="sm"
               variant="outline"
-              class="h-6 px-2 text-[10px] font-mono border-amber-500/50 text-amber-500 hover:bg-amber-500/10 cursor-pointer"
+              class="h-6 px-2 text-xs border-amber-500/50 text-amber-500 hover:bg-amber-500/10 cursor-pointer"
               @click="handleAutoBalance"
             >
               Auto-balance
@@ -287,9 +287,7 @@
               >
                 {{ totalSplit }}%
               </span>
-              <span class="text-[9px] font-mono text-muted-foreground uppercase tracking-wider">
-                Split
-              </span>
+              <span class="text-xs text-muted-foreground uppercase tracking-wider"> Split </span>
             </div>
           </div>
 
@@ -315,11 +313,9 @@
                 thumb-class="border-foreground focus-visible:ring-foreground"
                 @update:model-value="updatePillar('creator', $event ? $event[0] : 0)"
               />
-              <div
-                class="flex items-center justify-between text-[10px] text-muted-foreground font-mono"
-              >
+              <div class="flex items-center justify-between text-xs text-muted-foreground">
                 <span>Creator revenue share</span>
-                <span>{{ revenueSplit.creator }}%</span>
+                <span class="font-mono font-semibold">{{ revenueSplit.creator }}%</span>
               </div>
             </div>
 
@@ -345,11 +341,9 @@
                 thumb-class="border-foreground focus-visible:ring-foreground"
                 @update:model-value="updatePillar('buyback', $event ? $event[0] : 0)"
               />
-              <div
-                class="flex items-center justify-between text-[10px] text-muted-foreground font-mono"
-              >
+              <div class="flex items-center justify-between text-xs text-muted-foreground">
                 <span>Deflationary buyback share</span>
-                <span>{{ revenueSplit.buyback }}%</span>
+                <span class="font-mono font-semibold">{{ revenueSplit.buyback }}%</span>
               </div>
             </div>
 
@@ -375,11 +369,9 @@
                 thumb-class="border-foreground focus-visible:ring-foreground"
                 @update:model-value="updatePillar('holders', $event ? $event[0] : 0)"
               />
-              <div
-                class="flex items-center justify-between text-[10px] text-muted-foreground font-mono"
-              >
+              <div class="flex items-center justify-between text-xs text-muted-foreground">
                 <span>Holder dividend share</span>
-                <span>{{ revenueSplit.holders }}%</span>
+                <span class="font-mono font-semibold">{{ revenueSplit.holders }}%</span>
               </div>
             </div>
 
@@ -405,11 +397,9 @@
                 thumb-class="border-foreground focus-visible:ring-foreground"
                 @update:model-value="updatePillar('growth', $event ? $event[0] : 0)"
               />
-              <div
-                class="flex items-center justify-between text-[10px] text-muted-foreground font-mono"
-              >
+              <div class="flex items-center justify-between text-xs text-muted-foreground">
                 <span>Liquidity injection share</span>
-                <span>{{ revenueSplit.growth }}%</span>
+                <span class="font-mono font-semibold">{{ revenueSplit.growth }}%</span>
               </div>
             </div>
 
