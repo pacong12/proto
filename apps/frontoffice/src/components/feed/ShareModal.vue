@@ -218,7 +218,7 @@
           </div>
 
           <!-- PnL Actions -->
-          <div class="flex items-center gap-2">
+          <div class="grid grid-cols-2 gap-2">
             <Button
               size="sm"
               variant="outline"
@@ -231,6 +231,15 @@
                 />
               </svg>
               <span>Tweet PnL</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="default"
+              class="w-full text-xs font-bold gap-1.5 h-8 cursor-pointer font-mono"
+              @click="downloadPnlCard"
+            >
+              <Download class="w-3.5 h-3.5" />
+              <span>Save Card</span>
             </Button>
           </div>
         </div>
@@ -250,6 +259,7 @@ import {
   ChevronDown,
   ExternalLink,
   Sparkles,
+  Download,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -302,5 +312,96 @@ function shareOnX(): void {
     `Verified Call on ${symbolStr}\n${targetStr}${posStr}\n\n"${call.content.slice(0, 100)}"\n\n${url} via @proto_protocol`,
   );
   window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank', 'noopener,noreferrer');
+}
+async function exportPnlCardCanvas(): Promise<string | null> {
+  if (typeof document === 'undefined' || !props.call) return null;
+  const call = props.call;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 600;
+  canvas.height = 360;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+
+  // Background
+  ctx.fillStyle = '#0f0f11';
+  ctx.fillRect(0, 0, 600, 360);
+
+  // Border & Ambient Stroke
+  ctx.strokeStyle = '#27272a';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(10, 10, 580, 340);
+
+  // Top header banner
+  ctx.fillStyle = '#10b981';
+  ctx.font = 'bold 14px monospace';
+  ctx.fillText('PROTO ALPHA SIGNAL', 30, 45);
+
+  ctx.fillStyle = '#a1a1aa';
+  ctx.font = '12px monospace';
+  ctx.fillText('VERIFIED ON-CHAIN POSITION', 380, 45);
+
+  // Divider
+  ctx.strokeStyle = '#27272a';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(30, 60);
+  ctx.lineTo(570, 60);
+  ctx.stroke();
+
+  // Token Title
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 28px sans-serif';
+  ctx.fillText(`$${call.tokenSymbol || 'TOKEN'}`, 30, 105);
+
+  ctx.fillStyle = '#71717a';
+  ctx.font = '16px sans-serif';
+  ctx.fillText(call.tokenName || 'Proto Token', 30, 130);
+
+  // Caller Position Box
+  ctx.fillStyle = '#18181b';
+  ctx.fillRect(30, 155, 250, 75);
+  ctx.fillStyle = '#a1a1aa';
+  ctx.font = '11px monospace';
+  ctx.fillText('CALLER POSITION', 45, 180);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 20px monospace';
+  ctx.fillText(call.positionUsd ? `$${call.positionUsd.toFixed(1)}` : 'Verified Holder', 45, 210);
+
+  // Profit Box
+  const isProfit = (call.profitUsd ?? 0) >= 0;
+  ctx.fillStyle = '#18181b';
+  ctx.fillRect(310, 155, 250, 75);
+  ctx.fillStyle = '#a1a1aa';
+  ctx.font = '11px monospace';
+  ctx.fillText('UNREALIZED PROFIT', 325, 180);
+  ctx.fillStyle = isProfit ? '#10b981' : '#f43f5e';
+  ctx.font = 'bold 20px monospace';
+  ctx.fillText(`${isProfit ? '+' : ''}$${(call.profitUsd ?? 0).toFixed(1)}`, 325, 210);
+
+  // Target Mcap
+  if (call.targetMcap) {
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = 'bold 14px monospace';
+    ctx.fillText(`Target: ${call.targetMcap}`, 30, 260);
+  }
+
+  // Footer
+  ctx.fillStyle = '#52525b';
+  ctx.font = '12px monospace';
+  ctx.fillText(`Caller: ${shortenAddress(call.authorAddress)}`, 30, 310);
+  ctx.fillText('proto.family/launchpad', 410, 310);
+
+  return canvas.toDataURL('image/png');
+}
+
+async function downloadPnlCard(): Promise<void> {
+  const dataUrl = await exportPnlCardCanvas();
+  if (!dataUrl) return;
+  const link = document.createElement('a');
+  link.download = `proto-pnl-${props.call?.tokenSymbol || 'card'}.png`;
+  link.href = dataUrl;
+  link.click();
+  toast.success('PnL card image downloaded!');
 }
 </script>
