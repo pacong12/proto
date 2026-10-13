@@ -109,19 +109,23 @@ h6 {
   font-weight: 600;
 }
 
-/* Numbers, Addresses, Code, Tables: Tabular alignment for financial tickers */
+/* Code, Pre, and Monospace overrides */
 code,
 kbd,
 samp,
 pre,
 .font-mono,
-[class*='font-mono'],
-table,
-th,
-td {
+[class*='font-mono'] {
   font-family: var(--vp-font-family-mono);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
+}
+
+/* Tabular alignment for financial tables without overriding font-family */
+table,
+th,
+td {
+  font-variant-numeric: tabular-nums;
 }
 
 /* ==========================================================================

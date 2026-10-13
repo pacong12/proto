@@ -1,6 +1,6 @@
 <template>
   <div class="rounded-2xl border border-border bg-black overflow-hidden shadow-xs">
-    <Table class="text-xs font-mono min-w-[920px] bg-black">
+    <Table class="text-xs min-w-[920px] bg-black">
       <TableHeader>
         <TableRow
           class="border-b border-border text-muted-foreground uppercase tracking-wider text-[11px] bg-black hover:bg-black"

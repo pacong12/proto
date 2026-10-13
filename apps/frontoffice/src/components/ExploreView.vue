@@ -46,9 +46,7 @@
         </p>
       </div>
 
-      <div
-        class="grid grid-cols-2 sm:flex sm:items-center gap-4 sm:gap-6 font-mono text-xs w-full md:w-auto"
-      >
+      <div class="grid grid-cols-2 sm:flex sm:items-center gap-4 sm:gap-6 text-xs w-full md:w-auto">
         <div
           class="p-3 sm:p-0 rounded-xl bg-black border border-border sm:border-0 sm:bg-transparent"
         >
@@ -86,7 +84,7 @@
         </div>
 
         <!-- Right Controls: View Mode Switcher (Pons-Style Pills) -->
-        <div class="flex items-center gap-2 self-end sm:self-auto font-mono">
+        <div class="flex items-center gap-2 self-end sm:self-auto">
           <div
             class="inline-flex items-center p-1 bg-black rounded-full border border-border gap-1"
           >
@@ -122,7 +120,7 @@
 
       <!-- Navigation Filter Pills (Shadcn Tabs variant="line") + Search Bar -->
       <div
-        class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-border font-mono text-xs"
+        class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-border text-xs"
       >
         <!-- Filter Tabs -->
         <Tabs v-model="activeMarketTab" class="w-full md:w-auto">
@@ -143,7 +141,7 @@
             v-model="searchQuery"
             type="text"
             placeholder="Search coins / address..."
-            class="h-8 pl-8 pr-3 text-xs bg-card border-border rounded-xl font-mono text-foreground focus-visible:ring-foreground"
+            class="h-8 pl-8 pr-3 text-xs bg-card border-border rounded-xl text-foreground focus-visible:ring-foreground"
           />
         </div>
       </div>

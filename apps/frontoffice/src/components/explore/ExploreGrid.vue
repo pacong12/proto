@@ -36,8 +36,8 @@
                 >
                   {{ item.token.name }}
                 </h3>
-                <div class="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
-                  <span>${{ item.token.symbol }}</span>
+                <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span class="font-mono font-semibold">${{ item.token.symbol }}</span>
                   <span>&middot;</span>
                   <span>{{ formatRelativeTime(item.token.createdAt) }}</span>
                   <template v-if="item.token.deployer">
@@ -86,7 +86,7 @@
           </div>
 
           <!-- Price & MCap -->
-          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-border font-mono text-xs">
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-border text-xs">
             <div>
               <span class="text-[10px] text-muted-foreground block">MARKET CAP</span>
               <span class="font-bold text-sm text-foreground">
@@ -136,9 +136,9 @@
 
           <!-- Bonding Progress -->
           <div class="space-y-1 pt-1">
-            <div class="flex justify-between text-[10px] font-mono">
+            <div class="flex justify-between text-[10px]">
               <span class="text-muted-foreground">Bonding Curve</span>
-              <span class="font-bold text-emerald-500">
+              <span class="font-bold font-mono text-emerald-500">
                 {{ ((item.marketData?.graduationProgress ?? 0) * 100).toFixed(1) }}%
               </span>
             </div>

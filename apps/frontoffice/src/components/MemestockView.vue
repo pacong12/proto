@@ -39,7 +39,7 @@
 
     <!-- Navigation Filter Pills (Shadcn Tabs variant="line") + Search Bar (identical to Explore) -->
     <div
-      class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-border font-mono text-xs"
+      class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-border text-xs"
     >
       <!-- Filter Tabs -->
       <Tabs v-model="selectedSort" class="w-full md:w-auto">
@@ -60,7 +60,7 @@
           v-model="searchQuery"
           type="text"
           placeholder="Search memestocks / address..."
-          class="h-8 pl-8 pr-3 text-xs bg-card border-border rounded-xl font-mono text-foreground focus-visible:ring-foreground"
+          class="h-8 pl-8 pr-3 text-xs bg-card border-border rounded-xl text-foreground focus-visible:ring-foreground"
         />
       </div>
     </div>
@@ -68,7 +68,7 @@
     <!-- Loading State -->
     <div v-if="loading" class="flex flex-col items-center justify-center py-20 gap-3">
       <Loader2 class="w-7 h-7 text-foreground animate-spin" />
-      <span class="text-xs text-muted-foreground font-mono">{{ t('loadingTape') }}</span>
+      <span class="text-xs text-muted-foreground">{{ t('loadingTape') }}</span>
     </div>
 
     <!-- Error Banner -->
@@ -152,10 +152,8 @@
                 >
                   {{ item.token.name }}
                 </h3>
-                <div
-                  class="flex items-center gap-1.5 font-mono text-xs text-muted-foreground truncate"
-                >
-                  <span>${{ item.token.symbol }}</span>
+                <div class="flex items-center gap-1.5 text-xs text-muted-foreground truncate">
+                  <span class="font-mono font-semibold">${{ item.token.symbol }}</span>
                   <span>&middot;</span>
                   <span>{{ formatRelativeTime(item.token.createdAt) }}</span>
                   <template v-if="item.token.deployer">
@@ -238,16 +236,16 @@
           </div>
 
           <div class="mt-5 pt-4 border-t border-border space-y-2">
-            <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+            <div class="grid grid-cols-2 gap-2 text-xs">
               <div>
                 <span class="text-[10px] text-muted-foreground block">MARKET CAP</span>
-                <span class="font-bold text-foreground">
+                <span class="font-bold font-mono text-foreground">
                   {{ formatCompactUsd(item.marketData.marketCapUsd) }}
                 </span>
               </div>
               <div class="text-right">
                 <span class="text-[10px] text-muted-foreground block">VOLUME 24H</span>
-                <span class="font-semibold text-muted-foreground">
+                <span class="font-semibold font-mono text-muted-foreground">
                   {{
                     (item.marketData.volume24hUsd || 0) > 0
                       ? formatCompactUsd(item.marketData.volume24hUsd)
@@ -256,9 +254,9 @@
                 </span>
               </div>
             </div>
-            <div class="flex justify-between text-xs font-mono pt-1">
+            <div class="flex justify-between text-xs pt-1">
               <span class="text-muted-foreground">Graduation ({{ graduationTargetDisplay }})</span>
-              <span class="text-foreground font-semibold">
+              <span class="text-foreground font-mono font-semibold">
                 {{ (item.marketData.graduationProgress * 100).toFixed(1) }}%
               </span>
             </div>
