@@ -1,10 +1,8 @@
 <template>
-  <div class="p-4 space-y-5 max-h-[340px] overflow-y-auto">
+  <div class="p-4 space-y-5">
     <!-- Description -->
     <p class="text-sm leading-relaxed text-muted-foreground">
-      {{
-        currentToken.description || `Fixed-supply launchpad token on ${activeNetwork.name}.`
-      }}
+      {{ currentToken.description || `Fixed-supply launchpad token on ${activeNetwork.name}.` }}
     </p>
 
     <!-- Contract addresses -->
@@ -39,10 +37,7 @@
             </a>
           </div>
         </div>
-        <div
-          v-if="currentToken.poolAddress"
-          class="flex items-center justify-between gap-3"
-        >
+        <div v-if="currentToken.poolAddress" class="flex items-center justify-between gap-3">
           <span class="text-xs text-muted-foreground font-mono shrink-0">Pool</span>
           <div class="flex items-center gap-1.5 min-w-0">
             <span class="text-xs font-mono text-foreground truncate">{{
@@ -93,9 +88,21 @@
           </p>
           <p class="text-xs text-foreground mt-0.5">
             Buy Tax:
-            <span class="font-bold">{{ (onchainTaxConfig.buyTaxBps / 100).toFixed(1) }}%</span>
+            <span class="font-bold"
+              >{{
+                (
+                  (onchainTaxConfig.buyTaxBps || currentToken.taxConfig?.buyTaxBps || 0) / 100
+                ).toFixed(1)
+              }}%</span
+            >
             - Sell Tax:
-            <span class="font-bold">{{ (onchainTaxConfig.sellTaxBps / 100).toFixed(1) }}%</span>
+            <span class="font-bold"
+              >{{
+                (
+                  (onchainTaxConfig.sellTaxBps || currentToken.taxConfig?.sellTaxBps || 0) / 100
+                ).toFixed(1)
+              }}%</span
+            >
             - Protocol Fee:
             <span class="font-bold text-emerald-500">1.0%</span>
           </p>
@@ -111,6 +118,41 @@
         >
           Update Tax
         </Button>
+      </div>
+      <!-- Revenue Split Breakdown if configured -->
+      <div
+        v-if="currentToken.taxConfig?.revenueSplit"
+        class="space-y-1.5 pt-2 border-t border-border/60"
+      >
+        <p class="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+          Tax Revenue Split Allocation
+        </p>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono">
+          <div class="p-2 rounded-lg bg-muted/40 border border-border">
+            <span class="text-muted-foreground block text-[9px]">Creator</span>
+            <span class="font-bold text-foreground"
+              >{{ currentToken.taxConfig.revenueSplit.creator }}%</span
+            >
+          </div>
+          <div class="p-2 rounded-lg bg-muted/40 border border-border">
+            <span class="text-muted-foreground block text-[9px]">Buyback</span>
+            <span class="font-bold text-foreground"
+              >{{ currentToken.taxConfig.revenueSplit.buyback }}%</span
+            >
+          </div>
+          <div class="p-2 rounded-lg bg-muted/40 border border-border">
+            <span class="text-muted-foreground block text-[9px]">Holders</span>
+            <span class="font-bold text-foreground"
+              >{{ currentToken.taxConfig.revenueSplit.holders }}%</span
+            >
+          </div>
+          <div class="p-2 rounded-lg bg-muted/40 border border-border">
+            <span class="text-muted-foreground block text-[9px]">Growth</span>
+            <span class="font-bold text-foreground"
+              >{{ currentToken.taxConfig.revenueSplit.growth }}%</span
+            >
+          </div>
+        </div>
       </div>
     </div>
   </div>

@@ -514,6 +514,7 @@ const advancedOpen = ref(false);
 function clearImage() {
   selectedFileName.value = '';
   imagePreview.value = '';
+  pendingImageFile.value = null;
   form.value.logo = '';
   imageError.value = '';
   if (fileInputRef.value) fileInputRef.value.value = '';
@@ -528,10 +529,11 @@ const form = ref({
   twitter: '',
   telegram: '',
   initialBuyEth: '',
-  buyTax: '1',
-  sellTax: '1',
+  buyTax: '0',
+  sellTax: '0',
   creatorWallet: '',
 });
+const pendingImageFile = ref<File | null>(null);
 
 function triggerFileInput() {
   fileInputRef.value?.click();
@@ -550,31 +552,14 @@ async function processImageFile(file: File) {
 
   selectedFileName.value = file.name;
   try {
-    isUploadingIpfs.value = true;
-    // Compress and convert photo to modern WebP (max 512x512) before IPFS pinning
+    // Compress and convert to WebP preview locally — IPFS upload is deferred until user confirms launch
     const processed = await compressAndConvertToWebp(file, 512, 0.85);
     imagePreview.value = processed.dataUrl;
-
-    const data = await uploadFile<{
-      success: boolean;
-      data?: { cid?: string; uri?: string; url?: string };
-      error?: { message?: string };
-    }>('/api/ipfs/upload', processed.file);
-    const logoUri =
-      (data.data?.cid ? `ipfs://${data.data.cid}` : '') || data.data?.uri || data.data?.url || '';
-    if (data.success && logoUri) {
-      form.value.logo = logoUri;
-      imageError.value = '';
-    } else {
-      form.value.logo = '';
-      imageError.value = data?.error?.message || 'Failed to upload image to IPFS.';
-    }
-  } catch (err) {
-    console.warn('[CreateToken] Image upload error:', err);
+    pendingImageFile.value = processed.file;
     form.value.logo = '';
-    imageError.value = 'Failed to upload image to IPFS. Please try again.';
-  } finally {
-    isUploadingIpfs.value = false;
+  } catch (err) {
+    console.warn('[CreateToken] Image preview processing error:', err);
+    imageError.value = 'Failed to process image preview. Please try another file.';
   }
 }
 
@@ -595,11 +580,6 @@ function handleDrop(event: DragEvent) {
 }
 
 async function handleLaunch() {
-  if (isUploadingIpfs.value) return;
-  if (imagePreview.value && !form.value.logo) {
-    imageError.value = 'Image upload incomplete or failed. Please re-upload before launching.';
-    return;
-  }
   if (!isConnected.value) {
     openWallet();
     return;
@@ -614,6 +594,33 @@ async function handleLaunch() {
       `Revenue split allocation must equal 100% (currently ${totalSplit.value}%). Please auto-balance or adjust.`,
     );
     return;
+  }
+
+  // Upload image to IPFS only when user clicks launch and confirms payment
+  if (pendingImageFile.value && !form.value.logo) {
+    try {
+      isUploadingIpfs.value = true;
+      const data = await uploadFile<{
+        success: boolean;
+        data?: { cid?: string; uri?: string; url?: string };
+        error?: { message?: string };
+      }>('/api/ipfs/upload', pendingImageFile.value);
+      const logoUri =
+        (data.data?.cid ? `ipfs://${data.data.cid}` : '') || data.data?.uri || data.data?.url || '';
+      if (data.success && logoUri) {
+        form.value.logo = logoUri;
+        imageError.value = '';
+      } else {
+        imageError.value = data?.error?.message || 'Failed to upload image to IPFS.';
+        return;
+      }
+    } catch (err) {
+      console.warn('[CreateToken] IPFS upload error:', err);
+      imageError.value = 'Failed to upload image to IPFS. Please try again.';
+      return;
+    } finally {
+      isUploadingIpfs.value = false;
+    }
   }
   isModalOpen.value = true;
   const result = await launchToken({

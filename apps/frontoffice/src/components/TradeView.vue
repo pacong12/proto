@@ -429,7 +429,19 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { TradingChart } from '@/components/ui/chart';
 import { CashtagText, ShareModal, ThreadModal } from '@/components/feed';
-import { TradesTable, TopTradersTable, HoldersTable, BondingCurveStats, TradeHeader, SwapPanel, CreatorTaxModal, CalloutModal, TradeAboutTab, TradeCalloutsTab, MobileTradeDock } from './trade';
+import {
+  TradesTable,
+  TopTradersTable,
+  HoldersTable,
+  BondingCurveStats,
+  TradeHeader,
+  SwapPanel,
+  CreatorTaxModal,
+  CalloutModal,
+  TradeAboutTab,
+  TradeCalloutsTab,
+  MobileTradeDock,
+} from './trade';
 import {
   shortenAddress,
   formatTokenNumber,
@@ -747,7 +759,7 @@ async function loadOnchainTax(tokenAddr: `0x${string}`) {
       abi: launchpadTokenAbi,
       functionName: 'taxConfig',
     })) as [number, number, string];
-    if (cfg) {
+    if (cfg && (Number(cfg[0]) > 0 || Number(cfg[1]) > 0)) {
       onchainTaxConfig.value = {
         buyTaxBps: Number(cfg[0]),
         sellTaxBps: Number(cfg[1]),
@@ -756,6 +768,21 @@ async function loadOnchainTax(tokenAddr: `0x${string}`) {
       editBuyTax.value = String(Number(cfg[0]) / 100);
       editSellTax.value = String(Number(cfg[1]) / 100);
       editTaxRecipient.value = cfg[2];
+    } else if (
+      currentToken.value?.taxConfig?.buyTaxBps ||
+      currentToken.value?.taxConfig?.sellTaxBps
+    ) {
+      const fallbackBuy = currentToken.value.taxConfig.buyTaxBps ?? 0;
+      const fallbackSell = currentToken.value.taxConfig.sellTaxBps ?? 0;
+      const fallbackRecipient = currentToken.value.taxConfig.taxRecipient || cfg?.[2] || '';
+      onchainTaxConfig.value = {
+        buyTaxBps: fallbackBuy,
+        sellTaxBps: fallbackSell,
+        taxRecipient: fallbackRecipient,
+      };
+      editBuyTax.value = String(fallbackBuy / 100);
+      editSellTax.value = String(fallbackSell / 100);
+      editTaxRecipient.value = fallbackRecipient;
     }
   } catch {
     // Non-blocking

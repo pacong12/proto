@@ -54,14 +54,13 @@
       <div class="space-y-3.5 pt-4 border-t border-border">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-1.5">
-            <Label class="text-xs font-semibold text-foreground">Trading Taxes</Label>
+            <Label class="text-xs font-semibold text-foreground">Trading Taxes (Optional)</Label>
             <InfoTooltip
-              text="Taxes collected on automated market maker (DEX) swaps (max 10% per trade). Funds project development, liquidity deepening, and holder dividends."
+              text="Initial tax configured here is activated immediately upon token launch. Defaults to 0% for pure meme coins. Post-launch changes will require a 24-hour timelock to protect holders."
             />
           </div>
-          <span class="text-[10px] font-mono text-muted-foreground">Max 10% per trade</span>
+          <span class="text-[10px] font-mono text-muted-foreground">Default: 0% (Max 10%)</span>
         </div>
-
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
           <!-- Buy Tax with Slider -->
           <div class="space-y-3.5 p-4 sm:p-5 rounded-2xl border border-border bg-card">
