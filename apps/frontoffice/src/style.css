@@ -236,13 +236,13 @@ td {
    ========================================================================== */
 
 .text-xs {
-  font-size: 0.75rem; /* 12px */
-  line-height: 1.35;
+  font-size: 0.8125rem; /* 13px */
+  line-height: 1.4;
 }
 
 .text-sm {
   font-size: 0.875rem; /* 14px */
-  line-height: 1.45;
+  line-height: 1.5;
 }
 
 .text-base {
@@ -250,17 +250,14 @@ td {
   line-height: 1.5;
 }
 
-/* Legible Micro-Size Protection Floor: Enforces 12px minimum across all pages */
+/* Legible Micro-Size Protection Floor: Enforces 13px minimum across all pages */
 [class*='text-[8px]'],
 [class*='text-[9px]'],
-[class*='text-[10px]'] {
-  font-size: 0.75rem !important; /* 12px minimum legible floor */
-  line-height: 1.35 !important;
-}
-
-[class*='text-[11px]'] {
-  font-size: 0.78125rem !important; /* 12.5px */
-  line-height: 1.35 !important;
+[class*='text-[10px]'],
+[class*='text-[11px]'],
+[class*='text-[12px]'] {
+  font-size: 0.8125rem !important; /* 13px minimum legible floor */
+  line-height: 1.4 !important;
 }
 
 /* ==========================================================================
