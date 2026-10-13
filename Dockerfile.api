@@ -16,6 +16,8 @@ RUN bun install --frozen-lockfile
 # Copy source files
 COPY tsconfig.base.json ./
 COPY packages/shared-types ./packages/shared-types
+COPY packages/contracts-abi ./packages/contracts-abi
+COPY packages/math-sdk ./packages/math-sdk
 COPY apps/api ./apps/api
 
 EXPOSE 3001
