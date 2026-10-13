@@ -4,6 +4,8 @@ WORKDIR /app
 # Copy root manifests and workspace package manifests
 COPY package.json bun.lock ./
 COPY packages/shared-types/package.json ./packages/shared-types/
+COPY packages/contracts-abi/package.json ./packages/contracts-abi/
+COPY packages/math-sdk/package.json ./packages/math-sdk/
 COPY apps/api/package.json ./apps/api/
 # Stub other workspaces so bun install resolves the full workspace graph
 COPY apps/frontoffice/package.json ./apps/frontoffice/
