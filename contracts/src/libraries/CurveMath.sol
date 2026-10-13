@@ -12,6 +12,7 @@ library CurveMath {
     uint256 internal constant TRADE_FEE_BPS = 100; // 1%
 
     error ZeroReserve();
+    error Overflow();
 
     /**
      * @notice Calculate tokens received and platform fee for an incoming ETH/USDC payment.
@@ -95,6 +96,7 @@ library CurveMath {
         uint256 sqrtDen = sqrt(tokenReserve);
         if (sqrtDen == 0) revert ZeroReserve();
         uint256 result = (sqrtNum << 96) / sqrtDen;
+        if (result > type(uint160).max) revert Overflow();
         return uint160(result);
     }
 

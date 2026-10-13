@@ -61,6 +61,14 @@ contract CurveMathTest is Test {
         assertTrue(sqrtPrice > 0, "sqrtPrice > 0");
     }
 
+    function computeSqrtPriceX96Wrapper(uint256 eth, uint256 token) external pure returns (uint160) {
+        return CurveMath.computeSqrtPriceX96(eth, token);
+    }
+
+    function test_CurveMath_ComputeSqrtPriceX96_RevertsOnOverflow() public {
+        vm.expectRevert(CurveMath.Overflow.selector);
+        this.computeSqrtPriceX96Wrapper(type(uint256).max, 1);
+    }
     function test_CurveMath_SpotPrice() public pure {
         uint256 spot = CurveMath.calculateSpotPrice(V_ETH, V_TOKEN);
         // 3 ether / 800M ether * 1e18 = 3.75e9 wei

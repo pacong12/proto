@@ -171,7 +171,9 @@ contract BondingCurve {
      * @notice ETH out and platform fee for a given token input.
      */
     function getAmountOutSell(uint256 tokenIn) public view returns (uint256 ethOut, uint256 feeEth) {
-        return CurveMath.getAmountOutSell(tokenIn, virtualEthReserve, virtualTokenReserve);
+        (, uint16 sellTaxBps, ) = token.taxConfig();
+        uint256 netTokenIn = sellTaxBps > 0 ? (tokenIn * (BPS - sellTaxBps)) / BPS : tokenIn;
+        return CurveMath.getAmountOutSell(netTokenIn, virtualEthReserve, virtualTokenReserve);
     }
 
     // ---------------------------------------------------------------------------
@@ -262,9 +264,16 @@ contract BondingCurve {
         }
         if (ethOut < minEthOut) revert InsufficientOutput();
 
+        // H-01 fix: compute net tokens received after token sell tax.
+        // LaunchpadToken._transfer deducts sellTaxBps and sends it to taxRecipient.
+        // The curve only receives netTokenIn, so virtualTokenReserve must be incremented
+        // by netTokenIn to preserve the constant-product K invariant.
+        (, uint16 sellTaxBps, ) = token.taxConfig();
+        uint256 netTokenIn = sellTaxBps > 0 ? (tokenIn * (BPS - sellTaxBps)) / BPS : tokenIn;
+
         // EFFECTS — update all state before any external interaction.
         uint256 grossEthOut = ethOut + fee;
-        virtualTokenReserve += tokenIn;
+        virtualTokenReserve += netTokenIn;
         virtualEthReserve -= grossEthOut;
         totalEthRaised = totalEthRaised > grossEthOut ? totalEthRaised - grossEthOut : 0;
         totalVolumeEth += grossEthOut;
