@@ -150,6 +150,38 @@ contract LaunchpadTest is Test {
         uint256 expectedSellTax = (sellAmount * 1000) / 10000;
         assertEq(token.balanceOf(taxRecipient), expectedTax + expectedSellTax);
     }
+    function test_SetInitialTaxConfigAtCreation() public {
+        ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials("", "", "", "", "");
+
+        vm.startPrank(deployer);
+        LaunchpadToken token = new LaunchpadToken();
+        token.initialize(
+            "Initial Tax Token",
+            "ITAX",
+            "ipfs://itax",
+            "Token with 1% initial tax",
+            socials,
+            deployer,
+            address(weth),
+            deployer
+        );
+
+        address taxRecipient = address(0x5555);
+
+        // Creator sets initial 1% tax (100 bps) immediately at creation without 24h timelock
+        token.setInitialTaxConfig(100, 100, taxRecipient);
+        vm.stopPrank();
+
+        (uint16 buyBps, uint16 sellBps, address recipient) = token.taxConfig();
+        assertEq(buyBps, 100, "buy tax must be 100 bps immediately");
+        assertEq(sellBps, 100, "sell tax must be 100 bps immediately");
+        assertEq(recipient, taxRecipient, "recipient set correctly");
+
+        // Setting initial tax again fails (cannot overwrite baseline tax without 24h timelock)
+        vm.prank(deployer);
+        vm.expectRevert(LaunchpadToken.Unauthorized.selector);
+        token.setInitialTaxConfig(200, 200, taxRecipient);
+    }
 
     function test_AntiSnipeProtection() public {
         ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials("", "", "", "", "");

@@ -360,6 +360,29 @@ export const launchpadTokenAbi = [
   },
   {
     type: 'function',
+    name: 'setInitialTaxConfig',
+    inputs: [
+      {
+        name: 'buyTaxBps',
+        type: 'uint16',
+        internalType: 'uint16',
+      },
+      {
+        name: 'sellTaxBps',
+        type: 'uint16',
+        internalType: 'uint16',
+      },
+      {
+        name: 'taxRecipient',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'proposeTaxConfig',
     inputs: [
       {

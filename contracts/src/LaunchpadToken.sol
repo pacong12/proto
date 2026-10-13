@@ -182,6 +182,32 @@ contract LaunchpadToken is ILaunchpadToken {
     // ---------------------------------------------------------------------------
     // Configuration
     // ---------------------------------------------------------------------------
+    /**
+     * @notice Set initial creator tax during the launch window without a 24h timelock.
+     * @dev Allows deployer to configure the baseline token tax directly at creation.
+     *      Can only be called by the deployer while the token is still in the launch restriction
+     *      window and the active tax is currently 0.
+     *      Subsequent post-launch tax changes must use the two-step proposeTaxConfig flow (24h timelock).
+     */
+    function setInitialTaxConfig(
+        uint16 buyTaxBps,
+        uint16 sellTaxBps,
+        address taxRecipient
+    ) external {
+        if (msg.sender != deployer) revert Unauthorized();
+        if (block.number > restrictionsEndBlock) revert TimelockNotExpired();
+        if (buyTaxBps > MAX_TAX_BPS || sellTaxBps > MAX_TAX_BPS) revert ExcessiveTax();
+        if (_taxConfig.buyTaxBps != 0 || _taxConfig.sellTaxBps != 0) revert Unauthorized();
+
+        address recipient = taxRecipient != address(0) ? taxRecipient : deployer;
+        _taxConfig = TaxConfig({
+            buyTaxBps: buyTaxBps,
+            sellTaxBps: sellTaxBps,
+            taxRecipient: recipient
+        });
+
+        emit TaxConfigUpdated(buyTaxBps, sellTaxBps, recipient);
+    }
 
     /**
      * @notice Propose a tax configuration change. Takes effect after TAX_CHANGE_TIMELOCK (24h).
