@@ -80,7 +80,7 @@
         <div class="min-w-0 space-y-1">
           <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap">
             <h1
-              class="text-2xl sm:text-3xl font-black font-sans tracking-tight text-foreground truncate"
+              class="text-2xl sm:text-3xl font-extrabold font-sans tracking-tight text-foreground truncate"
             >
               {{ currentToken.name }}
             </h1>

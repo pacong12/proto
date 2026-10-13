@@ -3,8 +3,10 @@
     <!-- Top Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
-        <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t('memestock') }}</h1>
-        <p class="text-sm mt-1 text-muted-foreground">
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+          {{ t('memestock') }}
+        </h1>
+        <p class="text-sm text-muted-foreground mt-1 leading-relaxed">
           {{ t('memestockSubtitle') }}
         </p>
       </div>

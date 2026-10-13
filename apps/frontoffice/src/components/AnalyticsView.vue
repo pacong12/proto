@@ -6,7 +6,7 @@
     >
       <div>
         <div class="flex items-center gap-2.5">
-          <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-foreground font-mono">
+          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
             {{ t('protocolAnalytics') }}
           </h1>
           <span
@@ -20,7 +20,7 @@
             {{ activeNetwork.name }}
           </span>
         </div>
-        <p class="text-xs sm:text-sm text-muted-foreground mt-1">
+        <p class="text-sm text-muted-foreground mt-1 leading-relaxed">
           Real-time on-chain volume, fair launch token deployments, and protocol revenue metrics.
         </p>
       </div>
@@ -323,7 +323,7 @@
     <Card class="p-5 sm:p-7 rounded-3xl border border-border bg-card space-y-4 shadow-sm">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h2 class="text-base sm:text-lg font-bold text-foreground font-mono">
+          <h2 class="text-base sm:text-lg font-bold text-foreground">
             {{ t('deployedContracts') }}
           </h2>
           <p class="text-xs text-muted-foreground font-sans">

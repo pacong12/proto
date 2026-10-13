@@ -1,5 +1,14 @@
 @import 'tailwindcss';
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 
+:root {
+  --vp-font-family-base:
+    'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', 'Noto Color Emoji';
+  --vp-font-family-mono:
+    ui-monospace, 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
+  font-optical-sizing: auto;
+}
 @theme {
   --breakpoint-xs: 30rem;
   --color-background: var(--background);
@@ -21,7 +30,7 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-  --color-brand: #FC4198;
+  --color-brand: #fc4198;
   --color-card-raised: var(--card-raised);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
@@ -31,17 +40,10 @@
   --color-bullish: var(--bullish);
   --color-bearish: var(--bearish);
 
-  --font-serif:
-    'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    sans-serif;
-  --font-sans:
-    'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    sans-serif;
-  --font-heading:
-    'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    sans-serif;
-  --font-mono:
-    ui-monospace, 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
+  --font-serif: var(--vp-font-family-base);
+  --font-sans: var(--vp-font-family-base);
+  --font-heading: var(--vp-font-family-base);
+  --font-mono: var(--vp-font-family-mono);
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -72,36 +74,22 @@ html {
   }
 }
 
-/* Universal Typography: Inter / System UI */
+/* Universal Typography: Matched to apps/docs (VitePress) */
 html,
 body {
-  font-family:
-    'Inter',
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
+  font-family: var(--vp-font-family-base);
+  font-optical-sizing: auto;
 }
 
-/* Headings: Space & weight hierarchy */
+/* Headings: Space & weight hierarchy matched to apps/docs */
 h1,
 h2,
 h3,
 h4,
 h5,
 h6 {
-  font-family:
-    'Inter',
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
+  font-family: var(--vp-font-family-base);
+  font-optical-sizing: auto;
   letter-spacing: -0.02em;
   line-height: 1.25;
 }
@@ -131,8 +119,7 @@ pre,
 table,
 th,
 td {
-  font-family:
-    ui-monospace, 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
+  font-family: var(--vp-font-family-mono);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
 }

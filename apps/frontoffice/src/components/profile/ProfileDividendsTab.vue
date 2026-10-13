@@ -6,9 +6,7 @@
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <Coins class="w-4 h-4 text-primary" />
-            <h3 class="text-sm font-bold text-foreground font-mono">
-              Holder Fee Sharing Dividends
-            </h3>
+            <h3 class="text-sm font-bold text-foreground">Holder Fee Sharing Dividends</h3>
           </div>
           <Button
             v-if="isOwnProfile"
@@ -106,7 +104,7 @@
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <Lock class="w-4 h-4 text-foreground" />
-            <h3 class="text-sm font-bold text-foreground font-mono">Linear Vesting Vault</h3>
+            <h3 class="text-sm font-bold text-foreground">Linear Vesting Vault</h3>
           </div>
           <Badge variant="outline" class="text-[9px] font-mono text-muted-foreground">
             Non-Custodial

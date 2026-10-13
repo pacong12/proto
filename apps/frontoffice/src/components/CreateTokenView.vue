@@ -1,8 +1,10 @@
 <template>
   <div class="max-w-4xl mx-auto space-y-8 py-2 sm:py-4">
     <div>
-      <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t('launchToken') }}</h1>
-      <p class="text-sm mt-1 text-muted-foreground">
+      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+        {{ t('launchToken') }}
+      </h1>
+      <p class="text-sm text-muted-foreground mt-1 leading-relaxed">
         {{ t('v2Subtitle') }}
       </p>
     </div>

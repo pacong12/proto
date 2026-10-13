@@ -6,18 +6,7 @@
     <div v-if="latestLaunches.length > 0" class="space-y-3">
       <div class="flex items-center justify-between">
         <div>
-          <h2
-            class="text-xs uppercase tracking-widest font-mono font-bold text-muted-foreground flex items-center gap-2"
-          >
-            <span>New on {{ activeNetwork.name }}</span>
-            <span
-              class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-primary/10 text-primary border border-primary/20"
-            >
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              {{ activeNetwork.nativeCurrency.symbol }}
-            </span>
-          </h2>
-          <p class="text-xs text-muted-foreground/80 mt-0.5">Latest launches</p>
+          <h2 class="text-sm font-bold text-foreground">New on {{ activeNetwork.name }}</h2>
         </div>
         <div class="flex items-center gap-2">
           <Button
@@ -48,10 +37,10 @@
       class="p-5 sm:p-6 rounded-3xl bg-card border border-border flex flex-col md:flex-row items-start md:items-center justify-between gap-5 shadow-xs"
     >
       <div class="space-y-1.5 max-w-xl">
-        <h1 class="text-xl sm:text-2xl font-black tracking-tight text-foreground">
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
           The launch floor for {{ activeNetwork.name }}.
         </h1>
-        <p class="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+        <p class="text-sm text-muted-foreground leading-relaxed mt-1">
           Launch a coin with locked liquidity. Find your community. Every trade shares fees in
           {{ activeNetwork.nativeCurrency.symbol }}.
         </p>
@@ -84,18 +73,6 @@
             {{ totalTokensCount }}
           </span>
         </div>
-        <div
-          class="p-3 sm:p-0 rounded-xl bg-black border border-border sm:border-0 sm:bg-transparent col-span-2 sm:col-span-1"
-        >
-          <span
-            class="text-muted-foreground text-[10px] uppercase tracking-wider block font-semibold"
-          >
-            Chain Standard
-          </span>
-          <span class="font-bold text-xs text-foreground">
-            {{ activeNetwork.nativeCurrency.symbol }} Native Gas
-          </span>
-        </div>
       </div>
     </div>
 
@@ -105,10 +82,7 @@
     <div class="space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 class="text-xl font-bold tracking-tight text-foreground">Explore coins</h2>
-          <p class="text-xs font-mono text-muted-foreground">
-            Markets in {{ activeNetwork.nativeCurrency.symbol }}
-          </p>
+          <h2 class="text-lg sm:text-xl font-bold tracking-tight text-foreground">Explore coins</h2>
         </div>
 
         <!-- Right Controls: View Mode Switcher (Pons-Style Pills) -->
