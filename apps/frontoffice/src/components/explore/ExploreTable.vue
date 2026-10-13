@@ -100,7 +100,7 @@
                   <button
                     v-if="item.token.deployer"
                     type="button"
-                    class="text-xs text-muted-foreground hover:text-foreground font-mono truncate hidden sm:inline cursor-pointer transition-colors hover:underline underline-offset-2"
+                    class="text-xs text-muted-foreground hover:text-foreground truncate hidden sm:inline cursor-pointer transition-colors hover:underline underline-offset-2"
                     :title="`View profile: ${getUserIdentity(item.token.deployer).displayName}`"
                     @click.stop="navigateToDeployer(item.token.deployer)"
                   >
@@ -108,7 +108,7 @@
                   </button>
                   <button
                     type="button"
-                    class="text-xs text-muted-foreground hover:text-foreground font-mono flex items-center gap-1 bg-black border border-border px-1.5 py-0.5 rounded transition cursor-pointer"
+                    class="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 bg-black border border-border px-1.5 py-0.5 rounded transition cursor-pointer"
                     title="Copy Contract Address"
                     @click.stop="copyAddress(item.token.address)"
                   >
@@ -126,7 +126,7 @@
                   />
                   <span
                     v-if="(item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0"
-                    class="text-xs text-sky-400 font-mono px-1.5 py-0.5 rounded border border-sky-500/20 bg-sky-500/5"
+                    class="text-xs text-sky-400 px-1.5 py-0.5 rounded border border-sky-500/20 bg-sky-500/5"
                     title="Holder Fee Sharing Enabled"
                   >
                     {{ item.token.taxConfig?.revenueSplit?.holders }}% Divs
@@ -156,9 +156,7 @@
           </TableCell>
 
           <!-- 4. MARKET CAP -->
-          <TableCell
-            class="py-3.5 px-4 text-right font-extrabold text-sm text-foreground font-mono"
-          >
+          <TableCell class="py-3.5 px-4 text-right font-extrabold text-sm text-foreground">
             {{
               (item.marketData?.marketCapUsd ?? 0) > 0
                 ? `$${formatNumberCap(item.marketData?.marketCapUsd ?? 0)}`
@@ -168,7 +166,7 @@
 
           <!-- 5. BONDING / PROGRESS -->
           <TableCell class="py-3.5 px-4">
-            <div class="space-y-1.5 max-w-[130px] mx-auto font-mono text-center">
+            <div class="space-y-1.5 max-w-[130px] mx-auto text-center">
               <div class="flex items-center justify-between text-xs">
                 <span class="text-muted-foreground">
                   {{ item.marketData?.isGraduated ? 'Graduated' : 'Curve' }}
@@ -214,7 +212,7 @@
             <Button
               size="sm"
               variant="outline"
-              class="h-8 px-3 text-xs font-bold rounded-xl border-border hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all cursor-pointer inline-flex items-center gap-1 font-mono"
+              class="h-8 px-3 text-xs font-bold rounded-xl border-border hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all cursor-pointer inline-flex items-center gap-1"
               @click.stop="$emit('selectToken', item.token.address)"
             >
               <span>Trade</span>

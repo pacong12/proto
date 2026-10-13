@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-4 font-mono text-xs">
+  <div class="space-y-4 text-xs">
     <!-- Loading State -->
     <div v-if="loading" class="py-16 text-center text-muted-foreground">
       <Loader2 class="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
@@ -138,7 +138,7 @@
 
         <!-- Post Actions Bar -->
         <div
-          class="flex items-center justify-between pt-2 border-t border-border/60 text-xs text-muted-foreground font-mono"
+          class="flex items-center justify-between pt-2 border-t border-border/60 text-xs text-muted-foreground"
         >
           <!-- 1. Reply -->
           <button
@@ -162,7 +162,7 @@
                 <span>{{ (call.repostsCount || 0) + (call.quotesCount || 0) }}</span>
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" class="w-36 font-mono text-xs">
+            <DropdownMenuContent align="center" class="w-36 text-xs">
               <DropdownMenuItem class="cursor-pointer gap-2" @click="emit('repost', call.id)">
                 <Repeat class="w-3.5 h-3.5 text-emerald-500" />
                 <span>{{ call.isRepostedByViewer ? 'Undo Repost' : 'Repost' }}</span>

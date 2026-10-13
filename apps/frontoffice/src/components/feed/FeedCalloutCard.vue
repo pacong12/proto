@@ -14,7 +14,7 @@
         <div class="min-w-0 leading-tight">
           <div class="flex items-center gap-1.5 flex-wrap">
             <span
-              class="font-bold text-foreground text-xs sm:text-sm hover:underline cursor-pointer font-mono"
+              class="font-bold text-foreground text-xs sm:text-sm hover:underline cursor-pointer"
               @click.stop="$emit('navigateToCaller', call.authorAddress)"
             >
               {{ getUserIdentity(call.authorAddress).displayName }}
@@ -23,12 +23,12 @@
             <!-- Caller Whale Badge with GMGN/Web3Icons SVG -->
             <TraderTagBadge v-if="isWhaleCaller(call)" tag="whale" size="sm" />
           </div>
-          <span class="text-[10px] text-muted-foreground font-mono"> Verified Caller </span>
+          <span class="text-[10px] text-muted-foreground"> Verified Caller </span>
         </div>
       </div>
 
       <div class="flex items-center gap-2 shrink-0">
-        <span class="text-[10px] text-muted-foreground font-mono">
+        <span class="text-[10px] text-muted-foreground">
           {{ formatRelativeTime(call.createdAt) }}
         </span>
       </div>
@@ -49,14 +49,14 @@
     >
       <div class="flex items-center gap-1.5">
         <Jazzicon :address="call.quotedCallout.authorAddress" :size="16" class="rounded-full" />
-        <span class="font-bold text-foreground font-mono">
+        <span class="font-bold text-foreground">
           {{ getUserIdentity(call.quotedCallout.authorAddress).displayName }}
         </span>
-        <span v-if="call.quotedCallout.tokenSymbol" class="text-primary font-bold font-mono">
+        <span v-if="call.quotedCallout.tokenSymbol" class="text-primary font-bold">
           ${{ call.quotedCallout.tokenSymbol }}
         </span>
         <span class="text-muted-foreground text-[10px]">&middot;</span>
-        <span class="text-[10px] text-muted-foreground font-mono">
+        <span class="text-[10px] text-muted-foreground">
           {{ formatRelativeTime(call.quotedCallout.createdAt) }}
         </span>
       </div>
@@ -80,7 +80,7 @@
 
     <!-- Signature Web3 Token Card Widget -->
     <div
-      class="p-3.5 rounded-xl border border-border bg-black hover:bg-zinc-950 transition cursor-pointer flex items-center justify-between gap-3 text-xs font-mono shadow-2xs"
+      class="p-3.5 rounded-xl border border-border bg-black hover:bg-zinc-950 transition cursor-pointer flex items-center justify-between gap-3 text-xs shadow-2xs"
       @click.stop="$emit('navigateToToken', call.tokenAddress)"
     >
       <div class="flex items-center gap-2.5 min-w-0">
@@ -153,7 +153,7 @@
         >
           <!-- Live PnL % row -->
           <span
-            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-black font-mono tabular-nums border"
+            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-black tabular-nums border"
             :class="
               callPnlPct(call) >= 0
                 ? 'bg-emerald-950/60 border-emerald-700/40 text-emerald-400'
@@ -165,7 +165,7 @@
             {{ callPnlPct(call) >= 0 ? '+' : '' }}{{ callPnlPct(call).toFixed(1) }}%
           </span>
           <!-- Position size + abs PnL row -->
-          <span class="text-[9px] font-mono text-muted-foreground tabular-nums leading-none">
+          <span class="text-[9px] text-muted-foreground tabular-nums leading-none">
             <span v-if="call.positionUsd && call.positionUsd > 0">
               ${{ formatCompactUsd(call.positionUsd) }}
             </span>
@@ -185,12 +185,12 @@
           v-else-if="call.positionUsd || call.profitUsd !== undefined"
           class="flex flex-col items-end gap-0.5"
         >
-          <span v-if="call.positionUsd" class="text-xs font-bold text-foreground font-mono">
+          <span v-if="call.positionUsd" class="text-xs font-bold text-foreground">
             ${{ formatCompactUsd(call.positionUsd) }}
           </span>
           <span
             v-if="call.profitUsd !== undefined"
-            class="text-[11px] font-bold font-mono"
+            class="text-[11px] font-bold"
             :class="call.profitUsd >= 0 ? 'text-emerald-500' : 'text-rose-500'"
           >
             {{ call.profitUsd >= 0 ? '+' : '' }}${{ call.profitUsd.toFixed(1) }}
@@ -209,7 +209,7 @@
 
     <!-- Hybrid Social Action Bar -->
     <div
-      class="flex items-center justify-between pt-2 border-t border-border/60 text-xs text-muted-foreground font-mono"
+      class="flex items-center justify-between pt-2 border-t border-border/60 text-xs text-muted-foreground"
       @click.stop
     >
       <!-- 1. Reply / Thread -->
@@ -236,7 +236,7 @@
             <span>{{ (call.repostsCount || 0) + (call.quotesCount || 0) }}</span>
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="center" class="w-36 font-mono text-xs">
+        <DropdownMenuContent align="center" class="w-36 text-xs">
           <DropdownMenuItem class="cursor-pointer gap-2" @click="$emit('toggleRepost', call.id)">
             <Repeat class="w-3.5 h-3.5 text-emerald-500" />
             <span>{{ call.isRepostedByViewer ? 'Undo Repost' : 'Repost' }}</span>

@@ -45,7 +45,7 @@ const hasActivated = computed(() => {
 
 <template>
   <div
-    class="flex items-start gap-3 px-4 py-3 rounded-xl border font-mono text-xs"
+    class="flex items-start gap-3 px-4 py-3 rounded-xl border text-xs"
     :class="
       hasActivated
         ? 'bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400'

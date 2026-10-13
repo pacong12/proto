@@ -1,14 +1,12 @@
 <template>
   <Dialog :open="open" @update:open="$emit('update:open', $event)">
-    <DialogContent class="sm:max-w-md bg-card border-border font-mono text-xs">
+    <DialogContent class="sm:max-w-md bg-card border-border text-xs">
       <DialogHeader>
         <div class="flex items-center gap-2">
           <Megaphone class="w-4 h-4 text-primary shrink-0" />
-          <DialogTitle class="text-base font-black font-mono">
-            Call ${{ currentToken.symbol }}
-          </DialogTitle>
+          <DialogTitle class="text-base font-black"> Call ${{ currentToken.symbol }} </DialogTitle>
         </div>
-        <DialogDescription class="text-xs text-muted-foreground font-mono">
+        <DialogDescription class="text-xs text-muted-foreground">
           Post an on-chain verified alpha callout with your price target and thesis.
         </DialogDescription>
       </DialogHeader>
@@ -72,7 +70,7 @@
             <span class="text-[11px] font-sans">
               Anti-spam: You must hold at least $1.00 worth of ${{ currentToken.symbol }} to
               comment.
-              <span v-if="userHoldingUsd > 0" class="block font-mono text-[10px] text-amber-400">
+              <span v-if="userHoldingUsd > 0" class="block text-[10px] text-amber-400">
                 (Current: ${{ userHoldingUsd.toFixed(2) }})
               </span>
             </span>
@@ -80,7 +78,7 @@
           <Button
             size="sm"
             variant="outline"
-            class="h-7 px-2.5 text-[11px] border-amber-500 text-amber-500 hover:bg-amber-500/10 shrink-0 font-bold font-mono cursor-pointer rounded-lg"
+            class="h-7 px-2.5 text-[11px] border-amber-500 text-amber-500 hover:bg-amber-500/10 shrink-0 font-bold cursor-pointer rounded-lg"
             @click="$emit('goToBuy')"
           >
             Buy ${{ Math.max(1, Math.ceil(1 - userHoldingUsd)) }} of ${{ currentToken.symbol }}
@@ -98,7 +96,7 @@
             class="w-full text-xs font-sans p-2.5 rounded-lg border border-border bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-foreground resize-none"
             @input="$emit('update:callContent', ($event.target as HTMLTextAreaElement).value)"
           />
-          <div class="flex justify-between text-[10px] text-muted-foreground font-mono">
+          <div class="flex justify-between text-[10px] text-muted-foreground">
             <span>{{ callContent.length }}/500</span>
             <span v-if="account" class="truncate">Caller: {{ shortenAddress(account, 6, 4) }}</span>
           </div>
@@ -111,7 +109,7 @@
             :model-value="callImageUrl"
             type="text"
             placeholder="https://... or ipfs://... (chart screenshot / meme)"
-            class="h-8 text-xs font-mono"
+            class="h-8 text-xs"
             @update:model-value="$emit('update:callImageUrl', String($event))"
           />
         </div>

@@ -839,7 +839,7 @@ onUnmounted(() => {
 
         <button
           type="button"
-          class="hidden sm:grid h-8 w-8 cursor-pointer place-items-center rounded-md text-xs font-mono font-bold transition"
+          class="hidden sm:grid h-8 w-8 cursor-pointer place-items-center rounded-md text-xs font-bold transition"
           :class="
             isLogScale ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
           "
@@ -883,7 +883,7 @@ onUnmounted(() => {
 
       <!-- In-chart OHLC legend (Top-left inside chart canvas) -->
       <div
-        class="pointer-events-none absolute left-3 top-3 z-10 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs text-muted-foreground"
+        class="pointer-events-none absolute left-3 top-3 z-10 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"
       >
         <span v-if="activeBar" class="font-semibold text-foreground">
           {{ activeBar.close >= activeBar.open ? '▲' : '▼' }}
@@ -924,7 +924,7 @@ onUnmounted(() => {
         v-if="isEmpty && !loading"
         class="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-1 text-muted-foreground"
       >
-        <span class="text-xs font-mono">No trades in this resolution yet</span>
+        <span class="text-xs">No trades in this resolution yet</span>
       </div>
 
       <!-- Return to Latest Button -->

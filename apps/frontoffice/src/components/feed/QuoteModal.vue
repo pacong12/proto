@@ -5,7 +5,7 @@
     @click.self="emit('close')"
   >
     <div
-      class="w-full max-w-lg rounded-2xl border border-border bg-card shadow-2xl overflow-hidden font-mono text-xs flex flex-col max-h-[90vh]"
+      class="w-full max-w-lg rounded-2xl border border-border bg-card shadow-2xl overflow-hidden text-xs flex flex-col max-h-[90vh]"
     >
       <!-- Header -->
       <div class="flex items-center justify-between px-5 py-3.5 border-b border-border">
@@ -40,9 +40,7 @@
               class="w-full text-xs font-sans p-3 rounded-xl border border-border bg-muted/30 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground resize-none"
             />
             <div class="flex justify-end">
-              <span class="text-[10px] text-muted-foreground font-mono">
-                {{ quoteContent.length }}/500
-              </span>
+              <span class="text-[10px] text-muted-foreground"> {{ quoteContent.length }}/500 </span>
             </div>
           </div>
         </div>
@@ -85,14 +83,14 @@
         <Button
           variant="outline"
           size="sm"
-          class="h-8 text-xs font-mono font-bold cursor-pointer"
+          class="h-8 text-xs font-bold cursor-pointer"
           @click="emit('close')"
         >
           Cancel
         </Button>
         <Button
           size="sm"
-          class="h-8 px-4 text-xs font-mono font-bold gap-1.5 cursor-pointer shadow-xs"
+          class="h-8 px-4 text-xs font-bold gap-1.5 cursor-pointer shadow-xs"
           :disabled="isSubmitting || !quoteContent.trim() || callerBalance <= 0"
           @click="submitQuote"
         >

@@ -12,11 +12,9 @@
       </p>
       <div class="space-y-1.5">
         <div class="flex items-center justify-between gap-3">
-          <span class="text-xs text-muted-foreground font-mono shrink-0">Token</span>
+          <span class="text-xs text-muted-foreground shrink-0">Token</span>
           <div class="flex items-center gap-1.5 min-w-0">
-            <span class="text-xs font-mono text-foreground truncate">{{
-              currentToken.address
-            }}</span>
+            <span class="text-xs text-foreground truncate">{{ currentToken.address }}</span>
             <button
               type="button"
               aria-label="Copy token address"
@@ -38,11 +36,9 @@
           </div>
         </div>
         <div v-if="currentToken.poolAddress" class="flex items-center justify-between gap-3">
-          <span class="text-xs text-muted-foreground font-mono shrink-0">Pool</span>
+          <span class="text-xs text-muted-foreground shrink-0">Pool</span>
           <div class="flex items-center gap-1.5 min-w-0">
-            <span class="text-xs font-mono text-foreground truncate">{{
-              currentToken.poolAddress
-            }}</span>
+            <span class="text-xs text-foreground truncate">{{ currentToken.poolAddress }}</span>
             <a
               :href="`${explorerUrl}/address/${currentToken.poolAddress}`"
               target="_blank"
@@ -61,26 +57,26 @@
     <div class="grid grid-cols-3 gap-4 pt-3 border-t border-border">
       <div>
         <p class="text-[10px] uppercase tracking-wider text-muted-foreground">Price</p>
-        <p class="text-sm font-bold font-mono mt-0.5 text-foreground">
+        <p class="text-sm font-bold mt-0.5 text-foreground">
           {{ formatPriceUsd(currentMarketData.priceUsd) }}
         </p>
       </div>
       <div>
         <p class="text-[10px] uppercase tracking-wider text-muted-foreground">Mkt Cap</p>
-        <p class="text-sm font-bold font-mono mt-0.5 text-foreground">
+        <p class="text-sm font-bold mt-0.5 text-foreground">
           {{ formatCompactUsd(currentMarketData.marketCapUsd) }}
         </p>
       </div>
       <div>
         <p class="text-[10px] uppercase tracking-wider text-muted-foreground">24h Vol</p>
-        <p class="text-sm font-bold font-mono mt-0.5 text-foreground">
+        <p class="text-sm font-bold mt-0.5 text-foreground">
           {{ formatCompactUsd(currentMarketData.volume24hUsd) }}
         </p>
       </div>
     </div>
 
     <!-- Trading Taxes & Fees Card -->
-    <div class="space-y-2.5 pt-3 border-t border-border font-mono text-xs">
+    <div class="space-y-2.5 pt-3 border-t border-border text-xs">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
@@ -113,7 +109,7 @@
           v-if="isCreator"
           variant="outline"
           size="sm"
-          class="h-7 text-xs font-mono cursor-pointer"
+          class="h-7 text-xs cursor-pointer"
           @click="$emit('openTaxModal')"
         >
           Update Tax
@@ -127,7 +123,7 @@
         <p class="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
           Tax Revenue Split Allocation
         </p>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
           <div class="p-2 rounded-lg bg-muted/40 border border-border">
             <span class="text-muted-foreground block text-xs">Creator</span>
             <span class="font-bold text-foreground"

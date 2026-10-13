@@ -6,11 +6,11 @@
     </div>
 
     <div v-else-if="holders.length === 0" class="py-16 text-center text-muted-foreground">
-      <p class="text-xs font-mono">No holder data available.</p>
+      <p class="text-xs">No holder data available.</p>
     </div>
 
     <div v-else class="overflow-x-auto rounded-2xl border border-border bg-black">
-      <Table class="w-full text-left text-xs font-mono min-w-[500px] bg-black">
+      <Table class="w-full text-left text-xs min-w-[500px] bg-black">
         <TableHeader>
           <TableRow class="border-b border-border text-muted-foreground bg-black hover:bg-black">
             <TableHead class="py-2.5 px-3 font-semibold w-10 text-muted-foreground bg-black">
@@ -73,7 +73,7 @@
                 <Badge
                   v-else-if="getHolderBadge(holder.address)"
                   variant="outline"
-                  class="text-[9px] px-1.5 py-0 h-4 border-border text-muted-foreground font-mono"
+                  class="text-[9px] px-1.5 py-0 h-4 border-border text-muted-foreground"
                 >
                   {{ getHolderBadge(holder.address) }}
                 </Badge>

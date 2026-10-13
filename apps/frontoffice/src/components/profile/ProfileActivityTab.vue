@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-4 font-mono text-xs">
+  <div class="space-y-4 text-xs">
     <!-- Empty state -->
     <Empty
       v-if="userActivities.length === 0"
@@ -15,7 +15,7 @@
           as-child
           size="sm"
           variant="default"
-          class="h-8 px-4 font-bold text-xs cursor-pointer font-mono rounded-xl mt-2"
+          class="h-8 px-4 font-bold text-xs cursor-pointer rounded-xl mt-2"
         >
           <RouterLink to="/launchpad"> Explore Tokens & Trade </RouterLink>
         </Button>
@@ -24,7 +24,7 @@
 
     <!-- Activity Table -->
     <div v-else class="rounded-2xl border border-border bg-black overflow-hidden shadow-xs">
-      <Table class="text-xs font-mono bg-black">
+      <Table class="text-xs bg-black">
         <TableHeader>
           <TableRow
             class="border-b border-border/80 bg-black text-muted-foreground text-xs hover:bg-black"
@@ -62,29 +62,29 @@
             <TableCell class="py-3 px-4">
               <Badge
                 :variant="act.isBuy ? 'default' : 'destructive'"
-                class="text-xs uppercase px-2 py-0.5 font-mono font-bold"
+                class="text-xs uppercase px-2 py-0.5 font-bold"
               >
                 {{ act.isBuy ? 'BUY' : 'SELL' }}
               </Badge>
             </TableCell>
-            <TableCell class="py-3 px-4 text-foreground font-bold font-mono">
+            <TableCell class="py-3 px-4 text-foreground font-bold">
               ${{ act.tokenSymbol }}
             </TableCell>
-            <TableCell class="py-3 px-4 text-right text-foreground font-medium font-mono">
+            <TableCell class="py-3 px-4 text-right text-foreground font-medium">
               {{ act.ethAmount }} {{ nativeCurrencySymbol }}
             </TableCell>
-            <TableCell class="py-3 px-4 text-right text-foreground font-mono">
+            <TableCell class="py-3 px-4 text-right text-foreground">
               {{ act.tokenAmount }}
             </TableCell>
-            <TableCell class="py-3 px-4 text-right text-muted-foreground font-mono text-xs">
+            <TableCell class="py-3 px-4 text-right text-muted-foreground text-xs">
               {{ formatRelativeTime(act.timestamp) }}
             </TableCell>
-            <TableCell class="py-3 px-4 text-right font-mono text-xs">
+            <TableCell class="py-3 px-4 text-right text-xs">
               <a
                 :href="`${blockExplorer}/tx/${act.txHash}`"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="text-primary hover:underline inline-flex items-center gap-1 font-mono font-semibold"
+                class="text-primary hover:underline inline-flex items-center gap-1 font-semibold"
                 :title="act.txHash"
               >
                 <span>{{ act.txHash.slice(0, 6) }}...{{ act.txHash.slice(-4) }}</span>

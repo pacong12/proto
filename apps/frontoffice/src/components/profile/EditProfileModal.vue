@@ -14,7 +14,7 @@
       </DialogHeader>
 
       <div
-        class="p-2.5 rounded-xl border border-border bg-muted/40 text-[11px] text-muted-foreground font-mono"
+        class="p-2.5 rounded-xl border border-border bg-muted/40 text-[11px] text-muted-foreground"
       >
         Profile metadata and media are pinned to decentralized IPFS and stored for this wallet
         address.
@@ -25,7 +25,7 @@
         <div class="space-y-1.5">
           <div class="flex items-center justify-between">
             <Label class="text-xs font-medium">Cover Banner</Label>
-            <span class="text-[10px] text-muted-foreground font-mono">Recommended 1200x400</span>
+            <span class="text-[10px] text-muted-foreground">Recommended 1200x400</span>
           </div>
 
           <div
@@ -64,13 +64,13 @@
               <div class="p-2 rounded-full bg-muted/60 text-foreground">
                 <ImageIcon class="w-5 h-5" />
               </div>
-              <span class="text-xs font-bold text-foreground font-mono">Upload Cover Banner</span>
+              <span class="text-xs font-bold text-foreground">Upload Cover Banner</span>
               <p class="text-[10px]">Click or drag image (PNG, JPG, WEBP max 8MB)</p>
             </div>
 
             <div
               v-if="isUploadingBanner"
-              class="absolute inset-0 bg-background/80 flex items-center justify-center gap-2 text-xs font-mono"
+              class="absolute inset-0 bg-background/80 flex items-center justify-center gap-2 text-xs"
             >
               <Loader2 class="w-4 h-4 animate-spin text-primary" />
               <span>Optimizing & Pinning Banner...</span>
@@ -93,7 +93,7 @@
 
           <div
             v-if="bannerError"
-            class="text-[11px] text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2 font-mono flex items-center gap-1.5"
+            class="text-[11px] text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2 flex items-center gap-1.5"
           >
             <AlertCircle class="w-3.5 h-3.5 shrink-0" />
             <span>{{ bannerError }}</span>
@@ -151,7 +151,7 @@
             <div class="flex-1 min-w-0 space-y-0.5">
               <div class="flex items-center gap-1.5 min-w-0">
                 <span
-                  class="text-xs font-bold text-foreground truncate block flex-1 min-w-0 font-mono"
+                  class="text-xs font-bold text-foreground truncate block flex-1 min-w-0"
                   :title="
                     avatarFileName || (form.avatarUrl ? 'Custom Photo' : 'Upload from device')
                   "
@@ -160,7 +160,7 @@
                 </span>
                 <span
                   v-if="isUploadingAvatar"
-                  class="text-[10px] text-muted-foreground flex items-center gap-1 shrink-0 font-mono"
+                  class="text-[10px] text-muted-foreground flex items-center gap-1 shrink-0"
                 >
                   <Loader2 class="w-2.5 h-2.5 animate-spin text-primary" />
                   Pinning...
@@ -188,7 +188,7 @@
           <!-- Inline Avatar Error Banner -->
           <div
             v-if="avatarError"
-            class="text-[11px] text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2 flex items-start gap-1.5 font-mono"
+            class="text-[11px] text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2 flex items-start gap-1.5"
           >
             <AlertCircle class="w-3.5 h-3.5 shrink-0 mt-0.5" />
             <span>{{ avatarError }}</span>
@@ -223,15 +223,14 @@
           <div class="space-y-1.5">
             <Label for="edit-x" class="text-xs font-medium">X (Twitter)</Label>
             <div class="relative">
-              <span
-                class="absolute left-2.5 top-2.5 text-xs font-mono text-muted-foreground select-none"
+              <span class="absolute left-2.5 top-2.5 text-xs text-muted-foreground select-none"
                 >@</span
               >
               <Input
                 id="edit-x"
                 v-model="form.twitter"
                 placeholder="handle"
-                class="text-xs pl-7 font-mono rounded-xl"
+                class="text-xs pl-7 rounded-xl"
               />
             </div>
           </div>
@@ -239,15 +238,14 @@
           <div class="space-y-1.5">
             <Label for="edit-tg" class="text-xs font-medium">Telegram</Label>
             <div class="relative">
-              <span
-                class="absolute left-2.5 top-2.5 text-xs font-mono text-muted-foreground select-none"
+              <span class="absolute left-2.5 top-2.5 text-xs text-muted-foreground select-none"
                 >t.me/</span
               >
               <Input
                 id="edit-tg"
                 v-model="form.telegram"
                 placeholder="handle"
-                class="text-xs pl-11 font-mono rounded-xl"
+                class="text-xs pl-11 rounded-xl"
               />
             </div>
           </div>
@@ -258,7 +256,7 @@
             type="button"
             variant="outline"
             size="sm"
-            class="cursor-pointer font-mono rounded-xl"
+            class="cursor-pointer rounded-xl"
             @click="emit('update:open', false)"
           >
             Cancel
@@ -267,7 +265,7 @@
             type="submit"
             variant="default"
             size="sm"
-            class="cursor-pointer font-bold font-mono rounded-xl px-5"
+            class="cursor-pointer font-bold rounded-xl px-5"
             :disabled="isUploadingAvatar || isUploadingBanner"
           >
             <Loader2

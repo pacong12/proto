@@ -21,7 +21,7 @@
         title="Update header banner"
       >
         <span
-          class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-card text-foreground shadow-xs border border-border pointer-events-auto"
+          class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-card text-foreground shadow-xs border border-border pointer-events-auto"
         >
           <Camera class="w-3.5 h-3.5 text-primary" />
           Update Banner
@@ -67,7 +67,7 @@
             v-if="isOwnProfile"
             variant="outline"
             size="sm"
-            class="h-8 text-xs font-semibold gap-1.5 border-border hover:bg-muted text-foreground cursor-pointer rounded-xl font-mono"
+            class="h-8 text-xs font-semibold gap-1.5 border-border hover:bg-muted text-foreground cursor-pointer rounded-xl"
             @click="emit('edit')"
           >
             <Edit3 class="w-3.5 h-3.5" />
@@ -77,7 +77,7 @@
           <Button
             variant="default"
             size="sm"
-            class="h-8 text-xs font-semibold gap-1.5 font-bold cursor-pointer rounded-xl font-mono"
+            class="h-8 text-xs font-semibold gap-1.5 font-bold cursor-pointer rounded-xl"
             @click="emit('share')"
           >
             <Share2 class="w-3.5 h-3.5" />
@@ -97,7 +97,7 @@
           </h1>
         </div>
 
-        <p class="text-xs font-mono text-muted-foreground flex items-center gap-1.5">
+        <p class="text-xs text-muted-foreground flex items-center gap-1.5">
           <span
             >@{{ profileAddress ? getUserIdentity(profileAddress).name : 'not-connected' }}</span
           >
@@ -113,7 +113,7 @@
         </p>
 
         <!-- Metadata Ribbon: Social Handles & Block Explorer -->
-        <div class="flex items-center gap-4 pt-1 text-xs text-muted-foreground flex-wrap font-mono">
+        <div class="flex items-center gap-4 pt-1 text-xs text-muted-foreground flex-wrap">
           <a
             v-if="profileData.twitter"
             :href="`https://x.com/${profileData.twitter}`"

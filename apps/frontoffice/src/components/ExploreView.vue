@@ -146,7 +146,7 @@
     <!-- Error Banner -->
     <div
       v-if="apiError"
-      class="p-4 rounded-xl bg-destructive/10 border border-destructive/30 text-xs text-destructive flex items-center gap-2 font-mono"
+      class="p-4 rounded-xl bg-destructive/10 border border-destructive/30 text-xs text-destructive flex items-center gap-2"
     >
       <AlertCircle class="w-4 h-4 shrink-0" />
       <span>{{ apiError }}</span>
@@ -158,7 +158,7 @@
       class="flex flex-col items-center justify-center py-24 space-y-3"
     >
       <Loader2 class="w-7 h-7 text-emerald-500 animate-spin" />
-      <span class="text-xs font-medium text-muted-foreground font-mono">
+      <span class="text-xs font-medium text-muted-foreground">
         Loading coins on {{ activeNetwork.name }}...
       </span>
     </div>

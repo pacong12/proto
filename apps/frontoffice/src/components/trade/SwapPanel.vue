@@ -10,13 +10,13 @@
     >
       <div class="space-y-0.5">
         <span class="text-muted-foreground text-[11px] block">Your Holdings</span>
-        <span class="font-bold text-foreground font-mono text-sm">
+        <span class="font-bold text-foreground text-sm">
           {{ formatTokenBalance(userTokenBalance) }} ${{ currentToken.symbol }}
         </span>
       </div>
       <div class="text-right space-y-0.5">
         <span class="text-muted-foreground text-[11px] block">Current Value</span>
-        <span class="font-bold text-emerald-500 font-mono text-sm">
+        <span class="font-bold text-emerald-500 text-sm">
           ${{ formatCompactUsd(userHoldingUsd) }}
         </span>
       </div>
@@ -24,7 +24,7 @@
 
     <div class="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
       <!-- Swap panel form wrapper -->
-      <div class="p-5 sm:p-6 space-y-4 font-mono">
+      <div class="p-5 sm:p-6 space-y-4">
         <!-- Wrong network warning banner -->
         <div
           v-if="isConnected && activeNetwork.chainId !== tokenNetwork.chainId"
@@ -78,14 +78,14 @@
               </button>
             </PopoverTrigger>
             <PopoverContent
-              class="w-64 p-3.5 bg-black border border-border text-foreground rounded-2xl shadow-xl font-mono text-xs"
+              class="w-64 p-3.5 bg-black border border-border text-foreground rounded-2xl shadow-xl text-xs"
               align="end"
             >
               <div class="space-y-3">
                 <div class="flex items-center justify-between">
                   <span class="font-bold text-xs">Slippage Tolerance</span>
                   <span
-                    class="font-mono text-[11px]"
+                    class="text-[11px]"
                     :class="slippage > slippageWarnThreshold ? 'text-amber-500' : 'text-foreground'"
                   >
                     {{ slippage }}%
@@ -97,7 +97,7 @@
                     v-for="preset in [0.5, 1.0, 2.5, 5.0]"
                     :key="preset"
                     type="button"
-                    class="flex-1 py-1 rounded-lg border text-xs font-mono font-medium transition cursor-pointer"
+                    class="flex-1 py-1 rounded-lg border text-xs font-medium transition cursor-pointer"
                     :class="
                       !isCustomSlippage && slippage === preset
                         ? 'bg-foreground text-background font-bold border-foreground shadow-2xs'
@@ -118,7 +118,7 @@
                       min="0.1"
                       max="49"
                       placeholder="Custom %"
-                      class="h-7 text-xs font-mono pr-6 bg-black border-input"
+                      class="h-7 text-xs pr-6 bg-black border-input"
                       @update:model-value="$emit('update:customSlippageInput', String($event))"
                     />
                     <span
@@ -129,7 +129,7 @@
                   </div>
                   <button
                     type="button"
-                    class="text-[10px] text-muted-foreground hover:text-foreground font-mono underline cursor-pointer"
+                    class="text-[10px] text-muted-foreground hover:text-foreground underline cursor-pointer"
                     @click="selectSlippage(1.0)"
                   >
                     Auto
@@ -155,7 +155,7 @@
               <span>You pay</span>
               <div
                 v-if="isBuy"
-                class="flex items-center bg-black p-0.5 rounded-lg border border-border text-[10px] font-mono font-bold"
+                class="flex items-center bg-black p-0.5 rounded-lg border border-border text-[10px] font-bold"
               >
                 <button
                   type="button"
@@ -183,7 +183,7 @@
                 </button>
               </div>
             </div>
-            <div class="flex items-center gap-1.5 font-mono text-[11px]">
+            <div class="flex items-center gap-1.5 text-[11px]">
               <span class="text-muted-foreground">Bal:</span>
               <span
                 v-if="!isBuy && isTokenBalanceLoading"
@@ -200,7 +200,7 @@
               <Button
                 variant="ghost"
                 size="sm"
-                class="h-5 px-1 text-[10px] font-bold text-primary hover:text-primary/80 uppercase font-mono"
+                class="h-5 px-1 text-[10px] font-bold text-primary hover:text-primary/80 uppercase"
                 @click="$emit('applyPercentage', 100)"
               >
                 MAX
@@ -213,13 +213,13 @@
               type="number"
               step="any"
               placeholder="0.0"
-              class="text-sm sm:text-base font-mono font-semibold text-foreground bg-black border-input h-11 pr-20 rounded-xl"
+              class="text-sm sm:text-base font-semibold text-foreground bg-black border-input h-11 pr-20 rounded-xl"
               @update:model-value="$emit('update:amountIn', String($event))"
             />
             <div
               class="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-black px-2 py-1 rounded-lg border border-border"
             >
-              <span class="text-xs font-mono font-bold text-foreground">
+              <span class="text-xs font-bold text-foreground">
                 {{ isBuy ? (payInUsd ? 'USD' : currencySymbol) : currentToken.symbol }}
               </span>
             </div>
@@ -232,7 +232,7 @@
               :key="presetVal"
               variant="outline"
               size="sm"
-              class="h-8 text-xs font-mono font-medium rounded-lg border-border bg-black hover:bg-zinc-900"
+              class="h-8 text-xs font-medium rounded-lg border-border bg-black hover:bg-zinc-900"
               @click="$emit('applyQuickBuy', String(presetVal))"
             >
               {{ payInUsd ? '$' + presetVal : presetVal }}
@@ -246,7 +246,7 @@
               :key="percent"
               variant="outline"
               size="sm"
-              class="h-8 text-xs font-mono font-medium rounded-lg border-border bg-black hover:bg-zinc-900"
+              class="h-8 text-xs font-medium rounded-lg border-border bg-black hover:bg-zinc-900"
               @click="$emit('applyPercentage', percent)"
             >
               {{ percent === 100 ? 'Max' : `${percent}%` }}
@@ -274,18 +274,18 @@
               />
               <div
                 v-else
-                class="w-6 h-6 rounded-full bg-black flex items-center justify-center font-mono text-[9px] font-bold border border-border shrink-0"
+                class="w-6 h-6 rounded-full bg-black flex items-center justify-center text-[9px] font-bold border border-border shrink-0"
               >
                 {{ currencySymbol.slice(0, 3) }}
               </div>
-              <span class="text-sm sm:text-base font-mono font-semibold text-foreground truncate">
+              <span class="text-sm sm:text-base font-semibold text-foreground truncate">
                 {{ estimatedOutputAmount }}
               </span>
             </div>
             <div
               class="flex items-center gap-1 bg-black px-2 py-0.5 rounded-lg border border-border shrink-0"
             >
-              <span class="font-mono text-xs text-foreground font-bold">
+              <span class="text-xs text-foreground font-bold">
                 {{ isBuy ? currentToken.symbol : currencySymbol }}
               </span>
             </div>
@@ -296,12 +296,12 @@
         <div class="pt-2 border-t border-border/60 space-y-1.5 text-xs font-sans">
           <div class="flex items-center justify-between text-muted-foreground">
             <span>Price Impact</span>
-            <span class="font-mono font-medium text-foreground">&lt; 0.1%</span>
+            <span class="font-medium text-foreground">&lt; 0.1%</span>
           </div>
           <div class="flex items-center justify-between text-muted-foreground">
             <span>Slippage Tolerance</span>
             <span
-              class="font-mono font-semibold"
+              class="font-semibold"
               :class="slippage > slippageWarnThreshold ? 'text-amber-500' : 'text-foreground'"
             >
               {{ slippage }}%
@@ -312,7 +312,7 @@
             class="flex items-center justify-between text-muted-foreground"
           >
             <span>Trading Tax</span>
-            <span class="font-mono font-medium text-foreground">
+            <span class="font-medium text-foreground">
               {{ isBuy ? onchainTaxConfig.buyTaxBps / 100 : onchainTaxConfig.sellTaxBps / 100 }}%
             </span>
           </div>
@@ -325,7 +325,7 @@
             isConnected &&
             activeNetwork.chainId !== tokenNetwork.chainId
           "
-          class="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-2.5 text-[11px] font-mono text-amber-500"
+          class="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-2.5 text-[11px] text-amber-500"
         >
           <AlertCircle class="w-3.5 h-3.5 shrink-0 mt-0.5" />
           <span>

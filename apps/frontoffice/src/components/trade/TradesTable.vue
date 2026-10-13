@@ -3,7 +3,7 @@
     <!-- Order flow filters & stats (lunch.fun style) -->
     <div
       v-if="trades.length > 0"
-      class="flex flex-wrap items-center justify-between gap-2 p-2.5 sm:px-4 border-b border-border bg-black text-xs font-mono"
+      class="flex flex-wrap items-center justify-between gap-2 p-2.5 sm:px-4 border-b border-border bg-black text-xs"
     >
       <div class="flex items-center gap-1.5">
         <button
@@ -41,17 +41,17 @@
 
     <!-- Empty State -->
     <div v-else-if="trades.length === 0" class="py-16 text-center text-muted-foreground">
-      <p class="text-xs font-mono">No trades recorded yet.</p>
+      <p class="text-xs">No trades recorded yet.</p>
     </div>
 
     <!-- Filter Empty State -->
     <div v-else-if="filteredTrades.length === 0" class="py-16 text-center text-muted-foreground">
-      <p class="text-xs font-mono">No trades match this filter.</p>
+      <p class="text-xs">No trades match this filter.</p>
     </div>
 
     <!-- Table of Trades -->
     <div v-else class="overflow-x-auto rounded-2xl border border-border bg-black">
-      <Table class="w-full text-left text-xs font-mono min-w-[620px] bg-black">
+      <Table class="w-full text-left text-xs min-w-[620px] bg-black">
         <TableHeader>
           <TableRow class="border-b border-border text-muted-foreground bg-black hover:bg-black">
             <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black"
@@ -94,7 +94,7 @@
             <!-- 2. Type (GMGN Style BUY / SELL pill) -->
             <TableCell class="py-2 px-3 whitespace-nowrap">
               <span
-                class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider border select-none"
+                class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider border select-none"
                 :class="
                   trade.isBuy
                     ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
@@ -107,7 +107,7 @@
 
             <!-- 3. Total (USD) -->
             <TableCell
-              class="py-2 px-3 whitespace-nowrap text-right font-mono font-bold"
+              class="py-2 px-3 whitespace-nowrap text-right font-bold"
               :class="trade.isBuy ? 'text-emerald-400' : 'text-rose-400'"
             >
               ${{
@@ -119,21 +119,17 @@
             </TableCell>
 
             <!-- 4. Native Volume (ETH / USDC) -->
-            <TableCell
-              class="py-2 px-3 whitespace-nowrap text-right text-muted-foreground font-mono"
-            >
+            <TableCell class="py-2 px-3 whitespace-nowrap text-right text-muted-foreground">
               {{ parseFloat(trade.wethAmount || '0').toFixed(4) }}
             </TableCell>
 
             <!-- 5. Token Amount -->
-            <TableCell
-              class="py-2 px-3 whitespace-nowrap text-right text-foreground font-medium font-mono"
-            >
+            <TableCell class="py-2 px-3 whitespace-nowrap text-right text-foreground font-medium">
               {{ formatTokenNumber(trade.tokenAmount) }}
             </TableCell>
 
             <!-- 6. Price (DEX Subscript notation) -->
-            <TableCell class="py-2 px-3 whitespace-nowrap text-right text-foreground font-mono">
+            <TableCell class="py-2 px-3 whitespace-nowrap text-right text-foreground">
               ${{ formatSubscriptPrice(trade.priceUsd) }}
             </TableCell>
 

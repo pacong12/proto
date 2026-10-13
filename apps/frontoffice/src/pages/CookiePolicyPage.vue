@@ -4,7 +4,7 @@
       <h1 class="text-2xl font-bold tracking-tight text-foreground">
         {{ t('cookiePolicy') }}
       </h1>
-      <p class="text-xs text-muted-foreground font-mono mt-1">Last Updated: September 2026</p>
+      <p class="text-xs text-muted-foreground mt-1">Last Updated: September 2026</p>
     </div>
 
     <div class="space-y-6 text-sm text-muted-foreground leading-relaxed">

@@ -16,7 +16,7 @@
           <Tabs v-model="activeFilter" class="w-auto">
             <TabsList
               variant="line"
-              class="font-mono text-xs overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0"
+              class="text-xs overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0"
             >
               <TabsTrigger
                 v-for="flt in filterTabs"
@@ -30,9 +30,7 @@
           </Tabs>
 
           <!-- Chain Filter (All Chains default / Robinhood / Arc) -->
-          <div
-            class="flex items-center gap-1 font-mono text-[11px] self-end sm:self-auto pb-1 sm:pb-0"
-          >
+          <div class="flex items-center gap-1 text-[11px] self-end sm:self-auto pb-1 sm:pb-0">
             <button
               v-for="chainOpt in [
                 {
@@ -121,7 +119,7 @@
                 <!-- Floating $ Cashtag Live Autocomplete Popup -->
                 <div
                   v-if="showCashtagSuggestions && cashtagSuggestions.length > 0"
-                  class="absolute left-0 right-0 top-full mt-1 bg-card border border-border/90 rounded-2xl shadow-2xl p-2 z-50 space-y-1 font-mono text-xs max-h-56 overflow-y-auto"
+                  class="absolute left-0 right-0 top-full mt-1 bg-card border border-border/90 rounded-2xl shadow-2xl p-2 z-50 space-y-1 text-xs max-h-56 overflow-y-auto"
                 >
                   <div
                     class="px-2 py-1 text-[10px] text-muted-foreground uppercase font-bold flex items-center justify-between border-b border-border/50"
@@ -208,7 +206,7 @@
                 <!-- Uploading / Pinning Status Banner -->
                 <div
                   v-if="isUploadingMedia"
-                  class="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center gap-2 text-xs text-white font-mono"
+                  class="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center gap-2 text-xs text-white"
                 >
                   <Loader2 class="w-4 h-4 animate-spin text-primary" />
                   <span>Uploading to IPFS...</span>
@@ -216,7 +214,7 @@
               </div>
 
               <!-- Media Attachment Input -->
-              <div v-if="showMediaInput" class="pt-1 font-mono">
+              <div v-if="showMediaInput" class="pt-1">
                 <Input
                   v-model="composerImageUrl"
                   type="text"
@@ -228,7 +226,7 @@
               <!-- On-Chain Balance Verifier (Holder Badge) -->
               <div
                 v-if="account && selectedToken && callerPositionUsd >= 1.0"
-                class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-between gap-2 text-xs font-mono"
+                class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-between gap-2 text-xs"
               >
                 <div class="flex items-center gap-1.5 min-w-0">
                   <ShieldCheck class="w-4 h-4 shrink-0 text-emerald-400" />
@@ -254,7 +252,7 @@
                 <Button
                   size="sm"
                   variant="outline"
-                  class="h-6 px-2 text-[10px] font-mono shrink-0 rounded-lg cursor-pointer border-border hover:bg-zinc-900"
+                  class="h-6 px-2 text-[10px] shrink-0 rounded-lg cursor-pointer border-border hover:bg-zinc-900"
                   @click="navigateToToken(selectedToken.address)"
                 >
                   Buy ${{ selectedToken.symbol }}
@@ -283,7 +281,7 @@
                     @click="triggerMediaUpload"
                   >
                     <ImageIcon class="w-4 h-4" />
-                    <span class="text-[11px] font-mono hidden sm:inline">Photo</span>
+                    <span class="text-[11px] hidden sm:inline">Photo</span>
                   </button>
 
                   <button
@@ -296,14 +294,14 @@
                     <Link2 class="w-4 h-4" />
                   </button>
 
-                  <span class="text-[11px] text-muted-foreground font-mono">
+                  <span class="text-[11px] text-muted-foreground">
                     {{ composerContent.length }}/500
                   </span>
                 </div>
 
                 <Button
                   size="sm"
-                  class="rounded-xl px-5 h-8 font-bold text-xs cursor-pointer shadow-xs font-mono gap-1.5"
+                  class="rounded-xl px-5 h-8 font-bold text-xs cursor-pointer shadow-xs gap-1.5"
                   :disabled="
                     isPostingCall ||
                     !composerContent.trim() ||
@@ -319,7 +317,7 @@
 
               <div
                 v-if="composerError"
-                class="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-2.5 mt-2 font-mono"
+                class="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-2.5 mt-2"
               >
                 {{ composerError }}
               </div>
@@ -330,7 +328,7 @@
         <!-- 3. Hybrid Timeline Cards (Card-based with X / Twitter conversation mechanics) -->
         <div
           v-if="loading && callouts.length === 0"
-          class="py-20 text-center text-muted-foreground font-mono"
+          class="py-20 text-center text-muted-foreground"
         >
           <Loader2 class="w-7 h-7 animate-spin mx-auto mb-3 text-primary" />
           <p class="text-xs">Loading community alpha...</p>
@@ -368,7 +366,7 @@
         </div>
 
         <!-- Pagination -->
-        <div v-if="networkCallouts.length > pageSize" class="flex justify-center p-3 font-mono">
+        <div v-if="networkCallouts.length > pageSize" class="flex justify-center p-3">
           <Pagination
             :total="networkCallouts.length"
             :items-per-page="pageSize"

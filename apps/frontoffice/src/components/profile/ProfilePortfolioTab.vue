@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-4 font-mono">
+  <div class="space-y-4">
     <Empty
       v-if="portfolioPositions.length === 0"
       title="No active holdings"
@@ -14,14 +14,14 @@
           as-child
           size="sm"
           variant="outline"
-          class="rounded-xl px-4 font-mono font-bold cursor-pointer"
+          class="rounded-xl px-4 font-bold cursor-pointer"
         >
           <RouterLink to="/launchpad">Explore Tokens</RouterLink>
         </Button>
       </template>
     </Empty>
     <div v-else class="rounded-2xl border border-border overflow-hidden bg-black">
-      <Table class="text-xs font-mono bg-black">
+      <Table class="text-xs bg-black">
         <TableHeader>
           <TableRow class="border-b border-border text-muted-foreground bg-black hover:bg-black">
             <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black"
@@ -51,7 +51,7 @@
               <div class="flex items-center gap-2">
                 <div class="relative shrink-0">
                   <Avatar class="w-6 h-6 rounded border border-border overflow-hidden">
-                    <AvatarFallback class="text-[9px] bg-muted text-foreground font-mono">
+                    <AvatarFallback class="text-[9px] bg-muted text-foreground">
                       {{ pos.symbol.slice(0, 3) }}
                     </AvatarFallback>
                   </Avatar>
@@ -88,7 +88,7 @@
                 as-child
                 variant="outline"
                 size="sm"
-                class="h-7 px-2.5 text-xs font-semibold gap-1 border-border cursor-pointer font-mono"
+                class="h-7 px-2.5 text-xs font-semibold gap-1 border-border cursor-pointer"
               >
                 <RouterLink :to="`/token/${pos.tokenAddress}`">
                   Trade

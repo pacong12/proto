@@ -14,7 +14,7 @@
         <Button
           size="sm"
           variant="default"
-          class="h-10 px-6 font-bold text-xs shrink-0 cursor-pointer font-mono rounded-xl shadow-xs"
+          class="h-10 px-6 font-bold text-xs shrink-0 cursor-pointer rounded-xl shadow-xs"
           @click="openWallet"
         >
           Connect Wallet
@@ -36,7 +36,7 @@
         <Button
           size="sm"
           variant="outline"
-          class="h-10 px-6 font-bold text-xs shrink-0 cursor-pointer font-mono rounded-xl border-border"
+          class="h-10 px-6 font-bold text-xs shrink-0 cursor-pointer rounded-xl border-border"
           @click="router.push('/launchpad')"
         >
           Back to Markets
@@ -71,7 +71,7 @@
       <!-- Notifications -->
       <div
         v-if="successTx"
-        class="text-xs font-mono text-foreground bg-black border border-border rounded-xl p-4 flex items-start justify-between gap-2 break-all"
+        class="text-xs text-foreground bg-black border border-border rounded-xl p-4 flex items-start justify-between gap-2 break-all"
       >
         <div class="flex items-start gap-2">
           <Check class="w-4 h-4 shrink-0 mt-0.5 text-foreground" />
@@ -89,7 +89,7 @@
 
       <div
         v-if="actionError"
-        class="text-xs font-mono text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-4 flex items-start justify-between gap-2 break-words"
+        class="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-4 flex items-start justify-between gap-2 break-words"
       >
         <div class="flex items-start gap-2">
           <AlertCircle class="w-4 h-4 shrink-0 mt-0.5 text-destructive" />
@@ -113,7 +113,7 @@
           >
             <TabsList
               variant="line"
-              class="flex sm:inline-flex w-full sm:w-auto overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0 font-mono text-xs"
+              class="flex sm:inline-flex w-full sm:w-auto overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0 text-xs"
             >
               <TabsTrigger value="posts"> Posts & Calls ({{ userPosts.length }}) </TabsTrigger>
               <TabsTrigger value="created">
@@ -133,7 +133,7 @@
             <Button
               variant="ghost"
               size="sm"
-              class="h-8 text-xs font-mono text-muted-foreground hover:text-foreground self-end sm:self-auto border border-border cursor-pointer rounded-xl"
+              class="h-8 text-xs text-muted-foreground hover:text-foreground self-end sm:self-auto border border-border cursor-pointer rounded-xl"
               @click="refreshAllData"
             >
               <RefreshCw class="w-3.5 h-3.5 mr-1" :class="{ 'animate-spin': loadingLaunches }" />

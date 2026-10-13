@@ -8,7 +8,7 @@
     >
       <div class="flex items-center gap-2">
         <span class="font-bold">{{ t('advanced') }}</span>
-        <span class="text-xs text-muted-foreground font-mono">
+        <span class="text-xs text-muted-foreground">
           (Buy: {{ buyTax }}% &middot; Sell: {{ sellTax }}% &middot; Split: {{ totalSplit }}/100%)
         </span>
       </div>
@@ -41,7 +41,7 @@
           :model-value="creatorWallet"
           type="text"
           :placeholder="account || '0x... (defaults to deployer)'"
-          class="h-10 text-xs font-mono rounded-xl bg-muted/20"
+          class="h-10 text-xs rounded-xl bg-muted/20"
           @update:model-value="$emit('update:creatorWallet', String($event))"
         />
         <p class="text-xs text-muted-foreground">
@@ -71,7 +71,7 @@
                   text="Fee deducted when users purchase tokens. Recommended: 1% - 5%."
                 />
               </div>
-              <span class="text-xs font-mono font-bold text-foreground">{{ buyTax }}%</span>
+              <span class="text-xs font-bold text-foreground">{{ buyTax }}%</span>
             </div>
             <Slider
               :model-value="[parseFloat(buyTax || '0')]"
@@ -90,7 +90,7 @@
                 type="button"
                 size="sm"
                 :variant="parseFloat(buyTax || '0') === p ? 'default' : 'outline'"
-                class="flex-1 h-7 text-xs font-mono p-0 cursor-pointer"
+                class="flex-1 h-7 text-xs p-0 cursor-pointer"
                 @click="$emit('update:buyTax', String(p))"
               >
                 {{ p }}%
@@ -107,7 +107,7 @@
                   text="Fee deducted when users sell tokens back into the pool. Discourages immediate dumping."
                 />
               </div>
-              <span class="text-xs font-mono font-bold text-foreground">{{ sellTax }}%</span>
+              <span class="text-xs font-bold text-foreground">{{ sellTax }}%</span>
             </div>
             <Slider
               :model-value="[parseFloat(sellTax || '0')]"
@@ -126,7 +126,7 @@
                 type="button"
                 size="sm"
                 :variant="parseFloat(sellTax || '0') === p ? 'destructive' : 'outline'"
-                class="flex-1 h-7 text-xs font-mono p-0 cursor-pointer"
+                class="flex-1 h-7 text-xs p-0 cursor-pointer"
                 @click="$emit('update:sellTax', String(p))"
               >
                 {{ p }}%
@@ -161,7 +161,7 @@
             </Button>
             <Badge
               :variant="totalSplit === 100 ? 'default' : 'outline'"
-              class="font-mono text-xs"
+              class="text-xs"
               :class="totalSplit !== 100 ? 'border-amber-500 text-amber-500' : ''"
             >
               {{ totalSplit }}/100%
@@ -175,7 +175,7 @@
             type="button"
             size="sm"
             :variant="isPreset(50, 0, 50, 0) ? 'default' : 'outline'"
-            class="h-7 text-xs font-mono cursor-pointer"
+            class="h-7 text-xs cursor-pointer"
             @click="setPreset(50, 0, 50, 0)"
           >
             <span class="hidden sm:inline">50/50 Creator & Holders</span>
@@ -185,7 +185,7 @@
             type="button"
             size="sm"
             :variant="isPreset(100, 0, 0, 0) ? 'default' : 'outline'"
-            class="h-7 text-xs font-mono cursor-pointer"
+            class="h-7 text-xs cursor-pointer"
             @click="setPreset(100, 0, 0, 0)"
           >
             100% Creator
@@ -194,7 +194,7 @@
             type="button"
             size="sm"
             :variant="isPreset(40, 20, 40, 0) ? 'default' : 'outline'"
-            class="h-7 text-xs font-mono cursor-pointer"
+            class="h-7 text-xs cursor-pointer"
             @click="setPreset(40, 20, 40, 0)"
           >
             <span class="hidden sm:inline">40/40/20 Buyback</span>
@@ -204,7 +204,7 @@
             type="button"
             size="sm"
             :variant="isPreset(25, 25, 25, 25) ? 'default' : 'outline'"
-            class="h-7 text-xs font-mono cursor-pointer"
+            class="h-7 text-xs cursor-pointer"
             @click="setPreset(25, 25, 25, 25)"
           >
             25% Equal
@@ -282,7 +282,7 @@
               class="absolute inset-0 flex flex-col items-center justify-center text-center select-none"
             >
               <span
-                class="text-lg font-mono font-bold leading-tight"
+                class="text-lg font-bold leading-tight"
                 :class="totalSplit === 100 ? 'text-foreground' : 'text-amber-500'"
               >
                 {{ totalSplit }}%
@@ -300,9 +300,7 @@
                   <span>Creator</span>
                   <InfoTooltip text="Portion of swap taxes sent directly to the creator wallet." />
                 </div>
-                <span class="font-mono font-bold text-foreground">
-                  {{ revenueSplit.creator }}%
-                </span>
+                <span class="font-bold text-foreground"> {{ revenueSplit.creator }}% </span>
               </div>
               <Slider
                 :model-value="[revenueSplit.creator]"
@@ -315,7 +313,7 @@
               />
               <div class="flex items-center justify-between text-xs text-muted-foreground">
                 <span>Creator revenue share</span>
-                <span class="font-mono font-semibold">{{ revenueSplit.creator }}%</span>
+                <span class="font-semibold">{{ revenueSplit.creator }}%</span>
               </div>
             </div>
 
@@ -328,9 +326,7 @@
                     text="Automatically buys tokens off the pool and permanently burns them to reduce supply."
                   />
                 </div>
-                <span class="font-mono font-bold text-foreground">
-                  {{ revenueSplit.buyback }}%
-                </span>
+                <span class="font-bold text-foreground"> {{ revenueSplit.buyback }}% </span>
               </div>
               <Slider
                 :model-value="[revenueSplit.buyback]"
@@ -343,7 +339,7 @@
               />
               <div class="flex items-center justify-between text-xs text-muted-foreground">
                 <span>Deflationary buyback share</span>
-                <span class="font-mono font-semibold">{{ revenueSplit.buyback }}%</span>
+                <span class="font-semibold">{{ revenueSplit.buyback }}%</span>
               </div>
             </div>
 
@@ -356,9 +352,7 @@
                     text="Distributed proportionally in native currency to all token holders as passive yield."
                   />
                 </div>
-                <span class="font-mono font-bold text-foreground">
-                  {{ revenueSplit.holders }}%
-                </span>
+                <span class="font-bold text-foreground"> {{ revenueSplit.holders }}% </span>
               </div>
               <Slider
                 :model-value="[revenueSplit.holders]"
@@ -371,7 +365,7 @@
               />
               <div class="flex items-center justify-between text-xs text-muted-foreground">
                 <span>Holder dividend share</span>
-                <span class="font-mono font-semibold">{{ revenueSplit.holders }}%</span>
+                <span class="font-semibold">{{ revenueSplit.holders }}%</span>
               </div>
             </div>
 
@@ -384,9 +378,7 @@
                     text="Permanently injected into the liquidity pool to deepen market depth and reduce slippage."
                   />
                 </div>
-                <span class="font-mono font-bold text-foreground">
-                  {{ revenueSplit.growth }}%
-                </span>
+                <span class="font-bold text-foreground"> {{ revenueSplit.growth }}% </span>
               </div>
               <Slider
                 :model-value="[revenueSplit.growth]"
@@ -399,7 +391,7 @@
               />
               <div class="flex items-center justify-between text-xs text-muted-foreground">
                 <span>Liquidity injection share</span>
-                <span class="font-mono font-semibold">{{ revenueSplit.growth }}%</span>
+                <span class="font-semibold">{{ revenueSplit.growth }}%</span>
               </div>
             </div>
 
@@ -411,7 +403,7 @@
                 Each share stops where the others leave off. They must total 100% to launch.
               </span>
               <span
-                class="font-mono font-semibold shrink-0"
+                class="font-semibold shrink-0"
                 :class="totalSplit === 100 ? 'text-foreground' : 'text-amber-500'"
               >
                 {{

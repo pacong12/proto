@@ -6,11 +6,11 @@
     </div>
 
     <div v-else-if="topTraders.length === 0" class="py-16 text-center text-muted-foreground">
-      <p class="text-xs font-mono">No trading activity recorded yet.</p>
+      <p class="text-xs">No trading activity recorded yet.</p>
     </div>
 
     <div v-else class="overflow-x-auto rounded-2xl border border-border bg-black">
-      <Table class="w-full text-left text-xs font-mono min-w-[640px] bg-black">
+      <Table class="w-full text-left text-xs min-w-[640px] bg-black">
         <TableHeader>
           <TableRow class="border-b border-border text-muted-foreground bg-black hover:bg-black">
             <TableHead class="py-2.5 px-3 font-semibold w-10 text-muted-foreground bg-black">
@@ -75,17 +75,17 @@
               </div>
             </TableCell>
             <TableCell class="py-2.5 px-3 text-right">
-              <span class="text-foreground font-medium font-mono">
+              <span class="text-foreground font-medium">
                 ${{ trader.buyVolumeUsd.toLocaleString() }}
               </span>
             </TableCell>
             <TableCell class="py-2.5 px-3 text-right">
-              <span class="text-muted-foreground font-medium font-mono">
+              <span class="text-muted-foreground font-medium">
                 ${{ trader.sellVolumeUsd.toLocaleString() }}
               </span>
             </TableCell>
             <TableCell class="py-2.5 px-3 text-right">
-              <div class="space-y-0.5 font-mono">
+              <div class="space-y-0.5">
                 <span class="text-foreground font-bold block">
                   ${{ Math.round(getHoldingUsd(trader)).toLocaleString() }}
                 </span>
@@ -96,7 +96,7 @@
               </div>
             </TableCell>
             <TableCell class="py-2.5 px-3 text-right">
-              <div class="space-y-0.5 font-mono">
+              <div class="space-y-0.5">
                 <span
                   class="font-bold block"
                   :class="getRealizedPnl(trader).usd >= 0 ? 'text-emerald-500' : 'text-rose-500'"
@@ -115,7 +115,7 @@
               </div>
             </TableCell>
             <TableCell class="py-2.5 px-3 text-right">
-              <div class="space-y-0.5 font-mono">
+              <div class="space-y-0.5">
                 <span
                   class="font-black text-sm block"
                   :class="getTotalPnl(trader).usd >= 0 ? 'text-emerald-500' : 'text-rose-500'"

@@ -198,7 +198,7 @@ function formatValue(val: number): string {
           }"
         >
           <div class="flex flex-col gap-0.5 text-center">
-            <span class="text-[11px] font-mono tracking-tight text-muted-foreground">
+            <span class="text-[11px] tracking-tight text-muted-foreground">
               {{ activePoint.label }}
             </span>
             <strong class="text-xs font-serif font-bold tabular-nums">
@@ -208,9 +208,7 @@ function formatValue(val: number): string {
         </div>
 
         <!-- Horizontal X-Axis Ticks -->
-        <div
-          class="flex justify-between px-2 pt-2 text-[10px] font-mono tabular-nums text-muted-foreground"
-        >
+        <div class="flex justify-between px-2 pt-2 text-[10px] tabular-nums text-muted-foreground">
           <span>{{ data[0]?.label }}</span>
           <span v-if="data.length > 2">{{ data[Math.floor(data.length / 2)]?.label }}</span>
           <span>{{ data[data.length - 1]?.label }}</span>

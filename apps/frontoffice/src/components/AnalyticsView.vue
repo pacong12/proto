@@ -10,7 +10,7 @@
             {{ t('protocolAnalytics') }}
           </h1>
           <span
-            class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-primary/10 text-primary border border-primary/20"
+            class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20"
           >
             <img
               :src="activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
@@ -29,7 +29,7 @@
       <Button
         variant="outline"
         size="sm"
-        class="h-8 text-xs font-mono font-bold gap-1.5 border-border hover:bg-muted text-foreground self-start md:self-auto cursor-pointer rounded-xl"
+        class="h-8 text-xs font-bold gap-1.5 border-border hover:bg-muted text-foreground self-start md:self-auto cursor-pointer rounded-xl"
         @click="fetchAnalytics"
       >
         <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': loading }" />
@@ -40,7 +40,7 @@
     <!-- Error Banner -->
     <div
       v-if="fetchError"
-      class="text-xs font-mono text-destructive bg-destructive/10 border border-destructive/20 rounded-2xl p-4 flex items-center justify-between gap-3"
+      class="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-2xl p-4 flex items-center justify-between gap-3"
     >
       <div class="flex items-center gap-2">
         <AlertCircle class="w-4 h-4 shrink-0" />
@@ -62,23 +62,23 @@
         <!-- Main Figure Callout -->
         <div class="space-y-1">
           <div class="flex items-baseline gap-2">
-            <span class="text-2xl sm:text-4xl font-black font-mono tracking-tight text-foreground">
+            <span class="text-2xl sm:text-4xl font-black tracking-tight text-foreground">
               {{ currentFigureDisplay }}
             </span>
             <span
-              class="text-xs font-mono font-bold"
+              class="text-xs font-bold"
               :class="activeMetric === 'volume' ? 'text-emerald-500' : 'text-sky-500'"
             >
               {{ activeMetric === 'volume' ? '+12.4% 24h' : 'Active 24h' }}
             </span>
           </div>
-          <p class="text-xs text-muted-foreground font-mono">
+          <p class="text-xs text-muted-foreground">
             {{ currentFigureSubtitle }}
           </p>
         </div>
 
         <!-- Metric Switcher Pills & Mode Toggle (Pons / Shadcn Segmented Controls) -->
-        <div class="flex flex-wrap items-center gap-2 font-mono text-xs">
+        <div class="flex flex-wrap items-center gap-2 text-xs">
           <!-- Metric Selectors -->
           <div class="inline-flex p-1 rounded-xl bg-black border border-border gap-1">
             <button
@@ -148,7 +148,7 @@
     </Card>
 
     <!-- 2. PROTOCOL KPI STATS RIBBON (Pons x Shadcn Metric Cards) -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 font-mono">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
       <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
         <p class="text-xs uppercase font-semibold flex items-center gap-1.5 text-muted-foreground">
           <Activity class="w-4 h-4 text-emerald-500" />
@@ -194,9 +194,7 @@
     <Card class="p-5 sm:p-7 rounded-3xl border border-border bg-card space-y-4 shadow-sm">
       <div class="flex items-center justify-between">
         <div>
-          <h2
-            class="text-base sm:text-lg font-bold text-foreground font-mono flex items-center gap-2"
-          >
+          <h2 class="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
             <Zap class="w-4 h-4 text-amber-500 fill-amber-500" />
             <span>Top Coins on {{ activeNetwork.name }}</span>
           </h2>
@@ -208,16 +206,13 @@
           as-child
           variant="outline"
           size="sm"
-          class="h-8 px-3 text-xs font-mono font-bold rounded-xl cursor-pointer"
+          class="h-8 px-3 text-xs font-bold rounded-xl cursor-pointer"
         >
           <RouterLink to="/launchpad"> View All Coins </RouterLink>
         </Button>
       </div>
 
-      <div
-        v-if="topCoins.length === 0"
-        class="py-12 text-center text-muted-foreground font-mono text-xs"
-      >
+      <div v-if="topCoins.length === 0" class="py-12 text-center text-muted-foreground text-xs">
         No active tokens indexed on this network yet.
       </div>
 
@@ -305,7 +300,7 @@
                 <Button
                   size="sm"
                   variant="outline"
-                  class="h-7 px-3 text-xs font-mono font-bold rounded-lg cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                  class="h-7 px-3 text-xs font-bold rounded-lg cursor-pointer hover:bg-primary hover:text-primary-foreground"
                   @click.stop="router.push(`/token/${tItem.token.address}`)"
                 >
                   Trade
@@ -328,12 +323,12 @@
             Verified autonomous protocol smart contracts on {{ activeNetwork.name }}
           </p>
         </div>
-        <span class="font-mono text-xs text-muted-foreground self-start sm:self-auto">
+        <span class="text-xs text-muted-foreground self-start sm:self-auto">
           Chain ID: {{ activeNetwork.chainId }}
         </span>
       </div>
 
-      <div class="space-y-2.5 font-mono text-xs">
+      <div class="space-y-2.5 text-xs">
         <div
           v-for="c in contractEntries"
           :key="c.name"
@@ -344,21 +339,17 @@
             <Badge
               v-if="isContractDeployed(c.address)"
               variant="secondary"
-              class="text-xs py-0.5 px-2 font-mono font-bold bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+              class="text-xs py-0.5 px-2 font-bold bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
             >
               ACTIVE
             </Badge>
-            <Badge
-              v-else
-              variant="outline"
-              class="text-xs py-0.5 px-2 font-mono text-muted-foreground"
-            >
+            <Badge v-else variant="outline" class="text-xs py-0.5 px-2 text-muted-foreground">
               PENDING
             </Badge>
           </div>
 
           <div class="flex items-center gap-2">
-            <span class="text-foreground font-mono select-all break-all sm:break-normal text-xs">
+            <span class="text-foreground select-all break-all sm:break-normal text-xs">
               {{ c.address }}
             </span>
 

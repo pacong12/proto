@@ -80,7 +80,7 @@
               <span>{{ t('launchStepConfirm') }}</span>
               <span
                 v-if="['broadcasting', 'confirming'].includes(launchStep)"
-                class="text-[10px] text-foreground animate-pulse font-mono"
+                class="text-[10px] text-foreground animate-pulse"
               >
                 Confirming...
               </span>
@@ -95,7 +95,7 @@
                 :href="txExplorerUrl"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted text-foreground hover:opacity-80 text-xs font-mono transition-colors"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted text-foreground hover:opacity-80 text-xs transition-colors"
               >
                 <span>Tx: {{ formatHash(launchTxHash) }}</span>
                 <ExternalLink class="w-3 h-3" />
@@ -145,9 +145,7 @@
           {{ t('launchSuccessDesc') }}
         </p>
         <div v-if="launchTokenAddress" class="mt-3 flex items-center justify-center gap-2">
-          <span
-            class="text-xs font-mono text-foreground bg-muted px-2 py-1 rounded border border-border"
-          >
+          <span class="text-xs text-foreground bg-muted px-2 py-1 rounded border border-border">
             {{ formatHash(launchTokenAddress) }}
           </span>
           <a
@@ -155,7 +153,7 @@
             :href="tokenExplorerUrl"
             target="_blank"
             rel="noopener noreferrer"
-            class="inline-flex items-center gap-1 text-xs text-foreground hover:underline font-mono"
+            class="inline-flex items-center gap-1 text-xs text-foreground hover:underline"
           >
             <span>{{ t('viewOnExplorer') }}</span>
             <ExternalLink class="w-3 h-3" />

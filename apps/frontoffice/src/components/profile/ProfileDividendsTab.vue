@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-4 font-mono text-xs">
+  <div class="space-y-4 text-xs">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <!-- 1. Holder Fee Dividends Card -->
       <Card class="p-5 bg-card/90 border-border/80 space-y-3.5 shadow-2xs rounded-2xl">
@@ -30,10 +30,8 @@
         <!-- Total + Claim All -->
         <div class="flex items-end justify-between pt-3 border-t border-border/60">
           <div>
-            <span class="text-xs text-muted-foreground uppercase font-mono block">
-              Total Claimable
-            </span>
-            <p class="text-xl font-bold font-mono text-foreground">
+            <span class="text-xs text-muted-foreground uppercase block"> Total Claimable </span>
+            <p class="text-xl font-bold text-foreground">
               {{ dividendsTotalFormatted }} {{ nativeCurrencySymbol }}
             </p>
           </div>
@@ -41,7 +39,7 @@
             v-if="isOwnProfile"
             size="sm"
             variant="default"
-            class="h-8 px-4 text-xs font-semibold gap-1.5 cursor-pointer font-mono rounded-xl shadow-xs"
+            class="h-8 px-4 text-xs font-semibold gap-1.5 cursor-pointer rounded-xl shadow-xs"
             :disabled="!dividendsHasAny || Boolean(dividendsActionLoading)"
             @click="emit('claim-all')"
           >
@@ -56,7 +54,7 @@
           <div
             v-for="entry in dividendEntries"
             :key="entry.tokenAddress"
-            class="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-black text-xs font-mono"
+            class="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-black text-xs"
           >
             <div>
               <span class="font-bold text-foreground">${{ entry.tokenSymbol }}</span>
@@ -68,7 +66,7 @@
               v-if="isOwnProfile"
               size="sm"
               variant="outline"
-              class="h-7 px-3 text-xs gap-1 cursor-pointer font-mono rounded-lg border-border hover:bg-muted"
+              class="h-7 px-3 text-xs gap-1 cursor-pointer rounded-lg border-border hover:bg-muted"
               :disabled="dividendsActionLoading === entry.tokenAddress"
               @click="emit('claim-single', entry.tokenAddress)"
             >
@@ -94,7 +92,7 @@
         </Empty>
 
         <!-- Error -->
-        <p v-if="dividendsError" class="text-xs text-rose-500 font-mono">
+        <p v-if="dividendsError" class="text-xs text-rose-500">
           {{ dividendsError }}
         </p>
       </Card>
@@ -106,9 +104,7 @@
             <Lock class="w-4 h-4 text-foreground" />
             <h3 class="text-sm font-bold text-foreground">Linear Vesting Vault</h3>
           </div>
-          <Badge variant="outline" class="text-xs font-mono text-muted-foreground">
-            Non-Custodial
-          </Badge>
+          <Badge variant="outline" class="text-xs text-muted-foreground"> Non-Custodial </Badge>
         </div>
 
         <p class="text-xs text-muted-foreground font-sans leading-relaxed">
@@ -118,18 +114,14 @@
 
         <div class="flex items-end justify-between pt-3 border-t border-border/60">
           <div>
-            <span class="text-xs text-muted-foreground uppercase font-mono block">
-              Vested Balance
-            </span>
-            <p class="text-xl font-bold font-mono text-foreground">
-              0.00 {{ nativeCurrencySymbol }}
-            </p>
+            <span class="text-xs text-muted-foreground uppercase block"> Vested Balance </span>
+            <p class="text-xl font-bold text-foreground">0.00 {{ nativeCurrencySymbol }}</p>
           </div>
           <Button
             size="sm"
             variant="outline"
             :disabled="true"
-            class="h-8 px-4 text-xs font-semibold opacity-50 cursor-not-allowed font-mono rounded-xl border-border"
+            class="h-8 px-4 text-xs font-semibold opacity-50 cursor-not-allowed rounded-xl border-border"
           >
             Claim Unlocked
           </Button>

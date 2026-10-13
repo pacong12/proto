@@ -304,7 +304,7 @@ function formatDisplayPrice(val: number): string {
     <!-- Empty state -->
     <div
       v-if="data.length === 0"
-      class="flex items-center justify-center h-64 text-muted-foreground font-mono text-xs"
+      class="flex items-center justify-center h-64 text-muted-foreground text-xs"
     >
       No chart data available for this range.
     </div>
@@ -398,7 +398,7 @@ function formatDisplayPrice(val: number): string {
         />
 
         <!-- Y-Axis Price Labels (Right column) -->
-        <g class="chart-y-axis font-mono text-[10px]">
+        <g class="chart-y-axis text-[10px]">
           <text
             v-for="(tick, tIdx) in yAxisTicks"
             :key="`y-lbl-${tIdx}`"
@@ -412,7 +412,7 @@ function formatDisplayPrice(val: number): string {
         </g>
 
         <!-- X-Axis Time Labels (Bottom row) -->
-        <g class="chart-x-axis font-mono text-[10px]">
+        <g class="chart-x-axis text-[10px]">
           <text
             v-for="(xTick, xIdx) in xAxisTicks"
             :key="`x-lbl-${xIdx}`"
@@ -477,7 +477,7 @@ function formatDisplayPrice(val: number): string {
       <!-- Floating Interactive Tooltip Card (Official Shadcn Card Component) -->
       <Card
         v-if="activePoint"
-        class="absolute pointer-events-none z-30 transition-all duration-75 ease-out shadow-2xl rounded-xl border border-border/80 bg-zinc-950/95 p-2.5 text-xs font-mono text-zinc-100 backdrop-blur-md"
+        class="absolute pointer-events-none z-30 transition-all duration-75 ease-out shadow-2xl rounded-xl border border-border/80 bg-zinc-950/95 p-2.5 text-xs text-zinc-100 backdrop-blur-md"
         :style="{
           left: `${Math.min(Math.max(16, (activePoint.x / viewWidth) * 100), 78)}%`,
           top: `${Math.min(Math.max(12, (activePoint.y / height) * 100 - 18), 65)}%`,
@@ -493,7 +493,7 @@ function formatDisplayPrice(val: number): string {
             <Badge
               v-if="activePoint.data.open > 0"
               :variant="activePoint.data.close >= activePoint.data.open ? 'default' : 'destructive'"
-              class="px-1 py-0 h-3.5 text-[9px] font-mono font-bold leading-none"
+              class="px-1 py-0 h-3.5 text-[9px] font-bold leading-none"
             >
               {{ activePoint.data.close >= activePoint.data.open ? '+' : ''
               }}{{

@@ -116,7 +116,7 @@ const fillPath = computed(() => {
     </svg>
 
     <!-- X-Axis Labels -->
-    <div class="flex justify-between px-4 pt-2 text-[10px] font-mono text-zinc-500">
+    <div class="flex justify-between px-4 pt-2 text-[10px] text-zinc-500">
       <span v-for="(d, i) in data" :key="i">{{ d.label }}</span>
     </div>
   </div>

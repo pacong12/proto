@@ -15,38 +15,38 @@
       </DialogHeader>
 
       <div class="space-y-4 py-2 font-sans">
-        <div class="space-y-1.5 font-mono">
+        <div class="space-y-1.5">
           <Label for="token-addr" class="text-xs font-medium">Target Token Address</Label>
           <Input
             id="token-addr"
             :model-value="tokenAddress"
             readonly
             disabled
-            class="font-mono text-xs text-muted-foreground"
+            class="text-xs text-muted-foreground"
           />
         </div>
 
-        <div class="space-y-1.5 font-mono">
+        <div class="space-y-1.5">
           <Label for="new-recipient" class="text-xs font-medium">New Community Recipient</Label>
           <Input
             id="new-recipient"
             v-model="newRecipientAddress"
             placeholder="0x..."
-            class="font-mono text-xs"
+            class="text-xs"
           />
         </div>
 
         <!-- Inline CTO Error -->
         <div
           v-if="error"
-          class="text-[11px] text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2.5 flex items-start gap-1.5 font-mono"
+          class="text-[11px] text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2.5 flex items-start gap-1.5"
         >
           <AlertCircle class="w-4 h-4 shrink-0 mt-0.5" />
           <span>{{ error }}</span>
         </div>
       </div>
 
-      <DialogFooter class="gap-2 font-mono">
+      <DialogFooter class="gap-2">
         <Button
           variant="outline"
           size="sm"

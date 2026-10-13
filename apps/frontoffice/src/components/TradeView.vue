@@ -18,7 +18,7 @@
       <AlertCircle class="w-10 h-10 text-muted-foreground" />
       <div class="space-y-1">
         <p class="text-base font-semibold text-foreground">Token not found</p>
-        <p class="text-xs text-muted-foreground font-mono">{{ props.tokenAddress }}</p>
+        <p class="text-xs text-muted-foreground">{{ props.tokenAddress }}</p>
         <p class="text-xs text-muted-foreground">
           This token has not been indexed yet or does not exist on this network.
         </p>
@@ -68,7 +68,7 @@
           <div class="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
             <!-- Chart Header with Timeframe Pills -->
             <div
-              class="flex items-center justify-between gap-3 px-3.5 py-2.5 border-b border-border/80 bg-card text-xs font-mono"
+              class="flex items-center justify-between gap-3 px-3.5 py-2.5 border-b border-border/80 bg-card text-xs"
             >
               <!-- Timeframe switcher pills (Shadcn Buttons) -->
               <div class="flex items-center gap-1 bg-black p-0.5 rounded-xl border border-border">
@@ -77,7 +77,7 @@
                   :key="res.label"
                   size="sm"
                   :variant="selectedResolution === res.seconds ? 'default' : 'ghost'"
-                  class="h-7 px-2.5 text-xs font-mono font-bold rounded-lg"
+                  class="h-7 px-2.5 text-xs font-bold rounded-lg"
                   @click="changeResolution(res.seconds)"
                 >
                   {{ res.label }}
@@ -205,7 +205,7 @@
                   v-if="activeBottomTab === 'trades'"
                   variant="ghost"
                   size="sm"
-                  class="ml-auto h-7 px-2 text-xs font-mono text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
+                  class="ml-auto h-7 px-2 text-xs text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
                   @click="fetchTrades(currentToken.address)"
                 >
                   <RefreshCw class="w-3.5 h-3.5 sm:mr-1" />
@@ -215,7 +215,7 @@
                   v-if="activeBottomTab === 'callouts'"
                   variant="ghost"
                   size="sm"
-                  class="ml-auto h-7 px-2 text-xs font-mono text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
+                  class="ml-auto h-7 px-2 text-xs text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
                   @click="fetchCallouts(currentToken.address)"
                 >
                   <RefreshCw class="w-3.5 h-3.5 sm:mr-1" />

@@ -14,7 +14,7 @@
         <Rocket class="w-6 h-6" />
       </template>
       <template v-if="isOwnProfile" #action>
-        <Button as-child size="sm" class="rounded-xl px-4 font-mono font-bold cursor-pointer">
+        <Button as-child size="sm" class="rounded-xl px-4 font-bold cursor-pointer">
           <RouterLink to="/launchpad/create">Create a Coin</RouterLink>
         </Button>
       </template>
@@ -52,7 +52,7 @@
               <h3 class="font-bold text-base text-foreground">
                 {{ token.name }}
               </h3>
-              <span class="text-xs font-mono text-muted-foreground">${{ token.symbol }}</span>
+              <span class="text-xs text-muted-foreground">${{ token.symbol }}</span>
               <TaxTooltip
                 :buy-tax-bps="token.taxConfig?.buyTaxBps"
                 :sell-tax-bps="token.taxConfig?.sellTaxBps"
@@ -60,7 +60,7 @@
               />
               <span
                 v-if="(token.taxConfig?.revenueSplit?.holders ?? 0) > 0"
-                class="text-xs text-sky-400 font-mono px-1.5 py-0.5 rounded border border-sky-500/20 bg-sky-500/5"
+                class="text-xs text-sky-400 px-1.5 py-0.5 rounded border border-sky-500/20 bg-sky-500/5"
                 title="Holder Fee Sharing Enabled"
               >
                 {{ token.taxConfig?.revenueSplit?.holders }}% Divs
@@ -69,7 +69,7 @@
             <!-- CA copy button -->
             <button
               type="button"
-              class="flex items-center gap-1.5 mt-1 font-mono text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer group"
+              class="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer group"
               :title="'Copy contract address: ' + token.address"
               @click.stop="copyCA(token.address)"
             >
@@ -83,12 +83,10 @@
                 class="w-3.5 h-3.5 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity"
               />
             </button>
-            <div
-              class="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap font-mono"
-            >
+            <div class="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
               <span>
                 Accrued:
-                <strong class="text-foreground font-mono">
+                <strong class="text-foreground">
                   {{
                     token.unclaimedWeth === '—'
                       ? 'Curve'
@@ -100,7 +98,7 @@
                 <span>•</span>
                 <span>
                   Redirect:
-                  <strong class="font-mono text-foreground">
+                  <strong class="text-foreground">
                     {{ token.redirect.slice(0, 6) }}...{{ token.redirect.slice(-4) }}
                   </strong>
                 </span>
@@ -109,12 +107,12 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-2 self-end sm:self-center font-mono flex-wrap">
+        <div class="flex items-center gap-2 self-end sm:self-center flex-wrap">
           <Button
             as-child
             variant="outline"
             size="sm"
-            class="h-8 px-2.5 text-xs font-semibold gap-1 border-border cursor-pointer font-mono"
+            class="h-8 px-2.5 text-xs font-semibold gap-1 border-border cursor-pointer"
           >
             <RouterLink :to="`/token/${token.address}`">
               Trade

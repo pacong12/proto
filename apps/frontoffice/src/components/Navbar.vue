@@ -223,7 +223,7 @@ function copyAddress() {
             t('searchPlaceholder') ? 'Search...' : 'Search'
           }}</span>
           <kbd
-            class="hidden sm:inline font-mono text-xs bg-muted border border-border px-1.5 py-0.5 rounded-md"
+            class="hidden sm:inline text-xs bg-muted border border-border px-1.5 py-0.5 rounded-md"
           >
             ⌘K
           </kbd>
@@ -334,15 +334,15 @@ function copyAddress() {
                 />
                 <div class="truncate min-w-0 flex-1">
                   <div class="flex items-center justify-between gap-1">
-                    <span class="text-xs font-bold text-foreground font-mono truncate">
+                    <span class="text-xs font-bold text-foreground truncate">
                       {{ getUserIdentity(account).displayName }}
                     </span>
-                    <span class="text-xs font-mono font-bold text-primary shrink-0">
+                    <span class="text-xs font-bold text-primary shrink-0">
                       {{ formattedBalance }}
                     </span>
                   </div>
                   <span
-                    class="block text-xs font-mono text-muted-foreground truncate mt-0.5"
+                    class="block text-xs text-muted-foreground truncate mt-0.5"
                     :title="account || ''"
                   >
                     {{ account }}
@@ -553,12 +553,10 @@ function copyAddress() {
             <div class="flex items-center gap-2.5 min-w-0">
               <Jazzicon :address="account" :size="28" class="rounded-full shrink-0" />
               <div class="truncate">
-                <span class="text-xs font-mono font-bold text-foreground block truncate">{{
+                <span class="text-xs font-bold text-foreground block truncate">{{
                   getUserIdentity(account).displayName
                 }}</span>
-                <span class="text-[11px] font-mono text-primary font-semibold">{{
-                  formattedBalance
-                }}</span>
+                <span class="text-[11px] text-primary font-semibold">{{ formattedBalance }}</span>
               </div>
             </div>
             <Button
@@ -610,7 +608,7 @@ function copyAddress() {
                 :key="net.chainId"
                 size="sm"
                 variant="outline"
-                class="h-7 px-2.5 text-[11px] font-mono font-bold cursor-pointer border-border"
+                class="h-7 px-2.5 text-[11px] font-bold cursor-pointer border-border"
                 :class="
                   activeNetwork.chainId === net.chainId
                     ? 'bg-primary text-primary-foreground border-primary'

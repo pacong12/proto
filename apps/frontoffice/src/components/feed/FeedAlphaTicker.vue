@@ -4,7 +4,7 @@
     class="p-2 sm:p-2.5 rounded-2xl border border-border/80 bg-card/60 backdrop-blur-md flex items-center justify-between gap-3 overflow-x-auto no-scrollbar select-none text-xs shadow-2xs"
   >
     <div
-      class="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-primary/10 text-primary font-bold shrink-0 font-mono text-[11px] border border-primary/20"
+      class="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-primary/10 text-primary font-bold shrink-0 text-[11px] border border-primary/20"
     >
       <Flame class="w-3.5 h-3.5 fill-current" />
       <span>ALPHA RADAR</span>
@@ -15,7 +15,7 @@
         v-for="(tItem, idx) in hotTokens"
         :key="tItem.token.address"
         type="button"
-        class="flex items-center gap-2 px-3 py-1 rounded-xl border border-border bg-black hover:bg-zinc-950 hover:border-foreground/30 transition cursor-pointer shrink-0 font-mono text-xs group"
+        class="flex items-center gap-2 px-3 py-1 rounded-xl border border-border bg-black hover:bg-zinc-950 hover:border-foreground/30 transition cursor-pointer shrink-0 text-xs group"
         @click="$emit('selectToken', tItem.token.address)"
       >
         <span class="text-[10px] text-muted-foreground font-bold">#{{ idx + 1 }}</span>

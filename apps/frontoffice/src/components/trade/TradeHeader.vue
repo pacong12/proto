@@ -1,7 +1,7 @@
 <template>
   <header class="space-y-4 pb-2 border-b border-border/80">
     <!-- Top Row: Back Navigation + Action Buttons -->
-    <div class="flex items-center justify-between gap-3 text-xs font-mono">
+    <div class="flex items-center justify-between gap-3 text-xs">
       <RouterLink
         to="/launchpad"
         class="text-muted-foreground hover:text-foreground transition inline-flex items-center gap-1.5 font-medium group"
@@ -20,7 +20,7 @@
         <Button
           variant="outline"
           size="sm"
-          class="h-7 px-2.5 text-xs font-bold gap-1 rounded-xl border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer shadow-2xs font-mono"
+          class="h-7 px-2.5 text-xs font-bold gap-1 rounded-xl border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer shadow-2xs"
           @click="$emit('openCallModal')"
         >
           <Megaphone class="w-3.5 h-3.5" />
@@ -32,7 +32,7 @@
         <Button
           variant="outline"
           size="sm"
-          class="h-7 px-2.5 text-xs font-bold gap-1 rounded-xl border-border cursor-pointer font-mono"
+          class="h-7 px-2.5 text-xs font-bold gap-1 rounded-xl border-border cursor-pointer"
           @click="$emit('shareToX')"
         >
           <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
@@ -47,7 +47,7 @@
         <Button
           variant="outline"
           size="sm"
-          class="h-7 px-2.5 text-xs font-bold gap-1 rounded-xl border-border cursor-pointer font-mono"
+          class="h-7 px-2.5 text-xs font-bold gap-1 rounded-xl border-border cursor-pointer"
           @click="$emit('copyTokenLink')"
         >
           <Check v-if="linkCopied" class="w-3 h-3 text-emerald-500" />
@@ -84,7 +84,7 @@
             >
               {{ currentToken.name }}
             </h1>
-            <span class="text-sm sm:text-base font-bold font-mono text-muted-foreground">
+            <span class="text-sm sm:text-base font-bold text-muted-foreground">
               ${{ currentToken.symbol }}
             </span>
             <!-- Pin / Star Watchlist Button (Pons style) -->
@@ -106,7 +106,7 @@
             </button>
             <Badge
               :variant="currentMarketData.isGraduated ? 'default' : 'outline'"
-              class="text-[10px] font-mono h-4 px-1.5 border-border uppercase font-semibold"
+              class="text-[10px] h-4 px-1.5 border-border uppercase font-semibold"
             >
               {{ currentMarketData.isGraduated ? 'Graduated' : 'Bonding Curve' }}
             </Badge>
@@ -128,25 +128,23 @@
               <span>by</span>
               <RouterLink
                 :to="'/' + getUserIdentity(currentToken.deployer).name"
-                class="hover:text-foreground hover:underline transition text-foreground font-mono font-bold"
+                class="hover:text-foreground hover:underline transition text-foreground font-bold"
                 :title="currentToken.deployer"
               >
                 {{ getUserIdentity(currentToken.deployer).name }}
               </RouterLink>
             </span>
             <span class="text-muted-foreground/50">·</span>
-            <span class="font-mono text-[11px]">{{
-              formatRelativeTime(currentToken.createdAt)
-            }}</span>
+            <span class="text-[11px]">{{ formatRelativeTime(currentToken.createdAt) }}</span>
             <span class="text-muted-foreground/50">·</span>
-            <span class="text-[11px] text-muted-foreground font-semibold font-mono">
+            <span class="text-[11px] text-muted-foreground font-semibold">
               {{ currencySymbol }} pair
             </span>
             <span class="text-muted-foreground/50">·</span>
             <!-- Contract Address Pill -->
             <button
               type="button"
-              class="inline-flex items-center gap-1 hover:text-foreground transition cursor-pointer text-[11px] font-mono"
+              class="inline-flex items-center gap-1 hover:text-foreground transition cursor-pointer text-[11px]"
               title="Copy Contract Address"
               @click="$emit('copyAddress', currentToken.address)"
             >
@@ -233,7 +231,7 @@
       <!-- Right: Pons-style Large Clickable Live Figure with Flash Animation -->
       <button
         type="button"
-        class="text-left md:text-right flex flex-col items-start md:items-end gap-0.5 cursor-pointer select-none group transition-all self-start md:self-auto shrink-0 font-mono"
+        class="text-left md:text-right flex flex-col items-start md:items-end gap-0.5 cursor-pointer select-none group transition-all self-start md:self-auto shrink-0"
         :title="`Click to toggle between Market Cap and Price display`"
         @click="$emit('toggleFigure')"
       >

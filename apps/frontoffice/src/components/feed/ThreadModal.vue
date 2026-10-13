@@ -5,7 +5,7 @@
     @click.self="emit('close')"
   >
     <div
-      class="w-full max-w-xl rounded-2xl border border-border bg-card shadow-2xl overflow-hidden font-mono text-xs flex flex-col max-h-[90vh]"
+      class="w-full max-w-xl rounded-2xl border border-border bg-card shadow-2xl overflow-hidden text-xs flex flex-col max-h-[90vh]"
     >
       <!-- Thread Modal Header -->
       <div class="flex items-center justify-between px-5 py-3.5 border-b border-border bg-card">
@@ -252,9 +252,7 @@
               class="w-full text-xs font-sans p-2.5 rounded-xl border border-border bg-muted/30 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground resize-none"
             />
             <div class="flex items-center justify-between">
-              <span class="text-[10px] text-muted-foreground font-mono">
-                {{ replyText.length }}/500
-              </span>
+              <span class="text-[10px] text-muted-foreground"> {{ replyText.length }}/500 </span>
               <Button
                 size="sm"
                 class="h-7 px-3 text-xs font-bold gap-1 rounded-lg cursor-pointer"

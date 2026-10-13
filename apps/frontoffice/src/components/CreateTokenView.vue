@@ -125,7 +125,7 @@
                   :placeholder="t('symbolPlaceholder')"
                   maxlength="10"
                   required
-                  class="font-mono uppercase"
+                  class="uppercase"
                 />
               </div>
             </div>
@@ -152,7 +152,7 @@
               v-model="form.twitter"
               type="text"
               placeholder="https://x.com/yourproject"
-              class="font-mono text-xs"
+              class="text-xs"
             />
           </div>
 
@@ -162,7 +162,7 @@
               v-model="form.telegram"
               type="text"
               placeholder="https://t.me/yourproject"
-              class="font-mono text-xs"
+              class="text-xs"
             />
           </div>
 
@@ -172,7 +172,7 @@
               v-model="form.website"
               type="text"
               placeholder="https://yourproject.com"
-              class="font-mono text-xs"
+              class="text-xs"
             />
           </div>
         </div>
@@ -189,7 +189,7 @@
             id="paired-asset"
             class="w-full flex items-center justify-between px-4 py-3 h-12 rounded-xl border border-border bg-card text-foreground"
           >
-            <div class="flex items-center gap-2.5 font-mono">
+            <div class="flex items-center gap-2.5">
               <img
                 :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
                 alt=""
@@ -227,7 +227,7 @@
               step="0.001"
               min="0"
               placeholder="0.00"
-              class="font-mono text-sm pr-20"
+              class="text-sm pr-20"
             />
             <div
               class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none select-none"
@@ -240,7 +240,7 @@
                 height="16"
                 class="w-4 h-4 rounded-full object-contain shrink-0"
               />
-              <span class="text-xs font-semibold font-mono text-muted-foreground">
+              <span class="text-xs font-semibold text-muted-foreground">
                 {{ currencySymbol }}
               </span>
             </div>
@@ -260,7 +260,7 @@
         <!-- Form Footer Rate & Submit Button -->
         <div class="pt-6 border-t border-border space-y-4">
           <!-- Launch Cost Summary Breakdown -->
-          <div class="rounded-2xl border border-border bg-black p-4 space-y-3 text-xs font-mono">
+          <div class="rounded-2xl border border-border bg-black p-4 space-y-3 text-xs">
             <div class="flex items-center justify-between text-muted-foreground">
               <span>{{ t('platformCreationFee') }}</span>
               <span class="font-bold text-foreground flex items-center gap-1.5">
@@ -300,7 +300,7 @@
               <span class="font-bold text-foreground uppercase tracking-wider text-xs">
                 {{ t('totalDue') }}
               </span>
-              <span class="text-sm font-bold text-foreground flex items-center gap-1.5 font-mono">
+              <span class="text-sm font-bold text-foreground flex items-center gap-1.5">
                 <img
                   :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
                   alt=""

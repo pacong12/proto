@@ -28,7 +28,7 @@
           aria-label="Close search"
         >
           <span
-            class="hidden sm:inline-block font-mono text-xs px-1.5 py-0.5 rounded border border-border bg-muted/60"
+            class="hidden sm:inline-block text-xs px-1.5 py-0.5 rounded border border-border bg-muted/60"
           >
             ESC
           </span>
@@ -57,7 +57,7 @@
             </span>
             <Badge
               :variant="matchedTrade.isBuy ? 'default' : 'destructive'"
-              class="text-xs uppercase px-1.5 py-0 font-mono"
+              class="text-xs uppercase px-1.5 py-0"
             >
               {{ matchedTrade.isBuy ? 'BUY' : 'SELL' }}
             </Badge>
@@ -69,11 +69,11 @@
           >
             <div class="min-w-0 truncate">
               <span
-                class="font-mono text-xs font-bold text-foreground group-hover:text-foreground/80 transition truncate block"
+                class="text-xs font-bold text-foreground group-hover:text-foreground/80 transition truncate block"
               >
                 {{ shortenAddress(matchedTrade.transactionHash, 10, 8) }}
               </span>
-              <p class="text-xs font-mono text-muted-foreground truncate mt-0.5">
+              <p class="text-xs text-muted-foreground truncate mt-0.5">
                 Token: {{ shortenAddress(matchedTrade.tokenAddress) }} •
                 {{ matchedTrade.tokenAmount }} tokens • {{ matchedTrade.wethAmount }}
                 {{ activeNetwork.nativeCurrency.symbol }}
@@ -135,17 +135,15 @@
                     >
                       {{ item.token.name }}
                     </span>
-                    <span class="text-xs font-mono text-muted-foreground">
-                      ${{ item.token.symbol }}
-                    </span>
+                    <span class="text-xs text-muted-foreground"> ${{ item.token.symbol }} </span>
                   </div>
-                  <p class="text-xs font-mono text-muted-foreground truncate mt-0.5">
+                  <p class="text-xs text-muted-foreground truncate mt-0.5">
                     {{ item.token.address }}
                   </p>
                 </div>
               </div>
 
-              <div class="text-right shrink-0 font-mono text-xs ml-2 sm:ml-4 space-y-0.5">
+              <div class="text-right shrink-0 text-xs ml-2 sm:ml-4 space-y-0.5">
                 <span class="font-bold block text-foreground">
                   {{ formatPriceUsd(item.marketData?.priceUsd) }}
                 </span>
@@ -175,7 +173,7 @@
 
       <!-- Quick Actions Footer with Light & Dark contrast -->
       <div
-        class="px-4 py-2.5 bg-muted/40 border-t border-border flex items-center justify-between text-xs font-mono text-muted-foreground"
+        class="px-4 py-2.5 bg-muted/40 border-t border-border flex items-center justify-between text-xs text-muted-foreground"
       >
         <span>
           {{ t('navigateHint') }}:

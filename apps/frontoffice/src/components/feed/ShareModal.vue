@@ -5,7 +5,7 @@
     @click.self="emit('close')"
   >
     <div
-      class="w-full max-w-md rounded-2xl border border-border bg-card shadow-2xl overflow-hidden font-mono text-xs flex flex-col max-h-[90vh]"
+      class="w-full max-w-md rounded-2xl border border-border bg-card shadow-2xl overflow-hidden text-xs flex flex-col max-h-[90vh]"
     >
       <!-- Modal Header -->
       <div class="flex items-center justify-between px-5 py-4 border-b border-border">
@@ -149,7 +149,7 @@
                 <Sparkles class="w-3.5 h-3.5" />
                 <span>PROTO ALPHA SIGNAL</span>
               </div>
-              <Badge variant="outline" class="text-[9px] border-primary/30 text-primary font-mono">
+              <Badge variant="outline" class="text-[9px] border-primary/30 text-primary">
                 Verified Position
               </Badge>
             </div>
@@ -187,7 +187,7 @@
 
             <!-- Position & Profit Stats Ribbon -->
             <div
-              class="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-muted/50 border border-border relative z-10 font-mono"
+              class="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-muted/50 border border-border relative z-10"
             >
               <div>
                 <span class="text-[9px] text-muted-foreground block uppercase"
@@ -210,7 +210,7 @@
 
             <!-- Card Footer -->
             <div
-              class="flex items-center justify-between text-[10px] text-muted-foreground relative z-10 pt-1 font-mono"
+              class="flex items-center justify-between text-[10px] text-muted-foreground relative z-10 pt-1"
             >
               <span>by {{ shortenAddress(call.authorAddress, 6, 4) }}</span>
               <span>proto.it/launchpad</span>
@@ -235,7 +235,7 @@
             <Button
               size="sm"
               variant="default"
-              class="w-full text-xs font-bold gap-1.5 h-8 cursor-pointer font-mono"
+              class="w-full text-xs font-bold gap-1.5 h-8 cursor-pointer"
               @click="downloadPnlCard"
             >
               <Download class="w-3.5 h-3.5" />

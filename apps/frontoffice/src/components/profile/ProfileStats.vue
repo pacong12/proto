@@ -1,5 +1,5 @@
 <template>
-  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 font-mono">
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
     <!-- Stat 1: Claimable Fees -->
     <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
       <p class="text-xs uppercase font-semibold flex items-center gap-1.5 text-muted-foreground">

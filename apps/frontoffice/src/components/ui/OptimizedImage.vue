@@ -107,7 +107,7 @@ function handleError() {
       <!-- Fallback avatar when image fails or is empty -->
       <span
         v-if="!resolvedSrc || hasError"
-        class="font-mono font-bold text-xs uppercase tracking-wider text-foreground"
+        class="font-bold text-xs uppercase tracking-wider text-foreground"
       >
         {{ fallbackText ? fallbackText.slice(0, 3) : 'TOK' }}
       </span>

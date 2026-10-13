@@ -1,5 +1,5 @@
 <template>
-  <div class="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-xs font-mono">
+  <div class="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-xs">
     <!-- Graduation Progress Bar Strip -->
     <div class="space-y-2.5">
       <div class="flex items-center justify-between text-xs">
@@ -9,7 +9,7 @@
           </span>
           <Badge
             :variant="currentMarketData.isGraduated ? 'default' : 'outline'"
-            class="text-[9px] h-4 px-1.5 uppercase font-mono"
+            class="text-[9px] h-4 px-1.5 uppercase"
           >
             {{
               currentMarketData.isGraduated

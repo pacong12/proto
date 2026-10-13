@@ -1,5 +1,5 @@
 <template>
-  <aside class="space-y-4 font-mono text-xs">
+  <aside class="space-y-4 text-xs">
     <!-- Quick Search Pill -->
     <div class="relative w-full">
       <Search
@@ -9,7 +9,7 @@
         :value="searchQuery"
         type="text"
         placeholder="Search feed, cashtags..."
-        class="w-full h-9 pl-9 pr-4 text-xs rounded-xl bg-card border border-border/80 focus:border-primary focus:bg-background outline-none transition text-foreground placeholder:text-muted-foreground shadow-2xs font-mono"
+        class="w-full h-9 pl-9 pr-4 text-xs rounded-xl bg-card border border-border/80 focus:border-primary focus:bg-background outline-none transition text-foreground placeholder:text-muted-foreground shadow-2xs"
         @input="$emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
       />
     </div>

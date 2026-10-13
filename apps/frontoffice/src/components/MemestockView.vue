@@ -153,7 +153,7 @@
                   {{ item.token.name }}
                 </h3>
                 <div class="flex items-center gap-1.5 text-xs text-muted-foreground truncate">
-                  <span class="font-mono font-semibold">${{ item.token.symbol }}</span>
+                  <span class="font-semibold">${{ item.token.symbol }}</span>
                   <span>&middot;</span>
                   <span>{{ formatRelativeTime(item.token.createdAt) }}</span>
                   <template v-if="item.token.deployer">
@@ -189,7 +189,7 @@
                 </button>
                 <span
                   v-if="(item.marketData.priceChange24h ?? 0) !== 0"
-                  class="text-xs font-mono font-bold"
+                  class="text-xs font-bold"
                   :class="
                     (item.marketData.priceChange24h ?? 0) >= 0
                       ? 'text-emerald-500'
@@ -212,7 +212,7 @@
               }}
             </p>
 
-            <div class="flex items-center gap-2 flex-wrap text-xs font-mono">
+            <div class="flex items-center gap-2 flex-wrap text-xs">
               <TaxTooltip
                 :buy-tax-bps="item.token.taxConfig?.buyTaxBps"
                 :sell-tax-bps="item.token.taxConfig?.sellTaxBps"
@@ -239,13 +239,13 @@
             <div class="grid grid-cols-2 gap-2 text-xs">
               <div>
                 <span class="text-xs text-muted-foreground block font-semibold">MARKET CAP</span>
-                <span class="font-bold font-mono text-foreground">
+                <span class="font-bold text-foreground">
                   {{ formatCompactUsd(item.marketData.marketCapUsd) }}
                 </span>
               </div>
               <div class="text-right">
                 <span class="text-xs text-muted-foreground block font-semibold">VOLUME 24H</span>
-                <span class="font-semibold font-mono text-muted-foreground">
+                <span class="font-semibold text-muted-foreground">
                   {{
                     (item.marketData.volume24hUsd || 0) > 0
                       ? formatCompactUsd(item.marketData.volume24hUsd)
@@ -256,7 +256,7 @@
             </div>
             <div class="flex justify-between text-xs pt-1">
               <span class="text-muted-foreground">Graduation ({{ graduationTargetDisplay }})</span>
-              <span class="text-foreground font-mono font-semibold">
+              <span class="text-foreground font-semibold">
                 {{ (item.marketData.graduationProgress * 100).toFixed(1) }}%
               </span>
             </div>

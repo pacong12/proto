@@ -56,7 +56,7 @@ const timelockLabel = computed(() => {
 </script>
 
 <template>
-  <div class="space-y-4 font-mono text-xs">
+  <div class="space-y-4 text-xs">
     <!-- No pending proposal -->
     <div v-if="!hasPending" class="flex items-center gap-2 text-muted-foreground py-2">
       <CheckCircle class="w-4 h-4 text-emerald-500 shrink-0" />

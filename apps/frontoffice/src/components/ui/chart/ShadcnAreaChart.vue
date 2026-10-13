@@ -183,7 +183,7 @@ function formatValue(val: number): string {
       <!-- Empty state -->
       <div
         v-if="data.length === 0"
-        class="flex items-center justify-center h-48 text-muted-foreground font-mono text-xs"
+        class="flex items-center justify-center h-48 text-muted-foreground text-xs"
       >
         No chart data available for this range.
       </div>
@@ -309,7 +309,7 @@ function formatValue(val: number): string {
         <!-- Official Shadcn Style Floating Tooltip Card -->
         <div
           v-if="activePoint !== null && cursorX !== null"
-          class="pointer-events-none absolute top-1 rounded-xl bg-popover/95 text-popover-foreground border border-border shadow-2xl p-2.5 backdrop-blur-md z-30 transition-all duration-75 font-mono text-xs"
+          class="pointer-events-none absolute top-1 rounded-xl bg-popover/95 text-popover-foreground border border-border shadow-2xl p-2.5 backdrop-blur-md z-30 transition-all duration-75 text-xs"
           :style="{
             left: `clamp(80px, ${(cursorX / viewWidth) * 100}%, calc(100% - 80px))`,
             transform: 'translateX(-50%)',
@@ -330,7 +330,7 @@ function formatValue(val: number): string {
 
         <!-- Horizontal X-Axis Labels -->
         <div
-          class="flex justify-between px-3 pt-2 text-[11px] font-mono tabular-nums text-muted-foreground select-none"
+          class="flex justify-between px-3 pt-2 text-[11px] tabular-nums text-muted-foreground select-none"
         >
           <span>{{ data[0]?.label }}</span>
           <span v-if="data.length > 2">{{ data[Math.floor(data.length / 2)]?.label }}</span>

@@ -9,7 +9,7 @@
         </DialogDescription>
       </DialogHeader>
 
-      <div class="space-y-4 py-2 font-mono text-xs">
+      <div class="space-y-4 py-2 text-xs">
         <div class="space-y-1.5">
           <Label for="update-buy-tax">Buy Tax (%)</Label>
           <Input
@@ -50,9 +50,7 @@
 
       <!-- Deployer: manage pending timelock proposal -->
       <div class="pt-2 border-t border-border">
-        <p
-          class="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-3 font-mono"
-        >
+        <p class="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-3">
           Pending proposal
         </p>
         <TaxTimelockPanel

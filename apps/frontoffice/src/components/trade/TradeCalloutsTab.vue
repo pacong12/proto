@@ -2,7 +2,7 @@
   <div class="max-h-[460px] overflow-y-auto p-4 sm:p-5 space-y-4">
     <!-- Quick Post Callout Action -->
     <div
-      class="p-4 rounded-2xl border border-border bg-black flex items-center justify-between gap-3 font-mono text-xs"
+      class="p-4 rounded-2xl border border-border bg-black flex items-center justify-between gap-3 text-xs"
     >
       <div class="flex items-center gap-2 min-w-0">
         <Megaphone class="w-4 h-4 text-primary shrink-0" />
@@ -29,7 +29,7 @@
       class="py-12 text-center text-muted-foreground"
     >
       <Loader2 class="w-4 h-4 animate-spin mx-auto mb-2 text-primary" />
-      <span class="text-xs font-mono">Loading callouts...</span>
+      <span class="text-xs">Loading callouts...</span>
     </div>
     <Empty
       v-else-if="callouts.length === 0"
@@ -53,26 +53,26 @@
             <Jazzicon :address="cmt.authorAddress" :size="18" />
             <RouterLink
               :to="'/' + getUserIdentity(cmt.authorAddress).name"
-              class="text-xs font-mono font-bold text-foreground hover:underline"
+              class="text-xs font-bold text-foreground hover:underline"
             >
               {{ getUserIdentity(cmt.authorAddress).displayName }}
             </RouterLink>
             <Badge
               v-if="cmt.authorAddress.toLowerCase() === currentToken.deployer?.toLowerCase()"
               variant="secondary"
-              class="text-[9px] px-1.5 py-0 h-4 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-mono"
+              class="text-[9px] px-1.5 py-0 h-4 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
             >
               Creator
             </Badge>
             <Badge
               v-else-if="isHolderAddress(cmt.authorAddress)"
               variant="outline"
-              class="text-[9px] px-1.5 py-0 h-4 font-mono text-muted-foreground"
+              class="text-[9px] px-1.5 py-0 h-4 text-muted-foreground"
             >
               Holder
             </Badge>
           </div>
-          <span class="text-[10px] font-mono text-muted-foreground">
+          <span class="text-[10px] text-muted-foreground">
             {{ formatRelativeTime(cmt.createdAt) }}
           </span>
         </div>
@@ -95,7 +95,7 @@
 
         <!-- Pump.fun Style Callout Mini Token Card -->
         <div
-          class="p-2.5 rounded-xl border border-border bg-black flex items-center justify-between gap-3 text-xs font-mono"
+          class="p-2.5 rounded-xl border border-border bg-black flex items-center justify-between gap-3 text-xs"
         >
           <div class="flex items-center gap-2 min-w-0">
             <OptimizedImage

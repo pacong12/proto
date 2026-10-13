@@ -180,10 +180,10 @@ export function useLaunchpad() {
               b1: '0x0000000000000000000000000000000000000000000000000000000000000000',
               b2: '0x0000000000000000000000000000000000000000000000000000000000000000',
             },
-            0n,
+            initialBuyWei,
             '0x0000000000000000000000000000000000000000',
           ],
-          value: network.launchConfig.launchFeeWei,
+          value: totalValue,
           account,
           chain: walletClient.chain,
         });
@@ -275,6 +275,25 @@ export function useLaunchpad() {
         launchStep.value = 'success';
         launchTokenAddress.value = tokenAddr;
 
+        const buyBps = taxPercentToBps(params.buyTaxPercent || 0);
+        const sellBps = taxPercentToBps(params.sellTaxPercent || 0);
+        if (buyBps > 0 || sellBps > 0) {
+          try {
+            const taxRecipient = (params.creatorTaxWallet as `0x${string}`) || account;
+            const taxHash = await walletClient.writeContract({
+              address: tokenAddr,
+              abi: launchpadTokenAbi,
+              functionName: 'setInitialTaxConfig',
+              args: [buyBps, sellBps, taxRecipient],
+              account,
+              chain: walletClient.chain,
+            });
+            await publicClient.waitForTransactionReceipt({ hash: taxHash });
+          } catch (taxErr) {
+            console.warn('[useLaunchpad] Failed to configure onchain initial tax:', taxErr);
+          }
+        }
+
         const syncPayload = {
           txHash: hash,
           chain: network.chainId,
@@ -322,6 +341,25 @@ export function useLaunchpad() {
             const curveAddr = decoded.args.curve as `0x${string}`;
             launchStep.value = 'success';
             launchTokenAddress.value = tokenAddr;
+
+            const buyBps = taxPercentToBps(params.buyTaxPercent || 0);
+            const sellBps = taxPercentToBps(params.sellTaxPercent || 0);
+            if (buyBps > 0 || sellBps > 0) {
+              try {
+                const taxRecipient = (params.creatorTaxWallet as `0x${string}`) || account;
+                const taxHash = await walletClient.writeContract({
+                  address: tokenAddr,
+                  abi: launchpadTokenAbi,
+                  functionName: 'setInitialTaxConfig',
+                  args: [buyBps, sellBps, taxRecipient],
+                  account,
+                  chain: walletClient.chain,
+                });
+                await publicClient.waitForTransactionReceipt({ hash: taxHash });
+              } catch (taxErr) {
+                console.warn('[useLaunchpad] Failed to configure onchain initial tax:', taxErr);
+              }
+            }
 
             try {
               await apiFetch<unknown>(`/api/tokens/${tokenAddr}/sync`, {
