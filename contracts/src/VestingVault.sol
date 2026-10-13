@@ -81,7 +81,11 @@ contract VestingVault {
     ) external nonReentrant {
         if (token == address(0) || beneficiary == address(0)) revert ZeroAddress();
         if (amount == 0 || duration == 0) revert ZeroAmount();
-        if (vestingSchedules[token][beneficiary].exists) revert ScheduleExists();
+        // L-01 fix: allow creating a new schedule if previous one is fully claimed or revoked.
+        Schedule storage existing = vestingSchedules[token][beneficiary];
+        if (existing.exists && !existing.revoked && existing.claimedAmount < existing.totalAmount) {
+            revert ScheduleExists();
+        }
 
         vestingSchedules[token][beneficiary] = Schedule({
             creator: msg.sender,

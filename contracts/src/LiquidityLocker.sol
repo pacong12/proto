@@ -167,7 +167,8 @@ contract LiquidityLocker is ILiquidityLocker {
 
     function claimFees(address token) external override nonReentrant returns (uint256 creatorTokenFee, uint256 creatorWethFee) {
         address redirect = feeRedirects[token];
-        if (msg.sender != tokenDeployers[token] && msg.sender != owner && (redirect == address(0) || msg.sender != redirect)) {
+        // H-04 fix: remove owner privilege on claimFees. Only deployer or active redirect may claim.
+        if (msg.sender != tokenDeployers[token] && (redirect == address(0) || msg.sender != redirect)) {
             revert Unauthorized();
         }
         uint256 positionId = tokenPositions[token];
