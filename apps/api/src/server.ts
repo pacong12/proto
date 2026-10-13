@@ -704,6 +704,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     try {
       let body: {
         txHash?: string;
+        chain?: string | number;
         taxConfig?: {
           buyTaxBps?: number;
           sellTaxBps?: number;
@@ -726,8 +727,19 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         await indexTradeFromReceipt(body.txHash as `0x${string}`, address);
       }
 
-      // Refresh token taxConfig and revenueSplit
-      const existing = await repository.findByAddress(address);
+      // Refresh or initialize token taxConfig and revenueSplit
+      let existing = await repository.findByAddress(address);
+      if (!existing) {
+        const chainParam =
+          url.searchParams.get('chain') || (body.chain ? String(body.chain) : null);
+        const chain = chainRegistry.getChainByParam(chainParam);
+        const fetched = await chainIndexer
+          .fetchLaunchedTokenFromChain(address, chain.network)
+          .catch(() => null);
+        if (fetched) {
+          existing = fetched;
+        }
+      }
       if (existing) {
         let buyTaxBps = existing.taxConfig?.buyTaxBps ?? 0;
         let sellTaxBps = existing.taxConfig?.sellTaxBps ?? 0;

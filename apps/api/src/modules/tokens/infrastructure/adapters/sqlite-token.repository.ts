@@ -353,6 +353,26 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
   }
 
   async save(token: LaunchedTokenEntity): Promise<void> {
+    let finalTaxConfig = token.taxConfig;
+    try {
+      const existingRow = this.db
+        .prepare('SELECT tax_config_json FROM tokens WHERE LOWER(address) = LOWER(?) LIMIT 1')
+        .get(token.address) as { tax_config_json?: string | null } | undefined;
+      if (existingRow?.tax_config_json) {
+        const parsed = JSON.parse(existingRow.tax_config_json) as LaunchedTokenEntity['taxConfig'];
+        if (parsed?.revenueSplit && !finalTaxConfig?.revenueSplit) {
+          finalTaxConfig = {
+            buyTaxBps: finalTaxConfig?.buyTaxBps ?? parsed.buyTaxBps ?? 0,
+            sellTaxBps: finalTaxConfig?.sellTaxBps ?? parsed.sellTaxBps ?? 0,
+            taxRecipient: finalTaxConfig?.taxRecipient ?? parsed.taxRecipient ?? token.deployer,
+            revenueSplit: parsed.revenueSplit,
+          };
+        }
+      }
+    } catch {
+      // ignore parse errors
+    }
+
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO tokens (
         address, name, symbol, decimals, totalSupply, logo, description,
@@ -381,7 +401,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       token.launchBlock.toString(),
       token.createdAt,
       token.initialBuyAmount ?? null,
-      token.taxConfig ? JSON.stringify(token.taxConfig) : null,
+      finalTaxConfig ? JSON.stringify(finalTaxConfig) : null,
       token.version ?? null,
       token.curveAddress?.toLowerCase() ?? null,
       token.isGraduated ? 1 : 0,
