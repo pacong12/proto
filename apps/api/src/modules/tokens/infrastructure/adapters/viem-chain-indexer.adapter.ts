@@ -218,8 +218,7 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
         graduationTarget: graduationTarget.toString(),
         isGraduated: graduated as boolean,
       };
-    } catch (err) {
-      console.error(`[ChainIndexer] fetchV2LaunchedToken failed for ${tokenAddress}:`, err);
+    } catch {
       return null;
     }
   }
@@ -359,8 +358,7 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
         initialBuyAmount: td.initialBuyAmount.toString(),
         version: 'v1',
       };
-    } catch (err) {
-      console.error(`[ChainIndexer] fetchLaunchedTokenFromChain failed for ${tokenAddress}:`, err);
+    } catch {
       return null;
     }
   }

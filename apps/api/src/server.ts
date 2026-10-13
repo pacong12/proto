@@ -607,20 +607,6 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     }
     return replyJson(res, 200, { 'x-cache': 'MISS' });
   }
-  // GET /api/tokens/koth — Token closest to graduation (highest graduation progress)
-  if (url.pathname === '/api/tokens/koth' && req.method === 'GET') {
-    const cacheKey = 'tokens:koth';
-    const cached = await cache.get<unknown>(cacheKey);
-    if (cached) {
-      return replyJson(cached, 200, { 'x-cache': 'HIT' });
-    }
-
-    const res = await tokenController.getKingOfTheHill();
-    if (res.success && res.data) {
-      await cache.set(cacheKey, res, 5); // Cache for 5s
-    }
-    return replyJson(res, 200, { 'x-cache': 'MISS' });
-  }
 
   // GET /api/users/resolve?query=:query
   if (url.pathname === '/api/users/resolve' && req.method === 'GET') {
@@ -726,9 +712,31 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         await indexTradeFromReceipt(body.txHash as `0x${string}`, address);
       }
 
-      // C-01 fix: unauthenticated taxConfig write removed.
-      // Token taxes must only be updated from on-chain TaxConfigUpdated logs.
-
+      // Refresh token taxConfig directly from the on-chain contract state
+      const existing = await repository.findByAddress(address);
+      if (existing) {
+        const chain = chainRegistry.resolveForToken(existing);
+        try {
+          const [buyTaxBps, sellTaxBps, taxRecipient] = (await chain.client.readContract({
+            address,
+            abi: launchpadTokenAbi,
+            functionName: 'taxConfig',
+          })) as [number, number, Address];
+          if (
+            existing.taxConfig?.buyTaxBps !== buyTaxBps ||
+            existing.taxConfig?.sellTaxBps !== sellTaxBps ||
+            existing.taxConfig?.taxRecipient !== taxRecipient
+          ) {
+            await repository.save({
+              ...existing,
+              taxConfig: { buyTaxBps, sellTaxBps, taxRecipient },
+            });
+            await cache.del(`token:detail:${address.toLowerCase()}`);
+          }
+        } catch {
+          // non-fatal
+        }
+      }
       Promise.allSettled([robinhoodPoller.pollEvents(), arcPoller.pollEvents()]);
       return replyEnvelope(ok({ synced: true, address, txHash: body.txHash ?? null }));
     } catch (e) {

@@ -65,33 +65,6 @@ export class TokenController {
       return err('FETCH_TOKENS_FAILED', (error as Error).message);
     }
   }
-  async getKingOfTheHill(): Promise<ApiEnvelope<TokenWithMarketData | null>> {
-    try {
-      const allTokens = await this.listTokens(100, 0, 'v2');
-      if (!allTokens.success || !allTokens.data || allTokens.data.length === 0) {
-        return ok(null);
-      }
-
-      // Filter active (ungraduated) curves and sort by graduationProgress descending, then marketCap
-      const activeCurves = allTokens.data.filter((item) => !item.marketData?.isGraduated);
-
-      if (activeCurves.length === 0) {
-        // Fallback to top token if all are graduated
-        return ok(allTokens.data[0]);
-      }
-
-      activeCurves.sort((a, b) => {
-        const progA = a.marketData?.graduationProgress ?? 0;
-        const progB = b.marketData?.graduationProgress ?? 0;
-        if (progB !== progA) return progB - progA;
-        return (b.marketData?.marketCapUsd ?? 0) - (a.marketData?.marketCapUsd ?? 0);
-      });
-
-      return ok(activeCurves[0]);
-    } catch (error) {
-      return err('KOTH_ERROR', (error as Error).message);
-    }
-  }
 
   async getToken(address: string): Promise<ApiEnvelope<TokenDetailResult>> {
     if (!address.startsWith('0x') || address.length !== 42) {
