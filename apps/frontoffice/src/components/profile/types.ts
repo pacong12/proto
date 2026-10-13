@@ -14,6 +14,17 @@ export interface MyLaunchItem {
   logo?: string;
   unclaimedWeth: string;
   redirect: string | null;
+  taxConfig?: {
+    buyTaxBps?: number;
+    sellTaxBps?: number;
+    taxRecipient?: string;
+    revenueSplit?: {
+      creator: number;
+      buyback: number;
+      holders: number;
+      growth: number;
+    };
+  };
 }
 
 export interface PortfolioPosition {

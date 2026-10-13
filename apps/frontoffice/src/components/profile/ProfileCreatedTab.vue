@@ -53,6 +53,18 @@
                 {{ token.name }}
               </h3>
               <span class="text-xs font-mono text-muted-foreground">${{ token.symbol }}</span>
+              <TaxTooltip
+                :buy-tax-bps="token.taxConfig?.buyTaxBps"
+                :sell-tax-bps="token.taxConfig?.sellTaxBps"
+                custom-class="text-[10px]"
+              />
+              <span
+                v-if="(token.taxConfig?.revenueSplit?.holders ?? 0) > 0"
+                class="text-[9px] text-sky-400 font-mono px-1.5 py-0.5 rounded border border-sky-500/20 bg-sky-500/5"
+                title="Holder Fee Sharing Enabled"
+              >
+                {{ token.taxConfig?.revenueSplit?.holders }}% Divs
+              </span>
             </div>
             <!-- CA copy button -->
             <button
@@ -97,27 +109,43 @@
           </div>
         </div>
 
-        <div v-if="isOwnProfile" class="flex items-center gap-2 self-end sm:self-center font-mono">
+        <div class="flex items-center gap-2 self-end sm:self-center font-mono flex-wrap">
           <Button
-            @click="emit('claim', token.address)"
-            :disabled="loadingAction || claimingToken === token.address"
-            variant="default"
-            size="sm"
-            class="cursor-pointer"
-          >
-            <Loader2 v-if="claimingToken === token.address" class="w-3.5 h-3.5 mr-1 animate-spin" />
-            <ArrowDownToLine v-else class="w-3.5 h-3.5 mr-1" />
-            Claim Fees
-          </Button>
-          <Button
-            @click="emit('cto', token.address)"
+            as-child
             variant="outline"
             size="sm"
-            class="cursor-pointer"
+            class="h-8 px-2.5 text-xs font-semibold gap-1 border-border cursor-pointer font-mono"
           >
-            <Share2 class="w-3.5 h-3.5 mr-1" />
-            CTO Redirect
+            <RouterLink :to="`/token/${token.address}`">
+              Trade
+              <ExternalLink class="w-3 h-3" />
+            </RouterLink>
           </Button>
+          <template v-if="isOwnProfile">
+            <Button
+              @click="emit('claim', token.address)"
+              :disabled="loadingAction || claimingToken === token.address"
+              variant="default"
+              size="sm"
+              class="cursor-pointer"
+            >
+              <Loader2
+                v-if="claimingToken === token.address"
+                class="w-3.5 h-3.5 mr-1 animate-spin"
+              />
+              <ArrowDownToLine v-else class="w-3.5 h-3.5 mr-1" />
+              Claim Fees
+            </Button>
+            <Button
+              @click="emit('cto', token.address)"
+              variant="outline"
+              size="sm"
+              class="cursor-pointer"
+            >
+              <Share2 class="w-3.5 h-3.5 mr-1" />
+              CTO Redirect
+            </Button>
+          </template>
         </div>
       </Card>
     </div>
@@ -126,7 +154,16 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Loader2, ArrowDownToLine, Share2, Rocket, Copy, Check } from 'lucide-vue-next';
+import {
+  Loader2,
+  ArrowDownToLine,
+  Share2,
+  Rocket,
+  Copy,
+  Check,
+  ExternalLink,
+} from 'lucide-vue-next';
+import TaxTooltip from '@/components/ui/TaxTooltip.vue';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';

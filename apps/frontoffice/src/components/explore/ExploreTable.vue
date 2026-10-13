@@ -124,6 +124,18 @@
                     />
                     <Copy v-else class="w-3 h-3" />
                   </button>
+                  <TaxTooltip
+                    :buy-tax-bps="item.token.taxConfig?.buyTaxBps"
+                    :sell-tax-bps="item.token.taxConfig?.sellTaxBps"
+                    custom-class="text-[10px]"
+                  />
+                  <span
+                    v-if="(item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0"
+                    class="text-[9px] text-sky-400 font-mono px-1 py-0.5 rounded border border-sky-500/20 bg-sky-500/5"
+                    title="Holder Fee Sharing Enabled"
+                  >
+                    {{ item.token.taxConfig?.revenueSplit?.holders }}% Divs
+                  </span>
                 </div>
               </div>
             </div>
@@ -263,6 +275,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Pagination } from '@/components/ui/pagination';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
+import TaxTooltip from '@/components/ui/TaxTooltip.vue';
 import { shortenAddress, formatRelativeTime, formatCompactUsd } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { useTokenStore } from '@/composables/useTokenStore';

@@ -104,6 +104,7 @@ export function useUserProfile({
               logo: item.token.logo,
               unclaimedWeth,
               redirect,
+              taxConfig: item.token.taxConfig,
             };
           }),
         );

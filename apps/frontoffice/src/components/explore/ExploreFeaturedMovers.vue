@@ -23,23 +23,50 @@
             :class="isPinned(item.token.address) ? 'fill-amber-400 text-amber-400' : ''"
           />
         </button>
-        <OptimizedImage
-          :src="item.token.logo"
-          :alt="item.token.name"
-          :fallback-text="item.token.symbol"
-          :width="38"
-          :height="38"
-          class="rounded-full border border-border object-cover shrink-0 ring-1 ring-border group-hover:ring-primary/40 transition"
-        />
+        <div class="relative shrink-0">
+          <OptimizedImage
+            :src="item.token.logo"
+            :alt="item.token.name"
+            :fallback-text="item.token.symbol"
+            :width="38"
+            :height="38"
+            class="rounded-full border border-border object-cover shrink-0 ring-1 ring-border group-hover:ring-primary/40 transition"
+          />
+          <img
+            :src="
+              tokenStore.getTokenNetwork(item.token.address).chainId === 5042
+                ? '/chains/arc.svg'
+                : '/chains/robinhood.svg'
+            "
+            :alt="tokenStore.getTokenNetwork(item.token.address).name"
+            :title="tokenStore.getTokenNetwork(item.token.address).name"
+            class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border border-black bg-black object-contain shadow-xs"
+          />
+        </div>
         <div class="min-w-0 truncate">
-          <h4
-            class="font-bold text-xs sm:text-sm text-foreground truncate group-hover:text-primary transition"
+          <div class="flex items-center gap-1.5 truncate">
+            <h4
+              class="font-bold text-xs sm:text-sm text-foreground truncate group-hover:text-primary transition"
+            >
+              {{ item.token.name }}
+            </h4>
+            <TaxTooltip
+              :buy-tax-bps="item.token.taxConfig?.buyTaxBps"
+              :sell-tax-bps="item.token.taxConfig?.sellTaxBps"
+              custom-class="text-[10px]"
+            />
+          </div>
+          <div
+            class="flex items-center gap-1.5 text-[11px] font-mono font-semibold text-muted-foreground truncate"
           >
-            {{ item.token.name }}
-          </h4>
-          <p class="text-[11px] font-mono font-semibold text-muted-foreground truncate">
-            ${{ item.token.symbol }}
-          </p>
+            <span>${{ item.token.symbol }}</span>
+            <span
+              v-if="(item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0"
+              class="text-sky-400 text-[10px]"
+            >
+              &middot; {{ item.token.taxConfig?.revenueSplit?.holders }}% Divs
+            </span>
+          </div>
         </div>
       </div>
 
@@ -62,6 +89,8 @@
 <script setup lang="ts">
 import { Star, ArrowRight } from 'lucide-vue-next';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
+import TaxTooltip from '@/components/ui/TaxTooltip.vue';
+import { useTokenStore } from '@/composables/useTokenStore';
 import { formatRelativeTime } from '@/lib/utils';
 import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
 
@@ -81,4 +110,6 @@ defineEmits<{
   (e: 'selectToken', address: string): void;
   (e: 'togglePin', address: string): void;
 }>();
+
+const tokenStore = useTokenStore();
 </script>

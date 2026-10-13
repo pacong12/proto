@@ -1,6 +1,7 @@
 <template>
   <div class="space-y-6">
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <!-- Top Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
         <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t('memestock') }}</h1>
         <p class="text-sm mt-1 text-muted-foreground">
@@ -8,37 +9,7 @@
         </p>
       </div>
 
-      <div
-        class="flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-end gap-2.5 w-full sm:w-auto"
-      >
-        <!-- Shadcn Tabs for Filtering -->
-        <Tabs v-model="selectedSort" class="overflow-x-auto no-scrollbar flex-1 sm:flex-initial">
-          <TabsList class="overflow-x-auto no-scrollbar shrink-0">
-            <TabsTrigger value="Trending" class="cursor-pointer">
-              {{ t('trending') }}
-            </TabsTrigger>
-            <TabsTrigger value="Top Gainers" class="cursor-pointer">
-              {{ t('topGainers') }}
-            </TabsTrigger>
-            <TabsTrigger value="Highest Volume" class="cursor-pointer">
-              {{ t('highestVolume') }}
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        <!-- Search Input -->
-        <div class="relative w-full sm:w-44">
-          <Search
-            class="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2"
-          />
-          <Input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Filter memes..."
-            class="h-8 pl-8 pr-2.5 text-xs font-mono"
-          />
-        </div>
-
+      <div class="flex items-center gap-2 self-end sm:self-auto">
         <!-- Refresh Button -->
         <Button
           variant="outline"
@@ -61,6 +32,34 @@
           <Plus class="w-4 h-4" />
           {{ t('create') }}
         </Button>
+      </div>
+    </div>
+
+    <!-- Navigation Filter Pills (Shadcn Tabs variant="line") + Search Bar (identical to Explore) -->
+    <div
+      class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-border font-mono text-xs"
+    >
+      <!-- Filter Tabs -->
+      <Tabs v-model="selectedSort" class="w-full md:w-auto">
+        <TabsList
+          variant="line"
+          class="overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0 w-auto"
+        >
+          <TabsTrigger v-for="tab in memestockTabs" :key="tab.value" :value="tab.value">
+            {{ tab.label }}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      <!-- Search Bar -->
+      <div class="relative w-full md:w-64 shrink-0">
+        <Search class="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-2.5" />
+        <Input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Search memestocks / address..."
+          class="h-8 pl-8 pr-3 text-xs bg-card border-border rounded-xl font-mono text-foreground focus-visible:ring-foreground"
+        />
       </div>
     </div>
 
@@ -125,7 +124,7 @@
         >
           <div class="space-y-3.5">
             <div class="flex items-start justify-between gap-3">
-              <div class="flex items-center gap-3 min-w-0">
+              <div class="relative shrink-0">
                 <OptimizedImage
                   :src="item.token.logo"
                   :alt="item.token.name"
@@ -134,17 +133,60 @@
                   :height="48"
                   class="rounded-xl border border-border group-hover:border-foreground/40 transition shrink-0"
                 />
-                <div class="min-w-0 truncate">
-                  <h3
-                    class="font-bold text-base text-foreground group-hover:opacity-85 transition truncate"
-                  >
-                    {{ item.token.name }}
-                  </h3>
-                  <p class="text-xs font-mono text-muted-foreground">${{ item.token.symbol }}</p>
+                <img
+                  :src="
+                    tokenStore.getTokenNetwork(item.token.address).chainId === 5042
+                      ? '/chains/arc.svg'
+                      : '/chains/robinhood.svg'
+                  "
+                  :alt="tokenStore.getTokenNetwork(item.token.address).name"
+                  :title="tokenStore.getTokenNetwork(item.token.address).name"
+                  class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-black bg-black object-contain shadow-xs"
+                />
+              </div>
+              <div class="min-w-0 truncate">
+                <h3
+                  class="font-bold text-base text-foreground group-hover:opacity-85 transition truncate"
+                >
+                  {{ item.token.name }}
+                </h3>
+                <div
+                  class="flex items-center gap-1.5 font-mono text-xs text-muted-foreground truncate"
+                >
+                  <span>${{ item.token.symbol }}</span>
+                  <span>&middot;</span>
+                  <span>{{ formatRelativeTime(item.token.createdAt) }}</span>
+                  <template v-if="item.token.deployer">
+                    <span>&middot;</span>
+                    <button
+                      type="button"
+                      class="hover:text-foreground transition-colors hover:underline underline-offset-2 cursor-pointer truncate max-w-[120px]"
+                      :title="`View profile: ${getUserIdentity(item.token.deployer).displayName}`"
+                      @click.stop="navigateToDeployer(item.token.deployer)"
+                    >
+                      {{ getUserIdentity(item.token.deployer).displayName }}
+                    </button>
+                  </template>
                 </div>
               </div>
 
               <div class="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  class="p-1 rounded-lg transition-transform hover:scale-110 cursor-pointer select-none"
+                  :class="
+                    isPinned(item.token.address)
+                      ? 'text-amber-400'
+                      : 'text-muted-foreground/35 hover:text-amber-400'
+                  "
+                  :title="isPinned(item.token.address) ? 'Unpin coin' : 'Pin to Watchlist'"
+                  @click.stop="togglePin(item.token.address)"
+                >
+                  <Star
+                    class="w-4 h-4"
+                    :class="isPinned(item.token.address) ? 'fill-amber-400 text-amber-400' : ''"
+                  />
+                </button>
                 <span
                   v-if="(item.marketData.priceChange24h ?? 0) !== 0"
                   class="text-xs font-mono font-bold"
@@ -170,21 +212,49 @@
               }}
             </p>
 
-            <div class="flex items-center gap-2 text-[11px] font-mono text-muted-foreground">
-              <span>Pool Fee: 1%</span>
-              <span>•</span>
-              <span class="text-foreground font-semibold">70% Creator Fees</span>
+            <div class="flex items-center gap-2 flex-wrap text-[10px] font-mono">
+              <TaxTooltip
+                :buy-tax-bps="item.token.taxConfig?.buyTaxBps"
+                :sell-tax-bps="item.token.taxConfig?.sellTaxBps"
+              />
+              <Badge
+                v-if="(item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0"
+                variant="outline"
+                class="bg-sky-500/10 text-sky-400 border-sky-500/20 py-0 px-1.5 h-4.5 font-normal"
+              >
+                {{ item.token.taxConfig?.revenueSplit?.holders }}% Dividends
+              </Badge>
+              <Badge
+                v-if="(item.token.taxConfig?.revenueSplit?.buyback ?? 0) > 0"
+                variant="outline"
+                class="bg-amber-500/10 text-amber-400 border-amber-500/20 py-0 px-1.5 h-4.5 font-normal"
+              >
+                {{ item.token.taxConfig?.revenueSplit?.buyback }}% Buyback
+              </Badge>
+              <span class="text-muted-foreground ml-auto">Pool: 1%</span>
             </div>
           </div>
 
           <div class="mt-5 pt-4 border-t border-border space-y-2">
-            <div class="flex justify-between text-xs font-mono">
-              <span class="text-muted-foreground">Market Cap</span>
-              <span class="font-semibold text-foreground">{{
-                formatCompactUsd(item.marketData.marketCapUsd)
-              }}</span>
+            <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+              <div>
+                <span class="text-[10px] text-muted-foreground block">MARKET CAP</span>
+                <span class="font-bold text-foreground">
+                  {{ formatCompactUsd(item.marketData.marketCapUsd) }}
+                </span>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] text-muted-foreground block">VOLUME 24H</span>
+                <span class="font-semibold text-muted-foreground">
+                  {{
+                    (item.marketData.volume24hUsd || 0) > 0
+                      ? formatCompactUsd(item.marketData.volume24hUsd)
+                      : '—'
+                  }}
+                </span>
+              </div>
             </div>
-            <div class="flex justify-between text-xs font-mono">
+            <div class="flex justify-between text-xs font-mono pt-1">
               <span class="text-muted-foreground">Graduation ({{ graduationTargetDisplay }})</span>
               <span class="text-foreground font-semibold">
                 {{ (item.marketData.graduationProgress * 100).toFixed(1) }}%
@@ -211,7 +281,8 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import { Plus, Loader2, AlertCircle, RefreshCw, Search } from 'lucide-vue-next';
+import { useRouter } from 'vue-router';
+import { Plus, Loader2, AlertCircle, RefreshCw, Search, Star } from 'lucide-vue-next';
 import { apiFetch } from '@/lib/api-client';
 import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
@@ -223,9 +294,13 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Empty } from '@/components/ui/empty';
 import { Pagination } from '@/components/ui/pagination';
+import TaxTooltip from '@/components/ui/TaxTooltip.vue';
 import { ARC_CHAIN, type LaunchedTokenEntity, type TokenMarketData } from '@proto/shared-types';
-import { formatCompactUsd } from '@/lib/utils';
+import { formatCompactUsd, formatRelativeTime, shortenAddress } from '@/lib/utils';
+import { getUserIdentity } from '@/lib/username';
 import { useWallet } from '@/composables/useWallet';
+import { useTokenStore } from '@/composables/useTokenStore';
+import { usePinnedTokens } from '@/composables/usePinnedTokens';
 
 defineEmits<{
   (e: 'selectToken', address: string): void;
@@ -234,6 +309,24 @@ defineEmits<{
 
 const { t } = useI18n();
 const { activeNetwork } = useWallet();
+const tokenStore = useTokenStore();
+
+const router = useRouter();
+const { isPinned, togglePin, pinnedTokens } = usePinnedTokens();
+
+function navigateToDeployer(deployerAddress: string) {
+  if (!deployerAddress) return;
+  router.push(`/${getUserIdentity(deployerAddress).name}`);
+}
+
+const memestockTabs = computed(() => [
+  { label: 'Trending', value: 'Trending' },
+  { label: 'New', value: 'Newest' },
+  { label: 'Dividends', value: 'Dividends' },
+  { label: 'Top Gainers', value: 'Top Gainers' },
+  { label: 'High Vol', value: 'Highest Volume' },
+  { label: `Pinned (${pinnedTokens.value.size})`, value: 'Pinned' },
+]);
 
 const selectedSort = ref('Trending');
 const searchQuery = ref('');
@@ -286,6 +379,17 @@ const filteredAndSortedItems = computed(() => {
     );
   }
 
+  if (selectedSort.value === 'Pinned') {
+    return [...list].filter((item) => isPinned(item.token.address));
+  }
+  if (selectedSort.value === 'Newest') {
+    return [...list].sort((a, b) => b.token.createdAt - a.token.createdAt);
+  }
+  if (selectedSort.value === 'Dividends') {
+    return [...list]
+      .filter((item) => (item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0)
+      .sort((a, b) => (b.marketData.marketCapUsd ?? 0) - (a.marketData.marketCapUsd ?? 0));
+  }
   if (selectedSort.value === 'Top Gainers') {
     return [...list].sort(
       (a, b) => (b.marketData.priceChange24h ?? 0) - (a.marketData.priceChange24h ?? 0),

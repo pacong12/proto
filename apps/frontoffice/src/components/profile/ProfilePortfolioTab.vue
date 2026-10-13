@@ -49,11 +49,22 @@
           >
             <TableCell class="py-2.5 px-3">
               <div class="flex items-center gap-2">
-                <Avatar class="w-6 h-6 rounded border border-border overflow-hidden">
-                  <AvatarFallback class="text-[9px] bg-muted text-foreground font-mono">
-                    {{ pos.symbol.slice(0, 3) }}
-                  </AvatarFallback>
-                </Avatar>
+                <div class="relative shrink-0">
+                  <Avatar class="w-6 h-6 rounded border border-border overflow-hidden">
+                    <AvatarFallback class="text-[9px] bg-muted text-foreground font-mono">
+                      {{ pos.symbol.slice(0, 3) }}
+                    </AvatarFallback>
+                  </Avatar>
+                  <img
+                    :src="
+                      getTokenNetwork(pos.tokenAddress).chainId === 5042
+                        ? '/chains/arc.svg'
+                        : '/chains/robinhood.svg'
+                    "
+                    :alt="getTokenNetwork(pos.tokenAddress).name"
+                    class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border border-black bg-black object-contain shadow-xs"
+                  />
+                </div>
                 <span class="font-bold text-foreground">{{ pos.name }}</span>
                 <span class="text-muted-foreground">${{ pos.symbol }}</span>
               </div>
@@ -96,6 +107,7 @@
 import { ExternalLink, PieChart } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useTokenStore } from '@/composables/useTokenStore';
 import { Empty } from '@/components/ui/empty';
 import {
   Table,
@@ -106,6 +118,8 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import type { PortfolioPosition } from './types';
+
+const { getTokenNetwork } = useTokenStore();
 
 defineProps<{
   portfolioPositions: PortfolioPosition[];

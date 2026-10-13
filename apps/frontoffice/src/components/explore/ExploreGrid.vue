@@ -105,6 +105,35 @@
             </div>
           </div>
 
+          <!-- Token Features & Taxes -->
+          <div class="flex items-center gap-2 flex-wrap pt-1 font-mono text-[10px]">
+            <TaxTooltip
+              :buy-tax-bps="item.token.taxConfig?.buyTaxBps"
+              :sell-tax-bps="item.token.taxConfig?.sellTaxBps"
+            />
+            <Badge
+              v-if="item.token.isGraduated"
+              variant="default"
+              class="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 py-0 px-1.5 h-4 font-normal"
+            >
+              V4 Graduated
+            </Badge>
+            <Badge
+              v-if="(item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0"
+              variant="outline"
+              class="bg-sky-500/10 text-sky-400 border-sky-500/20 py-0 px-1.5 h-4 font-normal"
+            >
+              {{ item.token.taxConfig?.revenueSplit?.holders }}% Divs
+            </Badge>
+            <Badge
+              v-if="(item.token.taxConfig?.revenueSplit?.buyback ?? 0) > 0"
+              variant="outline"
+              class="bg-amber-500/10 text-amber-400 border-amber-500/20 py-0 px-1.5 h-4 font-normal"
+            >
+              {{ item.token.taxConfig?.revenueSplit?.buyback }}% Buyback
+            </Badge>
+          </div>
+
           <!-- Bonding Progress -->
           <div class="space-y-1 pt-1">
             <div class="flex justify-between text-[10px] font-mono">
@@ -138,8 +167,10 @@
 import { useRouter } from 'vue-router';
 import { Star } from 'lucide-vue-next';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Pagination } from '@/components/ui/pagination';
+import TaxTooltip from '@/components/ui/TaxTooltip.vue';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { formatRelativeTime, formatCompactUsd } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';

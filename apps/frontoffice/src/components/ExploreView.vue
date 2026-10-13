@@ -270,7 +270,7 @@ defineEmits<{
 
 const viewMode = ref<'table' | 'grid'>('table');
 const activeMarketTab = ref<
-  'trending' | 'newest' | 'curve' | 'top' | 'highvol' | 'gainers' | 'pinned'
+  'trending' | 'newest' | 'curve' | 'dividends' | 'top' | 'highvol' | 'gainers' | 'pinned'
 >('trending');
 
 // Watchlist Pin Feature — shared singleton composable (FE-02)
@@ -280,6 +280,7 @@ const marketTabs = computed(() => [
   { label: 'Trending', value: 'trending' as const },
   { label: 'New', value: 'newest' as const },
   { label: 'Fair launch', value: 'curve' as const },
+  { label: 'Dividends', value: 'dividends' as const },
   { label: 'Top', value: 'top' as const },
   { label: 'High vol', value: 'highvol' as const },
   { label: 'Movers', value: 'gainers' as const },
@@ -327,7 +328,8 @@ const filteredTokens = computed(() => {
     list.sort((a, b) => b.token.createdAt - a.token.createdAt);
   } else if (activeMarketTab.value === 'curve') {
     list = list.filter((item) => !item.marketData?.isGraduated);
-  } else if (activeMarketTab.value === 'top') {
+  } else if (activeMarketTab.value === 'dividends') {
+    list = list.filter((item) => (item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0);
     list.sort((a, b) => (b.marketData?.marketCapUsd ?? 0) - (a.marketData?.marketCapUsd ?? 0));
   } else if (activeMarketTab.value === 'highvol') {
     list.sort((a, b) => (b.marketData?.volume24hUsd ?? 0) - (a.marketData?.volume24hUsd ?? 0));
