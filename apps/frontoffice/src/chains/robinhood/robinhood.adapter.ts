@@ -190,7 +190,7 @@ export class RobinhoodChainAdapter implements ChainAdapter {
         const taxHash = await walletClient.writeContract({
           address: launchResult.tokenAddress,
           abi: launchpadTokenAbi,
-          functionName: 'proposeTaxConfig',
+          functionName: 'setInitialTaxConfig',
           args: [buyTaxBps, sellTaxBps, recipient],
           account,
           chain: walletClient.chain,

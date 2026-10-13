@@ -287,7 +287,7 @@ export function useLaunchpad() {
             const taxHash = await walletClient.writeContract({
               address: tokenAddr,
               abi: launchpadTokenAbi,
-              functionName: 'proposeTaxConfig',
+              functionName: 'setInitialTaxConfig',
               args: [buyTaxBps, sellTaxBps, recipient],
               account,
               chain: walletClient.chain,
