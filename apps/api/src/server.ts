@@ -454,8 +454,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     url.pathname === '/api/devops/metrics';
 
   if (isDevopsPath) {
-    // In production, fail-closed: if DEVOPS_AUTH_TOKEN is not configured, endpoints are disabled.
-    if (!devopsToken && process.env.NODE_ENV === 'production') {
+    // Fail-closed across production, staging, and development if token is not configured.
+    // Only bypassed in test runner environment where mocks drive unauthenticated telemetry.
+    if (!devopsToken && process.env.NODE_ENV !== 'test') {
       return replyError(
         'FORBIDDEN',
         'DevOps endpoints disabled: DEVOPS_AUTH_TOKEN not configured',
@@ -1468,6 +1469,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           'Content-Length': file.data.byteLength.toString(),
           'Cache-Control': 'public, max-age=31536000, immutable',
           'Access-Control-Allow-Origin': '*',
+          'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+          'X-Content-Type-Options': 'nosniff',
+          'Cross-Origin-Resource-Policy': 'cross-origin',
         },
       });
     } catch {
