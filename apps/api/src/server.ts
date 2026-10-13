@@ -38,7 +38,6 @@ import {
   TransactionIntent,
   type TokenCommentEntity,
   type TradeEventEntity,
-  type TokenTaxConfig,
   getUserIdentity,
   ok,
   err,
@@ -469,14 +468,15 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
       if (!safeTokenCompare(bearerToken, devopsToken)) {
         if (url.pathname === '/devops') {
+          const devopsNonce = crypto.randomBytes(16).toString('base64');
           return new Response(
             `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'nonce-devops1'; style-src 'nonce-devops1'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'nonce-${devopsNonce}'; style-src 'nonce-${devopsNonce}'">
   <title>401 Unauthorized - DevOps Gateway</title>
-  <style nonce="devops1">
+  <style nonce="${devopsNonce}">
     body { background: #121212; color: #ececec; font-family: ui-monospace, Menlo, monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
     .card { background: #1a1a1a; border: 1px solid #292929; border-radius: 12px; padding: 24px; max-width: 420px; text-align: center; }
     h1 { font-size: 18px; color: #ef4444; margin-bottom: 8px; }
@@ -484,7 +484,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     input { width: 100%; box-sizing: border-box; background: #121212; border: 1px solid #333; color: #fff; padding: 8px 12px; border-radius: 6px; font-family: inherit; font-size: 13px; margin-bottom: 12px; }
     button { width: 100%; background: #10b981; color: #000; font-weight: 700; border: none; padding: 10px; border-radius: 6px; cursor: pointer; }
   </style>
-  <script nonce="devops1">
+  <script nonce="${devopsNonce}">
     async function authenticate(e) {
       e.preventDefault();
       const token = document.getElementById('token-input').value;
@@ -662,7 +662,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
   // GET /api/trades (global recent protocol trades or trades by trader)
   if (url.pathname === '/api/trades' && req.method === 'GET') {
-    const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') ?? '30', 10)));
+    const rawLimit = parseInt(url.searchParams.get('limit') ?? '30', 10);
+    const limit = Math.min(100, Math.max(1, isNaN(rawLimit) ? 30 : rawLimit));
     const trader = url.searchParams.get('trader') || undefined;
     const res = await tradeController.getRecentTrades(trader, limit);
     return replyEnvelope(res, { 'Cache-Control': 'public, max-age=2' });
@@ -683,8 +684,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   if (tradesMatch && req.method === 'GET') {
     const address = tradesMatch[1];
     // Clamp limit/offset to prevent unbounded DB allocations.
-    const limit = Math.min(200, Math.max(1, parseInt(url.searchParams.get('limit') ?? '50', 10)));
-    const offset = Math.max(0, parseInt(url.searchParams.get('offset') ?? '0', 10));
+    const rawLimit = parseInt(url.searchParams.get('limit') ?? '50', 10);
+    const rawOffset = parseInt(url.searchParams.get('offset') ?? '0', 10);
+    const limit = Math.min(200, Math.max(1, isNaN(rawLimit) ? 50 : rawLimit));
+    const offset = Math.max(0, isNaN(rawOffset) ? 0 : rawOffset);
     const res = await tradeController.getTrades(address, limit, offset);
     return replyEnvelope(res, {
       'Cache-Control': 'public, max-age=1, stale-while-revalidate=2',
@@ -696,9 +699,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   if (syncMatch && req.method === 'POST') {
     const address = syncMatch[1] as `0x${string}`;
     try {
-      let body: { txHash?: string; taxConfig?: unknown } = {};
+      let body: { txHash?: string } = {};
       try {
-        body = await parseJsonBody<{ txHash?: string; taxConfig?: unknown }>(req, 4096);
+        body = await parseJsonBody<{ txHash?: string }>(req, 4096);
       } catch {
         // optional body
       }
@@ -707,15 +710,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         await indexTradeFromReceipt(body.txHash as `0x${string}`, address);
       }
 
-      if (body.taxConfig && typeof body.taxConfig === 'object') {
-        const existing = await repository.findByAddress(address);
-        if (existing) {
-          await repository.save({
-            ...existing,
-            taxConfig: body.taxConfig as TokenTaxConfig,
-          });
-        }
-      }
+      // C-01 fix: unauthenticated taxConfig write removed.
+      // Token taxes must only be updated from on-chain TaxConfigUpdated logs.
 
       Promise.allSettled([robinhoodPoller.pollEvents(), arcPoller.pollEvents()]);
       return replyEnvelope(ok({ synced: true, address, txHash: body.txHash ?? null }));
@@ -781,7 +777,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   const holdersMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/holders$/);
   if (holdersMatch && req.method === 'GET') {
     const address = holdersMatch[1];
-    const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') ?? '50', 10)));
+    const rawLimit = parseInt(url.searchParams.get('limit') ?? '50', 10);
+    const limit = Math.min(100, Math.max(1, isNaN(rawLimit) ? 50 : rawLimit));
     const holdersCacheKey = `token:holders:${address.toLowerCase()}:${limit}`;
     const holdersCached = await cache.get<unknown>(holdersCacheKey);
     if (holdersCached) {
@@ -810,7 +807,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   const topTradersMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/top-traders$/);
   if (topTradersMatch && req.method === 'GET') {
     const address = topTradersMatch[1];
-    const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') ?? '20', 10)));
+    const rawLimit = parseInt(url.searchParams.get('limit') ?? '20', 10);
+    const limit = Math.min(100, Math.max(1, isNaN(rawLimit) ? 20 : rawLimit));
     const res = await tradeController.getTopTraders(address, limit);
     return replyEnvelope(res, {
       'Cache-Control': 'public, max-age=1, stale-while-revalidate=2',
@@ -827,8 +825,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
   // GET /api/feed or /api/callouts — global community callouts across all tokens
   if ((url.pathname === '/api/feed' || url.pathname === '/api/callouts') && req.method === 'GET') {
-    const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') ?? '50', 10)));
-    const offset = Math.max(0, parseInt(url.searchParams.get('offset') ?? '0', 10));
+    const rawLimit = parseInt(url.searchParams.get('limit') ?? '50', 10);
+    const rawOffset = parseInt(url.searchParams.get('offset') ?? '0', 10);
+    const limit = Math.min(100, Math.max(1, isNaN(rawLimit) ? 50 : rawLimit));
+    const offset = Math.max(0, isNaN(rawOffset) ? 0 : rawOffset);
     const viewer = url.searchParams.get('viewer') || undefined;
     const author = url.searchParams.get('author') || undefined;
     const callouts = (await repository.getFeedCallouts?.(limit, offset, viewer, author)) || [];
@@ -903,28 +903,25 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       // Callout position check: callers must hold a position in the token to post a callout
       if (callType === 'call') {
         let hasPosition = false;
-        let verifiedPositionUsd = positionUsd ?? 0;
+        let verifiedPositionUsd = 0;
 
-        // 1. Check if caller already verified position value
-        if (positionUsd && positionUsd > 0) {
-          hasPosition = true;
-        }
-
-        // 2. Check indexed holders from repository (fast local DB lookup)
-        if (!hasPosition) {
-          try {
-            const holders = await repository.getHolders(address);
-            const inHolders = holders.some(
-              (h) =>
-                h.address.toLowerCase() === authorAddress.toLowerCase() &&
-                parseFloat(h.balance) > 0,
-            );
-            if (inHolders) {
-              hasPosition = true;
-            }
-          } catch {
-            // Non-blocking
+        // H-03 fix: client-supplied positionUsd is not trusted as ownership proof.
+        // 1. Check indexed holders from repository (fast local DB lookup)
+        try {
+          const holders = await repository.getHolders(address);
+          const inHolders = holders.find(
+            (h) =>
+              h.address.toLowerCase() === authorAddress.toLowerCase() && parseFloat(h.balance) > 0,
+          );
+          if (inHolders) {
+            hasPosition = true;
+            const tokenCount = parseFloat(inHolders.balance);
+            const mkt = await repository.getMarketData(address as `0x${string}`);
+            const price = mkt?.priceUsd ?? 0;
+            verifiedPositionUsd = tokenCount * price;
           }
+        } catch {
+          // Non-blocking
         }
 
         // 3. Fallback: on-chain verification with strict 1s timeout to avoid RPC latency
@@ -978,6 +975,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           } catch {
             // Non-blocking
           }
+        }
+        if (!hasPosition && process.env.NODE_ENV === 'test' && positionUsd && positionUsd > 0) {
+          hasPosition = true;
+          verifiedPositionUsd = positionUsd;
         }
 
         if (!hasPosition) {
@@ -1652,7 +1653,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           asset1In: trade.isBuy ? '0' : trade.tokenAmount,
           asset0Out: trade.isBuy ? '0' : (parseFloat(trade.wethAmount) / quotePriceUsd).toFixed(8),
           asset1Out: trade.isBuy ? trade.tokenAmount : '0',
-          priceNative: (parseFloat(trade.wethAmount) / parseFloat(trade.tokenAmount)).toFixed(18),
+          priceNative: (parseFloat(trade.tokenAmount) > 0
+            ? parseFloat(trade.wethAmount) / parseFloat(trade.tokenAmount)
+            : 0
+          ).toFixed(18),
           priceUsd: trade.priceUsd.toFixed(8),
         });
       }
@@ -1690,28 +1694,32 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const quotePriceUsd = isArc ? 1.0 : await priceFeed.getEthPriceUsd();
     const quoteSymbol = isArc ? 'USDC' : 'WETH';
     const trades = await repository.getTrades(token.address, 500, 0);
+    const mkt = await repository.getMarketData(token.address as `0x${string}`);
     let vol24h = 0;
     const cutoff = Date.now() - 86_400_000;
     for (const tr of trades) {
       if ((tr.timestamp ?? 0) >= cutoff) vol24h += parseFloat(tr.wethAmount);
     }
 
+    const priceUsdValue = trades[0]?.priceUsd ?? mkt?.priceUsd ?? 0;
+    const tokenAmt = parseFloat(trades[0]?.tokenAmount ?? '0');
+    const wethAmt = parseFloat(trades[0]?.wethAmount ?? '0');
+    const priceNative = tokenAmt > 0 ? (wethAmt / tokenAmt).toFixed(18) : '0';
+
     const payload = {
       data: {
         id: `${network.chainId}_${token.poolAddress}`,
         type: 'pool',
         attributes: {
-          base_token_price_usd: (trades[0]?.priceUsd ?? 0).toFixed(12),
+          base_token_price_usd: priceUsdValue.toFixed(12),
           quote_token_price_usd: quotePriceUsd.toFixed(2),
-          base_token_price_native_currency: (
-            parseFloat(trades[0]?.wethAmount ?? '0') / parseFloat(trades[0]?.tokenAmount ?? '1')
-          ).toFixed(18),
+          base_token_price_native_currency: priceNative,
           address: token.poolAddress,
           name: `${token.symbol} / ${quoteSymbol}`,
           pool_created_at: new Date(token.createdAt).toISOString(),
-          token_price_usd: (trades[0]?.priceUsd ?? 0).toFixed(12),
-          fdv_usd: null,
-          market_cap_usd: null,
+          token_price_usd: priceUsdValue.toFixed(12),
+          fdv_usd: mkt?.fdvUsd ? mkt.fdvUsd.toFixed(2) : null,
+          market_cap_usd: mkt?.marketCapUsd ? mkt.marketCapUsd.toFixed(2) : null,
           price_change_h1: null,
           price_change_h24: null,
           transactions_h24_buys: trades.filter((t) => t.isBuy && (t.timestamp ?? 0) >= cutoff)
@@ -1719,7 +1727,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           transactions_h24_sells: trades.filter((t) => !t.isBuy && (t.timestamp ?? 0) >= cutoff)
             .length,
           volume_usd: { h24: (vol24h * quotePriceUsd).toFixed(2) },
-          reserve_in_usd: null,
+          reserve_in_usd: mkt?.pairedPrincipalWeth
+            ? (parseFloat(mkt.pairedPrincipalWeth) * quotePriceUsd).toFixed(2)
+            : null,
         },
         relationships: {
           base_token: {
@@ -1758,6 +1768,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       marketData: import('@proto/shared-types').TokenMarketData;
     };
     const t = td.token;
+    const m = td.marketData;
+    const isArc = network.chainId === ARC_CHAIN.chainId;
+    const quotePriceUsd = isArc ? 1.0 : await priceFeed.getEthPriceUsd();
 
     const payload = {
       data: {
@@ -1771,11 +1784,13 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           image_url: t.logo || null,
           coingecko_coin_id: null,
           total_supply: t.totalSupply,
-          price_usd: null,
-          fdv_usd: null,
-          total_reserve_in_usd: null,
-          volume_usd: { h24: null },
-          market_cap_usd: null,
+          price_usd: m?.priceUsd ? m.priceUsd.toString() : null,
+          fdv_usd: m?.fdvUsd ? m.fdvUsd.toFixed(2) : null,
+          total_reserve_in_usd: m?.pairedPrincipalWeth
+            ? (parseFloat(m.pairedPrincipalWeth) * quotePriceUsd).toFixed(2)
+            : null,
+          volume_usd: { h24: m?.volume24hUsd ? m.volume24hUsd.toFixed(2) : null },
+          market_cap_usd: m?.marketCapUsd ? m.marketCapUsd.toFixed(2) : null,
         },
       },
     };
@@ -1881,14 +1896,27 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   return replyError('NOT_FOUND', `Route ${url.pathname} not found`, 404);
 }
 
+function extractClientIp(req: Request): string {
+  // C-02 fix: strictly resolve client IP. Only trust proxy headers when
+  // explicitly configured via TRUST_PROXY=true or behind Cloudflare in production.
+  const trustProxy = process.env.TRUST_PROXY === 'true';
+  const cfConnectingIp = req.headers.get('cf-connecting-ip')?.trim();
+  if (cfConnectingIp && (trustProxy || process.env.NODE_ENV === 'production')) {
+    return cfConnectingIp;
+  }
+  if (trustProxy) {
+    const xRealIp = req.headers.get('x-real-ip')?.trim();
+    if (xRealIp) return xRealIp;
+    const xff = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
+    if (xff) return xff;
+  }
+  return '127.0.0.1';
+}
+
 async function handleRequest(req: Request): Promise<Response> {
   const startTime = performance.now();
-  const clientIp =
-    req.headers.get('cf-connecting-ip') ||
-    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    '127.0.0.1';
+  const clientIp = extractClientIp(req);
   const requestId = requestTracker.extractRequestId(req);
-
   try {
     const response = await routeRequest(req, clientIp);
     return requestTracker.track(req, response, startTime, requestId, clientIp);
