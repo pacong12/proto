@@ -180,7 +180,6 @@ abstract contract BaseLaunchpadFactory is ILaunchpadV2Factory {
         bool tokenSent = token.transfer(curveAddress, token.totalSupply());
         if (!tokenSent) revert TransferFailed();
 
-        token.setLiquidityPool(curveAddress);
 
         launches[tokenAddress] = V2Launch({
             token: tokenAddress,
@@ -204,6 +203,10 @@ abstract contract BaseLaunchpadFactory is ILaunchpadV2Factory {
             );
             require(tokensBought >= minInitialTokensOut, "Slippage");
         }
+
+        // M-02 fix: register the curve as the liquidity pool AFTER the initial buy
+        // so creator initial buy is not blocked by anti-snipe restrictions.
+        token.setLiquidityPool(curveAddress);
     }
 
     // ---------------------------------------------------------------------------

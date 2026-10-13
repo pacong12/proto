@@ -76,8 +76,8 @@ contract LaunchpadToken is ILaunchpadToken {
     event TaxConfigProposed(uint16 buyTaxBps, uint16 sellTaxBps, address indexed taxRecipient, uint256 validAfter);
     event TaxConfigCancelled();
 
-    modifier onlyFactoryOrDeployer() {
-        if (msg.sender != deployer && msg.sender != factory) revert Unauthorized();
+    modifier onlyFactory() {
+        if (msg.sender != factory) revert Unauthorized();
         _;
     }
 
@@ -248,7 +248,7 @@ contract LaunchpadToken is ILaunchpadToken {
         return (p.config.buyTaxBps, p.config.sellTaxBps, p.config.taxRecipient, p.validAfter);
     }
 
-    function setLiquidityPool(address pool) external override onlyFactoryOrDeployer {
+    function setLiquidityPool(address pool) external override onlyFactory {
         if (liquidityPool != address(0)) revert PoolAlreadySet();
         if (pool == address(0)) revert ZeroAddress();
         liquidityPool = pool;

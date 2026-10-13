@@ -161,6 +161,23 @@ contract LaunchpadFactory is ILaunchpadFactory {
         ILaunchpadToken.Socials memory socials,
         uint256 initialBuyAmount
     ) external payable override returns (address tokenAddress, address poolAddress) {
+        return launchToken(name, symbol, logo, description, socials, initialBuyAmount, 0);
+    }
+
+    /**
+     * @notice Overload supporting explicit slippage protection on initial buy.
+     * @dev H-02 fix: minTokensOut enforces slippage floor on the Uniswap V3 swap.
+     */
+    // slither-disable-next-line reentrancy-balance
+    function launchToken(
+        string memory name,
+        string memory symbol,
+        string memory logo,
+        string memory description,
+        ILaunchpadToken.Socials memory socials,
+        uint256 initialBuyAmount,
+        uint256 minTokensOut
+    ) public payable returns (address tokenAddress, address poolAddress) {
         if (msg.value < launchFee + initialBuyAmount) revert InsufficientLaunchFee();
 
         // 1. Route launch fee to protocol treasury before any other action (CEI).
@@ -248,12 +265,12 @@ contract LaunchpadFactory is ILaunchpadFactory {
                 recipient: msg.sender,
                 deadline: block.timestamp + 1200,
                 amountIn: initialBuyAmount,
-                amountOutMinimum: 0,
+                amountOutMinimum: minTokensOut,
                 sqrtPriceLimitX96: 0
             });
 
             uint256 tokensBought = swapRouter.exactInputSingle(swapParams);
-            require(tokensBought > 0, "Zero buy");
+            require(tokensBought >= minTokensOut, "Slippage");
         }
 
         // 8. Record state.

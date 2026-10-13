@@ -97,7 +97,7 @@ contract LaunchpadTest is Test {
     function test_TokenCreatorTaxes() public {
         ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials("", "", "", "", "");
 
-        vm.prank(deployer);
+        vm.startPrank(deployer);
         LaunchpadToken token = new LaunchpadToken();
         token.initialize(
             "Tax Token",
@@ -113,16 +113,13 @@ contract LaunchpadTest is Test {
         address taxRecipient = address(0x5555);
         address mockPool = address(0x6666);
 
-        vm.prank(deployer);
         token.setLiquidityPool(mockPool);
-
         // Seed mock pool with tokens before configuring taxes
-        vm.prank(deployer);
         token.transfer(mockPool, 10_000_000 * 10**18);
 
         // Configure 5% buy tax (500 bps) and 10% sell tax (1000 bps) via two-step timelock
-        vm.prank(deployer);
         token.proposeTaxConfig(500, 1000, taxRecipient);
+        vm.stopPrank();
         vm.warp(block.timestamp + 24 hours);
         vm.prank(deployer);
         token.acceptTaxConfig();
@@ -157,7 +154,7 @@ contract LaunchpadTest is Test {
     function test_AntiSnipeProtection() public {
         ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials("", "", "", "", "");
 
-        vm.prank(deployer);
+        vm.startPrank(deployer);
         LaunchpadToken token = new LaunchpadToken();
         token.initialize(
             "AntiSnipe",
@@ -171,13 +168,10 @@ contract LaunchpadTest is Test {
         );
 
         address mockPool = address(0x9999);
-        vm.prank(deployer);
         token.setLiquidityPool(mockPool);
-
         // Fund mock pool with 200M tokens
-        vm.prank(deployer);
         token.transfer(mockPool, 200_000_000 * 10**18);
-
+        vm.stopPrank();
         // Block 0 (launchBlock): Only deployer can buy from pool
         vm.prank(mockPool);
         vm.expectRevert(LaunchpadToken.OnlyDeployerCanBuyAtLaunchBlock.selector);
