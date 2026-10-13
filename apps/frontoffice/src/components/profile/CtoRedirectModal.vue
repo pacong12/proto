@@ -39,7 +39,7 @@
         <!-- Inline CTO Error -->
         <div
           v-if="error"
-          class="text-[11px] text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2.5 flex items-start gap-1.5"
+          class="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2.5 flex items-start gap-1.5"
         >
           <AlertCircle class="w-4 h-4 shrink-0 mt-0.5" />
           <span>{{ error }}</span>

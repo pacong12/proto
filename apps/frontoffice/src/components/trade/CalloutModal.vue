@@ -30,11 +30,11 @@
                 <span class="font-bold text-foreground text-sm leading-tight truncate">
                   ${{ currentToken.symbol }}
                 </span>
-                <span class="text-muted-foreground text-[11px] truncate">
+                <span class="text-muted-foreground text-xs truncate">
                   {{ currentToken.name }}
                 </span>
               </div>
-              <span class="text-[11px] text-muted-foreground block mt-0.5">
+              <span class="text-xs text-muted-foreground block mt-0.5">
                 MC:
                 <strong class="text-foreground"
                   >${{ formatCompactUsd(currentMarketData.marketCapUsd || 4200) }}</strong
@@ -48,7 +48,7 @@
           </div>
 
           <div class="text-right shrink-0">
-            <span class="text-[10px] text-muted-foreground block uppercase font-bold"
+            <span class="text-xs text-muted-foreground block uppercase font-bold"
               >Your Position</span
             >
             <span
@@ -67,10 +67,10 @@
         >
           <div class="flex items-center gap-2 min-w-0">
             <AlertCircle class="w-4 h-4 shrink-0" />
-            <span class="text-[11px] font-sans">
+            <span class="text-xs font-sans">
               Anti-spam: You must hold at least $1.00 worth of ${{ currentToken.symbol }} to
               comment.
-              <span v-if="userHoldingUsd > 0" class="block text-[10px] text-amber-400">
+              <span v-if="userHoldingUsd > 0" class="block text-xs text-amber-400">
                 (Current: ${{ userHoldingUsd.toFixed(2) }})
               </span>
             </span>
@@ -78,7 +78,7 @@
           <Button
             size="sm"
             variant="outline"
-            class="h-7 px-2.5 text-[11px] border-amber-500 text-amber-500 hover:bg-amber-500/10 shrink-0 font-bold cursor-pointer rounded-lg"
+            class="h-7 px-2.5 text-xs border-amber-500 text-amber-500 hover:bg-amber-500/10 shrink-0 font-bold cursor-pointer rounded-lg"
             @click="$emit('goToBuy')"
           >
             Buy ${{ Math.max(1, Math.ceil(1 - userHoldingUsd)) }} of ${{ currentToken.symbol }}
@@ -87,7 +87,7 @@
 
         <!-- Comment Message / Thesis -->
         <div class="space-y-1.5">
-          <Label class="text-[11px] font-bold text-foreground">Comment / Meme Alpha</Label>
+          <Label class="text-xs font-bold text-foreground">Comment / Meme Alpha</Label>
           <textarea
             :value="callContent"
             rows="3"
@@ -96,7 +96,7 @@
             class="w-full text-xs font-sans p-2.5 rounded-lg border border-border bg-card text-foreground focus:outline-none focus:ring-1 focus:ring-foreground resize-none"
             @input="$emit('update:callContent', ($event.target as HTMLTextAreaElement).value)"
           />
-          <div class="flex justify-between text-[10px] text-muted-foreground">
+          <div class="flex justify-between text-xs text-muted-foreground">
             <span>{{ callContent.length }}/500</span>
             <span v-if="account" class="truncate">Caller: {{ shortenAddress(account, 6, 4) }}</span>
           </div>
@@ -104,7 +104,7 @@
 
         <!-- Optional Image URL -->
         <div class="space-y-1.5">
-          <Label class="text-[11px] font-bold text-foreground">Image / Chart URL (Optional)</Label>
+          <Label class="text-xs font-bold text-foreground">Image / Chart URL (Optional)</Label>
           <Input
             :model-value="callImageUrl"
             type="text"
@@ -134,7 +134,7 @@
         <!-- Error message -->
         <div
           v-if="callError"
-          class="text-[11px] text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2"
+          class="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2"
         >
           {{ callError }}
         </div>

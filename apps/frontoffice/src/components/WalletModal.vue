@@ -246,7 +246,7 @@
       <!-- AppKit Notice Footer -->
       <div
         v-if="!appKitConfigured"
-        class="px-5 py-2.5 border-t border-border bg-muted/30 text-[11px] text-muted-foreground leading-relaxed"
+        class="px-5 py-2.5 border-t border-border bg-muted/30 text-xs text-muted-foreground leading-relaxed"
       >
         <span>EIP-6963 multi-wallet discovery active.</span>
       </div>

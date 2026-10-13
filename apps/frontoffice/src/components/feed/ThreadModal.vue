@@ -38,10 +38,10 @@
                 <span class="font-bold text-foreground text-xs hover:underline cursor-pointer">
                   {{ shortenAddress(targetCall.authorAddress, 6, 4) }}
                 </span>
-                <span class="text-[10px] text-muted-foreground block">Caller</span>
+                <span class="text-xs text-muted-foreground block">Caller</span>
               </div>
             </div>
-            <span class="text-[10px] text-muted-foreground shrink-0">
+            <span class="text-xs text-muted-foreground shrink-0">
               {{ formatRelativeTime(targetCall.createdAt) }}
             </span>
           </div>
@@ -58,7 +58,7 @@
             v-if="targetCall.quotedCallout"
             class="p-3 rounded-xl border border-border/80 bg-card/60 space-y-2 text-xs"
           >
-            <div class="flex items-center justify-between text-[11px]">
+            <div class="flex items-center justify-between text-xs">
               <div class="flex items-center gap-1.5">
                 <Jazzicon :address="targetCall.quotedCallout.authorAddress" :size="16" />
                 <span class="font-bold text-foreground">
@@ -68,7 +68,7 @@
                   ${{ targetCall.quotedCallout.tokenSymbol }}
                 </span>
               </div>
-              <span class="text-[10px] text-muted-foreground">
+              <span class="text-xs text-muted-foreground">
                 {{ formatRelativeTime(targetCall.quotedCallout.createdAt) }}
               </span>
             </div>
@@ -107,16 +107,14 @@
                 <span class="font-black text-foreground block text-xs">
                   ${{ targetCall.tokenSymbol || 'TOKEN' }}
                 </span>
-                <span v-if="targetCall.targetMcap" class="text-[10px] text-emerald-500 font-bold">
+                <span v-if="targetCall.targetMcap" class="text-xs text-emerald-500 font-bold">
                   Target: {{ targetCall.targetMcap }}
                 </span>
               </div>
             </div>
 
             <div class="text-right shrink-0">
-              <span class="text-[9px] text-muted-foreground block uppercase font-bold"
-                >Position</span
-              >
+              <span class="text-xs text-muted-foreground block uppercase font-bold">Position</span>
               <span class="text-xs font-bold text-foreground">
                 {{ targetCall.positionUsd ? `$${targetCall.positionUsd.toFixed(1)}` : 'Holding' }}
               </span>
@@ -125,7 +123,7 @@
 
           <!-- Action bar -->
           <div
-            class="flex items-center justify-between pt-2 border-t border-border/60 text-[11px] text-muted-foreground"
+            class="flex items-center justify-between pt-2 border-t border-border/60 text-xs text-muted-foreground"
           >
             <button
               type="button"
@@ -171,7 +169,7 @@
         </article>
 
         <!-- Divider with Replies count -->
-        <div class="flex items-center gap-2 text-muted-foreground text-[11px] font-bold px-1">
+        <div class="flex items-center gap-2 text-muted-foreground text-xs font-bold px-1">
           <span>Replies ({{ replies.length }})</span>
           <div class="flex-1 h-px bg-border" />
         </div>
@@ -199,14 +197,14 @@
             :key="rep.id"
             class="p-3.5 rounded-xl border border-border bg-card space-y-2 hover:border-foreground/20 transition"
           >
-            <div class="flex items-center justify-between text-[11px]">
+            <div class="flex items-center justify-between text-xs">
               <div class="flex items-center gap-2">
                 <Jazzicon :address="rep.authorAddress" :size="20" class="rounded-full" />
                 <span class="font-bold text-foreground">
                   {{ shortenAddress(rep.authorAddress, 6, 4) }}
                 </span>
               </div>
-              <span class="text-[10px] text-muted-foreground">
+              <span class="text-xs text-muted-foreground">
                 {{ formatRelativeTime(rep.createdAt) }}
               </span>
             </div>
@@ -217,7 +215,7 @@
               <CashtagText :text="rep.content" :tokens="tokens" />
             </p>
 
-            <div class="flex items-center justify-between pt-1 text-[11px] text-muted-foreground">
+            <div class="flex items-center justify-between pt-1 text-xs text-muted-foreground">
               <button
                 type="button"
                 class="flex items-center gap-1.5 hover:text-rose-500 transition cursor-pointer"
@@ -252,7 +250,7 @@
               class="w-full text-xs font-sans p-2.5 rounded-xl border border-border bg-muted/30 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground resize-none"
             />
             <div class="flex items-center justify-between">
-              <span class="text-[10px] text-muted-foreground"> {{ replyText.length }}/500 </span>
+              <span class="text-xs text-muted-foreground"> {{ replyText.length }}/500 </span>
               <Button
                 size="sm"
                 class="h-7 px-3 text-xs font-bold gap-1 rounded-lg cursor-pointer"

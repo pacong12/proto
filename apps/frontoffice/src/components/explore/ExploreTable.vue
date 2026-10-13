@@ -3,7 +3,7 @@
     <Table class="text-xs min-w-[920px] bg-black">
       <TableHeader>
         <TableRow
-          class="border-b border-border text-muted-foreground uppercase tracking-wider text-[11px] bg-black hover:bg-black"
+          class="border-b border-border text-muted-foreground uppercase tracking-wider text-xs bg-black hover:bg-black"
         >
           <TableHead
             class="py-3 px-4 font-semibold sticky left-0 z-20 bg-black text-muted-foreground"

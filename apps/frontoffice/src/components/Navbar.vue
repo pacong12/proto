@@ -556,7 +556,7 @@ function copyAddress() {
                 <span class="text-xs font-bold text-foreground block truncate">{{
                   getUserIdentity(account).displayName
                 }}</span>
-                <span class="text-[11px] text-primary font-semibold">{{ formattedBalance }}</span>
+                <span class="text-xs text-primary font-semibold">{{ formattedBalance }}</span>
               </div>
             </div>
             <Button
@@ -608,7 +608,7 @@ function copyAddress() {
                 :key="net.chainId"
                 size="sm"
                 variant="outline"
-                class="h-7 px-2.5 text-[11px] font-bold cursor-pointer border-border"
+                class="h-7 px-2.5 text-xs font-bold cursor-pointer border-border"
                 :class="
                   activeNetwork.chainId === net.chainId
                     ? 'bg-primary text-primary-foreground border-primary'

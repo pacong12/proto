@@ -21,7 +21,7 @@
           <Flame class="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
           <span>Hot Tokens on Call</span>
         </h2>
-        <span class="text-[9px] text-muted-foreground uppercase font-bold">Dex Movers</span>
+        <span class="text-xs text-muted-foreground uppercase font-bold">Dex Movers</span>
       </div>
 
       <Empty
@@ -42,7 +42,7 @@
           @click="$emit('selectToken', tItem.token.address)"
         >
           <div class="flex items-center gap-2.5 min-w-0">
-            <span class="text-[10px] font-bold text-muted-foreground w-4 text-center">
+            <span class="text-xs font-bold text-muted-foreground w-4 text-center">
               #{{ idx + 1 }}
             </span>
             <div class="relative shrink-0">
@@ -65,7 +65,7 @@
               <span class="font-black text-foreground text-xs block">
                 ${{ tItem.token.symbol }}
               </span>
-              <span class="text-[10px] text-muted-foreground truncate block font-sans">
+              <span class="text-xs text-muted-foreground truncate block font-sans">
                 {{ tItem.token.name }}
               </span>
             </div>
@@ -76,7 +76,7 @@
               ${{ formatCompactUsd(tItem.marketData?.marketCapUsd || 4200) }}
             </span>
             <span
-              class="text-[10px] font-bold"
+              class="text-xs font-bold"
               :class="
                 (tItem.marketData?.priceChange24h ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'
               "

@@ -73,7 +73,7 @@
                 <Badge
                   v-else-if="getHolderBadge(holder.address)"
                   variant="outline"
-                  class="text-[9px] px-1.5 py-0 h-4 border-border text-muted-foreground"
+                  class="text-xs px-1.5 py-0 h-4 border-border text-muted-foreground"
                 >
                   {{ getHolderBadge(holder.address) }}
                 </Badge>

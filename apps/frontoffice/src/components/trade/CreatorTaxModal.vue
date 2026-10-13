@@ -50,7 +50,7 @@
 
       <!-- Deployer: manage pending timelock proposal -->
       <div class="pt-2 border-t border-border">
-        <p class="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-3">
+        <p class="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-3">
           Pending proposal
         </p>
         <TaxTimelockPanel

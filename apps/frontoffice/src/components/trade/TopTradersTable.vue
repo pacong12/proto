@@ -89,7 +89,7 @@
                 <span class="text-foreground font-bold block">
                   ${{ Math.round(getHoldingUsd(trader)).toLocaleString() }}
                 </span>
-                <span class="text-[10px] text-muted-foreground block">
+                <span class="text-xs text-muted-foreground block">
                   {{ formatTokenNumber(trader.holdingAmountTokens || '0') }}
                   {{ tokenSymbol }}
                 </span>
@@ -106,7 +106,7 @@
                   }}
                 </span>
                 <span
-                  class="text-[10px] block"
+                  class="text-xs block"
                   :class="getRealizedPnl(trader).pct >= 0 ? 'text-emerald-500' : 'text-rose-500'"
                 >
                   {{ getRealizedPnl(trader).pct >= 0 ? '+' : ''
@@ -125,7 +125,7 @@
                   }}
                 </span>
                 <span
-                  class="text-[10px] font-bold block"
+                  class="text-xs font-bold block"
                   :class="getTotalPnl(trader).pct >= 0 ? 'text-emerald-500' : 'text-rose-500'"
                 >
                   {{ getTotalPnl(trader).pct >= 0 ? '+' : ''

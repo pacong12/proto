@@ -13,9 +13,7 @@
         </DialogDescription>
       </DialogHeader>
 
-      <div
-        class="p-2.5 rounded-xl border border-border bg-muted/40 text-[11px] text-muted-foreground"
-      >
+      <div class="p-2.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
         Profile metadata and media are pinned to decentralized IPFS and stored for this wallet
         address.
       </div>
@@ -25,7 +23,7 @@
         <div class="space-y-1.5">
           <div class="flex items-center justify-between">
             <Label class="text-xs font-medium">Cover Banner</Label>
-            <span class="text-[10px] text-muted-foreground">Recommended 1200x400</span>
+            <span class="text-xs text-muted-foreground">Recommended 1200x400</span>
           </div>
 
           <div
@@ -65,7 +63,7 @@
                 <ImageIcon class="w-5 h-5" />
               </div>
               <span class="text-xs font-bold text-foreground">Upload Cover Banner</span>
-              <p class="text-[10px]">Click or drag image (PNG, JPG, WEBP max 8MB)</p>
+              <p class="text-xs">Click or drag image (PNG, JPG, WEBP max 8MB)</p>
             </div>
 
             <div
@@ -82,7 +80,7 @@
               type="button"
               variant="destructive"
               size="sm"
-              class="absolute top-2 right-2 h-7 px-2 text-[10px] rounded-lg cursor-pointer opacity-90 hover:opacity-100"
+              class="absolute top-2 right-2 h-7 px-2 text-xs rounded-lg cursor-pointer opacity-90 hover:opacity-100"
               title="Remove cover banner"
               @click.stop="removeBanner"
             >
@@ -93,7 +91,7 @@
 
           <div
             v-if="bannerError"
-            class="text-[11px] text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2 flex items-center gap-1.5"
+            class="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2 flex items-center gap-1.5"
           >
             <AlertCircle class="w-3.5 h-3.5 shrink-0" />
             <span>{{ bannerError }}</span>
@@ -160,13 +158,13 @@
                 </span>
                 <span
                   v-if="isUploadingAvatar"
-                  class="text-[10px] text-muted-foreground flex items-center gap-1 shrink-0"
+                  class="text-xs text-muted-foreground flex items-center gap-1 shrink-0"
                 >
                   <Loader2 class="w-2.5 h-2.5 animate-spin text-primary" />
                   Pinning...
                 </span>
               </div>
-              <p class="text-[11px] text-muted-foreground truncate">
+              <p class="text-xs text-muted-foreground truncate">
                 Click or drag square image (PNG, JPG, WEBP max 5MB).
               </p>
             </div>
@@ -188,7 +186,7 @@
           <!-- Inline Avatar Error Banner -->
           <div
             v-if="avatarError"
-            class="text-[11px] text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2 flex items-start gap-1.5"
+            class="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2 flex items-start gap-1.5"
           >
             <AlertCircle class="w-3.5 h-3.5 shrink-0 mt-0.5" />
             <span>{{ avatarError }}</span>

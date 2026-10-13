@@ -8,7 +8,7 @@
         <Megaphone class="w-4 h-4 text-primary shrink-0" />
         <div class="min-w-0">
           <p class="font-bold text-foreground text-xs leading-tight">Post a Community Callout</p>
-          <p class="text-[11px] text-muted-foreground truncate">
+          <p class="text-xs text-muted-foreground truncate">
             Attach your thesis, exit price target, and verified position.
           </p>
         </div>
@@ -60,19 +60,19 @@
             <Badge
               v-if="cmt.authorAddress.toLowerCase() === currentToken.deployer?.toLowerCase()"
               variant="secondary"
-              class="text-[9px] px-1.5 py-0 h-4 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+              class="text-xs px-1.5 py-0 h-4 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
             >
               Creator
             </Badge>
             <Badge
               v-else-if="isHolderAddress(cmt.authorAddress)"
               variant="outline"
-              class="text-[9px] px-1.5 py-0 h-4 text-muted-foreground"
+              class="text-xs px-1.5 py-0 h-4 text-muted-foreground"
             >
               Holder
             </Badge>
           </div>
-          <span class="text-[10px] text-muted-foreground">
+          <span class="text-xs text-muted-foreground">
             {{ formatRelativeTime(cmt.createdAt) }}
           </span>
         </div>
@@ -109,11 +109,9 @@
             <div class="min-w-0">
               <div class="flex items-center gap-1.5 leading-none">
                 <span class="font-bold text-foreground text-xs">${{ currentToken.symbol }}</span>
-                <span class="text-[10px] text-muted-foreground truncate">{{
-                  currentToken.name
-                }}</span>
+                <span class="text-xs text-muted-foreground truncate">{{ currentToken.name }}</span>
               </div>
-              <span class="text-[10px] text-emerald-500 font-bold block mt-1">
+              <span class="text-xs text-emerald-500 font-bold block mt-1">
                 {{
                   cmt.targetMcap
                     ? `Target: ${cmt.targetMcap}`
@@ -124,7 +122,7 @@
           </div>
 
           <div class="text-right shrink-0">
-            <span class="text-[9px] text-muted-foreground block uppercase font-bold">Position</span>
+            <span class="text-xs text-muted-foreground block uppercase font-bold">Position</span>
             <span class="text-xs font-bold text-foreground">
               {{ cmt.positionUsd ? `$${cmt.positionUsd.toFixed(2)}` : 'Holder' }}
             </span>

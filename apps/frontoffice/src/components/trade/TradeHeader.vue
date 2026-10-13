@@ -106,7 +106,7 @@
             </button>
             <Badge
               :variant="currentMarketData.isGraduated ? 'default' : 'outline'"
-              class="text-[10px] h-4 px-1.5 border-border uppercase font-semibold"
+              class="text-xs h-4 px-1.5 border-border uppercase font-semibold"
             >
               {{ currentMarketData.isGraduated ? 'Graduated' : 'Bonding Curve' }}
             </Badge>
@@ -135,16 +135,16 @@
               </RouterLink>
             </span>
             <span class="text-muted-foreground/50">·</span>
-            <span class="text-[11px]">{{ formatRelativeTime(currentToken.createdAt) }}</span>
+            <span class="text-xs">{{ formatRelativeTime(currentToken.createdAt) }}</span>
             <span class="text-muted-foreground/50">·</span>
-            <span class="text-[11px] text-muted-foreground font-semibold">
+            <span class="text-xs text-muted-foreground font-semibold">
               {{ currencySymbol }} pair
             </span>
             <span class="text-muted-foreground/50">·</span>
             <!-- Contract Address Pill -->
             <button
               type="button"
-              class="inline-flex items-center gap-1 hover:text-foreground transition cursor-pointer text-[11px]"
+              class="inline-flex items-center gap-1 hover:text-foreground transition cursor-pointer text-xs"
               title="Copy Contract Address"
               @click="$emit('copyAddress', currentToken.address)"
             >
@@ -236,7 +236,7 @@
         @click="$emit('toggleFigure')"
       >
         <span
-          class="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold font-sans"
+          class="text-xs text-muted-foreground uppercase tracking-wider font-semibold font-sans"
         >
           {{ primaryFigureMode === 'mcap' ? 'Market cap' : 'Token price' }}
         </span>
@@ -266,7 +266,7 @@
           </span>
         </div>
         <span
-          class="text-[11px] text-muted-foreground group-hover:text-foreground transition underline decoration-dotted"
+          class="text-xs text-muted-foreground group-hover:text-foreground transition underline decoration-dotted"
         >
           {{ secondaryFigureValue }}
         </span>

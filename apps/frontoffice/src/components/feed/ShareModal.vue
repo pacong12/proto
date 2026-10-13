@@ -34,12 +34,12 @@
               </span>
               <Badge
                 variant="secondary"
-                class="text-[9px] px-1 py-0 h-4 bg-primary/10 text-primary border-primary/20"
+                class="text-xs px-1 py-0 h-4 bg-primary/10 text-primary border-primary/20"
               >
                 ${{ call.tokenSymbol || 'TOKEN' }}
               </Badge>
             </div>
-            <span class="text-[10px] text-muted-foreground">
+            <span class="text-xs text-muted-foreground">
               {{ formatRelativeTime(call.createdAt) }}
             </span>
           </div>
@@ -67,7 +67,7 @@
                 <span class="font-bold text-foreground block">
                   {{ copiedLink ? 'Link Copied!' : 'Copy Link' }}
                 </span>
-                <span class="text-[10px] text-muted-foreground">
+                <span class="text-xs text-muted-foreground">
                   Direct permalink to this callout
                 </span>
               </div>
@@ -93,7 +93,7 @@
               </div>
               <div>
                 <span class="font-bold text-foreground block">Share on X (Twitter)</span>
-                <span class="text-[10px] text-muted-foreground">
+                <span class="text-xs text-muted-foreground">
                   Post with cashtags, targets, and chart link
                 </span>
               </div>
@@ -116,7 +116,7 @@
               </div>
               <div>
                 <span class="font-bold text-foreground block">PnL Alpha Card</span>
-                <span class="text-[10px] text-muted-foreground">
+                <span class="text-xs text-muted-foreground">
                   Visual badge card with caller position & targets
                 </span>
               </div>
@@ -143,13 +143,11 @@
             <div
               class="flex items-center justify-between relative z-10 border-b border-border pb-2"
             >
-              <div
-                class="flex items-center gap-1.5 font-bold tracking-wider text-[11px] text-primary"
-              >
+              <div class="flex items-center gap-1.5 font-bold tracking-wider text-xs text-primary">
                 <Sparkles class="w-3.5 h-3.5" />
                 <span>PROTO ALPHA SIGNAL</span>
               </div>
-              <Badge variant="outline" class="text-[9px] border-primary/30 text-primary">
+              <Badge variant="outline" class="text-xs border-primary/30 text-primary">
                 Verified Position
               </Badge>
             </div>
@@ -169,14 +167,14 @@
                   <h3 class="font-black text-sm text-foreground">
                     ${{ call.tokenSymbol || 'TOKEN' }}
                   </h3>
-                  <p class="text-[10px] text-muted-foreground">
+                  <p class="text-xs text-muted-foreground">
                     {{ call.tokenName || 'Proto Token' }}
                   </p>
                 </div>
               </div>
 
               <div class="text-right">
-                <span class="text-[9px] text-muted-foreground block uppercase font-bold"
+                <span class="text-xs text-muted-foreground block uppercase font-bold"
                   >Target MC</span
                 >
                 <span class="text-xs font-black text-primary">
@@ -190,15 +188,13 @@
               class="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-muted/50 border border-border relative z-10"
             >
               <div>
-                <span class="text-[9px] text-muted-foreground block uppercase"
-                  >Caller Position</span
-                >
+                <span class="text-xs text-muted-foreground block uppercase">Caller Position</span>
                 <span class="text-xs font-bold text-foreground">
                   {{ call.positionUsd ? `$${call.positionUsd.toFixed(1)}` : 'Verified Holder' }}
                 </span>
               </div>
               <div class="text-right">
-                <span class="text-[9px] text-muted-foreground block uppercase">Current Profit</span>
+                <span class="text-xs text-muted-foreground block uppercase">Current Profit</span>
                 <span
                   class="text-xs font-bold"
                   :class="(call.profitUsd ?? 0) >= 0 ? 'text-primary' : 'text-rose-500'"
@@ -210,7 +206,7 @@
 
             <!-- Card Footer -->
             <div
-              class="flex items-center justify-between text-[10px] text-muted-foreground relative z-10 pt-1"
+              class="flex items-center justify-between text-xs text-muted-foreground relative z-10 pt-1"
             >
               <span>by {{ shortenAddress(call.authorAddress, 6, 4) }}</span>
               <span>proto.it/launchpad</span>

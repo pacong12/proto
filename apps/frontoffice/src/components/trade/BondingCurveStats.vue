@@ -9,7 +9,7 @@
           </span>
           <Badge
             :variant="currentMarketData.isGraduated ? 'default' : 'outline'"
-            class="text-[9px] h-4 px-1.5 uppercase"
+            class="text-xs h-4 px-1.5 uppercase"
           >
             {{
               currentMarketData.isGraduated
@@ -18,7 +18,7 @@
             }}
           </Badge>
         </div>
-        <span class="text-muted-foreground text-[11px]">
+        <span class="text-muted-foreground text-xs">
           {{ currentMarketData.pairedPrincipalWeth }} /
           {{ currentMarketData.graduationThresholdWeth }} {{ currencySymbol }}
         </span>
@@ -27,7 +27,7 @@
         :model-value="currentMarketData.graduationProgress * 100"
         class="h-2 rounded-full"
       />
-      <div class="flex items-center justify-between text-[11px] text-muted-foreground">
+      <div class="flex items-center justify-between text-xs text-muted-foreground">
         <span
           v-if="currentToken.version === 'v2' && !currentMarketData.isGraduated"
           class="flex items-center gap-1.5 text-foreground"
@@ -58,13 +58,13 @@
       class="p-3.5 rounded-xl border border-border bg-black space-y-2 text-xs"
     >
       <div class="flex items-center justify-between font-bold text-foreground">
-        <span class="text-[10px] uppercase tracking-wider text-muted-foreground">Uniswap Pool</span>
-        <span class="text-emerald-500 flex items-center gap-1 text-[11px]">
+        <span class="text-xs uppercase tracking-wider text-muted-foreground">Uniswap Pool</span>
+        <span class="text-emerald-500 flex items-center gap-1 text-xs">
           <Check class="w-3 h-3" />
           Locked
         </span>
       </div>
-      <div class="space-y-1 text-[11px]">
+      <div class="space-y-1 text-xs">
         <div class="flex justify-between">
           <span class="text-muted-foreground">Pair</span>
           <div class="flex items-center gap-1">
@@ -104,25 +104,19 @@
       class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 pt-4 border-t border-border text-xs"
     >
       <div>
-        <span class="text-muted-foreground text-[10px] uppercase font-semibold block"
-          >Market Cap</span
-        >
+        <span class="text-muted-foreground text-xs uppercase font-semibold block">Market Cap</span>
         <span class="font-black text-foreground text-sm block mt-0.5">
           ${{ formatNumberCap(currentMarketData.marketCapUsd ?? 4200) }}
         </span>
       </div>
       <div>
-        <span class="text-muted-foreground text-[10px] uppercase font-semibold block"
-          >Token Price</span
-        >
+        <span class="text-muted-foreground text-xs uppercase font-semibold block">Token Price</span>
         <span class="font-black text-foreground text-sm block mt-0.5 truncate">
           {{ formatPriceUsd(currentMarketData.priceUsd) }}
         </span>
       </div>
       <div>
-        <span class="text-muted-foreground text-[10px] uppercase font-semibold block"
-          >24h Volume</span
-        >
+        <span class="text-muted-foreground text-xs uppercase font-semibold block">24h Volume</span>
         <span class="font-black text-foreground text-sm block mt-0.5">
           {{
             (currentMarketData.volume24hUsd ?? 0) > 0
@@ -132,13 +126,13 @@
         </span>
       </div>
       <div>
-        <span class="text-muted-foreground text-[10px] uppercase font-semibold block">Holders</span>
+        <span class="text-muted-foreground text-xs uppercase font-semibold block">Holders</span>
         <span class="font-black text-foreground text-sm block mt-0.5">
           {{ holdersCount.toLocaleString() }}
         </span>
       </div>
       <div>
-        <span class="text-muted-foreground text-[10px] uppercase font-semibold block"
+        <span class="text-muted-foreground text-xs uppercase font-semibold block"
           >Top 10 Supply</span
         >
         <span class="font-black text-foreground text-sm block mt-0.5">
@@ -146,9 +140,7 @@
         </span>
       </div>
       <div>
-        <span class="text-muted-foreground text-[10px] uppercase font-semibold block"
-          >Dev Holds</span
-        >
+        <span class="text-muted-foreground text-xs uppercase font-semibold block">Dev Holds</span>
         <span
           class="font-black text-sm block mt-0.5"
           :class="devHoldingPercent > 10 ? 'text-amber-500' : 'text-foreground'"
@@ -159,7 +151,7 @@
     </div>
 
     <!-- Trust & Secondary Badges -->
-    <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1 text-[11px]">
+    <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1 text-xs">
       <div
         class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black border border-border shrink-0"
         title="Buy / Sell creator trading tax"

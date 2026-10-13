@@ -9,13 +9,13 @@
       class="p-3.5 rounded-2xl bg-card border border-border flex items-center justify-between text-xs font-sans shadow-xs"
     >
       <div class="space-y-0.5">
-        <span class="text-muted-foreground text-[11px] block">Your Holdings</span>
+        <span class="text-muted-foreground text-xs block">Your Holdings</span>
         <span class="font-bold text-foreground text-sm">
           {{ formatTokenBalance(userTokenBalance) }} ${{ currentToken.symbol }}
         </span>
       </div>
       <div class="text-right space-y-0.5">
-        <span class="text-muted-foreground text-[11px] block">Current Value</span>
+        <span class="text-muted-foreground text-xs block">Current Value</span>
         <span class="font-bold text-emerald-500 text-sm">
           ${{ formatCompactUsd(userHoldingUsd) }}
         </span>
@@ -85,7 +85,7 @@
                 <div class="flex items-center justify-between">
                   <span class="font-bold text-xs">Slippage Tolerance</span>
                   <span
-                    class="text-[11px]"
+                    class="text-xs"
                     :class="slippage > slippageWarnThreshold ? 'text-amber-500' : 'text-foreground'"
                   >
                     {{ slippage }}%
@@ -122,14 +122,14 @@
                       @update:model-value="$emit('update:customSlippageInput', String($event))"
                     />
                     <span
-                      class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground"
+                      class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground"
                     >
                       %
                     </span>
                   </div>
                   <button
                     type="button"
-                    class="text-[10px] text-muted-foreground hover:text-foreground underline cursor-pointer"
+                    class="text-xs text-muted-foreground hover:text-foreground underline cursor-pointer"
                     @click="selectSlippage(1.0)"
                   >
                     Auto
@@ -138,7 +138,7 @@
 
                 <div
                   v-if="slippage > slippageWarnThreshold"
-                  class="flex items-start gap-1.5 text-[10px] text-amber-500 bg-amber-500/10 border border-amber-500/30 p-2 rounded-xl"
+                  class="flex items-start gap-1.5 text-xs text-amber-500 bg-amber-500/10 border border-amber-500/30 p-2 rounded-xl"
                 >
                   <AlertCircle class="w-3.5 h-3.5 shrink-0 mt-0.5" />
                   <span>High slippage increase risk of sandwich attacks.</span>
@@ -155,7 +155,7 @@
               <span>You pay</span>
               <div
                 v-if="isBuy"
-                class="flex items-center bg-black p-0.5 rounded-lg border border-border text-[10px] font-bold"
+                class="flex items-center bg-black p-0.5 rounded-lg border border-border text-xs font-bold"
               >
                 <button
                   type="button"
@@ -183,7 +183,7 @@
                 </button>
               </div>
             </div>
-            <div class="flex items-center gap-1.5 text-[11px]">
+            <div class="flex items-center gap-1.5 text-xs">
               <span class="text-muted-foreground">Bal:</span>
               <span
                 v-if="!isBuy && isTokenBalanceLoading"
@@ -200,7 +200,7 @@
               <Button
                 variant="ghost"
                 size="sm"
-                class="h-5 px-1 text-[10px] font-bold text-primary hover:text-primary/80 uppercase"
+                class="h-5 px-1 text-xs font-bold text-primary hover:text-primary/80 uppercase"
                 @click="$emit('applyPercentage', 100)"
               >
                 MAX
@@ -274,7 +274,7 @@
               />
               <div
                 v-else
-                class="w-6 h-6 rounded-full bg-black flex items-center justify-center text-[9px] font-bold border border-border shrink-0"
+                class="w-6 h-6 rounded-full bg-black flex items-center justify-center text-xs font-bold border border-border shrink-0"
               >
                 {{ currencySymbol.slice(0, 3) }}
               </div>
@@ -325,7 +325,7 @@
             isConnected &&
             activeNetwork.chainId !== tokenNetwork.chainId
           "
-          class="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-2.5 text-[11px] text-amber-500"
+          class="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-2.5 text-xs text-amber-500"
         >
           <AlertCircle class="w-3.5 h-3.5 shrink-0 mt-0.5" />
           <span>

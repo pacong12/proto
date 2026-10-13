@@ -3,7 +3,7 @@
     class="fixed bottom-0 left-0 right-0 z-40 p-3 bg-black/95 backdrop-blur-lg border-t border-border flex items-center justify-between gap-3 sm:hidden shadow-2xl"
   >
     <div class="flex flex-col min-w-0">
-      <span class="text-[10px] text-muted-foreground font-sans">Price</span>
+      <span class="text-xs text-muted-foreground font-sans">Price</span>
       <span class="text-sm font-bold text-foreground truncate">
         {{ formatPriceUsd(currentMarketData.priceUsd) }}
       </span>

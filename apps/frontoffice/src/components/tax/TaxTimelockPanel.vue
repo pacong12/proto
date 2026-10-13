@@ -67,11 +67,11 @@ const timelockLabel = computed(() => {
     <template v-else-if="pending">
       <div class="rounded-xl border border-border bg-muted/30 p-3.5 space-y-3">
         <div class="flex items-center justify-between gap-2">
-          <span class="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+          <span class="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
             Pending proposal
           </span>
           <span
-            class="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+            class="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full"
             :class="
               isReady
                 ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
@@ -83,7 +83,7 @@ const timelockLabel = computed(() => {
           </span>
         </div>
 
-        <div class="grid grid-cols-2 gap-2 text-[11px]">
+        <div class="grid grid-cols-2 gap-2 text-xs">
           <div>
             <span class="text-muted-foreground">Buy tax</span>
             <p class="font-bold text-foreground">{{ buyTaxPct }}%</p>
@@ -123,14 +123,14 @@ const timelockLabel = computed(() => {
           </Button>
         </div>
 
-        <p v-if="!isReady" class="text-[10px] text-muted-foreground">
+        <p v-if="!isReady" class="text-xs text-muted-foreground">
           The 24-hour timelock has not elapsed. Holders can see this pending change and exit before
           it takes effect.
         </p>
       </div>
 
       <!-- Error -->
-      <p v-if="error" class="text-rose-500 text-[11px]">{{ error }}</p>
+      <p v-if="error" class="text-rose-500 text-xs">{{ error }}</p>
     </template>
   </div>
 </template>

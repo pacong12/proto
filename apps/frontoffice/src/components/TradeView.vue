@@ -194,7 +194,7 @@
                     <span>{{ tab.label }}</span>
                     <span
                       v-if="tab.value === 'callouts' && callouts.length > 0"
-                      class="ml-1 px-1.5 py-0.2 rounded-full bg-primary/20 text-primary font-bold text-[10px]"
+                      class="ml-1 px-1.5 py-0.2 rounded-full bg-primary/20 text-primary font-bold text-xs"
                     >
                       {{ callouts.length }}
                     </span>

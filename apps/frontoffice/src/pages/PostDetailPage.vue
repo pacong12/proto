@@ -17,7 +17,7 @@
           <h1 class="text-base font-bold tracking-tight text-foreground leading-none">
             Alpha Post
           </h1>
-          <span class="text-[10px] text-muted-foreground"> Community Signal Detail </span>
+          <span class="text-xs text-muted-foreground"> Community Signal Detail </span>
         </div>
       </div>
 
@@ -106,8 +106,8 @@
             <span v-if="post.quotedCallout.tokenSymbol" class="text-primary font-bold">
               ${{ post.quotedCallout.tokenSymbol }}
             </span>
-            <span class="text-muted-foreground text-[10px]">&middot;</span>
-            <span class="text-[10px] text-muted-foreground">
+            <span class="text-muted-foreground text-xs">&middot;</span>
+            <span class="text-xs text-muted-foreground">
               {{ formatRelativeTime(post.quotedCallout.createdAt) }}
             </span>
           </div>
@@ -156,11 +156,11 @@
                 <span class="font-black text-foreground text-sm">
                   ${{ post.tokenSymbol || 'TOKEN' }}
                 </span>
-                <span class="text-[10px] text-muted-foreground truncate hidden sm:inline font-sans">
+                <span class="text-xs text-muted-foreground truncate hidden sm:inline font-sans">
                   {{ post.tokenName }}
                 </span>
               </div>
-              <div class="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+              <div class="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                 <span>MC: ${{ formatCompactUsd(post.tokenMarketCapUsd || 4200) }}</span>
                 <span v-if="post.targetMcap" class="text-emerald-500 font-bold truncate">
                   Target: {{ post.targetMcap }}
@@ -171,9 +171,7 @@
 
           <div class="flex items-center gap-3 shrink-0 text-right">
             <div>
-              <span class="text-[9px] text-muted-foreground block uppercase font-bold"
-                >Position</span
-              >
+              <span class="text-xs text-muted-foreground block uppercase font-bold">Position</span>
               <span class="text-xs font-bold text-foreground">
                 {{ post.positionUsd ? `$${post.positionUsd.toFixed(1)}` : 'Holding' }}
               </span>
@@ -307,7 +305,7 @@
           />
 
           <div class="flex items-center justify-between pt-1">
-            <span class="text-[11px] text-muted-foreground"> {{ replyContent.length }}/500 </span>
+            <span class="text-xs text-muted-foreground"> {{ replyContent.length }}/500 </span>
             <Button
               size="sm"
               class="rounded-xl px-5 h-8 font-bold text-xs cursor-pointer"

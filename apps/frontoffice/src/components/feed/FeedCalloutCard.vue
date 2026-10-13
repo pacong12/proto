@@ -23,12 +23,12 @@
             <!-- Caller Whale Badge with GMGN/Web3Icons SVG -->
             <TraderTagBadge v-if="isWhaleCaller(call)" tag="whale" size="sm" />
           </div>
-          <span class="text-[10px] text-muted-foreground"> Verified Caller </span>
+          <span class="text-xs text-muted-foreground"> Verified Caller </span>
         </div>
       </div>
 
       <div class="flex items-center gap-2 shrink-0">
-        <span class="text-[10px] text-muted-foreground">
+        <span class="text-xs text-muted-foreground">
           {{ formatRelativeTime(call.createdAt) }}
         </span>
       </div>
@@ -55,8 +55,8 @@
         <span v-if="call.quotedCallout.tokenSymbol" class="text-primary font-bold">
           ${{ call.quotedCallout.tokenSymbol }}
         </span>
-        <span class="text-muted-foreground text-[10px]">&middot;</span>
-        <span class="text-[10px] text-muted-foreground">
+        <span class="text-muted-foreground text-xs">&middot;</span>
+        <span class="text-xs text-muted-foreground">
           {{ formatRelativeTime(call.quotedCallout.createdAt) }}
         </span>
       </div>
@@ -123,11 +123,11 @@
                 :class="isPinned(call.tokenAddress) ? 'fill-amber-400 text-amber-400' : ''"
               />
             </button>
-            <span class="text-[10px] text-muted-foreground truncate hidden sm:inline font-sans">
+            <span class="text-xs text-muted-foreground truncate hidden sm:inline font-sans">
               {{ call.tokenName }}
             </span>
           </div>
-          <div class="flex items-center gap-2 text-[10px] text-muted-foreground">
+          <div class="flex items-center gap-2 text-xs text-muted-foreground">
             <span
               >MC:
               <strong class="text-foreground"
@@ -153,7 +153,7 @@
         >
           <!-- Live PnL % row -->
           <span
-            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-black tabular-nums border"
+            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-black tabular-nums border"
             :class="
               callPnlPct(call) >= 0
                 ? 'bg-emerald-950/60 border-emerald-700/40 text-emerald-400'
@@ -165,7 +165,7 @@
             {{ callPnlPct(call) >= 0 ? '+' : '' }}{{ callPnlPct(call).toFixed(1) }}%
           </span>
           <!-- Position size + abs PnL row -->
-          <span class="text-[9px] text-muted-foreground tabular-nums leading-none">
+          <span class="text-xs text-muted-foreground tabular-nums leading-none">
             <span v-if="call.positionUsd && call.positionUsd > 0">
               ${{ formatCompactUsd(call.positionUsd) }}
             </span>
@@ -190,7 +190,7 @@
           </span>
           <span
             v-if="call.profitUsd !== undefined"
-            class="text-[11px] font-bold"
+            class="text-xs font-bold"
             :class="call.profitUsd >= 0 ? 'text-emerald-500' : 'text-rose-500'"
           >
             {{ call.profitUsd >= 0 ? '+' : '' }}${{ call.profitUsd.toFixed(1) }}

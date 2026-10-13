@@ -40,7 +40,7 @@
               class="w-full text-xs font-sans p-3 rounded-xl border border-border bg-muted/30 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground resize-none"
             />
             <div class="flex justify-end">
-              <span class="text-[10px] text-muted-foreground"> {{ quoteContent.length }}/500 </span>
+              <span class="text-xs text-muted-foreground"> {{ quoteContent.length }}/500 </span>
             </div>
           </div>
         </div>
@@ -57,7 +57,7 @@
                 ${{ targetCall.tokenSymbol }}
               </span>
             </div>
-            <span class="text-[10px] text-muted-foreground">
+            <span class="text-xs text-muted-foreground">
               {{ formatRelativeTime(targetCall.createdAt) }}
             </span>
           </div>
@@ -69,7 +69,7 @@
         <!-- Position Warning if required -->
         <div
           v-if="account && callerBalance <= 0 && !checkingBalance"
-          class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-500 flex items-center gap-2 text-[11px]"
+          class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-500 flex items-center gap-2 text-xs"
         >
           <AlertCircle class="w-3.5 h-3.5 shrink-0" />
           <span>

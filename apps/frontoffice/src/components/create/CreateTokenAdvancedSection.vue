@@ -146,7 +146,7 @@
                 text="Specifies how collected trading taxes are distributed on-chain. Allocations must sum to exactly 100% to launch."
               />
             </div>
-            <p class="text-[11px] text-muted-foreground">Fee allocation (must total 100%)</p>
+            <p class="text-xs text-muted-foreground">Fee allocation (must total 100%)</p>
           </div>
           <div class="flex items-center gap-2">
             <Button

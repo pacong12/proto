@@ -316,7 +316,7 @@ function formatValue(val: number): string {
           }"
         >
           <div class="flex flex-col gap-1 min-w-[100px]">
-            <span class="text-[11px] text-muted-foreground uppercase font-semibold">
+            <span class="text-xs text-muted-foreground uppercase font-semibold">
               {{ activePoint.data.label }}
             </span>
             <div class="flex items-center gap-2">
@@ -330,7 +330,7 @@ function formatValue(val: number): string {
 
         <!-- Horizontal X-Axis Labels -->
         <div
-          class="flex justify-between px-3 pt-2 text-[11px] tabular-nums text-muted-foreground select-none"
+          class="flex justify-between px-3 pt-2 text-xs tabular-nums text-muted-foreground select-none"
         >
           <span>{{ data[0]?.label }}</span>
           <span v-if="data.length > 2">{{ data[Math.floor(data.length / 2)]?.label }}</span>

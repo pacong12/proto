@@ -10,7 +10,7 @@
           v-for="flt in filterOptions"
           :key="flt.key"
           type="button"
-          class="px-2 py-0.5 rounded-lg text-[11px] font-bold transition cursor-pointer"
+          class="px-2 py-0.5 rounded-lg text-xs font-bold transition cursor-pointer"
           :class="
             tradeFilter === flt.key
               ? 'bg-foreground text-background shadow-2xs'
@@ -21,7 +21,7 @@
           {{ flt.label }}
         </button>
       </div>
-      <div class="text-[11px] font-bold">
+      <div class="text-xs font-bold">
         <span class="text-muted-foreground">Net: </span>
         <span :class="orderFlowStats.netVolumeUsd >= 0 ? 'text-emerald-500' : 'text-rose-500'">
           {{ orderFlowStats.netVolumeUsd >= 0 ? '+' : '' }}${{
@@ -87,14 +87,14 @@
             class="hover:bg-zinc-900/40 transition-colors bg-black"
           >
             <!-- 1. Time / Age -->
-            <TableCell class="py-2 px-3 whitespace-nowrap text-muted-foreground text-[11px]">
+            <TableCell class="py-2 px-3 whitespace-nowrap text-muted-foreground text-xs">
               {{ formatRelativeTime(trade.timestamp) }}
             </TableCell>
 
             <!-- 2. Type (GMGN Style BUY / SELL pill) -->
             <TableCell class="py-2 px-3 whitespace-nowrap">
               <span
-                class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider border select-none"
+                class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold tracking-wider border select-none"
                 :class="
                   trade.isBuy
                     ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'

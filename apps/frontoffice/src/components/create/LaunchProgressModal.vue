@@ -80,7 +80,7 @@
               <span>{{ t('launchStepConfirm') }}</span>
               <span
                 v-if="['broadcasting', 'confirming'].includes(launchStep)"
-                class="text-[10px] text-foreground animate-pulse"
+                class="text-xs text-foreground animate-pulse"
               >
                 Confirming...
               </span>

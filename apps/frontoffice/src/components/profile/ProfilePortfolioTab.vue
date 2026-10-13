@@ -51,7 +51,7 @@
               <div class="flex items-center gap-2">
                 <div class="relative shrink-0">
                   <Avatar class="w-6 h-6 rounded border border-border overflow-hidden">
-                    <AvatarFallback class="text-[9px] bg-muted text-foreground">
+                    <AvatarFallback class="text-xs bg-muted text-foreground">
                       {{ pos.symbol.slice(0, 3) }}
                     </AvatarFallback>
                   </Avatar>

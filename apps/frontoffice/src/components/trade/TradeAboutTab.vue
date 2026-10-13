@@ -7,7 +7,7 @@
 
     <!-- Contract addresses -->
     <div class="space-y-2">
-      <p class="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+      <p class="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
         Contract Addresses
       </p>
       <div class="space-y-1.5">
@@ -56,19 +56,19 @@
     <!-- Market data grid -->
     <div class="grid grid-cols-3 gap-4 pt-3 border-t border-border">
       <div>
-        <p class="text-[10px] uppercase tracking-wider text-muted-foreground">Price</p>
+        <p class="text-xs uppercase tracking-wider text-muted-foreground">Price</p>
         <p class="text-sm font-bold mt-0.5 text-foreground">
           {{ formatPriceUsd(currentMarketData.priceUsd) }}
         </p>
       </div>
       <div>
-        <p class="text-[10px] uppercase tracking-wider text-muted-foreground">Mkt Cap</p>
+        <p class="text-xs uppercase tracking-wider text-muted-foreground">Mkt Cap</p>
         <p class="text-sm font-bold mt-0.5 text-foreground">
           {{ formatCompactUsd(currentMarketData.marketCapUsd) }}
         </p>
       </div>
       <div>
-        <p class="text-[10px] uppercase tracking-wider text-muted-foreground">24h Vol</p>
+        <p class="text-xs uppercase tracking-wider text-muted-foreground">24h Vol</p>
         <p class="text-sm font-bold mt-0.5 text-foreground">
           {{ formatCompactUsd(currentMarketData.volume24hUsd) }}
         </p>

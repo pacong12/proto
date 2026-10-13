@@ -30,7 +30,7 @@
           </Tabs>
 
           <!-- Chain Filter (All Chains default / Robinhood / Arc) -->
-          <div class="flex items-center gap-1 text-[11px] self-end sm:self-auto pb-1 sm:pb-0">
+          <div class="flex items-center gap-1 text-xs self-end sm:self-auto pb-1 sm:pb-0">
             <button
               v-for="chainOpt in [
                 {
@@ -122,13 +122,13 @@
                   class="absolute left-0 right-0 top-full mt-1 bg-card border border-border/90 rounded-2xl shadow-2xl p-2 z-50 space-y-1 text-xs max-h-56 overflow-y-auto"
                 >
                   <div
-                    class="px-2 py-1 text-[10px] text-muted-foreground uppercase font-bold flex items-center justify-between border-b border-border/50"
+                    class="px-2 py-1 text-xs text-muted-foreground uppercase font-bold flex items-center justify-between border-b border-border/50"
                   >
                     <span class="flex items-center gap-1">
                       <Sparkles class="w-3 h-3 text-primary" />
                       Select Token for Callout ${{ cashtagQuery || '' }}
                     </span>
-                    <span class="text-[9px]">Tab / Enter to pick</span>
+                    <span class="text-xs">Tab / Enter to pick</span>
                   </div>
 
                   <button
@@ -156,7 +156,7 @@
                         <span class="font-black text-foreground block text-xs truncate">
                           ${{ tItem.token.symbol }}
                         </span>
-                        <span class="text-[10px] text-muted-foreground truncate block font-sans">
+                        <span class="text-xs text-muted-foreground truncate block font-sans">
                           {{ tItem.token.name }}
                         </span>
                       </div>
@@ -167,7 +167,7 @@
                         ${{ formatCompactUsd(tItem.marketData?.marketCapUsd || 4200) }}
                       </span>
                       <span
-                        class="text-[10px] font-bold"
+                        class="text-xs font-bold"
                         :class="
                           (tItem.marketData?.priceChange24h ?? 0) >= 0
                             ? 'text-emerald-500'
@@ -244,7 +244,7 @@
                 class="p-2 rounded-xl bg-black border border-border text-muted-foreground flex items-center justify-between gap-2 text-xs font-sans"
               >
                 <div class="flex items-center gap-1.5 min-w-0">
-                  <span class="text-[11px]">
+                  <span class="text-xs">
                     Mentioning ${{ selectedToken.symbol }} &middot; Hold $1+ to earn a Verified
                     Holder badge.
                   </span>
@@ -252,7 +252,7 @@
                 <Button
                   size="sm"
                   variant="outline"
-                  class="h-6 px-2 text-[10px] shrink-0 rounded-lg cursor-pointer border-border hover:bg-zinc-900"
+                  class="h-6 px-2 text-xs shrink-0 rounded-lg cursor-pointer border-border hover:bg-zinc-900"
                   @click="navigateToToken(selectedToken.address)"
                 >
                   Buy ${{ selectedToken.symbol }}
@@ -281,7 +281,7 @@
                     @click="triggerMediaUpload"
                   >
                     <ImageIcon class="w-4 h-4" />
-                    <span class="text-[11px] hidden sm:inline">Photo</span>
+                    <span class="text-xs hidden sm:inline">Photo</span>
                   </button>
 
                   <button
@@ -294,7 +294,7 @@
                     <Link2 class="w-4 h-4" />
                   </button>
 
-                  <span class="text-[11px] text-muted-foreground">
+                  <span class="text-xs text-muted-foreground">
                     {{ composerContent.length }}/500
                   </span>
                 </div>
