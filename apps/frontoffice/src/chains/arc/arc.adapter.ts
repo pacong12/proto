@@ -10,7 +10,6 @@ import {
 import {
   ARC_CHAIN,
   launchpadV2FactoryAbi,
-  launchpadTokenAbi,
   bondingCurveAbi,
   swapRouterAbi,
 } from '@proto/shared-types';
@@ -157,35 +156,6 @@ export class ArcChainAdapter implements ChainAdapter {
     }
 
     const launchResult = extractArcLaunchData(receipt);
-    if (
-      launchResult &&
-      ((params.buyTaxPercent && params.buyTaxPercent > 0) ||
-        (params.sellTaxPercent && params.sellTaxPercent > 0))
-    ) {
-      try {
-        const buyTaxBps = Math.min(
-          1000,
-          Math.max(0, Math.round((params.buyTaxPercent || 0) * 100)),
-        );
-        const sellTaxBps = Math.min(
-          1000,
-          Math.max(0, Math.round((params.sellTaxPercent || 0) * 100)),
-        );
-        const recipient = params.creatorTaxWallet || account;
-        const taxHash = await walletClient.writeContract({
-          address: launchResult.tokenAddress,
-          abi: launchpadTokenAbi,
-          functionName: 'setInitialTaxConfig',
-          args: [buyTaxBps, sellTaxBps, recipient],
-          account,
-          chain: walletClient.chain,
-        });
-        await waitForReceiptWithFallback(publicClient, taxHash, walletClient);
-      } catch (taxErr) {
-        console.warn('[ArcAdapter] Post-launch proposeTaxConfig skipped or deferred:', taxErr);
-      }
-    }
-
     return launchResult;
   }
 

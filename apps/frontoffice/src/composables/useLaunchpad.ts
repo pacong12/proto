@@ -275,29 +275,6 @@ export function useLaunchpad() {
         launchStep.value = 'success';
         launchTokenAddress.value = tokenAddr;
 
-        // Apply advanced trading tax configuration if specified
-        if (
-          (params.buyTaxPercent && params.buyTaxPercent > 0) ||
-          (params.sellTaxPercent && params.sellTaxPercent > 0)
-        ) {
-          try {
-            const buyTaxBps = taxPercentToBps(params.buyTaxPercent || 0);
-            const sellTaxBps = taxPercentToBps(params.sellTaxPercent || 0);
-            const recipient = (params.creatorTaxWallet as `0x${string}`) || account;
-            const taxHash = await walletClient.writeContract({
-              address: tokenAddr,
-              abi: launchpadTokenAbi,
-              functionName: 'setInitialTaxConfig',
-              args: [buyTaxBps, sellTaxBps, recipient],
-              account,
-              chain: walletClient.chain,
-            });
-            await publicClient.waitForTransactionReceipt({ hash: taxHash });
-          } catch (taxErr) {
-            console.warn('[LaunchpadV2] Post-launch proposeTaxConfig skipped or deferred:', taxErr);
-          }
-        }
-
         try {
           await apiFetch<unknown>(`/api/tokens/${tokenAddr}/sync`, {
             method: 'POST',
