@@ -7,158 +7,11 @@ import {
   launchpadFactoryAbi,
   launchpadV2FactoryAbi,
   launchpadTokenAbi,
+  bondingCurveAbi,
   uniswapV3PoolAbi,
   type NetworkConfig,
 } from '@proto/shared-types';
 import { ChainIndexerPort } from '../../domain/ports/chain.indexer.port';
-
-// ---------------------------------------------------------------------------
-// Minimal ABI fragments for V2 BondingCurve reads
-// ---------------------------------------------------------------------------
-const bondingCurveAbi = [
-  {
-    name: 'totalEthRaised',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'uint256' }],
-  },
-  {
-    name: 'virtualEthReserve',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'uint256' }],
-  },
-  {
-    name: 'virtualTokenReserve',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'uint256' }],
-  },
-  {
-    name: 'graduationTarget',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'uint256' }],
-  },
-  {
-    name: 'graduated',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'bool' }],
-  },
-  {
-    name: 'creator',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'address' }],
-  },
-] as const;
-
-// V2 Factory ABI fragments for getLaunch lookup
-// Reserved for future factory readContract calls
-const _factoryV2Abi = [
-  {
-    name: 'launches',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'token', type: 'address' }],
-    outputs: [
-      { name: 'token', type: 'address' },
-      { name: 'curve', type: 'address' },
-      { name: 'creator', type: 'address' },
-      { name: 'createdAt', type: 'uint256' },
-      { name: 'graduated', type: 'bool' },
-    ],
-  },
-] as const;
-
-// V2 token ABI — only fields emitted by LaunchpadToken (name/symbol/logo etc.)
-const launchpadTokenV2Abi = [
-  {
-    name: 'name',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'string' }],
-  },
-  {
-    name: 'symbol',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'string' }],
-  },
-  {
-    name: 'decimals',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'uint8' }],
-  },
-  {
-    name: 'totalSupply',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'uint256' }],
-  },
-  {
-    name: 'logo',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'string' }],
-  },
-  {
-    name: 'description',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'string' }],
-  },
-  {
-    name: 'socials',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [
-      { name: 'twitter', type: 'string' },
-      { name: 'telegram', type: 'string' },
-      { name: 'discord', type: 'string' },
-      { name: 'website', type: 'string' },
-      { name: 'farcaster', type: 'string' },
-    ],
-  },
-  {
-    name: 'taxConfig',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [
-      { name: 'buyTaxBps', type: 'uint16' },
-      { name: 'sellTaxBps', type: 'uint16' },
-      { name: 'taxRecipient', type: 'address' },
-    ],
-  },
-  {
-    name: 'pendingTaxConfig',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [
-      { name: 'buyTaxBps', type: 'uint16' },
-      { name: 'sellTaxBps', type: 'uint16' },
-      { name: 'taxRecipient', type: 'address' },
-      { name: 'validAfter', type: 'uint256' },
-    ],
-  },
-] as const;
 
 function makeViemChain(cfg: NetworkConfig): Chain {
   return {
@@ -240,38 +93,38 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
       ] = await Promise.all([
         client.readContract({
           address: tokenAddress,
-          abi: launchpadTokenV2Abi,
+          abi: launchpadTokenAbi,
           functionName: 'name',
         }),
         client.readContract({
           address: tokenAddress,
-          abi: launchpadTokenV2Abi,
+          abi: launchpadTokenAbi,
           functionName: 'symbol',
         }),
         client.readContract({
           address: tokenAddress,
-          abi: launchpadTokenV2Abi,
+          abi: launchpadTokenAbi,
           functionName: 'decimals',
         }),
         client.readContract({
           address: tokenAddress,
-          abi: launchpadTokenV2Abi,
+          abi: launchpadTokenAbi,
           functionName: 'totalSupply',
         }),
         client
-          .readContract({ address: tokenAddress, abi: launchpadTokenV2Abi, functionName: 'logo' })
+          .readContract({ address: tokenAddress, abi: launchpadTokenAbi, functionName: 'logo' })
           .catch(() => ''),
         client
           .readContract({
             address: tokenAddress,
-            abi: launchpadTokenV2Abi,
+            abi: launchpadTokenAbi,
             functionName: 'description',
           })
           .catch(() => ''),
         client
           .readContract({
             address: tokenAddress,
-            abi: launchpadTokenV2Abi,
+            abi: launchpadTokenAbi,
             functionName: 'socials',
           })
           .catch(() => ['', '', '', '', '']),
@@ -308,14 +161,14 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
         client
           .readContract({
             address: tokenAddress,
-            abi: launchpadTokenV2Abi,
+            abi: launchpadTokenAbi,
             functionName: 'taxConfig',
           })
           .catch(() => [0, 0, '0x0000000000000000000000000000000000000000'] as const),
         client
           .readContract({
             address: tokenAddress,
-            abi: launchpadTokenV2Abi,
+            abi: launchpadTokenAbi,
             functionName: 'pendingTaxConfig',
           })
           .catch(() => [0, 0, '0x0000000000000000000000000000000000000000', 0n] as const),
