@@ -210,4 +210,32 @@ describe('Tokens HTTP Endpoints Integration', () => {
     expect(json).toHaveProperty('events');
     expect(Array.isArray(json.events)).toBe(true);
   });
+
+  it('GET /api/tokens/koth returns King of the Hill or null', async () => {
+    const req = new Request('http://localhost:3001/api/tokens/koth');
+    const res = await server.fetch(req);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    // Data can be null (no tokens) or an object with token & marketData
+    if (json.data) {
+      expect(json.data).toHaveProperty('token');
+      expect(json.data).toHaveProperty('marketData');
+    }
+  });
+
+  it('GET /api/tokens/:address/rewards returns reward distribution data', async () => {
+    const testAccount = '0x1111111111111111111111111111111111111111';
+    const req = new Request(
+      `http://localhost:3001/api/tokens/${testAddress}/rewards?account=${testAccount}`,
+    );
+    const res = await server.fetch(req);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    expect(json.data).toHaveProperty('tokenAddress');
+    expect(json.data).toHaveProperty('account');
+    expect(json.data).toHaveProperty('earnedWei');
+    expect(json.data).toHaveProperty('rewardAssetSymbol');
+  });
 });

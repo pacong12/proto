@@ -34,6 +34,7 @@ import {
   ARC_CHAIN,
   ARC_PROTO_CURVE_ADDRESS,
   bondingCurveAbi,
+  holderFeeDistributorAbi,
   type NetworkConfig,
   TransactionIntent,
   type TokenCommentEntity,
@@ -606,6 +607,20 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     }
     return replyJson(res, 200, { 'x-cache': 'MISS' });
   }
+  // GET /api/tokens/koth — Token closest to graduation (highest graduation progress)
+  if (url.pathname === '/api/tokens/koth' && req.method === 'GET') {
+    const cacheKey = 'tokens:koth';
+    const cached = await cache.get<unknown>(cacheKey);
+    if (cached) {
+      return replyJson(cached, 200, { 'x-cache': 'HIT' });
+    }
+
+    const res = await tokenController.getKingOfTheHill();
+    if (res.success && res.data) {
+      await cache.set(cacheKey, res, 5); // Cache for 5s
+    }
+    return replyJson(res, 200, { 'x-cache': 'MISS' });
+  }
 
   // GET /api/users/resolve?query=:query
   if (url.pathname === '/api/users/resolve' && req.method === 'GET') {
@@ -771,6 +786,88 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       );
     } catch (e) {
       return replyEnvelope(err('RPC_ERROR', (e as Error).message));
+    }
+  }
+  // GET /api/tokens/:address/rewards?account=0x... — Argus-style holder dividend rewards query
+  const rewardsMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/rewards$/);
+  if (rewardsMatch && req.method === 'GET') {
+    const tokenAddress = rewardsMatch[1] as `0x${string}`;
+    const accountParam = url.searchParams.get('account') as `0x${string}` | null;
+    if (!accountParam || !/^0x[a-fA-F0-9]{40}$/.test(accountParam)) {
+      return replyEnvelope(
+        err('INVALID_ACCOUNT', 'A valid 42-char hex account address is required'),
+      );
+    }
+
+    try {
+      const token = await repository.findByAddress(tokenAddress);
+      const chain = token
+        ? chainRegistry.resolveForToken(token)
+        : chainRegistry.getChainByParam(url.searchParams.get('chain'));
+      const distributorAddr = chain.network.contracts.holderFeeDistributor;
+
+      if (!distributorAddr || distributorAddr === '0x0000000000000000000000000000000000000000') {
+        return replyEnvelope(
+          ok({
+            tokenAddress,
+            account: accountParam,
+            distributorAvailable: false,
+            earnedWei: '0',
+            earnedFormatted: 0,
+            snapshotBalanceWei: '0',
+            totalDistributedWei: '0',
+            rewardAssetSymbol: chain.chainId === ARC_CHAIN.chainId ? 'USDC' : 'WETH',
+          }),
+        );
+      }
+
+      const client = chain.client;
+      const [earnedWei, feeState, snapBal] = await Promise.all([
+        client
+          .readContract({
+            address: distributorAddr,
+            abi: holderFeeDistributorAbi,
+            functionName: 'earned',
+            args: [tokenAddress, accountParam],
+          })
+          .catch(() => 0n) as Promise<bigint>,
+        client
+          .readContract({
+            address: distributorAddr,
+            abi: holderFeeDistributorAbi,
+            functionName: 'tokenFeeStates',
+            args: [tokenAddress],
+          })
+          .catch(() => [0n, 0n]) as Promise<[bigint, bigint]>,
+        client
+          .readContract({
+            address: distributorAddr,
+            abi: holderFeeDistributorAbi,
+            functionName: 'snapshotBalance',
+            args: [tokenAddress, accountParam],
+          })
+          .catch(() => 0n) as Promise<bigint>,
+      ]);
+
+      const isArc = chain.chainId === ARC_CHAIN.chainId;
+      const decimals = 18;
+      const earnedFormatted = Number(earnedWei) / 10 ** decimals;
+
+      return replyEnvelope(
+        ok({
+          tokenAddress,
+          account: accountParam,
+          distributorAvailable: true,
+          distributorAddress: distributorAddr,
+          earnedWei: earnedWei.toString(),
+          earnedFormatted,
+          snapshotBalanceWei: snapBal.toString(),
+          totalDistributedWei: feeState[1].toString(),
+          rewardAssetSymbol: isArc ? 'USDC' : 'WETH',
+        }),
+      );
+    } catch (e) {
+      return replyEnvelope(err('REWARD_QUERY_ERROR', (e as Error).message));
     }
   }
 
