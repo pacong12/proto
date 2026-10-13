@@ -109,3 +109,59 @@ feat(frontoffice): implement trade notification toast with tx hash link
 chore(deps): update ioredis and viem dependencies
 docs(security): document timing-safe token comparison pattern
 ```
+
+## Pull Request Convention
+
+### Labels
+
+Every PR MUST have at least one label applied before merging. Labels signal the primary nature of the change and drive changelog generation.
+
+| Label          | When to apply                                                     |
+| -------------- | ----------------------------------------------------------------- |
+| `feat`         | PR introduces new user-facing functionality                       |
+| `fix`          | PR resolves a bug or security vulnerability                       |
+| `refactor`     | PR restructures code without behavior change                      |
+| `test`         | PR adds or corrects tests only                                    |
+| `build`        | PR changes build system, tooling, or CI configuration             |
+| `chore`        | PR is maintenance: deps, lockfile, formatting, docs               |
+| `security`     | PR remediates a security finding (use alongside `fix`)            |
+| `contracts`    | PR touches Solidity contracts or contract ABIs                    |
+| `breaking`     | PR contains a breaking API or contract change                     |
+| `do-not-merge` | PR is a draft or blocked; NEVER merge while this label is present |
+
+### Rules
+
+1. **Label matches commit type**: The primary label MUST match the `type` of the majority of commits in the PR (e.g., mostly `feat` commits -> `feat` label).
+2. **Multiple labels allowed**: A PR fixing a security bug in a contract uses both `fix` + `security` + `contracts`.
+3. **`breaking` is mandatory** when any commit introduces a backward-incompatible change to a public API, contract interface, or event signature.
+4. **`do-not-merge` blocks all merges**: CI and reviewers MUST reject merge attempts while this label exists.
+5. **No emojis in label names**: Consistent with the Zero Emojis policy.
+
+### Applying Labels via CLI
+
+```bash
+# Single label
+gh pr edit <number> --add-label "feat"
+
+# Multiple labels
+gh pr edit <number> --add-label "fix,security,contracts"
+
+# Remove a label
+gh pr edit <number> --remove-label "do-not-merge"
+```
+
+### Examples
+
+```text
+PR: feat(frontoffice): implement canvas PnL card export
+Labels: feat, frontoffice  (optional scope label if created in repo)
+
+PR: fix(contracts): restrict fee claims and harden buyback slippage
+Labels: fix, security, contracts
+
+PR: chore(deps): update ioredis and viem dependencies
+Labels: chore
+
+PR: feat(contracts): migrate bonding curve to Uniswap V4 (breaking interface change)
+Labels: feat, contracts, breaking
+```
