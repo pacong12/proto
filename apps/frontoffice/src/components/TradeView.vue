@@ -224,218 +224,24 @@
               </div>
 
               <!-- Tab: Community Callouts (pump.fun style) -->
-              <TabsContent
-                value="callouts"
-                class="mt-0 max-h-[460px] overflow-y-auto p-4 sm:p-5 space-y-4"
-              >
-                <!-- Quick Post Callout Action -->
-                <div
-                  class="p-4 rounded-2xl border border-border bg-black flex items-center justify-between gap-3 font-mono text-xs"
-                >
-                  <div class="flex items-center gap-2 min-w-0">
-                    <Megaphone class="w-4 h-4 text-primary shrink-0" />
-                    <div class="min-w-0">
-                      <p class="font-bold text-foreground text-xs leading-tight">
-                        Post a Community Callout
-                      </p>
-                      <p class="text-[11px] text-muted-foreground truncate">
-                        Attach your thesis, exit price target, and verified position.
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    class="h-8 px-3 text-xs font-bold gap-1.5 cursor-pointer shrink-0 shadow-2xs"
-                    @click="openCallModal"
-                  >
-                    <Megaphone class="w-3 h-3" />
-                    <span>Call ${{ currentToken.symbol }}</span>
-                  </Button>
-                </div>
-
-                <!-- Callouts Feed -->
-                <div
-                  v-if="calloutsLoading && callouts.length === 0"
-                  class="py-12 text-center text-muted-foreground"
-                >
-                  <Loader2 class="w-4 h-4 animate-spin mx-auto mb-2 text-primary" />
-                  <span class="text-xs font-mono">Loading callouts...</span>
-                </div>
-                <Empty
-                  v-else-if="callouts.length === 0"
-                  :title="'No callouts yet'"
-                  :description="`Be the first to call $${currentToken.symbol} to the community!`"
-                  class="py-12 border border-dashed border-border bg-black"
-                >
-                  <template #icon>
-                    <Megaphone class="w-6 h-6 text-muted-foreground opacity-60" />
-                  </template>
-                </Empty>
-                <div v-else class="space-y-3">
-                  <div
-                    v-for="cmt in paginatedCallouts"
-                    :key="cmt.id"
-                    class="p-3.5 rounded-xl border border-border bg-black hover:bg-zinc-950 transition-colors space-y-2.5"
-                  >
-                    <!-- Header: Author + Badges + Time -->
-                    <div class="flex items-center justify-between gap-2">
-                      <div class="flex items-center gap-2">
-                        <Jazzicon :address="cmt.authorAddress" :size="18" />
-                        <RouterLink
-                          :to="'/' + getUserIdentity(cmt.authorAddress).name"
-                          class="text-xs font-mono font-bold text-foreground hover:underline"
-                        >
-                          {{ getUserIdentity(cmt.authorAddress).displayName }}
-                        </RouterLink>
-                        <Badge
-                          v-if="
-                            cmt.authorAddress.toLowerCase() === currentToken.deployer?.toLowerCase()
-                          "
-                          variant="secondary"
-                          class="text-[9px] px-1.5 py-0 h-4 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-mono"
-                        >
-                          Creator
-                        </Badge>
-                        <Badge
-                          v-else-if="isHolderAddress(cmt.authorAddress)"
-                          variant="outline"
-                          class="text-[9px] px-1.5 py-0 h-4 font-mono text-muted-foreground"
-                        >
-                          Holder
-                        </Badge>
-                      </div>
-                      <span class="text-[10px] font-mono text-muted-foreground">
-                        {{ formatRelativeTime(cmt.createdAt) }}
-                      </span>
-                    </div>
-
-                    <!-- Callout Text -->
-                    <p
-                      class="text-xs leading-relaxed text-foreground font-sans break-words whitespace-pre-wrap font-medium"
-                    >
-                      <CashtagText :text="cmt.content" :tokens="[{ token: currentToken }]" />
-                    </p>
-
-                    <!-- Optional Attached Image -->
-                    <div
-                      v-if="cmt.imageUrl"
-                      class="rounded-lg overflow-hidden border border-border max-w-xs"
-                    >
-                      <img
-                        :src="resolveSafeUrl(cmt.imageUrl)"
-                        alt="Call attachment"
-                        class="w-full max-h-48 object-cover"
-                      />
-                    </div>
-
-                    <!-- Pump.fun Style Callout Mini Token Card -->
-                    <div
-                      class="p-2.5 rounded-xl border border-border bg-black flex items-center justify-between gap-3 text-xs font-mono"
-                    >
-                      <div class="flex items-center gap-2 min-w-0">
-                        <OptimizedImage
-                          :src="currentToken.logo"
-                          :alt="currentToken.name"
-                          :fallback-text="currentToken.symbol"
-                          :width="26"
-                          :height="26"
-                          class="rounded-full border border-border shrink-0"
-                        />
-                        <div class="min-w-0">
-                          <div class="flex items-center gap-1.5 leading-none">
-                            <span class="font-bold text-foreground text-xs"
-                              >${{ currentToken.symbol }}</span
-                            >
-                            <span class="text-[10px] text-muted-foreground truncate">{{
-                              currentToken.name
-                            }}</span>
-                          </div>
-                          <span class="text-[10px] text-emerald-500 font-bold block mt-1">
-                            {{
-                              cmt.targetMcap
-                                ? `Target: ${cmt.targetMcap}`
-                                : `MC: ${formatCompactUsd(currentMarketData.marketCapUsd || 4200)}`
-                            }}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div class="text-right shrink-0">
-                        <span class="text-[9px] text-muted-foreground block uppercase font-bold"
-                          >Position</span
-                        >
-                        <span class="text-xs font-bold text-foreground">
-                          {{ cmt.positionUsd ? `$${cmt.positionUsd.toFixed(2)}` : 'Holder' }}
-                        </span>
-                      </div>
-                    </div>
-
-                    <!-- Card Actions: Thread Replies + Like + Total Views + Share Sheet (Twitter/X style) -->
-                    <div
-                      class="flex items-center justify-between pt-1 border-t border-border text-xs font-sans text-muted-foreground"
-                    >
-                      <button
-                        type="button"
-                        class="group flex items-center gap-1 hover:text-sky-500 transition-colors cursor-pointer text-xs"
-                        title="View replies"
-                        @click="openThreadModal(cmt)"
-                      >
-                        <div class="p-1 rounded-full group-hover:bg-sky-500/10 transition-colors">
-                          <MessageCircle class="w-3.5 h-3.5" />
-                        </div>
-                        <span class="group-hover:text-sky-500">{{ cmt.repliesCount || 0 }}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        aria-label="Like callout"
-                        class="group flex items-center gap-1 hover:text-rose-500 transition-colors cursor-pointer text-xs"
-                        :class="cmt.isLikedByViewer ? 'text-rose-500 font-bold' : ''"
-                        @click="toggleLike(cmt.id)"
-                      >
-                        <div class="p-1 rounded-full group-hover:bg-rose-500/10 transition-colors">
-                          <Heart
-                            class="w-3.5 h-3.5"
-                            :class="cmt.isLikedByViewer ? 'fill-rose-500 text-rose-500' : ''"
-                          />
-                        </div>
-                        <span class="group-hover:text-rose-500">{{ cmt.likesCount }}</span>
-                      </button>
-
-                      <!-- Total Views (Display only, strictly NOT clickable, Twitter / X style) -->
-                      <div
-                        class="flex items-center gap-1 text-muted-foreground select-none cursor-default text-xs"
-                        title="Views"
-                      >
-                        <div class="p-1">
-                          <BarChart2 class="w-3.5 h-3.5 text-muted-foreground/70" />
-                        </div>
-                        <span>{{ formatViews(cmt.viewsCount || 0) }}</span>
-                      </div>
-
-                      <button
-                        type="button"
-                        class="group flex items-center text-muted-foreground hover:text-sky-500 transition-colors cursor-pointer text-xs"
-                        title="Share callout"
-                        @click="openShareModal(cmt)"
-                      >
-                        <div class="p-1 rounded-full group-hover:bg-sky-500/10 transition-colors">
-                          <Share2 class="w-3.5 h-3.5" />
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- Callouts Pagination -->
-                  <div v-if="callouts.length > calloutsPageSize" class="pt-2 flex justify-center">
-                    <Pagination
-                      :total="callouts.length"
-                      :items-per-page="calloutsPageSize"
-                      :page="calloutsPage"
-                      @update:page="calloutsPage = $event"
-                    />
-                  </div>
-                </div>
+              <TabsContent value="callouts" class="mt-0">
+                <TradeCalloutsTab
+                  :current-token="currentToken"
+                  :current-market-data="currentMarketData"
+                  :callouts="callouts"
+                  :paginated-callouts="paginatedCallouts"
+                  :callouts-loading="calloutsLoading"
+                  :callouts-page="calloutsPage"
+                  :callouts-page-size="calloutsPageSize"
+                  :is-holder-address="isHolderAddress"
+                  :resolve-safe-url="resolveSafeUrl"
+                  :format-views="formatViews"
+                  @open-call-modal="openCallModal"
+                  @open-thread-modal="openThreadModal"
+                  @open-share-modal="openShareModal"
+                  @toggle-like="toggleLike"
+                  @update:callouts-page="calloutsPage = $event"
+                />
               </TabsContent>
 
               <!-- Tab: Live Trades -->
@@ -473,133 +279,18 @@
               </TabsContent>
 
               <!-- Tab: About -->
-              <TabsContent value="about" class="mt-0 p-4 space-y-5 max-h-[340px] overflow-y-auto">
-                <!-- Description -->
-                <p class="text-sm leading-relaxed text-muted-foreground">
-                  {{
-                    currentToken.description ||
-                    `Fixed-supply launchpad token on ${activeNetwork.name}.`
-                  }}
-                </p>
-
-                <!-- Contract addresses -->
-                <div class="space-y-2">
-                  <p
-                    class="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground"
-                  >
-                    Contract Addresses
-                  </p>
-                  <div class="space-y-1.5">
-                    <div class="flex items-center justify-between gap-3">
-                      <span class="text-xs text-muted-foreground font-mono shrink-0">Token</span>
-                      <div class="flex items-center gap-1.5 min-w-0">
-                        <span class="text-xs font-mono text-foreground truncate">{{
-                          currentToken.address
-                        }}</span>
-                        <button
-                          type="button"
-                          aria-label="Copy token address"
-                          class="text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
-                          @click="copyAddress"
-                        >
-                          <Check v-if="copied" class="w-3 h-3 text-emerald-400" />
-                          <Copy v-else class="w-3 h-3" />
-                        </button>
-                        <a
-                          :href="`${explorerUrl}/address/${currentToken.address}`"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label="View token on explorer"
-                          class="text-muted-foreground hover:text-foreground shrink-0"
-                        >
-                          <ExternalLink class="w-3 h-3" />
-                        </a>
-                      </div>
-                    </div>
-                    <div
-                      v-if="currentToken.poolAddress"
-                      class="flex items-center justify-between gap-3"
-                    >
-                      <span class="text-xs text-muted-foreground font-mono shrink-0">Pool</span>
-                      <div class="flex items-center gap-1.5 min-w-0">
-                        <span class="text-xs font-mono text-foreground truncate">{{
-                          currentToken.poolAddress
-                        }}</span>
-                        <a
-                          :href="`${explorerUrl}/address/${currentToken.poolAddress}`"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label="View pool on explorer"
-                          class="text-muted-foreground hover:text-foreground shrink-0"
-                        >
-                          <ExternalLink class="w-3 h-3" />
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Market data grid -->
-                <div class="grid grid-cols-3 gap-4 pt-3 border-t border-border">
-                  <div>
-                    <p class="text-[10px] uppercase tracking-wider text-muted-foreground">Price</p>
-                    <p class="text-sm font-bold font-mono mt-0.5 text-foreground">
-                      {{ formatPriceUsd(currentMarketData.priceUsd) }}
-                    </p>
-                  </div>
-                  <div>
-                    <p class="text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Mkt Cap
-                    </p>
-                    <p class="text-sm font-bold font-mono mt-0.5 text-foreground">
-                      {{ formatCompactUsd(currentMarketData.marketCapUsd) }}
-                    </p>
-                  </div>
-                  <div>
-                    <p class="text-[10px] uppercase tracking-wider text-muted-foreground">
-                      24h Vol
-                    </p>
-                    <p class="text-sm font-bold font-mono mt-0.5 text-foreground">
-                      {{ formatCompactUsd(currentMarketData.volume24hUsd) }}
-                    </p>
-                  </div>
-                </div>
-
-                <!-- Trading Taxes & Fees Card -->
-                <div class="space-y-2.5 pt-3 border-t border-border font-mono text-xs">
-                  <div class="flex items-center justify-between">
-                    <div>
-                      <p
-                        class="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground"
-                      >
-                        Trading Taxes &amp; Fees
-                      </p>
-                      <p class="text-xs text-foreground mt-0.5">
-                        Buy Tax:
-                        <span class="font-bold"
-                          >{{ (onchainTaxConfig.buyTaxBps / 100).toFixed(1) }}%</span
-                        >
-                        - Sell Tax:
-                        <span class="font-bold"
-                          >{{ (onchainTaxConfig.sellTaxBps / 100).toFixed(1) }}%</span
-                        >
-                        - Protocol Fee:
-                        <span class="font-bold text-emerald-500">1.0%</span>
-                      </p>
-                    </div>
-
-                    <!-- Creator Manage Tax Trigger -->
-                    <Button
-                      v-if="isCreator"
-                      variant="outline"
-                      size="sm"
-                      class="h-7 text-xs font-mono cursor-pointer"
-                      @click="taxModalOpen = true"
-                    >
-                      Update Tax
-                    </Button>
-                  </div>
-                </div>
+              <TabsContent value="about" class="mt-0">
+                <TradeAboutTab
+                  :current-token="currentToken"
+                  :current-market-data="currentMarketData"
+                  :active-network="activeNetwork"
+                  :explorer-url="explorerUrl"
+                  :copied="copied"
+                  :onchain-tax-config="onchainTaxConfig"
+                  :is-creator="isCreator"
+                  @copy-address="copyAddress"
+                  @open-tax-modal="taxModalOpen = true"
+                />
               </TabsContent>
             </Tabs>
           </div>
@@ -664,32 +355,11 @@
       />
 
       <!-- Mobile Sticky Quick Trade Floating Dock (Mobile only: sm:hidden) -->
-      <div
-        class="fixed bottom-0 left-0 right-0 z-40 p-3 bg-black/95 backdrop-blur-lg border-t border-border flex items-center justify-between gap-3 sm:hidden shadow-2xl"
-      >
-        <div class="flex flex-col min-w-0 font-mono">
-          <span class="text-[10px] text-muted-foreground font-sans">Price</span>
-          <span class="text-sm font-bold text-foreground truncate">
-            {{ formatPriceUsd(currentMarketData.priceUsd) }}
-          </span>
-        </div>
-        <div class="flex items-center gap-2">
-          <Button
-            size="sm"
-            class="h-9 px-4 font-sans font-bold text-xs bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl shadow-xs"
-            @click="scrollToSwap('buy')"
-          >
-            Buy ${{ currentToken.symbol }}
-          </Button>
-          <Button
-            size="sm"
-            class="h-9 px-4 font-sans font-bold text-xs bg-rose-500 hover:bg-rose-600 text-white rounded-xl shadow-xs"
-            @click="scrollToSwap('sell')"
-          >
-            Sell
-          </Button>
-        </div>
-      </div>
+      <MobileTradeDock
+        :current-token="currentToken"
+        :current-market-data="currentMarketData"
+        @scroll-to-swap="scrollToSwap"
+      />
     </template>
   </div>
 </template>
@@ -759,7 +429,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { TradingChart } from '@/components/ui/chart';
 import { CashtagText, ShareModal, ThreadModal } from '@/components/feed';
-import { TradesTable, TopTradersTable, HoldersTable, BondingCurveStats, TradeHeader, SwapPanel, CreatorTaxModal, CalloutModal } from './trade';
+import { TradesTable, TopTradersTable, HoldersTable, BondingCurveStats, TradeHeader, SwapPanel, CreatorTaxModal, CalloutModal, TradeAboutTab, TradeCalloutsTab, MobileTradeDock } from './trade';
 import {
   shortenAddress,
   formatTokenNumber,
