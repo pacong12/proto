@@ -35,6 +35,7 @@ import {
   ARC_PROTO_CURVE_ADDRESS,
   bondingCurveAbi,
   holderFeeDistributorAbi,
+  launchpadTokenAbi,
   type NetworkConfig,
   TransactionIntent,
   type TokenCommentEntity,
@@ -701,9 +702,22 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   if (syncMatch && req.method === 'POST') {
     const address = syncMatch[1] as `0x${string}`;
     try {
-      let body: { txHash?: string } = {};
+      let body: {
+        txHash?: string;
+        taxConfig?: {
+          buyTaxBps?: number;
+          sellTaxBps?: number;
+          taxRecipient?: `0x${string}`;
+          revenueSplit?: {
+            creator: number;
+            buyback: number;
+            holders: number;
+            growth: number;
+          };
+        };
+      } = {};
       try {
-        body = await parseJsonBody<{ txHash?: string }>(req, 4096);
+        body = await parseJsonBody<typeof body>(req, 8192);
       } catch {
         // optional body
       }
@@ -712,30 +726,49 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         await indexTradeFromReceipt(body.txHash as `0x${string}`, address);
       }
 
-      // Refresh token taxConfig directly from the on-chain contract state
+      // Refresh token taxConfig and revenueSplit
       const existing = await repository.findByAddress(address);
       if (existing) {
+        let buyTaxBps = existing.taxConfig?.buyTaxBps ?? 0;
+        let sellTaxBps = existing.taxConfig?.sellTaxBps ?? 0;
+        let taxRecipient = existing.taxConfig?.taxRecipient ?? existing.deployer;
+        let revenueSplit = existing.taxConfig?.revenueSplit;
+
+        if (body.taxConfig) {
+          if (typeof body.taxConfig.buyTaxBps === 'number') buyTaxBps = body.taxConfig.buyTaxBps;
+          if (typeof body.taxConfig.sellTaxBps === 'number') sellTaxBps = body.taxConfig.sellTaxBps;
+          if (body.taxConfig.taxRecipient) taxRecipient = body.taxConfig.taxRecipient;
+          if (body.taxConfig.revenueSplit) revenueSplit = body.taxConfig.revenueSplit;
+        }
+
         const chain = chainRegistry.resolveForToken(existing);
         try {
-          const [buyTaxBps, sellTaxBps, taxRecipient] = (await chain.client.readContract({
+          const onchainCfg = (await chain.client.readContract({
             address,
             abi: launchpadTokenAbi,
             functionName: 'taxConfig',
           })) as [number, number, Address];
-          if (
-            existing.taxConfig?.buyTaxBps !== buyTaxBps ||
-            existing.taxConfig?.sellTaxBps !== sellTaxBps ||
-            existing.taxConfig?.taxRecipient !== taxRecipient
-          ) {
-            await repository.save({
-              ...existing,
-              taxConfig: { buyTaxBps, sellTaxBps, taxRecipient },
-            });
-            await cache.del(`token:detail:${address.toLowerCase()}`);
+          if (Number(onchainCfg[0]) > 0 || Number(onchainCfg[1]) > 0) {
+            buyTaxBps = Number(onchainCfg[0]);
+            sellTaxBps = Number(onchainCfg[1]);
+            if (onchainCfg[2] && onchainCfg[2] !== '0x0000000000000000000000000000000000000000') {
+              taxRecipient = onchainCfg[2];
+            }
           }
         } catch {
           // non-fatal
         }
+
+        await repository.save({
+          ...existing,
+          taxConfig: {
+            buyTaxBps,
+            sellTaxBps,
+            taxRecipient,
+            revenueSplit,
+          },
+        });
+        await cache.del(`token:detail:${address.toLowerCase()}`);
       }
       Promise.allSettled([robinhoodPoller.pollEvents(), arcPoller.pollEvents()]);
       return replyEnvelope(ok({ synced: true, address, txHash: body.txHash ?? null }));
