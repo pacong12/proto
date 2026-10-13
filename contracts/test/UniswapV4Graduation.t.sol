@@ -106,4 +106,29 @@ contract UniswapV4GraduationTest is Test {
         assertEq(curve.poolManagerV4(), mockPoolManagerV4, "poolManager recorded");
         assertEq(curve.memeHook(), mockMemeHook, "memeHook recorded");
     }
+
+    function test_MigrationSends100PercentLiquidityToV4_PonsStandard() public {
+        (, address curveAddress) = _launch();
+        BondingCurve curve = BondingCurve(payable(curveAddress));
+
+        vm.roll(block.number + 3);
+        vm.startPrank(buyer);
+        while (!curve.graduated()) {
+            curve.buy{value: 0.5 ether}(0);
+        }
+        vm.stopPrank();
+
+        assertTrue(curve.graduated());
+
+        uint256 curveEthBalance = curveAddress.balance;
+        address payable mockV4LpRecipient = payable(makeAddr("v4LpRecipient"));
+
+        // Factory owner migrates curve to V4
+        vm.prank(factory.owner());
+        factory.migrateCurveToV4(curveAddress, mockV4LpRecipient);
+
+        // Pure Pons Family model: 100% of curve ETH is dedicated to V4 DEX liquidity
+        assertEq(mockV4LpRecipient.balance, curveEthBalance, "100% of ETH liquidity transferred to V4 LP");
+        assertEq(curveAddress.balance, 0, "curve balance emptied");
+    }
 }
