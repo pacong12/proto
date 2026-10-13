@@ -73,6 +73,48 @@ export function autoBalanceSplit(split: RevenueSplit): RevenueSplit {
 }
 
 /**
+ * Dynamically adjusts a revenue split share, rebalancing remaining non-zero shares
+ * so the total stays at exactly 100% and sliders never lock or freeze.
+ */
+export function adjustShareDynamically(
+  split: RevenueSplit,
+  targetKey: keyof RevenueSplit,
+  requested: number,
+): RevenueSplit {
+  const targetVal = Math.max(0, Math.min(100, Math.round(Number(requested) || 0)));
+  const currentVal = Math.max(0, Math.round(Number(split[targetKey]) || 0));
+  const delta = targetVal - currentVal;
+
+  if (delta === 0) return { ...split };
+
+  const next = { ...split, [targetKey]: targetVal };
+  const allKeys: (keyof RevenueSplit)[] = ['creator', 'holders', 'buyback', 'growth'];
+  const otherKeys = allKeys.filter((k) => k !== targetKey);
+
+  if (delta > 0) {
+    let needed = delta;
+    // Sort other keys by current value descending to deduct from the largest first
+    const sortedOthers = [...otherKeys].sort((a, b) => next[b] - next[a]);
+    for (const key of sortedOthers) {
+      if (needed <= 0) break;
+      const take = Math.min(next[key], needed);
+      next[key] -= take;
+      needed -= take;
+    }
+    if (needed > 0) {
+      next[targetKey] -= needed;
+    }
+  } else {
+    // When user decreases targetKey, re-allocate the freed amount to holders or creator
+    const freed = Math.abs(delta);
+    const recipientKey: keyof RevenueSplit = targetKey === 'creator' ? 'holders' : 'creator';
+    next[recipientKey] = Math.min(100, next[recipientKey] + freed);
+  }
+
+  return next;
+}
+
+/**
  * Computes SVG stroke-dasharray and stroke-dashoffset values for a 4-color circular donut chart.
  */
 export function calculateDonutSegments(

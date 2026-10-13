@@ -4,6 +4,7 @@ import {
   calculateMaxShare,
   clampShare,
   autoBalanceSplit,
+  adjustShareDynamically,
   calculateDonutSegments,
 } from '../src/revenue-split';
 
@@ -38,6 +39,26 @@ describe('Math SDK - Revenue Split Allocation', () => {
       const balanced = autoBalanceSplit(split);
       expect(calculateTotalSplit(balanced)).toBe(100);
       expect(balanced.holders).toBe(60); // 40 + 20 = 60
+    });
+  });
+
+  describe('adjustShareDynamically', () => {
+    it('rebalances other shares when increasing one share from 0 to 20', () => {
+      const initial = { creator: 50, buyback: 0, holders: 50, growth: 0 };
+      const adjusted = adjustShareDynamically(initial, 'buyback', 20);
+      expect(adjusted.buyback).toBe(20);
+      expect(calculateTotalSplit(adjusted)).toBe(100);
+      // Creator was reduced from 50 to 30
+      expect(adjusted.creator).toBe(30);
+      expect(adjusted.holders).toBe(50);
+    });
+
+    it('rebalances when decreasing one share', () => {
+      const initial = { creator: 50, buyback: 20, holders: 30, growth: 0 };
+      const adjusted = adjustShareDynamically(initial, 'buyback', 10);
+      expect(adjusted.buyback).toBe(10);
+      expect(calculateTotalSplit(adjusted)).toBe(100);
+      expect(adjusted.creator).toBe(60);
     });
   });
 
