@@ -70,7 +70,8 @@
           <div class="flex items-center gap-2 min-w-0">
             <AlertCircle class="w-4 h-4 shrink-0" />
             <span class="text-[11px] font-sans">
-              Anti-spam: You must hold at least $1.00 worth of ${{ currentToken.symbol }} to comment.
+              Anti-spam: You must hold at least $1.00 worth of ${{ currentToken.symbol }} to
+              comment.
               <span v-if="userHoldingUsd > 0" class="block font-mono text-[10px] text-amber-400">
                 (Current: ${{ userHoldingUsd.toFixed(2) }})
               </span>
@@ -99,9 +100,7 @@
           />
           <div class="flex justify-between text-[10px] text-muted-foreground font-mono">
             <span>{{ callContent.length }}/500</span>
-            <span v-if="account" class="truncate"
-              >Caller: {{ shortenAddress(account, 6, 4) }}</span
-            >
+            <span v-if="account" class="truncate">Caller: {{ shortenAddress(account, 6, 4) }}</span>
           </div>
         </div>
 

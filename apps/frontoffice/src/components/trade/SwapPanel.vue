@@ -69,7 +69,9 @@
               <button
                 type="button"
                 class="flex items-center justify-center w-8 h-8 rounded-xl border border-border bg-black text-muted-foreground hover:text-foreground transition cursor-pointer shrink-0"
-                :class="slippage > slippageWarnThreshold ? 'text-amber-500 border-amber-500/40' : ''"
+                :class="
+                  slippage > slippageWarnThreshold ? 'text-amber-500 border-amber-500/40' : ''
+                "
                 title="Slippage settings"
               >
                 <Settings class="w-3.5 h-3.5" />
@@ -276,9 +278,7 @@
               >
                 {{ currencySymbol.slice(0, 3) }}
               </div>
-              <span
-                class="text-sm sm:text-base font-mono font-semibold text-foreground truncate"
-              >
+              <span class="text-sm sm:text-base font-mono font-semibold text-foreground truncate">
                 {{ estimatedOutputAmount }}
               </span>
             </div>
@@ -371,12 +371,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  AlertCircle,
-  Settings,
-  ArrowUpDown,
-  Loader2,
-} from 'lucide-vue-next';
+import { AlertCircle, Settings, ArrowUpDown, Loader2 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';

@@ -9,6 +9,3 @@ export { default as CalloutModal } from './CalloutModal.vue';
 export { default as TradeAboutTab } from './TradeAboutTab.vue';
 export { default as TradeCalloutsTab } from './TradeCalloutsTab.vue';
 export { default as MobileTradeDock } from './MobileTradeDock.vue';
-
-
-

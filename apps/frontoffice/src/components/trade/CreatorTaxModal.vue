@@ -4,8 +4,8 @@
       <DialogHeader>
         <DialogTitle>Creator Tax Settings</DialogTitle>
         <DialogDescription>
-          Configure trading taxes on ${{ currentToken.symbol }}. Changes require a 24-hour
-          timelock before taking effect (max 10%).
+          Configure trading taxes on ${{ currentToken.symbol }}. Changes require a 24-hour timelock
+          before taking effect (max 10%).
         </DialogDescription>
       </DialogHeader>
 

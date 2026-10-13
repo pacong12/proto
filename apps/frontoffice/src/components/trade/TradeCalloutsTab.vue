@@ -7,9 +7,7 @@
       <div class="flex items-center gap-2 min-w-0">
         <Megaphone class="w-4 h-4 text-primary shrink-0" />
         <div class="min-w-0">
-          <p class="font-bold text-foreground text-xs leading-tight">
-            Post a Community Callout
-          </p>
+          <p class="font-bold text-foreground text-xs leading-tight">Post a Community Callout</p>
           <p class="text-[11px] text-muted-foreground truncate">
             Attach your thesis, exit price target, and verified position.
           </p>
@@ -87,10 +85,7 @@
         </p>
 
         <!-- Optional Attached Image -->
-        <div
-          v-if="cmt.imageUrl"
-          class="rounded-lg overflow-hidden border border-border max-w-xs"
-        >
+        <div v-if="cmt.imageUrl" class="rounded-lg overflow-hidden border border-border max-w-xs">
           <img
             :src="resolveSafeUrl(cmt.imageUrl)"
             alt="Call attachment"
@@ -113,9 +108,7 @@
             />
             <div class="min-w-0">
               <div class="flex items-center gap-1.5 leading-none">
-                <span class="font-bold text-foreground text-xs"
-                  >${{ currentToken.symbol }}</span
-                >
+                <span class="font-bold text-foreground text-xs">${{ currentToken.symbol }}</span>
                 <span class="text-[10px] text-muted-foreground truncate">{{
                   currentToken.name
                 }}</span>
@@ -131,9 +124,7 @@
           </div>
 
           <div class="text-right shrink-0">
-            <span class="text-[9px] text-muted-foreground block uppercase font-bold"
-              >Position</span
-            >
+            <span class="text-[9px] text-muted-foreground block uppercase font-bold">Position</span>
             <span class="text-xs font-bold text-foreground">
               {{ cmt.positionUsd ? `$${cmt.positionUsd.toFixed(2)}` : 'Holder' }}
             </span>
@@ -211,14 +202,7 @@
 
 <script setup lang="ts">
 import { RouterLink } from 'vue-router';
-import {
-  Megaphone,
-  Loader2,
-  MessageCircle,
-  Heart,
-  BarChart2,
-  Share2,
-} from 'lucide-vue-next';
+import { Megaphone, Loader2, MessageCircle, Heart, BarChart2, Share2 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Empty } from '@/components/ui/empty';
@@ -228,11 +212,7 @@ import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { CashtagText } from '@/components/feed';
 import { formatCompactUsd, formatRelativeTime } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
-import type {
-  LaunchedTokenEntity,
-  TokenMarketData,
-  TokenCommentEntity,
-} from '@proto/shared-types';
+import type { LaunchedTokenEntity, TokenMarketData, TokenCommentEntity } from '@proto/shared-types';
 
 interface Props {
   currentToken: LaunchedTokenEntity;

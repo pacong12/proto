@@ -15,7 +15,9 @@ import type { MyLaunchItem, PortfolioPosition, UserActivity } from '@/components
 export interface UseUserProfileOptions {
   targetAccount: Ref<string | null>;
   activeNetwork: Ref<NetworkConfig>;
-  allTokens: Ref<readonly { token: LaunchedTokenEntity; marketData?: TokenMarketData | null }[]> | Readonly<Ref<readonly { token: LaunchedTokenEntity; marketData?: TokenMarketData | null }[]>>;
+  allTokens:
+    | Ref<readonly { token: LaunchedTokenEntity; marketData?: TokenMarketData | null }[]>
+    | Readonly<Ref<readonly { token: LaunchedTokenEntity; marketData?: TokenMarketData | null }[]>>;
   getTokenNetwork: (address: string) => NetworkConfig;
 }
 
@@ -257,7 +259,10 @@ export function useUserProfile({
       finalPositions.sort((a, b) => b.valueUsd - a.valueUsd);
       portfolioPositions.value = finalPositions;
     } catch (e) {
-      console.warn('[useUserProfile] Failed to load positions and activities:', (e as Error).message);
+      console.warn(
+        '[useUserProfile] Failed to load positions and activities:',
+        (e as Error).message,
+      );
     } finally {
       loadingPortfolio.value = false;
     }
