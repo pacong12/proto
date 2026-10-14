@@ -1,16 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
   <rect width="1200" height="630" fill="#09090b"/>
-  <!-- Ambient Emerald & Cyan Glow -->
-  <circle cx="1020" cy="180" r="340" fill="#10b981" opacity="0.20" filter="blur(110px)"/>
-  <circle cx="220" cy="520" r="260" fill="#059669" opacity="0.16" filter="blur(95px)"/>
+  <!-- Ambient Brand Pink & Purple Glow -->
+  <circle cx="1020" cy="180" r="340" fill="#E7239F" opacity="0.22" filter="blur(110px)"/>
+  <circle cx="220" cy="520" r="260" fill="#7928CA" opacity="0.20" filter="blur(95px)"/>
   <circle cx="600" cy="315" r="450" fill="#18181b" opacity="0.65"/>
   
   <g transform="translate(100, 110)">
-    <!-- Brand Mark (Official Proto Logo Emblem in Emerald) -->
+    <!-- Brand Mark (Official Proto Logo Emblem in Brand Pink) -->
     <rect width="96" height="96" rx="22" fill="#141416" stroke="#27272a" stroke-width="2"/>
     <g transform="translate(19, 16) scale(0.038)">
-      <path d="M1532.8 835.77V1503.68C1532.8 1596.45 1457.59 1671.66 1364.82 1671.66H1041.89V1245.83C1041.89 1176.25 985.49 1119.85 915.91 1119.85H550.13L785.01 884.97C816.51 853.47 859.24 835.77 903.79 835.77H1532.8Z" fill="#10b981"/>
-      <path d="M658.89 490.91H974.01C1018.56 490.91 1061.29 473.21 1092.79 441.71L1534.48 0H560.49C515.94 0 473.21 17.7 441.71 49.2L49.2 441.71C17.7 473.21 0 515.93 0 560.48C0 814.15 0 1674.6 0 1673.34L417.59 1257.08C444.06 1230.69 489.23 1249.44 489.23 1286.82V1589.23C489.23 1635.62 526.83 1673.22 573.22 1673.22H896.15C942.54 1673.22 980.14 1635.62 980.14 1589.23V1266.3C980.14 1219.91 942.54 1182.31 896.15 1182.31H532.9C509.71 1182.31 490.91 1163.51 490.91 1140.32V658.89C490.91 566.12 566.12 490.91 658.89 490.91Z" fill="#10b981"/>
+      <path d="M1532.8 835.77V1503.68C1532.8 1596.45 1457.59 1671.66 1364.82 1671.66H1041.89V1245.83C1041.89 1176.25 985.49 1119.85 915.91 1119.85H550.13L785.01 884.97C816.51 853.47 859.24 835.77 903.79 835.77H1532.8Z" fill="#E7239F"/>
+      <path d="M658.89 490.91H974.01C1018.56 490.91 1061.29 473.21 1092.79 441.71L1534.48 0H560.49C515.94 0 473.21 17.7 441.71 49.2L49.2 441.71C17.7 473.21 0 515.93 0 560.48C0 814.15 0 1674.6 0 1673.34L417.59 1257.08C444.06 1230.69 489.23 1249.44 489.23 1286.82V1589.23C489.23 1635.62 526.83 1673.22 573.22 1673.22H896.15C942.54 1673.22 980.14 1635.62 980.14 1589.23V1266.3C980.14 1219.91 942.54 1182.31 896.15 1182.31H532.9C509.71 1182.31 490.91 1163.51 490.91 1140.32V658.89C490.91 566.12 566.12 490.91 658.89 490.91Z" fill="#E7239F"/>
     </g>
     
     <!-- Title & Tagline -->
@@ -21,9 +21,8 @@
     <!-- Topic Badges -->
     <g transform="translate(0, 310)">
       <rect width="210" height="44" rx="22" fill="#18181b" stroke="#27272a" stroke-width="1.5"/>
-      <circle cx="26" cy="22" r="7" fill="#10b981"/>
+      <circle cx="26" cy="22" r="7" fill="#E7239F"/>
       <text x="115" y="27" font-family="Poppins, -apple-system, system-ui, sans-serif" font-size="15" font-weight="600" fill="#e4e4e7" text-anchor="middle">Robinhood Chain L2</text>
-      
       <rect x="226" width="210" height="44" rx="22" fill="#18181b" stroke="#27272a" stroke-width="1.5"/>
       <circle cx="252" cy="22" r="7" fill="#00D2FF"/>
       <text x="341" y="27" font-family="Poppins, -apple-system, system-ui, sans-serif" font-size="15" font-weight="600" fill="#e4e4e7" text-anchor="middle">Arc Network Guides</text>
