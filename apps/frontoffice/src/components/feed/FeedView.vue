@@ -435,6 +435,7 @@ import FeedAlphaTicker from './FeedAlphaTicker.vue';
 import FeedSidebar from './FeedSidebar.vue';
 import FeedCalloutCard from './FeedCalloutCard.vue';
 import { shortenAddress, formatCompactUsd, getChainIcon, getChainShortName } from '@/lib/utils';
+import { useI18n } from '@/lib/i18n';
 import { SUPPORTED_CHAINS } from '@proto/shared-types';
 import { getUserIdentity } from '@/lib/username';
 import { compressAndConvertToWebp } from '@/lib/image-optimizer';
@@ -446,6 +447,7 @@ const emit = defineEmits<{
 }>();
 
 const router = useRouter();
+const { t } = useI18n();
 const { account, openWallet, activeNetwork } = useWallet();
 const {
   tokens: allTokens,

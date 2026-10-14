@@ -4,6 +4,7 @@ import path from 'node:path';
 
 export default defineConfig({
   plugins: [vue()],
+  publicDir: path.resolve(__dirname, './apps/frontoffice/public'),
   test: {
     globals: true,
     environment: 'node',

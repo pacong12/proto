@@ -202,7 +202,7 @@
           class="h-7 px-3 text-xs font-bold rounded-lg cursor-pointer bg-primary text-primary-foreground hover:opacity-90 shadow-2xs"
           @click.stop="$emit('navigateToToken', call.tokenAddress)"
         >
-          Trade
+          {{ t('trade') }}
         </Button>
       </div>
     </div>
@@ -239,11 +239,11 @@
         <DropdownMenuContent align="center" class="w-36 text-xs">
           <DropdownMenuItem class="cursor-pointer gap-2" @click="$emit('toggleRepost', call.id)">
             <Repeat class="w-3.5 h-3.5 text-emerald-500" />
-            <span>{{ call.isRepostedByViewer ? 'Undo Repost' : 'Repost' }}</span>
+            <span>{{ call.isRepostedByViewer ? t('undoRepost') : t('repost') }}</span>
           </DropdownMenuItem>
           <DropdownMenuItem class="cursor-pointer gap-2" @click="$emit('openQuote', call)">
             <Quote class="w-3.5 h-3.5 text-primary" />
-            <span>Quote</span>
+            <span>{{ t('quote') }}</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -299,6 +299,7 @@ import {
   TrendingUp,
   TrendingDown,
 } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { TraderTagBadge } from '@/components/ui/badge';
 import {
@@ -345,6 +346,7 @@ defineEmits<{
 }>();
 
 const router = useRouter();
+const { t } = useI18n();
 
 function formatViews(views: number): string {
   if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M`;

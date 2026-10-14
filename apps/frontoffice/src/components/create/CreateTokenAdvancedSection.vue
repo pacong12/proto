@@ -54,19 +54,21 @@
       <div class="space-y-3.5 pt-4 border-t border-border">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-1.5">
-            <Label class="text-sm font-semibold text-foreground">Trading Taxes (Optional)</Label>
+            <Label class="text-sm font-semibold text-foreground">{{
+              t('tradingTaxesOptional')
+            }}</Label>
             <InfoTooltip
               text="Initial tax configured here is activated immediately upon token launch. Defaults to 0% for pure meme coins. Post-launch changes will require a 24-hour timelock to protect holders."
             />
           </div>
-          <span class="text-xs text-muted-foreground">Default: 0% (Max 10%)</span>
+          <span class="text-xs text-muted-foreground">{{ t('defaultZeroMaxTen') }}</span>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
           <!-- Buy Tax with Slider -->
           <div class="space-y-3.5 p-4 sm:p-5 rounded-2xl border border-border bg-card">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-1">
-                <span class="text-xs font-medium text-foreground">Buy Tax</span>
+                <span class="text-xs font-medium text-foreground">{{ t('buyTax') }}</span>
                 <InfoTooltip
                   text="Fee deducted when users purchase tokens. Recommended: 1% - 5%."
                 />
@@ -102,7 +104,7 @@
           <div class="space-y-3.5 p-4 sm:p-5 rounded-2xl border border-border bg-card">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-1">
-                <span class="text-xs font-medium text-foreground">Sell Tax</span>
+                <span class="text-xs font-medium text-foreground">{{ t('sellTax') }}</span>
                 <InfoTooltip
                   text="Fee deducted when users sell tokens back into the pool. Discourages immediate dumping."
                 />
@@ -141,12 +143,12 @@
         <div class="flex items-center justify-between">
           <div>
             <div class="flex items-center gap-1.5">
-              <Label class="text-sm font-semibold text-foreground">Revenue Split</Label>
+              <Label class="text-sm font-semibold text-foreground">{{ t('revenueSplit') }}</Label>
               <InfoTooltip
                 text="Specifies how collected trading taxes are distributed on-chain. Allocations must sum to exactly 100% to launch."
               />
             </div>
-            <p class="text-xs text-muted-foreground">Fee allocation (must total 100%)</p>
+            <p class="text-xs text-muted-foreground">{{ t('feeAllocationMustTotal') }}</p>
           </div>
           <div class="flex items-center gap-2">
             <Button
@@ -157,7 +159,7 @@
               class="h-6 px-2 text-xs border-amber-500/50 text-amber-500 hover:bg-amber-500/10 cursor-pointer"
               @click="handleAutoBalance"
             >
-              Auto-balance
+              {{ t('autoBalance') }}
             </Button>
             <Badge
               :variant="totalSplit === 100 ? 'default' : 'outline'"
@@ -297,7 +299,7 @@
             <div class="space-y-2">
               <div class="flex items-center justify-between text-xs">
                 <div class="flex items-center gap-1.5 font-semibold text-foreground">
-                  <span>Creator</span>
+                  <span>{{ t('creatorShare') }}</span>
                   <InfoTooltip text="Portion of swap taxes sent directly to the creator wallet." />
                 </div>
                 <span class="font-bold text-foreground"> {{ revenueSplit.creator }}% </span>
@@ -312,7 +314,7 @@
                 @update:model-value="updatePillar('creator', $event ? $event[0] : 0)"
               />
               <div class="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Creator revenue share</span>
+                <span>{{ t('creatorRevenueShare') }}</span>
                 <span class="font-semibold">{{ revenueSplit.creator }}%</span>
               </div>
             </div>
@@ -321,7 +323,7 @@
             <div class="space-y-2">
               <div class="flex items-center justify-between text-xs">
                 <div class="flex items-center gap-1.5 font-semibold text-foreground">
-                  <span>Buyback & Burn</span>
+                  <span>{{ t('buybackAndBurn') }}</span>
                   <InfoTooltip
                     text="Automatically buys tokens off the pool and permanently burns them to reduce supply."
                   />
@@ -338,7 +340,7 @@
                 @update:model-value="updatePillar('buyback', $event ? $event[0] : 0)"
               />
               <div class="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Deflationary buyback share</span>
+                <span>{{ t('deflationaryBuybackShare') }}</span>
                 <span class="font-semibold">{{ revenueSplit.buyback }}%</span>
               </div>
             </div>
@@ -347,7 +349,7 @@
             <div class="space-y-2">
               <div class="flex items-center justify-between text-xs">
                 <div class="flex items-center gap-1.5 font-semibold text-foreground">
-                  <span>Holder Dividends</span>
+                  <span>{{ t('holderDividends') }}</span>
                   <InfoTooltip
                     text="Distributed proportionally in native currency to all token holders as passive yield."
                   />
@@ -364,7 +366,7 @@
                 @update:model-value="updatePillar('holders', $event ? $event[0] : 0)"
               />
               <div class="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Holder dividend share</span>
+                <span>{{ t('holderDividendShare') }}</span>
                 <span class="font-semibold">{{ revenueSplit.holders }}%</span>
               </div>
             </div>
@@ -373,7 +375,7 @@
             <div class="space-y-2">
               <div class="flex items-center justify-between text-xs">
                 <div class="flex items-center gap-1.5 font-semibold text-foreground">
-                  <span>Liquidity Growth</span>
+                  <span>{{ t('liquidityGrowth') }}</span>
                   <InfoTooltip
                     text="Permanently injected into the liquidity pool to deepen market depth and reduce slippage."
                   />
@@ -390,7 +392,7 @@
                 @update:model-value="updatePillar('growth', $event ? $event[0] : 0)"
               />
               <div class="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Liquidity injection share</span>
+                <span>{{ t('liquidityInjectionShare') }}</span>
                 <span class="font-semibold">{{ revenueSplit.growth }}%</span>
               </div>
             </div>
@@ -420,14 +422,13 @@
         class="p-4 rounded-xl border border-border bg-black text-xs text-muted-foreground space-y-1.5"
       >
         <div class="font-semibold text-foreground flex items-center gap-1">
-          <span>Fair Launch Anti-Snipe Safeguard</span>
+          <span>{{ t('antiSnipeSafeguard') }}</span>
           <InfoTooltip
             text="Applies a decaying 99% snipe tax on block 0 that drops smoothly to 0% in 3 seconds to defend against MEV bots."
           />
         </div>
         <p>
-          Connected creator wallet is automatically exempt from the initial 99% snipe tax. External
-          purchases decay smoothly to 0% in 3 seconds.
+          {{ t('antiSnipeSafeguardDesc') }}
         </p>
       </div>
     </div>

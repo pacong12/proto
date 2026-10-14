@@ -2,11 +2,11 @@
   <div class="space-y-0">
     <div v-if="loading && topTraders.length === 0" class="py-16 text-center text-muted-foreground">
       <Loader2 class="w-4 h-4 animate-spin mx-auto mb-2 text-emerald-500" />
-      <span class="text-xs">Loading traders...</span>
+      <span class="text-xs">{{ t('loadingTraders') }}</span>
     </div>
 
     <div v-else-if="topTraders.length === 0" class="py-16 text-center text-muted-foreground">
-      <p class="text-xs">No trading activity recorded yet.</p>
+      <p class="text-xs">{{ t('noTradersData') }}</p>
     </div>
 
     <div v-else class="overflow-x-auto rounded-2xl border border-border bg-black">
@@ -16,9 +16,9 @@
             <TableHead class="py-2.5 px-3 font-semibold w-10 text-muted-foreground bg-black">
               #
             </TableHead>
-            <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">
-              Trader
-            </TableHead>
+            <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">{{
+              t('topTraders')
+            }}</TableHead>
             <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">
               Bought
             </TableHead>
@@ -157,6 +157,7 @@
 import { ref, computed, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { Loader2, Copy, Check } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import {
   Table,
   TableHeader,
@@ -199,6 +200,8 @@ const props = withDefaults(defineProps<Props>(), {
   tokenSymbol: '',
   tokenPriceUsd: 0,
 });
+
+const { t } = useI18n();
 
 const currentPage = ref(1);
 const pageSize = 10;

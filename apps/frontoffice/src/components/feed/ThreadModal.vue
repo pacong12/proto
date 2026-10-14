@@ -11,7 +11,7 @@
       <div class="flex items-center justify-between px-5 py-3.5 border-b border-border bg-card">
         <div class="flex items-center gap-2">
           <MessageCircle class="w-4 h-4 text-primary" />
-          <h2 class="text-sm font-bold text-foreground">Thread & Discussion</h2>
+          <h2 class="text-sm font-bold text-foreground">{{ t('threadAndDiscussion') }}</h2>
         </div>
         <button
           type="button"
@@ -114,7 +114,9 @@
             </div>
 
             <div class="text-right shrink-0">
-              <span class="text-xs text-muted-foreground block uppercase font-bold">Position</span>
+              <span class="text-xs text-muted-foreground block uppercase font-bold">{{
+                t('position')
+              }}</span>
               <span class="text-xs font-bold text-foreground">
                 {{ targetCall.positionUsd ? `$${targetCall.positionUsd.toFixed(1)}` : 'Holding' }}
               </span>
@@ -154,7 +156,7 @@
               title="Views"
             >
               <BarChart2 class="w-3.5 h-3.5 text-muted-foreground/70" />
-              <span>{{ formatViews(targetCall.viewsCount || 0) }} Views</span>
+              <span>{{ formatViews(targetCall.viewsCount || 0) }} {{ t('views') }}</span>
             </div>
 
             <button
@@ -163,27 +165,27 @@
               @click="emit('share', targetCall)"
             >
               <Share2 class="w-3.5 h-3.5" />
-              <span>Share</span>
+              <span>{{ t('share') }}</span>
             </button>
           </div>
         </article>
 
         <!-- Divider with Replies count -->
         <div class="flex items-center gap-2 text-muted-foreground text-xs font-bold px-1">
-          <span>Replies ({{ replies.length }})</span>
+          <span>{{ t('discussionAndReplies') }} ({{ replies.length }})</span>
           <div class="flex-1 h-px bg-border" />
         </div>
 
         <!-- Replies List -->
         <div v-if="loadingThread" class="py-8 text-center text-muted-foreground">
           <Loader2 class="w-5 h-5 animate-spin mx-auto mb-2 text-primary" />
-          <span>Loading discussion...</span>
+          <span>{{ t('loadingDiscussion') }}</span>
         </div>
 
         <Empty
           v-else-if="replies.length === 0"
-          title="No replies yet"
-          description="Start the conversation!"
+          :title="t('noRepliesYet')"
+          :description="t('startConversation')"
           class="py-8 border-none bg-muted/20"
         >
           <template #icon>
@@ -246,7 +248,7 @@
               v-model="replyText"
               rows="2"
               maxlength="500"
-              placeholder="Post your reply... (use $TICKER to reference tokens)"
+              :placeholder="t('postReplyPlaceholder')"
               class="w-full text-xs font-sans p-2.5 rounded-xl border border-border bg-muted/30 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground resize-none"
             />
             <div class="flex items-center justify-between">
@@ -259,7 +261,7 @@
               >
                 <Loader2 v-if="isSubmittingReply" class="w-3 h-3 animate-spin" />
                 <Send v-else class="w-3 h-3" />
-                <span>Reply</span>
+                <span>{{ t('reply') }}</span>
               </Button>
             </div>
           </div>
@@ -272,6 +274,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { MessageCircle, X, Heart, Repeat, Share2, BarChart2, Send, Loader2 } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import { apiFetch } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
@@ -288,6 +291,8 @@ const props = defineProps<{
   account?: string | null;
   tokens?: ReadonlyArray<{ token: LaunchedTokenEntity }>;
 }>();
+
+const { t } = useI18n();
 
 const emit = defineEmits<{
   (e: 'close'): void;

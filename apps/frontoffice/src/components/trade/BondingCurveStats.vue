@@ -5,7 +5,7 @@
       <div class="flex items-center justify-between text-xs">
         <div class="flex items-center gap-2">
           <span class="font-bold text-foreground">
-            {{ currentToken.version === 'v2' ? 'Bonding Curve Progress' : 'Uniswap Liquidity' }}
+            {{ currentToken.version === 'v2' ? t('bondingCurveProgress') : t('uniswapLiquidity') }}
           </span>
           <Badge
             :variant="currentMarketData.isGraduated ? 'default' : 'outline'"
@@ -13,8 +13,8 @@
           >
             {{
               currentMarketData.isGraduated
-                ? 'Graduated'
-                : `${(currentMarketData.graduationProgress * 100).toFixed(1)}% filled`
+                ? t('graduated')
+                : `${(currentMarketData.graduationProgress * 100).toFixed(1)}% ${t('filled')}`
             }}
           </Badge>
         </div>
@@ -33,20 +33,20 @@
           class="flex items-center gap-1.5 text-foreground"
         >
           <Sparkles class="w-3.5 h-3.5 text-primary" />
-          <span>Graduates to Uniswap DEX at 100%</span>
+          <span>{{ t('graduatesAt100') }}</span>
         </span>
         <span
           v-else-if="currentMarketData.isGraduated"
           class="flex items-center gap-1.5 text-emerald-500 font-semibold"
         >
           <Check class="w-3.5 h-3.5" />
-          <span>Liquidity locked in Uniswap DEX</span>
+          <span>{{ t('liquidityLockedDEX') }}</span>
         </span>
         <span>
           {{
             currentMarketData.isGraduated
-              ? 'Graduated'
-              : `Need ${remainingToGraduate} ${currencySymbol}`
+              ? t('graduated')
+              : `${t('needRemaining')} ${remainingToGraduate} ${currencySymbol}`
           }}
         </span>
       </div>
@@ -58,15 +58,17 @@
       class="p-3.5 rounded-xl border border-border bg-black space-y-2 text-xs"
     >
       <div class="flex items-center justify-between font-bold text-foreground">
-        <span class="text-xs uppercase tracking-wider text-muted-foreground">Uniswap Pool</span>
+        <span class="text-xs uppercase tracking-wider text-muted-foreground">{{
+          t('uniswapPool')
+        }}</span>
         <span class="text-emerald-500 flex items-center gap-1 text-xs">
           <Check class="w-3 h-3" />
-          Locked
+          {{ t('locked') }}
         </span>
       </div>
       <div class="space-y-1 text-xs">
         <div class="flex justify-between">
-          <span class="text-muted-foreground">Pair</span>
+          <span class="text-muted-foreground">{{ t('pair') }}</span>
           <div class="flex items-center gap-1">
             <span class="text-foreground">{{
               shortenAddress(currentToken.poolAddress, 6, 4)
@@ -104,19 +106,25 @@
       class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 pt-4 border-t border-border text-xs"
     >
       <div>
-        <span class="text-muted-foreground text-xs uppercase font-semibold block">Market Cap</span>
+        <span class="text-muted-foreground text-xs uppercase font-semibold block">{{
+          t('marketCap')
+        }}</span>
         <span class="font-black text-foreground text-sm block mt-0.5">
           ${{ formatNumberCap(currentMarketData.marketCapUsd ?? 4200) }}
         </span>
       </div>
       <div>
-        <span class="text-muted-foreground text-xs uppercase font-semibold block">Token Price</span>
+        <span class="text-muted-foreground text-xs uppercase font-semibold block">{{
+          t('price')
+        }}</span>
         <span class="font-black text-foreground text-sm block mt-0.5 truncate">
           {{ formatPriceUsd(currentMarketData.priceUsd) }}
         </span>
       </div>
       <div>
-        <span class="text-muted-foreground text-xs uppercase font-semibold block">24h Volume</span>
+        <span class="text-muted-foreground text-xs uppercase font-semibold block">{{
+          t('volume24h')
+        }}</span>
         <span class="font-black text-foreground text-sm block mt-0.5">
           {{
             (currentMarketData.volume24hUsd ?? 0) > 0
@@ -126,21 +134,25 @@
         </span>
       </div>
       <div>
-        <span class="text-muted-foreground text-xs uppercase font-semibold block">Holders</span>
+        <span class="text-muted-foreground text-xs uppercase font-semibold block">{{
+          t('holders')
+        }}</span>
         <span class="font-black text-foreground text-sm block mt-0.5">
           {{ holdersCount.toLocaleString() }}
         </span>
       </div>
       <div>
-        <span class="text-muted-foreground text-xs uppercase font-semibold block"
-          >Top 10 Supply</span
-        >
+        <span class="text-muted-foreground text-xs uppercase font-semibold block">{{
+          t('top10Supply')
+        }}</span>
         <span class="font-black text-foreground text-sm block mt-0.5">
           {{ top10HoldingPercent > 0 ? top10HoldingPercent.toFixed(1) + '%' : '—' }}
         </span>
       </div>
       <div>
-        <span class="text-muted-foreground text-xs uppercase font-semibold block">Dev Holds</span>
+        <span class="text-muted-foreground text-xs uppercase font-semibold block">{{
+          t('devHolds')
+        }}</span>
         <span
           class="font-black text-sm block mt-0.5"
           :class="devHoldingPercent > 10 ? 'text-amber-500' : 'text-foreground'"
@@ -168,7 +180,7 @@
         class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black border border-border shrink-0"
         title="Total burned supply"
       >
-        <span class="text-muted-foreground font-semibold">Burned:</span>
+        <span class="text-muted-foreground font-semibold">{{ t('burned') }}:</span>
         <span class="font-bold text-rose-500">{{ burnedInfo.percent.toFixed(1) }}%</span>
       </div>
 
@@ -181,7 +193,7 @@
         title="View contract source on explorer"
       >
         <Check class="w-3.5 h-3.5" />
-        <span>Verified Contract</span>
+        <span>{{ t('verifiedContract') }}</span>
       </a>
     </div>
   </div>
@@ -190,10 +202,13 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Sparkles, Check, Copy, ExternalLink } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { shortenAddress, formatCompactUsd, formatPriceUsd } from '@/lib/utils';
 import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
+
+const { t } = useI18n();
 
 interface Props {
   currentToken: LaunchedTokenEntity;

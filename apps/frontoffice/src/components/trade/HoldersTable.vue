@@ -2,11 +2,11 @@
   <div class="space-y-0">
     <div v-if="loading && holders.length === 0" class="py-16 text-center text-muted-foreground">
       <Loader2 class="w-4 h-4 animate-spin mx-auto mb-2 text-emerald-500" />
-      <span class="text-xs">Loading holders...</span>
+      <span class="text-xs">{{ t('loadingHolders') }}</span>
     </div>
 
     <div v-else-if="holders.length === 0" class="py-16 text-center text-muted-foreground">
-      <p class="text-xs">No holder data available.</p>
+      <p class="text-xs">{{ t('noHoldersData') }}</p>
     </div>
 
     <div v-else class="overflow-x-auto rounded-2xl border border-border bg-black">
@@ -16,15 +16,16 @@
             <TableHead class="py-2.5 px-3 font-semibold w-10 text-muted-foreground bg-black">
               #
             </TableHead>
-            <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">
-              Holder
-            </TableHead>
+            <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">{{
+              t('holders')
+            }}</TableHead>
             <TableHead class="py-2.5 px-3 font-semibold w-44 text-muted-foreground bg-black">
               Share
             </TableHead>
-            <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">
-              Balance
-            </TableHead>
+            <TableHead
+              class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+              >{{ t('balance') }}</TableHead
+            >
             <TableHead
               class="py-2.5 px-3 font-semibold text-right w-8 text-muted-foreground bg-black"
             ></TableHead>
@@ -126,6 +127,7 @@
 import { ref, computed, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { Loader2, Copy, Check, ExternalLink } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import {
   Table,
   TableHeader,
@@ -158,6 +160,8 @@ const props = withDefaults(defineProps<Props>(), {
   poolAddress: '',
   explorerUrl: '',
 });
+
+const { t } = useI18n();
 
 const currentPage = ref(1);
 const pageSize = 10;

@@ -11,7 +11,7 @@
       <div class="flex items-center justify-between px-5 py-4 border-b border-border">
         <div class="flex items-center gap-2">
           <Share2 class="w-4 h-4 text-primary" />
-          <h2 class="text-sm font-bold text-foreground">Share Callout</h2>
+          <h2 class="text-sm font-bold text-foreground">{{ t('shareCallout') }}</h2>
         </div>
         <button
           type="button"
@@ -92,7 +92,7 @@
                 </svg>
               </div>
               <div>
-                <span class="font-bold text-foreground block">Share on X (Twitter)</span>
+                <span class="font-bold text-foreground block">{{ t('shareOnX') }}</span>
                 <span class="text-xs text-muted-foreground">
                   Post with cashtags, targets, and chart link
                 </span>
@@ -115,7 +115,7 @@
                 <TrendingUp class="w-4 h-4" />
               </div>
               <div>
-                <span class="font-bold text-foreground block">PnL Alpha Card</span>
+                <span class="font-bold text-foreground block">{{ t('pnlAlphaCard') }}</span>
                 <span class="text-xs text-muted-foreground">
                   Visual badge card with caller position & targets
                 </span>
@@ -145,7 +145,7 @@
             >
               <div class="flex items-center gap-1.5 font-bold tracking-wider text-xs text-primary">
                 <Sparkles class="w-3.5 h-3.5" />
-                <span>PROTO ALPHA SIGNAL</span>
+                <span>{{ t('protoAlphaSignal') }}</span>
               </div>
               <Badge variant="outline" class="text-xs border-primary/30 text-primary">
                 Verified Position
@@ -174,9 +174,9 @@
               </div>
 
               <div class="text-right">
-                <span class="text-xs text-muted-foreground block uppercase font-bold"
-                  >Target MC</span
-                >
+                <span class="text-xs text-muted-foreground block uppercase font-bold">{{
+                  t('targetMc')
+                }}</span>
                 <span class="text-xs font-black text-primary">
                   {{ call.targetMcap || 'Moon' }}
                 </span>
@@ -188,13 +188,17 @@
               class="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-muted/50 border border-border relative z-10"
             >
               <div>
-                <span class="text-xs text-muted-foreground block uppercase">Caller Position</span>
+                <span class="text-xs text-muted-foreground block uppercase">{{
+                  t('callerPosition')
+                }}</span>
                 <span class="text-xs font-bold text-foreground">
                   {{ call.positionUsd ? `$${call.positionUsd.toFixed(1)}` : 'Verified Holder' }}
                 </span>
               </div>
               <div class="text-right">
-                <span class="text-xs text-muted-foreground block uppercase">Current Profit</span>
+                <span class="text-xs text-muted-foreground block uppercase">{{
+                  t('currentProfit')
+                }}</span>
                 <span
                   class="text-xs font-bold"
                   :class="(call.profitUsd ?? 0) >= 0 ? 'text-primary' : 'text-rose-500'"
@@ -226,7 +230,7 @@
                   d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
                 />
               </svg>
-              <span>Tweet PnL</span>
+              <span>{{ t('tweetPnl') }}</span>
             </Button>
             <Button
               size="sm"
@@ -235,7 +239,7 @@
               @click="downloadPnlCard"
             >
               <Download class="w-3.5 h-3.5" />
-              <span>Save Card</span>
+              <span>{{ t('saveCard') }}</span>
             </Button>
           </div>
         </div>
@@ -263,8 +267,11 @@ import { Badge } from '@/components/ui/badge';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { Jazzicon } from '@/components/ui/avatar';
 import { shortenAddress, formatRelativeTime } from '@/lib/utils';
+import { useI18n } from '@/lib/i18n';
 import { toast } from '@/components/ui/sonner';
 import type { FeedCalloutItem } from '@proto/shared-types';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   isOpen: boolean;

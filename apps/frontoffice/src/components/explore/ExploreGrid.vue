@@ -84,13 +84,17 @@
           <!-- Price & MCap -->
           <div class="grid grid-cols-2 gap-2 pt-2 border-t border-border text-sm">
             <div>
-              <span class="text-xs text-muted-foreground block font-semibold">MARKET CAP</span>
+              <span class="text-xs text-muted-foreground block font-semibold">{{
+                t('marketCapCol').toUpperCase()
+              }}</span>
               <span class="font-bold text-sm text-foreground">
                 ${{ formatNumberCap(item.marketData?.marketCapUsd ?? 4200) }}
               </span>
             </div>
             <div class="text-right">
-              <span class="text-xs text-muted-foreground block font-semibold">VOLUME 24H</span>
+              <span class="text-xs text-muted-foreground block font-semibold">{{
+                t('volume24hCol').toUpperCase()
+              }}</span>
               <span class="font-semibold text-muted-foreground">
                 {{
                   (item.marketData?.volume24hUsd ?? 0) > 0
@@ -112,7 +116,7 @@
               variant="default"
               class="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 py-0 px-1.5 h-4 font-normal"
             >
-              V4 Graduated
+              {{ t('graduated') }}
             </Badge>
             <Badge
               v-if="(item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0"
@@ -133,7 +137,7 @@
           <!-- Bonding Progress -->
           <div class="space-y-1 pt-1">
             <div class="flex justify-between text-sm">
-              <span class="text-muted-foreground">Bonding Curve</span>
+              <span class="text-muted-foreground">{{ t('bondingCurveProgress') }}</span>
               <span class="font-bold text-emerald-500">
                 {{ ((item.marketData?.graduationProgress ?? 0) * 100).toFixed(1) }}%
               </span>
@@ -162,6 +166,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import { Star } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -187,6 +192,8 @@ interface Props {
 }
 
 defineProps<Props>();
+
+const { t } = useI18n();
 
 defineEmits<{
   (e: 'selectToken', address: string): void;

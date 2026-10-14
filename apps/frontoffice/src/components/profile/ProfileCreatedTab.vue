@@ -6,7 +6,7 @@
     </div>
     <Empty
       v-else-if="myLaunches.length === 0"
-      title="No created tokens"
+      :title="t('createdTokens')"
       description="No tokens have been launched from this address yet."
       class="py-14"
     >
@@ -15,7 +15,7 @@
       </template>
       <template v-if="isOwnProfile" #action>
         <Button as-child size="sm" class="rounded-xl px-4 font-bold cursor-pointer">
-          <RouterLink to="/launchpad/create">Create a Coin</RouterLink>
+          <RouterLink to="/launchpad/create">{{ t('createToken') }}</RouterLink>
         </Button>
       </template>
     </Empty>
@@ -163,9 +163,11 @@ import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { getChainIcon } from '@/lib/utils';
+import { useI18n } from '@/lib/i18n';
 import { useTokenStore } from '@/composables/useTokenStore';
 import type { MyLaunchItem } from './types';
 
+const { t } = useI18n();
 const { getTokenNetwork } = useTokenStore();
 
 defineProps<{

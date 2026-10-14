@@ -11,7 +11,7 @@
       <div class="flex items-center justify-between px-5 py-3.5 border-b border-border">
         <div class="flex items-center gap-2">
           <Quote class="w-4 h-4 text-primary" />
-          <h2 class="text-sm font-bold text-foreground">Quote Callout</h2>
+          <h2 class="text-sm font-bold text-foreground">{{ t('quote') }}</h2>
         </div>
         <button
           type="button"
@@ -86,7 +86,7 @@
           class="h-8 text-xs font-bold cursor-pointer"
           @click="emit('close')"
         >
-          Cancel
+          {{ t('cancel') }}
         </Button>
         <Button
           size="sm"
@@ -96,7 +96,7 @@
         >
           <Loader2 v-if="isSubmitting" class="w-3.5 h-3.5 animate-spin" />
           <Quote v-else class="w-3.5 h-3.5" />
-          <span>Post Quote</span>
+          <span>{{ t('quote') }}</span>
         </Button>
       </div>
     </div>
@@ -106,6 +106,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { Quote, X, AlertCircle, Loader2 } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import { apiFetch } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Jazzicon } from '@/components/ui/avatar';
@@ -118,6 +119,8 @@ const props = defineProps<{
   targetCall: FeedCalloutItem | null;
   account?: string | null;
 }>();
+
+const { t } = useI18n();
 
 const emit = defineEmits<{
   (e: 'close'): void;

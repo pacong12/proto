@@ -1,48 +1,48 @@
 <template>
-  <div class="rounded-2xl border border-border bg-black overflow-hidden shadow-xs">
-    <Table class="text-xs min-w-[920px] bg-black">
+  <div class="rounded-2xl border border-border bg-card overflow-hidden shadow-xs">
+    <Table class="text-sm min-w-[920px]">
       <TableHeader>
         <TableRow
-          class="border-b border-border text-muted-foreground uppercase tracking-wider text-xs bg-black hover:bg-black"
+          class="border-b border-border text-muted-foreground uppercase tracking-wider text-xs"
         >
           <TableHead
-            class="py-3 px-4 font-semibold sticky left-0 z-20 bg-black text-muted-foreground"
+            class="py-3 px-4 font-semibold sticky left-0 z-20 bg-card text-muted-foreground"
           >
-            COIN
+            {{ t('tokenCol').toUpperCase() }}
           </TableHead>
-          <TableHead class="py-3 px-4 font-semibold text-center w-24 text-muted-foreground bg-black"
+          <TableHead class="py-3 px-4 font-semibold text-center w-24 text-muted-foreground"
             >GRAPH</TableHead
           >
-          <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black"
-            >MARKET CAP</TableHead
-          >
-          <TableHead class="py-3 px-4 font-semibold text-center w-36 text-muted-foreground bg-black"
-            >BONDING</TableHead
-          >
-          <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black"
-            >AGE</TableHead
-          >
-          <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black"
-            >VOLUME 24H</TableHead
-          >
-          <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black"
-            >24H</TableHead
-          >
-          <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black"
-            >ACTION</TableHead
-          >
+          <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground">{{
+            t('marketCapCol').toUpperCase()
+          }}</TableHead>
+          <TableHead class="py-3 px-4 font-semibold text-center w-36 text-muted-foreground">{{
+            t('progress').toUpperCase()
+          }}</TableHead>
+          <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground">{{
+            t('timeCol').toUpperCase()
+          }}</TableHead>
+          <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground">{{
+            t('volume24hCol').toUpperCase()
+          }}</TableHead>
+          <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground">{{
+            t('change24hCol').toUpperCase()
+          }}</TableHead>
+          <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground">{{
+            t('actionCol').toUpperCase()
+          }}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         <TableRow
           v-for="item in paginatedTokens"
           :key="item.token.address"
-          class="hover:bg-zinc-900/40 transition-colors cursor-pointer group bg-black"
+          class="hover:bg-muted/50 transition-colors cursor-pointer group"
           @click="$emit('selectToken', item.token.address)"
         >
           <!-- 1. COIN (Pin + Logo + Name + Symbol + Creator + Copy Contract) -->
           <TableCell
-            class="py-3.5 px-4 sticky left-0 z-10 bg-black group-hover:bg-zinc-900/40 transition-colors"
+            class="py-3.5 px-4 sticky left-0 z-10 bg-card group-hover:bg-muted/50 transition-colors"
           >
             <div class="flex items-center gap-2.5">
               <!-- Pons-style Pin / Star Button -->
@@ -104,7 +104,7 @@
                   </button>
                   <button
                     type="button"
-                    class="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 bg-black border border-border px-1.5 py-0.5 rounded transition cursor-pointer"
+                    class="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 bg-muted/40 hover:bg-muted border border-border px-1.5 py-0.5 rounded transition cursor-pointer"
                     title="Copy Contract Address"
                     @click.stop="copyAddress(item.token.address)"
                   >
@@ -165,7 +165,7 @@
             <div class="space-y-1.5 max-w-[130px] mx-auto text-center">
               <div class="flex items-center justify-between text-xs">
                 <span class="text-muted-foreground">
-                  {{ item.marketData?.isGraduated ? 'Graduated' : 'Curve' }}
+                  {{ item.marketData?.isGraduated ? t('graduated') : t('onCurve') }}
                 </span>
                 <span class="font-bold text-emerald-500">
                   {{ ((item.marketData?.graduationProgress ?? 0) * 100).toFixed(0) }}%
@@ -211,7 +211,7 @@
               class="h-8 px-3 text-xs font-bold rounded-xl border-border hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all cursor-pointer inline-flex items-center gap-1"
               @click.stop="$emit('selectToken', item.token.address)"
             >
-              <span>Trade</span>
+              <span>{{ t('trade') }}</span>
               <ArrowRight class="w-3.5 h-3.5" />
             </Button>
           </TableCell>
@@ -222,7 +222,7 @@
     <!-- Pagination in Table Footer -->
     <div
       v-if="totalItems > pageSize"
-      class="flex justify-center p-4 border-t border-border bg-black"
+      class="flex justify-center p-4 border-t border-border bg-card"
     >
       <Pagination
         :current-page="currentPage"
@@ -238,6 +238,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { Star, Copy, Check, ArrowRight } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import {
   Table,
   TableHeader,
@@ -273,6 +274,8 @@ interface Props {
 withDefaults(defineProps<Props>(), {
   currencySymbol: 'ETH',
 });
+
+const { t } = useI18n();
 
 defineEmits<{
   (e: 'selectToken', address: string): void;

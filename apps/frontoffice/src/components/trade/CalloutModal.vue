@@ -48,9 +48,9 @@
           </div>
 
           <div class="text-right shrink-0">
-            <span class="text-xs text-muted-foreground block uppercase font-bold"
-              >Your Position</span
-            >
+            <span class="text-xs text-muted-foreground block uppercase font-bold">{{
+              t('yourPosition')
+            }}</span>
             <span
               class="text-xs font-bold"
               :class="userHoldingTokensCount > 0 ? 'text-emerald-500' : 'text-amber-500'"
@@ -87,7 +87,7 @@
 
         <!-- Comment Message / Thesis -->
         <div class="space-y-1.5">
-          <Label class="text-xs font-bold text-foreground">Comment / Meme Alpha</Label>
+          <Label class="text-xs font-bold text-foreground">{{ t('commentAlpha') }}</Label>
           <textarea
             :value="callContent"
             rows="3"
@@ -104,7 +104,7 @@
 
         <!-- Optional Image URL -->
         <div class="space-y-1.5">
-          <Label class="text-xs font-bold text-foreground">Image / Chart URL (Optional)</Label>
+          <Label class="text-xs font-bold text-foreground">{{ t('imageUrlOptional') }}</Label>
           <Input
             :model-value="callImageUrl"
             type="text"
@@ -141,7 +141,9 @@
       </div>
 
       <DialogFooter class="flex sm:justify-between items-center gap-2 pt-2">
-        <Button variant="outline" size="sm" @click="$emit('update:open', false)">Cancel</Button>
+        <Button variant="outline" size="sm" @click="$emit('update:open', false)">{{
+          t('cancel')
+        }}</Button>
         <Button
           :disabled="isPostingCall || !callContent.trim() || userTokenBalance <= 0n"
           size="sm"
@@ -150,7 +152,7 @@
         >
           <Loader2 v-if="isPostingCall" class="w-3.5 h-3.5 animate-spin" />
           <Megaphone v-else class="w-3.5 h-3.5" />
-          <span>Post Call</span>
+          <span>{{ t('postCall') }}</span>
         </Button>
       </DialogFooter>
     </DialogContent>
@@ -159,6 +161,7 @@
 
 <script setup lang="ts">
 import { Megaphone, AlertCircle, Loader2 } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import {
   Dialog,
   DialogContent,
@@ -173,6 +176,8 @@ import { Label } from '@/components/ui/label';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { formatCompactUsd, formatPriceUsd, shortenAddress } from '@/lib/utils';
 import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
+
+const { t } = useI18n();
 
 interface Props {
   open: boolean;

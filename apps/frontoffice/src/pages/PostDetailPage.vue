@@ -17,7 +17,7 @@
           <h1 class="text-base font-bold tracking-tight text-foreground leading-none">
             Alpha Post
           </h1>
-          <span class="text-xs text-muted-foreground"> Community Signal Detail </span>
+          <span class="text-xs text-muted-foreground"> {{ t('communitySignalDetail') }} </span>
         </div>
       </div>
 
@@ -28,21 +28,21 @@
       >
         <BarChart2 class="w-3.5 h-3.5 text-primary" />
         <span class="font-bold text-foreground">{{ formatViews(post.viewsCount || 0) }}</span>
-        <span>Views</span>
+        <span>{{ t('views') }}</span>
       </div>
     </header>
 
     <!-- Loading State -->
     <div v-if="loading" class="py-24 text-center text-muted-foreground">
       <Loader2 class="w-7 h-7 animate-spin mx-auto mb-3 text-primary" />
-      <p class="text-xs">Loading post details...</p>
+      <p class="text-xs">{{ t('loadingPostDetails') }}</p>
     </div>
 
     <!-- Error / Not Found State -->
     <Empty
       v-else-if="!post"
-      title="Post Not Found"
-      description="This post may have been removed or the link is invalid."
+      :title="t('postNotFound')"
+      :description="t('postNotFoundDesc')"
       class="py-16"
     >
       <template #icon>
@@ -50,7 +50,7 @@
       </template>
       <template #action>
         <Button size="sm" class="rounded-xl px-5 cursor-pointer" @click="router.push('/feed')">
-          Back to Feed
+          {{ t('backToFeed') }}
         </Button>
       </template>
     </Empty>
@@ -171,7 +171,9 @@
 
           <div class="flex items-center gap-3 shrink-0 text-right">
             <div>
-              <span class="text-xs text-muted-foreground block uppercase font-bold">Position</span>
+              <span class="text-xs text-muted-foreground block uppercase font-bold">{{
+                t('position')
+              }}</span>
               <span class="text-xs font-bold text-foreground">
                 {{ post.positionUsd ? `$${post.positionUsd.toFixed(1)}` : 'Holding' }}
               </span>
@@ -181,7 +183,7 @@
               class="h-7 px-3.5 text-xs font-bold rounded-lg cursor-pointer bg-primary text-primary-foreground"
               @click.stop="router.push(`/launchpad/${post.tokenAddress}`)"
             >
-              Trade
+              {{ t('trade') }}
             </Button>
           </div>
         </div>
@@ -193,7 +195,7 @@
           <span>{{ formatAbsoluteTime(post.createdAt) }}</span>
           <span>&middot;</span>
           <span class="font-bold text-foreground">{{ formatViews(post.viewsCount || 0) }}</span>
-          <span>Views</span>
+          <span>{{ t('views') }}</span>
         </div>
 
         <!-- Metrics Ribbon (Reposts, Quotes, Likes) -->
@@ -248,11 +250,11 @@
             <DropdownMenuContent align="center" class="w-36 text-xs">
               <DropdownMenuItem class="cursor-pointer gap-2" @click="handleRepostPost">
                 <Repeat class="w-3.5 h-3.5 text-emerald-500" />
-                <span>{{ post.isRepostedByViewer ? 'Undo Repost' : 'Repost' }}</span>
+                <span>{{ post.isRepostedByViewer ? t('undoRepost') : t('repost') }}</span>
               </DropdownMenuItem>
               <DropdownMenuItem class="cursor-pointer gap-2" @click="isQuoteModalOpen = true">
                 <Quote class="w-3.5 h-3.5 text-primary" />
-                <span>Quote</span>
+                <span>{{ t('quote') }}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -300,7 +302,7 @@
             v-model="replyContent"
             rows="2"
             maxlength="500"
-            placeholder="Post your reply... (use $TICKER to link coins)"
+            :placeholder="t('postReplyPlaceholder')"
             class="w-full text-xs sm:text-sm p-3 rounded-xl border border-border/80 bg-muted/20 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none leading-relaxed"
           />
 
@@ -313,7 +315,7 @@
               @click="submitReply"
             >
               <Loader2 v-if="isSubmittingReply" class="w-3.5 h-3.5 animate-spin mr-1" />
-              <span>Reply</span>
+              <span>{{ t('reply') }}</span>
             </Button>
           </div>
         </div>
@@ -322,13 +324,13 @@
       <!-- 3. Thread Replies Stream (Cards) -->
       <div class="rounded-2xl border border-border/80 bg-card/70 p-4 space-y-3 shadow-2xs">
         <h3 class="font-bold text-xs text-foreground px-1 flex items-center justify-between">
-          <span>Discussion & Replies ({{ replies.length }})</span>
+          <span>{{ t('discussionAndReplies') }} ({{ replies.length }})</span>
         </h3>
 
         <Empty
           v-if="replies.length === 0"
-          title="No replies yet"
-          description="Start the conversation by posting a reply above!"
+          :title="t('noRepliesYet')"
+          :description="t('startConversation')"
           class="py-10 border-none bg-muted/20"
         >
           <template #icon>
@@ -406,6 +408,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from '@/lib/i18n';
 import { apiFetch } from '@/lib/api-client';
 import {
   ArrowLeft,
@@ -446,6 +449,7 @@ import type { FeedCalloutItem } from '@proto/shared-types';
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 const { account, openWallet } = useWallet();
 const { tokens: allTokens, fetchTokens, getTokenNetwork } = useTokenStore();
 const { toggleLike, toggleRepost, recordView } = useFeed();

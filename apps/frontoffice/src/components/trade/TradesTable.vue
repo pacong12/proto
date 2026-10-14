@@ -22,7 +22,7 @@
         </button>
       </div>
       <div class="text-xs font-bold">
-        <span class="text-muted-foreground">Net: </span>
+        <span class="text-muted-foreground">{{ t('netCol') }}: </span>
         <span :class="orderFlowStats.netVolumeUsd >= 0 ? 'text-emerald-500' : 'text-rose-500'">
           {{ orderFlowStats.netVolumeUsd >= 0 ? '+' : '' }}${{
             Math.abs(orderFlowStats.netVolumeUsd).toLocaleString(undefined, {
@@ -36,17 +36,17 @@
     <!-- Loading State -->
     <div v-if="loading && trades.length === 0" class="py-16 text-center text-muted-foreground">
       <Loader2 class="w-4 h-4 animate-spin mx-auto mb-2 text-emerald-500" />
-      <span class="text-xs">Loading trades...</span>
+      <span class="text-xs">{{ t('loadingTrades') }}</span>
     </div>
 
     <!-- Empty State -->
     <div v-else-if="trades.length === 0" class="py-16 text-center text-muted-foreground">
-      <p class="text-xs">No trades recorded yet.</p>
+      <p class="text-xs">{{ t('noTradesRecorded') }}</p>
     </div>
 
     <!-- Filter Empty State -->
     <div v-else-if="filteredTrades.length === 0" class="py-16 text-center text-muted-foreground">
-      <p class="text-xs">No trades match this filter.</p>
+      <p class="text-xs">{{ t('noTradesMatchFilter') }}</p>
     </div>
 
     <!-- Table of Trades -->
@@ -54,12 +54,12 @@
       <Table class="w-full text-left text-xs min-w-[620px] bg-black">
         <TableHeader>
           <TableRow class="border-b border-border text-muted-foreground bg-black hover:bg-black">
-            <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black"
-              >Time</TableHead
-            >
-            <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black"
-              >Type</TableHead
-            >
+            <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">{{
+              t('timeCol')
+            }}</TableHead>
+            <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">{{
+              t('typeCol')
+            }}</TableHead>
             <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">
               Total (USD)
             </TableHead>
@@ -205,6 +205,7 @@
 import { ref, computed, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { Loader2, Copy, Check, ExternalLink } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import {
   Table,
   TableHeader,
@@ -219,6 +220,8 @@ import { TraderTagBadge } from '@/components/ui/badge';
 import { formatRelativeTime, formatTokenNumber, formatSubscriptPrice } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import type { TradeEventEntity } from '@proto/shared-types';
+
+const { t } = useI18n();
 
 export interface TradeItem {
   id?: string;

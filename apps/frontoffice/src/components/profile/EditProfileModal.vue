@@ -6,7 +6,7 @@
       <DialogHeader>
         <div class="flex items-center gap-2 text-foreground mb-1">
           <Edit3 class="w-5 h-5 text-primary" />
-          <DialogTitle>Edit Creator Profile</DialogTitle>
+          <DialogTitle>{{ t('editCreatorProfile') }}</DialogTitle>
         </div>
         <DialogDescription class="text-xs text-muted-foreground">
           Customize your public creator identity, avatar photo, cover banner, and social handles.
@@ -22,8 +22,8 @@
         <!-- 1. Header Cover Banner Upload Zone -->
         <div class="space-y-1.5">
           <div class="flex items-center justify-between">
-            <Label class="text-xs font-medium">Cover Banner</Label>
-            <span class="text-xs text-muted-foreground">Recommended 1200x400</span>
+            <Label class="text-xs font-medium">{{ t('coverBanner') }}</Label>
+            <span class="text-xs text-muted-foreground">{{ t('recommendedBannerSize') }}</span>
           </div>
 
           <div
@@ -100,7 +100,7 @@
 
         <!-- 2. Profile Avatar Upload Zone -->
         <div class="space-y-1.5">
-          <Label class="text-xs font-medium">Profile Photo</Label>
+          <Label class="text-xs font-medium">{{ t('profilePhoto') }}</Label>
           <div
             @dragover.prevent="dragOverAvatar = true"
             @dragleave.prevent="dragOverAvatar = false"
@@ -195,7 +195,7 @@
 
         <!-- 3. Identity Text Inputs -->
         <div class="space-y-1.5">
-          <Label for="display-name" class="text-xs font-medium">Display Name</Label>
+          <Label for="display-name" class="text-xs font-medium">{{ t('displayName') }}</Label>
           <Input
             id="display-name"
             v-model="form.displayName"
@@ -206,7 +206,7 @@
         </div>
 
         <div class="space-y-1.5">
-          <Label for="bio" class="text-xs font-medium">Bio / Description</Label>
+          <Label for="bio" class="text-xs font-medium">{{ t('bioDescription') }}</Label>
           <Textarea
             id="bio"
             v-model="form.bio"
@@ -257,7 +257,7 @@
             class="cursor-pointer rounded-xl"
             @click="emit('update:open', false)"
           >
-            Cancel
+            {{ t('cancel') }}
           </Button>
           <Button
             type="submit"
@@ -270,7 +270,7 @@
               v-if="isUploadingAvatar || isUploadingBanner"
               class="w-3.5 h-3.5 mr-1.5 animate-spin"
             />
-            <span>Save Profile</span>
+            <span>{{ t('saveProfile') }}</span>
           </Button>
         </DialogFooter>
       </form>
@@ -281,6 +281,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { Edit3, Loader2, Trash2, AlertCircle, Image as ImageIcon } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import {
   Dialog,
   DialogContent,
@@ -303,6 +304,8 @@ const props = defineProps<{
   profileAddress: string | null;
   initialData: ProfileStorageData;
 }>();
+
+const { t } = useI18n();
 
 const emit = defineEmits<{
   (e: 'update:open', val: boolean): void;

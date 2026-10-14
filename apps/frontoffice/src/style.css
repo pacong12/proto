@@ -86,7 +86,10 @@ html {
   }
 }
 
-/* Universal Typography: Matched to apps/docs (VitePress) */
+/* Universal Typography: Enforces Poppins across all elements, portals, modals, and dropdowns */
+*,
+::before,
+::after,
 html,
 body,
 button,
@@ -96,6 +99,9 @@ textarea,
 optgroup {
   font-family: var(--vp-font-family-base) !important;
   font-optical-sizing: auto;
+}
+
+body {
   font-weight: 500;
 }
 /* Headings: Space & weight hierarchy matched to apps/docs */
@@ -476,6 +482,24 @@ html:not(.dark) header {
   border-bottom-color: var(--border) !important;
 }
 
+/* Light Mode Hover States (Prevents black hover backgrounds in light mode) */
+html:not(.dark) [class*='hover:bg-zinc']:hover,
+html:not(.dark) [class*='hover:bg-black']:hover {
+  background-color: var(--muted) !important;
+  color: var(--foreground) !important;
+}
+
+html:not(.dark) [class*='group']:hover [class*='group-hover:bg-zinc'] {
+  background-color: var(--muted) !important;
+}
+
+/* Dark Mode Hover States */
+html.dark [class*='hover:bg-zinc-950']:hover,
+html.dark [class*='hover:bg-zinc-900']:hover,
+html.dark [class*='hover:bg-zinc-800']:hover {
+  background-color: #18181b !important;
+  color: #ffffff !important;
+}
 /* Buttons & Feedback */
 button,
 [role='button'],

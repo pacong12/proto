@@ -200,7 +200,7 @@
             @click="emit('share', call)"
           >
             <Share2 class="w-3.5 h-3.5" />
-            <span class="hidden sm:inline">Share</span>
+            <span class="hidden sm:inline">{{ t('share') }}</span>
           </button>
         </div>
       </article>
@@ -235,7 +235,10 @@ import { CashtagText } from '@/components/feed';
 import { isWhaleCaller } from '@/composables/useFeed';
 import { useTokenStore, type TokenListItem } from '@/composables/useTokenStore';
 import { shortenAddress, formatRelativeTime, formatCompactUsd, getChainIcon } from '@/lib/utils';
+import { useI18n } from '@/lib/i18n';
 import type { FeedCalloutItem } from '@proto/shared-types';
+
+const { t } = useI18n();
 
 defineProps<{
   posts: FeedCalloutItem[];

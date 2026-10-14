@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Clock, CheckCircle, XCircle, Loader2 } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import { Button } from '../ui/button';
 import type { PendingTaxConfig } from '../../composables/useTaxConfig';
+
+const { t } = useI18n();
 
 // ---------------------------------------------------------------------------
 // Props & emits
@@ -85,11 +88,11 @@ const timelockLabel = computed(() => {
 
         <div class="grid grid-cols-2 gap-2 text-xs">
           <div>
-            <span class="text-muted-foreground">Buy tax</span>
+            <span class="text-muted-foreground">{{ t('buyTax') }}</span>
             <p class="font-bold text-foreground">{{ buyTaxPct }}%</p>
           </div>
           <div>
-            <span class="text-muted-foreground">Sell tax</span>
+            <span class="text-muted-foreground">{{ t('sellTax') }}</span>
             <p class="font-bold text-foreground">{{ sellTaxPct }}%</p>
           </div>
           <div class="col-span-2">
@@ -119,7 +122,7 @@ const timelockLabel = computed(() => {
           >
             <Loader2 v-if="actionLoading" class="w-3.5 h-3.5 animate-spin" />
             <XCircle v-else class="w-3.5 h-3.5" />
-            Cancel proposal
+            {{ t('cancel') }}
           </Button>
         </div>
 

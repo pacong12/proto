@@ -93,6 +93,7 @@
 
 <script setup lang="ts">
 import { Search, Flame } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import { Empty } from '@/components/ui/empty';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import {
@@ -114,6 +115,8 @@ interface Props {
 }
 
 defineProps<Props>();
+
+const { t } = useI18n();
 
 defineEmits<{
   (e: 'update:searchQuery', val: string): void;

@@ -3,8 +3,8 @@
     <!-- Empty state -->
     <Empty
       v-if="userActivities.length === 0"
-      title="No recent trades"
-      description="Trades made with this wallet will appear here automatically with on-chain transaction hashes."
+      :title="t('noRecentTrades')"
+      :description="t('noTradesActivityDesc')"
       class="py-14"
     >
       <template #icon>
@@ -17,11 +17,10 @@
           variant="default"
           class="h-8 px-4 font-bold text-xs cursor-pointer rounded-xl mt-2"
         >
-          <RouterLink to="/launchpad"> Explore Tokens & Trade </RouterLink>
+          <RouterLink to="/launchpad"> {{ t('exploreAndTrade') }} </RouterLink>
         </Button>
       </template>
     </Empty>
-
     <!-- Activity Table -->
     <div v-else class="rounded-2xl border border-border bg-black overflow-hidden shadow-xs">
       <Table class="text-xs bg-black">
@@ -29,27 +28,27 @@
           <TableRow
             class="border-b border-border/80 bg-black text-muted-foreground text-xs hover:bg-black"
           >
-            <TableHead class="py-3 px-4 font-semibold uppercase text-muted-foreground bg-black"
-              >Action</TableHead
-            >
-            <TableHead class="py-3 px-4 font-semibold uppercase text-muted-foreground bg-black"
-              >Token</TableHead
+            <TableHead class="py-3 px-4 font-semibold uppercase text-muted-foreground bg-black">{{
+              t('action')
+            }}</TableHead>
+            <TableHead class="py-3 px-4 font-semibold uppercase text-muted-foreground bg-black">{{
+              t('token')
+            }}</TableHead>
+            <TableHead
+              class="py-3 px-4 font-semibold text-right uppercase text-muted-foreground bg-black"
+              >{{ t('amount') }} ({{ nativeCurrencySymbol }})</TableHead
             >
             <TableHead
               class="py-3 px-4 font-semibold text-right uppercase text-muted-foreground bg-black"
-              >Amount ({{ nativeCurrencySymbol }})</TableHead
+              >{{ t('tokens') }}</TableHead
             >
             <TableHead
               class="py-3 px-4 font-semibold text-right uppercase text-muted-foreground bg-black"
-              >Tokens</TableHead
+              >{{ t('time') }}</TableHead
             >
             <TableHead
               class="py-3 px-4 font-semibold text-right uppercase text-muted-foreground bg-black"
-              >Time</TableHead
-            >
-            <TableHead
-              class="py-3 px-4 font-semibold text-right uppercase text-muted-foreground bg-black"
-              >Tx Hash</TableHead
+              >{{ t('txHash') }}</TableHead
             >
           </TableRow>
         </TableHeader>
@@ -64,7 +63,7 @@
                 :variant="act.isBuy ? 'default' : 'destructive'"
                 class="text-xs uppercase px-2 py-0.5 font-bold"
               >
-                {{ act.isBuy ? 'BUY' : 'SELL' }}
+                {{ act.isBuy ? t('buy').toUpperCase() : t('sell').toUpperCase() }}
               </Badge>
             </TableCell>
             <TableCell class="py-3 px-4 text-foreground font-bold">
@@ -100,6 +99,7 @@
 
 <script setup lang="ts">
 import { Activity, ExternalLink } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
@@ -113,6 +113,8 @@ import {
 } from '@/components/ui/table';
 import { formatRelativeTime } from '@/lib/utils';
 import type { UserActivity } from './types';
+
+const { t } = useI18n();
 
 defineProps<{
   userActivities: UserActivity[];

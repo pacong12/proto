@@ -9,13 +9,13 @@
       class="p-3.5 rounded-2xl bg-card border border-border flex items-center justify-between text-xs font-sans shadow-xs"
     >
       <div class="space-y-0.5">
-        <span class="text-muted-foreground text-xs block">Your Holdings</span>
+        <span class="text-muted-foreground text-xs block">{{ t('yourHoldings') }}</span>
         <span class="font-bold text-foreground text-sm">
           {{ formatTokenBalance(userTokenBalance) }} ${{ currentToken.symbol }}
         </span>
       </div>
       <div class="text-right space-y-0.5">
-        <span class="text-muted-foreground text-xs block">Current Value</span>
+        <span class="text-muted-foreground text-xs block">{{ t('currentValue') }}</span>
         <span class="font-bold text-emerald-500 text-sm">
           ${{ formatCompactUsd(userHoldingUsd) }}
         </span>
@@ -83,7 +83,7 @@
             >
               <div class="space-y-3">
                 <div class="flex items-center justify-between">
-                  <span class="font-bold text-xs">Slippage Tolerance</span>
+                  <span class="font-bold text-xs">{{ t('slippageTolerance') }}</span>
                   <span
                     class="text-xs"
                     :class="slippage > slippageWarnThreshold ? 'text-amber-500' : 'text-foreground'"
@@ -117,7 +117,7 @@
                       step="0.1"
                       min="0.1"
                       max="49"
-                      placeholder="Custom %"
+                      :placeholder="t('customSlippage')"
                       class="h-7 text-xs pr-6 bg-black border-input"
                       @update:model-value="$emit('update:customSlippageInput', String($event))"
                     />
@@ -132,7 +132,7 @@
                     class="text-xs text-muted-foreground hover:text-foreground underline cursor-pointer"
                     @click="selectSlippage(1.0)"
                   >
-                    Auto
+                    {{ t('auto') }}
                   </button>
                 </div>
 
@@ -141,7 +141,7 @@
                   class="flex items-start gap-1.5 text-xs text-amber-500 bg-amber-500/10 border border-amber-500/30 p-2 rounded-xl"
                 >
                   <AlertCircle class="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                  <span>High slippage increase risk of sandwich attacks.</span>
+                  <span>{{ t('highSlippageRisk') }}</span>
                 </div>
               </div>
             </PopoverContent>
@@ -152,7 +152,7 @@
         <div class="space-y-2">
           <div class="flex justify-between items-center text-xs text-muted-foreground font-sans">
             <div class="flex items-center gap-2">
-              <span>You pay</span>
+              <span>{{ t('youPay') }}</span>
               <div
                 v-if="isBuy"
                 class="flex items-center bg-black p-0.5 rounded-lg border border-border text-xs font-bold"
@@ -184,7 +184,7 @@
               </div>
             </div>
             <div class="flex items-center gap-1.5 text-xs">
-              <span class="text-muted-foreground">Bal:</span>
+              <span class="text-muted-foreground">{{ t('bal') }}</span>
               <span
                 v-if="!isBuy && isTokenBalanceLoading"
                 class="animate-pulse font-bold text-foreground"
@@ -257,7 +257,7 @@
         <!-- You receive output -->
         <div class="space-y-1.5">
           <div class="flex justify-between items-center text-xs text-muted-foreground font-sans">
-            <span>You receive (est.)</span>
+            <span>{{ t('youReceive') }}</span>
           </div>
           <div
             class="w-full rounded-xl border border-border bg-black px-3 py-2 min-h-[44px] flex items-center justify-between gap-3"
@@ -295,11 +295,11 @@
         <!-- Transaction Summary Strip -->
         <div class="pt-2 border-t border-border/60 space-y-1.5 text-xs font-sans">
           <div class="flex items-center justify-between text-muted-foreground">
-            <span>Price Impact</span>
+            <span>{{ t('priceImpact') }}</span>
             <span class="font-medium text-foreground">&lt; 0.1%</span>
           </div>
           <div class="flex items-center justify-between text-muted-foreground">
-            <span>Slippage Tolerance</span>
+            <span>{{ t('slippageTolerance') }}</span>
             <span
               class="font-semibold"
               :class="slippage > slippageWarnThreshold ? 'text-amber-500' : 'text-foreground'"
@@ -311,7 +311,7 @@
             v-if="onchainTaxConfig.buyTaxBps > 0 || onchainTaxConfig.sellTaxBps > 0"
             class="flex items-center justify-between text-muted-foreground"
           >
-            <span>Trading Tax</span>
+            <span>{{ t('tradingTax') }}</span>
             <span class="font-medium text-foreground">
               {{ isBuy ? onchainTaxConfig.buyTaxBps / 100 : onchainTaxConfig.sellTaxBps / 100 }}%
             </span>

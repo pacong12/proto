@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { currentLocale, setLocale, t, SUPPORTED_LOCALES, useI18n } from '../src/lib/i18n';
+import { currentLocale, setLocale, t, SUPPORTED_LOCALES, useI18n, messages } from '../src/lib/i18n';
 
 describe('Internationalization (i18n) Engine', () => {
   it('supports all 11 major international languages', () => {
@@ -59,6 +59,19 @@ describe('Internationalization (i18n) Engine', () => {
     setLocale('ru');
     expect(t('non_existent_key_123')).toBe('non_existent_key_123');
     setLocale('en');
+  });
+
+  it('guarantees zero missing keys across all 11 supported locales', () => {
+    const enKeys = Object.keys(messages.en);
+    expect(enKeys.length).toBeGreaterThan(250);
+
+    for (const locale of SUPPORTED_LOCALES) {
+      if (locale.code === 'en') continue;
+      const currentKeys = Object.keys(messages[locale.code]);
+      const missing = enKeys.filter((k) => !currentKeys.includes(k));
+      expect(missing).toEqual([]);
+      expect(currentKeys.length).toBe(enKeys.length);
+    }
   });
 
   it('provides reactive useI18n composable', () => {

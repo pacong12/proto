@@ -81,7 +81,7 @@
             @click="emit('share')"
           >
             <Share2 class="w-3.5 h-3.5" />
-            {{ copiedShare ? 'Copied Link!' : 'Share Profile' }}
+            {{ copiedShare ? t('addressCopied') : t('shareProfile') }}
           </Button>
         </div>
       </div>
@@ -139,7 +139,7 @@
             rel="noopener noreferrer"
             class="hover:text-foreground transition flex items-center gap-1"
           >
-            <span>Explorer</span>
+            <span>{{ t('explorer') }}</span>
             <ExternalLink class="w-3 h-3" />
           </a>
         </div>
@@ -150,12 +150,15 @@
 
 <script setup lang="ts">
 import { Camera, Edit3, Share2, ExternalLink } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Jazzicon } from '@/components/ui/avatar';
 import { shortenAddress } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import type { ProfileStorageData } from './types';
 import type { NetworkConfig } from '@proto/shared-types';
+
+const { t } = useI18n();
 
 defineProps<{
   profileAddress: string | null;

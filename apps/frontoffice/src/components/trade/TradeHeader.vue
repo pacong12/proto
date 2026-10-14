@@ -7,7 +7,7 @@
         class="text-muted-foreground hover:text-foreground transition inline-flex items-center gap-1.5 font-medium group"
       >
         <ChevronLeft class="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
-        <span>Markets</span>
+        <span>{{ t('allMarkets') }}</span>
         <span class="text-muted-foreground/40">/</span>
         <span class="text-foreground font-bold truncate max-w-[200px] sm:max-w-none">{{
           currentToken.name
@@ -40,7 +40,7 @@
               d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
             />
           </svg>
-          <span class="hidden sm:inline">Share</span>
+          <span class="hidden sm:inline">{{ t('share') }}</span>
         </Button>
 
         <!-- Copy Link Button -->
@@ -52,7 +52,9 @@
         >
           <Check v-if="linkCopied" class="w-3 h-3 text-emerald-500" />
           <Copy v-else class="w-3 h-3" />
-          <span class="hidden sm:inline">{{ linkCopied ? 'Copied' : 'Copy link' }}</span>
+          <span class="hidden sm:inline">{{
+            linkCopied ? t('addressCopied') : t('copyAddress')
+          }}</span>
         </Button>
       </div>
     </div>
@@ -287,6 +289,7 @@ import {
   Send,
   Globe,
 } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
@@ -316,6 +319,8 @@ withDefaults(defineProps<Props>(), {
   linkCopied: false,
   copied: false,
 });
+
+const { t } = useI18n();
 
 defineEmits<{
   (e: 'openCallModal'): void;

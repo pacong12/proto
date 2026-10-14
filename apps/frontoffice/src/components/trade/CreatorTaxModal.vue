@@ -2,7 +2,7 @@
   <Dialog :open="open" @update:open="$emit('update:open', $event)">
     <DialogContent class="sm:max-w-md">
       <DialogHeader>
-        <DialogTitle>Creator Tax Settings</DialogTitle>
+        <DialogTitle>{{ t('creatorTaxSettings') }}</DialogTitle>
         <DialogDescription>
           Configure trading taxes on ${{ currentToken.symbol }}. Changes require a 24-hour timelock
           before taking effect (max 10%).
@@ -11,7 +11,7 @@
 
       <div class="space-y-4 py-2 text-xs">
         <div class="space-y-1.5">
-          <Label for="update-buy-tax">Buy Tax (%)</Label>
+          <Label for="update-buy-tax">{{ t('buyTax') }} (%)</Label>
           <Input
             id="update-buy-tax"
             :model-value="editBuyTax"
@@ -24,7 +24,7 @@
           />
         </div>
         <div class="space-y-1.5">
-          <Label for="update-sell-tax">Sell Tax (%)</Label>
+          <Label for="update-sell-tax">{{ t('sellTax') }} (%)</Label>
           <Input
             id="update-sell-tax"
             :model-value="editSellTax"
@@ -37,7 +37,7 @@
           />
         </div>
         <div class="space-y-1.5">
-          <Label for="update-tax-recipient">Tax Recipient Wallet</Label>
+          <Label for="update-tax-recipient">{{ t('taxRecipientWallet') }}</Label>
           <Input
             id="update-tax-recipient"
             :model-value="editTaxRecipient"
@@ -67,10 +67,10 @@
       </div>
 
       <DialogFooter>
-        <Button variant="outline" @click="$emit('update:open', false)">Cancel</Button>
+        <Button variant="outline" @click="$emit('update:open', false)">{{ t('cancel') }}</Button>
         <Button :disabled="updatingTax" @click="$emit('updateTax')">
           <Loader2 v-if="updatingTax" class="w-4 h-4 mr-2 animate-spin" />
-          Save Onchain Tax
+          {{ t('saveTaxSettings') }}
         </Button>
       </DialogFooter>
     </DialogContent>
@@ -79,6 +79,7 @@
 
 <script setup lang="ts">
 import { Loader2 } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import {
   Dialog,
   DialogContent,
@@ -92,6 +93,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import TaxTimelockPanel from '../tax/TaxTimelockPanel.vue';
 import type { LaunchedTokenEntity } from '@proto/shared-types';
+
+const { t } = useI18n();
 
 interface Props {
   open: boolean;

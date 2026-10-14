@@ -19,7 +19,7 @@ const forwardedProps = useForwardProps(delegatedProps);
     v-bind="forwardedProps"
     :class="
       cn(
-        'relative flex cursor-pointer select-none items-center rounded-xl gap-2.5 px-3 py-2 text-xs outline-none transition-colors hover:bg-muted focus:bg-muted data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0',
+        'relative flex cursor-pointer select-none items-center rounded-xl gap-2.5 px-3.5 py-2.5 text-sm font-medium outline-none transition-colors hover:bg-muted focus:bg-muted data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0',
         inset && 'pl-8',
         props.class,
       )

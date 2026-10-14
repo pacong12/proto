@@ -6,7 +6,7 @@
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <Coins class="w-4 h-4 text-primary" />
-            <h3 class="text-sm font-bold text-foreground">Holder Fee Sharing Dividends</h3>
+            <h3 class="text-sm font-bold text-foreground">{{ t('holderDividendsTitle') }}</h3>
           </div>
           <Button
             v-if="isOwnProfile"
@@ -30,7 +30,9 @@
         <!-- Total + Claim All -->
         <div class="flex items-end justify-between pt-3 border-t border-border/60">
           <div>
-            <span class="text-xs text-muted-foreground uppercase block"> Total Claimable </span>
+            <span class="text-xs text-muted-foreground uppercase block">
+              {{ t('totalClaimable') }}
+            </span>
             <p class="text-xl font-bold text-foreground">
               {{ dividendsTotalFormatted }} {{ nativeCurrencySymbol }}
             </p>
@@ -45,7 +47,7 @@
           >
             <Loader2 v-if="dividendsActionLoading" class="w-3.5 h-3.5 animate-spin" />
             <ArrowDownToLine v-else class="w-3.5 h-3.5" />
-            <span>Claim All</span>
+            <span>{{ t('claimAll') }}</span>
           </Button>
         </div>
 
@@ -102,7 +104,7 @@
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <Lock class="w-4 h-4 text-foreground" />
-            <h3 class="text-sm font-bold text-foreground">Linear Vesting Vault</h3>
+            <h3 class="text-sm font-bold text-foreground">{{ t('linearVestingVault') }}</h3>
           </div>
           <Badge variant="outline" class="text-xs text-muted-foreground"> Non-Custodial </Badge>
         </div>
@@ -114,7 +116,9 @@
 
         <div class="flex items-end justify-between pt-3 border-t border-border/60">
           <div>
-            <span class="text-xs text-muted-foreground uppercase block"> Vested Balance </span>
+            <span class="text-xs text-muted-foreground uppercase block">
+              {{ t('vestedBalance') }}
+            </span>
             <p class="text-xl font-bold text-foreground">0.00 {{ nativeCurrencySymbol }}</p>
           </div>
           <Button
@@ -143,10 +147,13 @@
 
 <script setup lang="ts">
 import { Coins, Loader2, RefreshCw, ArrowDownToLine, Lock, ShieldCheck } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
+
+const { t } = useI18n();
 
 interface DividendEntry {
   tokenAddress: string;

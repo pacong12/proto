@@ -6,7 +6,7 @@
       <DialogHeader>
         <div class="flex items-center gap-2 text-foreground mb-1">
           <ShieldAlert class="w-5 h-5 text-amber-500" />
-          <DialogTitle>Community Takeover (CTO)</DialogTitle>
+          <DialogTitle>{{ t('communityTakeover') }}</DialogTitle>
         </div>
         <DialogDescription class="text-xs text-muted-foreground">
           Permanently transfer all trading tax and launchpad fee accruals for this token to a new
@@ -16,7 +16,7 @@
 
       <div class="space-y-4 py-2 font-sans">
         <div class="space-y-1.5">
-          <Label for="token-addr" class="text-xs font-medium">Target Token Address</Label>
+          <Label for="token-addr" class="text-xs font-medium">{{ t('targetTokenAddress') }}</Label>
           <Input
             id="token-addr"
             :model-value="tokenAddress"
@@ -27,7 +27,9 @@
         </div>
 
         <div class="space-y-1.5">
-          <Label for="new-recipient" class="text-xs font-medium">New Community Recipient</Label>
+          <Label for="new-recipient" class="text-xs font-medium">{{
+            t('newCommunityRecipient')
+          }}</Label>
           <Input
             id="new-recipient"
             v-model="newRecipientAddress"
@@ -53,7 +55,7 @@
           class="cursor-pointer"
           @click="emit('update:open', false)"
         >
-          Cancel
+          {{ t('cancel') }}
         </Button>
         <Button
           variant="default"
@@ -73,6 +75,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { ShieldAlert, AlertCircle, Loader2 } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import {
   Dialog,
   DialogContent,
@@ -84,6 +87,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   open: boolean;

@@ -8,11 +8,11 @@
     <!-- Contract addresses -->
     <div class="space-y-2">
       <p class="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-        Contract Addresses
+        {{ t('contractAddresses') }}
       </p>
       <div class="space-y-1.5">
         <div class="flex items-center justify-between gap-3">
-          <span class="text-xs text-muted-foreground shrink-0">Token</span>
+          <span class="text-xs text-muted-foreground shrink-0">{{ t('tokenCol') }}</span>
           <div class="flex items-center gap-1.5 min-w-0">
             <span class="text-xs text-foreground truncate">{{ currentToken.address }}</span>
             <button
@@ -36,7 +36,7 @@
           </div>
         </div>
         <div v-if="currentToken.poolAddress" class="flex items-center justify-between gap-3">
-          <span class="text-xs text-muted-foreground shrink-0">Pool</span>
+          <span class="text-xs text-muted-foreground shrink-0">{{ t('pool') }}</span>
           <div class="flex items-center gap-1.5 min-w-0">
             <span class="text-xs text-foreground truncate">{{ currentToken.poolAddress }}</span>
             <a
@@ -56,19 +56,19 @@
     <!-- Market data grid -->
     <div class="grid grid-cols-3 gap-4 pt-3 border-t border-border">
       <div>
-        <p class="text-xs uppercase tracking-wider text-muted-foreground">Price</p>
+        <p class="text-xs uppercase tracking-wider text-muted-foreground">{{ t('price') }}</p>
         <p class="text-sm font-bold mt-0.5 text-foreground">
           {{ formatPriceUsd(currentMarketData.priceUsd) }}
         </p>
       </div>
       <div>
-        <p class="text-xs uppercase tracking-wider text-muted-foreground">Mkt Cap</p>
+        <p class="text-xs uppercase tracking-wider text-muted-foreground">{{ t('mktCap') }}</p>
         <p class="text-sm font-bold mt-0.5 text-foreground">
           {{ formatCompactUsd(currentMarketData.marketCapUsd) }}
         </p>
       </div>
       <div>
-        <p class="text-xs uppercase tracking-wider text-muted-foreground">24h Vol</p>
+        <p class="text-xs uppercase tracking-wider text-muted-foreground">{{ t('vol24h') }}</p>
         <p class="text-sm font-bold mt-0.5 text-foreground">
           {{ formatCompactUsd(currentMarketData.volume24hUsd) }}
         </p>
@@ -125,25 +125,25 @@
         </p>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
           <div class="p-2 rounded-lg bg-muted/40 border border-border">
-            <span class="text-muted-foreground block text-xs">Creator</span>
+            <span class="text-muted-foreground block text-xs">{{ t('creatorShare') }}</span>
             <span class="font-bold text-foreground"
               >{{ currentToken.taxConfig.revenueSplit.creator }}%</span
             >
           </div>
           <div class="p-2 rounded-lg bg-muted/40 border border-border">
-            <span class="text-muted-foreground block text-xs">Buyback</span>
+            <span class="text-muted-foreground block text-xs">{{ t('buyback') }}</span>
             <span class="font-bold text-foreground"
               >{{ currentToken.taxConfig.revenueSplit.buyback }}%</span
             >
           </div>
           <div class="p-2 rounded-lg bg-muted/40 border border-border">
-            <span class="text-muted-foreground block text-xs">Holders</span>
+            <span class="text-muted-foreground block text-xs">{{ t('holders') }}</span>
             <span class="font-bold text-foreground"
               >{{ currentToken.taxConfig.revenueSplit.holders }}%</span
             >
           </div>
           <div class="p-2 rounded-lg bg-muted/40 border border-border">
-            <span class="text-muted-foreground block text-xs">Growth</span>
+            <span class="text-muted-foreground block text-xs">{{ t('growth') }}</span>
             <span class="font-bold text-foreground"
               >{{ currentToken.taxConfig.revenueSplit.growth }}%</span
             >
@@ -156,9 +156,12 @@
 
 <script setup lang="ts">
 import { Copy, Check, ExternalLink } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { formatCompactUsd, formatPriceUsd } from '@/lib/utils';
 import type { LaunchedTokenEntity, TokenMarketData, NetworkConfig } from '@proto/shared-types';
+
+const { t } = useI18n();
 
 interface Props {
   currentToken: LaunchedTokenEntity;
