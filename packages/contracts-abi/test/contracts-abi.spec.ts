@@ -11,6 +11,7 @@ import {
   robinhoodLaunchpadV2Abi,
   uniswapV3PoolAbi,
   swapRouterAbi,
+  getFactoryV2Abi,
 } from '../src';
 
 describe('Contracts ABI Package', () => {
@@ -41,6 +42,12 @@ describe('Contracts ABI Package', () => {
 
     expect(Array.isArray(robinhoodLaunchpadV2Abi)).toBe(true);
     expect(robinhoodLaunchpadV2Abi.length).toBeGreaterThan(0);
+  });
+
+  it('getFactoryV2Abi returns appropriate factory ABI by chain ID', () => {
+    expect(getFactoryV2Abi(5042)).toBe(launchpadV2FactoryArcAbi);
+    expect(getFactoryV2Abi(4663)).toBe(launchpadV2FactoryAbi);
+    expect(getFactoryV2Abi()).toBe(launchpadV2FactoryAbi);
   });
 
   it('contains expected functions on BondingCurve ABI', () => {
