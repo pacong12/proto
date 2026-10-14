@@ -48,6 +48,6 @@ contract DeployRobinhoodV2 is Script {
         console.log("LaunchpadV2Factory:", factoryAddress);
         console.log("Launch Fee        :", factory.launchFee(), "wei (0.0005 ETH)");
         console.log("Graduation Target :", factory.GRADUATION_TARGET(), "wei (4.2 ETH)");
-        console.log("Virtual ETH       :", factory.VIRTUAL_ETH_RESERVE(), "wei (3.0 ETH)");
+        console.log("Virtual ETH       :", factory.VIRTUAL_ETH_RESERVE(), "wei (1.68 ETH)");
     }
 }

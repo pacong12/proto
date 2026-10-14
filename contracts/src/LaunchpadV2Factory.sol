@@ -21,8 +21,8 @@ import {BondingCurve} from "./BondingCurve.sol";
 contract LaunchpadV2Factory {
     uint256 public launchFee = 0.0005 ether;
     uint256 public constant GRADUATION_TARGET = 4.2 ether;
-    uint256 public constant VIRTUAL_ETH_RESERVE = 3.0 ether;
-    uint256 public constant VIRTUAL_TOKEN_RESERVE = 1_073_000_000 * 1e18;
+    uint256 public constant VIRTUAL_ETH_RESERVE = 1.68 ether;
+    uint256 public constant VIRTUAL_TOKEN_RESERVE = 1_000_000_000 * 1e18;
 
     address payable public immutable protocolFeeRecipient;
     address public immutable defaultLocker;
@@ -185,6 +185,7 @@ contract LaunchpadV2Factory {
         // Initialize token: supply minted to this factory (address(this)) so we can
         // transfer it to the curve in the next step without a separate approval.
         token.initialize(name, symbol, logo, description, socials, msg.sender, address(0), address(this));
+        token.setRestrictionExempt(protocolFeeRecipient, true);
 
         // Initialize curve with all bonding curve parameters.
         curve.initialize(

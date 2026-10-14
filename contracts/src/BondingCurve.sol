@@ -32,8 +32,6 @@ contract BondingCurve {
     using PoolIdLibrary for PoolKey;
 
     uint256 public constant BPS = 10_000;
-    uint256 public constant CURVE_TOKEN_SUPPLY = 800_000_000 * 1e18;
-    uint256 public constant POOL_RESERVE_SUPPLY = 200_000_000 * 1e18;
 
     // C-02 fix: maximum time (seconds) the factory may wait before calling
     // emergencyWithdraw if V4 migration cannot be completed.
@@ -46,6 +44,7 @@ contract BondingCurve {
     address payable public creator;
 
     uint256 public graduationTarget;
+    uint256 public poolReserveSupply;
     uint256 public launchTime;
 
     address public poolManagerV4;
@@ -139,9 +138,18 @@ contract BondingCurve {
         graduationTarget = _graduationTarget;
         virtualEthReserve = _virtualEthReserve;
         virtualTokenReserve = _virtualTokenReserve;
+        poolReserveSupply = (_virtualEthReserve * _virtualTokenReserve) / (_virtualEthReserve + _graduationTarget);
         poolManagerV4 = _poolManagerV4;
         memeHook = _memeHook;
         launchTime = block.timestamp;
+    }
+
+    function POOL_RESERVE_SUPPLY() external view returns (uint256) {
+        return poolReserveSupply > 0 ? poolReserveSupply : 200_000_000 * 1e18;
+    }
+
+    function CURVE_TOKEN_SUPPLY() external view returns (uint256) {
+        return virtualTokenReserve > poolReserveSupply ? virtualTokenReserve - poolReserveSupply : 800_000_000 * 1e18;
     }
 
     // ---------------------------------------------------------------------------
@@ -163,7 +171,11 @@ contract BondingCurve {
      */
     function getAmountOutBuy(uint256 ethIn) public view returns (uint256 tokenOut, uint256 feeEth) {
         uint256 available = token.balanceOf(address(this));
-        uint256 curveAvailable = available > POOL_RESERVE_SUPPLY ? available - POOL_RESERVE_SUPPLY : 0;
+        uint256 reserveTarget = poolReserveSupply;
+        if (available <= reserveTarget) {
+            return (0, 0);
+        }
+        uint256 curveAvailable = available - reserveTarget;
         return CurveMath.getAmountOutBuy(ethIn, virtualEthReserve, virtualTokenReserve, curveAvailable);
     }
 
@@ -196,6 +208,7 @@ contract BondingCurve {
         if (recipient == address(0)) revert ZeroAddress();
 
         (tokensOut, ) = getAmountOutBuy(msg.value);
+        if (tokensOut == 0) revert InvalidAmount();
 
         uint256 grossTokensOut = tokensOut;
         uint256 snipeFeeTokens = 0;
@@ -405,6 +418,6 @@ contract BondingCurve {
      *      the pool's sqrtPriceX96 when migrateToV4() forwards address(this).balance.
      */
     receive() external payable {
-        if (graduated) revert AlreadyGraduated();
+        revert Unauthorized();
     }
 }

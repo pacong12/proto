@@ -12,10 +12,12 @@ import {LiquidityLocker} from "../src/LiquidityLocker.sol";
  * Arc Network Standard:
  *   - Native gas: USDC (18 decimals native msg.value)
  *   - Launch fee: 1.00 USDC (1 ether)
- *   - Opening FDV: $4,200 USDC
+ *   - Opening FDV: $24,420 USDC
  *   - Graduation target: $69,000 USDC
- *   - Virtual USDC reserve: 4,200 ether
+ *   - Virtual USDC reserve: 24,420 ether
  *   - Virtual token reserve: 1,000,000,000 * 1e18
+ *   - Curve allocation: 738,600,000 tokens (73.86%)
+ *   - Pool allocation: 261,400,000 tokens (26.14%)
  *
  * Usage:
  *   forge script contracts/script/DeployArc.s.sol \

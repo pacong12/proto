@@ -61,6 +61,7 @@ interface ILaunchpadToken {
     ) external;
 
     function setLiquidityPool(address pool) external;
+    function setRestrictionExempt(address account, bool exempt) external;
     function setInitialTaxConfig(
         uint16 buyTaxBps,
         uint16 sellTaxBps,

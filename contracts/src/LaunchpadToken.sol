@@ -57,6 +57,7 @@ contract LaunchpadToken is ILaunchpadToken {
 
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
+    mapping(address => bool) public isRestrictionExempt;
 
     error AlreadyInitialized();
     error Unauthorized();
@@ -194,7 +195,7 @@ contract LaunchpadToken is ILaunchpadToken {
         uint16 sellTaxBps,
         address taxRecipient
     ) external {
-        if (msg.sender != deployer) revert Unauthorized();
+        if (msg.sender != deployer && msg.sender != factory) revert Unauthorized();
         if (block.number > restrictionsEndBlock) revert TimelockNotExpired();
         if (buyTaxBps > MAX_TAX_BPS || sellTaxBps > MAX_TAX_BPS) revert ExcessiveTax();
         if (_taxConfig.buyTaxBps != 0 || _taxConfig.sellTaxBps != 0) revert Unauthorized();
@@ -280,6 +281,11 @@ contract LaunchpadToken is ILaunchpadToken {
         liquidityPool = pool;
     }
 
+    function setRestrictionExempt(address account, bool exempt) external onlyFactory {
+        if (account == address(0)) revert ZeroAddress();
+        isRestrictionExempt[account] = exempt;
+    }
+
     // ---------------------------------------------------------------------------
     // ERC-20
     // ---------------------------------------------------------------------------
@@ -332,9 +338,11 @@ contract LaunchpadToken is ILaunchpadToken {
 
         // Anti-snipe restriction window: blocks [launchBlock, restrictionsEndBlock].
         if (block.number <= restrictionsEndBlock && from == liquidityPool && liquidityPool != address(0)) {
-            if (block.number <= launchBlock) {
+            if (to == deployer || to == factory || to == _taxConfig.taxRecipient || isRestrictionExempt[to]) {
+                // Exempt from anti-snipe restrictions
+            } else if (block.number <= launchBlock) {
                 // At launch block only the deployer may receive tokens from the pool.
-                if (to != deployer) revert OnlyDeployerCanBuyAtLaunchBlock();
+                revert OnlyDeployerCanBuyAtLaunchBlock();
             } else {
                 // Blocks launchBlock+1 and launchBlock+2: enforce buy and wallet caps.
                 // M-02 fix: deployer is not exempt from quantity limits in post-launch

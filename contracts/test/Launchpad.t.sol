@@ -7,6 +7,7 @@ import {LiquidityLocker} from "../src/LiquidityLocker.sol";
 import {LaunchpadFactory} from "../src/LaunchpadFactory.sol";
 import {ILaunchpadToken} from "../src/interfaces/ILaunchpadToken.sol";
 import {ILaunchpadFactory} from "../src/interfaces/ILaunchpadFactory.sol";
+import {HolderFeeDistributor} from "../src/HolderFeeDistributor.sol";
 import {
     MockWETH,
     MockUniswapV3Factory,
@@ -515,5 +516,48 @@ contract LaunchpadTest is Test {
         uint256 balanceAfter = testDeployer.balance;
         // Deployer should only have spent the launch fee, excess 1 ether is refunded
         assertEq(balanceBefore - balanceAfter, fee, "Only launchFee spent; excess was refunded");
+    }
+
+    function test_LiquidityLocker_RoutesFeesToHolderFeeDistributor() public {
+        ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials("", "", "", "", "");
+        vm.deal(deployer, 10 ether);
+        vm.startPrank(deployer);
+        (address tokenAddress, ) = factory.launchToken{value: factory.launchFee() + 0.1 ether}(
+            "Dividend Redirect Token",
+            "DRT",
+            "ipfs://drt",
+            "Testing locker to distributor",
+            socials,
+            0.1 ether
+        );
+
+        HolderFeeDistributor distributor = new HolderFeeDistributor(address(weth), address(locker));
+        vm.stopPrank();
+        vm.prank(address(factory));
+        locker.setHolderFeeDistributor(address(distributor));
+        vm.startPrank(deployer);
+
+        // Redirect fees to distributor
+        locker.setFeeRedirect(tokenAddress, address(distributor));
+        vm.warp(block.timestamp + 49 hours);
+        locker.acceptFeeRedirect(tokenAddress);
+
+        // Fund position manager with fees
+        weth.deposit{value: 1 ether}();
+        weth.transfer(address(positionManager), 1 ether);
+        vm.stopPrank();
+
+        // Give deployer tokens and checkpoint in distributor
+        deal(tokenAddress, deployer, 100_000_000 * 1e18);
+        vm.prank(deployer);
+        distributor.checkpoint(tokenAddress);
+
+        // Claim fees
+        vm.prank(address(distributor));
+        locker.claimFees(tokenAddress);
+
+        // Verify fees deposited into distributor
+        assertEq(weth.balanceOf(address(distributor)), 0.7 ether);
+        assertGt(distributor.earned(tokenAddress, deployer), 0);
     }
 }

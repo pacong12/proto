@@ -55,6 +55,7 @@ contract BuybackBurner is IBuybackBurner {
 
     event OwnershipTransferProposed(address indexed proposed);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event RateUpdated(uint256 oldRate, uint256 newRate);
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert Unauthorized();
@@ -118,6 +119,13 @@ contract BuybackBurner is IBuybackBurner {
         if (lastKnownRate != 0) revert Unauthorized();
         if (rate == 0) revert InvalidSlippage();
         lastKnownRate = rate;
+    }
+
+    function updateRate(uint256 newRate) external onlyOwner {
+        if (newRate == 0) revert InvalidSlippage();
+        uint256 oldRate = lastKnownRate;
+        lastKnownRate = newRate;
+        emit RateUpdated(oldRate, newRate);
     }
 
     function transferOwnership(address newOwner) external onlyOwner {

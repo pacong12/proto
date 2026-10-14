@@ -89,7 +89,7 @@ contract LaunchpadV2Test is Test {
 
         // Initial token allocations
         assertEq(token.balanceOf(curveAddress), 1_000_000_000 * 1e18);
-        assertEq(curve.virtualEthReserve(), 3.0 ether);
+        assertEq(curve.virtualEthReserve(), 1.68 ether);
 
         // Buyer1 purchases tokens from the curve after snipe tax window.
         // vm.roll is required: LaunchpadToken's anti-snipe guard uses block.number,

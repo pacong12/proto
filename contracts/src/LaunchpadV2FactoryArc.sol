@@ -43,7 +43,7 @@ contract LaunchpadV2FactoryArc {
     // spotPrice = virtualUsdcReserve / virtualTokenReserve
     // = 4_200e18 / (1_000_000_000e18) = 0.0000042 USDC per token
     // Opening FDV = 0.0000042 * 1,000,000,000 = $4,200
-    uint256 public constant VIRTUAL_USDC_RESERVE = 4_200 ether;
+    uint256 public constant VIRTUAL_USDC_RESERVE = 24_420 ether;
 
     // 1,000,000,000 tokens virtual reserve denominator
     uint256 public constant VIRTUAL_TOKEN_RESERVE = 1_000_000_000 * 1e18;
@@ -207,6 +207,7 @@ contract LaunchpadV2FactoryArc {
 
         // Initialize token: mint supply to factory so it can transfer to curve next.
         token.initialize(name, symbol, logo, description, socials, msg.sender, address(0), address(this));
+        token.setRestrictionExempt(protocolFeeRecipient, true);
 
         // Initialize curve with all bonding curve parameters.
         curve.initialize(
