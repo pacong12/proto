@@ -20,7 +20,13 @@
         <!-- Brand Info -->
         <div class="space-y-3">
           <div class="flex items-center gap-2.5">
-            <img src="/logo-pink.svg" alt="proto" class="w-6 h-6 object-contain shrink-0" />
+            <img
+              src="/logo-pink.svg"
+              alt="proto"
+              draggable="false"
+              oncontextmenu="return false;"
+              class="w-6 h-6 object-contain shrink-0 select-none pointer-events-none"
+            />
             <span class="text-foreground font-bold tracking-tight text-xl">proto</span>
           </div>
           <p class="text-sm text-muted-foreground leading-relaxed">
@@ -186,7 +192,23 @@ const { t } = useI18n();
 const { activeNetwork } = useWallet();
 const router = useRouter();
 const route = useRoute();
-const docsUrl = import.meta.env.VITE_DOCS_URL || 'https://docs.proto.family';
+const docsUrl = computed(() => {
+  if (import.meta.env.VITE_DOCS_URL) return import.meta.env.VITE_DOCS_URL;
+  if (typeof window !== 'undefined') {
+    const port = window.location.port;
+    // In local dev, frontoffice is on 3010 and docs is on 3002 or 3012
+    if (
+      port === '3010' ||
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1'
+    ) {
+      return `${window.location.protocol}//${window.location.hostname}:3002`;
+    }
+    // In production, derive docs subdomain from current host
+    return `${window.location.protocol}//docs.${window.location.host}`;
+  }
+  return '/docs';
+});
 
 const userProfileUrl = computed(() => {
   if (walletAddress.value) {

@@ -209,7 +209,7 @@
               class="flex items-center justify-between text-xs text-muted-foreground relative z-10 pt-1"
             >
               <span>by {{ shortenAddress(call.authorAddress, 6, 4) }}</span>
-              <span>proto.it/launchpad</span>
+              <span>{{ currentHostDisplay }}/launchpad</span>
             </div>
           </div>
 
@@ -245,7 +245,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import {
   Share2,
   X,
@@ -282,6 +282,11 @@ function getPostUrl(): string {
   if (typeof window === 'undefined' || !props.call) return '';
   return `${window.location.origin}/post/${props.call.id}`;
 }
+
+const currentHostDisplay = computed(() => {
+  if (typeof window !== 'undefined') return window.location.host;
+  return 'proto.family';
+});
 
 async function copyPostLink(): Promise<void> {
   const url = getPostUrl();
@@ -387,7 +392,7 @@ async function exportPnlCardCanvas(): Promise<string | null> {
   ctx.fillStyle = '#52525b';
   ctx.font = '12px monospace';
   ctx.fillText(`Caller: ${shortenAddress(call.authorAddress)}`, 30, 310);
-  ctx.fillText('proto.family/launchpad', 410, 310);
+  ctx.fillText(`${currentHostDisplay.value}/launchpad`, 410, 310);
 
   return canvas.toDataURL('image/png');
 }

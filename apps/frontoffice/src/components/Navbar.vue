@@ -141,11 +141,15 @@ function copyAddress() {
           to="/launchpad"
           class="flex items-center gap-2.5 text-xl font-extrabold tracking-tight text-foreground hover:opacity-85 transition group"
         >
-          <div class="w-7 h-7 shrink-0 flex items-center justify-center">
+          <div
+            class="w-7 h-7 shrink-0 flex items-center justify-center select-none pointer-events-none"
+          >
             <img
               src="/logo-pink.svg"
               alt="proto"
-              class="w-6.5 h-6.5 object-contain transition-transform group-hover:scale-105"
+              draggable="false"
+              oncontextmenu="return false;"
+              class="w-6.5 h-6.5 object-contain transition-transform group-hover:scale-105 select-none pointer-events-none"
             />
           </div>
           <span class="tracking-tight">proto</span>
