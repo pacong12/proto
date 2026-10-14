@@ -30,6 +30,19 @@ export const holderFeeDistributorAbi = [
         type: 'address',
         internalType: 'address',
       },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'checkpoint',
+    inputs: [
+      {
+        name: 'token',
+        type: 'address',
+        internalType: 'address',
+      },
       {
         name: 'holder',
         type: 'address',

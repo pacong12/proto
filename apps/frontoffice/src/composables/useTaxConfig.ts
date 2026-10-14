@@ -76,6 +76,42 @@ export function useTaxConfig() {
     }
   }
 
+  async function proposeTaxConfig(
+    tokenAddress: `0x${string}`,
+    buyTaxBps: number,
+    sellTaxBps: number,
+    taxRecipient?: `0x${string}`,
+  ): Promise<`0x${string}` | null> {
+    actionLoading.value = true;
+    error.value = null;
+    try {
+      const walletClient = await getWalletClient();
+      if (!walletClient) throw new Error('No wallet connected');
+      const [account] = await walletClient.getAddresses();
+      if (!account) throw new Error('Please connect your wallet');
+
+      const recipient = taxRecipient || account;
+      const hash = await walletClient.writeContract({
+        address: tokenAddress,
+        abi: launchpadTokenAbi,
+        functionName: 'proposeTaxConfig',
+        args: [buyTaxBps, sellTaxBps, recipient],
+        account,
+        chain: walletClient.chain,
+      });
+
+      const client = getPublicClient();
+      await client.waitForTransactionReceipt({ hash });
+      await loadPendingTax(tokenAddress);
+      return hash;
+    } catch (err) {
+      error.value = (err as Error).message;
+      return null;
+    } finally {
+      actionLoading.value = false;
+    }
+  }
+
   async function acceptTaxConfig(tokenAddress: `0x${string}`): Promise<`0x${string}` | null> {
     actionLoading.value = true;
     error.value = null;
@@ -145,6 +181,7 @@ export function useTaxConfig() {
     isReady,
     secondsUntilReady,
     loadPendingTax,
+    proposeTaxConfig,
     acceptTaxConfig,
     cancelTaxConfig,
   };

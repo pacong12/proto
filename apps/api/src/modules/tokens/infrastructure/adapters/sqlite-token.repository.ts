@@ -350,6 +350,14 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
         PRIMARY KEY (comment_id, user_address)
       );
     `);
+
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS indexer_cursor (
+        network TEXT PRIMARY KEY,
+        last_block TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+    `);
   }
 
   async save(token: LaunchedTokenEntity): Promise<void> {
@@ -1317,5 +1325,37 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       transactionHash: row.transactionHash as `0x${string}`,
       timestamp: Number(row.timestamp),
     };
+  }
+
+  async getLastIndexedBlock(networkName: string): Promise<bigint | null> {
+    try {
+      const row = this.db
+        .query<{ last_block: string }, [string]>(
+          'SELECT last_block FROM indexer_cursor WHERE network = ? LIMIT 1',
+        )
+        .get(networkName);
+      if (!row || !row.last_block) return null;
+      return BigInt(row.last_block);
+    } catch {
+      return null;
+    }
+  }
+
+  async setLastIndexedBlock(networkName: string, blockNumber: bigint): Promise<void> {
+    try {
+      this.db
+        .query(
+          `INSERT INTO indexer_cursor (network, last_block, updated_at)
+           VALUES (?, ?, ?)
+           ON CONFLICT(network) DO UPDATE SET
+             last_block = excluded.last_block,
+             updated_at = excluded.updated_at`,
+        )
+        .run(networkName, blockNumber.toString(), Date.now());
+    } catch (err) {
+      console.warn(
+        `[SqliteTokenRepository] Could not persist indexer block: ${(err as Error).message}`,
+      );
+    }
   }
 }

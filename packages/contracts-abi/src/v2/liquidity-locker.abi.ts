@@ -130,6 +130,19 @@ export const liquidityLockerAbi = [
   },
   {
     type: 'function',
+    name: 'holderFeeDistributor',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'lockPosition',
     inputs: [
       {
@@ -277,6 +290,19 @@ export const liquidityLockerAbi = [
       },
       {
         name: 'redirect',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'setHolderFeeDistributor',
+    inputs: [
+      {
+        name: 'distributor',
         type: 'address',
         internalType: 'address',
       },

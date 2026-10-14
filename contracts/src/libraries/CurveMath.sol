@@ -51,6 +51,39 @@ library CurveMath {
     }
 
     /**
+     * @notice Calculate exact gross ETH/USDC required to purchase a specific amount of tokens.
+     * @dev Inverts getAmountOutBuy with ceiling division to preserve the constant-product invariant.
+     *      k = virtualEthReserve * virtualTokenReserve
+     *      newTokenReserve = virtualTokenReserve - tokensOut
+     *      newEthReserve = ceil(k / newTokenReserve)
+     *      netEth = newEthReserve - virtualEthReserve
+     *      grossEth = ceil(netEth / (1 - TRADE_FEE_BPS / BPS))
+     * @param tokensOut Amount of tokens desired.
+     * @param virtualEthReserve Current virtual quote asset reserve.
+     * @param virtualTokenReserve Current virtual token reserve.
+     * @return grossEth Total quote asset required including 1% trade fee.
+     * @return feeEth Platform fee included in grossEth.
+     */
+    function getEthInForTokens(
+        uint256 tokensOut,
+        uint256 virtualEthReserve,
+        uint256 virtualTokenReserve
+    ) internal pure returns (uint256 grossEth, uint256 feeEth) {
+        if (tokensOut == 0 || virtualEthReserve == 0 || virtualTokenReserve == 0) return (0, 0);
+        if (tokensOut >= virtualTokenReserve) revert ZeroReserve();
+
+        uint256 currentK = virtualEthReserve * virtualTokenReserve;
+        uint256 newTokenReserve = virtualTokenReserve - tokensOut;
+        // Ceiling division: ensures the reserve invariant k is strictly maintained
+        uint256 newEthReserve = (currentK + newTokenReserve - 1) / newTokenReserve;
+        uint256 netEth = newEthReserve > virtualEthReserve ? newEthReserve - virtualEthReserve : 0;
+
+        uint256 netBps = BPS - TRADE_FEE_BPS;
+        grossEth = (netEth * BPS + netBps - 1) / netBps;
+        feeEth = (grossEth * TRADE_FEE_BPS) / BPS;
+    }
+
+    /**
      * @notice Calculate ETH/USDC received and platform fee for tokens sold back to curve.
      * @dev 1% fee is deducted from gross ETH proceeds:
      *      k = virtualEthReserve * virtualTokenReserve

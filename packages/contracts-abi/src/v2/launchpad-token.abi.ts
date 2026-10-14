@@ -267,6 +267,25 @@ export const launchpadTokenAbi = [
   },
   {
     type: 'function',
+    name: 'isRestrictionExempt',
+    inputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'bool',
+        internalType: 'bool',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'launchBlock',
     inputs: [],
     outputs: [
@@ -360,29 +379,6 @@ export const launchpadTokenAbi = [
   },
   {
     type: 'function',
-    name: 'setInitialTaxConfig',
-    inputs: [
-      {
-        name: 'buyTaxBps',
-        type: 'uint16',
-        internalType: 'uint16',
-      },
-      {
-        name: 'sellTaxBps',
-        type: 'uint16',
-        internalType: 'uint16',
-      },
-      {
-        name: 'taxRecipient',
-        type: 'address',
-        internalType: 'address',
-      },
-    ],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
     name: 'proposeTaxConfig',
     inputs: [
       {
@@ -419,12 +415,53 @@ export const launchpadTokenAbi = [
   },
   {
     type: 'function',
+    name: 'setInitialTaxConfig',
+    inputs: [
+      {
+        name: 'buyTaxBps',
+        type: 'uint16',
+        internalType: 'uint16',
+      },
+      {
+        name: 'sellTaxBps',
+        type: 'uint16',
+        internalType: 'uint16',
+      },
+      {
+        name: 'taxRecipient',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'setLiquidityPool',
     inputs: [
       {
         name: 'pool',
         type: 'address',
         internalType: 'address',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'setRestrictionExempt',
+    inputs: [
+      {
+        name: 'account',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'exempt',
+        type: 'bool',
+        internalType: 'bool',
       },
     ],
     outputs: [],

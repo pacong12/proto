@@ -91,8 +91,16 @@ contract HolderFeeDistributor {
         if (!success) revert TransferFailed();
 
         uint256 supply = ILaunchpadToken(token).totalSupply();
-        if (supply > 0) {
-            tokenFeeStates[token].rewardPerTokenCumulative += (amount * PRECISION) / supply;
+        address pool = ILaunchpadToken(token).liquidityPool();
+        uint256 nonCirculating = 0;
+        if (pool != address(0)) {
+            nonCirculating += ILaunchpadToken(token).balanceOf(pool);
+        }
+        nonCirculating += ILaunchpadToken(token).balanceOf(address(0x000000000000000000000000000000000000dEaD));
+        uint256 circulatingSupply = supply > nonCirculating ? supply - nonCirculating : supply;
+
+        if (circulatingSupply > 0) {
+            tokenFeeStates[token].rewardPerTokenCumulative += (amount * PRECISION) / circulatingSupply;
         }
         tokenFeeStates[token].totalDistributedWeth += amount;
 

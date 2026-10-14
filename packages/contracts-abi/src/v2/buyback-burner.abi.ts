@@ -201,6 +201,19 @@ export const buybackBurnerAbi = [
   },
   {
     type: 'function',
+    name: 'setInitialRate',
+    inputs: [
+      {
+        name: 'rate',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'setMaxSlippageBps',
     inputs: [
       {
@@ -259,6 +272,19 @@ export const buybackBurnerAbi = [
         name: 'newOwner',
         type: 'address',
         internalType: 'address',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'updateRate',
+    inputs: [
+      {
+        name: 'newRate',
+        type: 'uint256',
+        internalType: 'uint256',
       },
     ],
     outputs: [],
@@ -362,6 +388,25 @@ export const buybackBurnerAbi = [
         type: 'address',
         indexed: true,
         internalType: 'address',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'RateUpdated',
+    inputs: [
+      {
+        name: 'oldRate',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+      {
+        name: 'newRate',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
       },
     ],
     anonymous: false,

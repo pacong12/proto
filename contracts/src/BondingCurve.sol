@@ -188,6 +188,13 @@ contract BondingCurve {
         return CurveMath.getAmountOutSell(netTokenIn, virtualEthReserve, virtualTokenReserve);
     }
 
+    /**
+     * @notice Exact ETH/USDC required to purchase a specific amount of tokens.
+     */
+    function getEthInForTokens(uint256 tokensOut) external view returns (uint256 grossEth, uint256 feeEth) {
+        return CurveMath.getEthInForTokens(tokensOut, virtualEthReserve, virtualTokenReserve);
+    }
+
     // ---------------------------------------------------------------------------
     // Trading
     // ---------------------------------------------------------------------------
@@ -221,14 +228,35 @@ contract BondingCurve {
             tokensOut = grossTokensOut - snipeFeeTokens;
         }
         if (tokensOut < minTokensOut) revert InsufficientOutput();
+
+        // Calculate exact required ETH and refund excess if purchase reaches the curve cap.
+        uint256 effectiveCost = msg.value;
         uint256 fee = (msg.value * 100) / BPS;
-        uint256 netEth = msg.value - fee;
+        uint256 refundEth = 0;
+
+        uint256 available = token.balanceOf(address(this));
+        uint256 reserveTarget = poolReserveSupply;
+        uint256 curveAvailable = available > reserveTarget ? available - reserveTarget : 0;
+
+        if (curveAvailable > 0 && grossTokensOut == curveAvailable) {
+            (uint256 exactCost, uint256 exactFee) = CurveMath.getEthInForTokens(
+                grossTokensOut,
+                virtualEthReserve,
+                virtualTokenReserve
+            );
+            if (exactCost < msg.value) {
+                effectiveCost = exactCost;
+                fee = exactFee;
+                refundEth = msg.value - exactCost;
+            }
+        }
+        uint256 netEth = effectiveCost - fee;
 
         // State changes before external calls (CEI).
         virtualEthReserve += netEth;
         virtualTokenReserve -= grossTokensOut;
         totalEthRaised += netEth;
-        totalVolumeEth += msg.value;
+        totalVolumeEth += effectiveCost;
 
         bool shouldGraduate = totalEthRaised >= graduationTarget;
         if (shouldGraduate) {
@@ -247,7 +275,12 @@ contract BondingCurve {
             if (!feeTokensSent) revert TransferFailed();
         }
 
-        emit Trade(recipient, true, msg.value, tokensOut, fee);
+        if (refundEth > 0) {
+            (bool refundOk, ) = payable(msg.sender).call{value: refundEth}("");
+            if (!refundOk) revert TransferFailed();
+        }
+
+        emit Trade(recipient, true, effectiveCost, tokensOut, fee);
 
         if (shouldGraduate) {
             _prepareGraduationV4();

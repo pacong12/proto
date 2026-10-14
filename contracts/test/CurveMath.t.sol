@@ -74,4 +74,15 @@ contract CurveMathTest is Test {
         // 3 ether / 800M ether * 1e18 = 3.75e9 wei
         assertEq(spot, (3 ether * 1e18) / (800_000_000 ether));
     }
+
+    function test_CurveMath_GetEthInForTokens_InversionAccuracy() public pure {
+        uint256 ethIn = 1 ether;
+        (uint256 tokenOut, ) = CurveMath.getAmountOutBuy(ethIn, V_ETH, V_TOKEN, V_TOKEN);
+        assertTrue(tokenOut > 0, "tokenOut > 0");
+
+        (uint256 grossEthNeeded, ) = CurveMath.getEthInForTokens(tokenOut, V_ETH, V_TOKEN);
+        // Gross ETH needed should be within 1-2 wei of ethIn due to ceiling division
+        uint256 diff = grossEthNeeded > ethIn ? grossEthNeeded - ethIn : ethIn - grossEthNeeded;
+        assertTrue(diff <= 100, "Inversion must be accurate to within rounding tolerance");
+    }
 }

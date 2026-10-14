@@ -219,6 +219,30 @@ export const bondingCurveAbi = [
   },
   {
     type: 'function',
+    name: 'getEthInForTokens',
+    inputs: [
+      {
+        name: 'tokensOut',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [
+      {
+        name: 'grossEth',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'feeEth',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'graduated',
     inputs: [],
     outputs: [
@@ -383,6 +407,19 @@ export const bondingCurveAbi = [
         name: '',
         type: 'address',
         internalType: 'address',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'poolReserveSupply',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
       },
     ],
     stateMutability: 'view',
@@ -627,6 +664,11 @@ export const bondingCurveAbi = [
   {
     type: 'error',
     name: 'NotGraduated',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'Overflow',
     inputs: [],
   },
   {
