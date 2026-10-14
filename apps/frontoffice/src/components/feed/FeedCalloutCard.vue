@@ -14,7 +14,7 @@
         <div class="min-w-0 leading-tight">
           <div class="flex items-center gap-1.5 flex-wrap">
             <span
-              class="font-bold text-foreground text-xs sm:text-sm hover:underline cursor-pointer"
+              class="font-bold text-foreground text-sm sm:text-base hover:underline cursor-pointer"
               @click.stop="$emit('navigateToCaller', call.authorAddress)"
             >
               {{ getUserIdentity(call.authorAddress).displayName }}
@@ -36,7 +36,7 @@
 
     <!-- Post Message Text with Styled Interactive Cashtags -->
     <p
-      class="text-xs sm:text-sm leading-relaxed text-foreground font-sans font-medium whitespace-pre-wrap break-words"
+      class="text-sm sm:text-base leading-relaxed text-foreground font-sans font-medium whitespace-pre-wrap break-words"
     >
       <CashtagText :text="call.content" :tokens="allTokens" />
     </p>
@@ -44,7 +44,7 @@
     <!-- Quoted Callout Embed (Twitter / Pump.fun Hybrid Quote) -->
     <div
       v-if="call.quotedCallout"
-      class="rounded-xl border border-border p-3 bg-black hover:bg-zinc-950 transition text-xs space-y-1.5 cursor-pointer"
+      class="rounded-xl border border-border p-3 bg-black hover:bg-zinc-950 transition text-sm space-y-1.5 cursor-pointer"
       @click.stop="router.push(`/post/${call.quotedCallout.id}`)"
     >
       <div class="flex items-center gap-1.5">
@@ -60,7 +60,7 @@
           {{ formatRelativeTime(call.quotedCallout.createdAt) }}
         </span>
       </div>
-      <p class="text-xs text-muted-foreground font-sans">
+      <p class="text-sm text-muted-foreground font-sans">
         <CashtagText :text="call.quotedCallout.content" :tokens="allTokens" />
       </p>
     </div>
@@ -130,9 +130,9 @@
           <div class="flex items-center gap-2 text-xs text-muted-foreground">
             <span
               >MC:
-              <strong class="text-foreground"
-                >${{ formatCompactUsd(call.tokenMarketCapUsd ?? 4200) }}</strong
-              ></span
+              <strong class="text-foreground">{{
+                formatCompactUsd(call.tokenMarketCapUsd ?? 4200)
+              }}</strong></span
             >
             <span v-if="call.targetMcap" class="text-emerald-500 font-bold truncate">
               Target: {{ call.targetMcap }}
@@ -167,7 +167,7 @@
           <!-- Position size + abs PnL row -->
           <span class="text-xs text-muted-foreground tabular-nums leading-none">
             <span v-if="call.positionUsd && call.positionUsd > 0">
-              ${{ formatCompactUsd(call.positionUsd) }}
+              {{ formatCompactUsd(call.positionUsd) }}
             </span>
             <span
               v-if="callPnlUsd(call) !== null"
@@ -186,7 +186,7 @@
           class="flex flex-col items-end gap-0.5"
         >
           <span v-if="call.positionUsd" class="text-xs font-bold text-foreground">
-            ${{ formatCompactUsd(call.positionUsd) }}
+            {{ formatCompactUsd(call.positionUsd) }}
           </span>
           <span
             v-if="call.profitUsd !== undefined"
@@ -209,7 +209,7 @@
 
     <!-- Hybrid Social Action Bar -->
     <div
-      class="flex items-center justify-between pt-2 border-t border-border/60 text-xs text-muted-foreground"
+      class="flex items-center justify-between pt-2 border-t border-border/60 text-sm text-muted-foreground"
       @click.stop
     >
       <!-- 1. Reply / Thread -->

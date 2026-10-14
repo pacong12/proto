@@ -1,5 +1,5 @@
 <template>
-  <aside class="space-y-4 text-xs">
+  <aside class="space-y-4 text-sm">
     <!-- Quick Search Pill -->
     <div class="relative w-full">
       <Search
@@ -9,7 +9,7 @@
         :value="searchQuery"
         type="text"
         placeholder="Search feed, cashtags..."
-        class="w-full h-9 pl-9 pr-4 text-xs rounded-xl bg-card border border-border/80 focus:border-primary focus:bg-background outline-none transition text-foreground placeholder:text-muted-foreground shadow-2xs"
+        class="w-full h-9 pl-9 pr-4 text-sm rounded-xl bg-card border border-border/80 focus:border-primary focus:bg-background outline-none transition text-foreground placeholder:text-muted-foreground shadow-2xs"
         @input="$emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
       />
     </div>
@@ -17,7 +17,7 @@
     <!-- Hot Movers on Call Widget -->
     <div class="rounded-2xl border border-border/80 bg-card/70 p-4 space-y-3 shadow-2xs">
       <div class="flex items-center justify-between">
-        <h2 class="font-bold text-xs text-foreground flex items-center gap-1.5">
+        <h2 class="font-bold text-sm text-foreground flex items-center gap-1.5">
           <Flame class="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
           <span>Hot Tokens on Call</span>
         </h2>

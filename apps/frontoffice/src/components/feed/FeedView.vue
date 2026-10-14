@@ -111,7 +111,7 @@
                   rows="3"
                   maxlength="500"
                   placeholder="Call a token or share alpha... (type $ to select a token, e.g. $SPIDER!)"
-                  class="w-full text-xs sm:text-sm p-3 rounded-xl border border-border bg-black text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground focus:border-border resize-none leading-relaxed"
+                  class="w-full text-sm sm:text-base p-3.5 rounded-xl border border-border bg-black text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground focus:border-border resize-none leading-relaxed"
                   @input="handleComposerInput"
                   @keydown="handleComposerKeydown"
                 />
@@ -301,7 +301,7 @@
 
                 <Button
                   size="sm"
-                  class="rounded-xl px-5 h-8 font-bold text-xs cursor-pointer shadow-xs gap-1.5"
+                  class="rounded-xl px-5 h-9 font-bold text-sm cursor-pointer shadow-xs gap-1.5"
                   :disabled="
                     isPostingCall ||
                     !composerContent.trim() ||

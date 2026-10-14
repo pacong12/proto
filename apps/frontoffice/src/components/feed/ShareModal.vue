@@ -253,6 +253,7 @@ import {
   Check,
   TrendingUp,
   ChevronDown,
+  ChevronRight,
   ExternalLink,
   Sparkles,
   Download,

@@ -39,7 +39,7 @@
           ${{ tItem.token.symbol }}
         </span>
         <span class="text-muted-foreground text-xs">
-          ${{ formatCompactUsd(tItem.marketData?.marketCapUsd || 4200) }}
+          {{ formatCompactUsd(tItem.marketData?.marketCapUsd || 4200) }}
         </span>
         <span
           class="text-xs font-bold"
