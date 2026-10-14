@@ -389,10 +389,21 @@ contract BondingCurve {
     }
 
     /**
-     * @notice Execute liquidity migration into the Uniswap V4 pool.
-     * @dev C-02 fix: callable only by the factory once V4 is live.
+     * @notice Execute liquidity migration into the DEX pool (Uniswap V3 / V4).
+     * @dev Callable only by the factory once graduation target is reached.
+     */
+    function migrateLiquidity(address payable recipient) external nonReentrant onlyFactory {
+        _executeMigration(recipient);
+    }
+
+    /**
+     * @notice Backward-compatible alias for migrateLiquidity.
      */
     function migrateToV4(address payable recipient) external nonReentrant onlyFactory {
+        _executeMigration(recipient);
+    }
+
+    function _executeMigration(address payable recipient) internal {
         if (!graduated) revert NotGraduated();
         if (migrationExecuted) revert MigrationAlreadyExecuted();
         if (recipient == address(0)) revert ZeroAddress();

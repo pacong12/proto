@@ -8,6 +8,7 @@ export * from './v2/buyback-burner.abi';
 export * from './v2/liquidity-locker.abi';
 export * from './v2/vesting-vault.abi';
 export * from './external/dex.abi';
+export * from './chains';
 
 import { launchpadV2FactoryAbi } from './v2/launchpad-v2-factory.abi';
 import { launchpadV2FactoryArcAbi } from './v2/launchpad-v2-factory-arc.abi';

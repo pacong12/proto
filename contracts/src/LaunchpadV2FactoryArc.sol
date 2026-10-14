@@ -50,8 +50,6 @@ contract LaunchpadV2FactoryArc {
 
     address payable public immutable protocolFeeRecipient;
     address public immutable defaultLocker;
-    address public immutable poolManagerV4;
-    address public immutable memeHook;
 
     address public owner;
     address public pendingOwner;
@@ -104,15 +102,11 @@ contract LaunchpadV2FactoryArc {
 
     constructor(
         address payable _feeRecipient,
-        address _locker,
-        address _poolManagerV4,
-        address _memeHook
+        address _locker
     ) {
         if (_feeRecipient == address(0) || _locker == address(0)) revert ZeroAddress();
         protocolFeeRecipient = _feeRecipient;
         defaultLocker = _locker;
-        poolManagerV4 = _poolManagerV4;
-        memeHook = _memeHook;
         owner = msg.sender;
     }
 
@@ -209,7 +203,7 @@ contract LaunchpadV2FactoryArc {
         token.initialize(name, symbol, logo, description, socials, msg.sender, address(0), address(this));
         token.setRestrictionExempt(protocolFeeRecipient, true);
 
-        // Initialize curve with all bonding curve parameters.
+        // Initialize curve with all bonding curve parameters (Arc standard uses Uniswap V3).
         curve.initialize(
             tokenAddress,
             address(this),
@@ -218,8 +212,8 @@ contract LaunchpadV2FactoryArc {
             GRADUATION_TARGET,
             VIRTUAL_USDC_RESERVE,
             VIRTUAL_TOKEN_RESERVE,
-            poolManagerV4,
-            memeHook
+            address(0),
+            address(0)
         );
 
         // Transfer full supply to bonding curve; curve distributes on buy/sell
@@ -263,12 +257,20 @@ contract LaunchpadV2FactoryArc {
     // Migration management (C-02 fix)
     // ---------------------------------------------------------------------------
 
-    function migrateCurveToV4(address curve, address payable recipient) external onlyOwner {
+    function migrateCurve(address curve, address payable recipient) public onlyOwner {
         BondingCurve(payable(curve)).migrateToV4(recipient);
         address token = curveToToken[curve];
         if (token != address(0)) {
             launches[token].graduated = true; // F-11 fix
         }
+    }
+
+    function migrateCurveToV3(address curve, address payable recipient) external onlyOwner {
+        migrateCurve(curve, recipient);
+    }
+
+    function migrateCurveToV4(address curve, address payable recipient) external onlyOwner {
+        migrateCurve(curve, recipient);
     }
 
     function emergencyWithdrawFromCurve(address curve, address payable recipient) external onlyOwner {

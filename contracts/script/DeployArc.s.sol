@@ -102,12 +102,10 @@ contract DeployArc is Script {
             console.log("LiquidityLocker   :", lockerAddress);
         }
 
-        // 2. Deploy LaunchpadV2FactoryArc with Arc Standard constants
+        // 2. Deploy LaunchpadV2FactoryArc with Arc Standard constants (sovereign Uniswap V3)
         LaunchpadV2FactoryArc factory = new LaunchpadV2FactoryArc(
             payable(feeRecipient),
-            lockerAddress,
-            address(0), // poolManagerV4: not yet deployed on Arc
-            address(0)  // memeHook: not yet deployed on Arc
+            lockerAddress
         );
         factoryAddress = address(factory);
 

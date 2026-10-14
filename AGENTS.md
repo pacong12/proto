@@ -23,6 +23,15 @@ All agents working on this codebase MUST reference and strictly follow the insta
 - **Strict Quality Gates**: Every PR must pass all CI gates before merging (`lint`, `typecheck`, `test`, `test:contracts`, `build`, `format:check`, `codeql`, `gitleaks`, `slither`).
 - **No Direct Push to Main**: All changes must be developed on a dedicated branch, submitted via Pull Request, validated by GitHub Actions, and squash-merged only after green status.
 
+## Multi-Chain Architecture (Robinhood Chain 4663 & Arc Network 5042)
+
+All code touching blockchain networks must adhere to the multi-chain separation documented in `docs/CHAINS.md`:
+
+- **Robinhood Chain (4663)**: Arbitrum Nitro L2, native ETH, 1.68 ETH virtual reserve, 4.20 ETH graduation target, 71.43% curve / 28.57% pool.
+- **Arc Network (5042)**: Circle USDC L1, native USDC (18 decimals in `msg.value`), 24,420 USDC virtual reserve, 69,000 USDC target, 73.86% curve / 26.14% pool.
+- **Never Hardcode Chain IDs**: Use `ChainRegistry`, `resolveTokenNetwork`, or dedicated chain adapters in `apps/frontoffice/src/chains/` and `apps/api/src/modules/chains/`.
+- **Sovereign Infrastructure (Opsi 2)**: Both networks graduate into canonical Uniswap V3 instances and lock LP NFTs into Proto's `LiquidityLocker.sol` with 100% protocol control.
+
 ## Quality Commands (with Bun)
 
 ```bash

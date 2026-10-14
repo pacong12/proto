@@ -234,16 +234,24 @@ contract LaunchpadV2Factory {
     // ---------------------------------------------------------------------------
 
     /**
-     * @notice Trigger liquidity migration for a graduated bonding curve.
-     *         Delegates to BondingCurve.migrateToV4(). Only callable by owner.
+     * @notice Trigger liquidity migration for a graduated bonding curve to DEX locker.
+     *         Only callable by owner.
      * @dev F-11 fix: updates launches[token].graduated to true after successful migration.
      */
-    function migrateCurveToV4(address curve, address payable recipient) external onlyOwner {
+    function migrateCurve(address curve, address payable recipient) public onlyOwner {
         BondingCurve(payable(curve)).migrateToV4(recipient);
         address token = curveToToken[curve];
         if (token != address(0)) {
             launches[token].graduated = true;
         }
+    }
+
+    function migrateCurveToV3(address curve, address payable recipient) external onlyOwner {
+        migrateCurve(curve, recipient);
+    }
+
+    function migrateCurveToV4(address curve, address payable recipient) external onlyOwner {
+        migrateCurve(curve, recipient);
     }
 
     /**

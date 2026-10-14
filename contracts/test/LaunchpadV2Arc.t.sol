@@ -14,7 +14,7 @@ contract LaunchpadV2ArcTest is Test {
     address public buyer1 = address(0xB0B1);
 
     function setUp() public {
-        factory = new LaunchpadV2FactoryArc(feeRecipient, mockLocker, address(0), address(0));
+        factory = new LaunchpadV2FactoryArc(feeRecipient, mockLocker);
         vm.deal(creator, 100_000 ether);
         vm.deal(buyer1, 100_000 ether);
     }
