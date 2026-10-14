@@ -19,6 +19,7 @@ import {
 } from 'lucide-vue-next';
 import { useWallet } from '../composables/useWallet';
 import { useI18n } from '../lib/i18n';
+import { getChainIcon, getChainShortName } from '@/lib/utils';
 import { SUPPORTED_CHAINS } from '@proto/shared-types';
 import { Button } from '@/components/ui/button';
 import { Jazzicon } from '@/components/ui/avatar';
@@ -138,9 +139,16 @@ function copyAddress() {
       <div class="flex items-center gap-6">
         <RouterLink
           to="/launchpad"
-          class="flex items-center text-xl font-extrabold tracking-tight text-foreground hover:opacity-80 transition"
+          class="flex items-center gap-2.5 text-xl font-extrabold tracking-tight text-foreground hover:opacity-85 transition group"
         >
-          <span>proto</span>
+          <div class="w-7 h-7 shrink-0 flex items-center justify-center">
+            <img
+              src="/logo-pink.svg"
+              alt="proto"
+              class="w-6.5 h-6.5 object-contain transition-transform group-hover:scale-105"
+            />
+          </div>
+          <span class="tracking-tight">proto</span>
         </RouterLink>
 
         <!-- Desktop Navigation Routes: visible on lg and up -->
@@ -239,7 +247,7 @@ function copyAddress() {
           >
             <div class="flex items-center gap-1.5 sm:gap-2">
               <img
-                :src="activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+                :src="getChainIcon(activeNetwork)"
                 :alt="activeNetwork.name"
                 class="w-4 h-4 rounded-xs object-contain shrink-0"
               />
@@ -266,7 +274,7 @@ function copyAddress() {
             >
               <div class="flex items-center gap-3">
                 <img
-                  :src="net.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+                  :src="getChainIcon(net)"
                   :alt="net.name"
                   class="w-5 h-5 rounded-md object-contain shrink-0"
                 />
@@ -596,7 +604,7 @@ function copyAddress() {
           >
             <div class="flex items-center gap-2 text-xs font-semibold text-foreground">
               <img
-                :src="activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+                :src="getChainIcon(activeNetwork)"
                 :alt="activeNetwork.name"
                 class="w-4 h-4 rounded-xs object-contain shrink-0"
               />
@@ -616,7 +624,7 @@ function copyAddress() {
                 "
                 @click="handleChainSelect(net.chainId)"
               >
-                {{ net.chainId === 5042 ? 'Arc' : 'Robinhood' }}
+                {{ getChainShortName(net) }}
               </Button>
             </div>
           </div>

@@ -19,7 +19,8 @@
       >
         <!-- Brand Info -->
         <div class="space-y-3">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2.5">
+            <img src="/logo-pink.svg" alt="proto" class="w-6 h-6 object-contain shrink-0" />
             <span class="text-foreground font-bold tracking-tight text-xl">proto</span>
           </div>
           <p class="text-sm text-muted-foreground leading-relaxed">

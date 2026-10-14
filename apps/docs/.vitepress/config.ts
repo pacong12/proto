@@ -484,6 +484,11 @@ export default defineConfig({
 
   themeConfig: {
     siteTitle: 'Proto Guide',
+    logo: {
+      light: '/logo-black.svg',
+      dark: '/logo-white.svg',
+      alt: 'Proto',
+    },
     search: {
       provider: 'local',
     },

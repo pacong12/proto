@@ -1,32 +1,42 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
   <rect width="1200" height="630" fill="#09090b"/>
-  <circle cx="1000" cy="160" r="320" fill="#10b981" opacity="0.18" filter="blur(90px)"/>
-  <circle cx="200" cy="500" r="240" fill="#059669" opacity="0.15" filter="blur(80px)"/>
+  <!-- Ambient Emerald & Cyan Glow -->
+  <circle cx="1020" cy="180" r="340" fill="#10b981" opacity="0.20" filter="blur(110px)"/>
+  <circle cx="220" cy="520" r="260" fill="#059669" opacity="0.16" filter="blur(95px)"/>
+  <circle cx="600" cy="315" r="450" fill="#18181b" opacity="0.65"/>
   
-  <g transform="translate(100, 130)">
-    <!-- Brand Badge -->
-    <rect width="80" height="80" rx="18" fill="#18181b" stroke="#27272a" stroke-width="2"/>
-    <path d="M26 22H42C48.6274 22 54 27.3726 54 34C54 40.6274 48.6274 46 42 46H34V58H26V22ZM34 30V38H42C44.2091 38 46 36.2091 46 34C46 31.7909 44.2091 30 42 30H34Z" fill="#10b981"/>
+  <g transform="translate(100, 110)">
+    <!-- Brand Mark (Official Proto Logo Emblem in Emerald) -->
+    <rect width="96" height="96" rx="22" fill="#141416" stroke="#27272a" stroke-width="2"/>
+    <g transform="translate(19, 16) scale(0.038)">
+      <path d="M1532.8 835.77V1503.68C1532.8 1596.45 1457.59 1671.66 1364.82 1671.66H1041.89V1245.83C1041.89 1176.25 985.49 1119.85 915.91 1119.85H550.13L785.01 884.97C816.51 853.47 859.24 835.77 903.79 835.77H1532.8Z" fill="#10b981"/>
+      <path d="M658.89 490.91H974.01C1018.56 490.91 1061.29 473.21 1092.79 441.71L1534.48 0H560.49C515.94 0 473.21 17.7 441.71 49.2L49.2 441.71C17.7 473.21 0 515.93 0 560.48C0 814.15 0 1674.6 0 1673.34L417.59 1257.08C444.06 1230.69 489.23 1249.44 489.23 1286.82V1589.23C489.23 1635.62 526.83 1673.22 573.22 1673.22H896.15C942.54 1673.22 980.14 1635.62 980.14 1589.23V1266.3C980.14 1219.91 942.54 1182.31 896.15 1182.31H532.9C509.71 1182.31 490.91 1163.51 490.91 1140.32V658.89C490.91 566.12 566.12 490.91 658.89 490.91Z" fill="#10b981"/>
+    </g>
     
     <!-- Title & Tagline -->
-    <text x="0" y="150" font-family="Inter, -apple-system, system-ui, sans-serif" font-size="52" font-weight="bold" fill="#ffffff" letter-spacing="-0.02em">Proto Knowledge Base</text>
-    <text x="0" y="210" font-family="Inter, -apple-system, system-ui, sans-serif" font-size="26" fill="#a1a1aa">Official User Guide, Trading Handbooks & Protocol Reference</text>
+    <text x="0" y="165" font-family="Inter, -apple-system, system-ui, sans-serif" font-size="54" font-weight="800" fill="#ffffff" letter-spacing="-0.03em">Proto Knowledge Base</text>
+    <text x="0" y="225" font-family="Inter, -apple-system, system-ui, sans-serif" font-size="28" font-weight="500" fill="#a1a1aa" letter-spacing="-0.01em">Official User Guide, Trading Handbooks &amp; Protocol Reference</text>
+    <text x="0" y="265" font-family="Inter, -apple-system, system-ui, sans-serif" font-size="18" fill="#71717a">Robinhood Chain (L2) &amp; Arc Network · Uniswap V4 Integration</text>
     
     <!-- Topic Badges -->
-    <g transform="translate(0, 270)">
-      <rect width="210" height="42" rx="21" fill="#18181b" stroke="#27272a" stroke-width="1"/>
-      <text x="105" y="26" font-family="Inter, -apple-system, system-ui, sans-serif" font-size="15" fill="#e4e4e7" text-anchor="middle">Robinhood Chain L2</text>
+    <g transform="translate(0, 310)">
+      <rect width="210" height="44" rx="22" fill="#18181b" stroke="#27272a" stroke-width="1.5"/>
+      <circle cx="26" cy="22" r="7" fill="#10b981"/>
+      <text x="115" y="27" font-family="Inter, -apple-system, system-ui, sans-serif" font-size="15" font-weight="600" fill="#e4e4e7" text-anchor="middle">Robinhood Chain L2</text>
       
-      <rect x="225" width="220" height="42" rx="21" fill="#18181b" stroke="#27272a" stroke-width="1"/>
-      <text x="335" y="26" font-family="Inter, -apple-system, system-ui, sans-serif" font-size="15" fill="#e4e4e7" text-anchor="middle">Step-by-Step Guides</text>
+      <rect x="226" width="210" height="44" rx="22" fill="#18181b" stroke="#27272a" stroke-width="1.5"/>
+      <circle cx="252" cy="22" r="7" fill="#00D2FF"/>
+      <text x="341" y="27" font-family="Inter, -apple-system, system-ui, sans-serif" font-size="15" font-weight="600" fill="#e4e4e7" text-anchor="middle">Arc Network Guides</text>
 
-      <rect x="460" width="220" height="42" rx="21" fill="#18181b" stroke="#27272a" stroke-width="1"/>
-      <text x="570" y="26" font-family="Inter, -apple-system, system-ui, sans-serif" font-size="15" fill="#e4e4e7" text-anchor="middle">Anti-Snipe & Safety</text>
-
-      <rect x="695" width="210" height="42" rx="21" fill="#18181b" stroke="#27272a" stroke-width="1"/>
-      <text x="800" y="26" font-family="Inter, -apple-system, system-ui, sans-serif" font-size="15" fill="#10b981" font-weight="600" text-anchor="middle">70% Creator Fees</text>
+      <rect x="452" width="220" height="44" rx="22" fill="#18181b" stroke="#27272a" stroke-width="1.5"/>
+      <circle cx="478" cy="22" r="7" fill="#E7239F"/>
+      <text x="572" y="27" font-family="Inter, -apple-system, system-ui, sans-serif" font-size="15" font-weight="600" fill="#e4e4e7" text-anchor="middle">Anti-Snipe &amp; Safety</text>
+      
+      <rect x="688" width="210" height="44" rx="22" fill="#18181b" stroke="#27272a" stroke-width="1.5"/>
+      <circle cx="714" cy="22" r="7" fill="#F59E0B"/>
+      <text x="803" y="27" font-family="Inter, -apple-system, system-ui, sans-serif" font-size="15" font-weight="600" fill="#e4e4e7" text-anchor="middle">70% Creator Fees</text>
     </g>
   </g>
   
-  <text x="100" y="560" font-family="Inter, -apple-system, system-ui, sans-serif" font-size="16" fill="#71717a">docs.proto.family · Transparent, Non-Custodial Token Protocol</text>
+  <text x="100" y="575" font-family="Inter, -apple-system, system-ui, sans-serif" font-size="15" font-weight="500" fill="#71717a">docs.proto.family · Transparent, Non-Custodial Token Protocol</text>
 </svg>
