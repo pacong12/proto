@@ -57,6 +57,22 @@ export const ROBINHOOD_NETWORK: NetworkConfig = {
       'ROBINHOOD_WETH_ADDRESS',
       getEnv('WETH_ADDRESS', '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73'),
     ) as `0x${string}`,
+    universalRouter: getEnv(
+      'ROBINHOOD_UNIVERSAL_ROUTER',
+      '0xf0b7eaaf868191adc00065ca13391ef436ce8faf',
+    ) as `0x${string}`,
+    poolManagerV4: getEnv(
+      'ROBINHOOD_POOL_MANAGER_V4',
+      '0x8366a39cc670b4001a1121b8f6a443a643e40951',
+    ) as `0x${string}`,
+    positionManagerV4: getEnv(
+      'ROBINHOOD_POSITION_MANAGER_V4',
+      '0x58daec3116aae6d93017baaea7749052e8a04fa7',
+    ) as `0x${string}`,
+    memeHook: getEnv(
+      'ROBINHOOD_MEME_HOOK',
+      '0xe5e702641ea86f4ae6cc3cdaed2b886f976be044',
+    ) as `0x${string}`,
   },
   launchConfigV2: {
     supply: 1_000_000_000n * 10n ** 18n,

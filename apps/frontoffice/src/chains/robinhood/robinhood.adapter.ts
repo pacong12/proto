@@ -104,6 +104,9 @@ export class RobinhoodChainAdapter implements ChainAdapter {
     const isPonsLegacy =
       targetFactory.toLowerCase() === '0x7ed598bcef8bd9edd8c97a195c6d13f40801ec7e';
 
+    const initialBuyWei = parseInitialBuyWei(params.initialBuyAmountEth);
+    const totalValue = this.network.launchConfig.launchFeeWei + initialBuyWei;
+
     let hash: `0x${string}`;
     if (isPonsLegacy) {
       // Legacy Pons contract support if explicitly configured
@@ -130,18 +133,15 @@ export class RobinhoodChainAdapter implements ChainAdapter {
             b1: '0x0000000000000000000000000000000000000000000000000000000000000000',
             b2: '0x0000000000000000000000000000000000000000000000000000000000000000',
           },
-          0n,
+          initialBuyWei,
           '0x0000000000000000000000000000000000000000',
         ],
-        value: this.network.launchConfig.launchFeeWei,
+        value: totalValue,
         account,
         chain: walletClient.chain,
       });
     } else {
       // Proto Canonical LaunchpadV2Factory on Robinhood Chain
-      const initialBuyWei = parseInitialBuyWei(params.initialBuyAmountEth);
-      const totalValue = this.network.launchConfig.launchFeeWei + initialBuyWei;
-
       hash = await walletClient.writeContract({
         address: targetFactory,
         abi: launchpadV2FactoryAbi,
