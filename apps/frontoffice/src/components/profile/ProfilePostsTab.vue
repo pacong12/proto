@@ -89,11 +89,7 @@
                 class="rounded-full border border-border shrink-0"
               />
               <img
-                :src="
-                  getTokenNetwork(call.tokenAddress).chainId === 5042
-                    ? '/chains/arc.svg'
-                    : '/chains/robinhood.svg'
-                "
+                :src="getChainIcon(getTokenNetwork(call.tokenAddress))"
                 :alt="getTokenNetwork(call.tokenAddress).name"
                 :title="getTokenNetwork(call.tokenAddress).name"
                 class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-black bg-black object-contain shadow-xs"
@@ -238,7 +234,7 @@ import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { CashtagText } from '@/components/feed';
 import { isWhaleCaller } from '@/composables/useFeed';
 import { useTokenStore, type TokenListItem } from '@/composables/useTokenStore';
-import { shortenAddress, formatRelativeTime, formatCompactUsd } from '@/lib/utils';
+import { shortenAddress, formatRelativeTime, formatCompactUsd, getChainIcon } from '@/lib/utils';
 import type { FeedCalloutItem } from '@proto/shared-types';
 
 defineProps<{

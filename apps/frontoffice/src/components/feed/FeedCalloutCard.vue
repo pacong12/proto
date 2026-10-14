@@ -312,7 +312,12 @@ import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import CashtagText from './CashtagText.vue';
 import { isWhaleCaller } from '@/composables/useFeed';
 import { useTokenStore } from '@/composables/useTokenStore';
-import { formatRelativeTime, formatCompactUsd } from '@/lib/utils';
+import {
+  formatRelativeTime,
+  formatCompactUsd,
+  getTokenChainIcon as getChainIcon,
+  getTokenChainName as getChainName,
+} from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { calculateUnrealizedPnl } from '@proto/math-sdk';
 import type { FeedCalloutItem } from '@proto/shared-types';
@@ -340,17 +345,6 @@ defineEmits<{
 }>();
 
 const router = useRouter();
-const { getTokenNetwork } = useTokenStore();
-
-function getChainIcon(tokenAddress: string): string {
-  const net = getTokenNetwork(tokenAddress);
-  return net.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg';
-}
-
-function getChainName(tokenAddress: string): string {
-  const net = getTokenNetwork(tokenAddress);
-  return net.name;
-}
 
 function formatViews(views: number): string {
   if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M`;

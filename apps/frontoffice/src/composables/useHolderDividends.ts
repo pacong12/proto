@@ -50,7 +50,7 @@ export function useHolderDividends() {
 
   const totalEarnedFormatted = computed(() => {
     const n = Number(formatEther(totalEarnedWei.value));
-    return n.toFixed(4);
+    return isNaN(n) ? '0.0000' : n.toFixed(4);
   });
 
   const hasAnyEarned = computed(() => totalEarnedWei.value > 0n);

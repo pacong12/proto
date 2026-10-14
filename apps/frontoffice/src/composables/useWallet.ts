@@ -13,7 +13,7 @@ import {
   type NetworkConfig,
 } from '@proto/shared-types';
 import { getPublicClient } from '../lib/viem-client';
-import { appKitConfigured, appKit, robinhoodAppKitChain, arcAppKitChain } from '../lib/appkit';
+import { appKitConfigured, appKit, getAppKitChain } from '../lib/appkit';
 import {
   bindProviderListeners,
   clearWalletState,
@@ -89,7 +89,11 @@ export function useWallet() {
     return getNetworkConfig(walletChainId.value ?? undefined);
   });
 
-  async function syncBalance(addressValue?: `0x${string}`) {
+  async function syncBalance(
+    addressValue?: `0x${string}`,
+    explicitChainId?: number,
+    force = false,
+  ) {
     const target = addressValue ?? resolvedAddress.value ?? walletAddress.value;
     if (!target) {
       balanceWei.value = 0n;
@@ -97,12 +101,13 @@ export function useWallet() {
     }
     const now = Date.now();
     if (syncBalancePromise) return syncBalancePromise;
-    if (now - lastSyncTime < 2000) return;
+    if (!force && now - lastSyncTime < 1500) return;
     lastSyncTime = now;
 
     syncBalancePromise = (async () => {
       try {
-        balanceWei.value = await getPublicClient().getBalance({ address: target });
+        const client = getPublicClient(explicitChainId ?? walletChainId.value ?? undefined);
+        balanceWei.value = await client.getBalance({ address: target });
       } catch {
         // Keep current balance on transient error, avoid flickering to 0
       } finally {
@@ -282,7 +287,7 @@ export function useWallet() {
 
     if (appKitConfigured && appKit) {
       try {
-        const caip = targetConfig.chainId === 5042 ? arcAppKitChain : robinhoodAppKitChain;
+        const caip = getAppKitChain(targetConfig.chainId);
         await appKit.switchNetwork(caip);
         return true;
       } catch (err) {

@@ -36,11 +36,7 @@
               class="rounded-lg border border-border"
             />
             <img
-              :src="
-                getTokenNetwork(token.address).chainId === 5042
-                  ? '/chains/arc.svg'
-                  : '/chains/robinhood.svg'
-              "
+              :src="getChainIcon(getTokenNetwork(token.address))"
               :alt="getTokenNetwork(token.address).name"
               :title="getTokenNetwork(token.address).name"
               class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-black bg-black object-contain shadow-xs"
@@ -88,9 +84,9 @@
                 Accrued:
                 <strong class="text-foreground">
                   {{
-                    token.unclaimedWeth === '—'
+                    !token.isGraduated
                       ? 'Curve'
-                      : `${token.unclaimedWeth} ${nativeCurrencySymbol}`
+                      : `${token.unclaimedWeth || '0.0000'} ${nativeCurrencySymbol}`
                   }}
                 </strong>
               </span>
@@ -166,6 +162,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
+import { getChainIcon } from '@/lib/utils';
 import { useTokenStore } from '@/composables/useTokenStore';
 import type { MyLaunchItem } from './types';
 

@@ -32,23 +32,7 @@
           <!-- Chain Filter (All Chains default / Robinhood / Arc) -->
           <div class="flex items-center gap-1 text-sm self-end sm:self-auto pb-1 sm:pb-0">
             <button
-              v-for="chainOpt in [
-                {
-                  key: 'all' as ChainFilterType,
-                  label: 'All Chains',
-                  icons: ['/chains/robinhood.svg', '/chains/arc.svg'],
-                },
-                {
-                  key: 'robinhood' as ChainFilterType,
-                  label: 'Robinhood',
-                  icons: ['/chains/robinhood.svg'],
-                },
-                {
-                  key: 'arc' as ChainFilterType,
-                  label: 'Arc',
-                  icons: ['/chains/arc.svg'],
-                },
-              ] as const"
+              v-for="chainOpt in chainFilterOptions"
               :key="chainOpt.key"
               type="button"
               class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition cursor-pointer select-none"
@@ -450,7 +434,8 @@ import QuoteModal from './QuoteModal.vue';
 import FeedAlphaTicker from './FeedAlphaTicker.vue';
 import FeedSidebar from './FeedSidebar.vue';
 import FeedCalloutCard from './FeedCalloutCard.vue';
-import { shortenAddress, formatCompactUsd } from '@/lib/utils';
+import { shortenAddress, formatCompactUsd, getChainIcon, getChainShortName } from '@/lib/utils';
+import { SUPPORTED_CHAINS } from '@proto/shared-types';
 import { getUserIdentity } from '@/lib/username';
 import { compressAndConvertToWebp } from '@/lib/image-optimizer';
 import { toast } from '@/components/ui/sonner';
@@ -484,22 +469,28 @@ const {
   fetchCallerBalance,
 } = useFeed();
 
-type ChainFilterType = 'all' | 'robinhood' | 'arc';
+type ChainFilterType = string;
 const selectedChainFilter = ref<ChainFilterType>('all');
+
+const chainFilterOptions = computed(() => {
+  const supported = Object.values(SUPPORTED_CHAINS);
+  return [
+    {
+      key: 'all',
+      label: 'All Chains',
+      icons: supported.map((net) => getChainIcon(net)),
+    },
+    ...supported.map((net) => ({
+      key: String(net.chainId),
+      label: getChainShortName(net),
+      icons: [getChainIcon(net)],
+    })),
+  ];
+});
 
 function setChainFilter(key: ChainFilterType) {
   selectedChainFilter.value = key;
   currentPage.value = 1;
-}
-
-function getChainIcon(tokenAddress: string): string {
-  const net = getTokenNetwork(tokenAddress);
-  return net.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg';
-}
-
-function getChainName(tokenAddress: string): string {
-  const net = getTokenNetwork(tokenAddress);
-  return net.name;
 }
 
 // Multi-chain smart feed stream (shows all chains by default with instant filter)
@@ -508,13 +499,8 @@ const networkCallouts = computed(() => {
   if (selectedChainFilter.value === 'all') {
     return base;
   }
-  if (selectedChainFilter.value === 'robinhood') {
-    return base.filter((c) => getTokenNetwork(c.tokenAddress).chainId === 4663);
-  }
-  if (selectedChainFilter.value === 'arc') {
-    return base.filter((c) => getTokenNetwork(c.tokenAddress).chainId === 5042);
-  }
-  return base;
+  const targetChainId = Number(selectedChainFilter.value);
+  return base.filter((c) => getTokenNetwork(c.tokenAddress).chainId === targetChainId);
 });
 
 const paginatedCallouts = computed(() => {

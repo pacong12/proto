@@ -122,9 +122,7 @@
               >
                 <div class="flex items-center gap-2.5 truncate">
                   <img
-                    :src="
-                      activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'
-                    "
+                    :src="getChainIcon(activeNetwork)"
                     :alt="activeNetwork.name"
                     class="w-4 h-4 rounded-xs object-contain shrink-0"
                   />
@@ -149,7 +147,7 @@
                 >
                   <div class="flex items-center gap-2.5">
                     <img
-                      :src="net.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+                      :src="getChainIcon(net)"
                       :alt="net.name"
                       class="w-5 h-5 rounded-md object-contain shrink-0"
                     />
@@ -258,6 +256,7 @@
 import { onMounted, onUnmounted, ref } from 'vue';
 import { Loader2, X, Copy, Check, LogOut, ChevronDown, Mail } from 'lucide-vue-next';
 import { ROBINHOOD_CHAIN, SUPPORTED_CHAINS } from '@proto/shared-types';
+import { getChainIcon } from '@/lib/utils';
 import { useAppKit } from '@reown/appkit/vue';
 import { appKitConfigured } from '../lib/appkit';
 import { useI18n } from '@/lib/i18n';

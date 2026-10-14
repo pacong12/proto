@@ -434,10 +434,13 @@ function selectSlippage(preset: number) {
 }
 
 function formatEthBalance(wei: bigint): string {
-  const isArc = props.currencySymbol === 'USDC';
+  const isUsdQuote =
+    props.currencySymbol === 'USDC' ||
+    props.currencySymbol === 'USDT' ||
+    props.currencySymbol === 'USDG';
   const val = Number(wei) / 1e18;
-  if (val === 0) return isArc ? '0.00' : '0.0000';
-  if (isArc) return val < 0.01 ? val.toFixed(4) : val.toFixed(2);
+  if (val === 0) return isUsdQuote ? '0.00' : '0.0000';
+  if (isUsdQuote) return val < 0.01 ? val.toFixed(4) : val.toFixed(2);
   return val < 0.0001 ? val.toFixed(6) : val.toFixed(4);
 }
 

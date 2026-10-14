@@ -34,11 +34,11 @@ export function useUserProfile({
   const loadingPortfolio = ref(false);
 
   const totalClaimableWeth = computed(() => {
-    const sum = myLaunches.value.reduce(
-      (acc: number, item: MyLaunchItem) => acc + parseFloat(item.unclaimedWeth || '0'),
-      0,
-    );
-    return sum.toFixed(4);
+    const sum = myLaunches.value.reduce((acc: number, item: MyLaunchItem) => {
+      const val = parseFloat(item.unclaimedWeth);
+      return acc + (isNaN(val) ? 0 : val);
+    }, 0);
+    return isNaN(sum) ? '0.0000' : sum.toFixed(4);
   });
 
   // 1. Fetch launches created by the target account
@@ -55,18 +55,19 @@ export function useUserProfile({
         data: Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }>;
       }>(`/api/tokens?deployer=${target}`);
       if (envelope.success && Array.isArray(envelope.data)) {
-        const publicClient = getPublicClient(activeNetwork.value.chainId);
-        const lockerAddr = activeNetwork.value.contracts.locker;
-        const hasLocker = lockerAddr && lockerAddr !== UNDEPLOYED;
-
         const launches = await Promise.all(
           envelope.data.map(async (item) => {
             let redirect: string | null = null;
-            let unclaimedWeth = '--';
+            let unclaimedWeth = '0.0000';
+
+            const tokenNetwork = getTokenNetwork(item.token.address);
+            const tokenClient = getPublicClient(tokenNetwork.chainId);
+            const lockerAddr = tokenNetwork.contracts.locker;
+            const hasLocker = lockerAddr && lockerAddr !== UNDEPLOYED;
 
             if (hasLocker) {
               try {
-                const r = (await publicClient.readContract({
+                const r = (await tokenClient.readContract({
                   address: lockerAddr,
                   abi: liquidityLockerAbi,
                   functionName: 'feeRedirects',
@@ -81,7 +82,7 @@ export function useUserProfile({
 
               if (item.marketData?.isGraduated) {
                 try {
-                  const { result } = await publicClient.simulateContract({
+                  const { result } = await tokenClient.simulateContract({
                     address: lockerAddr,
                     abi: liquidityLockerAbi,
                     functionName: 'claimFees',
@@ -90,7 +91,7 @@ export function useUserProfile({
                   });
                   const [, creatorWethFee] = result as [bigint, bigint];
                   const wethNum = Number(creatorWethFee) / 1e18;
-                  unclaimedWeth = wethNum.toFixed(4);
+                  unclaimedWeth = isNaN(wethNum) ? '0.0000' : wethNum.toFixed(4);
                 } catch {
                   // Non-blocking
                 }
@@ -105,6 +106,7 @@ export function useUserProfile({
               unclaimedWeth,
               redirect,
               taxConfig: item.token.taxConfig,
+              isGraduated: Boolean(item.marketData?.isGraduated),
             };
           }),
         );

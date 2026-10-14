@@ -8,11 +8,10 @@
 import { ref, readonly, computed, watch } from 'vue';
 import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
 import {
-  isArcToken,
+  resolveTokenNetwork,
+  resolveNetworkByParam,
   ARC_NETWORK,
   ROBINHOOD_NETWORK,
-  ARC_CHAIN,
-  ROBINHOOD_CHAIN,
   type NetworkConfig,
 } from '@proto/shared-types';
 import { apiFetch } from '@/lib/api-client';
@@ -23,7 +22,7 @@ export interface TokenListItem {
   marketData: TokenMarketData | null;
 }
 
-export type ChainViewMode = 'all' | 'robinhood' | 'arc';
+export type ChainViewMode = 'all' | 'robinhood' | 'arc' | (string & {});
 
 // Module-level singletons - shared across all composable consumers
 const tokens = ref<TokenListItem[]>([]);
@@ -84,31 +83,37 @@ export function useTokenStore() {
    * All Robinhood Chain tokens.
    */
   const robinhoodTokens = computed<TokenListItem[]>(() => {
-    return tokens.value.filter((item) => !isArcToken(item.token));
+    return tokens.value.filter(
+      (item) => getTokenNetwork(item.token).chainId === ROBINHOOD_NETWORK.chainId,
+    );
   });
 
   /**
    * All Arc Network tokens.
    */
   const arcTokens = computed<TokenListItem[]>(() => {
-    return tokens.value.filter((item) => isArcToken(item.token));
+    return tokens.value.filter(
+      (item) => getTokenNetwork(item.token).chainId === ARC_NETWORK.chainId,
+    );
   });
 
   /**
    * Tokens for the currently active chain (wallet-linked).
    */
   const networkTokens = computed<TokenListItem[]>(() => {
-    const isArc = activeNetwork.value.chainId === ARC_NETWORK.chainId;
-    return isArc ? arcTokens.value : robinhoodTokens.value;
+    return tokens.value.filter(
+      (item) => getTokenNetwork(item.token).chainId === activeNetwork.value.chainId,
+    );
   });
 
   /**
-   * Tokens matching current GMGN-style selected chain view ('all' | 'robinhood' | 'arc').
+   * Tokens matching current GMGN-style selected chain view ('all' | chain param).
+   * Scalable: dynamically resolves target chain via resolveNetworkByParam.
    */
   const chainTokens = computed<TokenListItem[]>(() => {
-    if (selectedChainView.value === 'arc') return arcTokens.value;
-    if (selectedChainView.value === 'robinhood') return robinhoodTokens.value;
-    return tokens.value;
+    if (selectedChainView.value === 'all') return tokens.value;
+    const targetNet = resolveNetworkByParam(selectedChainView.value);
+    return tokens.value.filter((item) => getTokenNetwork(item.token).chainId === targetNet.chainId);
   });
 
   /**
@@ -131,15 +136,15 @@ export function useTokenStore() {
   function getTokenNetwork(
     tokenOrAddress: string | LaunchedTokenEntity | null | undefined,
   ): NetworkConfig {
-    if (!tokenOrAddress) return ROBINHOOD_NETWORK;
+    if (!tokenOrAddress) return activeNetwork.value;
     if (typeof tokenOrAddress === 'string') {
       const match = tokens.value.find(
         (t) => t.token.address.toLowerCase() === tokenOrAddress.toLowerCase(),
       );
-      if (match) return isArcToken(match.token) ? ARC_NETWORK : ROBINHOOD_NETWORK;
-      return ROBINHOOD_NETWORK;
+      if (match) return resolveTokenNetwork(match.token);
+      return resolveTokenNetwork({ pairedToken: tokenOrAddress, poolAddress: tokenOrAddress });
     }
-    return isArcToken(tokenOrAddress) ? ARC_NETWORK : ROBINHOOD_NETWORK;
+    return resolveTokenNetwork(tokenOrAddress);
   }
 
   /**
@@ -149,7 +154,7 @@ export function useTokenStore() {
     if (typeof tokenOrAddress === 'string') {
       return networkTokenAddresses.value.has(tokenOrAddress.toLowerCase());
     }
-    return isArcToken(tokenOrAddress) === (activeNetwork.value.chainId === ARC_NETWORK.chainId);
+    return getTokenNetwork(tokenOrAddress).chainId === activeNetwork.value.chainId;
   }
 
   /**
@@ -157,12 +162,9 @@ export function useTokenStore() {
    */
   async function selectChainView(mode: ChainViewMode, syncWallet = true): Promise<void> {
     selectedChainView.value = mode;
-    if (syncWallet) {
-      if (mode === 'arc') {
-        await switchOrAddNetwork(ARC_CHAIN);
-      } else if (mode === 'robinhood') {
-        await switchOrAddNetwork(ROBINHOOD_CHAIN);
-      }
+    if (syncWallet && mode !== 'all') {
+      const net = resolveNetworkByParam(mode);
+      await switchOrAddNetwork(net);
     }
   }
 

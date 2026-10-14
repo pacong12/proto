@@ -33,11 +33,7 @@
             class="rounded-full border border-border object-cover shrink-0 ring-1 ring-border group-hover:ring-primary/40 transition"
           />
           <img
-            :src="
-              tokenStore.getTokenNetwork(item.token.address).chainId === 5042
-                ? '/chains/arc.svg'
-                : '/chains/robinhood.svg'
-            "
+            :src="getChainIcon(tokenStore.getTokenNetwork(item.token.address))"
             :alt="tokenStore.getTokenNetwork(item.token.address).name"
             :title="tokenStore.getTokenNetwork(item.token.address).name"
             class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border border-black bg-black object-contain shadow-xs"
@@ -89,7 +85,7 @@ import { Star, ArrowRight } from 'lucide-vue-next';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import TaxTooltip from '@/components/ui/TaxTooltip.vue';
 import { useTokenStore } from '@/composables/useTokenStore';
-import { formatRelativeTime } from '@/lib/utils';
+import { formatRelativeTime, getChainIcon } from '@/lib/utils';
 import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
 
 interface TokenItem {

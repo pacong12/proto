@@ -11,10 +11,11 @@
       <section class="space-y-2">
         <h2 class="text-base font-bold text-foreground">1. Non-Custodial Protocol</h2>
         <p>
-          Proto is a decentralized, non-custodial software protocol deployed on Robinhood Chain
-          (Chain ID: 4663). Proto Labs does not take custody of user assets, tokens, or private keys
-          at any point. Every token launch, liquidity lock, swap, or fee claim is executed directly
-          between your cryptographic wallet and open-source smart contracts.
+          Proto is a decentralized, non-custodial software protocol deployed on EVM-compatible
+          networks, including Robinhood Chain and Arc Network. Proto Labs does not take custody of
+          user assets, tokens, or private keys at any point. Every token launch, liquidity lock,
+          swap, or fee claim is executed directly between your cryptographic wallet and open-source
+          smart contracts.
         </p>
       </section>
 

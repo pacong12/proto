@@ -95,7 +95,11 @@
 import { Search, Flame } from 'lucide-vue-next';
 import { Empty } from '@/components/ui/empty';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
-import { formatCompactUsd } from '@/lib/utils';
+import {
+  formatCompactUsd,
+  getTokenChainIcon as getChainIcon,
+  getTokenChainName as getChainName,
+} from '@/lib/utils';
 import { useTokenStore } from '@/composables/useTokenStore';
 import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
 
@@ -115,16 +119,4 @@ defineEmits<{
   (e: 'update:searchQuery', val: string): void;
   (e: 'selectToken', address: string): void;
 }>();
-
-const { getTokenNetwork } = useTokenStore();
-
-function getChainIcon(tokenAddress: string): string {
-  const net = getTokenNetwork(tokenAddress);
-  return net.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg';
-}
-
-function getChainName(tokenAddress: string): string {
-  const net = getTokenNetwork(tokenAddress);
-  return net.name;
-}
 </script>

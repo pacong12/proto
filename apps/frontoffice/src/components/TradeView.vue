@@ -454,6 +454,7 @@ import { getUserIdentity } from '@/lib/username';
 import {
   ROBINHOOD_CHAIN,
   ARC_CHAIN,
+  SUPPORTED_CHAINS,
   ARC_PROTO_CURVE_ADDRESS,
   resolveTokenNetwork,
   launchpadTokenAbi,
@@ -470,6 +471,8 @@ import {
   calculateCurveSellOutput,
   calculateRealizedPnl,
   calculateTraderTotalPnl,
+  ROBINHOOD_INITIAL_VIRTUAL_ETH_WEI,
+  ARC_INITIAL_VIRTUAL_ETH_WEI,
 } from '@proto/math-sdk';
 
 const props = defineProps<{
@@ -1234,7 +1237,8 @@ function getVirtualReserves() {
   // virtualTokenReserve = CURVE_TOKEN_SUPPLY = 800_000_000.
   const currentRaised = parseFloat(currentMarketData.value.pairedPrincipalWeth) || 0;
   const isArc = currencySymbol.value === 'USDC';
-  const baseVirtualEth = isArc ? 4200.0 : 3.0;
+  const baseVirtualEth =
+    Number(isArc ? ARC_INITIAL_VIRTUAL_ETH_WEI : ROBINHOOD_INITIAL_VIRTUAL_ETH_WEI) / 1e18;
   return {
     vEth: baseVirtualEth + currentRaised,
     vToken: CURVE_TOKEN_SUPPLY,
@@ -1339,20 +1343,23 @@ function applyQuickBuy(val: string) {
 function applyPercentage(percent: number) {
   if (isBuy.value) {
     isMaxSell.value = false;
-    const isArc = currencySymbol.value === 'USDC';
+    const isUsdQuote =
+      currencySymbol.value === 'USDC' ||
+      currencySymbol.value === 'USDT' ||
+      currencySymbol.value === 'USDG';
     const ethBalance = Number(balanceWei.value) / 1e18;
     if (ethBalance <= 0) {
       amountIn.value = '0';
       return;
     }
-    const reserveGas = isArc ? 0.05 : 0.005;
+    const reserveGas = isUsdQuote ? 0.05 : 0.005;
     const maxEth =
       percent === 100 ? Math.max(0, ethBalance - reserveGas) : ethBalance * (percent / 100);
     const nativeVal = maxEth > 0 ? maxEth : ethBalance;
     if (payInUsd.value) {
       amountIn.value = (nativeVal * (quoteAssetPriceUsd.value || 1)).toFixed(2);
     } else {
-      amountIn.value = nativeVal.toFixed(isArc ? 2 : 4);
+      amountIn.value = nativeVal.toFixed(isUsdQuote ? 2 : 4);
     }
   } else {
     const decimals = currentToken.value.decimals || 18;
@@ -1393,10 +1400,13 @@ function handleCustomSlippageInput() {
 }
 
 function formatEthBalance(wei: bigint): string {
-  const isArc = currencySymbol.value === 'USDC';
+  const isUsdQuote =
+    currencySymbol.value === 'USDC' ||
+    currencySymbol.value === 'USDT' ||
+    currencySymbol.value === 'USDG';
   const val = Number(wei) / 1e18;
-  if (val === 0) return isArc ? '0.00' : '0.0000';
-  if (isArc) return val < 0.01 ? val.toFixed(4) : val.toFixed(2);
+  if (val === 0) return isUsdQuote ? '0.00' : '0.0000';
+  if (isUsdQuote) return val < 0.01 ? val.toFixed(4) : val.toFixed(2);
   return val < 0.0001 ? val.toFixed(6) : val.toFixed(4);
 }
 
@@ -1490,7 +1500,7 @@ async function fetchUserTokenBalance(force = false) {
           args: [currentAcc as `0x${string}`],
         }) as Promise<bigint>,
         apiFetch<{ success: boolean; data: { balanceWei: string } } | null>(
-          `/api/tokens/${tokenAddr}/balance?account=${currentAcc}`,
+          `/api/tokens/${tokenAddr}/balance?account=${currentAcc}&chain=${tokenNetwork.value.chainId}`,
         ).catch(() => null),
       ]);
 
@@ -1990,22 +2000,14 @@ async function loadTokenData(address: `0x${string}`) {
   // If backend is catching up or returns 404, hydrate token & bonding curve directly from chain
   if (!loaded) {
     try {
-      const chainsToTry = [ARC_CHAIN, ROBINHOOD_CHAIN];
+      const chainsToTry = Object.values(SUPPORTED_CHAINS);
 
       for (const network of chainsToTry) {
         if (loaded) break;
         const client = getPublicClient(network.chainId);
-        const factories = [
-          network.contracts.factoryV2,
-          network.contracts.factory,
-          network.chainId === 5042
-            ? ('0xf94d16c9E90fCd55b75D318d0104269146612abF' as `0x${string}`)
-            : undefined,
-          network.chainId === 4663
-            ? ('0xbA42499Cfe59abc05120A100EEc4f859F476034F' as `0x${string}`)
-            : undefined,
-        ].filter((f): f is `0x${string}` =>
-          Boolean(f && f !== '0x0000000000000000000000000000000000000000'),
+        const factories = [network.contracts.factoryV2, network.contracts.factory].filter(
+          (f): f is `0x${string}` =>
+            Boolean(f && f !== '0x0000000000000000000000000000000000000000'),
         );
 
         for (const factory of factories) {
@@ -2055,8 +2057,10 @@ async function loadTokenData(address: `0x${string}`) {
               const vEthNum = Number(vEth) / 1e18;
               const vTokenNum = Number(vToken) / 10 ** (decimals || 18);
               const spotPrice = vTokenNum > 0 ? vEthNum / vTokenNum : 0;
-              const isArc = network.chainId === 5042;
-              const quoteUsd = isArc ? 1.0 : 2500;
+              const isStableQuote =
+                network.nativeCurrency.symbol === 'USDC' ||
+                network.nativeCurrency.symbol === 'USDT';
+              const quoteUsd = isStableQuote ? 1.0 : 2500;
               const priceUsd = spotPrice * quoteUsd;
 
               currentToken.value = {
@@ -2149,7 +2153,10 @@ watch(
     if (newAddress && newAddress !== currentToken.value.address) {
       currentToken.value.address = newAddress as `0x${string}`;
       await loadTokenData(newAddress as `0x${string}`);
-      await fetchUserTokenBalance(true);
+      await Promise.allSettled([
+        fetchUserTokenBalance(true),
+        updateBalance(undefined, tokenNetwork.value.chainId, true),
+      ]);
     }
   },
 );
@@ -2158,9 +2165,22 @@ watch(
   () => account.value,
   (newAcc, oldAcc) => {
     if (newAcc && newAcc !== oldAcc) {
-      Promise.allSettled([fetchUserTokenBalance(true), fetchCallouts(currentToken.value.address)]);
+      Promise.allSettled([
+        fetchUserTokenBalance(true),
+        updateBalance(undefined, tokenNetwork.value.chainId, true),
+        fetchCallouts(currentToken.value.address),
+      ]);
     } else if (!newAcc) {
       userTokenBalance.value = 0n;
+    }
+  },
+);
+
+watch(
+  () => tokenNetwork.value.chainId,
+  (newChainId) => {
+    if (account.value) {
+      Promise.allSettled([updateBalance(undefined, newChainId, true), fetchUserTokenBalance(true)]);
     }
   },
 );
@@ -2180,7 +2200,10 @@ onMounted(async () => {
   if (addr && addr !== '0x0000000000000000000000000000000000000000') {
     currentToken.value.address = addr;
     await loadTokenData(addr);
-    await fetchUserTokenBalance();
+    await Promise.allSettled([
+      fetchUserTokenBalance(true),
+      updateBalance(undefined, tokenNetwork.value.chainId, true),
+    ]);
   }
 
   // Open SSE stream first so market price arrives via push;

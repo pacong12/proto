@@ -205,19 +205,23 @@
 
           <p class="text-xs text-muted-foreground">
             {{
-              activeNetwork.chainId === 5042
-                ? 'Graduates once the curve raises 69,000 USDC into Uniswap liquidity.'
-                : t('v2GraduatesHint')
+              `Graduates once the curve raises ${graduationTargetFormatted} ${currencySymbol} into Uniswap liquidity.`
             }}
           </p>
         </div>
 
         <!-- Developer buy -->
         <div class="space-y-2 pt-1">
-          <div class="flex justify-between items-center">
-            <span class="text-xs text-muted-foreground">
+          <div class="flex justify-between items-center text-xs">
+            <span class="text-muted-foreground">
               {{ t('boughtInLaunchNotice') }}
             </span>
+            <div class="flex items-center gap-1.5 text-muted-foreground">
+              <span>Balance:</span>
+              <strong class="text-foreground font-semibold">
+                {{ isConnected ? `${formattedBalance} ${currencySymbol}` : '—' }}
+              </strong>
+            </div>
           </div>
           <div class="relative">
             <Input
@@ -244,6 +248,41 @@
                 {{ currencySymbol }}
               </span>
             </div>
+          </div>
+
+          <!-- Quick percentage selectors for initial buy -->
+          <div
+            v-if="isConnected && Number(formattedBalance) > 0"
+            class="flex items-center gap-1.5 pt-0.5"
+          >
+            <button
+              v-for="pct in [10, 25, 50, 75]"
+              :key="pct"
+              type="button"
+              class="px-2 py-0.5 text-xs rounded-md border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition cursor-pointer"
+              @click="setInitialBuyPercentage(pct)"
+            >
+              {{ pct }}%
+            </button>
+            <button
+              type="button"
+              class="px-2 py-0.5 text-xs rounded-md border border-border bg-muted/40 hover:bg-muted text-primary font-bold transition cursor-pointer"
+              @click="setInitialBuyMax"
+            >
+              MAX
+            </button>
+          </div>
+
+          <!-- Insufficient Balance Warning -->
+          <div
+            v-if="isConnected && isInsufficientBalance"
+            class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-500 text-xs flex items-center gap-2"
+          >
+            <AlertCircle class="w-4 h-4 shrink-0" />
+            <span>
+              Insufficient balance for launch fee + initial buy (Need ~{{ totalDueDisplay }}
+              {{ currencySymbol }}, Have {{ formattedBalance }} {{ currencySymbol }}).
+            </span>
           </div>
         </div>
 
@@ -375,7 +414,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { AlertCircle, UploadCloud, Loader2, Check, Trash2 } from 'lucide-vue-next';
 import { useLaunchpad } from '../composables/useLaunchpad';
 import { useWallet } from '../composables/useWallet';
@@ -406,10 +445,68 @@ const {
   resetLaunchState,
   checkPendingTransaction,
 } = useLaunchpad();
-const { isConnected, account, activeNetwork, switchOrAddNetwork, isCorrectNetwork, openWallet } =
-  useWallet();
+const {
+  isConnected,
+  account,
+  activeNetwork,
+  formattedBalance,
+  balanceWei,
+  updateBalance,
+  switchOrAddNetwork,
+  isCorrectNetwork,
+  openWallet,
+} = useWallet();
+
+onMounted(() => {
+  if (account.value) {
+    updateBalance(undefined, activeNetwork.value.chainId, true);
+  }
+});
+
+watch(
+  () => [account.value, activeNetwork.value.chainId],
+  () => {
+    if (account.value) {
+      updateBalance(undefined, activeNetwork.value.chainId, true);
+    }
+  },
+);
+
+const isInsufficientBalance = computed(() => {
+  if (!isConnected.value) return false;
+  const launchFeeNum = Number(activeNetwork.value.launchConfig.launchFeeWei) / 1e18;
+  const buyNum = parseFloat(form.value.initialBuyEth || '0') || 0;
+  const totalNeeded = launchFeeNum + buyNum;
+  const userBal = parseFloat(formattedBalance.value) || 0;
+  return totalNeeded > userBal;
+});
+
+const totalDueDisplay = computed(() => {
+  const launchFeeNum = Number(activeNetwork.value.launchConfig.launchFeeWei) / 1e18;
+  const buyNum = parseFloat(form.value.initialBuyEth || '0') || 0;
+  return (launchFeeNum + buyNum).toFixed(currencySymbol.value === 'USDC' ? 2 : 4);
+});
+
+function setInitialBuyPercentage(pct: number) {
+  const userBal = parseFloat(formattedBalance.value) || 0;
+  const launchFeeNum = Number(activeNetwork.value.launchConfig.launchFeeWei) / 1e18;
+  const gasBuffer = currencySymbol.value === 'USDC' ? 0.05 : 0.005;
+  const availableForBuy = Math.max(0, userBal - launchFeeNum - gasBuffer);
+  const amount = availableForBuy * (pct / 100);
+  form.value.initialBuyEth =
+    amount > 0 ? amount.toFixed(currencySymbol.value === 'USDC' ? 2 : 4) : '';
+}
+
+function setInitialBuyMax() {
+  setInitialBuyPercentage(100);
+}
 
 const isModalOpen = ref(false);
+
+const graduationTargetFormatted = computed(() => {
+  const val = Number(activeNetwork.value.launchConfig.graduationThresholdWei) / 1e18;
+  return val >= 1000 ? `${(val / 1000).toFixed(0)}K` : val.toFixed(1);
+});
 
 const txExplorerUrl = computed(() => {
   if (!launchTxHash.value) return '';

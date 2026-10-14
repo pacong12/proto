@@ -20,11 +20,7 @@
                   class="rounded-full border border-border object-cover shrink-0 ring-1 ring-border group-hover:ring-primary/50 transition"
                 />
                 <img
-                  :src="
-                    tokenStore.getTokenNetwork(item.token.address).chainId === 5042
-                      ? '/chains/arc.svg'
-                      : '/chains/robinhood.svg'
-                  "
+                  :src="getChainIcon(tokenStore.getTokenNetwork(item.token.address))"
                   :alt="tokenStore.getTokenNetwork(item.token.address).name"
                   :title="tokenStore.getTokenNetwork(item.token.address).name"
                   class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-black bg-black object-contain shadow-xs"
@@ -172,7 +168,7 @@ import { Progress } from '@/components/ui/progress';
 import { Pagination } from '@/components/ui/pagination';
 import TaxTooltip from '@/components/ui/TaxTooltip.vue';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
-import { formatRelativeTime, formatCompactUsd } from '@/lib/utils';
+import { formatRelativeTime, formatCompactUsd, getChainIcon } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { useTokenStore } from '@/composables/useTokenStore';
 import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';

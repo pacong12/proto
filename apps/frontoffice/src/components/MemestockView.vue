@@ -136,11 +136,7 @@
                   class="rounded-xl border border-border group-hover:border-foreground/40 transition shrink-0"
                 />
                 <img
-                  :src="
-                    tokenStore.getTokenNetwork(item.token.address).chainId === 5042
-                      ? '/chains/arc.svg'
-                      : '/chains/robinhood.svg'
-                  "
+                  :src="getChainIcon(tokenStore.getTokenNetwork(item.token.address))"
                   :alt="tokenStore.getTokenNetwork(item.token.address).name"
                   :title="tokenStore.getTokenNetwork(item.token.address).name"
                   class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-black bg-black object-contain shadow-xs"
@@ -296,7 +292,7 @@ import { Empty } from '@/components/ui/empty';
 import { Pagination } from '@/components/ui/pagination';
 import TaxTooltip from '@/components/ui/TaxTooltip.vue';
 import { ARC_CHAIN, type LaunchedTokenEntity, type TokenMarketData } from '@proto/shared-types';
-import { formatCompactUsd, formatRelativeTime, shortenAddress } from '@/lib/utils';
+import { formatCompactUsd, formatRelativeTime, shortenAddress, getChainIcon } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { useWallet } from '@/composables/useWallet';
 import { useTokenStore } from '@/composables/useTokenStore';
@@ -351,18 +347,10 @@ const graduationTargetDisplay = computed(() => {
   return `${val.toFixed(1)} ${symbol}`;
 });
 
-// Filter items by active network (Robinhood Chain 4663 vs Arc Network 5042)
+// Filter items by active network dynamically
 const networkTokens = computed(() => {
-  const isArc = activeNetwork.value.chainId === ARC_CHAIN.chainId;
-  const arcWeth = ARC_CHAIN.contracts.weth.toLowerCase();
-  const arcFactory = ARC_CHAIN.contracts.factory.toLowerCase();
-  const arcFactoryV2 = (ARC_CHAIN.contracts.factoryV2 ?? ARC_CHAIN.contracts.factory).toLowerCase();
-
   return items.value.filter((item) => {
-    const paired = item.token.pairedToken?.toLowerCase();
-    const pool = item.token.poolAddress?.toLowerCase();
-    const isTokenArc = paired === arcWeth || pool === arcFactory || pool === arcFactoryV2;
-    return isArc ? isTokenArc : !isTokenArc;
+    return tokenStore.isTokenOnActiveNetwork(item.token);
   });
 });
 

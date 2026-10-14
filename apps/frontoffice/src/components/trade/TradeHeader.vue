@@ -71,7 +71,7 @@
             class="rounded-2xl border border-border object-cover ring-2 ring-border shadow-xs shrink-0 w-14 h-14 sm:w-16 sm:h-16"
           />
           <img
-            :src="tokenNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+            :src="getChainIcon(tokenNetwork)"
             :alt="tokenNetwork.name"
             :title="tokenNetwork.name"
             class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-black bg-black object-contain shadow-xs"
@@ -290,7 +290,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
-import { shortenAddress, formatRelativeTime } from '@/lib/utils';
+import { shortenAddress, formatRelativeTime, getChainIcon } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import type { LaunchedTokenEntity, TokenMarketData, NetworkConfig } from '@proto/shared-types';
 

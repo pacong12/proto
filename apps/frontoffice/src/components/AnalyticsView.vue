@@ -13,7 +13,7 @@
             class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20"
           >
             <img
-              :src="activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+              :src="getChainIcon(activeNetwork)"
               :alt="activeNetwork.name"
               class="w-3.5 h-3.5 object-contain"
             />
@@ -423,7 +423,7 @@ import {
 } from '@/components/ui/table';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { ShadcnAreaChart, type ChartDataPoint } from '@/components/ui/chart';
-import { formatCompactUsd } from '@/lib/utils';
+import { formatCompactUsd, getChainIcon } from '@/lib/utils';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -460,7 +460,10 @@ const formattedBuyback = computed(() => {
 
 const estimatedProtocolFees = computed(() => {
   const vol = Number(totalVolume.value) || 0;
-  const divisor = activeNetwork.value.chainId === 5042 ? 1 : 2500;
+  const isStableQuote =
+    activeNetwork.value.nativeCurrency.symbol === 'USDC' ||
+    activeNetwork.value.nativeCurrency.symbol === 'USDT';
+  const divisor = isStableQuote ? 1 : 2500;
   const feeEstimate = (vol * 0.01) / divisor;
   return feeEstimate > 0 ? feeEstimate.toFixed(3) : '0.00';
 });

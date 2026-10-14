@@ -433,7 +433,13 @@ import { CashtagText, ShareModal, QuoteModal } from '@/components/feed';
 import { useWallet } from '@/composables/useWallet';
 import { useTokenStore } from '@/composables/useTokenStore';
 import { useFeed, isWhaleCaller } from '@/composables/useFeed';
-import { shortenAddress, formatRelativeTime, formatCompactUsd } from '@/lib/utils';
+import {
+  shortenAddress,
+  formatRelativeTime,
+  formatCompactUsd,
+  getTokenChainIcon as getChainIcon,
+  getTokenChainName as getChainName,
+} from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { toast } from '@/components/ui/sonner';
 import type { FeedCalloutItem } from '@proto/shared-types';
@@ -443,16 +449,6 @@ const router = useRouter();
 const { account, openWallet } = useWallet();
 const { tokens: allTokens, fetchTokens, getTokenNetwork } = useTokenStore();
 const { toggleLike, toggleRepost, recordView } = useFeed();
-
-function getChainIcon(tokenAddress: string): string {
-  const net = getTokenNetwork(tokenAddress);
-  return net.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg';
-}
-
-function getChainName(tokenAddress: string): string {
-  const net = getTokenNetwork(tokenAddress);
-  return net.name;
-}
 
 const calloutId = computed(() => String(route.params.id || route.params.detail || ''));
 const post = ref<FeedCalloutItem | null>(null);

@@ -56,11 +56,7 @@
                     </AvatarFallback>
                   </Avatar>
                   <img
-                    :src="
-                      getTokenNetwork(pos.tokenAddress).chainId === 5042
-                        ? '/chains/arc.svg'
-                        : '/chains/robinhood.svg'
-                    "
+                    :src="getChainIcon(getTokenNetwork(pos.tokenAddress))"
                     :alt="getTokenNetwork(pos.tokenAddress).name"
                     class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border border-black bg-black object-contain shadow-xs"
                   />
@@ -107,6 +103,7 @@
 import { ExternalLink, PieChart } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { getChainIcon } from '@/lib/utils';
 import { useTokenStore } from '@/composables/useTokenStore';
 import { Empty } from '@/components/ui/empty';
 import {

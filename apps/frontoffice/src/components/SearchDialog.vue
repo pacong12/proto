@@ -290,18 +290,8 @@ onMounted(async () => {
 });
 
 const filteredTokens = computed(() => {
-  const isArc = activeNetwork.value.chainId === ARC_CHAIN.chainId;
-  const arcWeth = ARC_CHAIN.contracts.weth.toLowerCase();
-  const arcFactory = ARC_CHAIN.contracts.factory.toLowerCase();
-
   const chainFiltered = tokens.value.filter((item) => {
-    const paired = item.token.pairedToken?.toLowerCase();
-    const pool = item.token.poolAddress?.toLowerCase();
-    const curve = item.token.curveAddress?.toLowerCase();
-    const isTokenArc =
-      paired === arcWeth || pool === arcFactory || curve === ARC_PROTO_CURVE_ADDRESS.toLowerCase();
-
-    return isArc ? isTokenArc : !isTokenArc;
+    return tokenStore.isTokenOnActiveNetwork(item.token);
   });
 
   const q = query.value.trim().toLowerCase();
