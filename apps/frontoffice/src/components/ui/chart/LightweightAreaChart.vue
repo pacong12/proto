@@ -115,7 +115,7 @@ function getThemeOptions() {
     layout: {
       background: { type: ColorType.Solid, color: 'transparent' },
       textColor: dark ? '#a1a1aa' : '#52525b',
-      fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
+      fontFamily: 'Poppins, ui-sans-serif, system-ui, sans-serif',
       fontSize: 11,
     },
     grid: {
@@ -148,7 +148,7 @@ function updateWatermark() {
             text: props.watermarkText.toUpperCase(),
             color,
             fontSize: 54,
-            fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
+            fontFamily: 'Poppins, ui-sans-serif, system-ui, sans-serif',
             fontStyle: 'bold',
           },
         ],
@@ -160,7 +160,7 @@ function updateWatermark() {
             text: props.watermarkText.toUpperCase(),
             color,
             fontSize: 54,
-            fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
+            fontFamily: 'Poppins, ui-sans-serif, system-ui, sans-serif',
             fontStyle: 'bold',
           },
         ],
