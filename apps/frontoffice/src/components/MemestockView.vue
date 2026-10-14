@@ -39,7 +39,7 @@
 
     <!-- Navigation Filter Pills (Shadcn Tabs variant="line") + Search Bar (identical to Explore) -->
     <div
-      class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-border text-xs"
+      class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-border text-sm"
     >
       <!-- Filter Tabs -->
       <Tabs v-model="selectedSort" class="w-full md:w-auto">
@@ -60,7 +60,7 @@
           v-model="searchQuery"
           type="text"
           placeholder="Search memestocks / address..."
-          class="h-8 pl-8 pr-3 text-xs bg-card border-border rounded-xl text-foreground focus-visible:ring-foreground"
+          class="h-9 pl-8 pr-3 text-sm bg-card border-border rounded-xl text-foreground focus-visible:ring-foreground"
         />
       </div>
     </div>
@@ -68,7 +68,7 @@
     <!-- Loading State -->
     <div v-if="loading" class="flex flex-col items-center justify-center py-20 gap-3">
       <Loader2 class="w-7 h-7 text-foreground animate-spin" />
-      <span class="text-xs text-muted-foreground">{{ t('loadingTape') }}</span>
+      <span class="text-sm text-muted-foreground">{{ t('loadingTape') }}</span>
     </div>
 
     <!-- Error Banner -->
@@ -152,7 +152,7 @@
                 >
                   {{ item.token.name }}
                 </h3>
-                <div class="flex items-center gap-1.5 text-xs text-muted-foreground truncate">
+                <div class="flex items-center gap-1.5 text-sm text-muted-foreground truncate">
                   <span class="font-semibold">${{ item.token.symbol }}</span>
                   <span>&middot;</span>
                   <span>{{ formatRelativeTime(item.token.createdAt) }}</span>
@@ -205,14 +205,14 @@
               </div>
             </div>
 
-            <p class="text-xs leading-relaxed text-muted-foreground line-clamp-2">
+            <p class="text-sm leading-relaxed text-muted-foreground line-clamp-2">
               {{
                 item.token.description ||
                 `Community-backed fixed-supply memestock on ${activeNetwork.name}.`
               }}
             </p>
 
-            <div class="flex items-center gap-2 flex-wrap text-xs">
+            <div class="flex items-center gap-2 flex-wrap text-sm">
               <TaxTooltip
                 :buy-tax-bps="item.token.taxConfig?.buyTaxBps"
                 :sell-tax-bps="item.token.taxConfig?.sellTaxBps"
@@ -236,7 +236,7 @@
           </div>
 
           <div class="mt-5 pt-4 border-t border-border space-y-2">
-            <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="grid grid-cols-2 gap-2 text-sm">
               <div>
                 <span class="text-xs text-muted-foreground block font-semibold">MARKET CAP</span>
                 <span class="font-bold text-foreground">
@@ -254,7 +254,7 @@
                 </span>
               </div>
             </div>
-            <div class="flex justify-between text-xs pt-1">
+            <div class="flex justify-between text-sm pt-1">
               <span class="text-muted-foreground">Graduation ({{ graduationTargetDisplay }})</span>
               <span class="text-foreground font-semibold">
                 {{ (item.marketData.graduationProgress * 100).toFixed(1) }}%

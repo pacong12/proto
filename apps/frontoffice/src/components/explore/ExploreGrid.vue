@@ -32,11 +32,11 @@
               </div>
               <div class="truncate">
                 <h3
-                  class="font-bold text-sm text-foreground group-hover:text-primary transition truncate"
+                  class="font-bold text-base text-foreground group-hover:text-primary transition truncate"
                 >
                   {{ item.token.name }}
                 </h3>
-                <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <div class="flex items-center gap-1.5 text-sm text-muted-foreground">
                   <span class="font-semibold">${{ item.token.symbol }}</span>
                   <span>&middot;</span>
                   <span>{{ formatRelativeTime(item.token.createdAt) }}</span>
@@ -74,7 +74,7 @@
                 />
               </button>
               <span
-                class="text-xs font-bold"
+                class="text-sm font-bold"
                 :class="
                   (item.marketData?.priceChange24h ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'
                 "
@@ -86,7 +86,7 @@
           </div>
 
           <!-- Price & MCap -->
-          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-border text-xs">
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-border text-sm">
             <div>
               <span class="text-xs text-muted-foreground block font-semibold">MARKET CAP</span>
               <span class="font-bold text-sm text-foreground">
@@ -106,7 +106,7 @@
           </div>
 
           <!-- Token Features & Taxes -->
-          <div class="flex items-center gap-2 flex-wrap pt-1 text-xs">
+          <div class="flex items-center gap-2 flex-wrap pt-1 text-sm">
             <TaxTooltip
               :buy-tax-bps="item.token.taxConfig?.buyTaxBps"
               :sell-tax-bps="item.token.taxConfig?.sellTaxBps"
@@ -136,7 +136,7 @@
 
           <!-- Bonding Progress -->
           <div class="space-y-1 pt-1">
-            <div class="flex justify-between text-xs">
+            <div class="flex justify-between text-sm">
               <span class="text-muted-foreground">Bonding Curve</span>
               <span class="font-bold text-emerald-500">
                 {{ ((item.marketData?.graduationProgress ?? 0) * 100).toFixed(1) }}%

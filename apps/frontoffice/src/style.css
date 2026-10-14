@@ -43,6 +43,13 @@
   --font-sans: var(--vp-font-family-base);
   --font-heading: var(--vp-font-family-base);
   --font-mono: var(--vp-font-family-base);
+
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.4;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.5;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5;
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -236,18 +243,18 @@ td {
    ========================================================================== */
 
 .text-xs {
-  font-size: 0.8125rem; /* 13px */
-  line-height: 1.4;
+  font-size: 0.8125rem !important; /* 13px */
+  line-height: 1.4 !important;
 }
 
 .text-sm {
-  font-size: 0.875rem; /* 14px */
-  line-height: 1.5;
+  font-size: 0.875rem !important; /* 14px standard */
+  line-height: 1.5 !important;
 }
 
 .text-base {
-  font-size: 1rem; /* 16px */
-  line-height: 1.5;
+  font-size: 1rem !important; /* 16px standard */
+  line-height: 1.5 !important;
 }
 
 /* Legible Micro-Size Protection Floor: Enforces 13px minimum across all pages */

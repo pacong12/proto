@@ -46,11 +46,11 @@
         </p>
       </div>
 
-      <div class="grid grid-cols-2 sm:flex sm:items-center gap-4 sm:gap-6 text-xs w-full md:w-auto">
+      <div class="grid grid-cols-2 sm:flex sm:items-center gap-4 sm:gap-6 text-sm w-full md:w-auto">
         <div
           class="p-3 sm:p-0 rounded-xl bg-black border border-border sm:border-0 sm:bg-transparent"
         >
-          <span class="text-muted-foreground text-xs uppercase tracking-wider block font-semibold">
+          <span class="text-muted-foreground text-sm uppercase tracking-wider block font-semibold">
             24h Volume
           </span>
           <span class="font-extrabold text-sm sm:text-base text-foreground">
@@ -60,7 +60,7 @@
         <div
           class="p-3 sm:p-0 rounded-xl bg-black border border-border sm:border-0 sm:bg-transparent"
         >
-          <span class="text-muted-foreground text-xs uppercase tracking-wider block font-semibold">
+          <span class="text-muted-foreground text-sm uppercase tracking-wider block font-semibold">
             Total Coins
           </span>
           <span class="font-extrabold text-sm sm:text-base text-foreground">
@@ -87,7 +87,7 @@
             <button
               type="button"
               @click="viewMode = 'table'"
-              class="px-3 py-1 text-xs font-semibold rounded-full transition cursor-pointer flex items-center gap-1.5"
+              class="px-3.5 py-1.5 text-sm font-semibold rounded-full transition cursor-pointer flex items-center gap-1.5"
               :class="
                 viewMode === 'table'
                   ? 'bg-card text-foreground shadow-xs border border-border/80 font-bold'
@@ -100,7 +100,7 @@
             <button
               type="button"
               @click="viewMode = 'grid'"
-              class="px-3 py-1 text-xs font-semibold rounded-full transition cursor-pointer flex items-center gap-1.5"
+              class="px-3.5 py-1.5 text-sm font-semibold rounded-full transition cursor-pointer flex items-center gap-1.5"
               :class="
                 viewMode === 'grid'
                   ? 'bg-card text-foreground shadow-xs border border-border/80 font-bold'
@@ -116,7 +116,7 @@
 
       <!-- Navigation Filter Pills (Shadcn Tabs variant="line") + Search Bar -->
       <div
-        class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-border text-xs"
+        class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-border text-sm"
       >
         <!-- Filter Tabs -->
         <Tabs v-model="activeMarketTab" class="w-full md:w-auto">
@@ -137,7 +137,7 @@
             v-model="searchQuery"
             type="text"
             placeholder="Search coins / address..."
-            class="h-8 pl-8 pr-3 text-xs bg-card border-border rounded-xl text-foreground focus-visible:ring-foreground"
+            class="h-9 pl-8 pr-3 text-sm bg-card border-border rounded-xl text-foreground focus-visible:ring-foreground"
           />
         </div>
       </div>
