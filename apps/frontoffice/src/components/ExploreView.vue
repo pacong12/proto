@@ -6,17 +6,19 @@
     <div v-if="latestLaunches.length > 0" class="space-y-3">
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-sm font-bold text-foreground">New on {{ activeNetwork.name }}</h2>
+          <h2 class="text-base sm:text-lg font-bold text-foreground tracking-tight">
+            New on {{ activeNetwork.name }}
+          </h2>
         </div>
         <div class="flex items-center gap-2">
           <Button
             @click="$emit('selectTab', 'create')"
-            size="sm"
+            size="default"
             variant="default"
-            class="h-7 text-xs font-bold gap-1 rounded-lg cursor-pointer"
+            class="h-9 sm:h-10 px-4 sm:px-5 text-sm sm:text-base font-semibold gap-2 rounded-xl shadow-sm hover:opacity-90 active:scale-[0.98] transition cursor-pointer"
           >
-            <Plus class="w-3.5 h-3.5 stroke-[3]" />
-            <span>{{ t('create') }}</span>
+            <Plus class="w-4 h-4 stroke-[2.5]" />
+            <span>{{ t('createToken') }}</span>
           </Button>
         </div>
       </div>
@@ -205,10 +207,10 @@
         <Button
           @click="$emit('selectTab', 'create')"
           size="default"
-          class="gap-1.5 font-bold rounded-xl cursor-pointer"
+          class="h-10 px-5 text-sm font-semibold gap-2 rounded-xl cursor-pointer"
         >
-          <Plus class="w-4 h-4 stroke-[3]" />
-          Create a coin
+          <Plus class="w-4 h-4 stroke-[2.5]" />
+          {{ t('createToken') }}
         </Button>
       </template>
     </Empty>
