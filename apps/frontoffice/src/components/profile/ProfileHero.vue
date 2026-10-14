@@ -97,7 +97,7 @@
           </h1>
         </div>
 
-        <p class="text-xs text-muted-foreground flex items-center gap-1.5">
+        <p class="text-sm text-muted-foreground flex items-center gap-1.5">
           <span
             >@{{ profileAddress ? getUserIdentity(profileAddress).name : 'not-connected' }}</span
           >
@@ -105,7 +105,7 @@
           <span>{{ profileAddress ? shortenAddress(profileAddress, 6, 4) : '' }}</span>
         </p>
 
-        <p class="text-xs sm:text-sm text-foreground/90 max-w-2xl font-sans leading-relaxed">
+        <p class="text-sm sm:text-base text-foreground/90 max-w-2xl font-sans leading-relaxed">
           {{
             profileData.bio ||
             'Non-custodial creator and alpha trader on Proto multi-chain launchpad.'
@@ -113,7 +113,7 @@
         </p>
 
         <!-- Metadata Ribbon: Social Handles & Block Explorer -->
-        <div class="flex items-center gap-4 pt-1 text-xs text-muted-foreground flex-wrap">
+        <div class="flex items-center gap-4 pt-1 text-sm text-muted-foreground flex-wrap">
           <a
             v-if="profileData.twitter"
             :href="`https://x.com/${profileData.twitter}`"

@@ -16,7 +16,7 @@
           <Tabs v-model="activeFilter" class="w-auto">
             <TabsList
               variant="line"
-              class="text-xs overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0"
+              class="text-sm overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0"
             >
               <TabsTrigger
                 v-for="flt in filterTabs"
@@ -30,7 +30,7 @@
           </Tabs>
 
           <!-- Chain Filter (All Chains default / Robinhood / Arc) -->
-          <div class="flex items-center gap-1 text-xs self-end sm:self-auto pb-1 sm:pb-0">
+          <div class="flex items-center gap-1 text-sm self-end sm:self-auto pb-1 sm:pb-0">
             <button
               v-for="chainOpt in [
                 {

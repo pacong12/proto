@@ -179,7 +179,7 @@
               <div
                 class="flex items-center justify-between border-b border-border px-3 sm:px-4 py-1.5 overflow-x-auto no-scrollbar gap-2"
               >
-                <TabsList variant="line" class="flex gap-4 sm:gap-6 border-b-0 w-auto">
+                <TabsList variant="line" class="flex gap-4 sm:gap-6 border-b-0 w-auto text-sm">
                   <TabsTrigger
                     v-for="tab in [
                       { value: 'callouts', label: 'Callouts' },

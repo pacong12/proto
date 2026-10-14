@@ -4,7 +4,7 @@
       type="button"
       variant="ghost"
       @click="isOpen = !isOpen"
-      class="w-full flex items-center justify-between px-5 py-4 h-auto text-xs font-semibold transition hover:bg-muted/40 cursor-pointer rounded-none"
+      class="w-full flex items-center justify-between px-5 py-4 h-auto text-sm font-semibold transition hover:bg-muted/40 cursor-pointer rounded-none"
     >
       <div class="flex items-center gap-2">
         <span class="font-bold">{{ t('advanced') }}</span>
@@ -23,7 +23,7 @@
       <div class="space-y-2">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-1.5">
-            <Label class="text-xs font-semibold">{{ t('creatorWallet') }}</Label>
+            <Label class="text-sm font-semibold">{{ t('creatorWallet') }}</Label>
             <InfoTooltip
               text="Receives creator fees, trading taxes, and governance permissions. Defaults to your connected wallet if left blank."
             />
@@ -54,7 +54,7 @@
       <div class="space-y-3.5 pt-4 border-t border-border">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-1.5">
-            <Label class="text-xs font-semibold text-foreground">Trading Taxes (Optional)</Label>
+            <Label class="text-sm font-semibold text-foreground">Trading Taxes (Optional)</Label>
             <InfoTooltip
               text="Initial tax configured here is activated immediately upon token launch. Defaults to 0% for pure meme coins. Post-launch changes will require a 24-hour timelock to protect holders."
             />
@@ -141,7 +141,7 @@
         <div class="flex items-center justify-between">
           <div>
             <div class="flex items-center gap-1.5">
-              <Label class="text-xs font-semibold text-foreground">Revenue Split</Label>
+              <Label class="text-sm font-semibold text-foreground">Revenue Split</Label>
               <InfoTooltip
                 text="Specifies how collected trading taxes are distributed on-chain. Allocations must sum to exactly 100% to launch."
               />

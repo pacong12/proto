@@ -113,7 +113,7 @@
           >
             <TabsList
               variant="line"
-              class="flex sm:inline-flex w-full sm:w-auto overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0 text-xs"
+              class="flex sm:inline-flex w-full sm:w-auto overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0 text-sm"
             >
               <TabsTrigger value="posts"> Posts & Calls ({{ userPosts.length }}) </TabsTrigger>
               <TabsTrigger value="created">
@@ -133,7 +133,7 @@
             <Button
               variant="ghost"
               size="sm"
-              class="h-8 text-xs text-muted-foreground hover:text-foreground self-end sm:self-auto border border-border cursor-pointer rounded-xl"
+              class="h-8 text-sm text-muted-foreground hover:text-foreground self-end sm:self-auto border border-border cursor-pointer rounded-xl"
               @click="refreshAllData"
             >
               <RefreshCw class="w-3.5 h-3.5 mr-1" :class="{ 'animate-spin': loadingLaunches }" />

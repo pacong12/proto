@@ -78,14 +78,14 @@
         </div>
 
         <!-- Metric Switcher Pills & Mode Toggle (Pons / Shadcn Segmented Controls) -->
-        <div class="flex flex-wrap items-center gap-2 text-xs">
+        <div class="flex flex-wrap items-center gap-2 text-sm">
           <!-- Metric Selectors -->
           <div class="inline-flex p-1 rounded-xl bg-black border border-border gap-1">
             <button
               v-for="m in metricOptions"
               :key="m.value"
               type="button"
-              class="px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer select-none"
+              class="px-3 py-1.5 rounded-lg text-sm font-bold transition cursor-pointer select-none"
               :class="
                 activeMetric === m.value
                   ? 'bg-foreground text-background shadow-2xs'
