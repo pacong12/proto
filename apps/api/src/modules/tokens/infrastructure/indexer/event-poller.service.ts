@@ -217,9 +217,7 @@ export class EventPollerService {
     if (v2Tokens.length === 0) return 0;
 
     const curveAddresses = v2Tokens.map((t) => t.poolAddress as Address);
-    const isArc = this.network.nativeCurrency.symbol === 'USDC';
-    // USDC is always $1.00 on Arc; Robinhood uses live ETH price
-    const quotePriceUsd = isArc ? 1.0 : await this.priceFeed.getEthPriceUsd();
+    const quotePriceUsd = await this.priceFeed.getQuoteAssetPriceUsd(this.network.chainId);
 
     try {
       const logs = await this.client.getLogs({
@@ -358,8 +356,7 @@ export class EventPollerService {
 
     if (v1Tokens.length === 0) return 0;
 
-    const isArc = this.network.nativeCurrency.symbol === 'USDC';
-    const quotePriceUsd = isArc ? 1.0 : await this.priceFeed.getEthPriceUsd();
+    const quotePriceUsd = await this.priceFeed.getQuoteAssetPriceUsd(this.network.chainId);
 
     try {
       const poolAddresses = v1Tokens.map((t) => t.poolAddress as Address);

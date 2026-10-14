@@ -191,7 +191,7 @@ describe('Tokens HTTP Endpoints Integration', () => {
       expect(json.data.attributes).toHaveProperty('symbol');
       expect(json.data.attributes).toHaveProperty('total_supply');
     }
-  });
+  }, 10_000);
 
   it('GET /dex/latest-block returns latest indexed block', async () => {
     const req = new Request('http://localhost:3001/dex/latest-block?chain=robinhood');

@@ -4,7 +4,7 @@ import {
   CandlestickEntity,
   ok,
   err,
-  ARC_CHAIN,
+  resolveTokenNetwork,
 } from '@proto/shared-types';
 import {
   GetTokensUseCase,
@@ -164,16 +164,13 @@ export class TokenController {
         }
       >();
 
-      // Multi-chain: Arc tokens use USDC quote (always $1.00)
-      const isArcToken =
-        token?.pairedToken?.toLowerCase() === ARC_CHAIN.contracts.weth.toLowerCase();
+      // Multi-chain: dynamically query quote asset price based on token network
+      const network = resolveTokenNetwork(token, token?.chainId);
       let quotePrice = 1.0;
-      if (!isArcToken) {
-        try {
-          quotePrice = await this.priceFeed.getEthPriceUsd();
-        } catch {
-          quotePrice = 2500; // resilient fallback when oracle rate limits
-        }
+      try {
+        quotePrice = await this.priceFeed.getQuoteAssetPriceUsd(network.chainId);
+      } catch {
+        quotePrice = network.nativeCurrency.symbol === 'USDC' ? 1.0 : 2500;
       }
       // Trades are sorted newest first, sort chronological to determine first buy
       const chronologicalTrades = [...trades].sort((a, b) => a.timestamp - b.timestamp);

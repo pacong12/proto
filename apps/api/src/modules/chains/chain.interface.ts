@@ -6,7 +6,9 @@ export interface IChainService {
   readonly name: string;
   readonly client: PublicClient;
   readonly network: NetworkConfig;
-  readonly isArc: boolean;
+  readonly quoteSymbol: string;
+  readonly quoteDecimals: number;
+  readonly isArc?: boolean;
 
   getQuotePriceUsd(): Promise<number>;
 }

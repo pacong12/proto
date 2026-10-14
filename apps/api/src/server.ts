@@ -32,7 +32,6 @@ import {
 import {
   ROBINHOOD_CHAIN,
   ARC_CHAIN,
-  ARC_PROTO_CURVE_ADDRESS,
   bondingCurveAbi,
   holderFeeDistributorAbi,
   launchpadTokenAbi,
@@ -41,6 +40,8 @@ import {
   type TokenCommentEntity,
   type TradeEventEntity,
   getUserIdentity,
+  resolveTokenNetwork,
+  resolveNetworkByParam,
   ok,
   err,
 } from '@proto/shared-types';
@@ -255,28 +256,6 @@ setTimeout(scheduleArcPoll, 30_000);
 const TRADE_EVENT = parseAbiItem(
   'event Trade(address indexed trader, bool indexed isBuy, uint256 ethAmount, uint256 tokenAmount, uint256 feeEth)',
 );
-
-function resolveNetworkForToken(token: {
-  pairedToken?: string;
-  poolAddress?: string;
-  curveAddress?: string;
-}): NetworkConfig {
-  if (
-    token.pairedToken?.toLowerCase() === ARC_CHAIN.contracts.weth.toLowerCase() ||
-    token.poolAddress?.toLowerCase() === ARC_CHAIN.contracts.factory.toLowerCase() ||
-    token.curveAddress?.toLowerCase() === ARC_CHAIN.contracts.factory.toLowerCase() ||
-    token.curveAddress?.toLowerCase() === ARC_PROTO_CURVE_ADDRESS.toLowerCase()
-  ) {
-    return ARC_CHAIN;
-  }
-  return ROBINHOOD_CHAIN;
-}
-
-function resolveNetworkByParam(param?: string | null): NetworkConfig {
-  const p = (param || '').toLowerCase();
-  if (p === 'arc' || p === '5042') return ARC_CHAIN;
-  return ROBINHOOD_CHAIN;
-}
 
 async function indexTradeFromReceipt(
   txHash: `0x${string}`,
@@ -869,7 +848,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
             earnedFormatted: 0,
             snapshotBalanceWei: '0',
             totalDistributedWei: '0',
-            rewardAssetSymbol: chain.chainId === ARC_CHAIN.chainId ? 'USDC' : 'WETH',
+            rewardAssetSymbol: chain.network.nativeCurrency.symbol,
           }),
         );
       }
@@ -902,8 +881,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           .catch(() => 0n) as Promise<bigint>,
       ]);
 
-      const isArc = chain.chainId === ARC_CHAIN.chainId;
-      const decimals = 18;
+      const decimals = chain.network.nativeCurrency.decimals;
       const earnedFormatted = Number(earnedWei) / 10 ** decimals;
 
       return replyEnvelope(
@@ -916,7 +894,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           earnedFormatted,
           snapshotBalanceWei: snapBal.toString(),
           totalDistributedWei: feeState[1].toString(),
-          rewardAssetSymbol: isArc ? 'USDC' : 'WETH',
+          rewardAssetSymbol: chain.network.nativeCurrency.symbol,
         }),
       );
     } catch (e) {
@@ -1632,13 +1610,12 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   // ---------------------------------------------------------------------------
   // DEX Screener Partner API (https://docs.dexscreener.com/api/partner)
   // Required endpoints for chain listing & token indexing
-  // ---------------------------------------------------------------------------
-
   // GET /dex/latest-block  — most recent indexed block
   if (url.pathname === '/dex/latest-block' && req.method === 'GET') {
     const chainParam = url.searchParams.get('chain') || url.searchParams.get('chainId');
-    const targetNetwork = resolveNetworkByParam(chainParam);
-    const targetClient = targetNetwork.chainId === ARC_CHAIN.chainId ? arcClient : robinhoodClient;
+    const chain = chainRegistry.getChainByParam(chainParam);
+    const targetNetwork = chain.network;
+    const targetClient = chain.client;
     const cacheKey = `dex:latest-block:${targetNetwork.chainId}`;
     const cached = await cache.get<unknown>(cacheKey);
     if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
@@ -1673,7 +1650,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       marketData: import('@proto/shared-types').TokenMarketData;
     };
     const t = td.token;
-    const network = resolveNetworkForToken(t);
+    const network = resolveTokenNetwork(t);
     const payload = {
       id: `${network.chainId}_${t.address}`,
       caip19: `eip155:${network.chainId}/erc20:${t.address}`,
@@ -1717,8 +1694,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
     if (!token) return replyError('NOT_FOUND', 'Pair not found', 404);
 
-    const network = resolveNetworkForToken(token);
-    const isArc = network.chainId === ARC_CHAIN.chainId;
+    const chain = chainRegistry.resolveForToken(token);
+    const network = chain.network;
     const isToken0 = token.isToken0;
     const payload = {
       id: `${network.chainId}_${token.poolAddress}`,
@@ -1733,8 +1710,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       },
       quoteToken: {
         address: network.contracts.weth,
-        name: isArc ? 'USD Coin' : 'Wrapped Ether',
-        symbol: isArc ? 'USDC' : 'WETH',
+        name: network.nativeCurrency.name,
+        symbol: network.nativeCurrency.symbol,
       },
       quoteTokenOrder: isToken0 ? 'token0' : 'token1',
       fee: token.poolFee / 1_000_000,
@@ -1772,16 +1749,14 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         (await repository.findByAddress(poolAddress)))
       : null;
     const allTokens = poolAddress ? (eventsToken ? [eventsToken] : []) : await repository.findAll();
-    const ethPriceUsd = await priceFeed.getEthPriceUsd();
-
     const swaps: unknown[] = [];
 
     for (const token of allTokens) {
       if (poolAddress && token.poolAddress.toLowerCase() !== poolAddress) continue;
 
-      const network = resolveNetworkForToken(token);
-      const isArc = network.chainId === ARC_CHAIN.chainId;
-      const quotePriceUsd = isArc ? 1.0 : ethPriceUsd;
+      const chain = chainRegistry.resolveForToken(token);
+      const network = chain.network;
+      const quotePriceUsd = await chain.getQuotePriceUsd();
 
       const trades = await repository.getTrades(token.address, 100, 0);
       for (const trade of trades) {
@@ -1831,8 +1806,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   );
   if (geckoPoolMatch && req.method === 'GET') {
     const netParam = geckoPoolMatch[1];
-    const network = resolveNetworkByParam(netParam);
-    const isArc = network.chainId === ARC_CHAIN.chainId;
+    const chain = chainRegistry.getChainByParam(netParam);
+    const network = chain.network;
     const poolAddr = geckoPoolMatch[2].toLowerCase() as `0x${string}`;
     const cacheKey = `gecko:pool:${network.chainId}:${poolAddr}`;
     const cached = await cache.get<unknown>(cacheKey);
@@ -1845,8 +1820,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         null);
     if (!token) return replyError('NOT_FOUND', 'Pool not found', 404);
 
-    const quotePriceUsd = isArc ? 1.0 : await priceFeed.getEthPriceUsd();
-    const quoteSymbol = isArc ? 'USDC' : 'WETH';
+    const quotePriceUsd = await chain.getQuotePriceUsd();
+    const quoteSymbol = network.nativeCurrency.symbol;
     const trades = await repository.getTrades(token.address, 500, 0);
     const mkt = await repository.getMarketData(token.address as `0x${string}`);
     let vol24h = 0;
@@ -1923,8 +1898,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     };
     const t = td.token;
     const m = td.marketData;
-    const isArc = network.chainId === ARC_CHAIN.chainId;
-    const quotePriceUsd = isArc ? 1.0 : await priceFeed.getEthPriceUsd();
+    const chain = chainRegistry.getChainById(network.chainId);
+    const quotePriceUsd = await chain.getQuotePriceUsd();
 
     const payload = {
       data: {
@@ -1958,8 +1933,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   );
   if (geckoOhlcvMatch && req.method === 'GET') {
     const netParam = geckoOhlcvMatch[1];
-    const network = resolveNetworkByParam(netParam);
-    const isArc = network.chainId === ARC_CHAIN.chainId;
+    const chain = chainRegistry.getChainByParam(netParam);
+    const network = chain.network;
     const poolAddr = geckoOhlcvMatch[2].toLowerCase() as `0x${string}`;
     const timeframe = geckoOhlcvMatch[3];
     const limit = Math.min(1000, parseInt(url.searchParams.get('limit') ?? '100', 10));
@@ -1983,7 +1958,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           ohlcv_list: sliced.map((c) => [c.timestamp, c.open, c.high, c.low, c.close, c.volume]),
         },
       },
-      meta: { base: token.symbol, quote: isArc ? 'USDC' : 'WETH' },
+      meta: { base: token.symbol, quote: network.nativeCurrency.symbol },
     };
     return replyJson(payload);
   }
@@ -1994,8 +1969,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   );
   if (geckoTradesMatch && req.method === 'GET') {
     const netParam = geckoTradesMatch[1];
-    const network = resolveNetworkByParam(netParam);
-    const isArc = network.chainId === ARC_CHAIN.chainId;
+    const chain = chainRegistry.getChainByParam(netParam);
+    const network = chain.network;
     const poolAddr = geckoTradesMatch[2].toLowerCase() as `0x${string}`;
     const token = repository.findByPoolAddress
       ? await repository.findByPoolAddress(poolAddr)
@@ -2004,7 +1979,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     if (!token) return replyError('NOT_FOUND', 'Pool not found', 404);
 
     const trades = await repository.getTrades(token.address, 100, 0);
-    const quotePriceUsd = isArc ? 1.0 : await priceFeed.getEthPriceUsd();
+    const quotePriceUsd = await chain.getQuotePriceUsd();
 
     const payload = {
       data: trades.map((tr) => ({

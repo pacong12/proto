@@ -1,3 +1,4 @@
+import { getNetworkConfig } from '@proto/shared-types';
 import { PriceFeedPort } from '../../domain/ports/price-feed.port';
 
 export interface CoinGeckoConfig {
@@ -95,7 +96,9 @@ export class CoinGeckoPriceFeedAdapter implements PriceFeedPort {
   }
 
   async getQuoteAssetPriceUsd(chainId: number): Promise<number> {
-    if (chainId === 5042) {
+    const net = getNetworkConfig(chainId);
+    const sym = net.nativeCurrency.symbol.toUpperCase();
+    if (sym === 'USDC' || sym === 'USDT' || sym === 'USDG' || sym === 'DAI') {
       return 1.0;
     }
     return this.getEthPriceUsd();
