@@ -195,17 +195,18 @@ const route = useRoute();
 const docsUrl = computed(() => {
   if (import.meta.env.VITE_DOCS_URL) return import.meta.env.VITE_DOCS_URL;
   if (typeof window !== 'undefined') {
-    const port = window.location.port;
-    // In local dev, frontoffice is on 3010 and docs is on 3002 or 3012
-    if (
-      port === '3010' ||
-      window.location.hostname === 'localhost' ||
-      window.location.hostname === '127.0.0.1'
-    ) {
-      return `${window.location.protocol}//${window.location.hostname}:3002`;
+    const { hostname, port, protocol } = window.location;
+    // In local dev, frontoffice is on 3010 and docs is on 3002
+    if (port === '3010' || hostname === 'localhost' || hostname === '127.0.0.1') {
+      return `${protocol}//${hostname}:3002`;
     }
-    // In production, derive docs subdomain from current host
-    return `${window.location.protocol}//docs.${window.location.host}`;
+    // Cloudflare Workers dev domain: proto.mutingudin12.workers.dev -> proto-docs.mutingudin12.workers.dev
+    if (hostname.endsWith('.workers.dev')) {
+      const docsHost = hostname.replace(/^proto\./, 'proto-docs.');
+      return `${protocol}//${docsHost}`;
+    }
+    // In custom domain production, derive docs subdomain from current host
+    return `${protocol}//docs.${window.location.host}`;
   }
   return '/docs';
 });
