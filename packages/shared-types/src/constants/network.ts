@@ -8,6 +8,7 @@ export const UNDEPLOYED = '0x0000000000000000000000000000000000000000' as const;
 export interface NetworkConfig {
   chainId: number;
   name: string;
+  icon?: string;
   nativeCurrency: {
     name: string;
     symbol: string;
@@ -42,6 +43,7 @@ export interface NetworkConfig {
   launchConfigV2?: {
     supply: bigint;
     curveTokenAllocation: bigint;
+    virtualReserveWei?: bigint;
     graduationTargetWei: bigint;
     platformFeeBps: number;
     snipeTaxMaxBps: number;

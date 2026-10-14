@@ -10,6 +10,7 @@ import { getEnv, getEnvBigInt } from './env';
 export const ROBINHOOD_NETWORK: NetworkConfig = {
   chainId: 4663,
   name: 'Robinhood Chain',
+  icon: '/chains/robinhood.svg',
   nativeCurrency: {
     name: 'Ether',
     symbol: 'ETH',
@@ -59,7 +60,8 @@ export const ROBINHOOD_NETWORK: NetworkConfig = {
   },
   launchConfigV2: {
     supply: 1_000_000_000n * 10n ** 18n,
-    curveTokenAllocation: 800_000_000n * 10n ** 18n, // 80% on curve, 20% reserved for graduation pool
+    curveTokenAllocation: 714_285_714n * 10n ** 18n, // 71.43% on curve (Pons 5/7 model), 28.57% (2/7) reserved for graduation pool
+    virtualReserveWei: 1_680_000_000_000_000_000n, // 1.68 ETH (Pons standard)
     graduationTargetWei: getEnvBigInt(
       'ROBINHOOD_GRADUATION_TARGET_WEI',
       getEnvBigInt('GRADUATION_TARGET_WEI', 4_200_000_000_000_000_000n),

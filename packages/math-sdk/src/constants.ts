@@ -25,5 +25,16 @@ export const ROBINHOOD_GRADUATION_TARGET_WEI = 4_200_000_000_000_000_000n; // 4.
 export const ARC_GRADUATION_TARGET_WEI = 69_000n * 10n ** 18n; // 69,000 USDC
 
 // Default initial virtual reserve baselines
-export const ROBINHOOD_INITIAL_VIRTUAL_ETH_WEI = 3n * 10n ** 18n; // 3 ETH
-export const ARC_INITIAL_VIRTUAL_ETH_WEI = 4_200n * 10n ** 18n; // 4,200 USDC
+export const ROBINHOOD_INITIAL_VIRTUAL_ETH_WEI = 1_680_000_000_000_000_000n; // 1.68 ETH (Pons standard)
+export const ARC_INITIAL_VIRTUAL_ETH_WEI = 24_420n * 10n ** 18n; // 24,420 USDC (Arc/Argus standard)
+
+// Network specific curve and pool allocations
+export const ROBINHOOD_CURVE_TOKEN_SUPPLY_NUM = 714_285_714;
+export const ROBINHOOD_POOL_RESERVE_SUPPLY_NUM = 285_714_286;
+export const ROBINHOOD_CURVE_TOKEN_SUPPLY_WEI = 714_285_714n * 10n ** 18n;
+export const ROBINHOOD_POOL_RESERVE_SUPPLY_WEI = 285_714_286n * 10n ** 18n;
+
+export const ARC_CURVE_TOKEN_SUPPLY_NUM = 738_600_000;
+export const ARC_POOL_RESERVE_SUPPLY_NUM = 261_400_000;
+export const ARC_CURVE_TOKEN_SUPPLY_WEI = 738_600_000n * 10n ** 18n;
+export const ARC_POOL_RESERVE_SUPPLY_WEI = 261_400_000n * 10n ** 18n;

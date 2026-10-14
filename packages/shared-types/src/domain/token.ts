@@ -48,6 +48,7 @@ export interface LaunchedTokenEntity {
   version?: LaunchVersion;
   curveAddress?: `0x${string}`;
   isGraduated?: boolean;
+  chainId?: number;
   // V2 bonding curve on-chain parameters (stored to avoid repeat RPC calls)
   virtualEthReserve?: string; // wei as string
   virtualTokenReserve?: string; // wei as string
