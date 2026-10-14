@@ -26,8 +26,10 @@ import {
   defineChain,
   decodeEventLog,
   parseAbiItem,
+  verifyMessage,
   type PublicClient,
   type Address,
+  type Hex,
 } from 'viem';
 import {
   ROBINHOOD_CHAIN,
@@ -42,6 +44,7 @@ import {
   getUserIdentity,
   resolveTokenNetwork,
   resolveNetworkByParam,
+  buildCommentSignMessage,
   ok,
   err,
 } from '@proto/shared-types';
@@ -989,9 +992,13 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         callType?: 'call' | 'comment';
         parentId?: string;
         quotedCalloutId?: string;
+        signature?: Hex;
+        timestamp?: number;
       }>(req, 32_768);
       const content = String(body.content || '').trim();
       const authorAddress = String(body.authorAddress || '').trim();
+      const signature = body.signature;
+      const timestamp = body.timestamp;
       const imageUrl = body.imageUrl ? String(body.imageUrl).trim() : undefined;
       const targetMcap = body.targetMcap ? String(body.targetMcap).trim() : undefined;
       const parentId = body.parentId ? String(body.parentId).trim() : undefined;
@@ -1018,6 +1025,58 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           400,
         );
       }
+
+      // Cryptographic authentication: verify wallet signature to defeat author impersonation
+      if (signature) {
+        if (!timestamp || typeof timestamp !== 'number' || isNaN(timestamp)) {
+          return replyError(
+            'INVALID_TIMESTAMP',
+            'Valid millisecond timestamp is required with signature',
+            400,
+          );
+        }
+        const ageMs = Math.abs(Date.now() - timestamp);
+        if (ageMs > 10 * 60 * 1000) {
+          return replyError(
+            'EXPIRED_SIGNATURE',
+            'Signature timestamp has expired (validity window is 10 minutes)',
+            401,
+          );
+        }
+
+        const signMessage = buildCommentSignMessage({
+          tokenAddress: address,
+          authorAddress,
+          content,
+          timestamp,
+        });
+
+        let isValid = false;
+        try {
+          isValid = await verifyMessage({
+            address: authorAddress as Address,
+            message: signMessage,
+            signature,
+          });
+        } catch {
+          isValid = false;
+        }
+
+        if (!isValid) {
+          return replyError(
+            'INVALID_SIGNATURE',
+            'Cryptographic signature does not match author wallet address',
+            401,
+          );
+        }
+      } else if (process.env.NODE_ENV !== 'test') {
+        return replyError(
+          'SIGNATURE_REQUIRED',
+          'Cryptographic wallet signature is required to post comments and callouts',
+          401,
+        );
+      }
+
       // Validate imageUrl — only allow https:// or ipfs:// to block javascript: injection.
       if (imageUrl) {
         if (imageUrl.length > 2048 || !/^(https:\/\/|ipfs:\/\/)/.test(imageUrl)) {

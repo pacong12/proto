@@ -396,6 +396,7 @@ import { useWallet } from '../composables/useWallet';
 import { useLaunchpad } from '../composables/useLaunchpad';
 import { useTaxConfig } from '../composables/useTaxConfig';
 import { usePinnedTokens } from '../composables/usePinnedTokens';
+import { useFeed } from '../composables/useFeed';
 import { getPublicClient } from '../lib/viem-client';
 import { toast } from '@/components/ui/sonner';
 import { Badge, TraderTagBadge, type TraderTagType } from '@/components/ui/badge';
@@ -622,24 +623,18 @@ async function handlePostCallout(): Promise<void> {
   isPostingCall.value = true;
   callError.value = null;
   try {
-    const res = await apiFetch<{
-      success: boolean;
-      data: unknown;
-      error?: { message?: string };
-    }>(`/api/tokens/${currentToken.value.address}/comments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        authorAddress: account.value,
-        content,
-        imageUrl: callImageUrl.value.trim() || undefined,
-        targetMcap: callTargetMcap.value,
-        positionUsd: userHoldingUsd.value > 0 ? userHoldingUsd.value : undefined,
-        callType: 'call',
-      }),
+    const { postCallout } = useFeed();
+    const created = await postCallout({
+      tokenAddress: currentToken.value.address,
+      authorAddress: account.value,
+      content,
+      imageUrl: callImageUrl.value.trim() || undefined,
+      targetMcap: callTargetMcap.value,
+      positionUsd: userHoldingUsd.value > 0 ? userHoldingUsd.value : undefined,
+      callType: 'call',
     });
-    const envelope = res;
-    if (envelope.success && envelope.data) {
+
+    if (created) {
       toast.success(`Called $${currentToken.value.symbol}!`);
 
       if (callShareToX.value && typeof window !== 'undefined') {
@@ -659,7 +654,7 @@ async function handlePostCallout(): Promise<void> {
       activeBottomTab.value = 'callouts';
       await fetchCallouts(currentToken.value.address);
     } else {
-      callError.value = envelope.error?.message || 'Failed to publish callout.';
+      callError.value = 'Failed to publish callout.';
     }
   } catch (err) {
     callError.value = (err as Error).message || 'Network error.';

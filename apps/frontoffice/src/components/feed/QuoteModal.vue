@@ -107,6 +107,7 @@
 import { ref, watch } from 'vue';
 import { Quote, X, AlertCircle, Loader2 } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
+import { useFeed } from '@/composables/useFeed';
 import { apiFetch } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Jazzicon } from '@/components/ui/avatar';
@@ -121,6 +122,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
+const { postCallout } = useFeed();
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -165,30 +167,21 @@ async function submitQuote(): Promise<void> {
 
   isSubmitting.value = true;
   try {
-    const data = await apiFetch<{
-      success: boolean;
-      data: import('@proto/shared-types').FeedCalloutItem;
-      message?: string;
-    }>(`/api/tokens/${props.targetCall.tokenAddress}/comments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        authorAddress: props.account,
-        content: quoteContent.value.trim(),
-        quotedCalloutId: props.targetCall.id,
-        callType: 'call',
-      }),
+    const created = await postCallout({
+      tokenAddress: props.targetCall.tokenAddress,
+      authorAddress: props.account,
+      content: quoteContent.value.trim(),
+      quotedCalloutId: props.targetCall.id,
+      callType: 'call',
     });
-    if (data.success && data.data) {
+    if (created) {
       toast.success('Quote posted!');
       quoteContent.value = '';
-      emit('quote-posted', data.data);
+      emit('quote-posted', created);
       emit('close');
-    } else {
-      toast.error(data.message || 'Failed to post quote');
     }
-  } catch {
-    toast.error('Failed to post quote');
+  } catch (err) {
+    toast.error((err as Error).message || 'Failed to post quote');
   } finally {
     isSubmitting.value = false;
   }

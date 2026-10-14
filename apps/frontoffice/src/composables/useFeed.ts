@@ -1,6 +1,7 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue';
-import type { FeedCalloutItem } from '@proto/shared-types';
+import { type FeedCalloutItem, buildCommentSignMessage } from '@proto/shared-types';
 import { apiFetch } from '@/lib/api-client';
+import { getWalletClient } from '@/lib/viem-client';
 
 export type FeedFilterType = 'all' | 'target' | 'whale' | 'profit' | 'media';
 
@@ -34,6 +35,7 @@ export function useFeed(): {
     profitUsd?: number;
     parentId?: string;
     quotedCalloutId?: string;
+    callType?: 'call' | 'comment';
   }) => Promise<FeedCalloutItem | null>;
   toggleLike: (
     commentId: string,
@@ -116,8 +118,40 @@ export function useFeed(): {
     profitUsd?: number;
     parentId?: string;
     quotedCalloutId?: string;
+    callType?: 'call' | 'comment';
   }): Promise<FeedCalloutItem | null> {
     try {
+      let signature: `0x${string}` | undefined;
+      const timestamp = Date.now();
+
+      const walletClient = await getWalletClient();
+      if (walletClient) {
+        try {
+          const message = buildCommentSignMessage({
+            tokenAddress: params.tokenAddress,
+            authorAddress: params.authorAddress,
+            content: params.content,
+            timestamp,
+          });
+          signature = await walletClient.signMessage({
+            account: params.authorAddress as `0x${string}`,
+            message,
+          });
+        } catch (signErr) {
+          const msg = ((signErr as Error)?.message ?? '').toLowerCase();
+          if (
+            msg.includes('user reject') ||
+            msg.includes('user denied') ||
+            msg.includes('user cancelled') ||
+            msg.includes('user canceled') ||
+            msg.includes('action_rejected')
+          ) {
+            return null;
+          }
+          throw signErr;
+        }
+      }
+
       const res = await apiFetch<{ success: boolean; data: FeedCalloutItem }>(
         `/api/tokens/${params.tokenAddress}/comments`,
         {
@@ -132,7 +166,9 @@ export function useFeed(): {
             profitUsd: params.profitUsd,
             parentId: params.parentId,
             quotedCalloutId: params.quotedCalloutId,
-            callType: params.parentId ? 'comment' : 'call',
+            callType: params.callType ?? (params.parentId ? 'comment' : 'call'),
+            signature,
+            timestamp,
           }),
         },
       );

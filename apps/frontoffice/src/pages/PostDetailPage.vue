@@ -452,7 +452,7 @@ const router = useRouter();
 const { t } = useI18n();
 const { account, openWallet } = useWallet();
 const { tokens: allTokens, fetchTokens, getTokenNetwork } = useTokenStore();
-const { toggleLike, toggleRepost, recordView } = useFeed();
+const { toggleLike, toggleRepost, recordView, postCallout } = useFeed();
 
 const calloutId = computed(() => String(route.params.id || route.params.detail || ''));
 const post = ref<FeedCalloutItem | null>(null);
@@ -575,29 +575,20 @@ async function submitReply(): Promise<void> {
 
   isSubmittingReply.value = true;
   try {
-    const data = await apiFetch<{
-      success: boolean;
-      data: import('@proto/shared-types').FeedCalloutItem;
-      message?: string;
-    }>(`/api/tokens/${post.value.tokenAddress}/comments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        authorAddress: account.value,
-        content: replyContent.value.trim(),
-        parentId: post.value.id,
-        callType: 'comment',
-      }),
+    const created = await postCallout({
+      tokenAddress: post.value.tokenAddress,
+      authorAddress: account.value,
+      content: replyContent.value.trim(),
+      parentId: post.value.id,
+      callType: 'comment',
     });
-    if (data.success && data.data) {
+    if (created) {
       toast.success('Reply posted!');
       replyContent.value = '';
-      replies.value.push(data.data);
-    } else {
-      toast.error(data.message || 'Failed to post reply');
+      replies.value.push(created);
     }
-  } catch {
-    toast.error('Failed to post reply');
+  } catch (err) {
+    toast.error((err as Error).message || 'Failed to post reply');
   } finally {
     isSubmittingReply.value = false;
   }

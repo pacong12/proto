@@ -155,3 +155,24 @@ export interface FeedCalloutItem extends TokenCommentEntity {
   holdersCount?: number;
   replies?: FeedCalloutItem[];
 }
+
+export interface CommentSignaturePayload {
+  tokenAddress: string;
+  authorAddress: string;
+  content: string;
+  timestamp: number;
+}
+
+/**
+ * Builds the canonical message string to be signed by the author's wallet
+ * for on-chain identity authentication of comments and callouts.
+ */
+export function buildCommentSignMessage(params: CommentSignaturePayload): string {
+  return [
+    'Proto Community Signal',
+    `Token: ${params.tokenAddress.toLowerCase()}`,
+    `Author: ${params.authorAddress.toLowerCase()}`,
+    `Timestamp: ${params.timestamp}`,
+    `Content: ${params.content.trim()}`,
+  ].join('\n');
+}

@@ -275,6 +275,7 @@
 import { ref, watch } from 'vue';
 import { MessageCircle, X, Heart, Repeat, Share2, BarChart2, Send, Loader2 } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
+import { useFeed } from '@/composables/useFeed';
 import { apiFetch } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
@@ -293,6 +294,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
+const { postCallout } = useFeed();
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -352,30 +354,21 @@ async function submitReply(): Promise<void> {
 
   isSubmittingReply.value = true;
   try {
-    const data = await apiFetch<{
-      success: boolean;
-      data: import('@proto/shared-types').FeedCalloutItem;
-      message?: string;
-    }>(`/api/tokens/${props.targetCall.tokenAddress}/comments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        authorAddress: props.account,
-        content: replyText.value.trim(),
-        parentId: props.targetCall.id,
-        callType: 'comment',
-      }),
+    const created = await postCallout({
+      tokenAddress: props.targetCall.tokenAddress,
+      authorAddress: props.account,
+      content: replyText.value.trim(),
+      parentId: props.targetCall.id,
+      callType: 'comment',
     });
-    if (data.success && data.data) {
+    if (created) {
       toast.success('Reply posted!');
       replyText.value = '';
-      replies.value.push(data.data);
-      emit('reply-posted', data.data);
-    } else {
-      toast.error(data.message || 'Failed to post reply');
+      replies.value.push(created);
+      emit('reply-posted', created);
     }
-  } catch {
-    toast.error('Failed to post reply');
+  } catch (err) {
+    toast.error((err as Error).message || 'Failed to post reply');
   } finally {
     isSubmittingReply.value = false;
   }
