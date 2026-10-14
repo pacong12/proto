@@ -29,7 +29,7 @@
           @click="$emit('selectTab', 'create')"
           variant="default"
           size="default"
-          class="h-9 sm:h-10 px-4 sm:px-5 gap-2 font-semibold text-sm sm:text-base rounded-xl shadow-sm transition active:scale-[0.98] cursor-pointer shrink-0"
+          class="h-9 px-4 gap-1.5 font-semibold text-sm rounded-xl shadow-sm transition active:scale-[0.98] cursor-pointer shrink-0"
         >
           <Plus class="w-4 h-4 stroke-[2.5]" />
           {{ t('createToken') }}

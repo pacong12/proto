@@ -15,14 +15,13 @@
             @click="$emit('selectTab', 'create')"
             size="default"
             variant="default"
-            class="h-9 sm:h-10 px-4 sm:px-5 text-sm sm:text-base font-semibold gap-2 rounded-xl shadow-sm hover:opacity-90 active:scale-[0.98] transition cursor-pointer"
+            class="h-9 px-4 text-sm font-semibold gap-1.5 rounded-xl shadow-sm hover:opacity-90 active:scale-[0.98] transition cursor-pointer"
           >
             <Plus class="w-4 h-4 stroke-[2.5]" />
             <span>{{ t('createToken') }}</span>
           </Button>
         </div>
       </div>
-
       <!-- Horizontal Cards Grid (ubi.fun style) -->
       <ExploreFeaturedMovers
         :latest-launches="latestLaunches"
@@ -207,7 +206,7 @@
         <Button
           @click="$emit('selectTab', 'create')"
           size="default"
-          class="h-10 px-5 text-sm font-semibold gap-2 rounded-xl cursor-pointer"
+          class="h-9 px-4 text-sm font-semibold gap-1.5 rounded-xl cursor-pointer"
         >
           <Plus class="w-4 h-4 stroke-[2.5]" />
           {{ t('createToken') }}
