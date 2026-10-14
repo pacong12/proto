@@ -8,7 +8,7 @@
     "build": "vitepress build",
     "preview": "vitepress preview --port 3002",
     "typecheck": "tsc --noEmit",
-    "deploy": "wrangler deploy"
+    "deploy": "bunx wrangler deploy"
   },
   "dependencies": {
     "@proto/shared-types": "*",
