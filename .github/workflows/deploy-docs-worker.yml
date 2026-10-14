@@ -2,7 +2,12 @@ name: Deploy Docs Worker (Cloudflare)
 
 on:
   push:
-    branches: [main]
+    branches: [main, refactor/clean-architecture]
+    paths:
+      - 'apps/docs/**'
+      - '.github/workflows/deploy-docs-worker.yml'
+  pull_request:
+    branches: [main, refactor/clean-architecture]
     paths:
       - 'apps/docs/**'
       - '.github/workflows/deploy-docs-worker.yml'
