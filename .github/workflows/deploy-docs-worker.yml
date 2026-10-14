@@ -32,9 +32,20 @@ jobs:
         run: bun run --filter @proto/docs build
 
       - name: Deploy to Cloudflare Workers
+        if: env.CF_TOKEN != '' && env.CF_ACCOUNT != ''
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: 'apps/docs'
           command: deploy
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Skip Cloudflare Workers deployment (secrets not configured)
+        if: env.CF_TOKEN == '' || env.CF_ACCOUNT == ''
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: echo "CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID is not configured in GitHub Secrets. Skipping deploy."
