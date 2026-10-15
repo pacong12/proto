@@ -258,7 +258,7 @@ contract BondingCurve {
         totalEthRaised += netEth;
         totalVolumeEth += effectiveCost;
 
-        bool shouldGraduate = totalEthRaised >= graduationTarget;
+        bool shouldGraduate = totalEthRaised >= graduationTarget || (curveAvailable > 0 && grossTokensOut == curveAvailable);
         if (shouldGraduate) {
             graduated = true;
             graduatedAt = block.timestamp;
@@ -432,9 +432,12 @@ contract BondingCurve {
      * @dev C-02 fix: prevents permanent fund lockup if V4 is never deployed.
      */
     function emergencyWithdraw(address payable recipient) external nonReentrant onlyFactory {
-        if (!graduated) revert NotGraduated();
         if (migrationExecuted) revert MigrationAlreadyExecuted();
-        if (block.timestamp < graduatedAt + MIGRATION_DEADLINE) revert MigrationDeadlineNotReached();
+        if (graduated) {
+            if (block.timestamp < graduatedAt + MIGRATION_DEADLINE) revert MigrationDeadlineNotReached();
+        } else {
+            if (block.timestamp < launchTime + MIGRATION_DEADLINE) revert MigrationDeadlineNotReached();
+        }
         if (recipient == address(0)) revert ZeroAddress();
 
         migrationExecuted = true;

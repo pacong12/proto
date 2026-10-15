@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {ILiquidityLocker} from "./interfaces/ILiquidityLocker.sol";
 import {IPositionManagerV4} from "./interfaces/IUniswapV4.sol";
+import {IWETH} from "./interfaces/IUniswapV3.sol";
 import {ILaunchpadToken} from "./interfaces/ILaunchpadToken.sol";
 import {IHolderFeeDistributor} from "./interfaces/IHolderFeeDistributor.sol";
 import {FeeMath} from "./libraries/FeeMath.sol";
@@ -44,6 +45,8 @@ contract ProtoLiquidityLockerV4 is ILiquidityLocker {
     mapping(address => uint256) public override tokenProtocolFeeShares;
     mapping(address => address) public override feeRedirects;
     mapping(address => PendingRedirect) public pendingFeeRedirects;
+    mapping(address => uint256) public tokenEthFees;
+    mapping(address => uint256) public tokenTokenFees;
 
     error Unauthorized();
     error AlreadyLocked();
@@ -150,6 +153,16 @@ contract ProtoLiquidityLockerV4 is ILiquidityLocker {
         emit FeeRedirectCancelled(token);
     }
 
+    function depositFees(address token, uint256 tokenAmount) external payable {
+        if (token == address(0)) revert ZeroAddress();
+        if (msg.value > 0) tokenEthFees[token] += msg.value;
+        if (tokenAmount > 0) {
+            tokenTokenFees[token] += tokenAmount;
+            bool ok = ILaunchpadToken(token).transferFrom(msg.sender, address(this), tokenAmount);
+            if (!ok) revert TransferFailed();
+        }
+    }
+
     function claimFees(address token) external override nonReentrant returns (uint256 creatorTokenFee, uint256 creatorWethFee) {
         address redirect = feeRedirects[token];
         if (msg.sender != tokenDeployers[token] && (redirect == address(0) || msg.sender != redirect)) {
@@ -158,15 +171,31 @@ contract ProtoLiquidityLockerV4 is ILiquidityLocker {
         uint256 positionId = tokenPositions[token];
         if (positionId == 0) revert NotLocked();
 
-        // Accumulate pending balance held by the locker
-        uint256 tokenBal = ILaunchpadToken(token).balanceOf(address(this));
-        uint256 wethBal = address(this).balance;
+        // Segregated per-token balance with fallback to contract balance
+        uint256 tokenBal = tokenTokenFees[token];
+        uint256 wethBal = tokenEthFees[token];
+        if (tokenBal == 0) tokenBal = ILaunchpadToken(token).balanceOf(address(this));
+        if (wethBal == 0 && address(this).balance > 0) wethBal = address(this).balance;
+        tokenTokenFees[token] = 0;
+        tokenEthFees[token] = 0;
 
         uint256 protocolSharePercent = tokenProtocolFeeShares[token];
-        (creatorTokenFee, ) = FeeMath.calculateLockerSplit(tokenBal, protocolSharePercent);
-        (creatorWethFee, ) = FeeMath.calculateLockerSplit(wethBal, protocolSharePercent);
+        uint256 protocolTokenFee;
+        uint256 protocolWethFee;
+        (creatorTokenFee, protocolTokenFee) = FeeMath.calculateLockerSplit(tokenBal, protocolSharePercent);
+        (creatorWethFee, protocolWethFee) = FeeMath.calculateLockerSplit(wethBal, protocolSharePercent);
 
         address recipient = redirect != address(0) ? redirect : tokenDeployers[token];
+
+        if (protocolTokenFee > 0) {
+            bool ok = ILaunchpadToken(token).transfer(protocolFeeRecipient, protocolTokenFee);
+            if (!ok) revert TransferFailed();
+        }
+
+        if (protocolWethFee > 0) {
+            (bool ok, ) = protocolFeeRecipient.call{value: protocolWethFee}("");
+            if (!ok) revert TransferFailed();
+        }
 
         if (creatorTokenFee > 0) {
             bool ok = ILaunchpadToken(token).transfer(recipient, creatorTokenFee);
@@ -174,8 +203,15 @@ contract ProtoLiquidityLockerV4 is ILiquidityLocker {
         }
 
         if (creatorWethFee > 0) {
-            (bool ok, ) = recipient.call{value: creatorWethFee}("");
-            if (!ok) revert TransferFailed();
+            if (holderFeeDistributor != address(0) && recipient == holderFeeDistributor) {
+                IWETH(weth).deposit{value: creatorWethFee}();
+                bool okApprove = IWETH(weth).approve(holderFeeDistributor, creatorWethFee);
+                if (!okApprove) revert TransferFailed();
+                IHolderFeeDistributor(holderFeeDistributor).depositRewards(token, creatorWethFee);
+            } else {
+                (bool ok, ) = recipient.call{value: creatorWethFee}("");
+                if (!ok) revert TransferFailed();
+            }
         }
 
         emit FeesClaimed(token, creatorTokenFee, creatorWethFee, recipient);

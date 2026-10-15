@@ -125,8 +125,8 @@ library CurveMath {
         uint256 tokenReserve
     ) internal pure returns (uint160) {
         if (tokenReserve == 0 || ethReserve == 0) revert ZeroReserve();
-        uint256 sqrtNum = sqrt(ethReserve);
-        uint256 sqrtDen = sqrt(tokenReserve);
+        uint256 sqrtNum = sqrt(tokenReserve);
+        uint256 sqrtDen = sqrt(ethReserve);
         if (sqrtDen == 0) revert ZeroReserve();
         uint256 result = (sqrtNum << 96) / sqrtDen;
         if (result > type(uint160).max) revert Overflow();

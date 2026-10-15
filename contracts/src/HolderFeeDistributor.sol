@@ -119,7 +119,7 @@ contract HolderFeeDistributor {
     function earned(address token, address holder) public view returns (uint256) {
         uint256 liveBalance = ILaunchpadToken(token).balanceOf(holder);
         uint256 snap = snapshotBalance[token][holder];
-        uint256 balance = FeeMath.calculateEffectiveBalance(snap, liveBalance);
+        uint256 balance = snap == 0 ? liveBalance : FeeMath.calculateEffectiveBalance(snap, liveBalance);
         uint256 cum = tokenFeeStates[token].rewardPerTokenCumulative;
         uint256 paid = userRewardPerTokenPaid[token][holder];
 

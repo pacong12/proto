@@ -276,7 +276,6 @@ contract LaunchpadToken is ILaunchpadToken {
     }
 
     function setLiquidityPool(address pool) external override onlyFactory {
-        if (liquidityPool != address(0)) revert PoolAlreadySet();
         if (pool == address(0)) revert ZeroAddress();
         liquidityPool = pool;
     }
