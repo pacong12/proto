@@ -10,7 +10,6 @@ import {
 import {
   ROBINHOOD_CHAIN,
   launchpadV2FactoryAbi,
-  robinhoodLaunchpadV2Abi,
   bondingCurveAbi,
   swapRouterAbi,
 } from '@proto/shared-types';
@@ -101,66 +100,28 @@ export class RobinhoodChainAdapter implements ChainAdapter {
       throw new Error(`Factory contract not deployed on ${this.network.name}`);
     }
 
-    const isPonsLegacy =
-      targetFactory.toLowerCase() === '0x7ed598bcef8bd9edd8c97a195c6d13f40801ec7e';
-
     const initialBuyWei = parseInitialBuyWei(params.initialBuyAmountEth);
     const totalValue = this.network.launchConfig.launchFeeWei + initialBuyWei;
 
-    let hash: `0x${string}`;
-    if (isPonsLegacy) {
-      // Legacy Pons contract support if explicitly configured
-      hash = await walletClient.writeContract({
-        address: targetFactory,
-        abi: robinhoodLaunchpadV2Abi,
-        functionName: 'launchToken',
-        args: [
-          {
-            name: params.name,
-            symbol: params.symbol,
-            logo: params.logo,
-            description: params.description,
-            socials: {
-              twitter: params.socials.twitter ?? '',
-              telegram: params.socials.telegram ?? '',
-              discord: params.socials.discord ?? '',
-              website: params.socials.website ?? '',
-              farcaster: params.socials.farcaster ?? '',
-            },
-            creatorFeeRecipient: account,
-            feeConfig: 0,
-            isFair: false,
-            b1: '0x0000000000000000000000000000000000000000000000000000000000000000',
-            b2: '0x0000000000000000000000000000000000000000000000000000000000000000',
-          },
-          initialBuyWei,
-          '0x0000000000000000000000000000000000000000',
-        ],
-        value: totalValue,
-        account,
-        chain: walletClient.chain,
-      });
-    } else {
-      // Proto Canonical LaunchpadV2Factory on Robinhood Chain
-      hash = await walletClient.writeContract({
-        address: targetFactory,
-        abi: launchpadV2FactoryAbi,
-        functionName: 'launchTokenV2',
-        args: [
-          params.name,
-          params.symbol,
-          params.logo,
-          params.description,
-          params.socials.twitter ?? '',
-          params.socials.telegram ?? '',
-          params.socials.website ?? '',
-          params.minInitialTokensOut ?? 0n,
-        ],
-        value: totalValue,
-        account,
-        chain: walletClient.chain,
-      });
-    }
+    // Proto Sovereign LaunchpadV2Factory on Robinhood Chain
+    const hash = await walletClient.writeContract({
+      address: targetFactory,
+      abi: launchpadV2FactoryAbi,
+      functionName: 'launchTokenV2',
+      args: [
+        params.name,
+        params.symbol,
+        params.logo,
+        params.description,
+        params.socials.twitter ?? '',
+        params.socials.telegram ?? '',
+        params.socials.website ?? '',
+        params.minInitialTokensOut ?? 0n,
+      ],
+      value: totalValue,
+      account,
+      chain: walletClient.chain,
+    });
 
     onHashEmitted?.(hash);
     const receipt = await waitForReceiptWithFallback(publicClient, hash, walletClient);

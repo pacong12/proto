@@ -28,10 +28,6 @@ export interface NetworkConfig {
     swapRouter: `0x${string}`;
     quoterV2: `0x${string}`;
     weth: `0x${string}`;
-    universalRouter?: `0x${string}`;
-    poolManagerV4?: `0x${string}`;
-    positionManagerV4?: `0x${string}`;
-    memeHook?: `0x${string}`;
   };
   launchConfig: {
     supply: bigint;

@@ -2,7 +2,6 @@ export * from './v2/bonding-curve.abi';
 export * from './v2/launchpad-token.abi';
 export * from './v2/launchpad-v2-factory.abi';
 export * from './v2/launchpad-v2-factory-arc.abi';
-export * from './v2/robinhood-launchpad-v2.abi';
 export * from './v2/holder-fee-distributor.abi';
 export * from './v2/buyback-burner.abi';
 export * from './v2/liquidity-locker.abi';

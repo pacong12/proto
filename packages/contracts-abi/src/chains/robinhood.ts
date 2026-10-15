@@ -1,5 +1,4 @@
 import { launchpadV2FactoryAbi } from '../v2/launchpad-v2-factory.abi';
-import { robinhoodLaunchpadV2Abi } from '../v2/robinhood-launchpad-v2.abi';
 import { bondingCurveAbi } from '../v2/bonding-curve.abi';
 import { launchpadTokenAbi } from '../v2/launchpad-token.abi';
 import { liquidityLockerAbi } from '../v2/liquidity-locker.abi';
@@ -8,11 +7,10 @@ import { buybackBurnerAbi } from '../v2/buyback-burner.abi';
 import { vestingVaultAbi } from '../v2/vesting-vault.abi';
 
 /**
- * Robinhood Chain (Chain ID: 4663) Smart Contract ABIs
+ * Robinhood Chain (Chain ID: 4663) Sovereign Smart Contract ABIs
  */
 export const ROBINHOOD_ABIS = {
   factoryV2: launchpadV2FactoryAbi,
-  ponsFactory: robinhoodLaunchpadV2Abi,
   bondingCurve: bondingCurveAbi,
   token: launchpadTokenAbi,
   locker: liquidityLockerAbi,
@@ -21,7 +19,4 @@ export const ROBINHOOD_ABIS = {
   vestingVault: vestingVaultAbi,
 } as const;
 
-export {
-  launchpadV2FactoryAbi as robinhoodFactoryAbi,
-  robinhoodLaunchpadV2Abi as ponsLaunchpadAbi,
-};
+export { launchpadV2FactoryAbi as robinhoodFactoryAbi };

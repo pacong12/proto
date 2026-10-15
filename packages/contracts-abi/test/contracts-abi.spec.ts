@@ -8,7 +8,6 @@ import {
   buybackBurnerAbi,
   liquidityLockerAbi,
   vestingVaultAbi,
-  robinhoodLaunchpadV2Abi,
   uniswapV3PoolAbi,
   swapRouterAbi,
   getFactoryV2Abi,
@@ -39,9 +38,6 @@ describe('Contracts ABI Package', () => {
 
     expect(Array.isArray(vestingVaultAbi)).toBe(true);
     expect(vestingVaultAbi.length).toBeGreaterThan(10);
-
-    expect(Array.isArray(robinhoodLaunchpadV2Abi)).toBe(true);
-    expect(robinhoodLaunchpadV2Abi.length).toBeGreaterThan(0);
   });
 
   it('getFactoryV2Abi returns appropriate factory ABI by chain ID', () => {

@@ -22,9 +22,9 @@ contract SimulateV2UniswapV4Graduation is Script {
         console.log("=================================================");
 
         address deployer = address(0xAA11);
-        address mockLocker = address(0x267444D099b10fB5Ed7c3Cc7B7c767AdcA574952);
-        address mockPoolManagerV4 = address(0); // In testnet sandbox
-        address mockMemeHook = address(0xE5e702641Ea86F4ae6cC3cDaeD2B886f976Be044);
+        address mockLocker = address(0x070233B6F46ccD61CA2B7bc1E13520c3fE4614E4); // Proto Sovereign Locker
+        address mockPoolManagerV4 = address(0);
+        address mockMemeHook = address(0);
 
         vm.deal(deployer, 100 ether);
 

@@ -147,4 +147,32 @@ contract LaunchpadV2ArcTest is Test {
         assertTrue(curve.graduated(), "Curve must graduate at 69k USDC");
         assertGe(token.balanceOf(curveAddress), curve.poolReserveSupply(), "Pool reserve must be preserved");
     }
+
+    function test_ArcCurveBuy_RefundsExcessUsdcAtGraduation() public {
+        vm.prank(creator);
+        (, address curveAddress) = factory.launchTokenV2{value: 1 ether}(
+            "Proto Arc Token", "PARC", "", "", "", "", "", 0
+        );
+
+        BondingCurve curve = BondingCurve(payable(curveAddress));
+
+        // Advance blocks past anti-snipe restrictions
+        vm.roll(block.number + 3);
+        vm.warp(block.timestamp + 10);
+
+        uint256 buyerBalanceBefore = buyer1.balance;
+        // Target is 69,000 USDC. Buyer sends 100,000 USDC (100_000 ether).
+        vm.startPrank(buyer1);
+        uint256 tokensBought = curve.buy{value: 100_000 ether}(0);
+        vm.stopPrank();
+
+        uint256 buyerBalanceAfter = buyer1.balance;
+        uint256 usdcSpent = buyerBalanceBefore - buyerBalanceAfter;
+
+        assertTrue(curve.graduated(), "Curve must be graduated");
+        assertTrue(tokensBought >= 738_000_000 * 1e18, "Buyer receives all curve tokens");
+        // Spent amount should be ~69,697 USDC (69,000 net + ~1% fee), not 100,000 USDC!
+        assertLt(usdcSpent, 71_000 ether, "Excess USDC must be refunded to buyer");
+        assertGt(usdcSpent, 69_000 ether, "Graduation target must be fully paid");
+    }
 }
