@@ -45,6 +45,6 @@ Rather than hardcoding conditional branches (`if (chainId === 5042)`), the codeb
 
 Proto adopts **Sovereign Infrastructure (Opsi 2)**:
 
-- Both Robinhood Chain and Arc Network graduate into canonical Uniswap V3 instances deployed on each respective network.
-- LP positions are locked in Proto's own `LiquidityLocker.sol` (`0x0702...` on Robinhood, `0x173F...` on Arc).
-- Protocol fees, locker fees, and trading incentives flow directly to Proto and token creators without dependency on third-party multisigs (e.g. Pons Multisig `0x263ed...`).
+- Robinhood Chain graduates into Uniswap V4 using Proto's sovereign `ProtoLiquidityLockerV4` (`0x7A1A...`) and `ProtoMemeHook` (`0x6347...`) with `LaunchpadV2Factory` (`0x9f1f...`).
+- Arc Network graduates into Uniswap V3 using Proto's sovereign `LiquidityLocker` (`0x173F...`) with `LaunchpadV2FactoryArc` (`0xf94d...`).
+- Protocol fees, locker fees, and trading incentives flow directly to Proto (`0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2`) and token creators without dependency on third-party multisigs (e.g. Pons Multisig `0x263ed...`).

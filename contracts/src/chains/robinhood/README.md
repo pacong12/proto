@@ -28,8 +28,9 @@
 
 Proto maintains 100% sovereign ownership over its protocol contracts on Robinhood Chain:
 
-- **Factory V2 Contract**: `LaunchpadV2Factory.sol` (`0xbA42499Cfe59abc05120A100EEc4f859F476034F`)
-- **Liquidity Locker**: `LiquidityLocker.sol` (`0x070233B6F46ccD61CA2B7bc1E13520c3fE4614E4`)
+- **Factory V2 Contract**: `LaunchpadV2Factory.sol` (`0x9f1fAf78adE92C994AB188452338b45c52800748`)
+- **Liquidity Locker V4**: `ProtoLiquidityLockerV4.sol` (`0x7A1AD6AD30B1c9e276eD80a853E8dA897fE5D63E`)
+- **Proto MemeHook V4**: `ProtoMemeHook.sol` (`0x6347Ee4710cBCBafa2ED1e837eDc7605cB80D9a7`)
 - **Protocol Fee Recipient**: `0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2`
 
 ---
