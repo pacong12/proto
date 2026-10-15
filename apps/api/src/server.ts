@@ -1303,6 +1303,77 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     });
   }
 
+  // GET & POST /api/tokens/:address/sentiment — Community Bull vs Bear sentiment gauge
+  const sentimentMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/sentiment$/);
+  if (sentimentMatch && req.method === 'GET') {
+    const address = sentimentMatch[1];
+    const user = url.searchParams.get('user') || undefined;
+    const sentiment = (await repository.getTokenSentiment?.(address, user)) || {
+      bullVotes: 0,
+      bearVotes: 0,
+      totalVotes: 0,
+      bullPercent: 50,
+      bearPercent: 50,
+    };
+    return new Response(safeStringify({ success: true, data: sentiment, timestamp: Date.now() }), {
+      headers,
+    });
+  }
+
+  if (sentimentMatch && req.method === 'POST') {
+    try {
+      const address = sentimentMatch[1];
+      const body = await parseJsonBody<{ userAddress?: string; sentiment?: string }>(req, 4096);
+      const userAddress = String(body.userAddress || '')
+        .trim()
+        .toLowerCase();
+      const sentiment = String(body.sentiment || '')
+        .trim()
+        .toLowerCase();
+
+      if (!userAddress || !/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
+        return replyError('INVALID_USER_ADDRESS', 'Valid Ethereum wallet address is required', 400);
+      }
+      if (sentiment !== 'bull' && sentiment !== 'bear') {
+        return replyError('INVALID_SENTIMENT', "Sentiment must be either 'bull' or 'bear'", 400);
+      }
+
+      const updated = await repository.voteTokenSentiment?.(address, userAddress, sentiment);
+      return new Response(safeStringify({ success: true, data: updated, timestamp: Date.now() }), {
+        status: 200,
+        headers,
+      });
+    } catch (e) {
+      console.error('[Sentiment POST Error]', e);
+      return replyError('SENTIMENT_ERROR', (e as Error).message, 500);
+    }
+  }
+
+  // GET /api/tokens/:address/buyback OR /api/buyback/stats — automated buyback & burn tracker
+  const buybackMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/buyback$/);
+  if (buybackMatch && req.method === 'GET') {
+    const address = buybackMatch[1];
+    const stats = (await repository.getBuybackStats?.(address)) || {
+      totalBurns: 0,
+      totalTokensBurned: '0',
+      recentBurns: [],
+    };
+    return new Response(safeStringify({ success: true, data: stats, timestamp: Date.now() }), {
+      headers,
+    });
+  }
+
+  if (url.pathname === '/api/buyback/stats' && req.method === 'GET') {
+    const stats = (await repository.getBuybackStats?.()) || {
+      totalBurns: 0,
+      totalTokensBurned: '0',
+      recentBurns: [],
+    };
+    return new Response(safeStringify({ success: true, data: stats, timestamp: Date.now() }), {
+      headers,
+    });
+  }
+
   // GET /api/tokens/:address/stream — Server-Sent Events for realtime market data push.
   // Browser connects once; server pushes a `data:` frame whenever priceUsd, marketCapUsd,
   // or graduationProgress changes (polled from DB every 2s, frame sent only on delta).

@@ -57,6 +57,9 @@
         :symbol="currentToken.symbol"
       />
 
+      <!-- Community Sentiment Gauge (Bull vs Bear 1-click voting) -->
+      <SentimentGauge :token-address="currentToken.address" :account="account || undefined" />
+
       <!-- ============================================================
            HYBRID PONS X PROTO TRADING GRID
            - Desktop: 2 Columns (Col 1: Chart, Facts, Tabs | Col 2: Sticky Swap Panel)
@@ -139,6 +142,10 @@
           :is-swap-disabled="isSwapDisabled"
           :is-swapping="isSwapping"
           :swap-button-text="swapButtonText"
+          :unclaimed-dividend-formatted="unclaimedDividendFormatted"
+          :is-claiming-dividends="isClaimingDividends"
+          :is-dividends-configured="isDividendsConfigured"
+          :has-dividends="hasDividends"
           @update:trade-tab="tradeTab = $event"
           @update:amount-in="amountIn = $event"
           @update:pay-in-usd="payInUsd = $event"
@@ -153,6 +160,8 @@
           @open-wallet="openWallet"
           @switch-network="switchOrAddNetwork(tokenNetwork)"
           @execute-swap="handleSwap"
+          @claim-dividends="handleClaimDividends"
+          @open-pnl-card="isPnlModalOpen = true"
         />
 
         <!-- 3. Bonding Curve & Protocol Facts Card (Pons app-facts style) -->
@@ -354,6 +363,18 @@
         @reply-posted="onReplyPosted"
       />
 
+      <!-- PnL Card Share Modal -->
+      <PnlCardModal
+        :is-open="isPnlModalOpen"
+        :current-token="currentToken"
+        :current-market-data="currentMarketData"
+        :user-holding-usd="userHoldingUsd"
+        :user-token-balance="userTokenBalance"
+        :account="account || undefined"
+        :token-network="tokenNetwork"
+        @close="isPnlModalOpen = false"
+      />
+
       <!-- Mobile Sticky Quick Trade Floating Dock (Mobile only: sm:hidden) -->
       <MobileTradeDock
         :current-token="currentToken"
@@ -442,7 +463,10 @@ import {
   TradeAboutTab,
   TradeCalloutsTab,
   MobileTradeDock,
+  SentimentGauge,
+  PnlCardModal,
 } from './trade';
+import { useHolderDividends, type HolderDividendEntry } from '../composables/useHolderDividends';
 import {
   shortenAddress,
   formatTokenNumber,
@@ -546,6 +570,69 @@ async function handleCancelTax() {
     toast.success('Tax proposal cancelled');
   } else if (taxError.value) {
     toast.error('Failed to cancel tax proposal: ' + taxError.value);
+  }
+}
+
+// Live Holder Dividends State (Argus style)
+const { loadSingleTokenDividend, claimDividend: claimHolderDividend } = useHolderDividends();
+const unclaimedDividend = ref<HolderDividendEntry | null>(null);
+const isClaimingDividends = ref(false);
+const isPnlModalOpen = ref(false);
+
+const isDividendsConfigured = computed(() => {
+  return (
+    Boolean(tokenNetwork.value.contracts.holderFeeDistributor) &&
+    tokenNetwork.value.contracts.holderFeeDistributor !==
+      '0x0000000000000000000000000000000000000000'
+  );
+});
+
+const hasDividends = computed(() => {
+  return (unclaimedDividend.value?.earnedWei ?? 0n) > 0n;
+});
+
+const unclaimedDividendFormatted = computed(() => {
+  return unclaimedDividend.value?.earnedFormatted ?? '0.0000';
+});
+
+async function refreshLiveDividends() {
+  if (!account.value || !currentToken.value.address || !isDividendsConfigured.value) {
+    unclaimedDividend.value = null;
+    return;
+  }
+  try {
+    const entry = await loadSingleTokenDividend(
+      account.value as `0x${string}`,
+      currentToken.value.address as `0x${string}`,
+      currentToken.value.symbol,
+      currentToken.value.name,
+      tokenNetwork.value.contracts.holderFeeDistributor as `0x${string}`,
+      tokenNetwork.value.chainId,
+    );
+    unclaimedDividend.value = entry;
+  } catch {
+    // Non-blocking
+  }
+}
+
+async function handleClaimDividends() {
+  if (!account.value || !currentToken.value.address || !isDividendsConfigured.value) return;
+  isClaimingDividends.value = true;
+  try {
+    const hash = await claimHolderDividend(
+      currentToken.value.address as `0x${string}`,
+      tokenNetwork.value.contracts.holderFeeDistributor as `0x${string}`,
+      tokenNetwork.value.chainId,
+    );
+    if (hash) {
+      toast.success('Dividends claimed successfully!');
+      await refreshLiveDividends();
+      await updateBalance(undefined, tokenNetwork.value.chainId, true);
+    }
+  } catch (err) {
+    toast.error('Failed to claim dividends: ' + (err as Error).message);
+  } finally {
+    isClaimingDividends.value = false;
   }
 }
 
@@ -1946,6 +2033,7 @@ async function handleSwap() {
     await Promise.allSettled([
       updateBalance(),
       fetchUserTokenBalance(true),
+      refreshLiveDividends(),
       fetchTrades(currentToken.value.address, true),
       fetchCandlesticks(currentToken.value.address, selectedResolution.value, true),
       fetchHolders(currentToken.value.address, true),
@@ -2151,6 +2239,7 @@ watch(
       await Promise.allSettled([
         fetchUserTokenBalance(true),
         updateBalance(undefined, tokenNetwork.value.chainId, true),
+        refreshLiveDividends(),
       ]);
     }
   },
@@ -2163,10 +2252,12 @@ watch(
       Promise.allSettled([
         fetchUserTokenBalance(true),
         updateBalance(undefined, tokenNetwork.value.chainId, true),
+        refreshLiveDividends(),
         fetchCallouts(currentToken.value.address),
       ]);
     } else if (!newAcc) {
       userTokenBalance.value = 0n;
+      unclaimedDividend.value = null;
     }
   },
 );
@@ -2198,6 +2289,7 @@ onMounted(async () => {
     await Promise.allSettled([
       fetchUserTokenBalance(true),
       updateBalance(undefined, tokenNetwork.value.chainId, true),
+      refreshLiveDividends(),
     ]);
   }
 
