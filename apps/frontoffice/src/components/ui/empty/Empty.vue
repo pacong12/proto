@@ -30,7 +30,7 @@ const props = withDefaults(defineProps<Props>(), {
       </slot>
     </div>
     <div class="space-y-1">
-      <h4 class="text-sm font-semibold text-foreground font-mono">
+      <h4 class="text-sm font-semibold text-foreground">
         {{ props.title }}
       </h4>
       <p class="text-xs text-muted-foreground max-w-sm font-sans">

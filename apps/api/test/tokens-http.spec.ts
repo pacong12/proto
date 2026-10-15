@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { privateKeyToAccount } from 'viem/accounts';
+import { buildCommentSignMessage } from '@proto/shared-types';
 import { server } from '../src/server';
 
 describe('Tokens HTTP Endpoints Integration', () => {
@@ -172,5 +174,139 @@ describe('Tokens HTTP Endpoints Integration', () => {
     const json = await res.json();
     expect(json.success).toBe(false);
     expect(json.error.code).toBe('NO_TOKEN_POSITION');
+  });
+
+  it('POST /api/tokens/:address/comments verifies cryptographic signature and prevents whale impersonation', async () => {
+    const realSigner = privateKeyToAccount(
+      '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
+    );
+    const whaleAddress = '0x1111111111111111111111111111111111111111';
+    const timestamp = Date.now();
+    const content = 'Legitimate call signed by real wallet key';
+
+    const message = buildCommentSignMessage({
+      tokenAddress: testAddress,
+      authorAddress: realSigner.address,
+      content,
+      timestamp,
+    });
+    const validSignature = await realSigner.signMessage({ message });
+
+    // 1. Valid signature passes
+    const validReq = new Request(`http://localhost:3001/api/tokens/${testAddress}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        authorAddress: realSigner.address,
+        content,
+        targetMcap: '$200K MC',
+        positionUsd: 100,
+        callType: 'call',
+        signature: validSignature,
+        timestamp,
+      }),
+    });
+    const validRes = await server.fetch(validReq);
+    expect(validRes.status).toBe(201);
+
+    // 2. Impersonation: attacker uses signature signed by realSigner, but sets authorAddress to whaleAddress
+    const fakeReq = new Request(`http://localhost:3001/api/tokens/${testAddress}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        authorAddress: whaleAddress,
+        content,
+        targetMcap: '$10M MC',
+        positionUsd: 50000,
+        callType: 'call',
+        signature: validSignature,
+        timestamp,
+      }),
+    });
+    const fakeRes = await server.fetch(fakeReq);
+    expect(fakeRes.status).toBe(401);
+    const fakeJson = await fakeRes.json();
+    expect(fakeJson.success).toBe(false);
+    expect(fakeJson.error.code).toBe('INVALID_SIGNATURE');
+
+    // 3. Expired signature (e.g. 15 minutes ago)
+    const expiredTimestamp = Date.now() - 15 * 60 * 1000;
+    const expiredMessage = buildCommentSignMessage({
+      tokenAddress: testAddress,
+      authorAddress: realSigner.address,
+      content,
+      timestamp: expiredTimestamp,
+    });
+    const expiredSignature = await realSigner.signMessage({ message: expiredMessage });
+    const expiredReq = new Request(`http://localhost:3001/api/tokens/${testAddress}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        authorAddress: realSigner.address,
+        content,
+        targetMcap: '$200K MC',
+        positionUsd: 100,
+        callType: 'call',
+        signature: expiredSignature,
+        timestamp: expiredTimestamp,
+      }),
+    });
+    const expiredRes = await server.fetch(expiredReq);
+    expect(expiredRes.status).toBe(401);
+    const expiredJson = await expiredRes.json();
+    expect(expiredJson.success).toBe(false);
+    expect(expiredJson.error.code).toBe('EXPIRED_SIGNATURE');
+  });
+
+  it('GET /api/v1/networks/:network/tokens/:address returns GeckoTerminal attributes or 404', async () => {
+    const listReq = new Request('http://localhost:3001/api/tokens?limit=1');
+    const listRes = await server.fetch(listReq);
+    const listJson = await listRes.json();
+    const targetAddr = listJson.data?.[0]?.address ?? testAddress;
+
+    const req = new Request(`http://localhost:3001/api/v1/networks/robinhood/tokens/${targetAddr}`);
+    const res = await server.fetch(req);
+    expect([200, 404]).toContain(res.status);
+    if (res.status === 200) {
+      const json = await res.json();
+      expect(json.data).toBeDefined();
+      expect(json.data.type).toBe('token');
+      expect(json.data.attributes).toHaveProperty('address');
+      expect(json.data.attributes).toHaveProperty('symbol');
+      expect(json.data.attributes).toHaveProperty('total_supply');
+    }
+  }, 10_000);
+
+  it('GET /dex/latest-block returns latest indexed block', async () => {
+    const req = new Request('http://localhost:3001/dex/latest-block?chain=robinhood');
+    const res = await server.fetch(req);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json).toHaveProperty('block');
+    expect(json).toHaveProperty('chainId');
+  });
+
+  it('GET /dex/events handles zero tokenAmount safely without NaN or Infinity', async () => {
+    const req = new Request('http://localhost:3001/dex/events?fromBlock=0&toBlock=100');
+    const res = await server.fetch(req);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json).toHaveProperty('events');
+    expect(Array.isArray(json.events)).toBe(true);
+  });
+
+  it('GET /api/tokens/:address/rewards returns reward distribution data', async () => {
+    const testAccount = '0x1111111111111111111111111111111111111111';
+    const req = new Request(
+      `http://localhost:3001/api/tokens/${testAddress}/rewards?account=${testAccount}`,
+    );
+    const res = await server.fetch(req);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    expect(json.data).toHaveProperty('tokenAddress');
+    expect(json.data).toHaveProperty('account');
+    expect(json.data).toHaveProperty('earnedWei');
+    expect(json.data).toHaveProperty('rewardAssetSymbol');
   });
 });

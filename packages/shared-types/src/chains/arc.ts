@@ -15,6 +15,7 @@ export const ARC_PROTO_CURVE_ADDRESS = getEnv(
 export const ARC_NETWORK: NetworkConfig = {
   chainId: 5042,
   name: 'Arc Network',
+  icon: '/chains/arc.svg',
   nativeCurrency: {
     name: 'USD Coin',
     symbol: 'USDC',
@@ -63,7 +64,8 @@ export const ARC_NETWORK: NetworkConfig = {
   },
   launchConfigV2: {
     supply: 1_000_000_000n * 10n ** 18n,
-    curveTokenAllocation: 738_600_000n * 10n ** 18n, // 73.86% on curve (Arc standard)
+    curveTokenAllocation: 738_600_000n * 10n ** 18n, // 73.86% on curve (Arc/Argus standard: 69k target, 24.42k initial)
+    virtualReserveWei: 24_420n * 10n ** 18n, // 24,420 USDC (Arc/Argus standard)
     graduationTargetWei: getEnvBigInt('ARC_GRADUATION_TARGET_WEI', 69_000n * 10n ** 18n),
     platformFeeBps: 100, // 1% trading fee (Arc standard)
     snipeTaxMaxBps: 9900, // 99% decaying anti-snipe

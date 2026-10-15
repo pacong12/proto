@@ -46,6 +46,8 @@ export default {
         'observability',
         'security',
         'shared-types',
+        'contracts-abi',
+        'math-sdk',
         'infra',
         'deps',
         'docs',

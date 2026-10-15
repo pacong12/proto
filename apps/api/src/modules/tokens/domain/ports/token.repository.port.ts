@@ -75,4 +75,8 @@ export interface TokenRepositoryPort {
     userAddress: string,
   ): Promise<{ reposted: boolean; repostsCount: number }>;
   incrementCommentViews?(commentId: string): Promise<number>;
+
+  // Indexer persistence
+  getLastIndexedBlock?(networkName: string): Promise<bigint | null>;
+  setLastIndexedBlock?(networkName: string, blockNumber: bigint): Promise<void>;
 }

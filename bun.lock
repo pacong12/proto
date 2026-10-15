@@ -32,6 +32,7 @@
       "name": "@proto/api",
       "version": "0.1.0",
       "dependencies": {
+        "@proto/math-sdk": "*",
         "@proto/shared-types": "*",
         "ioredis": "^6.0.0",
         "viem": "^2.23.0",
@@ -70,6 +71,7 @@
       "dependencies": {
         "@headlessui/vue": "^1.7.23",
         "@lucide/vue": "^1.46.0",
+        "@proto/math-sdk": "*",
         "@proto/shared-types": "*",
         "@reown/appkit": "^1.8.23",
         "@reown/appkit-adapter-wagmi": "^1.8.23",
@@ -100,10 +102,28 @@
         "vue-tsc": "^2.2.0",
       },
     },
+    "packages/contracts-abi": {
+      "name": "@proto/contracts-abi",
+      "version": "0.1.0",
+      "dependencies": {
+        "viem": "^2.23.0",
+      },
+      "devDependencies": {
+        "typescript": "^5.7.3",
+      },
+    },
+    "packages/math-sdk": {
+      "name": "@proto/math-sdk",
+      "version": "0.1.0",
+      "devDependencies": {
+        "typescript": "^5.7.3",
+      },
+    },
     "packages/shared-types": {
       "name": "@proto/shared-types",
       "version": "0.1.0",
       "dependencies": {
+        "@proto/contracts-abi": "*",
         "viem": "^2.23.0",
       },
       "devDependencies": {
@@ -357,9 +377,13 @@
 
     "@proto/api": ["@proto/api@workspace:apps/api"],
 
+    "@proto/contracts-abi": ["@proto/contracts-abi@workspace:packages/contracts-abi"],
+
     "@proto/docs": ["@proto/docs@workspace:apps/docs"],
 
     "@proto/frontoffice": ["@proto/frontoffice@workspace:apps/frontoffice"],
+
+    "@proto/math-sdk": ["@proto/math-sdk@workspace:packages/math-sdk"],
 
     "@proto/shared-types": ["@proto/shared-types@workspace:packages/shared-types"],
 

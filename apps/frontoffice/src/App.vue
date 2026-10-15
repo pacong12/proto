@@ -19,20 +19,27 @@
       >
         <!-- Brand Info -->
         <div class="space-y-3">
-          <div class="flex items-center gap-2">
-            <span class="text-foreground font-bold tracking-tight text-lg">proto</span>
+          <div class="flex items-center gap-2.5">
+            <img
+              src="/logo-pink.svg"
+              alt="proto"
+              draggable="false"
+              oncontextmenu="return false;"
+              class="w-6 h-6 object-contain shrink-0 select-none pointer-events-none"
+            />
+            <span class="text-foreground font-bold tracking-tight text-xl">proto</span>
           </div>
-          <p class="text-xs text-muted-foreground leading-relaxed">
+          <p class="text-sm text-muted-foreground leading-relaxed">
             {{ t('footerSubtitle') }}
           </p>
         </div>
 
         <!-- Product Links -->
         <div class="space-y-2">
-          <h4 class="text-xs font-semibold uppercase tracking-wider text-foreground">
+          <h4 class="text-sm font-semibold uppercase tracking-wider text-foreground">
             {{ t('product') }}
           </h4>
-          <ul class="space-y-1.5 text-xs text-muted-foreground">
+          <ul class="space-y-2 text-sm text-muted-foreground">
             <li>
               <RouterLink to="/launchpad" class="hover:text-primary transition">
                 {{ t('explore') }}
@@ -74,10 +81,10 @@
 
         <!-- Resources & Network -->
         <div class="space-y-2">
-          <h4 class="text-xs font-semibold uppercase tracking-wider text-foreground">
+          <h4 class="text-sm font-semibold uppercase tracking-wider text-foreground">
             {{ t('network') }}
           </h4>
-          <ul class="space-y-1.5 text-xs text-muted-foreground font-mono">
+          <ul class="space-y-2 text-sm text-muted-foreground">
             <li>{{ activeNetwork.name }} ({{ activeNetwork.chainId }})</li>
             <li>Uniswap V3 Factory (1% Fee)</li>
             <li>Direct Permanent Lock</li>
@@ -87,10 +94,10 @@
 
         <!-- Legal & Privacy Policy Modal Trigger -->
         <div class="space-y-2">
-          <h4 class="text-xs font-semibold uppercase tracking-wider text-foreground">
+          <h4 class="text-sm font-semibold uppercase tracking-wider text-foreground">
             {{ t('legal') }}
           </h4>
-          <ul class="space-y-1.5 text-xs text-muted-foreground">
+          <ul class="space-y-2 text-sm text-muted-foreground">
             <li>
               <RouterLink to="/terms-of-service" class="hover:text-primary transition">
                 {{ t('termsOfService') }}
@@ -107,22 +114,22 @@
               </RouterLink>
             </li>
           </ul>
-          <p class="text-[11px] leading-relaxed text-muted-foreground pt-2">
+          <p class="text-xs leading-relaxed text-muted-foreground pt-2">
             {{ t('footerDisclaimer') }}
           </p>
         </div>
       </div>
 
       <div
-        class="max-w-7xl mx-auto pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground"
+        class="max-w-7xl mx-auto pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground"
       >
         <p>{{ t('copyright') }}</p>
-        <div class="flex items-center gap-4 text-xs">
+        <div class="flex items-center gap-4 text-sm">
           <a
             href="https://x.com/protodotfun"
             target="_blank"
             rel="noopener noreferrer"
-            class="hover:text-foreground transition font-mono flex items-center gap-1"
+            class="hover:text-foreground transition flex items-center gap-1 font-medium"
           >
             <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
               <path
@@ -185,7 +192,24 @@ const { t } = useI18n();
 const { activeNetwork } = useWallet();
 const router = useRouter();
 const route = useRoute();
-const docsUrl = import.meta.env.VITE_DOCS_URL || 'https://docs.proto.family';
+const docsUrl = computed(() => {
+  if (import.meta.env.VITE_DOCS_URL) return import.meta.env.VITE_DOCS_URL;
+  if (typeof window !== 'undefined') {
+    const { hostname, port, protocol } = window.location;
+    // In local dev, frontoffice is on 3010 and docs is on 3002
+    if (port === '3010' || hostname === 'localhost' || hostname === '127.0.0.1') {
+      return `${protocol}//${hostname}:3002`;
+    }
+    // Cloudflare Workers dev domain: proto.mutingudin12.workers.dev -> proto-docs.mutingudin12.workers.dev
+    if (hostname.endsWith('.workers.dev')) {
+      const docsHost = hostname.replace(/^proto\./, 'proto-docs.');
+      return `${protocol}//${docsHost}`;
+    }
+    // In custom domain production, derive docs subdomain from current host
+    return `${protocol}//docs.${window.location.host}`;
+  }
+  return '/docs';
+});
 
 const userProfileUrl = computed(() => {
   if (walletAddress.value) {

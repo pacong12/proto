@@ -319,6 +319,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       'ALTER TABLE comments ADD COLUMN replies_count INTEGER DEFAULT 0',
       'ALTER TABLE comments ADD COLUMN views_count INTEGER DEFAULT 0',
       'ALTER TABLE comments ADD COLUMN supply_percent REAL',
+      'ALTER TABLE comments ADD COLUMN price_at_post REAL',
     ];
     for (const sql of commentMigrations) {
       try {
@@ -349,9 +350,37 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
         PRIMARY KEY (comment_id, user_address)
       );
     `);
+
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS indexer_cursor (
+        network TEXT PRIMARY KEY,
+        last_block TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+    `);
   }
 
   async save(token: LaunchedTokenEntity): Promise<void> {
+    let finalTaxConfig = token.taxConfig;
+    try {
+      const existingRow = this.db
+        .prepare('SELECT tax_config_json FROM tokens WHERE LOWER(address) = LOWER(?) LIMIT 1')
+        .get(token.address) as { tax_config_json?: string | null } | undefined;
+      if (existingRow?.tax_config_json) {
+        const parsed = JSON.parse(existingRow.tax_config_json) as LaunchedTokenEntity['taxConfig'];
+        if (parsed?.revenueSplit && !finalTaxConfig?.revenueSplit) {
+          finalTaxConfig = {
+            buyTaxBps: finalTaxConfig?.buyTaxBps ?? parsed.buyTaxBps ?? 0,
+            sellTaxBps: finalTaxConfig?.sellTaxBps ?? parsed.sellTaxBps ?? 0,
+            taxRecipient: finalTaxConfig?.taxRecipient ?? parsed.taxRecipient ?? token.deployer,
+            revenueSplit: parsed.revenueSplit,
+          };
+        }
+      }
+    } catch {
+      // ignore parse errors
+    }
+
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO tokens (
         address, name, symbol, decimals, totalSupply, logo, description,
@@ -380,7 +409,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       token.launchBlock.toString(),
       token.createdAt,
       token.initialBuyAmount ?? null,
-      token.taxConfig ? JSON.stringify(token.taxConfig) : null,
+      finalTaxConfig ? JSON.stringify(finalTaxConfig) : null,
       token.version ?? null,
       token.curveAddress?.toLowerCase() ?? null,
       token.isGraduated ? 1 : 0,
@@ -530,7 +559,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       endTime: Date.now(),
       fillGaps,
       maxCandles: 1000,
-      fallbackPrice: mkt?.priceUsd || (token?.version === 'v2' ? 0.0000042 : 0),
+      fallbackPrice: mkt?.priceUsd || 0.0000042,
     });
   }
 
@@ -611,6 +640,17 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     return null;
   }
 
+  /**
+   * Returns estimated token positions for a trader derived from indexed trade history.
+   *
+   * @remarks
+   * **Off-chain estimate only.** Balance is computed as
+   * `sum(buy tokenAmount) - sum(sell tokenAmount)` across the last 500 indexed trades.
+   * This will under-report positions for wallets that:
+   * - received tokens via transfer (not a swap indexed by the poller)
+   * - traded before the indexer start block
+   * Use on-chain `balanceOf()` for authoritative balance when precision is required.
+   */
   async getUserPositions(address: string): Promise<
     Array<{
       tokenAddress: string;
@@ -693,9 +733,9 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       INSERT INTO comments (
         id, token_address, author_address, content, image_url, likes_count, created_at,
         target_mcap, position_usd, profit_usd, call_type, parent_id, quoted_callout_id,
-        reposts_count, quotes_count, replies_count
+        reposts_count, quotes_count, replies_count, price_at_post
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     stmt.run(
       comment.id,
@@ -714,6 +754,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       comment.repostsCount || 0,
       comment.quotesCount || 0,
       comment.repliesCount || 0,
+      comment.priceAtPost ?? null,
     );
 
     if (comment.parentId) {
@@ -762,6 +803,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       replies_count: number | null;
       views_count: number | null;
       supply_percent: number | null;
+      price_at_post: number | null;
     }
     const rows = stmt.all(tokenAddress) as CommentRow[];
 
@@ -797,6 +839,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       positionUsd: r.position_usd != null ? Number(r.position_usd) : undefined,
       supplyPercent: r.supply_percent != null ? Number(r.supply_percent) : undefined,
       profitUsd: r.profit_usd != null ? Number(r.profit_usd) : undefined,
+      priceAtPost: r.price_at_post != null ? Number(r.price_at_post) : undefined,
       callType: (r.call_type as 'call' | 'comment') ?? 'call',
       parentId: r.parent_id ?? undefined,
       quotedCalloutId: r.quoted_callout_id ?? undefined,
@@ -817,7 +860,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       SELECT 
         c.id, c.token_address, c.author_address, c.content, c.image_url, 
         c.likes_count, c.created_at, c.target_mcap, c.position_usd, c.profit_usd, c.call_type,
-        c.parent_id, c.quoted_callout_id, c.reposts_count, c.quotes_count, c.replies_count, c.views_count, c.supply_percent,
+        c.parent_id, c.quoted_callout_id, c.reposts_count, c.quotes_count, c.replies_count, c.views_count, c.supply_percent, c.price_at_post,
         t.name as token_name, t.symbol as token_symbol, t.logo as token_logo,
         m.marketCapUsd as token_market_cap, m.priceUsd as token_price_usd
       FROM comments c
@@ -853,6 +896,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       replies_count: number | null;
       views_count: number | null;
       supply_percent: number | null;
+      price_at_post: number | null;
       token_name: string | null;
       token_symbol: string | null;
       token_logo: string | null;
@@ -894,6 +938,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       positionUsd: r.position_usd != null ? Number(r.position_usd) : undefined,
       supplyPercent: r.supply_percent != null ? Number(r.supply_percent) : undefined,
       profitUsd: r.profit_usd != null ? Number(r.profit_usd) : undefined,
+      priceAtPost: r.price_at_post != null ? Number(r.price_at_post) : undefined,
       callType: (r.call_type as 'call' | 'comment') ?? 'call',
       parentId: r.parent_id ?? undefined,
       quotedCalloutId: r.quoted_callout_id ?? undefined,
@@ -926,7 +971,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       SELECT 
         c.id, c.token_address, c.author_address, c.content, c.image_url, 
         c.likes_count, c.created_at, c.target_mcap, c.position_usd, c.profit_usd, c.call_type,
-        c.parent_id, c.quoted_callout_id, c.reposts_count, c.quotes_count, c.replies_count, c.views_count, c.supply_percent,
+        c.parent_id, c.quoted_callout_id, c.reposts_count, c.quotes_count, c.replies_count, c.views_count, c.supply_percent, c.price_at_post,
         t.name as token_name, t.symbol as token_symbol, t.logo as token_logo,
         m.marketCapUsd as token_market_cap, m.priceUsd as token_price_usd
       FROM comments c
@@ -947,6 +992,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       position_usd: number | null;
       supply_percent: number | null;
       profit_usd: number | null;
+      price_at_post: number | null;
       call_type: string | null;
       parent_id: string | null;
       quoted_callout_id: string | null;
@@ -976,6 +1022,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       positionUsd: r.position_usd != null ? Number(r.position_usd) : undefined,
       supplyPercent: r.supply_percent != null ? Number(r.supply_percent) : undefined,
       profitUsd: r.profit_usd != null ? Number(r.profit_usd) : undefined,
+      priceAtPost: r.price_at_post != null ? Number(r.price_at_post) : undefined,
       callType: (r.call_type as 'call' | 'comment') ?? 'call',
       parentId: r.parent_id ?? undefined,
       quotedCalloutId: r.quoted_callout_id ?? undefined,
@@ -1278,5 +1325,37 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       transactionHash: row.transactionHash as `0x${string}`,
       timestamp: Number(row.timestamp),
     };
+  }
+
+  async getLastIndexedBlock(networkName: string): Promise<bigint | null> {
+    try {
+      const row = this.db
+        .query<{ last_block: string }, [string]>(
+          'SELECT last_block FROM indexer_cursor WHERE network = ? LIMIT 1',
+        )
+        .get(networkName);
+      if (!row || !row.last_block) return null;
+      return BigInt(row.last_block);
+    } catch {
+      return null;
+    }
+  }
+
+  async setLastIndexedBlock(networkName: string, blockNumber: bigint): Promise<void> {
+    try {
+      this.db
+        .query(
+          `INSERT INTO indexer_cursor (network, last_block, updated_at)
+           VALUES (?, ?, ?)
+           ON CONFLICT(network) DO UPDATE SET
+             last_block = excluded.last_block,
+             updated_at = excluded.updated_at`,
+        )
+        .run(networkName, blockNumber.toString(), Date.now());
+    } catch (err) {
+      console.warn(
+        `[SqliteTokenRepository] Could not persist indexer block: ${(err as Error).message}`,
+      );
+    }
   }
 }

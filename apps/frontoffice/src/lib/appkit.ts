@@ -51,6 +51,19 @@ export const arcAppKitChain = defineChain({
 
 const networks = [robinhoodAppKitChain, arcAppKitChain] as [AppKitNetwork, ...AppKitNetwork[]];
 
+const appKitNetworkMap = new Map<number, AppKitNetwork>([
+  [robinhoodAppKitChain.id as number, robinhoodAppKitChain],
+  [arcAppKitChain.id as number, arcAppKitChain],
+]);
+
+export function registerAppKitNetwork(net: AppKitNetwork): void {
+  appKitNetworkMap.set(net.id as number, net);
+}
+
+export function getAppKitChain(chainId: number): AppKitNetwork {
+  return appKitNetworkMap.get(chainId) ?? robinhoodAppKitChain;
+}
+
 export const wagmiAdapter = projectId
   ? new WagmiAdapter({
       networks,

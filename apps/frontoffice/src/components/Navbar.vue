@@ -19,6 +19,7 @@ import {
 } from 'lucide-vue-next';
 import { useWallet } from '../composables/useWallet';
 import { useI18n } from '../lib/i18n';
+import { getChainIcon, getChainShortName } from '@/lib/utils';
 import { SUPPORTED_CHAINS } from '@proto/shared-types';
 import { Button } from '@/components/ui/button';
 import { Jazzicon } from '@/components/ui/avatar';
@@ -53,7 +54,8 @@ const route = useRoute();
 const mobileMenuOpen = ref(false);
 
 const mode = useColorMode({
-  emitAuto: true,
+  emitAuto: false,
+  initialValue: 'dark',
   modes: {
     dark: 'dark',
     light: 'light',
@@ -64,7 +66,7 @@ const mode = useColorMode({
 const isDark = computed(() => mode.value === 'dark');
 
 function toggleTheme() {
-  mode.value = isDark.value ? 'light' : 'dark';
+  mode.value = mode.value === 'dark' ? 'light' : 'dark';
 }
 
 watch(
@@ -138,20 +140,31 @@ function copyAddress() {
       <div class="flex items-center gap-6">
         <RouterLink
           to="/launchpad"
-          class="flex items-center text-xl font-extrabold tracking-tight text-foreground hover:opacity-80 transition"
+          class="flex items-center gap-2.5 text-xl font-extrabold tracking-tight text-foreground hover:opacity-85 transition group"
         >
-          <span>proto</span>
+          <div
+            class="w-7 h-7 shrink-0 flex items-center justify-center select-none pointer-events-none"
+          >
+            <img
+              src="/logo-pink.svg"
+              alt="proto"
+              draggable="false"
+              oncontextmenu="return false;"
+              class="w-6.5 h-6.5 object-contain transition-transform group-hover:scale-105 select-none pointer-events-none"
+            />
+          </div>
+          <span class="tracking-tight">proto</span>
         </RouterLink>
 
         <!-- Desktop Navigation Routes: visible on lg and up -->
-        <nav class="hidden lg:flex items-center gap-1 text-sm font-medium">
+        <nav class="hidden lg:flex items-center gap-1.5 text-sm font-medium">
           <RouterLink
             to="/launchpad"
             :class="[
-              'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
+              'inline-flex items-center h-9 px-3.5 rounded-xl text-sm font-medium transition-colors',
               isRouteActive('/launchpad')
-                ? 'bg-black text-foreground border border-border font-bold'
-                : 'text-muted-foreground hover:text-foreground hover:bg-zinc-950',
+                ? 'bg-foreground text-background font-semibold shadow-xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted',
             ]"
           >
             {{ t('explore') }}
@@ -160,10 +173,10 @@ function copyAddress() {
           <RouterLink
             to="/launchpad/create"
             :class="[
-              'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
+              'inline-flex items-center h-9 px-3.5 rounded-xl text-sm font-medium transition-colors',
               isRouteActive('/launchpad/create')
-                ? 'bg-black text-foreground border border-border font-bold'
-                : 'text-muted-foreground hover:text-foreground hover:bg-zinc-950',
+                ? 'bg-foreground text-background font-semibold shadow-xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted',
             ]"
           >
             {{ t('create') }}
@@ -172,10 +185,10 @@ function copyAddress() {
           <RouterLink
             to="/memestock"
             :class="[
-              'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
+              'inline-flex items-center h-9 px-3.5 rounded-xl text-sm font-medium transition-colors',
               isRouteActive('/memestock')
-                ? 'bg-black text-foreground border border-border font-bold'
-                : 'text-muted-foreground hover:text-foreground hover:bg-zinc-950',
+                ? 'bg-foreground text-background font-semibold shadow-xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted',
             ]"
           >
             {{ t('memestock') }}
@@ -184,10 +197,10 @@ function copyAddress() {
           <RouterLink
             to="/feed"
             :class="[
-              'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
+              'inline-flex items-center h-9 px-3.5 rounded-xl text-sm font-medium transition-colors',
               isRouteActive('/feed')
-                ? 'bg-black text-foreground border border-border font-bold'
-                : 'text-muted-foreground hover:text-foreground hover:bg-zinc-950',
+                ? 'bg-foreground text-background font-semibold shadow-xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted',
             ]"
           >
             {{ t('feed') }}
@@ -196,10 +209,10 @@ function copyAddress() {
           <RouterLink
             to="/analytics"
             :class="[
-              'inline-flex items-center h-8 px-3 rounded-md text-xs font-semibold transition-colors',
+              'inline-flex items-center h-9 px-3.5 rounded-xl text-sm font-medium transition-colors',
               isRouteActive('/analytics')
-                ? 'bg-black text-foreground border border-border font-bold'
-                : 'text-muted-foreground hover:text-foreground hover:bg-zinc-950',
+                ? 'bg-foreground text-background font-semibold shadow-xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted',
             ]"
           >
             {{ t('analytics') }}
@@ -219,11 +232,11 @@ function copyAddress() {
           aria-label="Search"
         >
           <Search class="w-3.5 h-3.5" />
-          <span class="hidden sm:inline font-mono">{{
+          <span class="hidden sm:inline">{{
             t('searchPlaceholder') ? 'Search...' : 'Search'
           }}</span>
           <kbd
-            class="hidden sm:inline font-mono text-[10px] bg-muted border border-border px-1.5 py-0.5 rounded-md"
+            class="hidden sm:inline text-xs bg-muted border border-border px-1.5 py-0.5 rounded-md"
           >
             ⌘K
           </kbd>
@@ -235,11 +248,11 @@ function copyAddress() {
           @update:model-value="handleChainSelect"
         >
           <SelectTrigger
-            class="h-9 px-2 sm:px-3 gap-1.5 sm:gap-2 w-auto text-xs font-mono border-border bg-card hover:bg-muted cursor-pointer text-foreground rounded-xl shrink-0"
+            class="h-9 px-2 sm:px-3 gap-1.5 sm:gap-2 w-auto text-xs border-border bg-card hover:bg-muted cursor-pointer text-foreground rounded-xl shrink-0"
           >
             <div class="flex items-center gap-1.5 sm:gap-2">
               <img
-                :src="activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+                :src="getChainIcon(activeNetwork)"
                 :alt="activeNetwork.name"
                 class="w-4 h-4 rounded-xs object-contain shrink-0"
               />
@@ -253,7 +266,7 @@ function copyAddress() {
             class="w-64 bg-card border border-border p-2 shadow-2xl rounded-2xl"
           >
             <SelectLabel
-              class="text-[11px] font-mono uppercase tracking-wider text-muted-foreground px-3 py-1.5"
+              class="text-xs uppercase tracking-wider text-muted-foreground px-3 py-1.5 font-semibold"
             >
               Select Network
             </SelectLabel>
@@ -262,11 +275,11 @@ function copyAddress() {
               v-for="net in Object.values(SUPPORTED_CHAINS)"
               :key="net.chainId"
               :value="String(net.chainId)"
-              class="cursor-pointer text-xs font-mono py-2.5 px-3 hover:bg-muted rounded-xl transition my-0.5"
+              class="cursor-pointer text-xs py-2.5 px-3 hover:bg-muted rounded-xl transition my-0.5"
             >
               <div class="flex items-center gap-3">
                 <img
-                  :src="net.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+                  :src="getChainIcon(net)"
                   :alt="net.name"
                   class="w-5 h-5 rounded-md object-contain shrink-0"
                 />
@@ -277,6 +290,19 @@ function copyAddress() {
             </SelectItem>
           </SelectContent>
         </Select>
+
+        <!-- Theme Switcher (Always accessible on desktop) -->
+        <Button
+          variant="outline"
+          size="sm"
+          class="h-9 w-9 p-0 border-border bg-card hover:bg-muted text-foreground rounded-xl cursor-pointer shrink-0"
+          :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+          :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+          @click="toggleTheme"
+        >
+          <Sun v-if="isDark" class="w-4 h-4 text-amber-400" />
+          <Moon v-else class="w-4 h-4 text-foreground" />
+        </Button>
         <!-- Wrong Network Warning Button -->
         <Button
           v-if="isConnected && !isCorrectNetwork"
@@ -313,36 +339,38 @@ function copyAddress() {
               <Button
                 variant="outline"
                 size="sm"
-                class="h-9 px-2 sm:px-3 gap-1.5 sm:gap-2 text-xs font-mono border-border bg-card hover:bg-muted cursor-pointer rounded-xl shrink-0"
+                class="h-9 px-3 gap-2 text-sm font-semibold border-border bg-card hover:bg-muted cursor-pointer rounded-xl shrink-0"
               >
-                <Jazzicon :address="account" :size="16" class="rounded-full shrink-0" />
+                <Jazzicon :address="account" :size="18" class="rounded-full shrink-0" />
                 <span
-                  class="font-bold text-foreground text-[11px] sm:text-xs hidden min-[480px]:inline truncate max-w-[140px]"
+                  class="font-bold text-foreground text-sm hidden min-[480px]:inline truncate max-w-[150px]"
                   >{{ getUserIdentity(account).name }}</span
                 >
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              class="w-72 p-2 bg-card border border-border shadow-2xl rounded-2xl space-y-1"
+              class="w-80 p-2.5 bg-card border border-border shadow-2xl rounded-2xl space-y-1.5"
             >
-              <DropdownMenuLabel class="flex items-center gap-3 p-3 rounded-xl bg-muted/50 mb-1">
+              <DropdownMenuLabel
+                class="flex items-center gap-3.5 p-3.5 rounded-xl bg-muted/60 mb-1"
+              >
                 <Jazzicon
                   :address="account"
-                  :size="36"
+                  :size="40"
                   class="rounded-full border border-border shrink-0"
                 />
                 <div class="truncate min-w-0 flex-1">
                   <div class="flex items-center justify-between gap-1">
-                    <span class="text-xs font-bold text-foreground font-mono truncate">
+                    <span class="text-sm font-bold text-foreground truncate">
                       {{ getUserIdentity(account).displayName }}
                     </span>
-                    <span class="text-[11px] font-mono font-bold text-primary shrink-0">
+                    <span class="text-sm font-bold text-primary shrink-0">
                       {{ formattedBalance }}
                     </span>
                   </div>
                   <span
-                    class="block text-[10px] font-mono text-muted-foreground truncate mt-0.5"
+                    class="block text-xs font-medium text-muted-foreground truncate mt-0.5"
                     :title="account || ''"
                   >
                     {{ account }}
@@ -354,27 +382,27 @@ function copyAddress() {
               <DropdownMenuItem as-child>
                 <RouterLink
                   :to="userProfileUrl"
-                  class="flex items-center gap-2.5 w-full cursor-pointer text-foreground px-3 py-2.5 text-xs rounded-xl hover:bg-muted transition"
+                  class="flex items-center gap-3 w-full cursor-pointer text-foreground px-3.5 py-3 text-sm font-medium rounded-xl hover:bg-muted transition"
                 >
-                  <User class="w-4 h-4" />
+                  <User class="w-4.5 h-4.5" />
                   <span>{{ t('myProfileAndFees') }}</span>
                 </RouterLink>
               </DropdownMenuItem>
 
               <DropdownMenuItem
                 @click="copyAddress"
-                class="cursor-pointer text-foreground px-3 py-2.5 text-xs rounded-xl hover:bg-muted transition flex items-center gap-2.5"
+                class="cursor-pointer text-foreground px-3.5 py-3 text-sm font-medium rounded-xl hover:bg-muted transition flex items-center gap-3"
               >
-                <Copy v-if="!copied" class="w-4 h-4" />
-                <Check v-else class="w-4 h-4 text-primary" />
+                <Copy v-if="!copied" class="w-4.5 h-4.5" />
+                <Check v-else class="w-4.5 h-4.5 text-primary" />
                 <span>{{ copied ? t('addressCopied') : t('copyAddress') }}</span>
               </DropdownMenuItem>
 
               <DropdownMenuItem
                 @click="openWallet"
-                class="cursor-pointer text-foreground px-3 py-2.5 text-xs rounded-xl hover:bg-muted transition flex items-center gap-2.5"
+                class="cursor-pointer text-foreground px-3.5 py-3 text-sm font-medium rounded-xl hover:bg-muted transition flex items-center gap-3"
               >
-                <Wallet class="w-4 h-4" />
+                <Wallet class="w-4.5 h-4.5" />
                 <span>{{ t('switchManageWallet') }}</span>
               </DropdownMenuItem>
 
@@ -382,29 +410,28 @@ function copyAddress() {
 
               <!-- Theme Toggle in Profile Menu -->
               <DropdownMenuItem
-                class="flex items-center justify-between px-3 py-2.5 text-xs rounded-xl cursor-pointer hover:bg-muted transition"
+                class="flex items-center justify-between px-3.5 py-3 text-sm font-medium rounded-xl cursor-pointer hover:bg-muted transition"
                 @click="toggleTheme"
               >
-                <div class="flex items-center gap-2.5">
-                  <Sun v-if="isDark" class="w-4 h-4 text-amber-500" />
-                  <Moon v-else class="w-4 h-4 text-primary" />
+                <div class="flex items-center gap-3">
+                  <Sun v-if="isDark" class="w-4.5 h-4.5 text-amber-500" />
+                  <Moon v-else class="w-4.5 h-4.5 text-primary" />
                   <span>{{ isDark ? 'Light Theme' : 'Dark Theme' }}</span>
                 </div>
-                <span class="text-[10px] font-mono text-muted-foreground capitalize">{{
+                <span class="text-sm text-muted-foreground capitalize font-semibold">{{
                   mode
                 }}</span>
               </DropdownMenuItem>
-
               <!-- Language Submenu using DropdownMenuPortal (Scroll-Free 2-Column Grid) -->
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger
-                  class="flex items-center justify-between px-3 py-2.5 text-xs rounded-xl cursor-pointer hover:bg-muted transition"
+                  class="flex items-center justify-between px-3.5 py-3 text-sm font-medium rounded-xl cursor-pointer hover:bg-muted transition"
                 >
-                  <div class="flex items-center gap-2.5">
-                    <Globe class="w-4 h-4 text-muted-foreground" />
+                  <div class="flex items-center gap-3">
+                    <Globe class="w-4.5 h-4.5 text-muted-foreground" />
                     <span>Language</span>
                   </div>
-                  <span class="text-[10px] text-primary font-bold uppercase font-mono mr-1">{{
+                  <span class="text-sm text-primary font-bold uppercase mr-1">{{
                     currentLocaleOption.code
                   }}</span>
                 </DropdownMenuSubTrigger>
@@ -415,19 +442,19 @@ function copyAddress() {
                     <DropdownMenuItem
                       v-for="item in locales"
                       :key="item.code"
-                      class="flex items-center justify-between px-3 py-2 text-xs rounded-xl cursor-pointer hover:bg-muted transition"
+                      class="flex items-center justify-between px-3.5 py-2.5 text-sm font-medium rounded-xl cursor-pointer hover:bg-muted transition"
                       :class="{
                         'font-bold text-primary bg-primary/10': item.code === locale,
                       }"
                       @click="setLocale(item.code)"
                     >
-                      <div class="flex items-center gap-2 truncate">
-                        <span class="text-sm leading-none">{{ item.flag }}</span>
+                      <div class="flex items-center gap-2.5 truncate">
+                        <span class="text-base leading-none">{{ item.flag }}</span>
                         <span class="truncate">{{ item.nativeName }}</span>
                       </div>
                       <Check
                         v-if="item.code === locale"
-                        class="w-3.5 h-3.5 text-primary shrink-0 ml-1"
+                        class="w-4 h-4 text-primary shrink-0 ml-1"
                       />
                     </DropdownMenuItem>
                   </DropdownMenuSubContent>
@@ -438,9 +465,9 @@ function copyAddress() {
 
               <DropdownMenuItem
                 @click="disconnectWallet"
-                class="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer px-3 py-2.5 text-xs rounded-xl transition flex items-center gap-2.5 hover:bg-destructive/10"
+                class="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer px-3.5 py-3 text-sm font-semibold rounded-xl transition flex items-center gap-3 hover:bg-destructive/10"
               >
-                <LogOut class="w-4 h-4 text-destructive" />
+                <LogOut class="w-4.5 h-4.5 text-destructive" />
                 <span>{{ t('disconnect') }}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -555,12 +582,10 @@ function copyAddress() {
             <div class="flex items-center gap-2.5 min-w-0">
               <Jazzicon :address="account" :size="28" class="rounded-full shrink-0" />
               <div class="truncate">
-                <span class="text-xs font-mono font-bold text-foreground block truncate">{{
+                <span class="text-xs font-bold text-foreground block truncate">{{
                   getUserIdentity(account).displayName
                 }}</span>
-                <span class="text-[11px] font-mono text-primary font-semibold">{{
-                  formattedBalance
-                }}</span>
+                <span class="text-xs text-primary font-semibold">{{ formattedBalance }}</span>
               </div>
             </div>
             <Button
@@ -600,7 +625,7 @@ function copyAddress() {
           >
             <div class="flex items-center gap-2 text-xs font-semibold text-foreground">
               <img
-                :src="activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+                :src="getChainIcon(activeNetwork)"
                 :alt="activeNetwork.name"
                 class="w-4 h-4 rounded-xs object-contain shrink-0"
               />
@@ -612,7 +637,7 @@ function copyAddress() {
                 :key="net.chainId"
                 size="sm"
                 variant="outline"
-                class="h-7 px-2.5 text-[11px] font-mono font-bold cursor-pointer border-border"
+                class="h-7 px-2.5 text-xs font-bold cursor-pointer border-border"
                 :class="
                   activeNetwork.chainId === net.chainId
                     ? 'bg-primary text-primary-foreground border-primary'
@@ -620,7 +645,7 @@ function copyAddress() {
                 "
                 @click="handleChainSelect(net.chainId)"
               >
-                {{ net.chainId === 5042 ? 'Arc' : 'Robinhood' }}
+                {{ getChainShortName(net) }}
               </Button>
             </div>
           </div>
@@ -647,7 +672,7 @@ function copyAddress() {
           <!-- Language Horizontal Scroll Bar -->
           <div class="space-y-1.5">
             <div
-              class="flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-muted-foreground px-0.5"
+              class="flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted-foreground px-0.5 font-semibold"
             >
               <Globe class="w-3.5 h-3.5" />
               <span>Language</span>
@@ -666,7 +691,7 @@ function copyAddress() {
                 "
               >
                 <span>{{ l.flag }}</span>
-                <span class="text-[11px]">{{ l.name }}</span>
+                <span class="text-xs">{{ l.name }}</span>
               </button>
             </div>
           </div>

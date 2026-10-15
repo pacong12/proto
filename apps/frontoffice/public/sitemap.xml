@@ -2,32 +2,56 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://proto.family/</loc>
-    <lastmod>2026-09-14T00:00:00.000Z</lastmod>
-    <changefreq>daily</changefreq>
+    <lastmod>2026-10-14T00:00:00.000Z</lastmod>
+    <changefreq>hourly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://proto.family/launchpad</loc>
-    <lastmod>2026-09-14T00:00:00.000Z</lastmod>
+    <lastmod>2026-10-14T00:00:00.000Z</lastmod>
     <changefreq>hourly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://proto.family/launchpad/create</loc>
-    <lastmod>2026-09-14T00:00:00.000Z</lastmod>
+    <lastmod>2026-10-14T00:00:00.000Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://proto.family/analytics</loc>
-    <lastmod>2026-09-14T00:00:00.000Z</lastmod>
-    <changefreq>hourly</changefreq>
+    <loc>https://proto.family/feed</loc>
+    <lastmod>2026-10-14T00:00:00.000Z</lastmod>
+    <changefreq>always</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://proto.family/memestock</loc>
-    <lastmod>2026-09-14T00:00:00.000Z</lastmod>
+    <lastmod>2026-10-14T00:00:00.000Z</lastmod>
     <changefreq>hourly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://proto.family/analytics</loc>
+    <lastmod>2026-10-14T00:00:00.000Z</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://proto.family/terms-of-service</loc>
+    <lastmod>2026-10-14T00:00:00.000Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://proto.family/privacy-policy</loc>
+    <lastmod>2026-10-14T00:00:00.000Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://proto.family/cookie-policy</loc>
+    <lastmod>2026-10-14T00:00:00.000Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>
 </urlset>

@@ -26,7 +26,11 @@ describe('WalletStore State Management', () => {
         fakeStore = {};
       }),
     };
-    vi.stubGlobal('localStorage', mockStorage);
+    Object.defineProperty(globalThis, 'localStorage', {
+      value: mockStorage,
+      writable: true,
+      configurable: true,
+    });
     clearWalletState();
   });
 

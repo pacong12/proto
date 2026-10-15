@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {ILaunchpadToken} from "./interfaces/ILaunchpadToken.sol";
 import {IWETH} from "./interfaces/IUniswapV3.sol";
+import {FeeMath} from "./libraries/FeeMath.sol";
 
 /**
  * @title HolderFeeDistributor
@@ -90,8 +91,16 @@ contract HolderFeeDistributor {
         if (!success) revert TransferFailed();
 
         uint256 supply = ILaunchpadToken(token).totalSupply();
-        if (supply > 0) {
-            tokenFeeStates[token].rewardPerTokenCumulative += (amount * PRECISION) / supply;
+        address pool = ILaunchpadToken(token).liquidityPool();
+        uint256 nonCirculating = 0;
+        if (pool != address(0)) {
+            nonCirculating += ILaunchpadToken(token).balanceOf(pool);
+        }
+        nonCirculating += ILaunchpadToken(token).balanceOf(address(0x000000000000000000000000000000000000dEaD));
+        uint256 circulatingSupply = supply > nonCirculating ? supply - nonCirculating : supply;
+
+        if (circulatingSupply > 0) {
+            tokenFeeStates[token].rewardPerTokenCumulative += (amount * PRECISION) / circulatingSupply;
         }
         tokenFeeStates[token].totalDistributedWeth += amount;
 
@@ -110,7 +119,7 @@ contract HolderFeeDistributor {
     function earned(address token, address holder) public view returns (uint256) {
         uint256 liveBalance = ILaunchpadToken(token).balanceOf(holder);
         uint256 snap = snapshotBalance[token][holder];
-        uint256 balance = snap < liveBalance ? snap : liveBalance;
+        uint256 balance = FeeMath.calculateEffectiveBalance(snap, liveBalance);
         uint256 cum = tokenFeeStates[token].rewardPerTokenCumulative;
         uint256 paid = userRewardPerTokenPaid[token][holder];
 
@@ -128,15 +137,20 @@ contract HolderFeeDistributor {
 
 
     /**
-     * @notice Snapshot the caller's current balance into the reward accounting system.
-     * @dev Allows a holder to register their balance before rewards are deposited,
-     *      ensuring they will earn from subsequent deposits. Without calling checkpoint
-     *      (or claimReward), a holder with snapshotBalance == 0 earns nothing from
-     *      historical accumulation — only future deposits after their first checkpoint.
-     *      Any address may checkpoint any holder; snapshotting another holder is safe
-     *      because it can only increase their tracked balance, never decrease it.
+     * @notice Snapshot caller's balance into the reward accounting system.
+     */
+    function checkpoint(address token) external nonReentrant {
+        _updateReward(token, msg.sender);
+    }
+
+    /**
+     * @notice Snapshot specified holder's balance into reward accounting.
+     * @dev CRIT-02 fix: restricted to the holder themselves or the locker contract.
+     *      Unrestricted third-party checkpointing allowed attackers to force-checkpoint
+     *      a holder whose balance had temporarily dropped, wiping their accrued rewards.
      */
     function checkpoint(address token, address holder) external nonReentrant {
+        if (msg.sender != holder && msg.sender != locker) revert Unauthorized();
         _updateReward(token, holder);
     }
     /**

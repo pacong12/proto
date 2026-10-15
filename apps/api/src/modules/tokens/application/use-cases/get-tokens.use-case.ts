@@ -1,6 +1,6 @@
-import { LaunchedTokenEntity, TokenMarketData, ARC_CHAIN } from '@proto/shared-types';
+import { LaunchedTokenEntity, TokenMarketData, resolveTokenNetwork } from '@proto/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
-import { ViemChainIndexerAdapter } from '../../infrastructure/adapters/viem-chain-indexer.adapter';
+import { ChainIndexerPort } from '../../domain/ports/chain.indexer.port';
 import { PriceFeedPort } from '../../domain/ports/price-feed.port';
 import { CalculatePricingUseCase } from './calculate-pricing.use-case';
 
@@ -12,7 +12,7 @@ export interface TokenWithMarketData {
 export class GetTokensUseCase {
   constructor(
     private readonly tokenRepository: TokenRepositoryPort,
-    private readonly chainIndexer?: ViemChainIndexerAdapter,
+    private readonly chainIndexer?: ChainIndexerPort,
     private readonly priceFeed?: PriceFeedPort,
     private readonly calculatePricing?: CalculatePricingUseCase,
   ) {}
@@ -31,16 +31,12 @@ export class GetTokensUseCase {
       // If no cached marketData and we have the required adapters, compute it live.
       if (!marketData && this.chainIndexer && this.priceFeed && this.calculatePricing) {
         try {
-          const isArc = token.pairedToken?.toLowerCase() === ARC_CHAIN.contracts.weth.toLowerCase();
-          const network = isArc ? ARC_CHAIN : null;
+          const network = resolveTokenNetwork(token, token.chainId);
 
           if (token.version === 'v2' && token.curveAddress) {
             const curveAddr = token.curveAddress as `0x${string}`;
-            const curveState = await this.chainIndexer.fetchV2CurveState(
-              curveAddr,
-              network ?? ARC_CHAIN,
-            );
-            const quoteUsd = isArc ? 1.0 : await this.priceFeed.getEthPriceUsd();
+            const curveState = await this.chainIndexer.fetchV2CurveState(curveAddr, network);
+            const quoteUsd = await this.priceFeed.getQuoteAssetPriceUsd(network.chainId);
             const vEthNum = Number(curveState.virtualEthReserve) / 1e18;
             const virtualTokensNum = Number(curveState.virtualTokenReserve) / 1e18;
             const spotPriceNative = virtualTokensNum > 0 ? vEthNum / virtualTokensNum : 0;

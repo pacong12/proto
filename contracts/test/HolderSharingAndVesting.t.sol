@@ -53,8 +53,10 @@ contract HolderSharingAndVestingTest is Test {
     function test_HolderFeeDistributionProRata() public {
         // H-03 fix: snapshotBalance is 0 until checkpoint or claimReward is called.
         // Holders must checkpoint before depositRewards to earn from that deposit.
-        distributor.checkpoint(address(token), alice);
-        distributor.checkpoint(address(token), bob);
+        vm.prank(alice);
+        distributor.checkpoint(address(token));
+        vm.prank(bob);
+        distributor.checkpoint(address(token));
 
         // I-05 fix: depositRewards is now restricted to the locker address.
         // Fund the mock locker with WETH and have it approve + deposit.
@@ -89,7 +91,8 @@ contract HolderSharingAndVestingTest is Test {
         token.transfer(attacker, 500_000_000 * 1e18);
 
         // 2. Attacker checkpoints their temporary high balance
-        distributor.checkpoint(address(token), attacker);
+        vm.prank(attacker);
+        distributor.checkpoint(address(token));
         assertEq(distributor.snapshotBalance(address(token), attacker), 500_000_000 * 1e18);
 
         // 3. Attacker returns tokens (flash loan repaid in same transaction)

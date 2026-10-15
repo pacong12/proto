@@ -297,10 +297,10 @@ const iconSizeClass = computed(() => {
 
       <TooltipContent
         side="top"
-        class="z-50 max-w-xs font-mono text-xs p-2 bg-black border border-border text-foreground shadow-2xl"
+        class="z-50 max-w-xs text-xs p-2 bg-black border border-border text-foreground shadow-2xl"
       >
         <p class="font-bold text-foreground">{{ meta.title }}</p>
-        <p class="text-[11px] text-muted-foreground font-sans mt-0.5 leading-snug">
+        <p class="text-xs text-muted-foreground font-sans mt-0.5 leading-snug">
           {{ meta.description }}
         </p>
       </TooltipContent>

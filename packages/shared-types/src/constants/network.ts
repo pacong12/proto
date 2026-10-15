@@ -1,6 +1,14 @@
+/**
+ * Sentinel for a contract that has not yet been deployed on a given network.
+ * Code that reads a contract address must check for this value and skip the call.
+ * Never substitute a mainnet address for a missing deployment.
+ */
+export const UNDEPLOYED = '0x0000000000000000000000000000000000000000' as const;
+
 export interface NetworkConfig {
   chainId: number;
   name: string;
+  icon?: string;
   nativeCurrency: {
     name: string;
     symbol: string;
@@ -20,6 +28,9 @@ export interface NetworkConfig {
     swapRouter: `0x${string}`;
     quoterV2: `0x${string}`;
     weth: `0x${string}`;
+    memeHook?: `0x${string}`;
+    poolManagerV4?: `0x${string}`;
+    positionManagerV4?: `0x${string}`;
   };
   launchConfig: {
     supply: bigint;
@@ -35,6 +46,7 @@ export interface NetworkConfig {
   launchConfigV2?: {
     supply: bigint;
     curveTokenAllocation: bigint;
+    virtualReserveWei?: bigint;
     graduationTargetWei: bigint;
     platformFeeBps: number;
     snipeTaxMaxBps: number;

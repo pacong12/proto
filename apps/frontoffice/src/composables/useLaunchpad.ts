@@ -1,5 +1,7 @@
 import { ref } from 'vue';
 import { decodeEventLog, parseEventLogs, parseEther, type TransactionReceipt } from 'viem';
+import { apiFetch } from '@/lib/api-client';
+import { taxPercentToBps } from '@proto/math-sdk';
 
 /**
  * Return true when the error originates from the user explicitly rejecting
@@ -44,7 +46,6 @@ function parseInitialBuyWei(val: string | number | undefined | null): bigint {
 import {
   getNetworkConfig,
   launchpadV2FactoryAbi,
-  robinhoodLaunchpadV2Abi,
   launchpadTokenAbi,
   bondingCurveAbi,
   liquidityLockerAbi,
@@ -152,40 +153,7 @@ export function useLaunchpad() {
       launchStep.value = 'awaiting_signature';
 
       let hash: `0x${string}`;
-      if (targetFactory.toLowerCase() === '0x7ed598bcef8bd9edd8c97a195c6d13f40801ec7e') {
-        // Robinhood Chain LaunchpadV2Factory (0x7eD598BcEf8bd9Edd8C97A195C6d13f40801EC7e)
-        // Uses launchToken(params, initialBuyAmount, referral) with launchFee (0.0005 ETH)
-        hash = await walletClient.writeContract({
-          address: targetFactory,
-          abi: robinhoodLaunchpadV2Abi,
-          functionName: 'launchToken',
-          args: [
-            {
-              name: params.name,
-              symbol: params.symbol,
-              logo: params.logo,
-              description: params.description,
-              socials: {
-                twitter: params.socials.twitter ?? '',
-                telegram: params.socials.telegram ?? '',
-                discord: params.socials.discord ?? '',
-                website: params.socials.website ?? '',
-                farcaster: params.socials.farcaster ?? '',
-              },
-              creatorFeeRecipient: account,
-              feeConfig: 0,
-              isFair: false,
-              b1: '0x0000000000000000000000000000000000000000000000000000000000000000',
-              b2: '0x0000000000000000000000000000000000000000000000000000000000000000',
-            },
-            0n,
-            '0x0000000000000000000000000000000000000000',
-          ],
-          value: network.launchConfig.launchFeeWei,
-          account,
-          chain: walletClient.chain,
-        });
-      } else if (is7ArgFactory) {
+      if (is7ArgFactory) {
         hash = await walletClient.writeContract({
           address: targetFactory,
           abi: launchpadV2FactoryAbi,
@@ -257,9 +225,9 @@ export function useLaunchpad() {
 
       launchStep.value = 'indexing';
 
-      // 1. Primary: decode via viem parseEventLogs (supports TokenLaunched and TokenLaunchedV2)
+      // 1. Primary: decode via viem parseEventLogs (supports TokenLaunchedV2)
       const v2Events = parseEventLogs({
-        abi: [...launchpadV2FactoryAbi, ...robinhoodLaunchpadV2Abi],
+        abi: launchpadV2FactoryAbi,
         logs: receipt.logs,
       });
 
@@ -273,54 +241,41 @@ export function useLaunchpad() {
         launchStep.value = 'success';
         launchTokenAddress.value = tokenAddr;
 
-        // Apply advanced trading tax configuration if specified
-        if (
-          (params.buyTaxPercent && params.buyTaxPercent > 0) ||
-          (params.sellTaxPercent && params.sellTaxPercent > 0)
-        ) {
+        const buyBps = taxPercentToBps(params.buyTaxPercent || 0);
+        const sellBps = taxPercentToBps(params.sellTaxPercent || 0);
+        if (buyBps > 0 || sellBps > 0) {
           try {
-            const buyTaxBps = Math.min(
-              1000,
-              Math.max(0, Math.round((params.buyTaxPercent || 0) * 100)),
-            );
-            const sellTaxBps = Math.min(
-              1000,
-              Math.max(0, Math.round((params.sellTaxPercent || 0) * 100)),
-            );
-            const recipient = (params.creatorTaxWallet as `0x${string}`) || account;
+            const taxRecipient = (params.creatorTaxWallet as `0x${string}`) || account;
             const taxHash = await walletClient.writeContract({
               address: tokenAddr,
               abi: launchpadTokenAbi,
-              functionName: 'proposeTaxConfig',
-              args: [buyTaxBps, sellTaxBps, recipient],
+              functionName: 'setInitialTaxConfig',
+              args: [buyBps, sellBps, taxRecipient],
               account,
               chain: walletClient.chain,
             });
             await publicClient.waitForTransactionReceipt({ hash: taxHash });
           } catch (taxErr) {
-            console.warn('[LaunchpadV2] Post-launch proposeTaxConfig skipped or deferred:', taxErr);
+            console.warn('[useLaunchpad] Failed to configure onchain initial tax:', taxErr);
           }
         }
 
+        const syncPayload = {
+          txHash: hash,
+          chain: network.chainId,
+          taxConfig: {
+            buyTaxBps: taxPercentToBps(params.buyTaxPercent || 0),
+            sellTaxBps: taxPercentToBps(params.sellTaxPercent || 0),
+            taxRecipient: (params.creatorTaxWallet as `0x${string}`) || account,
+            revenueSplit: params.revenueSplit,
+          },
+        };
+
         try {
-          await fetch(`/api/tokens/${tokenAddr}/sync`, {
+          await apiFetch<unknown>(`/api/tokens/${tokenAddr}/sync`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              txHash: hash,
-              taxConfig: {
-                buyTaxBps: Math.min(
-                  1000,
-                  Math.max(0, Math.round((params.buyTaxPercent || 0) * 100)),
-                ),
-                sellTaxBps: Math.min(
-                  1000,
-                  Math.max(0, Math.round((params.sellTaxPercent || 0) * 100)),
-                ),
-                taxRecipient: (params.creatorTaxWallet as `0x${string}`) || account,
-                revenueSplit: params.revenueSplit,
-              },
-            }),
+            body: JSON.stringify(syncPayload),
           });
         } catch {
           /* backend sync is best-effort */
@@ -352,6 +307,45 @@ export function useLaunchpad() {
             const curveAddr = decoded.args.curve as `0x${string}`;
             launchStep.value = 'success';
             launchTokenAddress.value = tokenAddr;
+
+            const buyBps = taxPercentToBps(params.buyTaxPercent || 0);
+            const sellBps = taxPercentToBps(params.sellTaxPercent || 0);
+            if (buyBps > 0 || sellBps > 0) {
+              try {
+                const taxRecipient = (params.creatorTaxWallet as `0x${string}`) || account;
+                const taxHash = await walletClient.writeContract({
+                  address: tokenAddr,
+                  abi: launchpadTokenAbi,
+                  functionName: 'setInitialTaxConfig',
+                  args: [buyBps, sellBps, taxRecipient],
+                  account,
+                  chain: walletClient.chain,
+                });
+                await publicClient.waitForTransactionReceipt({ hash: taxHash });
+              } catch (taxErr) {
+                console.warn('[useLaunchpad] Failed to configure onchain initial tax:', taxErr);
+              }
+            }
+
+            try {
+              await apiFetch<unknown>(`/api/tokens/${tokenAddr}/sync`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  txHash: hash,
+                  chain: network.chainId,
+                  taxConfig: {
+                    buyTaxBps: taxPercentToBps(params.buyTaxPercent || 0),
+                    sellTaxBps: taxPercentToBps(params.sellTaxPercent || 0),
+                    taxRecipient: (params.creatorTaxWallet as `0x${string}`) || account,
+                    revenueSplit: params.revenueSplit,
+                  },
+                }),
+              });
+            } catch {
+              /* backend sync is best-effort */
+            }
+
             return {
               tokenAddress: tokenAddr,
               curveAddress: curveAddr,
@@ -624,7 +618,7 @@ export function useLaunchpad() {
   } | null {
     try {
       const v2Events = parseEventLogs({
-        abi: [...launchpadV2FactoryAbi, ...robinhoodLaunchpadV2Abi],
+        abi: launchpadV2FactoryAbi,
         logs: receipt.logs,
       });
       const launchEv = v2Events.find(
@@ -646,7 +640,7 @@ export function useLaunchpad() {
     for (const log of receipt.logs) {
       try {
         const decoded = decodeEventLog({
-          abi: [...launchpadV2FactoryAbi, ...robinhoodLaunchpadV2Abi],
+          abi: launchpadV2FactoryAbi,
           topics: log.topics,
           data: log.data,
         });

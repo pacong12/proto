@@ -10,6 +10,7 @@ import { getEnv, getEnvBigInt } from './env';
 export const ROBINHOOD_NETWORK: NetworkConfig = {
   chainId: 4663,
   name: 'Robinhood Chain',
+  icon: '/chains/robinhood.svg',
   nativeCurrency: {
     name: 'Ether',
     symbol: 'ETH',
@@ -24,15 +25,15 @@ export const ROBINHOOD_NETWORK: NetworkConfig = {
   contracts: {
     factory: getEnv(
       'ROBINHOOD_FACTORY_V2_ADDRESS',
-      getEnv('ROBINHOOD_FACTORY_ADDRESS', '0xbA42499Cfe59abc05120A100EEc4f859F476034F'),
+      getEnv('ROBINHOOD_FACTORY_ADDRESS', '0x9f1fAf78adE92C994AB188452338b45c52800748'),
     ) as `0x${string}`,
     factoryV2: getEnv(
       'ROBINHOOD_FACTORY_V2_ADDRESS',
-      getEnv('ROBINHOOD_FACTORY_ADDRESS', '0xbA42499Cfe59abc05120A100EEc4f859F476034F'),
+      getEnv('ROBINHOOD_FACTORY_ADDRESS', '0x9f1fAf78adE92C994AB188452338b45c52800748'),
     ) as `0x${string}`,
     locker: getEnv(
       'ROBINHOOD_LOCKER_ADDRESS',
-      getEnv('LIQUIDITY_LOCKER_ADDRESS', '0x070233B6F46ccD61CA2B7bc1E13520c3fE4614E4'),
+      getEnv('LIQUIDITY_LOCKER_ADDRESS', '0x7A1AD6AD30B1c9e276eD80a853E8dA897fE5D63E'),
     ) as `0x${string}`,
     // Not yet deployed to Robinhood mainnet. Fill in the address once deployed.
     holderFeeDistributor: '0x0000000000000000000000000000000000000000' as `0x${string}`,
@@ -56,10 +57,15 @@ export const ROBINHOOD_NETWORK: NetworkConfig = {
       'ROBINHOOD_WETH_ADDRESS',
       getEnv('WETH_ADDRESS', '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73'),
     ) as `0x${string}`,
+    memeHook: getEnv(
+      'ROBINHOOD_MEME_HOOK',
+      '0x6347Ee4710cBCBafa2ED1e837eDc7605cB80D9a7',
+    ) as `0x${string}`,
   },
   launchConfigV2: {
     supply: 1_000_000_000n * 10n ** 18n,
-    curveTokenAllocation: 800_000_000n * 10n ** 18n, // 80% on curve, 20% reserved for graduation pool
+    curveTokenAllocation: 714_285_714n * 10n ** 18n, // 71.43% on curve (Pons 5/7 model), 28.57% (2/7) reserved for graduation pool
+    virtualReserveWei: 1_680_000_000_000_000_000n, // 1.68 ETH (Pons standard)
     graduationTargetWei: getEnvBigInt(
       'ROBINHOOD_GRADUATION_TARGET_WEI',
       getEnvBigInt('GRADUATION_TARGET_WEI', 4_200_000_000_000_000_000n),

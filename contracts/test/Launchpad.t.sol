@@ -7,6 +7,7 @@ import {LiquidityLocker} from "../src/LiquidityLocker.sol";
 import {LaunchpadFactory} from "../src/LaunchpadFactory.sol";
 import {ILaunchpadToken} from "../src/interfaces/ILaunchpadToken.sol";
 import {ILaunchpadFactory} from "../src/interfaces/ILaunchpadFactory.sol";
+import {HolderFeeDistributor} from "../src/HolderFeeDistributor.sol";
 import {
     MockWETH,
     MockUniswapV3Factory,
@@ -97,7 +98,7 @@ contract LaunchpadTest is Test {
     function test_TokenCreatorTaxes() public {
         ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials("", "", "", "", "");
 
-        vm.prank(deployer);
+        vm.startPrank(deployer);
         LaunchpadToken token = new LaunchpadToken();
         token.initialize(
             "Tax Token",
@@ -113,16 +114,13 @@ contract LaunchpadTest is Test {
         address taxRecipient = address(0x5555);
         address mockPool = address(0x6666);
 
-        vm.prank(deployer);
         token.setLiquidityPool(mockPool);
-
         // Seed mock pool with tokens before configuring taxes
-        vm.prank(deployer);
         token.transfer(mockPool, 10_000_000 * 10**18);
 
         // Configure 5% buy tax (500 bps) and 10% sell tax (1000 bps) via two-step timelock
-        vm.prank(deployer);
         token.proposeTaxConfig(500, 1000, taxRecipient);
+        vm.stopPrank();
         vm.warp(block.timestamp + 24 hours);
         vm.prank(deployer);
         token.acceptTaxConfig();
@@ -153,11 +151,43 @@ contract LaunchpadTest is Test {
         uint256 expectedSellTax = (sellAmount * 1000) / 10000;
         assertEq(token.balanceOf(taxRecipient), expectedTax + expectedSellTax);
     }
+    function test_SetInitialTaxConfigAtCreation() public {
+        ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials("", "", "", "", "");
+
+        vm.startPrank(deployer);
+        LaunchpadToken token = new LaunchpadToken();
+        token.initialize(
+            "Initial Tax Token",
+            "ITAX",
+            "ipfs://itax",
+            "Token with 1% initial tax",
+            socials,
+            deployer,
+            address(weth),
+            deployer
+        );
+
+        address taxRecipient = address(0x5555);
+
+        // Creator sets initial 1% tax (100 bps) immediately at creation without 24h timelock
+        token.setInitialTaxConfig(100, 100, taxRecipient);
+        vm.stopPrank();
+
+        (uint16 buyBps, uint16 sellBps, address recipient) = token.taxConfig();
+        assertEq(buyBps, 100, "buy tax must be 100 bps immediately");
+        assertEq(sellBps, 100, "sell tax must be 100 bps immediately");
+        assertEq(recipient, taxRecipient, "recipient set correctly");
+
+        // Setting initial tax again fails (cannot overwrite baseline tax without 24h timelock)
+        vm.prank(deployer);
+        vm.expectRevert(LaunchpadToken.Unauthorized.selector);
+        token.setInitialTaxConfig(200, 200, taxRecipient);
+    }
 
     function test_AntiSnipeProtection() public {
         ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials("", "", "", "", "");
 
-        vm.prank(deployer);
+        vm.startPrank(deployer);
         LaunchpadToken token = new LaunchpadToken();
         token.initialize(
             "AntiSnipe",
@@ -171,13 +201,10 @@ contract LaunchpadTest is Test {
         );
 
         address mockPool = address(0x9999);
-        vm.prank(deployer);
         token.setLiquidityPool(mockPool);
-
         // Fund mock pool with 200M tokens
-        vm.prank(deployer);
         token.transfer(mockPool, 200_000_000 * 10**18);
-
+        vm.stopPrank();
         // Block 0 (launchBlock): Only deployer can buy from pool
         vm.prank(mockPool);
         vm.expectRevert(LaunchpadToken.OnlyDeployerCanBuyAtLaunchBlock.selector);
@@ -489,5 +516,48 @@ contract LaunchpadTest is Test {
         uint256 balanceAfter = testDeployer.balance;
         // Deployer should only have spent the launch fee, excess 1 ether is refunded
         assertEq(balanceBefore - balanceAfter, fee, "Only launchFee spent; excess was refunded");
+    }
+
+    function test_LiquidityLocker_RoutesFeesToHolderFeeDistributor() public {
+        ILaunchpadToken.Socials memory socials = ILaunchpadToken.Socials("", "", "", "", "");
+        vm.deal(deployer, 10 ether);
+        vm.startPrank(deployer);
+        (address tokenAddress, ) = factory.launchToken{value: factory.launchFee() + 0.1 ether}(
+            "Dividend Redirect Token",
+            "DRT",
+            "ipfs://drt",
+            "Testing locker to distributor",
+            socials,
+            0.1 ether
+        );
+
+        HolderFeeDistributor distributor = new HolderFeeDistributor(address(weth), address(locker));
+        vm.stopPrank();
+        vm.prank(address(factory));
+        locker.setHolderFeeDistributor(address(distributor));
+        vm.startPrank(deployer);
+
+        // Redirect fees to distributor
+        locker.setFeeRedirect(tokenAddress, address(distributor));
+        vm.warp(block.timestamp + 49 hours);
+        locker.acceptFeeRedirect(tokenAddress);
+
+        // Fund position manager with fees
+        weth.deposit{value: 1 ether}();
+        weth.transfer(address(positionManager), 1 ether);
+        vm.stopPrank();
+
+        // Give deployer tokens and checkpoint in distributor
+        deal(tokenAddress, deployer, 100_000_000 * 1e18);
+        vm.prank(deployer);
+        distributor.checkpoint(tokenAddress);
+
+        // Claim fees
+        vm.prank(address(distributor));
+        locker.claimFees(tokenAddress);
+
+        // Verify fees deposited into distributor
+        assertEq(weth.balanceOf(address(distributor)), 0.7 ether);
+        assertGt(distributor.earned(tokenAddress, deployer), 0);
     }
 }

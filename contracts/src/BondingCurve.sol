@@ -3,6 +3,8 @@ pragma solidity ^0.8.24;
 
 import {ILaunchpadToken} from "./interfaces/ILaunchpadToken.sol";
 import {PoolKey, PoolIdLibrary, IPoolManager} from "./interfaces/IUniswapV4.sol";
+import {CurveMath} from "./libraries/CurveMath.sol";
+import {AntiSnipeLogic} from "./libraries/AntiSnipeLogic.sol";
 
 /**
  * @title BondingCurve
@@ -30,8 +32,6 @@ contract BondingCurve {
     using PoolIdLibrary for PoolKey;
 
     uint256 public constant BPS = 10_000;
-    uint256 public constant CURVE_TOKEN_SUPPLY = 800_000_000 * 1e18;
-    uint256 public constant POOL_RESERVE_SUPPLY = 200_000_000 * 1e18;
 
     // C-02 fix: maximum time (seconds) the factory may wait before calling
     // emergencyWithdraw if V4 migration cannot be completed.
@@ -44,6 +44,7 @@ contract BondingCurve {
     address payable public creator;
 
     uint256 public graduationTarget;
+    uint256 public poolReserveSupply;
     uint256 public launchTime;
 
     address public poolManagerV4;
@@ -137,9 +138,18 @@ contract BondingCurve {
         graduationTarget = _graduationTarget;
         virtualEthReserve = _virtualEthReserve;
         virtualTokenReserve = _virtualTokenReserve;
+        poolReserveSupply = (_virtualEthReserve * _virtualTokenReserve) / (_virtualEthReserve + _graduationTarget);
         poolManagerV4 = _poolManagerV4;
         memeHook = _memeHook;
         launchTime = block.timestamp;
+    }
+
+    function POOL_RESERVE_SUPPLY() external view returns (uint256) {
+        return poolReserveSupply > 0 ? poolReserveSupply : 200_000_000 * 1e18;
+    }
+
+    function CURVE_TOKEN_SUPPLY() external view returns (uint256) {
+        return virtualTokenReserve > poolReserveSupply ? virtualTokenReserve - poolReserveSupply : 800_000_000 * 1e18;
     }
 
     // ---------------------------------------------------------------------------
@@ -153,47 +163,36 @@ contract BondingCurve {
      *      universally regardless of who the recipient is.
      */
     function currentSnipeTaxBps() public view returns (uint256) {
-        uint256 elapsed = block.timestamp - launchTime;
-        if (elapsed >= 3) return 0;
-        if (elapsed <= 0) return 9900;
-        if (elapsed <= 1) return 2500;
-        return 300;
+        return AntiSnipeLogic.calculateSnipeTaxBps(launchTime, block.timestamp);
     }
 
     /**
      * @notice Tokens out and platform fee for a given ETH input.
      */
     function getAmountOutBuy(uint256 ethIn) public view returns (uint256 tokenOut, uint256 feeEth) {
-        if (ethIn == 0) return (0, 0);
-        feeEth = (ethIn * 100) / BPS;
-        uint256 netEth = ethIn - feeEth;
-
-        uint256 currentK = virtualEthReserve * virtualTokenReserve;
-        uint256 newEthReserve = virtualEthReserve + netEth;
-        uint256 newTokenReserve = currentK / newEthReserve;
-
-        tokenOut = virtualTokenReserve - newTokenReserve;
         uint256 available = token.balanceOf(address(this));
-        if (available > POOL_RESERVE_SUPPLY) {
-            uint256 curveAvailable = available - POOL_RESERVE_SUPPLY;
-            if (tokenOut > curveAvailable) {
-                tokenOut = curveAvailable;
-            }
+        uint256 reserveTarget = poolReserveSupply;
+        if (available <= reserveTarget) {
+            return (0, 0);
         }
+        uint256 curveAvailable = available - reserveTarget;
+        return CurveMath.getAmountOutBuy(ethIn, virtualEthReserve, virtualTokenReserve, curveAvailable);
     }
 
     /**
      * @notice ETH out and platform fee for a given token input.
      */
     function getAmountOutSell(uint256 tokenIn) public view returns (uint256 ethOut, uint256 feeEth) {
-        if (tokenIn == 0) return (0, 0);
-        uint256 currentK = virtualEthReserve * virtualTokenReserve;
-        uint256 newTokenReserve = virtualTokenReserve + tokenIn;
-        uint256 newEthReserve = currentK / newTokenReserve;
+        (, uint16 sellTaxBps, ) = token.taxConfig();
+        uint256 netTokenIn = sellTaxBps > 0 ? (tokenIn * (BPS - sellTaxBps)) / BPS : tokenIn;
+        return CurveMath.getAmountOutSell(netTokenIn, virtualEthReserve, virtualTokenReserve);
+    }
 
-        uint256 grossEth = virtualEthReserve - newEthReserve;
-        feeEth = (grossEth * 100) / BPS;
-        ethOut = grossEth > feeEth ? grossEth - feeEth : 0;
+    /**
+     * @notice Exact ETH/USDC required to purchase a specific amount of tokens.
+     */
+    function getEthInForTokens(uint256 tokensOut) external view returns (uint256 grossEth, uint256 feeEth) {
+        return CurveMath.getEthInForTokens(tokensOut, virtualEthReserve, virtualTokenReserve);
     }
 
     // ---------------------------------------------------------------------------
@@ -216,24 +215,48 @@ contract BondingCurve {
         if (recipient == address(0)) revert ZeroAddress();
 
         (tokensOut, ) = getAmountOutBuy(msg.value);
-        if (tokensOut < minTokensOut) revert InsufficientOutput();
+        if (tokensOut == 0) revert InvalidAmount();
 
         uint256 grossTokensOut = tokensOut;
         uint256 snipeFeeTokens = 0;
-        uint256 snipeBps = currentSnipeTaxBps();
+        // CRIT-01 fix: Factory calling buyFor during launchTokenV2 executes the creator's
+        // legitimate initial buy. Exempt factory calls from the 99% decaying anti-snipe tax.
+        // Third-party callers (snipers/traders) cannot impersonate the factory.
+        uint256 snipeBps = (msg.sender == factory) ? 0 : currentSnipeTaxBps();
         if (snipeBps > 0) {
             snipeFeeTokens = (grossTokensOut * snipeBps) / BPS;
             tokensOut = grossTokensOut - snipeFeeTokens;
         }
+        if (tokensOut < minTokensOut) revert InsufficientOutput();
 
+        // Calculate exact required ETH and refund excess if purchase reaches the curve cap.
+        uint256 effectiveCost = msg.value;
         uint256 fee = (msg.value * 100) / BPS;
-        uint256 netEth = msg.value - fee;
+        uint256 refundEth = 0;
+
+        uint256 available = token.balanceOf(address(this));
+        uint256 reserveTarget = poolReserveSupply;
+        uint256 curveAvailable = available > reserveTarget ? available - reserveTarget : 0;
+
+        if (curveAvailable > 0 && grossTokensOut == curveAvailable) {
+            (uint256 exactCost, uint256 exactFee) = CurveMath.getEthInForTokens(
+                grossTokensOut,
+                virtualEthReserve,
+                virtualTokenReserve
+            );
+            if (exactCost < msg.value) {
+                effectiveCost = exactCost;
+                fee = exactFee;
+                refundEth = msg.value - exactCost;
+            }
+        }
+        uint256 netEth = effectiveCost - fee;
 
         // State changes before external calls (CEI).
         virtualEthReserve += netEth;
         virtualTokenReserve -= grossTokensOut;
         totalEthRaised += netEth;
-        totalVolumeEth += msg.value;
+        totalVolumeEth += effectiveCost;
 
         bool shouldGraduate = totalEthRaised >= graduationTarget;
         if (shouldGraduate) {
@@ -252,7 +275,12 @@ contract BondingCurve {
             if (!feeTokensSent) revert TransferFailed();
         }
 
-        emit Trade(recipient, true, msg.value, tokensOut, fee);
+        if (refundEth > 0) {
+            (bool refundOk, ) = payable(msg.sender).call{value: refundEth}("");
+            if (!refundOk) revert TransferFailed();
+        }
+
+        emit Trade(recipient, true, effectiveCost, tokensOut, fee);
 
         if (shouldGraduate) {
             _prepareGraduationV4();
@@ -284,9 +312,16 @@ contract BondingCurve {
         }
         if (ethOut < minEthOut) revert InsufficientOutput();
 
+        // H-01 fix: compute net tokens received after token sell tax.
+        // LaunchpadToken._transfer deducts sellTaxBps and sends it to taxRecipient.
+        // The curve only receives netTokenIn, so virtualTokenReserve must be incremented
+        // by netTokenIn to preserve the constant-product K invariant.
+        (, uint16 sellTaxBps, ) = token.taxConfig();
+        uint256 netTokenIn = sellTaxBps > 0 ? (tokenIn * (BPS - sellTaxBps)) / BPS : tokenIn;
+
         // EFFECTS — update all state before any external interaction.
         uint256 grossEthOut = ethOut + fee;
-        virtualTokenReserve += tokenIn;
+        virtualTokenReserve += netTokenIn;
         virtualEthReserve -= grossEthOut;
         totalEthRaised = totalEthRaised > grossEthOut ? totalEthRaised - grossEthOut : 0;
         totalVolumeEth += grossEthOut;
@@ -345,31 +380,30 @@ contract BondingCurve {
      *      Uses Babylonian integer sqrt.
      */
     function _computeSqrtPriceX96(uint256 ethReserve, uint256 tokenReserve) internal pure returns (uint160) {
-        require(tokenReserve > 0, "zero tokenReserve");
-        uint256 sqrtNum = _sqrt(ethReserve);
-        uint256 sqrtDen = _sqrt(tokenReserve);
-        require(sqrtDen > 0, "zero sqrtDen");
-        uint256 result = (sqrtNum << 96) / sqrtDen;
-        // forge-lint: disable-next-line(unsafe-typecast)
-        return uint160(result);
+        return CurveMath.computeSqrtPriceX96(ethReserve, tokenReserve);
     }
 
     /// @notice Babylonian integer square root (floor).
     function _sqrt(uint256 x) internal pure returns (uint256 y) {
-        if (x <= 0) return 0;
-        y = x;
-        uint256 z = (x >> 1) + 1;
-        while (z < y) {
-            y = z;
-            z = (x / z + z) >> 1;
-        }
+        return CurveMath.sqrt(x);
     }
 
     /**
-     * @notice Execute liquidity migration into the Uniswap V4 pool.
-     * @dev C-02 fix: callable only by the factory once V4 is live.
+     * @notice Execute liquidity migration into the DEX pool (Uniswap V3 / V4).
+     * @dev Callable only by the factory once graduation target is reached.
+     */
+    function migrateLiquidity(address payable recipient) external nonReentrant onlyFactory {
+        _executeMigration(recipient);
+    }
+
+    /**
+     * @notice Backward-compatible alias for migrateLiquidity.
      */
     function migrateToV4(address payable recipient) external nonReentrant onlyFactory {
+        _executeMigration(recipient);
+    }
+
+    function _executeMigration(address payable recipient) internal {
         if (!graduated) revert NotGraduated();
         if (migrationExecuted) revert MigrationAlreadyExecuted();
         if (recipient == address(0)) revert ZeroAddress();
@@ -428,6 +462,6 @@ contract BondingCurve {
      *      the pool's sqrtPriceX96 when migrateToV4() forwards address(this).balance.
      */
     receive() external payable {
-        if (graduated) revert AlreadyGraduated();
+        revert Unauthorized();
     }
 }

@@ -14,47 +14,43 @@
           <ArrowLeft class="w-4 h-4" />
         </button>
         <div>
-          <h1 class="text-base font-bold tracking-tight text-foreground leading-none font-mono">
+          <h1 class="text-base font-bold tracking-tight text-foreground leading-none">
             Alpha Post
           </h1>
-          <span class="text-[10px] text-muted-foreground font-mono"> Community Signal Detail </span>
+          <span class="text-xs text-muted-foreground"> {{ t('communitySignalDetail') }} </span>
         </div>
       </div>
 
       <div
         v-if="post"
-        class="flex items-center gap-1.5 px-3 py-1 rounded-xl border border-border/60 bg-muted/30 text-muted-foreground font-mono text-xs select-none cursor-default"
+        class="flex items-center gap-1.5 px-3 py-1 rounded-xl border border-border/60 bg-muted/30 text-muted-foreground text-xs select-none cursor-default"
         title="Total Impressions"
       >
         <BarChart2 class="w-3.5 h-3.5 text-primary" />
         <span class="font-bold text-foreground">{{ formatViews(post.viewsCount || 0) }}</span>
-        <span>Views</span>
+        <span>{{ t('views') }}</span>
       </div>
     </header>
 
     <!-- Loading State -->
-    <div v-if="loading" class="py-24 text-center text-muted-foreground font-mono">
+    <div v-if="loading" class="py-24 text-center text-muted-foreground">
       <Loader2 class="w-7 h-7 animate-spin mx-auto mb-3 text-primary" />
-      <p class="text-xs">Loading post details...</p>
+      <p class="text-xs">{{ t('loadingPostDetails') }}</p>
     </div>
 
     <!-- Error / Not Found State -->
     <Empty
       v-else-if="!post"
-      title="Post Not Found"
-      description="This post may have been removed or the link is invalid."
+      :title="t('postNotFound')"
+      :description="t('postNotFoundDesc')"
       class="py-16"
     >
       <template #icon>
         <AlertCircle class="w-6 h-6 text-destructive/70" />
       </template>
       <template #action>
-        <Button
-          size="sm"
-          class="rounded-xl px-5 cursor-pointer font-mono"
-          @click="router.push('/feed')"
-        >
-          Back to Feed
+        <Button size="sm" class="rounded-xl px-5 cursor-pointer" @click="router.push('/feed')">
+          {{ t('backToFeed') }}
         </Button>
       </template>
     </Empty>
@@ -74,14 +70,14 @@
             <div class="min-w-0 leading-snug">
               <div class="flex items-center gap-1.5 flex-wrap">
                 <span
-                  class="font-bold text-foreground text-sm sm:text-base hover:underline cursor-pointer truncate font-mono"
+                  class="font-bold text-foreground text-sm sm:text-base hover:underline cursor-pointer truncate"
                   @click="router.push(`/${getUserIdentity(post.authorAddress).name}`)"
                 >
                   {{ getUserIdentity(post.authorAddress).displayName }}
                 </span>
                 <TraderTagBadge v-if="isWhaleCaller(post)" tag="whale" size="sm" />
               </div>
-              <span class="text-xs text-muted-foreground font-mono block truncate">
+              <span class="text-xs text-muted-foreground block truncate">
                 @{{ getUserIdentity(post.authorAddress).name }} &middot;
                 {{ shortenAddress(post.authorAddress, 6, 4) }}
               </span>
@@ -104,14 +100,14 @@
         >
           <div class="flex items-center gap-1.5">
             <Jazzicon :address="post.quotedCallout.authorAddress" :size="18" class="rounded-full" />
-            <span class="font-bold text-foreground font-mono">
+            <span class="font-bold text-foreground">
               {{ getUserIdentity(post.quotedCallout.authorAddress).displayName }}
             </span>
-            <span v-if="post.quotedCallout.tokenSymbol" class="text-primary font-bold font-mono">
+            <span v-if="post.quotedCallout.tokenSymbol" class="text-primary font-bold">
               ${{ post.quotedCallout.tokenSymbol }}
             </span>
-            <span class="text-muted-foreground text-[10px]">&middot;</span>
-            <span class="text-[10px] text-muted-foreground font-mono">
+            <span class="text-muted-foreground text-xs">&middot;</span>
+            <span class="text-xs text-muted-foreground">
               {{ formatRelativeTime(post.quotedCallout.createdAt) }}
             </span>
           </div>
@@ -135,7 +131,7 @@
 
         <!-- Embedded Coin Widget Card -->
         <div
-          class="p-3.5 rounded-xl border border-border/80 bg-muted/30 hover:bg-muted/60 transition cursor-pointer flex items-center justify-between gap-3 text-xs font-mono shadow-2xs"
+          class="p-3.5 rounded-xl border border-border/80 bg-muted/30 hover:bg-muted/60 transition cursor-pointer flex items-center justify-between gap-3 text-xs shadow-2xs"
           @click="router.push(`/launchpad/${post.tokenAddress}`)"
         >
           <div class="flex items-center gap-2.5 min-w-0">
@@ -160,11 +156,11 @@
                 <span class="font-black text-foreground text-sm">
                   ${{ post.tokenSymbol || 'TOKEN' }}
                 </span>
-                <span class="text-[10px] text-muted-foreground truncate hidden sm:inline font-sans">
+                <span class="text-xs text-muted-foreground truncate hidden sm:inline font-sans">
                   {{ post.tokenName }}
                 </span>
               </div>
-              <div class="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+              <div class="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                 <span>MC: ${{ formatCompactUsd(post.tokenMarketCapUsd || 4200) }}</span>
                 <span v-if="post.targetMcap" class="text-emerald-500 font-bold truncate">
                   Target: {{ post.targetMcap }}
@@ -175,9 +171,9 @@
 
           <div class="flex items-center gap-3 shrink-0 text-right">
             <div>
-              <span class="text-[9px] text-muted-foreground block uppercase font-bold"
-                >Position</span
-              >
+              <span class="text-xs text-muted-foreground block uppercase font-bold">{{
+                t('position')
+              }}</span>
               <span class="text-xs font-bold text-foreground">
                 {{ post.positionUsd ? `$${post.positionUsd.toFixed(1)}` : 'Holding' }}
               </span>
@@ -187,25 +183,25 @@
               class="h-7 px-3.5 text-xs font-bold rounded-lg cursor-pointer bg-primary text-primary-foreground"
               @click.stop="router.push(`/launchpad/${post.tokenAddress}`)"
             >
-              Trade
+              {{ t('trade') }}
             </Button>
           </div>
         </div>
 
         <!-- Timestamp & Views Ribbon -->
         <div
-          class="pt-2 text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap font-mono border-t border-border/50"
+          class="pt-2 text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap border-t border-border/50"
         >
           <span>{{ formatAbsoluteTime(post.createdAt) }}</span>
           <span>&middot;</span>
           <span class="font-bold text-foreground">{{ formatViews(post.viewsCount || 0) }}</span>
-          <span>Views</span>
+          <span>{{ t('views') }}</span>
         </div>
 
         <!-- Metrics Ribbon (Reposts, Quotes, Likes) -->
         <div
           v-if="(post.repostsCount || 0) + (post.quotesCount || 0) + post.likesCount > 0"
-          class="py-2.5 border-y border-border/60 flex items-center gap-5 text-xs text-muted-foreground font-mono"
+          class="py-2.5 border-y border-border/60 flex items-center gap-5 text-xs text-muted-foreground"
         >
           <div v-if="post.repostsCount" class="flex items-center gap-1">
             <strong class="text-foreground">{{ post.repostsCount }}</strong>
@@ -223,7 +219,7 @@
 
         <!-- Action Bar (Reply, Repost, Like, Share) -->
         <div
-          class="flex items-center justify-around pt-1 text-muted-foreground border-t border-border/60 font-mono"
+          class="flex items-center justify-around pt-1 text-muted-foreground border-t border-border/60"
         >
           <!-- 1. Reply -->
           <button
@@ -251,14 +247,14 @@
                 }}</span>
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" class="w-36 font-mono text-xs">
+            <DropdownMenuContent align="center" class="w-36 text-xs">
               <DropdownMenuItem class="cursor-pointer gap-2" @click="handleRepostPost">
                 <Repeat class="w-3.5 h-3.5 text-emerald-500" />
-                <span>{{ post.isRepostedByViewer ? 'Undo Repost' : 'Repost' }}</span>
+                <span>{{ post.isRepostedByViewer ? t('undoRepost') : t('repost') }}</span>
               </DropdownMenuItem>
               <DropdownMenuItem class="cursor-pointer gap-2" @click="isQuoteModalOpen = true">
                 <Quote class="w-3.5 h-3.5 text-primary" />
-                <span>Quote</span>
+                <span>{{ t('quote') }}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -306,22 +302,20 @@
             v-model="replyContent"
             rows="2"
             maxlength="500"
-            placeholder="Post your reply... (use $TICKER to link coins)"
+            :placeholder="t('postReplyPlaceholder')"
             class="w-full text-xs sm:text-sm p-3 rounded-xl border border-border/80 bg-muted/20 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none leading-relaxed"
           />
 
           <div class="flex items-center justify-between pt-1">
-            <span class="text-[11px] text-muted-foreground font-mono">
-              {{ replyContent.length }}/500
-            </span>
+            <span class="text-xs text-muted-foreground"> {{ replyContent.length }}/500 </span>
             <Button
               size="sm"
-              class="rounded-xl px-5 h-8 font-bold text-xs cursor-pointer font-mono"
+              class="rounded-xl px-5 h-8 font-bold text-xs cursor-pointer"
               :disabled="isSubmittingReply || !replyContent.trim()"
               @click="submitReply"
             >
               <Loader2 v-if="isSubmittingReply" class="w-3.5 h-3.5 animate-spin mr-1" />
-              <span>Reply</span>
+              <span>{{ t('reply') }}</span>
             </Button>
           </div>
         </div>
@@ -329,16 +323,14 @@
 
       <!-- 3. Thread Replies Stream (Cards) -->
       <div class="rounded-2xl border border-border/80 bg-card/70 p-4 space-y-3 shadow-2xs">
-        <h3
-          class="font-bold text-xs font-mono text-foreground px-1 flex items-center justify-between"
-        >
-          <span>Discussion & Replies ({{ replies.length }})</span>
+        <h3 class="font-bold text-xs text-foreground px-1 flex items-center justify-between">
+          <span>{{ t('discussionAndReplies') }} ({{ replies.length }})</span>
         </h3>
 
         <Empty
           v-if="replies.length === 0"
-          title="No replies yet"
-          description="Start the conversation by posting a reply above!"
+          :title="t('noRepliesYet')"
+          :description="t('startConversation')"
           class="py-10 border-none bg-muted/20"
         >
           <template #icon>
@@ -361,7 +353,7 @@
 
             <!-- Reply Content & Actions -->
             <div class="flex-1 min-w-0 space-y-1.5">
-              <div class="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
+              <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <span
                   class="font-bold text-foreground text-xs hover:underline cursor-pointer"
                   @click="router.push(`/${getUserIdentity(rep.authorAddress).name}`)"
@@ -380,7 +372,7 @@
               </p>
 
               <!-- Reply Action Row -->
-              <div class="flex items-center gap-4 pt-1 text-xs text-muted-foreground font-mono">
+              <div class="flex items-center gap-4 pt-1 text-xs text-muted-foreground">
                 <button
                   type="button"
                   class="flex items-center gap-1 hover:text-rose-500 transition cursor-pointer select-none"
@@ -416,6 +408,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useI18n } from '@/lib/i18n';
+import { apiFetch } from '@/lib/api-client';
 import {
   ArrowLeft,
   Heart,
@@ -442,26 +436,23 @@ import { CashtagText, ShareModal, QuoteModal } from '@/components/feed';
 import { useWallet } from '@/composables/useWallet';
 import { useTokenStore } from '@/composables/useTokenStore';
 import { useFeed, isWhaleCaller } from '@/composables/useFeed';
-import { shortenAddress, formatRelativeTime, formatCompactUsd } from '@/lib/utils';
+import {
+  shortenAddress,
+  formatRelativeTime,
+  formatCompactUsd,
+  getTokenChainIcon as getChainIcon,
+  getTokenChainName as getChainName,
+} from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { toast } from '@/components/ui/sonner';
 import type { FeedCalloutItem } from '@proto/shared-types';
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 const { account, openWallet } = useWallet();
 const { tokens: allTokens, fetchTokens, getTokenNetwork } = useTokenStore();
-const { toggleLike, toggleRepost, recordView } = useFeed();
-
-function getChainIcon(tokenAddress: string): string {
-  const net = getTokenNetwork(tokenAddress);
-  return net.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg';
-}
-
-function getChainName(tokenAddress: string): string {
-  const net = getTokenNetwork(tokenAddress);
-  return net.name;
-}
+const { toggleLike, toggleRepost, recordView, postCallout } = useFeed();
 
 const calloutId = computed(() => String(route.params.id || route.params.detail || ''));
 const post = ref<FeedCalloutItem | null>(null);
@@ -515,8 +506,10 @@ async function loadPost(): Promise<void> {
   loading.value = true;
   try {
     const viewerParam = account.value ? `?viewer=${account.value}` : '';
-    const res = await fetch(`/api/callouts/${targetId}${viewerParam}`);
-    const data = await res.json();
+    const data = await apiFetch<{
+      success: boolean;
+      data: import('@proto/shared-types').FeedCalloutItem;
+    }>(`/api/callouts/${targetId}${viewerParam}`);
     if (data.success && data.data) {
       post.value = data.data;
       replies.value = data.data.replies || [];
@@ -582,26 +575,20 @@ async function submitReply(): Promise<void> {
 
   isSubmittingReply.value = true;
   try {
-    const res = await fetch(`/api/tokens/${post.value.tokenAddress}/comments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        authorAddress: account.value,
-        content: replyContent.value.trim(),
-        parentId: post.value.id,
-        callType: 'comment',
-      }),
+    const created = await postCallout({
+      tokenAddress: post.value.tokenAddress,
+      authorAddress: account.value,
+      content: replyContent.value.trim(),
+      parentId: post.value.id,
+      callType: 'comment',
     });
-    const data = await res.json();
-    if (data.success && data.data) {
+    if (created) {
       toast.success('Reply posted!');
       replyContent.value = '';
-      replies.value.push(data.data);
-    } else {
-      toast.error(data.message || 'Failed to post reply');
+      replies.value.push(created);
     }
-  } catch {
-    toast.error('Failed to post reply');
+  } catch (err) {
+    toast.error((err as Error).message || 'Failed to post reply');
   } finally {
     isSubmittingReply.value = false;
   }

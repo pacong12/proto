@@ -284,8 +284,10 @@ contract ComprehensiveLifecycleTest is Test {
 
         // H-03 fix: checkpoint must be called before depositRewards so snapshotBalance
         // is populated; otherwise earned() returns 0 for unchecked holders.
-        feeDistributor.checkpoint(address(token), traderAlice);
-        feeDistributor.checkpoint(address(token), traderBob);
+        vm.prank(traderAlice);
+        feeDistributor.checkpoint(address(token));
+        vm.prank(traderBob);
+        feeDistributor.checkpoint(address(token));
 
         // I-05 fix: depositRewards is restricted to the locker address.
         // Fund the locker with WETH and impersonate it.

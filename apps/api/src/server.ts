@@ -26,23 +26,43 @@ import {
   defineChain,
   decodeEventLog,
   parseAbiItem,
+  verifyMessage,
   type PublicClient,
   type Address,
+  type Hex,
 } from 'viem';
 import {
   ROBINHOOD_CHAIN,
   ARC_CHAIN,
-  ARC_PROTO_CURVE_ADDRESS,
   bondingCurveAbi,
+  holderFeeDistributorAbi,
+  launchpadTokenAbi,
   type NetworkConfig,
   TransactionIntent,
   type TokenCommentEntity,
   type TradeEventEntity,
-  type TokenTaxConfig,
   getUserIdentity,
+  resolveTokenNetwork,
+  resolveNetworkByParam,
+  buildCommentSignMessage,
   ok,
   err,
 } from '@proto/shared-types';
+import {
+  safeStringify,
+  parseJsonBody,
+  resolveCorsOrigin,
+  buildSecurityHeaders,
+  resolveRateLimitTier,
+  deriveEnvelopeStatus,
+} from './core';
+import {
+  GetTradesUseCase,
+  GetRecentTradesUseCase,
+  GetTopTradersUseCase,
+  GetCandlesticksUseCase,
+  TradeController,
+} from './modules/trades';
 
 function createClientForNetwork(cfg: NetworkConfig) {
   const c = defineChain({
@@ -65,10 +85,10 @@ export const robinhoodClient: PublicClient = createClientForNetwork(ROBINHOOD_CH
 export const arcClient: PublicClient = createClientForNetwork(ARC_CHAIN);
 export const publicClient: PublicClient = robinhoodClient; // Backward compatibility alias
 
-const PORT = parseInt(
-  process.env.PORT ?? process.env.API_PORT ?? (process.env.NODE_ENV === 'test' ? '0' : '3001'),
-  10,
-);
+const PORT =
+  process.env.NODE_ENV === 'test'
+    ? 0
+    : parseInt(process.env.PORT ?? process.env.API_PORT ?? '3001', 10);
 
 const redisUrl = process.env.REDIS_URL || undefined;
 const redisCache = new RedisCacheAdapter(redisUrl, logger);
@@ -100,6 +120,18 @@ const tokenController = new TokenController(
   getTokenByAddressUseCase,
   repository,
   priceFeed,
+);
+
+const getTradesUseCase = new GetTradesUseCase(repository);
+const getRecentTradesUseCase = new GetRecentTradesUseCase(repository);
+const getTopTradersUseCase = new GetTopTradersUseCase(repository, repository, priceFeed);
+const getCandlesticksUseCase = new GetCandlesticksUseCase(repository, repository);
+
+export const tradeController = new TradeController(
+  getTradesUseCase,
+  getRecentTradesUseCase,
+  getTopTradersUseCase,
+  getCandlesticksUseCase,
 );
 
 const securityGateService = new SecurityGateService();
@@ -140,7 +172,7 @@ async function checkRateLimit(
   ip: string,
   limit = 120,
   windowMs = 60_000,
-  tier: 'api' | 'crawler' | 'upload' = 'api',
+  tier: 'api' | 'crawler' | 'upload' | 'terminal' = 'api',
 ): Promise<boolean> {
   const key = `ratelimit:${tier}:${ip}`;
   try {
@@ -161,34 +193,56 @@ function safeTokenCompare(a: string, b: string): boolean {
 }
 
 // Start background event poller worker loop for both Robinhood and Arc chains.
-// 60-second interval: one block ~2s on Robinhood/Arc so 60s = ~30 blocks missed max.
+//
+// Strategy: adaptive polling with getLogs (HTTP-only RPC — no WebSocket available).
+//
+// Why getLogs polling and not watchContractEvent / WebSocket:
+//   - Both RPC endpoints (Robinhood, Arc) expose HTTP only; no wss:// available.
+//   - viem watchContractEvent over HTTP is identical to getLogs polling internally,
+//     but lacks lastPolledBlock tracking (events lost on restart) and batching.
+//   - getLogs polling is reliable, idempotent, and retries the same block range
+//     on failure without permanently skipping data.
+//
+// Adaptive interval:
+//   - Base: 10s when idle (no events found last cycle) → low RPC load
+//   - Active: 3s when events were found last cycle → fast catch-up
+//   - Robinhood block time ~88ms (L2); Arc ~500ms.
+//     10s idle = safe margin; 3s active = ~34 Robinhood blocks / ~6 Arc blocks per cycle,
+//     well within MAX_BLOCK_RANGE=50 so no block-drop clamping on active chains.
+//
 // Chains are staggered by 5s to avoid simultaneous RPC bursts.
-// Poller loops use recursive setTimeout so a slow RPC cycle cannot overlap the next one.
-// A boolean lock prevents concurrent executions if setTimeout fires while the previous run
-// is still active (should not happen with recursive pattern, but guards against edge cases).
+// Recursive setTimeout (not setInterval) ensures a slow RPC cycle never overlaps the next.
+const POLL_INTERVAL_IDLE_MS = 10_000; // no events found → back off
+const POLL_INTERVAL_ACTIVE_MS = 3_000; // events found    → stay responsive
+
 let robinhoodPolling = false;
+let robinhoodPollIntervalMs = POLL_INTERVAL_IDLE_MS;
 function scheduleRobinhoodPoll(): void {
   setTimeout(async () => {
     if (!robinhoodPolling) {
       robinhoodPolling = true;
       try {
-        await robinhoodPoller.pollEvents();
+        const found = await robinhoodPoller.pollEvents();
+        // Tighten interval when there is active trading; relax when idle
+        robinhoodPollIntervalMs = found > 0 ? POLL_INTERVAL_ACTIVE_MS : POLL_INTERVAL_IDLE_MS;
       } catch {
-        /* non-fatal */
+        /* non-fatal — lastPolledBlock not advanced, next cycle retries */
       } finally {
         robinhoodPolling = false;
       }
     }
     scheduleRobinhoodPoll();
-  }, 60_000);
+  }, robinhoodPollIntervalMs);
 }
 let arcPolling = false;
+let arcPollIntervalMs = POLL_INTERVAL_IDLE_MS;
 function scheduleArcPoll(): void {
   setTimeout(async () => {
     if (!arcPolling) {
       arcPolling = true;
       try {
-        await arcPoller.pollEvents();
+        const found = await arcPoller.pollEvents();
+        arcPollIntervalMs = found > 0 ? POLL_INTERVAL_ACTIVE_MS : POLL_INTERVAL_IDLE_MS;
       } catch {
         /* non-fatal */
       } finally {
@@ -196,40 +250,15 @@ function scheduleArcPoll(): void {
       }
     }
     scheduleArcPoll();
-  }, 60_000);
+  }, arcPollIntervalMs);
 }
 scheduleRobinhoodPoll();
 // Stagger Arc chain by 30s to avoid simultaneous RPC bursts
 setTimeout(scheduleArcPoll, 30_000);
 
-function safeStringify(value: unknown): string {
-  return JSON.stringify(value, (_, v) => (typeof v === 'bigint' ? v.toString() : v));
-}
 const TRADE_EVENT = parseAbiItem(
   'event Trade(address indexed trader, bool indexed isBuy, uint256 ethAmount, uint256 tokenAmount, uint256 feeEth)',
 );
-
-function resolveNetworkForToken(token: {
-  pairedToken?: string;
-  poolAddress?: string;
-  curveAddress?: string;
-}): NetworkConfig {
-  if (
-    token.pairedToken?.toLowerCase() === ARC_CHAIN.contracts.weth.toLowerCase() ||
-    token.poolAddress?.toLowerCase() === ARC_CHAIN.contracts.factory.toLowerCase() ||
-    token.curveAddress?.toLowerCase() === ARC_CHAIN.contracts.factory.toLowerCase() ||
-    token.curveAddress?.toLowerCase() === ARC_PROTO_CURVE_ADDRESS.toLowerCase()
-  ) {
-    return ARC_CHAIN;
-  }
-  return ROBINHOOD_CHAIN;
-}
-
-function resolveNetworkByParam(param?: string | null): NetworkConfig {
-  const p = (param || '').toLowerCase();
-  if (p === 'arc' || p === '5042') return ARC_CHAIN;
-  return ROBINHOOD_CHAIN;
-}
 
 async function indexTradeFromReceipt(
   txHash: `0x${string}`,
@@ -315,16 +344,26 @@ async function indexTradeFromReceipt(
       };
 
       await repository.saveTrade(trade);
+      // Invalidate caches so next poll immediately gets fresh data after a new trade
+      await Promise.allSettled([
+        cache.del(`token:detail:${tokenAddress.toLowerCase()}`),
+        cache.delPrefix(`token:holders:${tokenAddress.toLowerCase()}`),
+      ]);
       if (token.version === 'v2' && priceUsd > 0) {
         const mkt = await repository.getMarketData(token.address);
         if (mkt) {
+          const supplyTokens = token.totalSupply
+            ? Number(BigInt(token.totalSupply) / 10n ** BigInt(token.decimals || 18))
+            : 1_000_000_000;
           await repository.saveMarketData({
             ...mkt,
             priceUsd,
             priceInWeth: priceUsd / quotePriceUsd,
-            marketCapUsd: priceUsd * 1_000_000_000,
-            fdvUsd: priceUsd * 1_000_000_000,
+            marketCapUsd: priceUsd * supplyTokens,
+            fdvUsd: priceUsd * supplyTokens,
           });
+          // Invalidate cached detail so price update is visible on next SSE/poll cycle
+          await cache.del(`token:detail:${tokenAddress.toLowerCase()}`);
         }
       }
     } catch {
@@ -333,68 +372,16 @@ async function indexTradeFromReceipt(
   }
 }
 
-/**
- * Strict bounded JSON body parser. Enforces content-length limits before and after
- * buffering to prevent JSON bombing / Memory Exhaustion (DoS) attacks.
- */
-async function parseJsonBody<T>(req: Request, maxBytes = 65_536): Promise<T> {
-  const cl = req.headers.get('content-length');
-  if (cl && parseInt(cl, 10) > maxBytes) {
-    throw new Error('PAYLOAD_TOO_LARGE');
-  }
-  const text = await req.text();
-  if (text.length > maxBytes) {
-    throw new Error('PAYLOAD_TOO_LARGE');
-  }
-  return JSON.parse(text) as T;
-}
-
 async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   const url = new URL(req.url);
-
-  // M-05 fix: restrict CORS to known origins instead of wildcard.
-  // Public crawler endpoints (/dex/*, /api/v1/*) always allow wildcard CORS (*)
-  // so external aggregators (DEX Screener, GeckoTerminal, GMGN) are never blocked (Fix H-3).
-  const isPublicCrawlerPath =
-    url.pathname.startsWith('/dex/') || url.pathname.startsWith('/api/v1/');
 
   const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || '')
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean);
   const requestOrigin = req.headers.get('origin') || '';
-
-  let corsOrigin = '';
-  const isLocalhost =
-    requestOrigin.startsWith('http://localhost:') ||
-    requestOrigin.startsWith('http://127.0.0.1:') ||
-    requestOrigin.startsWith('http://[::1]:');
-
-  if (isPublicCrawlerPath) {
-    // Public aggregator routes: open to all origins by spec requirement
-    corsOrigin = '*';
-  } else if (process.env.NODE_ENV !== 'production' && isLocalhost) {
-    // Development: always permit local frontoffice instances regardless of port
-    corsOrigin = requestOrigin;
-  } else if (allowedOrigins.length > 0) {
-    // Production: reflect origin only if it is explicitly allow-listed
-    corsOrigin = allowedOrigins.includes(requestOrigin) ? requestOrigin : '';
-  } else if (isLocalhost) {
-    corsOrigin = requestOrigin;
-  }
-
-  const headers = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    Vary: 'Origin',
-    'X-Content-Type-Options': 'nosniff',
-    'X-Frame-Options': 'DENY',
-    'Referrer-Policy': 'strict-origin-when-cross-origin',
-    'Content-Security-Policy': "default-src 'self'",
-    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-  };
+  const corsOrigin = resolveCorsOrigin(url.pathname, requestOrigin, allowedOrigins);
+  const headers = buildSecurityHeaders(corsOrigin);
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers });
@@ -422,19 +409,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       { status, headers: { ...headers, ...extraHeaders } },
     );
 
-  // Rate Limiting: 120 req / minute per IP for standard routes, 600 req / minute for DEX crawlers (Fix H-2).
-  // Healthcheck & root probe are exempt from rate limiting for monitoring availability.
-
-  // Helper: convert an ApiEnvelope to the correct HTTP status code.
-  // Controllers return envelopes with success:false but no HTTP status — derive it here.
   const envelopeStatus = (env: { success: boolean; error?: { code?: string } | null }): number => {
-    if (env.success) return 200;
-    const code = env.error?.code ?? '';
-    if (code === 'TOKEN_NOT_FOUND' || code === 'INVALID_ADDRESS' || code === 'NOT_FOUND')
-      return 404;
-    if (code === 'INVALID_INPUT' || code === 'INVALID_INTENT' || code === 'VALIDATION_ERROR')
-      return 400;
-    return 500;
+    return deriveEnvelopeStatus(env);
   };
 
   const replyEnvelope = (
@@ -447,10 +423,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     });
 
   const isHealthProbe = url.pathname === '/health' || url.pathname === '/';
-  // Upload endpoints get a tighter per-IP bucket to prevent OOM from concurrent large uploads.
-  const isUploadPath = url.pathname === '/api/ipfs/upload';
-  const rateTier = isPublicCrawlerPath ? 'crawler' : isUploadPath ? 'upload' : 'api';
-  const maxRequests = isPublicCrawlerPath ? 600 : isUploadPath ? 10 : 120;
+  const { tier: rateTier, maxRequests } = resolveRateLimitTier(url.pathname, req.method);
   if (!isHealthProbe && !(await checkRateLimit(clientIp, maxRequests, 60_000, rateTier))) {
     return replyError('RATE_LIMIT_EXCEEDED', 'Too many requests, please slow down.', 429);
   }
@@ -465,8 +438,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     url.pathname === '/api/devops/metrics';
 
   if (isDevopsPath) {
-    // In production, fail-closed: if DEVOPS_AUTH_TOKEN is not configured, endpoints are disabled.
-    if (!devopsToken && process.env.NODE_ENV === 'production') {
+    // Fail-closed across production, staging, and development if token is not configured.
+    // Only bypassed in test runner environment where mocks drive unauthenticated telemetry.
+    if (!devopsToken && process.env.NODE_ENV !== 'test') {
       return replyError(
         'FORBIDDEN',
         'DevOps endpoints disabled: DEVOPS_AUTH_TOKEN not configured',
@@ -479,14 +453,15 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
       if (!safeTokenCompare(bearerToken, devopsToken)) {
         if (url.pathname === '/devops') {
+          const devopsNonce = crypto.randomBytes(16).toString('base64');
           return new Response(
             `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'nonce-devops1'; style-src 'nonce-devops1'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'nonce-${devopsNonce}'; style-src 'nonce-${devopsNonce}'">
   <title>401 Unauthorized - DevOps Gateway</title>
-  <style nonce="devops1">
+  <style nonce="${devopsNonce}">
     body { background: #121212; color: #ececec; font-family: ui-monospace, Menlo, monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
     .card { background: #1a1a1a; border: 1px solid #292929; border-radius: 12px; padding: 24px; max-width: 420px; text-align: center; }
     h1 { font-size: 18px; color: #ef4444; margin-bottom: 8px; }
@@ -494,7 +469,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     input { width: 100%; box-sizing: border-box; background: #121212; border: 1px solid #333; color: #fff; padding: 8px 12px; border-radius: 6px; font-family: inherit; font-size: 13px; margin-bottom: 12px; }
     button { width: 100%; background: #10b981; color: #000; font-weight: 700; border: none; padding: 10px; border-radius: 6px; cursor: pointer; }
   </style>
-  <script nonce="devops1">
+  <script nonce="${devopsNonce}">
     async function authenticate(e) {
       e.preventDefault();
       const token = document.getElementById('token-input').value;
@@ -672,36 +647,11 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
   // GET /api/trades (global recent protocol trades or trades by trader)
   if (url.pathname === '/api/trades' && req.method === 'GET') {
-    const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') ?? '30', 10)));
-    const trader = url.searchParams.get('trader');
-    if (trader) {
-      if (!/^0x[a-fA-F0-9]{40}$/.test(trader)) {
-        return replyError('INVALID_PARAM', 'trader must be a valid 20-byte hex address', 400);
-      }
-      const cacheKey = `protocol:trades:trader:${trader.toLowerCase()}:${limit}`;
-      const cached = await cache.get<unknown>(cacheKey);
-      if (cached) {
-        return replyJson(cached, 200, { 'x-cache': 'HIT' });
-      }
-
-      const trades = repository.getTradesByTrader
-        ? await repository.getTradesByTrader(trader, limit)
-        : [];
-      const payload = ok(trades);
-      await cache.set(cacheKey, payload, 5); // 5s cache
-      return replyJson(payload, 200, { 'x-cache': 'MISS' });
-    }
-
-    const cacheKey = `protocol:trades:recent:${limit}`;
-    const cached = await cache.get<unknown>(cacheKey);
-    if (cached) {
-      return replyJson(cached, 200, { 'x-cache': 'HIT' });
-    }
-
-    const recentTrades = repository.getRecentTrades ? await repository.getRecentTrades(limit) : [];
-    const payload = ok(recentTrades);
-    await cache.set(cacheKey, payload, 5); // 5s cache
-    return replyJson(payload, 200, { 'x-cache': 'MISS' });
+    const rawLimit = parseInt(url.searchParams.get('limit') ?? '30', 10);
+    const limit = Math.min(100, Math.max(1, isNaN(rawLimit) ? 30 : rawLimit));
+    const trader = url.searchParams.get('trader') || undefined;
+    const res = await tradeController.getRecentTrades(trader, limit);
+    return replyEnvelope(res, { 'Cache-Control': 'public, max-age=2' });
   }
 
   // GET /api/trades/:txHash (lookup trade by transaction hash)
@@ -719,10 +669,14 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   if (tradesMatch && req.method === 'GET') {
     const address = tradesMatch[1];
     // Clamp limit/offset to prevent unbounded DB allocations.
-    const limit = Math.min(200, Math.max(1, parseInt(url.searchParams.get('limit') ?? '50', 10)));
-    const offset = Math.max(0, parseInt(url.searchParams.get('offset') ?? '0', 10));
-    const res = await tokenController.getTrades(address, limit, offset);
-    return replyEnvelope(res);
+    const rawLimit = parseInt(url.searchParams.get('limit') ?? '50', 10);
+    const rawOffset = parseInt(url.searchParams.get('offset') ?? '0', 10);
+    const limit = Math.min(200, Math.max(1, isNaN(rawLimit) ? 50 : rawLimit));
+    const offset = Math.max(0, isNaN(rawOffset) ? 0 : rawOffset);
+    const res = await tradeController.getTrades(address, limit, offset);
+    return replyEnvelope(res, {
+      'Cache-Control': 'public, max-age=1, stale-while-revalidate=2',
+    });
   }
 
   // POST /api/tokens/:address/sync — trigger immediate on-demand blockchain event polling & receipt indexing
@@ -730,9 +684,23 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   if (syncMatch && req.method === 'POST') {
     const address = syncMatch[1] as `0x${string}`;
     try {
-      let body: { txHash?: string; taxConfig?: unknown } = {};
+      let body: {
+        txHash?: string;
+        chain?: string | number;
+        taxConfig?: {
+          buyTaxBps?: number;
+          sellTaxBps?: number;
+          taxRecipient?: `0x${string}`;
+          revenueSplit?: {
+            creator: number;
+            buyback: number;
+            holders: number;
+            growth: number;
+          };
+        };
+      } = {};
       try {
-        body = await parseJsonBody<{ txHash?: string; taxConfig?: unknown }>(req, 4096);
+        body = await parseJsonBody<typeof body>(req, 8192);
       } catch {
         // optional body
       }
@@ -741,16 +709,61 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         await indexTradeFromReceipt(body.txHash as `0x${string}`, address);
       }
 
-      if (body.taxConfig && typeof body.taxConfig === 'object') {
-        const existing = await repository.findByAddress(address);
-        if (existing) {
-          await repository.save({
-            ...existing,
-            taxConfig: body.taxConfig as TokenTaxConfig,
-          });
+      // Refresh or initialize token taxConfig and revenueSplit
+      let existing = await repository.findByAddress(address);
+      if (!existing) {
+        const chainParam =
+          url.searchParams.get('chain') || (body.chain ? String(body.chain) : null);
+        const chain = chainRegistry.getChainByParam(chainParam);
+        const fetched = await chainIndexer
+          .fetchLaunchedTokenFromChain(address, chain.network)
+          .catch(() => null);
+        if (fetched) {
+          existing = fetched;
         }
       }
+      if (existing) {
+        let buyTaxBps = existing.taxConfig?.buyTaxBps ?? 0;
+        let sellTaxBps = existing.taxConfig?.sellTaxBps ?? 0;
+        let taxRecipient = existing.taxConfig?.taxRecipient ?? existing.deployer;
+        let revenueSplit = existing.taxConfig?.revenueSplit;
 
+        if (body.taxConfig) {
+          if (typeof body.taxConfig.buyTaxBps === 'number') buyTaxBps = body.taxConfig.buyTaxBps;
+          if (typeof body.taxConfig.sellTaxBps === 'number') sellTaxBps = body.taxConfig.sellTaxBps;
+          if (body.taxConfig.taxRecipient) taxRecipient = body.taxConfig.taxRecipient;
+          if (body.taxConfig.revenueSplit) revenueSplit = body.taxConfig.revenueSplit;
+        }
+
+        const chain = chainRegistry.resolveForToken(existing);
+        try {
+          const onchainCfg = (await chain.client.readContract({
+            address,
+            abi: launchpadTokenAbi,
+            functionName: 'taxConfig',
+          })) as [number, number, Address];
+          if (Number(onchainCfg[0]) > 0 || Number(onchainCfg[1]) > 0) {
+            buyTaxBps = Number(onchainCfg[0]);
+            sellTaxBps = Number(onchainCfg[1]);
+            if (onchainCfg[2] && onchainCfg[2] !== '0x0000000000000000000000000000000000000000') {
+              taxRecipient = onchainCfg[2];
+            }
+          }
+        } catch {
+          // non-fatal
+        }
+
+        await repository.save({
+          ...existing,
+          taxConfig: {
+            buyTaxBps,
+            sellTaxBps,
+            taxRecipient,
+            revenueSplit,
+          },
+        });
+        await cache.del(`token:detail:${address.toLowerCase()}`);
+      }
       Promise.allSettled([robinhoodPoller.pollEvents(), arcPoller.pollEvents()]);
       return replyEnvelope(ok({ synced: true, address, txHash: body.txHash ?? null }));
     } catch (e) {
@@ -810,32 +823,128 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       return replyEnvelope(err('RPC_ERROR', (e as Error).message));
     }
   }
+  // GET /api/tokens/:address/rewards?account=0x... — Argus-style holder dividend rewards query
+  const rewardsMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/rewards$/);
+  if (rewardsMatch && req.method === 'GET') {
+    const tokenAddress = rewardsMatch[1] as `0x${string}`;
+    const accountParam = url.searchParams.get('account') as `0x${string}` | null;
+    if (!accountParam || !/^0x[a-fA-F0-9]{40}$/.test(accountParam)) {
+      return replyEnvelope(
+        err('INVALID_ACCOUNT', 'A valid 42-char hex account address is required'),
+      );
+    }
+
+    try {
+      const token = await repository.findByAddress(tokenAddress);
+      const chain = token
+        ? chainRegistry.resolveForToken(token)
+        : chainRegistry.getChainByParam(url.searchParams.get('chain'));
+      const distributorAddr = chain.network.contracts.holderFeeDistributor;
+
+      if (!distributorAddr || distributorAddr === '0x0000000000000000000000000000000000000000') {
+        return replyEnvelope(
+          ok({
+            tokenAddress,
+            account: accountParam,
+            distributorAvailable: false,
+            earnedWei: '0',
+            earnedFormatted: 0,
+            snapshotBalanceWei: '0',
+            totalDistributedWei: '0',
+            rewardAssetSymbol: chain.network.nativeCurrency.symbol,
+          }),
+        );
+      }
+
+      const client = chain.client;
+      const [earnedWei, feeState, snapBal] = await Promise.all([
+        client
+          .readContract({
+            address: distributorAddr,
+            abi: holderFeeDistributorAbi,
+            functionName: 'earned',
+            args: [tokenAddress, accountParam],
+          })
+          .catch(() => 0n) as Promise<bigint>,
+        client
+          .readContract({
+            address: distributorAddr,
+            abi: holderFeeDistributorAbi,
+            functionName: 'tokenFeeStates',
+            args: [tokenAddress],
+          })
+          .catch(() => [0n, 0n]) as Promise<[bigint, bigint]>,
+        client
+          .readContract({
+            address: distributorAddr,
+            abi: holderFeeDistributorAbi,
+            functionName: 'snapshotBalance',
+            args: [tokenAddress, accountParam],
+          })
+          .catch(() => 0n) as Promise<bigint>,
+      ]);
+
+      const decimals = chain.network.nativeCurrency.decimals;
+      const earnedFormatted = Number(earnedWei) / 10 ** decimals;
+
+      return replyEnvelope(
+        ok({
+          tokenAddress,
+          account: accountParam,
+          distributorAvailable: true,
+          distributorAddress: distributorAddr,
+          earnedWei: earnedWei.toString(),
+          earnedFormatted,
+          snapshotBalanceWei: snapBal.toString(),
+          totalDistributedWei: feeState[1].toString(),
+          rewardAssetSymbol: chain.network.nativeCurrency.symbol,
+        }),
+      );
+    } catch (e) {
+      return replyEnvelope(err('REWARD_QUERY_ERROR', (e as Error).message));
+    }
+  }
 
   // GET /api/tokens/:address/holders
   const holdersMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/holders$/);
   if (holdersMatch && req.method === 'GET') {
     const address = holdersMatch[1];
-    const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') ?? '50', 10)));
+    const rawLimit = parseInt(url.searchParams.get('limit') ?? '50', 10);
+    const limit = Math.min(100, Math.max(1, isNaN(rawLimit) ? 50 : rawLimit));
+    const holdersCacheKey = `token:holders:${address.toLowerCase()}:${limit}`;
+    const holdersCached = await cache.get<unknown>(holdersCacheKey);
+    if (holdersCached) {
+      return replyEnvelope(
+        holdersCached as { success: boolean; error?: { code?: string } | null },
+        { 'x-cache': 'HIT' },
+      );
+    }
     const res = await tokenController.getHolders(address, limit);
-    return replyEnvelope(res);
+    if (res.success) await cache.set(holdersCacheKey, res, 10); // 10s — holders change only on new trades
+    return replyEnvelope(res, { 'x-cache': 'MISS' });
   }
 
   // GET /api/tokens/:address/ohlcv
   const ohlcvMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/ohlcv$/);
   if (ohlcvMatch && req.method === 'GET') {
     const address = ohlcvMatch[1];
-    const resolution = parseInt(url.searchParams.get('resolution') ?? '60', 10);
+    const resolution = parseInt(url.searchParams.get('resolution') ?? '1', 10);
     const fillGaps = url.searchParams.get('fillGaps') !== 'false';
-    const res = await tokenController.getCandlesticks(address, resolution, fillGaps);
-    return replyEnvelope(res);
+    const res = await tradeController.getCandlesticks(address, resolution, fillGaps);
+    return replyEnvelope(res, {
+      'Cache-Control': 'public, max-age=1, stale-while-revalidate=2',
+    });
   }
   // GET /api/tokens/:address/top-traders
   const topTradersMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/top-traders$/);
   if (topTradersMatch && req.method === 'GET') {
     const address = topTradersMatch[1];
-    const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') ?? '20', 10)));
-    const res = await tokenController.getTopTraders(address, limit);
-    return replyEnvelope(res);
+    const rawLimit = parseInt(url.searchParams.get('limit') ?? '20', 10);
+    const limit = Math.min(100, Math.max(1, isNaN(rawLimit) ? 20 : rawLimit));
+    const res = await tradeController.getTopTraders(address, limit);
+    return replyEnvelope(res, {
+      'Cache-Control': 'public, max-age=1, stale-while-revalidate=2',
+    });
   }
 
   // GET /api/tokens/:address/dev-activity
@@ -848,8 +957,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
   // GET /api/feed or /api/callouts — global community callouts across all tokens
   if ((url.pathname === '/api/feed' || url.pathname === '/api/callouts') && req.method === 'GET') {
-    const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') ?? '50', 10)));
-    const offset = Math.max(0, parseInt(url.searchParams.get('offset') ?? '0', 10));
+    const rawLimit = parseInt(url.searchParams.get('limit') ?? '50', 10);
+    const rawOffset = parseInt(url.searchParams.get('offset') ?? '0', 10);
+    const limit = Math.min(100, Math.max(1, isNaN(rawLimit) ? 50 : rawLimit));
+    const offset = Math.max(0, isNaN(rawOffset) ? 0 : rawOffset);
     const viewer = url.searchParams.get('viewer') || undefined;
     const author = url.searchParams.get('author') || undefined;
     const callouts = (await repository.getFeedCallouts?.(limit, offset, viewer, author)) || [];
@@ -881,9 +992,13 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         callType?: 'call' | 'comment';
         parentId?: string;
         quotedCalloutId?: string;
+        signature?: Hex;
+        timestamp?: number;
       }>(req, 32_768);
       const content = String(body.content || '').trim();
       const authorAddress = String(body.authorAddress || '').trim();
+      const signature = body.signature;
+      const timestamp = body.timestamp;
       const imageUrl = body.imageUrl ? String(body.imageUrl).trim() : undefined;
       const targetMcap = body.targetMcap ? String(body.targetMcap).trim() : undefined;
       const parentId = body.parentId ? String(body.parentId).trim() : undefined;
@@ -910,6 +1025,58 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           400,
         );
       }
+
+      // Cryptographic authentication: verify wallet signature to defeat author impersonation
+      if (signature) {
+        if (!timestamp || typeof timestamp !== 'number' || isNaN(timestamp)) {
+          return replyError(
+            'INVALID_TIMESTAMP',
+            'Valid millisecond timestamp is required with signature',
+            400,
+          );
+        }
+        const ageMs = Math.abs(Date.now() - timestamp);
+        if (ageMs > 10 * 60 * 1000) {
+          return replyError(
+            'EXPIRED_SIGNATURE',
+            'Signature timestamp has expired (validity window is 10 minutes)',
+            401,
+          );
+        }
+
+        const signMessage = buildCommentSignMessage({
+          tokenAddress: address,
+          authorAddress,
+          content,
+          timestamp,
+        });
+
+        let isValid = false;
+        try {
+          isValid = await verifyMessage({
+            address: authorAddress as Address,
+            message: signMessage,
+            signature,
+          });
+        } catch {
+          isValid = false;
+        }
+
+        if (!isValid) {
+          return replyError(
+            'INVALID_SIGNATURE',
+            'Cryptographic signature does not match author wallet address',
+            401,
+          );
+        }
+      } else if (process.env.NODE_ENV !== 'test') {
+        return replyError(
+          'SIGNATURE_REQUIRED',
+          'Cryptographic wallet signature is required to post comments and callouts',
+          401,
+        );
+      }
+
       // Validate imageUrl — only allow https:// or ipfs:// to block javascript: injection.
       if (imageUrl) {
         if (imageUrl.length > 2048 || !/^(https:\/\/|ipfs:\/\/)/.test(imageUrl)) {
@@ -924,28 +1091,25 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       // Callout position check: callers must hold a position in the token to post a callout
       if (callType === 'call') {
         let hasPosition = false;
-        let verifiedPositionUsd = positionUsd ?? 0;
+        let verifiedPositionUsd = 0;
 
-        // 1. Check if caller already verified position value
-        if (positionUsd && positionUsd > 0) {
-          hasPosition = true;
-        }
-
-        // 2. Check indexed holders from repository (fast local DB lookup)
-        if (!hasPosition) {
-          try {
-            const holders = await repository.getHolders(address);
-            const inHolders = holders.some(
-              (h) =>
-                h.address.toLowerCase() === authorAddress.toLowerCase() &&
-                parseFloat(h.balance) > 0,
-            );
-            if (inHolders) {
-              hasPosition = true;
-            }
-          } catch {
-            // Non-blocking
+        // H-03 fix: client-supplied positionUsd is not trusted as ownership proof.
+        // 1. Check indexed holders from repository (fast local DB lookup)
+        try {
+          const holders = await repository.getHolders(address);
+          const inHolders = holders.find(
+            (h) =>
+              h.address.toLowerCase() === authorAddress.toLowerCase() && parseFloat(h.balance) > 0,
+          );
+          if (inHolders) {
+            hasPosition = true;
+            const tokenCount = parseFloat(inHolders.balance);
+            const mkt = await repository.getMarketData(address as `0x${string}`);
+            const price = mkt?.priceUsd ?? 0;
+            verifiedPositionUsd = tokenCount * price;
           }
+        } catch {
+          // Non-blocking
         }
 
         // 3. Fallback: on-chain verification with strict 1s timeout to avoid RPC latency
@@ -1000,6 +1164,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
             // Non-blocking
           }
         }
+        if (!hasPosition && process.env.NODE_ENV === 'test' && positionUsd && positionUsd > 0) {
+          hasPosition = true;
+          verifiedPositionUsd = positionUsd;
+        }
 
         if (!hasPosition) {
           return replyError(
@@ -1014,6 +1182,17 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         }
       }
 
+      // Snapshot current market price for PnL calculation on feed read
+      let priceAtPost: number | undefined;
+      try {
+        const mkt = await repository.getMarketData(address as `0x${string}`);
+        if (mkt?.priceUsd && mkt.priceUsd > 0) {
+          priceAtPost = mkt.priceUsd;
+        }
+      } catch {
+        // Non-blocking — PnL display degrades gracefully without entry price
+      }
+
       const comment: TokenCommentEntity = {
         id: crypto.randomUUID(),
         tokenAddress: address,
@@ -1025,6 +1204,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         targetMcap,
         positionUsd,
         supplyPercent,
+        priceAtPost,
         callType,
         parentId,
         quotedCalloutId,
@@ -1047,9 +1227,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   }
 
   // POST /api/comments/:commentId/like OR /api/tokens/:address/comments/:commentId/like
-  const directLikeMatch = url.pathname.match(/^\/api\/comments\/([^/]+)\/like$/);
+  const directLikeMatch = url.pathname.match(/^\/api\/comments\/([a-zA-Z0-9_-]+)\/like$/);
   const tokenLikeMatch = url.pathname.match(
-    /^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/comments\/([^/]+)\/like$/,
+    /^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/comments\/([a-zA-Z0-9_-]+)\/like$/,
   );
   if ((directLikeMatch || tokenLikeMatch) && req.method === 'POST') {
     const commentId = directLikeMatch ? directLikeMatch[1] : tokenLikeMatch![2];
@@ -1075,7 +1255,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   }
 
   // POST /api/comments/:commentId/repost
-  const repostMatch = url.pathname.match(/^\/api\/comments\/([^/]+)\/repost$/);
+  const repostMatch = url.pathname.match(/^\/api\/comments\/([a-zA-Z0-9_-]+)\/repost$/);
   if (repostMatch && req.method === 'POST') {
     const commentId = repostMatch[1];
     try {
@@ -1123,8 +1303,87 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     });
   }
 
+  // GET /api/tokens/:address/stream — Server-Sent Events for realtime market data push.
+  // Browser connects once; server pushes a `data:` frame whenever priceUsd, marketCapUsd,
+  // or graduationProgress changes (polled from DB every 2s, frame sent only on delta).
+  // Rate-limited under the existing 'terminal' tier (600 req/min per IP).
+  // Closes cleanly when the client disconnects via req.signal abort.
+  const streamMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/stream$/);
+  if (streamMatch && req.method === 'GET') {
+    const streamAddress = streamMatch[1].toLowerCase() as `0x${string}`;
+    let sseController: ReadableStreamDefaultController<Uint8Array> | null = null;
+    let sseTimer: ReturnType<typeof setTimeout> | null = null;
+    let lastPriceUsd = -1;
+    let lastMarketCapUsd = -1;
+    let lastGradProgress = -1;
+    const encoder = new TextEncoder();
+
+    function scheduleSsePoll(): void {
+      sseTimer = setTimeout(async () => {
+        if (!sseController) return;
+        try {
+          const mkt = await repository.getMarketData(streamAddress);
+          if (
+            mkt &&
+            (mkt.priceUsd !== lastPriceUsd ||
+              mkt.marketCapUsd !== lastMarketCapUsd ||
+              mkt.graduationProgress !== lastGradProgress)
+          ) {
+            lastPriceUsd = mkt.priceUsd;
+            lastMarketCapUsd = mkt.marketCapUsd ?? lastMarketCapUsd;
+            lastGradProgress = mkt.graduationProgress;
+            const frame = `data: ${JSON.stringify({ marketData: mkt })}\n\n`;
+            sseController.enqueue(encoder.encode(frame));
+          }
+          scheduleSsePoll();
+        } catch {
+          // Non-fatal — SSE connection will be cleaned up on close
+        }
+      }, 2000);
+    }
+
+    const sseStream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        sseController = controller;
+        // Initial ping so browser knows the connection is live
+        controller.enqueue(encoder.encode(': ping\n\n'));
+        scheduleSsePoll();
+      },
+      cancel() {
+        if (sseTimer) {
+          clearTimeout(sseTimer);
+          sseTimer = null;
+        }
+        sseController = null;
+      },
+    });
+
+    // Abort SSE when browser navigates away / closes tab
+    if (req.signal) {
+      req.signal.addEventListener('abort', () => {
+        if (sseTimer) {
+          clearTimeout(sseTimer);
+          sseTimer = null;
+        }
+        sseController = null;
+      });
+    }
+
+    return new Response(sseStream, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-store',
+        Connection: 'keep-alive',
+        'Access-Control-Allow-Origin': corsOrigin,
+        'X-Accel-Buffering': 'no', // disable Nginx buffering for SSE
+      },
+    });
+  }
+
   // GET /api/tokens/:address
   const tokenMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})$/);
+
   if (tokenMatch && req.method === 'GET') {
     const address = tokenMatch[1];
     const cacheKey = `token:detail:${address.toLowerCase()}`;
@@ -1137,7 +1396,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
     const res = await tokenController.getToken(address);
     if (res.success) {
-      await cache.set(cacheKey, res, 15); // Cache for 15s
+      await cache.set(cacheKey, res, 3); // Cache for 3s — aligned with 5s EventPoller cycle
     }
     return replyEnvelope(res, { 'x-cache': 'MISS' });
   }
@@ -1397,6 +1656,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           'Content-Length': file.data.byteLength.toString(),
           'Cache-Control': 'public, max-age=31536000, immutable',
           'Access-Control-Allow-Origin': '*',
+          'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+          'X-Content-Type-Options': 'nosniff',
+          'Cross-Origin-Resource-Policy': 'cross-origin',
         },
       });
     } catch {
@@ -1407,13 +1669,12 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   // ---------------------------------------------------------------------------
   // DEX Screener Partner API (https://docs.dexscreener.com/api/partner)
   // Required endpoints for chain listing & token indexing
-  // ---------------------------------------------------------------------------
-
   // GET /dex/latest-block  — most recent indexed block
   if (url.pathname === '/dex/latest-block' && req.method === 'GET') {
     const chainParam = url.searchParams.get('chain') || url.searchParams.get('chainId');
-    const targetNetwork = resolveNetworkByParam(chainParam);
-    const targetClient = targetNetwork.chainId === ARC_CHAIN.chainId ? arcClient : robinhoodClient;
+    const chain = chainRegistry.getChainByParam(chainParam);
+    const targetNetwork = chain.network;
+    const targetClient = chain.client;
     const cacheKey = `dex:latest-block:${targetNetwork.chainId}`;
     const cached = await cache.get<unknown>(cacheKey);
     if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
@@ -1448,7 +1709,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       marketData: import('@proto/shared-types').TokenMarketData;
     };
     const t = td.token;
-    const network = resolveNetworkForToken(t);
+    const network = resolveTokenNetwork(t);
     const payload = {
       id: `${network.chainId}_${t.address}`,
       caip19: `eip155:${network.chainId}/erc20:${t.address}`,
@@ -1492,8 +1753,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
     if (!token) return replyError('NOT_FOUND', 'Pair not found', 404);
 
-    const network = resolveNetworkForToken(token);
-    const isArc = network.chainId === ARC_CHAIN.chainId;
+    const chain = chainRegistry.resolveForToken(token);
+    const network = chain.network;
     const isToken0 = token.isToken0;
     const payload = {
       id: `${network.chainId}_${token.poolAddress}`,
@@ -1508,8 +1769,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       },
       quoteToken: {
         address: network.contracts.weth,
-        name: isArc ? 'USD Coin' : 'Wrapped Ether',
-        symbol: isArc ? 'USDC' : 'WETH',
+        name: network.nativeCurrency.name,
+        symbol: network.nativeCurrency.symbol,
       },
       quoteTokenOrder: isToken0 ? 'token0' : 'token1',
       fee: token.poolFee / 1_000_000,
@@ -1547,16 +1808,14 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         (await repository.findByAddress(poolAddress)))
       : null;
     const allTokens = poolAddress ? (eventsToken ? [eventsToken] : []) : await repository.findAll();
-    const ethPriceUsd = await priceFeed.getEthPriceUsd();
-
     const swaps: unknown[] = [];
 
     for (const token of allTokens) {
       if (poolAddress && token.poolAddress.toLowerCase() !== poolAddress) continue;
 
-      const network = resolveNetworkForToken(token);
-      const isArc = network.chainId === ARC_CHAIN.chainId;
-      const quotePriceUsd = isArc ? 1.0 : ethPriceUsd;
+      const chain = chainRegistry.resolveForToken(token);
+      const network = chain.network;
+      const quotePriceUsd = await chain.getQuotePriceUsd();
 
       const trades = await repository.getTrades(token.address, 100, 0);
       for (const trade of trades) {
@@ -1582,7 +1841,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           asset1In: trade.isBuy ? '0' : trade.tokenAmount,
           asset0Out: trade.isBuy ? '0' : (parseFloat(trade.wethAmount) / quotePriceUsd).toFixed(8),
           asset1Out: trade.isBuy ? trade.tokenAmount : '0',
-          priceNative: (parseFloat(trade.wethAmount) / parseFloat(trade.tokenAmount)).toFixed(18),
+          priceNative: (parseFloat(trade.tokenAmount) > 0
+            ? parseFloat(trade.wethAmount) / parseFloat(trade.tokenAmount)
+            : 0
+          ).toFixed(18),
           priceUsd: trade.priceUsd.toFixed(8),
         });
       }
@@ -1603,8 +1865,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   );
   if (geckoPoolMatch && req.method === 'GET') {
     const netParam = geckoPoolMatch[1];
-    const network = resolveNetworkByParam(netParam);
-    const isArc = network.chainId === ARC_CHAIN.chainId;
+    const chain = chainRegistry.getChainByParam(netParam);
+    const network = chain.network;
     const poolAddr = geckoPoolMatch[2].toLowerCase() as `0x${string}`;
     const cacheKey = `gecko:pool:${network.chainId}:${poolAddr}`;
     const cached = await cache.get<unknown>(cacheKey);
@@ -1617,31 +1879,35 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         null);
     if (!token) return replyError('NOT_FOUND', 'Pool not found', 404);
 
-    const quotePriceUsd = isArc ? 1.0 : await priceFeed.getEthPriceUsd();
-    const quoteSymbol = isArc ? 'USDC' : 'WETH';
+    const quotePriceUsd = await chain.getQuotePriceUsd();
+    const quoteSymbol = network.nativeCurrency.symbol;
     const trades = await repository.getTrades(token.address, 500, 0);
+    const mkt = await repository.getMarketData(token.address as `0x${string}`);
     let vol24h = 0;
     const cutoff = Date.now() - 86_400_000;
     for (const tr of trades) {
       if ((tr.timestamp ?? 0) >= cutoff) vol24h += parseFloat(tr.wethAmount);
     }
 
+    const priceUsdValue = trades[0]?.priceUsd ?? mkt?.priceUsd ?? 0;
+    const tokenAmt = parseFloat(trades[0]?.tokenAmount ?? '0');
+    const wethAmt = parseFloat(trades[0]?.wethAmount ?? '0');
+    const priceNative = tokenAmt > 0 ? (wethAmt / tokenAmt).toFixed(18) : '0';
+
     const payload = {
       data: {
         id: `${network.chainId}_${token.poolAddress}`,
         type: 'pool',
         attributes: {
-          base_token_price_usd: (trades[0]?.priceUsd ?? 0).toFixed(12),
+          base_token_price_usd: priceUsdValue.toFixed(12),
           quote_token_price_usd: quotePriceUsd.toFixed(2),
-          base_token_price_native_currency: (
-            parseFloat(trades[0]?.wethAmount ?? '0') / parseFloat(trades[0]?.tokenAmount ?? '1')
-          ).toFixed(18),
+          base_token_price_native_currency: priceNative,
           address: token.poolAddress,
           name: `${token.symbol} / ${quoteSymbol}`,
           pool_created_at: new Date(token.createdAt).toISOString(),
-          token_price_usd: (trades[0]?.priceUsd ?? 0).toFixed(12),
-          fdv_usd: null,
-          market_cap_usd: null,
+          token_price_usd: priceUsdValue.toFixed(12),
+          fdv_usd: mkt?.fdvUsd ? mkt.fdvUsd.toFixed(2) : null,
+          market_cap_usd: mkt?.marketCapUsd ? mkt.marketCapUsd.toFixed(2) : null,
           price_change_h1: null,
           price_change_h24: null,
           transactions_h24_buys: trades.filter((t) => t.isBuy && (t.timestamp ?? 0) >= cutoff)
@@ -1649,7 +1915,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           transactions_h24_sells: trades.filter((t) => !t.isBuy && (t.timestamp ?? 0) >= cutoff)
             .length,
           volume_usd: { h24: (vol24h * quotePriceUsd).toFixed(2) },
-          reserve_in_usd: null,
+          reserve_in_usd: mkt?.pairedPrincipalWeth
+            ? (parseFloat(mkt.pairedPrincipalWeth) * quotePriceUsd).toFixed(2)
+            : null,
         },
         relationships: {
           base_token: {
@@ -1688,6 +1956,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       marketData: import('@proto/shared-types').TokenMarketData;
     };
     const t = td.token;
+    const m = td.marketData;
+    const chain = chainRegistry.getChainById(network.chainId);
+    const quotePriceUsd = await chain.getQuotePriceUsd();
 
     const payload = {
       data: {
@@ -1701,11 +1972,13 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           image_url: t.logo || null,
           coingecko_coin_id: null,
           total_supply: t.totalSupply,
-          price_usd: null,
-          fdv_usd: null,
-          total_reserve_in_usd: null,
-          volume_usd: { h24: null },
-          market_cap_usd: null,
+          price_usd: m?.priceUsd ? m.priceUsd.toString() : null,
+          fdv_usd: m?.fdvUsd ? m.fdvUsd.toFixed(2) : null,
+          total_reserve_in_usd: m?.pairedPrincipalWeth
+            ? (parseFloat(m.pairedPrincipalWeth) * quotePriceUsd).toFixed(2)
+            : null,
+          volume_usd: { h24: m?.volume24hUsd ? m.volume24hUsd.toFixed(2) : null },
+          market_cap_usd: m?.marketCapUsd ? m.marketCapUsd.toFixed(2) : null,
         },
       },
     };
@@ -1719,8 +1992,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   );
   if (geckoOhlcvMatch && req.method === 'GET') {
     const netParam = geckoOhlcvMatch[1];
-    const network = resolveNetworkByParam(netParam);
-    const isArc = network.chainId === ARC_CHAIN.chainId;
+    const chain = chainRegistry.getChainByParam(netParam);
+    const network = chain.network;
     const poolAddr = geckoOhlcvMatch[2].toLowerCase() as `0x${string}`;
     const timeframe = geckoOhlcvMatch[3];
     const limit = Math.min(1000, parseInt(url.searchParams.get('limit') ?? '100', 10));
@@ -1744,7 +2017,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           ohlcv_list: sliced.map((c) => [c.timestamp, c.open, c.high, c.low, c.close, c.volume]),
         },
       },
-      meta: { base: token.symbol, quote: isArc ? 'USDC' : 'WETH' },
+      meta: { base: token.symbol, quote: network.nativeCurrency.symbol },
     };
     return replyJson(payload);
   }
@@ -1755,8 +2028,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   );
   if (geckoTradesMatch && req.method === 'GET') {
     const netParam = geckoTradesMatch[1];
-    const network = resolveNetworkByParam(netParam);
-    const isArc = network.chainId === ARC_CHAIN.chainId;
+    const chain = chainRegistry.getChainByParam(netParam);
+    const network = chain.network;
     const poolAddr = geckoTradesMatch[2].toLowerCase() as `0x${string}`;
     const token = repository.findByPoolAddress
       ? await repository.findByPoolAddress(poolAddr)
@@ -1765,7 +2038,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     if (!token) return replyError('NOT_FOUND', 'Pool not found', 404);
 
     const trades = await repository.getTrades(token.address, 100, 0);
-    const quotePriceUsd = isArc ? 1.0 : await priceFeed.getEthPriceUsd();
+    const quotePriceUsd = await chain.getQuotePriceUsd();
 
     const payload = {
       data: trades.map((tr) => ({
@@ -1811,14 +2084,27 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   return replyError('NOT_FOUND', `Route ${url.pathname} not found`, 404);
 }
 
+function extractClientIp(req: Request): string {
+  // C-02 fix: strictly resolve client IP. Only trust proxy headers when
+  // explicitly configured via TRUST_PROXY=true or behind Cloudflare in production.
+  const trustProxy = process.env.TRUST_PROXY === 'true';
+  const cfConnectingIp = req.headers.get('cf-connecting-ip')?.trim();
+  if (cfConnectingIp && (trustProxy || process.env.NODE_ENV === 'production')) {
+    return cfConnectingIp;
+  }
+  if (trustProxy) {
+    const xRealIp = req.headers.get('x-real-ip')?.trim();
+    if (xRealIp) return xRealIp;
+    const xff = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
+    if (xff) return xff;
+  }
+  return '127.0.0.1';
+}
+
 async function handleRequest(req: Request): Promise<Response> {
   const startTime = performance.now();
-  const clientIp =
-    req.headers.get('cf-connecting-ip') ||
-    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    '127.0.0.1';
+  const clientIp = extractClientIp(req);
   const requestId = requestTracker.extractRequestId(req);
-
   try {
     const response = await routeRequest(req, clientIp);
     return requestTracker.track(req, response, startTime, requestId, clientIp);

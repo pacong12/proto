@@ -14,7 +14,7 @@
         <Button
           size="sm"
           variant="default"
-          class="h-10 px-6 font-bold text-xs shrink-0 cursor-pointer font-mono rounded-xl shadow-xs"
+          class="h-10 px-6 font-bold text-xs shrink-0 cursor-pointer rounded-xl shadow-xs"
           @click="openWallet"
         >
           Connect Wallet
@@ -36,7 +36,7 @@
         <Button
           size="sm"
           variant="outline"
-          class="h-10 px-6 font-bold text-xs shrink-0 cursor-pointer font-mono rounded-xl border-border"
+          class="h-10 px-6 font-bold text-xs shrink-0 cursor-pointer rounded-xl border-border"
           @click="router.push('/launchpad')"
         >
           Back to Markets
@@ -71,7 +71,7 @@
       <!-- Notifications -->
       <div
         v-if="successTx"
-        class="text-xs font-mono text-foreground bg-black border border-border rounded-xl p-4 flex items-start justify-between gap-2 break-all"
+        class="text-xs text-foreground bg-black border border-border rounded-xl p-4 flex items-start justify-between gap-2 break-all"
       >
         <div class="flex items-start gap-2">
           <Check class="w-4 h-4 shrink-0 mt-0.5 text-foreground" />
@@ -89,7 +89,7 @@
 
       <div
         v-if="actionError"
-        class="text-xs font-mono text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-4 flex items-start justify-between gap-2 break-words"
+        class="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-4 flex items-start justify-between gap-2 break-words"
       >
         <div class="flex items-start gap-2">
           <AlertCircle class="w-4 h-4 shrink-0 mt-0.5 text-destructive" />
@@ -113,7 +113,7 @@
           >
             <TabsList
               variant="line"
-              class="flex sm:inline-flex w-full sm:w-auto overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0 font-mono text-xs"
+              class="flex sm:inline-flex w-full sm:w-auto overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0 text-sm"
             >
               <TabsTrigger value="posts"> Posts & Calls ({{ userPosts.length }}) </TabsTrigger>
               <TabsTrigger value="created">
@@ -133,7 +133,7 @@
             <Button
               variant="ghost"
               size="sm"
-              class="h-8 text-xs font-mono text-muted-foreground hover:text-foreground self-end sm:self-auto border border-border cursor-pointer rounded-xl"
+              class="h-8 text-sm text-muted-foreground hover:text-foreground self-end sm:self-auto border border-border cursor-pointer rounded-xl"
               @click="refreshAllData"
             >
               <RefreshCw class="w-3.5 h-3.5 mr-1" :class="{ 'animate-spin': loadingLaunches }" />
@@ -261,6 +261,7 @@ import { useWallet } from '@/composables/useWallet';
 import { useFeed } from '@/composables/useFeed';
 import { useTokenStore } from '@/composables/useTokenStore';
 import { useHolderDividends } from '@/composables/useHolderDividends';
+import { useUserProfile } from '@/composables/useUserProfile';
 import { walletAddress } from '@/lib/wallet-store';
 import { getPublicClient } from '@/lib/viem-client';
 import { resolveUserAddress, getUserIdentity, registerUserIdentity } from '@/lib/username';
@@ -287,10 +288,13 @@ import {
 import { erc20Abi } from 'viem';
 import {
   liquidityLockerAbi,
+  UNDEPLOYED,
   type FeedCalloutItem,
   type LaunchedTokenEntity,
   type TokenMarketData,
+  type TradeEventEntity,
 } from '@proto/shared-types';
+import { apiFetch } from '@/lib/api-client';
 
 const props = defineProps<{
   address?: string;
@@ -355,8 +359,9 @@ async function resolveTargetUser(param: string) {
 
   // 2. Query backend API
   try {
-    const res = await fetch(`/api/users/${encodeURIComponent(param)}`);
-    const env = await res.json();
+    const env = await apiFetch<{ success: boolean; data?: { address: string } }>(
+      `/api/users/${encodeURIComponent(param)}`,
+    );
     if (env.success && env.data?.address) {
       const addr = env.data.address.toLowerCase();
       registerUserIdentity(addr);
@@ -364,7 +369,8 @@ async function resolveTargetUser(param: string) {
     } else {
       resolvedAddressFromApi.value = null;
     }
-  } catch {
+  } catch (e) {
+    console.warn('[ProfileView] Failed to resolve user identity from API:', (e as Error).message);
     resolvedAddressFromApi.value = null;
   }
 }
@@ -496,7 +502,8 @@ async function loadUserPosts(): Promise<void> {
   loadingPosts.value = true;
   try {
     userPosts.value = await fetchUserPosts(target, connectedAccount.value || undefined);
-  } catch {
+  } catch (e) {
+    console.warn('[ProfileView] Failed to load user posts:', (e as Error).message);
     userPosts.value = [];
   } finally {
     loadingPosts.value = false;
@@ -575,16 +582,19 @@ function navigateToToken(address: string): void {
 }
 
 // Connected Account Launches & Portfolio
-const myLaunches = ref<MyLaunchItem[]>([]);
-const portfolioPositions = ref<PortfolioPosition[]>([]);
-const userActivities = ref<UserActivity[]>([]);
-
-const totalClaimableWeth = computed(() => {
-  const sum = myLaunches.value.reduce(
-    (acc: number, item: MyLaunchItem) => acc + parseFloat(item.unclaimedWeth || '0'),
-    0,
-  );
-  return sum.toFixed(4);
+const {
+  myLaunches,
+  portfolioPositions,
+  userActivities,
+  loadingLaunches,
+  totalClaimableWeth,
+  fetchMyLaunches,
+  fetchUserPositionsAndActivity,
+} = useUserProfile({
+  targetAccount,
+  activeNetwork,
+  allTokens,
+  getTokenNetwork,
 });
 
 const activeTab = ref('posts');
@@ -595,7 +605,6 @@ const newRecipientAddress = ref<string>('');
 const successTx = ref<string | null>(null);
 const actionError = ref<string | null>(null);
 const ctoError = ref<string | null>(null);
-const loadingLaunches = ref(false);
 const claimingToken = ref<string | null>(null);
 
 // Holder Dividends & Vesting
@@ -614,7 +623,7 @@ const {
 
 function getDistributorAddress(): `0x${string}` {
   const addr = activeNetwork.value.contracts.holderFeeDistributor;
-  return (addr ?? '0x0000000000000000000000000000000000000000') as `0x${string}`;
+  return (addr ?? UNDEPLOYED) as `0x${string}`;
 }
 
 async function refreshDividends() {
@@ -653,223 +662,6 @@ async function handleClaimAll() {
     successTx.value = hashes[hashes.length - 1];
   } else if (dividendsError.value) {
     actionError.value = dividendsError.value;
-  }
-}
-
-// 1. Fetch launches created by the target account
-async function fetchMyLaunches() {
-  const target = targetAccount.value;
-  if (!target) {
-    myLaunches.value = [];
-    return;
-  }
-  loadingLaunches.value = true;
-  try {
-    const res = await fetch(`/api/tokens?deployer=${target}`);
-    const envelope = (await res.json()) as {
-      success: boolean;
-      data: Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }>;
-    };
-    if (envelope.success && Array.isArray(envelope.data)) {
-      const publicClient = getPublicClient(activeNetwork.value.chainId);
-      const lockerAddr = activeNetwork.value.contracts.locker;
-      const hasLocker = lockerAddr && lockerAddr !== '0x0000000000000000000000000000000000000000';
-
-      const launches = await Promise.all(
-        envelope.data.map(async (item) => {
-          let redirect: string | null = null;
-          let unclaimedWeth = '--';
-
-          if (hasLocker) {
-            try {
-              const r = (await publicClient.readContract({
-                address: lockerAddr,
-                abi: liquidityLockerAbi,
-                functionName: 'feeRedirects',
-                args: [item.token.address as `0x${string}`],
-              })) as string;
-              if (r && r !== '0x0000000000000000000000000000000000000000') {
-                redirect = r;
-              }
-            } catch {
-              // Non-blocking
-            }
-
-            if (item.marketData?.isGraduated) {
-              try {
-                const { result } = await publicClient.simulateContract({
-                  address: lockerAddr,
-                  abi: liquidityLockerAbi,
-                  functionName: 'claimFees',
-                  args: [item.token.address as `0x${string}`],
-                  account: target as `0x${string}`,
-                });
-                const [, creatorWethFee] = result as [bigint, bigint];
-                const wethNum = Number(creatorWethFee) / 1e18;
-                unclaimedWeth = wethNum.toFixed(4);
-              } catch {
-                // Non-blocking
-              }
-            }
-          }
-
-          return {
-            address: item.token.address,
-            name: item.token.name,
-            symbol: item.token.symbol,
-            logo: item.token.logo,
-            unclaimedWeth,
-            redirect,
-          };
-        }),
-      );
-      myLaunches.value = launches;
-    } else {
-      myLaunches.value = [];
-    }
-  } catch {
-    myLaunches.value = [];
-  } finally {
-    loadingLaunches.value = false;
-  }
-}
-
-// 2. Fetch positions and activities strictly for the target account
-async function fetchUserPositionsAndActivity() {
-  const target = targetAccount.value;
-  if (!target) {
-    portfolioPositions.value = [];
-    userActivities.value = [];
-    return;
-  }
-
-  try {
-    const [tradesRes, tokensRes, portfolioRes] = await Promise.all([
-      fetch(`/api/trades?trader=${target}&limit=100`).catch(() => null),
-      fetch('/api/tokens?limit=100').catch(() => null),
-      fetch(`/api/users/${target}/portfolio`).catch(() => null),
-    ]);
-
-    const tradesJson = tradesRes?.ok ? await tradesRes.json().catch(() => null) : null;
-    const tokensJson = tokensRes?.ok ? await tokensRes.json().catch(() => null) : null;
-    const portfolioJson = portfolioRes?.ok ? await portfolioRes.json().catch(() => null) : null;
-
-    const tokensList: Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }> =
-      tokensJson?.success && Array.isArray(tokensJson.data) ? tokensJson.data : [];
-
-    const tokenMap = new Map<
-      string,
-      { token: LaunchedTokenEntity; marketData?: TokenMarketData | null }
-    >();
-    for (const item of allTokens.value) {
-      tokenMap.set(item.token.address.toLowerCase(), item);
-    }
-    for (const item of tokensList) {
-      tokenMap.set(item.token.address.toLowerCase(), item);
-    }
-
-    const activities: UserActivity[] = [];
-    if (tradesJson?.success && Array.isArray(tradesJson.data)) {
-      for (const tr of tradesJson.data) {
-        if (tr.trader && tr.trader.toLowerCase() !== target) continue;
-        const tMeta = tokenMap.get(tr.tokenAddress.toLowerCase());
-        const sym = tMeta ? tMeta.token.symbol : tr.tokenSymbol || 'TOKEN';
-        activities.push({
-          txHash: tr.transactionHash,
-          isBuy: tr.isBuy,
-          tokenSymbol: sym,
-          ethAmount: tr.wethAmount,
-          tokenAmount: parseFloat(tr.tokenAmount || '0').toFixed(2),
-          timestamp: tr.timestamp,
-        });
-      }
-    }
-
-    userActivities.value = activities;
-
-    // Collect candidate addresses from all sources
-    const candidateAddresses = new Set<string>();
-    if (tradesJson?.success && Array.isArray(tradesJson.data)) {
-      for (const tr of tradesJson.data) {
-        if (tr.tokenAddress) candidateAddresses.add(tr.tokenAddress.toLowerCase());
-      }
-    }
-    for (const item of tokensList) {
-      candidateAddresses.add(item.token.address.toLowerCase());
-    }
-    for (const launch of myLaunches.value) {
-      candidateAddresses.add(launch.address.toLowerCase());
-    }
-
-    // Default portfolio positions from indexer
-    const indexedPositionsMap = new Map<string, PortfolioPosition>();
-    if (portfolioJson?.success && Array.isArray(portfolioJson.data)) {
-      for (const pos of portfolioJson.data) {
-        indexedPositionsMap.set(pos.tokenAddress.toLowerCase(), pos);
-      }
-    }
-
-    // Try on-chain balances with per-token network resilience
-    const candidateList = Array.from(candidateAddresses);
-    const balancePromises = candidateList.map(async (addr) => {
-      const meta = tokenMap.get(addr);
-      const chainId = meta
-        ? getTokenNetwork(meta.token.address).chainId
-        : activeNetwork.value.chainId;
-      const client = getPublicClient(chainId);
-
-      try {
-        const bal = (await client.readContract({
-          address: addr as `0x${string}`,
-          abi: erc20Abi,
-          functionName: 'balanceOf',
-          args: [target as `0x${string}`],
-        })) as bigint;
-
-        if (bal > 0n) {
-          const decimals = meta?.token.decimals || 18;
-          const num = Number(bal) / 10 ** decimals;
-          const price = meta?.marketData?.priceUsd || 0;
-          return {
-            tokenAddress: addr,
-            name: meta?.token.name || 'Token',
-            symbol: meta?.token.symbol || 'TOK',
-            balanceFormatted: num.toLocaleString(undefined, {
-              maximumFractionDigits: 2,
-            }),
-            priceUsd: price,
-            valueUsd: num * price,
-          };
-        }
-      } catch {
-        // Fallback to indexed position if on-chain call reverts
-        return indexedPositionsMap.get(addr) || null;
-      }
-      return null;
-    });
-
-    const settled = await Promise.allSettled(balancePromises);
-    const validPositionsMap = new Map<string, PortfolioPosition>();
-
-    // Merge on-chain verified positions
-    for (const res of settled) {
-      if (res.status === 'fulfilled' && res.value) {
-        validPositionsMap.set(res.value.tokenAddress.toLowerCase(), res.value);
-      }
-    }
-
-    // Also include any indexed positions that weren't checked or where on-chain reverted
-    for (const [addr, pos] of indexedPositionsMap.entries()) {
-      if (!validPositionsMap.has(addr)) {
-        validPositionsMap.set(addr, pos);
-      }
-    }
-
-    const finalPositions = Array.from(validPositionsMap.values());
-    finalPositions.sort((a, b) => b.valueUsd - a.valueUsd);
-    portfolioPositions.value = finalPositions;
-  } catch {
-    // Non-blocking
   }
 }
 

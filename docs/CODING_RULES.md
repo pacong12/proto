@@ -254,6 +254,17 @@ It must not render a blank or partially loaded page.
 Run `npx vue-tsc --noEmit` before every commit.
 Zero type errors is a hard requirement -- not a goal.
 
+**FE-13. Clean UI & Obsidian Monochrome Palette.**
+The interface must adhere to high-contrast, pure obsidian black (`#000000` / `bg-black`), sharp 1px borders (`#18181b` / `border-border`), and semantic trading colors (`--bull` / `#22c55e`, `--bear` / `#ef4444`).
+No muddy gray backgrounds, no skeuomorphic gradients, and no cluttered layouts.
+Maintain a high-density, professional Bloomberg / GMGN / Pons style terminal aesthetic.
+
+**FE-14. Zero Emoji Policy in UI.**
+Never use emoji characters in templates, badges, buttons, tooltips, toasts, placeholders, labels, or social share text.
+Forbidden: 🚀, 🔥, 💎, 📈, 📉, 👑, 📢, ✨, etc.
+Permitted: Sharp vector icons from `lucide-vue-next` (e.g. `Flame`, `TrendingUp`, `Sparkles`, `Check`, `Share2`), monospace badges, or plain English text.
+Emojis render inconsistently across platforms/operating systems, look unprofessional, and break the obsidian monochrome design system.
+
 ---
 
 ## 7. Shared Types (`packages/shared-types`)

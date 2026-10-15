@@ -1,60 +1,7 @@
 <template>
   <div class="max-w-6xl mx-auto space-y-4 font-sans">
-    <!-- Top Live Dex & Alpha Ticker Ribbon (Pump.fun x DexScreener Style) -->
-    <div
-      v-if="hotTokens.length > 0"
-      class="p-2 sm:p-2.5 rounded-2xl border border-border/80 bg-card/60 backdrop-blur-md flex items-center justify-between gap-3 overflow-x-auto no-scrollbar select-none text-xs shadow-2xs"
-    >
-      <div
-        class="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-primary/10 text-primary font-bold shrink-0 font-mono text-[11px] border border-primary/20"
-      >
-        <Flame class="w-3.5 h-3.5 fill-current" />
-        <span>ALPHA RADAR</span>
-      </div>
-
-      <div class="flex items-center gap-2 shrink-0">
-        <button
-          v-for="(tItem, idx) in hotTokens"
-          :key="tItem.token.address"
-          type="button"
-          class="flex items-center gap-2 px-3 py-1 rounded-xl border border-border bg-black hover:bg-zinc-950 hover:border-foreground/30 transition cursor-pointer shrink-0 font-mono text-xs group"
-          @click="navigateToToken(tItem.token.address)"
-        >
-          <span class="text-[10px] text-muted-foreground font-bold">#{{ idx + 1 }}</span>
-          <div class="relative shrink-0">
-            <OptimizedImage
-              :src="tItem.token.logo"
-              :alt="tItem.token.name"
-              :fallback-text="tItem.token.symbol"
-              :width="18"
-              :height="18"
-              class="rounded-full shrink-0 border border-border/50"
-            />
-            <img
-              :src="getChainIcon(tItem.token.address)"
-              :alt="getChainName(tItem.token.address)"
-              :title="getChainName(tItem.token.address)"
-              class="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full border border-black bg-black object-contain shadow-xs"
-            />
-          </div>
-          <span class="font-black text-foreground group-hover:text-primary transition-colors">
-            ${{ tItem.token.symbol }}
-          </span>
-          <span class="text-muted-foreground text-[11px]">
-            ${{ formatCompactUsd(tItem.marketData?.marketCapUsd || 4200) }}
-          </span>
-          <span
-            class="text-[11px] font-bold"
-            :class="
-              (tItem.marketData?.priceChange24h ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'
-            "
-          >
-            {{ (tItem.marketData?.priceChange24h ?? 0) >= 0 ? '+' : ''
-            }}{{ (tItem.marketData?.priceChange24h ?? 0).toFixed(1) }}%
-          </span>
-        </button>
-      </div>
-    </div>
+    <!-- Top Live Dex & Alpha Ticker Ribbon Component -->
+    <FeedAlphaTicker :hot-tokens="hotTokens" @select-token="navigateToToken" />
 
     <!-- Main Two-Column Hybrid Layout -->
     <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-5 items-start">
@@ -69,7 +16,7 @@
           <Tabs v-model="activeFilter" class="w-auto">
             <TabsList
               variant="line"
-              class="font-mono text-xs overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0"
+              class="text-sm overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0"
             >
               <TabsTrigger
                 v-for="flt in filterTabs"
@@ -83,27 +30,9 @@
           </Tabs>
 
           <!-- Chain Filter (All Chains default / Robinhood / Arc) -->
-          <div
-            class="flex items-center gap-1 font-mono text-[11px] self-end sm:self-auto pb-1 sm:pb-0"
-          >
+          <div class="flex items-center gap-1 text-sm self-end sm:self-auto pb-1 sm:pb-0">
             <button
-              v-for="chainOpt in [
-                {
-                  key: 'all',
-                  label: 'All Chains',
-                  icons: ['/chains/robinhood.svg', '/chains/arc.svg'],
-                },
-                {
-                  key: 'robinhood',
-                  label: 'Robinhood',
-                  icons: ['/chains/robinhood.svg'],
-                },
-                {
-                  key: 'arc',
-                  label: 'Arc',
-                  icons: ['/chains/arc.svg'],
-                },
-              ]"
+              v-for="chainOpt in chainFilterOptions"
               :key="chainOpt.key"
               type="button"
               class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition cursor-pointer select-none"
@@ -112,7 +41,7 @@
                   ? 'bg-foreground text-background border-foreground font-bold shadow-2xs'
                   : 'bg-black border border-border text-muted-foreground hover:text-foreground hover:bg-zinc-950'
               "
-              @click="setChainFilter(chainOpt.key as any)"
+              @click="setChainFilter(chainOpt.key)"
             >
               <!-- Overlapping chain icons for All Chains, or single icon -->
               <span
@@ -166,7 +95,7 @@
                   rows="3"
                   maxlength="500"
                   placeholder="Call a token or share alpha... (type $ to select a token, e.g. $SPIDER!)"
-                  class="w-full text-xs sm:text-sm p-3 rounded-xl border border-border bg-black text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground focus:border-border resize-none leading-relaxed"
+                  class="w-full text-sm sm:text-base p-3.5 rounded-xl border border-border bg-black text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground focus:border-border resize-none leading-relaxed"
                   @input="handleComposerInput"
                   @keydown="handleComposerKeydown"
                 />
@@ -174,16 +103,16 @@
                 <!-- Floating $ Cashtag Live Autocomplete Popup -->
                 <div
                   v-if="showCashtagSuggestions && cashtagSuggestions.length > 0"
-                  class="absolute left-0 right-0 top-full mt-1 bg-card border border-border/90 rounded-2xl shadow-2xl p-2 z-50 space-y-1 font-mono text-xs max-h-56 overflow-y-auto"
+                  class="absolute left-0 right-0 top-full mt-1 bg-card border border-border/90 rounded-2xl shadow-2xl p-2 z-50 space-y-1 text-xs max-h-56 overflow-y-auto"
                 >
                   <div
-                    class="px-2 py-1 text-[10px] text-muted-foreground uppercase font-bold flex items-center justify-between border-b border-border/50"
+                    class="px-2 py-1 text-xs text-muted-foreground uppercase font-bold flex items-center justify-between border-b border-border/50"
                   >
                     <span class="flex items-center gap-1">
                       <Sparkles class="w-3 h-3 text-primary" />
                       Select Token for Callout ${{ cashtagQuery || '' }}
                     </span>
-                    <span class="text-[9px]">Tab / Enter to pick</span>
+                    <span class="text-xs">Tab / Enter to pick</span>
                   </div>
 
                   <button
@@ -211,7 +140,7 @@
                         <span class="font-black text-foreground block text-xs truncate">
                           ${{ tItem.token.symbol }}
                         </span>
-                        <span class="text-[10px] text-muted-foreground truncate block font-sans">
+                        <span class="text-xs text-muted-foreground truncate block font-sans">
                           {{ tItem.token.name }}
                         </span>
                       </div>
@@ -222,7 +151,7 @@
                         ${{ formatCompactUsd(tItem.marketData?.marketCapUsd || 4200) }}
                       </span>
                       <span
-                        class="text-[10px] font-bold"
+                        class="text-xs font-bold"
                         :class="
                           (tItem.marketData?.priceChange24h ?? 0) >= 0
                             ? 'text-emerald-500'
@@ -261,7 +190,7 @@
                 <!-- Uploading / Pinning Status Banner -->
                 <div
                   v-if="isUploadingMedia"
-                  class="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center gap-2 text-xs text-white font-mono"
+                  class="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center gap-2 text-xs text-white"
                 >
                   <Loader2 class="w-4 h-4 animate-spin text-primary" />
                   <span>Uploading to IPFS...</span>
@@ -269,7 +198,7 @@
               </div>
 
               <!-- Media Attachment Input -->
-              <div v-if="showMediaInput" class="pt-1 font-mono">
+              <div v-if="showMediaInput" class="pt-1">
                 <Input
                   v-model="composerImageUrl"
                   type="text"
@@ -281,7 +210,7 @@
               <!-- On-Chain Balance Verifier (Holder Badge) -->
               <div
                 v-if="account && selectedToken && callerPositionUsd >= 1.0"
-                class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-between gap-2 text-xs font-mono"
+                class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-between gap-2 text-xs"
               >
                 <div class="flex items-center gap-1.5 min-w-0">
                   <ShieldCheck class="w-4 h-4 shrink-0 text-emerald-400" />
@@ -299,7 +228,7 @@
                 class="p-2 rounded-xl bg-black border border-border text-muted-foreground flex items-center justify-between gap-2 text-xs font-sans"
               >
                 <div class="flex items-center gap-1.5 min-w-0">
-                  <span class="text-[11px]">
+                  <span class="text-xs">
                     Mentioning ${{ selectedToken.symbol }} &middot; Hold $1+ to earn a Verified
                     Holder badge.
                   </span>
@@ -307,7 +236,7 @@
                 <Button
                   size="sm"
                   variant="outline"
-                  class="h-6 px-2 text-[10px] font-mono shrink-0 rounded-lg cursor-pointer border-border hover:bg-zinc-900"
+                  class="h-6 px-2 text-xs shrink-0 rounded-lg cursor-pointer border-border hover:bg-zinc-900"
                   @click="navigateToToken(selectedToken.address)"
                 >
                   Buy ${{ selectedToken.symbol }}
@@ -336,7 +265,7 @@
                     @click="triggerMediaUpload"
                   >
                     <ImageIcon class="w-4 h-4" />
-                    <span class="text-[11px] font-mono hidden sm:inline">Photo</span>
+                    <span class="text-xs hidden sm:inline">Photo</span>
                   </button>
 
                   <button
@@ -349,14 +278,14 @@
                     <Link2 class="w-4 h-4" />
                   </button>
 
-                  <span class="text-[11px] text-muted-foreground font-mono">
+                  <span class="text-xs text-muted-foreground">
                     {{ composerContent.length }}/500
                   </span>
                 </div>
 
                 <Button
                   size="sm"
-                  class="rounded-xl px-5 h-8 font-bold text-xs cursor-pointer shadow-xs font-mono gap-1.5"
+                  class="rounded-xl px-5 h-9 font-bold text-sm cursor-pointer shadow-xs gap-1.5"
                   :disabled="
                     isPostingCall ||
                     !composerContent.trim() ||
@@ -372,7 +301,7 @@
 
               <div
                 v-if="composerError"
-                class="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-2.5 mt-2 font-mono"
+                class="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-2.5 mt-2"
               >
                 {{ composerError }}
               </div>
@@ -383,7 +312,7 @@
         <!-- 3. Hybrid Timeline Cards (Card-based with X / Twitter conversation mechanics) -->
         <div
           v-if="loading && callouts.length === 0"
-          class="py-20 text-center text-muted-foreground font-mono"
+          class="py-20 text-center text-muted-foreground"
         >
           <Loader2 class="w-7 h-7 animate-spin mx-auto mb-3 text-primary" />
           <p class="text-xs">Loading community alpha...</p>
@@ -401,272 +330,27 @@
         </Empty>
 
         <div v-else class="space-y-3.5">
-          <!-- The Hybrid Post Card -->
-          <article
+          <!-- The Hybrid Post Card Component -->
+          <FeedCalloutCard
             v-for="call in paginatedCallouts"
             :key="call.id"
-            class="rounded-2xl border border-border/80 bg-card/80 hover:border-foreground/30 hover:bg-card/95 transition-all p-4 sm:p-5 space-y-3 shadow-2xs relative group"
-          >
-            <!-- Card Header: Author + Badges + Timestamp + More Menu -->
-            <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-2.5 min-w-0">
-                <Jazzicon
-                  :address="call.authorAddress"
-                  :size="36"
-                  class="rounded-full ring-1 ring-border shrink-0 cursor-pointer"
-                  @click.stop="navigateToCaller(call.authorAddress)"
-                />
-                <div class="min-w-0 leading-tight">
-                  <div class="flex items-center gap-1.5 flex-wrap">
-                    <span
-                      class="font-bold text-foreground text-xs sm:text-sm hover:underline cursor-pointer font-mono"
-                      @click.stop="navigateToCaller(call.authorAddress)"
-                    >
-                      {{ getUserIdentity(call.authorAddress).displayName }}
-                    </span>
-
-                    <!-- Caller Whale Badge with GMGN/Web3Icons SVG -->
-                    <TraderTagBadge v-if="isWhaleCaller(call)" tag="whale" size="sm" />
-                  </div>
-                  <span class="text-[10px] text-muted-foreground font-mono"> Verified Caller </span>
-                </div>
-              </div>
-
-              <div class="flex items-center gap-2 shrink-0">
-                <span class="text-[10px] text-muted-foreground font-mono">
-                  {{ formatRelativeTime(call.createdAt) }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Post Message Text with Styled Interactive Cashtags -->
-            <p
-              class="text-xs sm:text-sm leading-relaxed text-foreground font-sans font-medium whitespace-pre-wrap break-words"
-            >
-              <CashtagText :text="call.content" :tokens="allTokens" />
-            </p>
-
-            <!-- Quoted Callout Embed (Twitter / Pump.fun Hybrid Quote) -->
-            <div
-              v-if="call.quotedCallout"
-              class="rounded-xl border border-border p-3 bg-black hover:bg-zinc-950 transition text-xs space-y-1.5 cursor-pointer"
-              @click.stop="router.push(`/post/${call.quotedCallout.id}`)"
-            >
-              <div class="flex items-center gap-1.5">
-                <Jazzicon
-                  :address="call.quotedCallout.authorAddress"
-                  :size="16"
-                  class="rounded-full"
-                />
-                <span class="font-bold text-foreground font-mono">
-                  {{ getUserIdentity(call.quotedCallout.authorAddress).displayName }}
-                </span>
-                <span
-                  v-if="call.quotedCallout.tokenSymbol"
-                  class="text-primary font-bold font-mono"
-                >
-                  ${{ call.quotedCallout.tokenSymbol }}
-                </span>
-                <span class="text-muted-foreground text-[10px]">&middot;</span>
-                <span class="text-[10px] text-muted-foreground font-mono">
-                  {{ formatRelativeTime(call.quotedCallout.createdAt) }}
-                </span>
-              </div>
-              <p class="text-xs text-muted-foreground font-sans">
-                <CashtagText :text="call.quotedCallout.content" :tokens="allTokens" />
-              </p>
-            </div>
-
-            <!-- Attached Media Image -->
-            <div
-              v-if="call.imageUrl"
-              class="rounded-xl overflow-hidden border border-border max-h-72 cursor-pointer bg-black"
-              @click.stop="openImage(call.imageUrl)"
-            >
-              <img
-                :src="resolveSafeUrl(call.imageUrl)"
-                alt="Attachment"
-                class="w-full h-full object-cover hover:scale-[1.01] transition-transform"
-              />
-            </div>
-
-            <!-- Signature Web3 Token Card Widget -->
-            <div
-              class="p-3.5 rounded-xl border border-border bg-black hover:bg-zinc-950 transition cursor-pointer flex items-center justify-between gap-3 text-xs font-mono shadow-2xs"
-              @click.stop="navigateToToken(call.tokenAddress)"
-            >
-              <div class="flex items-center gap-2.5 min-w-0">
-                <!-- Token Logo with Chain Icon directly attached to corner (no badge!) -->
-                <div class="relative shrink-0">
-                  <OptimizedImage
-                    :src="call.tokenLogo"
-                    :alt="call.tokenName || 'Token'"
-                    :fallback-text="call.tokenSymbol || 'TOK'"
-                    :width="36"
-                    :height="36"
-                    class="rounded-full border border-border/70 shrink-0 shadow-2xs"
-                  />
-                  <img
-                    :src="getChainIcon(call.tokenAddress)"
-                    :alt="getChainName(call.tokenAddress)"
-                    :title="getChainName(call.tokenAddress)"
-                    class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-black bg-black object-contain shadow-xs"
-                  />
-                </div>
-
-                <div class="min-w-0 leading-tight space-y-0.5">
-                  <div class="flex items-center gap-1.5 flex-wrap">
-                    <span class="font-black text-foreground text-xs sm:text-sm">
-                      ${{ call.tokenSymbol || 'TOKEN' }}
-                    </span>
-                    <button
-                      type="button"
-                      class="p-0.5 rounded transition-transform hover:scale-110 cursor-pointer select-none"
-                      :class="
-                        isPinned(call.tokenAddress)
-                          ? 'text-amber-400'
-                          : 'text-muted-foreground/35 hover:text-amber-400'
-                      "
-                      :title="isPinned(call.tokenAddress) ? 'Unpin coin' : 'Pin to Watchlist'"
-                      @click.stop="togglePin(call.tokenAddress)"
-                    >
-                      <Star
-                        class="w-3.5 h-3.5"
-                        :class="isPinned(call.tokenAddress) ? 'fill-amber-400 text-amber-400' : ''"
-                      />
-                    </button>
-                    <span
-                      class="text-[10px] text-muted-foreground truncate hidden sm:inline font-sans"
-                    >
-                      {{ call.tokenName }}
-                    </span>
-                  </div>
-                  <div class="flex items-center gap-2 text-[10px] text-muted-foreground">
-                    <span
-                      >MC:
-                      <strong class="text-foreground"
-                        >${{ formatCompactUsd(call.tokenMarketCapUsd ?? 4200) }}</strong
-                      ></span
-                    >
-                    <span v-if="call.targetMcap" class="text-emerald-500 font-bold truncate">
-                      Target: {{ call.targetMcap }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Caller Financial Position & Trade Button -->
-              <div class="flex items-center gap-3 shrink-0 text-right">
-                <div>
-                  <span class="text-[9px] text-muted-foreground block uppercase font-bold"
-                    >Position</span
-                  >
-                  <span class="text-xs font-bold text-foreground">
-                    {{ call.positionUsd ? `$${call.positionUsd.toFixed(1)}` : 'Holding' }}
-                  </span>
-                </div>
-                <div v-if="call.profitUsd !== undefined">
-                  <span class="text-[9px] text-muted-foreground block uppercase font-bold"
-                    >Profit</span
-                  >
-                  <span
-                    class="text-xs font-bold"
-                    :class="call.profitUsd >= 0 ? 'text-emerald-500' : 'text-rose-500'"
-                  >
-                    {{ call.profitUsd >= 0 ? '+' : '' }}${{ call.profitUsd.toFixed(1) }}
-                  </span>
-                </div>
-                <Button
-                  size="sm"
-                  class="h-7 px-3 text-xs font-bold rounded-lg cursor-pointer bg-primary text-primary-foreground hover:opacity-90 shadow-2xs"
-                  @click.stop="navigateToToken(call.tokenAddress)"
-                >
-                  Trade
-                </Button>
-              </div>
-            </div>
-
-            <!-- Hybrid Social Action Bar -->
-            <div
-              class="flex items-center justify-between pt-2 border-t border-border/60 text-xs text-muted-foreground font-mono"
-              @click.stop
-            >
-              <!-- 1. Reply / Thread -->
-              <button
-                type="button"
-                class="flex items-center gap-1.5 hover:text-foreground transition cursor-pointer select-none"
-                title="View discussion thread & replies"
-                @click="openThreadModal(call)"
-              >
-                <MessageCircle class="w-3.5 h-3.5" />
-                <span>{{ call.repliesCount || 0 }}</span>
-              </button>
-
-              <!-- 2. Repost & Quote Dropdown -->
-              <DropdownMenu>
-                <DropdownMenuTrigger as-child>
-                  <button
-                    type="button"
-                    class="flex items-center gap-1.5 hover:text-emerald-500 transition cursor-pointer select-none"
-                    :class="call.isRepostedByViewer ? 'text-emerald-500 font-bold' : ''"
-                    title="Repost or Quote"
-                  >
-                    <Repeat class="w-3.5 h-3.5" />
-                    <span>{{ (call.repostsCount || 0) + (call.quotesCount || 0) }}</span>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" class="w-36 font-mono text-xs">
-                  <DropdownMenuItem class="cursor-pointer gap-2" @click="handleRepost(call.id)">
-                    <Repeat class="w-3.5 h-3.5 text-emerald-500" />
-                    <span>{{ call.isRepostedByViewer ? 'Undo Repost' : 'Repost' }}</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem class="cursor-pointer gap-2" @click="openQuoteModal(call)">
-                    <Quote class="w-3.5 h-3.5 text-primary" />
-                    <span>Quote</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <!-- 3. Like -->
-              <button
-                type="button"
-                class="flex items-center gap-1.5 hover:text-rose-500 transition cursor-pointer select-none"
-                :class="call.isLikedByViewer ? 'text-rose-500 font-bold' : ''"
-                title="Like"
-                @click="handleLike(call.id)"
-              >
-                <Heart
-                  class="w-3.5 h-3.5"
-                  :class="call.isLikedByViewer ? 'fill-rose-500 text-rose-500' : ''"
-                />
-                <span>{{ call.likesCount }}</span>
-              </button>
-
-              <!-- 4. Total Views (Display only, strictly NOT clickable) -->
-              <div
-                class="flex items-center gap-1.5 text-muted-foreground select-none cursor-default"
-                title="Total impressions & views"
-              >
-                <BarChart2 class="w-3.5 h-3.5 opacity-70" />
-                <span>{{ formatViews(call.viewsCount || 0) }}</span>
-              </div>
-
-              <!-- 5. Share Sheet -->
-              <button
-                type="button"
-                class="flex items-center gap-1 hover:text-foreground transition cursor-pointer select-none"
-                title="Share Sheet"
-                @click="openShareModal(call)"
-              >
-                <Share2 class="w-3.5 h-3.5" />
-                <span class="hidden sm:inline">Share</span>
-              </button>
-            </div>
-          </article>
+            :call="call"
+            :all-tokens="allTokens"
+            :is-pinned="isPinned"
+            @navigate-to-caller="navigateToCaller"
+            @navigate-to-token="navigateToToken"
+            @open-thread="openThreadModal"
+            @open-quote="openQuoteModal"
+            @open-share="openShareModal"
+            @toggle-like="handleLike"
+            @toggle-repost="handleRepost"
+            @toggle-pin="togglePin"
+            @open-image="openImage"
+          />
         </div>
 
         <!-- Pagination -->
-        <div v-if="networkCallouts.length > pageSize" class="flex justify-center p-3 font-mono">
+        <div v-if="networkCallouts.length > pageSize" class="flex justify-center p-3">
           <Pagination
             :total="networkCallouts.length"
             :items-per-page="pageSize"
@@ -676,100 +360,12 @@
         </div>
       </div>
 
-      <!-- ============================================================
-           RIGHT: Hybrid Alpha Radar & Trending Movers
-           ============================================================ -->
-      <aside class="space-y-4 font-mono text-xs">
-        <!-- Quick Search Pill -->
-        <div class="relative w-full">
-          <Search
-            class="w-3.5 h-3.5 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2"
-          />
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Search feed, cashtags..."
-            class="w-full h-9 pl-9 pr-4 text-xs rounded-xl bg-card border border-border/80 focus:border-primary focus:bg-background outline-none transition text-foreground placeholder:text-muted-foreground shadow-2xs font-mono"
-          />
-        </div>
-
-        <!-- Hot Movers on Call Widget -->
-        <div class="rounded-2xl border border-border/80 bg-card/70 p-4 space-y-3 shadow-2xs">
-          <div class="flex items-center justify-between">
-            <h2 class="font-bold text-xs text-foreground flex items-center gap-1.5">
-              <Flame class="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-              <span>Hot Tokens on Call</span>
-            </h2>
-            <span class="text-[9px] text-muted-foreground uppercase font-bold">Dex Movers</span>
-          </div>
-
-          <Empty
-            v-if="hotTokens.length === 0"
-            title="No hot movers"
-            description="No trending tokens on this chain today."
-            class="py-6 border-none bg-muted/20"
-          >
-            <template #icon>
-              <Flame class="w-5 h-5 text-muted-foreground" />
-            </template>
-          </Empty>
-          <div v-else class="space-y-2">
-            <div
-              v-for="(tItem, idx) in hotTokens"
-              :key="tItem.token.address"
-              class="flex items-center justify-between hover:bg-muted/50 p-2 rounded-xl transition cursor-pointer"
-              @click="navigateToToken(tItem.token.address)"
-            >
-              <div class="flex items-center gap-2.5 min-w-0">
-                <span class="text-[10px] font-bold text-muted-foreground w-4 text-center">
-                  #{{ idx + 1 }}
-                </span>
-                <div class="relative shrink-0">
-                  <OptimizedImage
-                    :src="tItem.token.logo"
-                    :alt="tItem.token.name"
-                    :fallback-text="tItem.token.symbol"
-                    :width="26"
-                    :height="26"
-                    class="rounded-full shrink-0 border border-border/60"
-                  />
-                  <img
-                    :src="getChainIcon(tItem.token.address)"
-                    :alt="getChainName(tItem.token.address)"
-                    :title="getChainName(tItem.token.address)"
-                    class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border border-black bg-black object-contain shadow-xs"
-                  />
-                </div>
-                <div class="min-w-0">
-                  <span class="font-black text-foreground text-xs block">
-                    ${{ tItem.token.symbol }}
-                  </span>
-                  <span class="text-[10px] text-muted-foreground truncate block font-sans">
-                    {{ tItem.token.name }}
-                  </span>
-                </div>
-              </div>
-
-              <div class="text-right shrink-0">
-                <span class="font-bold text-foreground block text-xs">
-                  ${{ formatCompactUsd(tItem.marketData?.marketCapUsd || 4200) }}
-                </span>
-                <span
-                  class="text-[10px] font-bold"
-                  :class="
-                    (tItem.marketData?.priceChange24h ?? 0) >= 0
-                      ? 'text-emerald-500'
-                      : 'text-rose-500'
-                  "
-                >
-                  {{ (tItem.marketData?.priceChange24h ?? 0) >= 0 ? '+' : ''
-                  }}{{ (tItem.marketData?.priceChange24h ?? 0).toFixed(1) }}%
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </aside>
+      <!-- RIGHT: Hybrid Alpha Radar & Trending Movers Component -->
+      <FeedSidebar
+        v-model:search-query="searchQuery"
+        :hot-tokens="hotTokens"
+        @select-token="navigateToToken"
+      />
     </div>
 
     <!-- Modals & Sheets -->
@@ -806,18 +402,15 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useWallet } from '@/composables/useWallet';
 import { useTokenStore } from '@/composables/useTokenStore';
+import { usePinnedTokens } from '@/composables/usePinnedTokens';
 import { useFeed, isWhaleCaller, type FeedFilterType } from '@/composables/useFeed';
+import { uploadFile } from '@/lib/api-client';
 import {
   Search,
   Loader2,
-  Heart,
-  Repeat,
-  Quote,
-  Share2,
   BarChart2,
   Sparkles,
   ChevronDown,
-  MessageCircle,
   Image as ImageIcon,
   AlertCircle,
   Megaphone,
@@ -825,27 +418,25 @@ import {
   ShieldCheck,
   X,
   Link2,
-  Star,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
-import { Badge, TraderTagBadge } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge';
 import { Pagination } from '@/components/ui/pagination';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { Jazzicon } from '@/components/ui/avatar';
 import CashtagText from './CashtagText.vue';
 import ShareModal from './ShareModal.vue';
 import ThreadModal from './ThreadModal.vue';
 import QuoteModal from './QuoteModal.vue';
-import { shortenAddress, formatRelativeTime, formatCompactUsd } from '@/lib/utils';
+import FeedAlphaTicker from './FeedAlphaTicker.vue';
+import FeedSidebar from './FeedSidebar.vue';
+import FeedCalloutCard from './FeedCalloutCard.vue';
+import { shortenAddress, formatCompactUsd, getChainIcon, getChainShortName } from '@/lib/utils';
+import { useI18n } from '@/lib/i18n';
+import { SUPPORTED_CHAINS } from '@proto/shared-types';
 import { getUserIdentity } from '@/lib/username';
 import { compressAndConvertToWebp } from '@/lib/image-optimizer';
 import { toast } from '@/components/ui/sonner';
@@ -856,6 +447,7 @@ const emit = defineEmits<{
 }>();
 
 const router = useRouter();
+const { t } = useI18n();
 const { account, openWallet, activeNetwork } = useWallet();
 const {
   tokens: allTokens,
@@ -876,24 +468,31 @@ const {
   postCallout,
   toggleLike,
   toggleRepost,
+  fetchCallerBalance,
 } = useFeed();
 
-type ChainFilterType = 'all' | 'robinhood' | 'arc';
+type ChainFilterType = string;
 const selectedChainFilter = ref<ChainFilterType>('all');
+
+const chainFilterOptions = computed(() => {
+  const supported = Object.values(SUPPORTED_CHAINS);
+  return [
+    {
+      key: 'all',
+      label: 'All Chains',
+      icons: supported.map((net) => getChainIcon(net)),
+    },
+    ...supported.map((net) => ({
+      key: String(net.chainId),
+      label: getChainShortName(net),
+      icons: [getChainIcon(net)],
+    })),
+  ];
+});
 
 function setChainFilter(key: ChainFilterType) {
   selectedChainFilter.value = key;
   currentPage.value = 1;
-}
-
-function getChainIcon(tokenAddress: string): string {
-  const net = getTokenNetwork(tokenAddress);
-  return net.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg';
-}
-
-function getChainName(tokenAddress: string): string {
-  const net = getTokenNetwork(tokenAddress);
-  return net.name;
 }
 
 // Multi-chain smart feed stream (shows all chains by default with instant filter)
@@ -902,13 +501,8 @@ const networkCallouts = computed(() => {
   if (selectedChainFilter.value === 'all') {
     return base;
   }
-  if (selectedChainFilter.value === 'robinhood') {
-    return base.filter((c) => getTokenNetwork(c.tokenAddress).chainId === 4663);
-  }
-  if (selectedChainFilter.value === 'arc') {
-    return base.filter((c) => getTokenNetwork(c.tokenAddress).chainId === 5042);
-  }
-  return base;
+  const targetChainId = Number(selectedChainFilter.value);
+  return base.filter((c) => getTokenNetwork(c.tokenAddress).chainId === targetChainId);
 });
 
 const paginatedCallouts = computed(() => {
@@ -926,37 +520,8 @@ watch(activeNetwork, () => {
   }
 });
 
-// Watchlist Pin Feature (Pons style with localStorage persistence)
-const pinnedTokens = ref<Set<string>>(new Set());
-
-function loadPinnedTokens() {
-  if (typeof window === 'undefined') return;
-  try {
-    const raw = localStorage.getItem('proto_pinned_tokens');
-    if (raw) {
-      pinnedTokens.value = new Set(JSON.parse(raw));
-    }
-  } catch {}
-}
-
-function togglePin(address: string) {
-  if (!address) return;
-  const lower = address.toLowerCase();
-  const next = new Set(pinnedTokens.value);
-  if (next.has(lower)) {
-    next.delete(lower);
-  } else {
-    next.add(lower);
-  }
-  pinnedTokens.value = next;
-  try {
-    localStorage.setItem('proto_pinned_tokens', JSON.stringify(Array.from(next)));
-  } catch {}
-}
-
-function isPinned(address: string): boolean {
-  return pinnedTokens.value.has(address.toLowerCase());
-}
+// Watchlist Pin Feature — shared singleton composable (FE-02)
+const { pinnedTokens, togglePin, isPinned } = usePinnedTokens();
 
 // Social Modals state
 const isShareModalOpen = ref(false);
@@ -1164,12 +729,6 @@ function selectCashtagToken(token: LaunchedTokenEntity): void {
   }, 10);
 }
 
-function formatViews(val: number): string {
-  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
-  if (val >= 1_000) return `${(val / 1_000).toFixed(1)}K`;
-  return String(val || 0);
-}
-
 async function checkCallerPosition(tokenAddress: string): Promise<void> {
   if (!account.value || !tokenAddress) {
     callerTokenBalance.value = 0;
@@ -1177,15 +736,7 @@ async function checkCallerPosition(tokenAddress: string): Promise<void> {
   }
   checkingBalance.value = true;
   try {
-    const res = await fetch(`/api/tokens/${tokenAddress}/balance?account=${account.value}`);
-    const data = await res.json();
-    if (data.success && data.data) {
-      callerTokenBalance.value = Number(data.data.balance || 0);
-    } else {
-      callerTokenBalance.value = 0;
-    }
-  } catch {
-    callerTokenBalance.value = 0;
+    callerTokenBalance.value = await fetchCallerBalance(tokenAddress, account.value);
   } finally {
     checkingBalance.value = false;
   }
@@ -1290,20 +841,15 @@ async function submitCallout(): Promise<void> {
     if (pendingMediaFile.value) {
       isUploadingMedia.value = true;
       try {
-        const formData = new FormData();
-        formData.append('file', pendingMediaFile.value);
-        const res = await fetch('/api/ipfs/upload', {
-          method: 'POST',
-          body: formData,
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const ipfsUri = data.data?.cid
-            ? `ipfs://${data.data.cid}`
-            : data.data?.uri || data.data?.url || '';
-          if (ipfsUri) {
-            finalImageUrl = ipfsUri;
-          }
+        const data = await uploadFile<{
+          success: boolean;
+          data?: { cid?: string; uri?: string; url?: string };
+        }>('/api/ipfs/upload', pendingMediaFile.value);
+        const ipfsUri = data.data?.cid
+          ? `ipfs://${data.data.cid}`
+          : data.data?.uri || data.data?.url || '';
+        if (ipfsUri) {
+          finalImageUrl = ipfsUri;
         }
       } catch (uploadErr) {
         console.warn('[Feed] IPFS upload on submit fallback:', uploadErr);
@@ -1376,7 +922,6 @@ function openImage(url?: string): void {
 }
 
 onMounted(async () => {
-  loadPinnedTokens();
   await Promise.allSettled([fetchFeed(account.value || undefined), fetchTokens()]);
   if (networkTokens.value?.length > 0 && !selectedToken.value) {
     selectedToken.value = networkTokens.value[0].token;

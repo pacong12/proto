@@ -14,7 +14,7 @@ contract LaunchpadV2ArcTest is Test {
     address public buyer1 = address(0xB0B1);
 
     function setUp() public {
-        factory = new LaunchpadV2FactoryArc(feeRecipient, mockLocker, address(0), address(0));
+        factory = new LaunchpadV2FactoryArc(feeRecipient, mockLocker);
         vm.deal(creator, 100_000 ether);
         vm.deal(buyer1, 100_000 ether);
     }
@@ -27,8 +27,8 @@ contract LaunchpadV2ArcTest is Test {
         // Graduation target: 69,000 USDC
         assertEq(factory.GRADUATION_TARGET(), 69_000 ether);
 
-        // Virtual reserves calibrated for opening FDV $4,200
-        assertEq(factory.VIRTUAL_USDC_RESERVE(), 4_200 ether);
+        // Virtual reserves calibrated for Arc/Argus standard
+        assertEq(factory.VIRTUAL_USDC_RESERVE(), 24_420 ether);
         assertEq(factory.VIRTUAL_TOKEN_RESERVE(), 1_000_000_000 * 1e18);
     }
 
@@ -63,7 +63,7 @@ contract LaunchpadV2ArcTest is Test {
 
         // Curve configuration verification
         assertEq(curve.graduationTarget(), 69_000 ether);
-        assertEq(curve.virtualEthReserve(), 4_200 ether);
+        assertEq(curve.virtualEthReserve(), 24_420 ether);
         assertEq(curve.virtualTokenReserve(), 1_000_000_000 * 1e18);
 
         // Check launch tracking
@@ -116,11 +116,63 @@ contract LaunchpadV2ArcTest is Test {
 
         BondingCurve curve = BondingCurve(payable(curveAddress));
         // spotPrice = virtualEthReserve * 1e18 / virtualTokenReserve
-        // = 4_200e18 * 1e18 / 1_000_000_000e18
-        // = 4_200 * 1e18 / 1_000_000_000
-        // = 4_200_000_000_000 (4.2e12 wei per token)
-        // Expressed as USD: 4.2e12 / 1e18 = $0.0000042
+        // = 24_420e18 * 1e18 / 1_000_000_000e18
+        // = 24_420_000_000_000 (2.442e13 wei per token)
+        // Expressed as USD: 2.442e13 / 1e18 = $0.00002442
         uint256 expectedSpotPrice = (curve.virtualEthReserve() * 1e18) / curve.virtualTokenReserve();
-        assertEq(expectedSpotPrice, 4_200_000_000_000);
+        assertEq(expectedSpotPrice, 24_420_000_000_000);
+    }
+
+    function test_ArcGraduationAndPoolReserveIntegrity() public {
+        vm.prank(creator);
+        (address tokenAddress, address curveAddress) = factory.launchTokenV2{value: 1 ether}(
+            "Proto Arc Token", "PARC", "", "", "", "", "", 0
+        );
+
+        LaunchpadToken token = LaunchpadToken(tokenAddress);
+        BondingCurve curve = BondingCurve(payable(curveAddress));
+
+        // Advance blocks past anti-snipe restrictions
+        vm.roll(block.number + 3);
+        vm.warp(block.timestamp + 10);
+
+        // Buy in tranches towards 69,000 USDC graduation target
+        vm.startPrank(buyer1);
+        for (uint256 i = 0; i < 75; i++) {
+            if (curve.graduated()) break;
+            curve.buy{value: 1_000 ether}(0);
+        }
+        vm.stopPrank();
+
+        assertTrue(curve.graduated(), "Curve must graduate at 69k USDC");
+        assertGe(token.balanceOf(curveAddress), curve.poolReserveSupply(), "Pool reserve must be preserved");
+    }
+
+    function test_ArcCurveBuy_RefundsExcessUsdcAtGraduation() public {
+        vm.prank(creator);
+        (, address curveAddress) = factory.launchTokenV2{value: 1 ether}(
+            "Proto Arc Token", "PARC", "", "", "", "", "", 0
+        );
+
+        BondingCurve curve = BondingCurve(payable(curveAddress));
+
+        // Advance blocks past anti-snipe restrictions
+        vm.roll(block.number + 3);
+        vm.warp(block.timestamp + 10);
+
+        uint256 buyerBalanceBefore = buyer1.balance;
+        // Target is 69,000 USDC. Buyer sends 100,000 USDC (100_000 ether).
+        vm.startPrank(buyer1);
+        uint256 tokensBought = curve.buy{value: 100_000 ether}(0);
+        vm.stopPrank();
+
+        uint256 buyerBalanceAfter = buyer1.balance;
+        uint256 usdcSpent = buyerBalanceBefore - buyerBalanceAfter;
+
+        assertTrue(curve.graduated(), "Curve must be graduated");
+        assertTrue(tokensBought >= 738_000_000 * 1e18, "Buyer receives all curve tokens");
+        // Spent amount should be ~69,697 USDC (69,000 net + ~1% fee), not 100,000 USDC!
+        assertLt(usdcSpent, 71_000 ether, "Excess USDC must be refunded to buyer");
+        assertGt(usdcSpent, 69_000 ether, "Graduation target must be fully paid");
     }
 }

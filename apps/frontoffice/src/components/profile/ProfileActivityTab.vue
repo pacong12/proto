@@ -1,10 +1,10 @@
 <template>
-  <div class="space-y-4 font-mono text-xs">
+  <div class="space-y-4 text-xs">
     <!-- Empty state -->
     <Empty
       v-if="userActivities.length === 0"
-      title="No recent trades"
-      description="Trades made with this wallet will appear here automatically with on-chain transaction hashes."
+      :title="t('noRecentTrades')"
+      :description="t('noTradesActivityDesc')"
       class="py-14"
     >
       <template #icon>
@@ -15,41 +15,40 @@
           as-child
           size="sm"
           variant="default"
-          class="h-8 px-4 font-bold text-xs cursor-pointer font-mono rounded-xl mt-2"
+          class="h-8 px-4 font-bold text-xs cursor-pointer rounded-xl mt-2"
         >
-          <RouterLink to="/launchpad"> Explore Tokens & Trade </RouterLink>
+          <RouterLink to="/launchpad"> {{ t('exploreAndTrade') }} </RouterLink>
         </Button>
       </template>
     </Empty>
-
     <!-- Activity Table -->
     <div v-else class="rounded-2xl border border-border bg-black overflow-hidden shadow-xs">
-      <Table class="text-xs font-mono bg-black">
+      <Table class="text-xs bg-black">
         <TableHeader>
           <TableRow
-            class="border-b border-border/80 bg-black text-muted-foreground text-[11px] hover:bg-black"
+            class="border-b border-border/80 bg-black text-muted-foreground text-xs hover:bg-black"
           >
-            <TableHead class="py-3 px-4 font-semibold uppercase text-muted-foreground bg-black"
-              >Action</TableHead
-            >
-            <TableHead class="py-3 px-4 font-semibold uppercase text-muted-foreground bg-black"
-              >Token</TableHead
+            <TableHead class="py-3 px-4 font-semibold uppercase text-muted-foreground bg-black">{{
+              t('action')
+            }}</TableHead>
+            <TableHead class="py-3 px-4 font-semibold uppercase text-muted-foreground bg-black">{{
+              t('token')
+            }}</TableHead>
+            <TableHead
+              class="py-3 px-4 font-semibold text-right uppercase text-muted-foreground bg-black"
+              >{{ t('amount') }} ({{ nativeCurrencySymbol }})</TableHead
             >
             <TableHead
               class="py-3 px-4 font-semibold text-right uppercase text-muted-foreground bg-black"
-              >Amount ({{ nativeCurrencySymbol }})</TableHead
+              >{{ t('tokens') }}</TableHead
             >
             <TableHead
               class="py-3 px-4 font-semibold text-right uppercase text-muted-foreground bg-black"
-              >Tokens</TableHead
+              >{{ t('time') }}</TableHead
             >
             <TableHead
               class="py-3 px-4 font-semibold text-right uppercase text-muted-foreground bg-black"
-              >Time</TableHead
-            >
-            <TableHead
-              class="py-3 px-4 font-semibold text-right uppercase text-muted-foreground bg-black"
-              >Tx Hash</TableHead
+              >{{ t('txHash') }}</TableHead
             >
           </TableRow>
         </TableHeader>
@@ -62,29 +61,29 @@
             <TableCell class="py-3 px-4">
               <Badge
                 :variant="act.isBuy ? 'default' : 'destructive'"
-                class="text-[9px] uppercase px-2 py-0.5 font-mono font-bold"
+                class="text-xs uppercase px-2 py-0.5 font-bold"
               >
-                {{ act.isBuy ? 'BUY' : 'SELL' }}
+                {{ act.isBuy ? t('buy').toUpperCase() : t('sell').toUpperCase() }}
               </Badge>
             </TableCell>
-            <TableCell class="py-3 px-4 text-foreground font-bold font-mono">
+            <TableCell class="py-3 px-4 text-foreground font-bold">
               ${{ act.tokenSymbol }}
             </TableCell>
-            <TableCell class="py-3 px-4 text-right text-foreground font-medium font-mono">
+            <TableCell class="py-3 px-4 text-right text-foreground font-medium">
               {{ act.ethAmount }} {{ nativeCurrencySymbol }}
             </TableCell>
-            <TableCell class="py-3 px-4 text-right text-foreground font-mono">
+            <TableCell class="py-3 px-4 text-right text-foreground">
               {{ act.tokenAmount }}
             </TableCell>
-            <TableCell class="py-3 px-4 text-right text-muted-foreground font-mono text-[11px]">
+            <TableCell class="py-3 px-4 text-right text-muted-foreground text-xs">
               {{ formatRelativeTime(act.timestamp) }}
             </TableCell>
-            <TableCell class="py-3 px-4 text-right font-mono text-xs">
+            <TableCell class="py-3 px-4 text-right text-xs">
               <a
                 :href="`${blockExplorer}/tx/${act.txHash}`"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="text-primary hover:underline inline-flex items-center gap-1 font-mono font-semibold"
+                class="text-primary hover:underline inline-flex items-center gap-1 font-semibold"
                 :title="act.txHash"
               >
                 <span>{{ act.txHash.slice(0, 6) }}...{{ act.txHash.slice(-4) }}</span>
@@ -100,6 +99,7 @@
 
 <script setup lang="ts">
 import { Activity, ExternalLink } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
@@ -113,6 +113,8 @@ import {
 } from '@/components/ui/table';
 import { formatRelativeTime } from '@/lib/utils';
 import type { UserActivity } from './types';
+
+const { t } = useI18n();
 
 defineProps<{
   userActivities: UserActivity[];

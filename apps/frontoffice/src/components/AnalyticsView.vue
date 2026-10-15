@@ -6,21 +6,21 @@
     >
       <div>
         <div class="flex items-center gap-2.5">
-          <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-foreground font-mono">
+          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
             {{ t('protocolAnalytics') }}
           </h1>
           <span
-            class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-primary/10 text-primary border border-primary/20"
+            class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20"
           >
             <img
-              :src="activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+              :src="getChainIcon(activeNetwork)"
               :alt="activeNetwork.name"
               class="w-3.5 h-3.5 object-contain"
             />
             {{ activeNetwork.name }}
           </span>
         </div>
-        <p class="text-xs sm:text-sm text-muted-foreground mt-1">
+        <p class="text-sm text-muted-foreground mt-1 leading-relaxed">
           Real-time on-chain volume, fair launch token deployments, and protocol revenue metrics.
         </p>
       </div>
@@ -29,7 +29,7 @@
       <Button
         variant="outline"
         size="sm"
-        class="h-8 text-xs font-mono font-bold gap-1.5 border-border hover:bg-muted text-foreground self-start md:self-auto cursor-pointer rounded-xl"
+        class="h-8 text-xs font-bold gap-1.5 border-border hover:bg-muted text-foreground self-start md:self-auto cursor-pointer rounded-xl"
         @click="fetchAnalytics"
       >
         <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': loading }" />
@@ -40,7 +40,7 @@
     <!-- Error Banner -->
     <div
       v-if="fetchError"
-      class="text-xs font-mono text-destructive bg-destructive/10 border border-destructive/20 rounded-2xl p-4 flex items-center justify-between gap-3"
+      class="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-2xl p-4 flex items-center justify-between gap-3"
     >
       <div class="flex items-center gap-2">
         <AlertCircle class="w-4 h-4 shrink-0" />
@@ -62,30 +62,30 @@
         <!-- Main Figure Callout -->
         <div class="space-y-1">
           <div class="flex items-baseline gap-2">
-            <span class="text-2xl sm:text-4xl font-black font-mono tracking-tight text-foreground">
+            <span class="text-2xl sm:text-4xl font-black tracking-tight text-foreground">
               {{ currentFigureDisplay }}
             </span>
             <span
-              class="text-xs font-mono font-bold"
+              class="text-xs font-bold"
               :class="activeMetric === 'volume' ? 'text-emerald-500' : 'text-sky-500'"
             >
               {{ activeMetric === 'volume' ? '+12.4% 24h' : 'Active 24h' }}
             </span>
           </div>
-          <p class="text-xs text-muted-foreground font-mono">
+          <p class="text-xs text-muted-foreground">
             {{ currentFigureSubtitle }}
           </p>
         </div>
 
         <!-- Metric Switcher Pills & Mode Toggle (Pons / Shadcn Segmented Controls) -->
-        <div class="flex flex-wrap items-center gap-2 font-mono text-xs">
+        <div class="flex flex-wrap items-center gap-2 text-sm">
           <!-- Metric Selectors -->
           <div class="inline-flex p-1 rounded-xl bg-black border border-border gap-1">
             <button
               v-for="m in metricOptions"
               :key="m.value"
               type="button"
-              class="px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer select-none"
+              class="px-3 py-1.5 rounded-lg text-sm font-bold transition cursor-pointer select-none"
               :class="
                 activeMetric === m.value
                   ? 'bg-foreground text-background shadow-2xs'
@@ -148,16 +148,14 @@
     </Card>
 
     <!-- 2. PROTOCOL KPI STATS RIBBON (Pons x Shadcn Metric Cards) -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 font-mono">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
       <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
         <p class="text-xs uppercase font-semibold flex items-center gap-1.5 text-muted-foreground">
           <Activity class="w-4 h-4 text-emerald-500" />
           {{ t('totalTradingVolume') }}
         </p>
         <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">${{ formattedVolume }}</p>
-        <p class="text-[11px] text-muted-foreground mt-1 font-sans">
-          Indexed 24h DEX & curve swaps
-        </p>
+        <p class="text-xs text-muted-foreground mt-1">Indexed 24h DEX & curve swaps</p>
       </Card>
 
       <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
@@ -168,7 +166,7 @@
         <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">
           {{ totalTokens.toLocaleString() }}
         </p>
-        <p class="text-[11px] text-muted-foreground mt-1 font-sans">Fair launch tokens created</p>
+        <p class="text-xs text-muted-foreground mt-1">Fair launch tokens created</p>
       </Card>
 
       <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
@@ -177,7 +175,7 @@
           {{ t('protocolBuybackAndBurn') }}
         </p>
         <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">${{ formattedBuyback }}</p>
-        <p class="text-[11px] text-muted-foreground mt-1 font-sans">Deflationary buybacks burned</p>
+        <p class="text-xs text-muted-foreground mt-1">Deflationary buybacks burned</p>
       </Card>
 
       <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
@@ -188,7 +186,7 @@
         <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">
           {{ estimatedProtocolFees }} {{ activeNetwork.nativeCurrency.symbol }}
         </p>
-        <p class="text-[11px] text-muted-foreground mt-1 font-sans">100% protocol fee retention</p>
+        <p class="text-xs text-muted-foreground mt-1">100% protocol fee retention</p>
       </Card>
     </div>
 
@@ -196,9 +194,7 @@
     <Card class="p-5 sm:p-7 rounded-3xl border border-border bg-card space-y-4 shadow-sm">
       <div class="flex items-center justify-between">
         <div>
-          <h2
-            class="text-base sm:text-lg font-bold text-foreground font-mono flex items-center gap-2"
-          >
+          <h2 class="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
             <Zap class="w-4 h-4 text-amber-500 fill-amber-500" />
             <span>Top Coins on {{ activeNetwork.name }}</span>
           </h2>
@@ -210,24 +206,21 @@
           as-child
           variant="outline"
           size="sm"
-          class="h-8 px-3 text-xs font-mono font-bold rounded-xl cursor-pointer"
+          class="h-8 px-3 text-xs font-bold rounded-xl cursor-pointer"
         >
           <RouterLink to="/launchpad"> View All Coins </RouterLink>
         </Button>
       </div>
 
-      <div
-        v-if="topCoins.length === 0"
-        class="py-12 text-center text-muted-foreground font-mono text-xs"
-      >
+      <div v-if="topCoins.length === 0" class="py-12 text-center text-muted-foreground text-xs">
         No active tokens indexed on this network yet.
       </div>
 
       <div v-else class="rounded-2xl border border-border/80 overflow-hidden bg-black">
-        <Table class="text-xs font-mono bg-black">
+        <Table class="text-xs bg-black">
           <TableHeader>
             <TableRow
-              class="border-b border-border/70 text-muted-foreground text-[11px] uppercase bg-black hover:bg-black"
+              class="border-b border-border/70 text-muted-foreground text-xs uppercase bg-black hover:bg-black"
             >
               <TableHead
                 class="py-3 px-3 font-semibold w-12 text-center text-muted-foreground bg-black"
@@ -276,7 +269,7 @@
                     >
                       ${{ tItem.token.symbol }}
                     </span>
-                    <span class="text-[11px] text-muted-foreground font-sans truncate block">
+                    <span class="text-xs text-muted-foreground truncate block">
                       {{ tItem.token.name }}
                     </span>
                   </div>
@@ -307,7 +300,7 @@
                 <Button
                   size="sm"
                   variant="outline"
-                  class="h-7 px-3 text-xs font-mono font-bold rounded-lg cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                  class="h-7 px-3 text-xs font-bold rounded-lg cursor-pointer hover:bg-primary hover:text-primary-foreground"
                   @click.stop="router.push(`/token/${tItem.token.address}`)"
                 >
                   Trade
@@ -323,19 +316,19 @@
     <Card class="p-5 sm:p-7 rounded-3xl border border-border bg-card space-y-4 shadow-sm">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h2 class="text-base sm:text-lg font-bold text-foreground font-mono">
+          <h2 class="text-base sm:text-lg font-bold text-foreground">
             {{ t('deployedContracts') }}
           </h2>
           <p class="text-xs text-muted-foreground font-sans">
             Verified autonomous protocol smart contracts on {{ activeNetwork.name }}
           </p>
         </div>
-        <span class="font-mono text-xs text-muted-foreground self-start sm:self-auto">
+        <span class="text-xs text-muted-foreground self-start sm:self-auto">
           Chain ID: {{ activeNetwork.chainId }}
         </span>
       </div>
 
-      <div class="space-y-2.5 font-mono text-xs">
+      <div class="space-y-2.5 text-xs">
         <div
           v-for="c in contractEntries"
           :key="c.name"
@@ -346,23 +339,17 @@
             <Badge
               v-if="isContractDeployed(c.address)"
               variant="secondary"
-              class="text-[9px] py-0 px-1.5 font-mono font-bold bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+              class="text-xs py-0.5 px-2 font-bold bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
             >
               ACTIVE
             </Badge>
-            <Badge
-              v-else
-              variant="outline"
-              class="text-[9px] py-0 px-1.5 font-mono text-muted-foreground"
-            >
+            <Badge v-else variant="outline" class="text-xs py-0.5 px-2 text-muted-foreground">
               PENDING
             </Badge>
           </div>
 
           <div class="flex items-center gap-2">
-            <span
-              class="text-foreground font-mono select-all break-all sm:break-normal text-[11px] sm:text-xs"
-            >
+            <span class="text-foreground select-all break-all sm:break-normal text-xs">
               {{ c.address }}
             </span>
 
@@ -406,6 +393,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { apiFetch } from '@/lib/api-client';
 import {
   RefreshCw,
   ExternalLink,
@@ -435,7 +423,7 @@ import {
 } from '@/components/ui/table';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { ShadcnAreaChart, type ChartDataPoint } from '@/components/ui/chart';
-import { formatCompactUsd } from '@/lib/utils';
+import { formatCompactUsd, getChainIcon } from '@/lib/utils';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -472,7 +460,10 @@ const formattedBuyback = computed(() => {
 
 const estimatedProtocolFees = computed(() => {
   const vol = Number(totalVolume.value) || 0;
-  const divisor = activeNetwork.value.chainId === 5042 ? 1 : 2500;
+  const isStableQuote =
+    activeNetwork.value.nativeCurrency.symbol === 'USDC' ||
+    activeNetwork.value.nativeCurrency.symbol === 'USDT';
+  const divisor = isStableQuote ? 1 : 2500;
   const feeEstimate = (vol * 0.01) / divisor;
   return feeEstimate > 0 ? feeEstimate.toFixed(3) : '0.00';
 });
@@ -570,8 +561,17 @@ async function fetchAnalytics() {
   loading.value = true;
   fetchError.value = null;
   try {
-    const res = await fetch('/api/analytics');
-    const envelope = await res.json();
+    const envelope = await apiFetch<{
+      success: boolean;
+      data: {
+        totalVolume: number;
+        totalTokens: number;
+        totalBuyback: string | number;
+        volumeHistory?: ChartDataPoint[];
+        tokenHistory?: ChartDataPoint[];
+      };
+      error?: { message?: string };
+    }>('/api/analytics');
     if (envelope.success && envelope.data) {
       totalVolume.value = envelope.data.totalVolume;
       totalTokens.value = envelope.data.totalTokens;

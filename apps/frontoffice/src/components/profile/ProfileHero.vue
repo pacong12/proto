@@ -21,7 +21,7 @@
         title="Update header banner"
       >
         <span
-          class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold bg-card text-foreground shadow-xs border border-border pointer-events-auto"
+          class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-card text-foreground shadow-xs border border-border pointer-events-auto"
         >
           <Camera class="w-3.5 h-3.5 text-primary" />
           Update Banner
@@ -67,7 +67,7 @@
             v-if="isOwnProfile"
             variant="outline"
             size="sm"
-            class="h-8 text-xs font-semibold gap-1.5 border-border hover:bg-muted text-foreground cursor-pointer rounded-xl font-mono"
+            class="h-8 text-xs font-semibold gap-1.5 border-border hover:bg-muted text-foreground cursor-pointer rounded-xl"
             @click="emit('edit')"
           >
             <Edit3 class="w-3.5 h-3.5" />
@@ -77,11 +77,11 @@
           <Button
             variant="default"
             size="sm"
-            class="h-8 text-xs font-semibold gap-1.5 font-bold cursor-pointer rounded-xl font-mono"
+            class="h-8 text-xs font-semibold gap-1.5 font-bold cursor-pointer rounded-xl"
             @click="emit('share')"
           >
             <Share2 class="w-3.5 h-3.5" />
-            {{ copiedShare ? 'Copied Link!' : 'Share Profile' }}
+            {{ copiedShare ? t('addressCopied') : t('shareProfile') }}
           </Button>
         </div>
       </div>
@@ -89,7 +89,7 @@
       <!-- Identity & Bio -->
       <div class="space-y-1.5 pt-1">
         <div class="flex items-center gap-2 flex-wrap">
-          <h1 class="text-xl sm:text-2xl font-black tracking-tight text-foreground font-mono">
+          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
             {{
               profileData.displayName ||
               (profileAddress ? getUserIdentity(profileAddress).displayName : 'Anonymous Creator')
@@ -97,7 +97,7 @@
           </h1>
         </div>
 
-        <p class="text-xs font-mono text-muted-foreground flex items-center gap-1.5">
+        <p class="text-sm text-muted-foreground flex items-center gap-1.5">
           <span
             >@{{ profileAddress ? getUserIdentity(profileAddress).name : 'not-connected' }}</span
           >
@@ -105,7 +105,7 @@
           <span>{{ profileAddress ? shortenAddress(profileAddress, 6, 4) : '' }}</span>
         </p>
 
-        <p class="text-xs sm:text-sm text-foreground/90 max-w-2xl font-sans leading-relaxed">
+        <p class="text-sm sm:text-base text-foreground/90 max-w-2xl font-sans leading-relaxed">
           {{
             profileData.bio ||
             'Non-custodial creator and alpha trader on Proto multi-chain launchpad.'
@@ -113,7 +113,7 @@
         </p>
 
         <!-- Metadata Ribbon: Social Handles & Block Explorer -->
-        <div class="flex items-center gap-4 pt-1 text-xs text-muted-foreground flex-wrap font-mono">
+        <div class="flex items-center gap-4 pt-1 text-sm text-muted-foreground flex-wrap">
           <a
             v-if="profileData.twitter"
             :href="`https://x.com/${profileData.twitter}`"
@@ -139,7 +139,7 @@
             rel="noopener noreferrer"
             class="hover:text-foreground transition flex items-center gap-1"
           >
-            <span>Explorer</span>
+            <span>{{ t('explorer') }}</span>
             <ExternalLink class="w-3 h-3" />
           </a>
         </div>
@@ -150,12 +150,15 @@
 
 <script setup lang="ts">
 import { Camera, Edit3, Share2, ExternalLink } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Jazzicon } from '@/components/ui/avatar';
 import { shortenAddress } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import type { ProfileStorageData } from './types';
 import type { NetworkConfig } from '@proto/shared-types';
+
+const { t } = useI18n();
 
 defineProps<{
   profileAddress: string | null;

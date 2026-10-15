@@ -28,7 +28,7 @@
           aria-label="Close search"
         >
           <span
-            class="hidden sm:inline-block font-mono text-[10px] px-1.5 py-0.5 rounded border border-border bg-muted/60"
+            class="hidden sm:inline-block text-xs px-1.5 py-0.5 rounded border border-border bg-muted/60"
           >
             ESC
           </span>
@@ -52,12 +52,12 @@
           class="mb-2 p-3 rounded-xl border border-border bg-muted/40 text-xs space-y-2"
         >
           <div class="flex items-center justify-between">
-            <span class="text-[10px] font-mono uppercase font-bold text-muted-foreground">
+            <span class="text-xs uppercase font-bold text-muted-foreground">
               Transaction Match
             </span>
             <Badge
               :variant="matchedTrade.isBuy ? 'default' : 'destructive'"
-              class="text-[9px] uppercase px-1.5 py-0 font-mono"
+              class="text-xs uppercase px-1.5 py-0"
             >
               {{ matchedTrade.isBuy ? 'BUY' : 'SELL' }}
             </Badge>
@@ -69,11 +69,11 @@
           >
             <div class="min-w-0 truncate">
               <span
-                class="font-mono text-xs font-bold text-foreground group-hover:text-foreground/80 transition truncate block"
+                class="text-xs font-bold text-foreground group-hover:text-foreground/80 transition truncate block"
               >
                 {{ shortenAddress(matchedTrade.transactionHash, 10, 8) }}
               </span>
-              <p class="text-[11px] font-mono text-muted-foreground truncate mt-0.5">
+              <p class="text-xs text-muted-foreground truncate mt-0.5">
                 Token: {{ shortenAddress(matchedTrade.tokenAddress) }} •
                 {{ matchedTrade.tokenAmount }} tokens • {{ matchedTrade.wethAmount }}
                 {{ activeNetwork.nativeCurrency.symbol }}
@@ -135,21 +135,19 @@
                     >
                       {{ item.token.name }}
                     </span>
-                    <span class="text-xs font-mono text-muted-foreground">
-                      ${{ item.token.symbol }}
-                    </span>
+                    <span class="text-xs text-muted-foreground"> ${{ item.token.symbol }} </span>
                   </div>
-                  <p class="text-[11px] font-mono text-muted-foreground truncate mt-0.5">
+                  <p class="text-xs text-muted-foreground truncate mt-0.5">
                     {{ item.token.address }}
                   </p>
                 </div>
               </div>
 
-              <div class="text-right shrink-0 font-mono text-xs ml-2 sm:ml-4 space-y-0.5">
+              <div class="text-right shrink-0 text-xs ml-2 sm:ml-4 space-y-0.5">
                 <span class="font-bold block text-foreground">
                   {{ formatPriceUsd(item.marketData?.priceUsd) }}
                 </span>
-                <div class="flex items-center justify-end gap-1.5 text-[11px]">
+                <div class="flex items-center justify-end gap-1.5 text-xs">
                   <span class="text-muted-foreground hidden sm:inline">
                     MCap: {{ formatCompactUsd(item.marketData?.marketCapUsd) }} •
                   </span>
@@ -175,22 +173,22 @@
 
       <!-- Quick Actions Footer with Light & Dark contrast -->
       <div
-        class="px-4 py-2.5 bg-muted/40 border-t border-border flex items-center justify-between text-[11px] font-mono text-muted-foreground"
+        class="px-4 py-2.5 bg-muted/40 border-t border-border flex items-center justify-between text-xs text-muted-foreground"
       >
         <span>
           {{ t('navigateHint') }}:
-          <kbd class="bg-muted text-foreground border border-border px-1 py-0.5 rounded text-[10px]"
+          <kbd class="bg-muted text-foreground border border-border px-1.5 py-0.5 rounded text-xs"
             >↑</kbd
           >
           <kbd
-            class="bg-muted text-foreground border border-border px-1 py-0.5 rounded text-[10px] ml-0.5"
+            class="bg-muted text-foreground border border-border px-1.5 py-0.5 rounded text-xs ml-1"
             >↓</kbd
           >
         </span>
         <span>
           {{ t('selectHint') }}:
           <kbd
-            class="bg-muted text-foreground border border-border px-1.5 py-0.5 rounded text-[10px]"
+            class="bg-muted text-foreground border border-border px-1.5 py-0.5 rounded text-xs ml-1"
             >ENTER</kbd
           >
         </span>
@@ -202,6 +200,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { Search, Loader2, ExternalLink, X } from 'lucide-vue-next';
+import { apiFetch } from '@/lib/api-client';
 import { useI18n } from '@/lib/i18n';
 import { useWallet } from '@/composables/useWallet';
 import { useTokenStore } from '@/composables/useTokenStore';
@@ -246,8 +245,9 @@ watch(query, (val) => {
     searchingTx.value = true;
     txLookupDebounce = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/trades/${q}`);
-        const env = await res.json();
+        const env = await apiFetch<{ success: boolean; data: TradeEventEntity }>(
+          `/api/trades/${q}`,
+        );
         if (env.success && env.data) {
           matchedTrade.value = env.data;
         }
@@ -290,18 +290,8 @@ onMounted(async () => {
 });
 
 const filteredTokens = computed(() => {
-  const isArc = activeNetwork.value.chainId === ARC_CHAIN.chainId;
-  const arcWeth = ARC_CHAIN.contracts.weth.toLowerCase();
-  const arcFactory = ARC_CHAIN.contracts.factory.toLowerCase();
-
   const chainFiltered = tokens.value.filter((item) => {
-    const paired = item.token.pairedToken?.toLowerCase();
-    const pool = item.token.poolAddress?.toLowerCase();
-    const curve = item.token.curveAddress?.toLowerCase();
-    const isTokenArc =
-      paired === arcWeth || pool === arcFactory || curve === ARC_PROTO_CURVE_ADDRESS.toLowerCase();
-
-    return isArc ? isTokenArc : !isTokenArc;
+    return tokenStore.isTokenOnActiveNetwork(item.token);
   });
 
   const q = query.value.trim().toLowerCase();

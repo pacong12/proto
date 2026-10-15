@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-4 font-mono text-xs">
+  <div class="space-y-4 text-xs">
     <!-- Loading State -->
     <div v-if="loading" class="py-16 text-center text-muted-foreground">
       <Loader2 class="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
@@ -44,11 +44,11 @@
                 </span>
                 <TraderTagBadge v-if="isWhaleCaller(call)" tag="whale" size="sm" />
               </div>
-              <span class="text-[10px] text-muted-foreground">Verified Caller</span>
+              <span class="text-xs text-muted-foreground">Verified Caller</span>
             </div>
           </div>
 
-          <span class="text-[10px] text-muted-foreground">
+          <span class="text-xs text-muted-foreground">
             {{ formatRelativeTime(call.createdAt) }}
           </span>
         </div>
@@ -89,11 +89,7 @@
                 class="rounded-full border border-border shrink-0"
               />
               <img
-                :src="
-                  getTokenNetwork(call.tokenAddress).chainId === 5042
-                    ? '/chains/arc.svg'
-                    : '/chains/robinhood.svg'
-                "
+                :src="getChainIcon(getTokenNetwork(call.tokenAddress))"
                 :alt="getTokenNetwork(call.tokenAddress).name"
                 :title="getTokenNetwork(call.tokenAddress).name"
                 class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-black bg-black object-contain shadow-xs"
@@ -105,7 +101,7 @@
                   ${{ call.tokenSymbol || 'TOKEN' }}
                 </span>
               </div>
-              <div class="flex items-center gap-2 text-[10px] text-muted-foreground">
+              <div class="flex items-center gap-2 text-xs text-muted-foreground">
                 <span
                   >MC:
                   <strong class="text-foreground"
@@ -121,9 +117,7 @@
 
           <div class="flex items-center gap-3 shrink-0 text-right">
             <div>
-              <span class="text-[9px] text-muted-foreground block uppercase font-bold"
-                >Position</span
-              >
+              <span class="text-xs text-muted-foreground block uppercase font-bold">Position</span>
               <span class="text-xs font-bold text-foreground">
                 {{ call.positionUsd ? `$${call.positionUsd.toFixed(1)}` : 'Holding' }}
               </span>
@@ -140,7 +134,7 @@
 
         <!-- Post Actions Bar -->
         <div
-          class="flex items-center justify-between pt-2 border-t border-border/60 text-xs text-muted-foreground font-mono"
+          class="flex items-center justify-between pt-2 border-t border-border/60 text-xs text-muted-foreground"
         >
           <!-- 1. Reply -->
           <button
@@ -164,7 +158,7 @@
                 <span>{{ (call.repostsCount || 0) + (call.quotesCount || 0) }}</span>
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" class="w-36 font-mono text-xs">
+            <DropdownMenuContent align="center" class="w-36 text-xs">
               <DropdownMenuItem class="cursor-pointer gap-2" @click="emit('repost', call.id)">
                 <Repeat class="w-3.5 h-3.5 text-emerald-500" />
                 <span>{{ call.isRepostedByViewer ? 'Undo Repost' : 'Repost' }}</span>
@@ -206,7 +200,7 @@
             @click="emit('share', call)"
           >
             <Share2 class="w-3.5 h-3.5" />
-            <span class="hidden sm:inline">Share</span>
+            <span class="hidden sm:inline">{{ t('share') }}</span>
           </button>
         </div>
       </article>
@@ -240,8 +234,11 @@ import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { CashtagText } from '@/components/feed';
 import { isWhaleCaller } from '@/composables/useFeed';
 import { useTokenStore, type TokenListItem } from '@/composables/useTokenStore';
-import { shortenAddress, formatRelativeTime, formatCompactUsd } from '@/lib/utils';
+import { shortenAddress, formatRelativeTime, formatCompactUsd, getChainIcon } from '@/lib/utils';
+import { useI18n } from '@/lib/i18n';
 import type { FeedCalloutItem } from '@proto/shared-types';
+
+const { t } = useI18n();
 
 defineProps<{
   posts: FeedCalloutItem[];

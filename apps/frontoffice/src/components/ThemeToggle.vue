@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 const { t } = useI18n();
 
 const mode = useColorMode({
-  emitAuto: true,
+  emitAuto: false,
+  initialValue: 'dark',
   modes: {
     dark: 'dark',
     light: 'light',

@@ -1,14 +1,26 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import 'tailwindcss';
 
 :root {
-  --vp-c-brand-1: #10b981;
-  --vp-c-brand-2: #059669;
-  --vp-c-brand-3: #047857;
-  --vp-c-brand-soft: rgba(16, 185, 129, 0.14);
+  --vp-c-brand-1: #E7239F;
+  --vp-c-brand-2: #D11B8D;
+  --vp-c-brand-3: #B8147A;
+  --vp-c-brand-soft: rgba(231, 35, 159, 0.14);
+  --vp-font-family-base:
+    'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
 .dark {
   --vp-c-bg: #09090b;
   --vp-c-bg-soft: #18181b;
   --vp-c-bg-alt: #121215;
+  --vp-c-brand-1: #E7239F;
+  --vp-c-brand-2: #F048B0;
+  --vp-c-brand-3: #F468BF;
+  --vp-c-brand-soft: rgba(231, 35, 159, 0.16);
+}
+
+body {
+  font-weight: 500;
 }

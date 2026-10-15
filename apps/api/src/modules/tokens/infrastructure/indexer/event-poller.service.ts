@@ -63,28 +63,40 @@ export class EventPollerService {
     let currentBlock = 0n;
     try {
       currentBlock = toBlock ?? (await this.client.getBlockNumber());
-      let startBlock =
+
+      if (this.lastPolledBlock === 0n && this.tokenRepository.getLastIndexedBlock) {
+        try {
+          const persisted = await this.tokenRepository.getLastIndexedBlock(this.network.name);
+          if (persisted && persisted > 0n) {
+            this.lastPolledBlock = persisted;
+          }
+        } catch {
+          // fallback to live block
+        }
+      }
+
+      const startBlock =
         fromBlock ??
         (this.lastPolledBlock > 0n ? this.lastPolledBlock + 1n : currentBlock - MAX_BLOCK_RANGE);
 
       if (startBlock > currentBlock) return 0;
-      // Block-drop clamp: if we're more than MAX_BLOCK_RANGE behind, process the oldest batch
-      // this cycle and rely on subsequent polling cycles to catch up — never silently skip ahead.
-      // Capping startBlock here would cause irreversible data loss for protocols with many events.
-      // The while-loop inside pollV1Launches/pollV2Launches/pollV2Trades handles batch sizes.
-      // Clamp is still applied so a single getLogs call stays within provider limits.
-      if (currentBlock - startBlock > MAX_BLOCK_RANGE) {
-        startBlock = currentBlock - MAX_BLOCK_RANGE;
-      }
+
+      // Sequential batching: process at most MAX_BLOCK_RANGE blocks per cycle to respect RPC limits.
+      // Never drop or skip blocks; subsequent cycles continue catch-up until currentBlock is reached.
+      const batchEnd =
+        currentBlock - startBlock > MAX_BLOCK_RANGE ? startBlock + MAX_BLOCK_RANGE : currentBlock;
 
       let count = 0;
-      count += await this.pollV1Launches(startBlock, currentBlock);
-      count += await this.pollV2Launches(startBlock, currentBlock);
-      count += await this.pollV2Trades(startBlock, currentBlock);
-      count += await this.pollV1Swaps(startBlock, currentBlock);
+      count += await this.pollV1Launches(startBlock, batchEnd);
+      count += await this.pollV2Launches(startBlock, batchEnd);
+      count += await this.pollV2Trades(startBlock, batchEnd);
+      count += await this.pollV1Swaps(startBlock, batchEnd);
 
-      // Advance lastPolledBlock only on success so a failed cycle retries the same range.
-      this.lastPolledBlock = currentBlock;
+      // Advance and persist lastPolledBlock only on success so a failed cycle retries the same range.
+      this.lastPolledBlock = batchEnd;
+      if (this.tokenRepository.setLastIndexedBlock) {
+        await this.tokenRepository.setLastIndexedBlock(this.network.name, batchEnd);
+      }
       return count;
     } catch (error) {
       const e = error as { code?: number; message?: string };
@@ -217,9 +229,7 @@ export class EventPollerService {
     if (v2Tokens.length === 0) return 0;
 
     const curveAddresses = v2Tokens.map((t) => t.poolAddress as Address);
-    const isArc = this.network.nativeCurrency.symbol === 'USDC';
-    // USDC is always $1.00 on Arc; Robinhood uses live ETH price
-    const quotePriceUsd = isArc ? 1.0 : await this.priceFeed.getEthPriceUsd();
+    const quotePriceUsd = await this.priceFeed.getQuoteAssetPriceUsd(this.network.chainId);
 
     try {
       const logs = await this.client.getLogs({
@@ -358,8 +368,7 @@ export class EventPollerService {
 
     if (v1Tokens.length === 0) return 0;
 
-    const isArc = this.network.nativeCurrency.symbol === 'USDC';
-    const quotePriceUsd = isArc ? 1.0 : await this.priceFeed.getEthPriceUsd();
+    const quotePriceUsd = await this.priceFeed.getQuoteAssetPriceUsd(this.network.chainId);
 
     try {
       const poolAddresses = v1Tokens.map((t) => t.poolAddress as Address);

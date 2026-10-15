@@ -4,6 +4,9 @@ import {
   SimpleChart,
   ShadcnAreaChart,
   ShadcnTradingLineChart,
+  LightweightCandlestickChart,
+  LightweightAreaChart,
+  LightweightHistogramChart,
 } from '../src/components/ui/chart';
 
 describe('TradingChart & Candlestick Component', () => {
@@ -14,6 +17,19 @@ describe('TradingChart & Candlestick Component', () => {
     expect(ShadcnTradingLineChart).toBeDefined();
     expect(ShadcnTradingLineChart.__name || ShadcnTradingLineChart.name).toBe(
       'ShadcnTradingLineChart',
+    );
+  });
+
+  it('exports independent LightweightCandlestickChart, LightweightAreaChart, and LightweightHistogramChart components', () => {
+    expect(LightweightCandlestickChart).toBeDefined();
+    expect(LightweightAreaChart).toBeDefined();
+    expect(LightweightHistogramChart).toBeDefined();
+    expect(LightweightCandlestickChart.__name || LightweightCandlestickChart.name).toBe(
+      'LightweightCandlestickChart',
+    );
+    expect(LightweightAreaChart.__name || LightweightAreaChart.name).toBe('LightweightAreaChart');
+    expect(LightweightHistogramChart.__name || LightweightHistogramChart.name).toBe(
+      'LightweightHistogramChart',
     );
   });
 
@@ -89,5 +105,30 @@ describe('TradingChart & Candlestick Component', () => {
     // Last candle closes near basePrice
     const lastCandle = candles[candles.length - 1];
     expect(lastCandle.close).toBeCloseTo(basePrice, 7);
+  });
+
+  it('formats trade markers with correct positions, colors, and timestamps', () => {
+    const rawTrade = {
+      timestamp: 1728639000000,
+      isBuy: true,
+      priceUsd: 0.000012,
+    };
+
+    let ts = rawTrade.timestamp;
+    if (ts > 2_000_000_000) ts = Math.floor(ts / 1000);
+
+    const marker = {
+      time: ts,
+      position: rawTrade.isBuy ? 'belowBar' : 'aboveBar',
+      color: rawTrade.isBuy ? '#22c55e' : '#ef4444',
+      shape: rawTrade.isBuy ? 'arrowUp' : 'arrowDown',
+      text: rawTrade.isBuy ? 'B' : 'S',
+    };
+
+    expect(marker.time).toBe(1728639000);
+    expect(marker.position).toBe('belowBar');
+    expect(marker.color).toBe('#22c55e');
+    expect(marker.shape).toBe('arrowUp');
+    expect(marker.text).toBe('B');
   });
 });

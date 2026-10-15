@@ -4,6 +4,8 @@ pragma solidity ^0.8.24;
 import {ILiquidityLocker} from "./interfaces/ILiquidityLocker.sol";
 import {INonfungiblePositionManager, IWETH} from "./interfaces/IUniswapV3.sol";
 import {ILaunchpadToken} from "./interfaces/ILaunchpadToken.sol";
+import {IHolderFeeDistributor} from "./interfaces/IHolderFeeDistributor.sol";
+import {FeeMath} from "./libraries/FeeMath.sol";
 
 /**
  * @title LiquidityLocker
@@ -32,6 +34,7 @@ contract LiquidityLocker is ILiquidityLocker {
     address public immutable factory;
     address public immutable weth;
     address public protocolFeeRecipient;
+    address public holderFeeDistributor;
     address public owner;
     address public pendingOwner;
 
@@ -150,6 +153,10 @@ contract LiquidityLocker is ILiquidityLocker {
         protocolFeeRecipient = recipient;
     }
 
+    function setHolderFeeDistributor(address distributor) external onlyOwner {
+        holderFeeDistributor = distributor;
+    }
+
     /// @notice Two-step ownership transfer: Step 1 — propose new owner.
     function transferOwnership(address newOwner) external onlyOwner {
         if (newOwner == address(0)) revert ZeroAddress();
@@ -166,7 +173,8 @@ contract LiquidityLocker is ILiquidityLocker {
 
     function claimFees(address token) external override nonReentrant returns (uint256 creatorTokenFee, uint256 creatorWethFee) {
         address redirect = feeRedirects[token];
-        if (msg.sender != tokenDeployers[token] && msg.sender != owner && (redirect == address(0) || msg.sender != redirect)) {
+        // H-04 fix: remove owner privilege on claimFees. Only deployer or active redirect may claim.
+        if (msg.sender != tokenDeployers[token] && (redirect == address(0) || msg.sender != redirect)) {
             revert Unauthorized();
         }
         uint256 positionId = tokenPositions[token];
@@ -196,11 +204,14 @@ contract LiquidityLocker is ILiquidityLocker {
         });
 
         uint256 protocolSharePercent = tokenProtocolFeeShares[token];
-        dist.protocolTokenFee = (dist.totalTokenFee * protocolSharePercent) / 100;
-        dist.protocolWethFee = (dist.totalWethFee * protocolSharePercent) / 100;
-
-        dist.creatorTokenFee = dist.totalTokenFee - dist.protocolTokenFee;
-        dist.creatorWethFee = dist.totalWethFee - dist.protocolWethFee;
+        (dist.creatorTokenFee, dist.protocolTokenFee) = FeeMath.calculateLockerSplit(
+            dist.totalTokenFee,
+            protocolSharePercent
+        );
+        (dist.creatorWethFee, dist.protocolWethFee) = FeeMath.calculateLockerSplit(
+            dist.totalWethFee,
+            protocolSharePercent
+        );
 
         dist.creatorRecipient = redirect != address(0) ? redirect : tokenDeployers[token];
 
@@ -225,8 +236,14 @@ contract LiquidityLocker is ILiquidityLocker {
             if (!ok) revert TransferFailed();
         }
         if (dist.creatorWethFee > 0) {
-            bool ok = IWETH(weth).transfer(dist.creatorRecipient, dist.creatorWethFee);
-            if (!ok) revert TransferFailed();
+            if (holderFeeDistributor != address(0) && dist.creatorRecipient == holderFeeDistributor) {
+                bool okApprove = IWETH(weth).approve(holderFeeDistributor, dist.creatorWethFee);
+                if (!okApprove) revert TransferFailed();
+                IHolderFeeDistributor(holderFeeDistributor).depositRewards(token, dist.creatorWethFee);
+            } else {
+                bool ok = IWETH(weth).transfer(dist.creatorRecipient, dist.creatorWethFee);
+                if (!ok) revert TransferFailed();
+            }
         }
     }
 }

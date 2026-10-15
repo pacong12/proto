@@ -43,7 +43,7 @@ const forwarded = useForwardPropsEmits(props, emits);
                 variant: page.value === props.page ? 'default' : 'outline',
                 size: 'sm',
               }),
-              'h-8 w-8 p-0 text-xs font-mono',
+              'h-8 w-8 p-0 text-xs',
             )
           "
         >

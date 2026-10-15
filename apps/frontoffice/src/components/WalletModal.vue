@@ -47,15 +47,10 @@
           class="p-4 rounded-xl bg-muted/30 border border-border space-y-3"
         >
           <div class="flex items-center justify-between">
-            <span
-              class="text-[11px] font-mono text-muted-foreground uppercase tracking-wider font-semibold"
-            >
+            <span class="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
               {{ t('connectedAccount') }}
             </span>
-            <Badge
-              :variant="isCorrectNetwork ? 'default' : 'destructive'"
-              class="text-[10px] font-mono"
-            >
+            <Badge :variant="isCorrectNetwork ? 'default' : 'destructive'" class="text-xs">
               {{ isCorrectNetwork ? activeNetwork.name : t('switchToRobinhood') }}
             </Badge>
           </div>
@@ -65,10 +60,10 @@
             <div class="flex items-center gap-2.5 min-w-0">
               <Jazzicon :address="account" :size="24" class="rounded-full shrink-0" />
               <div class="truncate">
-                <span class="font-mono text-xs font-bold block truncate text-foreground">
+                <span class="text-xs font-bold block truncate text-foreground">
                   {{ account }}
                 </span>
-                <span class="font-mono text-[11px] text-foreground font-semibold">
+                <span class="text-xs text-foreground font-semibold">
                   {{ formattedBalance }}
                 </span>
               </div>
@@ -84,7 +79,7 @@
             >
               <Check v-if="copied" class="w-3 h-3 text-foreground" />
               <Copy v-else class="w-3 h-3" />
-              <span class="text-[10px] font-mono">{{ copied ? 'Copied' : 'Copy' }}</span>
+              <span class="text-xs">{{ copied ? 'Copied' : 'Copy' }}</span>
             </Button>
           </div>
 
@@ -114,7 +109,7 @@
           <!-- Multi-Chain Network Selector (Robinhood & Arc) with Shadcn Select -->
           <div class="space-y-1.5 pt-2 border-t border-border">
             <span
-              class="text-[10px] font-mono text-muted-foreground uppercase tracking-wider block"
+              class="text-xs uppercase tracking-wider text-muted-foreground block font-semibold"
             >
               Active Network
             </span>
@@ -123,13 +118,11 @@
               @update:model-value="handleChainSelect"
             >
               <SelectTrigger
-                class="w-full h-10 px-3 justify-between font-mono text-xs border-border hover:bg-muted cursor-pointer"
+                class="w-full h-10 px-3 justify-between text-xs border-border hover:bg-muted cursor-pointer"
               >
                 <div class="flex items-center gap-2.5 truncate">
                   <img
-                    :src="
-                      activeNetwork.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'
-                    "
+                    :src="getChainIcon(activeNetwork)"
                     :alt="activeNetwork.name"
                     class="w-4 h-4 rounded-xs object-contain shrink-0"
                   />
@@ -141,7 +134,7 @@
                 class="w-[--radix-select-trigger-width] min-w-[280px] bg-card border border-border p-1.5 shadow-lg"
               >
                 <SelectLabel
-                  class="text-[10px] font-mono uppercase tracking-wider text-muted-foreground px-2 py-1"
+                  class="text-xs uppercase tracking-wider text-muted-foreground px-2 py-1 font-semibold"
                 >
                   Select Network
                 </SelectLabel>
@@ -150,11 +143,11 @@
                   v-for="net in Object.values(SUPPORTED_CHAINS)"
                   :key="net.chainId"
                   :value="String(net.chainId)"
-                  class="cursor-pointer text-xs font-mono py-2.5 px-2.5 hover:bg-muted rounded-lg transition"
+                  class="cursor-pointer text-xs py-2.5 px-2.5 hover:bg-muted rounded-lg transition"
                 >
                   <div class="flex items-center gap-2.5">
                     <img
-                      :src="net.chainId === 5042 ? '/chains/arc.svg' : '/chains/robinhood.svg'"
+                      :src="getChainIcon(net)"
                       :alt="net.name"
                       class="w-5 h-5 rounded-md object-contain shrink-0"
                     />
@@ -171,15 +164,10 @@
         <!-- 2. Detected Wallet Providers Section -->
         <div class="space-y-2">
           <div class="flex items-center justify-between px-1">
-            <span
-              class="text-[11px] font-mono text-muted-foreground uppercase tracking-wider font-semibold"
-            >
+            <span class="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
               {{ isConnected ? 'Switch Provider' : 'Available Wallets' }}
             </span>
-            <span
-              v-if="scanning"
-              class="text-[10px] font-mono text-muted-foreground flex items-center gap-1"
-            >
+            <span v-if="scanning" class="text-xs text-muted-foreground flex items-center gap-1">
               <Loader2 class="w-3 h-3 animate-spin text-foreground" />
               <span>{{ t('scanningForWallets') }}</span>
             </span>
@@ -206,7 +194,7 @@
                     <span class="text-xs font-semibold block truncate text-foreground">
                       {{ wallet.name }}
                     </span>
-                    <span class="block text-[10px] font-mono text-muted-foreground truncate">
+                    <span class="block text-xs text-muted-foreground truncate">
                       {{ wallet.rdns ?? 'Browser extension' }}
                     </span>
                   </div>
@@ -215,14 +203,14 @@
                 <div class="shrink-0 flex items-center gap-2">
                   <span
                     v-if="isWalletActive(wallet)"
-                    class="text-[10px] font-mono font-bold text-foreground bg-muted border border-border px-2 py-0.5 rounded-full"
+                    class="text-xs font-bold text-foreground bg-muted border border-border px-2 py-0.5 rounded-full"
                   >
                     Active
                   </span>
 
                   <span
                     v-else-if="connectingId === wallet.id"
-                    class="text-xs text-foreground font-mono flex items-center gap-1"
+                    class="text-xs text-foreground flex items-center gap-1"
                   >
                     <Loader2 class="w-3 h-3 animate-spin" />
                     <span>{{ t('connecting') }}</span>
@@ -233,7 +221,7 @@
 
             <li
               v-if="wallets.length === 0 && !scanning"
-              class="px-4 py-6 text-center text-xs text-muted-foreground font-mono bg-muted/30 rounded-xl border border-dashed border-border"
+              class="px-4 py-6 text-center text-xs text-muted-foreground bg-muted/30 rounded-xl border border-dashed border-border"
             >
               No browser wallets detected. Please install MetaMask, Rabby, or Coinbase Wallet.
             </li>
@@ -256,7 +244,7 @@
       <!-- AppKit Notice Footer -->
       <div
         v-if="!appKitConfigured"
-        class="px-5 py-2.5 border-t border-border bg-muted/30 text-[11px] text-muted-foreground leading-relaxed font-mono"
+        class="px-5 py-2.5 border-t border-border bg-muted/30 text-xs text-muted-foreground leading-relaxed"
       >
         <span>EIP-6963 multi-wallet discovery active.</span>
       </div>
@@ -268,6 +256,7 @@
 import { onMounted, onUnmounted, ref } from 'vue';
 import { Loader2, X, Copy, Check, LogOut, ChevronDown, Mail } from 'lucide-vue-next';
 import { ROBINHOOD_CHAIN, SUPPORTED_CHAINS } from '@proto/shared-types';
+import { getChainIcon } from '@/lib/utils';
 import { useAppKit } from '@reown/appkit/vue';
 import { appKitConfigured } from '../lib/appkit';
 import { useI18n } from '@/lib/i18n';

@@ -304,7 +304,7 @@ function formatDisplayPrice(val: number): string {
     <!-- Empty state -->
     <div
       v-if="data.length === 0"
-      class="flex items-center justify-center h-64 text-muted-foreground font-mono text-xs"
+      class="flex items-center justify-center h-64 text-muted-foreground text-xs"
     >
       No chart data available for this range.
     </div>
@@ -398,7 +398,7 @@ function formatDisplayPrice(val: number): string {
         />
 
         <!-- Y-Axis Price Labels (Right column) -->
-        <g class="chart-y-axis font-mono text-[10px]">
+        <g class="chart-y-axis text-xs">
           <text
             v-for="(tick, tIdx) in yAxisTicks"
             :key="`y-lbl-${tIdx}`"
@@ -412,7 +412,7 @@ function formatDisplayPrice(val: number): string {
         </g>
 
         <!-- X-Axis Time Labels (Bottom row) -->
-        <g class="chart-x-axis font-mono text-[10px]">
+        <g class="chart-x-axis text-xs">
           <text
             v-for="(xTick, xIdx) in xAxisTicks"
             :key="`x-lbl-${xIdx}`"
@@ -477,7 +477,7 @@ function formatDisplayPrice(val: number): string {
       <!-- Floating Interactive Tooltip Card (Official Shadcn Card Component) -->
       <Card
         v-if="activePoint"
-        class="absolute pointer-events-none z-30 transition-all duration-75 ease-out shadow-2xl rounded-xl border border-border/80 bg-zinc-950/95 p-2.5 text-xs font-mono text-zinc-100 backdrop-blur-md"
+        class="absolute pointer-events-none z-30 transition-all duration-75 ease-out shadow-2xl rounded-xl border border-border/80 bg-zinc-950/95 p-2.5 text-xs text-zinc-100 backdrop-blur-md"
         :style="{
           left: `${Math.min(Math.max(16, (activePoint.x / viewWidth) * 100), 78)}%`,
           top: `${Math.min(Math.max(12, (activePoint.y / height) * 100 - 18), 65)}%`,
@@ -487,13 +487,13 @@ function formatDisplayPrice(val: number): string {
         <div class="space-y-1">
           <!-- Time Row -->
           <div
-            class="text-[10px] text-muted-foreground font-semibold flex items-center justify-between gap-3"
+            class="text-xs text-muted-foreground font-semibold flex items-center justify-between gap-3"
           >
             <span>{{ formatFullTime(activePoint.data.timestamp) }}</span>
             <Badge
               v-if="activePoint.data.open > 0"
               :variant="activePoint.data.close >= activePoint.data.open ? 'default' : 'destructive'"
-              class="px-1 py-0 h-3.5 text-[9px] font-mono font-bold leading-none"
+              class="px-1 py-0 h-3.5 text-xs font-bold leading-none"
             >
               {{ activePoint.data.close >= activePoint.data.open ? '+' : ''
               }}{{
@@ -507,7 +507,7 @@ function formatDisplayPrice(val: number): string {
 
           <!-- Price Row -->
           <div class="flex items-baseline justify-between gap-4">
-            <span class="text-muted-foreground text-[10px]">Price:</span>
+            <span class="text-muted-foreground text-xs">Price:</span>
             <span class="font-extrabold text-foreground text-sm">
               {{ formatDisplayPrice(activePoint.data.close) }}
             </span>
@@ -516,7 +516,7 @@ function formatDisplayPrice(val: number): string {
           <!-- Volume Row (if present) -->
           <div
             v-if="activePoint.data.volume > 0"
-            class="flex items-baseline justify-between gap-4 pt-0.5 border-t border-border/50 text-[10px]"
+            class="flex items-baseline justify-between gap-4 pt-0.5 border-t border-border/50 text-xs"
           >
             <span class="text-muted-foreground">Volume:</span>
             <span class="text-foreground font-semibold">

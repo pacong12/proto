@@ -13,15 +13,25 @@ console.info('====================================================');
 const componentsDir = path.join(frontofficeSrc, 'components');
 const pagesDir = path.join(frontofficeSrc, 'pages');
 
-const componentFiles = fs
-  .readdirSync(componentsDir)
-  .filter((f) => f.endsWith('.vue'))
-  .map((f) => path.join(componentsDir, f));
+function getVueFiles(dir) {
+  let results = [];
+  const list = fs.readdirSync(dir);
+  for (const file of list) {
+    const fullPath = path.join(dir, file);
+    const stat = fs.statSync(fullPath);
+    if (stat && stat.isDirectory()) {
+      if (!fullPath.includes('ui')) {
+        results = results.concat(getVueFiles(fullPath));
+      }
+    } else if (file.endsWith('.vue')) {
+      results.push(fullPath);
+    }
+  }
+  return results;
+}
 
-const pageFiles = fs
-  .readdirSync(pagesDir)
-  .filter((f) => f.endsWith('.vue'))
-  .map((f) => path.join(pagesDir, f));
+const componentFiles = getVueFiles(componentsDir);
+const pageFiles = getVueFiles(pagesDir);
 
 const allVueFiles = [...componentFiles, ...pageFiles, path.join(frontofficeSrc, 'App.vue')];
 

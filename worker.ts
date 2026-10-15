@@ -99,7 +99,7 @@ export default {
       url.pathname.startsWith('/api/v1/') ||
       url.pathname === '/health'
     ) {
-      const backendBase = env.BACKEND_API_URL || 'http://31.97.189.81:3011';
+      const backendBase = env.BACKEND_API_URL || 'https://api.robinmood.xyz';
       const targetUrl = new URL(url.pathname + url.search, backendBase);
       const forwardHeaders = new Headers(request.headers);
       forwardHeaders.set('x-forwarded-host', url.host);

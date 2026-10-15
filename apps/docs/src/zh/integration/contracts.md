@@ -9,7 +9,7 @@
 | 合约名称                         | 合约地址                                     | 核心功能                        |
 | :------------------------------- | :------------------------------------------- | :------------------------------ |
 | **Launchpad Factory (联合曲线)** | `0xbA42499Cfe59abc05120A100EEc4f859F476034F` | 部署代币并开启链上联合曲线      |
-| **Liquidity Locker**             | `0xf60664BEadbcBe25aFFdae0e7E2a41a819c81FCe` | 永久锁定 Uniswap V3 LP NFT 仓位 |
+| **Liquidity Locker**             | `0x070233B6F46ccD61CA2B7bc1E13520c3fE4614E4` | 永久锁定 Uniswap V3 LP NFT 仓位 |
 | **Uniswap V3 Factory**           | `0x1f7d7550B1b028f7571E69A784071F0205FD2EfA` | 官方去中心化交易池注册表        |
 | **Position Manager**             | `0x73991a25C818Bf1f1128dEAaB1492D45638DE0D3` | 集中流动性头寸管理合约          |
 | **Swap Router**                  | `0xCaf681a66D020601342297493863E78C959E5cb2` | 去中心化交易精确输入路由合约    |

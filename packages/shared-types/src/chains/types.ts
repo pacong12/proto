@@ -1,8 +1,9 @@
-export type SupportedChainId = 4663 | 5042;
+export type SupportedChainId = 4663 | 5042 | (number & {});
 
 export interface TokenAddressPair {
   pairedToken?: string;
   poolAddress?: string;
   curveAddress?: string;
   version?: string;
+  chainId?: number;
 }

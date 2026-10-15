@@ -158,7 +158,8 @@ export class IpfsService {
       }
     }
 
-    // Remote fallback: fetch from working public gateways and cache locally
+    // Remote fallback: fetch from working public gateways and cache locally (max 5 MiB to prevent OOM)
+    const MAX_DOWNLOAD_BYTES = 5 * 1024 * 1024;
     const gateways = [
       `https://ipfs.filebase.io/ipfs/${cleanCid}`,
       `https://4everland.io/ipfs/${cleanCid}`,
@@ -170,7 +171,14 @@ export class IpfsService {
       try {
         const res = await fetch(gw, { signal: AbortSignal.timeout(5000) });
         if (res.ok) {
+          const contentLength = res.headers.get('content-length');
+          if (contentLength && parseInt(contentLength, 10) > MAX_DOWNLOAD_BYTES) {
+            continue;
+          }
           const ab = await res.arrayBuffer();
+          if (ab.byteLength > MAX_DOWNLOAD_BYTES) {
+            continue;
+          }
           const buf = Buffer.from(ab);
           const mime = res.headers.get('content-type') || 'image/webp';
           saveLocalFile(cleanCid, buf, mime, `${cleanCid}.bin`);

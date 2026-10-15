@@ -4,17 +4,18 @@
       <h1 class="text-2xl font-bold tracking-tight text-foreground">
         {{ t('termsOfService') }}
       </h1>
-      <p class="text-xs text-muted-foreground font-mono mt-1">Last Updated: September 2026</p>
+      <p class="text-xs text-muted-foreground mt-1">Last Updated: September 2026</p>
     </div>
 
     <div class="space-y-6 text-sm text-muted-foreground leading-relaxed">
       <section class="space-y-2">
         <h2 class="text-base font-bold text-foreground">1. Non-Custodial Protocol</h2>
         <p>
-          Proto is a decentralized, non-custodial software protocol deployed on Robinhood Chain
-          (Chain ID: 4663). Proto Labs does not take custody of user assets, tokens, or private keys
-          at any point. Every token launch, liquidity lock, swap, or fee claim is executed directly
-          between your cryptographic wallet and open-source smart contracts.
+          Proto is a decentralized, non-custodial software protocol deployed on EVM-compatible
+          networks, including Robinhood Chain and Arc Network. Proto Labs does not take custody of
+          user assets, tokens, or private keys at any point. Every token launch, liquidity lock,
+          swap, or fee claim is executed directly between your cryptographic wallet and open-source
+          smart contracts.
         </p>
       </section>
 

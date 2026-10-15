@@ -1,8 +1,10 @@
 <template>
   <div class="max-w-4xl mx-auto space-y-8 py-2 sm:py-4">
     <div>
-      <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t('launchToken') }}</h1>
-      <p class="text-sm mt-1 text-muted-foreground">
+      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+        {{ t('launchToken') }}
+      </h1>
+      <p class="text-sm text-muted-foreground mt-1 leading-relaxed">
         {{ t('v2Subtitle') }}
       </p>
     </div>
@@ -65,7 +67,7 @@
                   <UploadCloud class="w-5 h-5 text-muted-foreground" />
                 </div>
                 <span class="text-xs font-semibold text-foreground">Upload Logo</span>
-                <span class="text-[10px] text-muted-foreground leading-tight"
+                <span class="text-xs text-muted-foreground leading-tight"
                   >PNG, JPG, WEBP (Max 5MB)</span
                 >
               </div>
@@ -74,7 +76,7 @@
             <!-- Minimal Uploading Spinner Indicator -->
             <div
               v-if="isUploadingIpfs"
-              class="flex items-center gap-1.5 text-[11px] font-mono text-amber-500 pt-0.5"
+              class="flex items-center gap-1.5 text-xs text-amber-500 pt-0.5"
             >
               <Loader2 class="w-3 h-3 animate-spin shrink-0" />
               <span>{{ t('pinningIpfs') }}</span>
@@ -83,7 +85,7 @@
             <!-- IPFS Ready Indicator -->
             <div
               v-else-if="form.logo"
-              class="flex items-center gap-1.5 text-[11px] font-mono text-emerald-500 pt-0.5"
+              class="flex items-center gap-1.5 text-xs text-emerald-500 pt-0.5"
             >
               <Check class="w-3 h-3 shrink-0" />
               <span>{{ t('ipfsReady') }}</span>
@@ -92,7 +94,7 @@
             <!-- Image Error -->
             <div
               v-if="imageError"
-              class="text-[11px] text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2"
+              class="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2"
             >
               {{ imageError }}
             </div>
@@ -123,7 +125,7 @@
                   :placeholder="t('symbolPlaceholder')"
                   maxlength="10"
                   required
-                  class="font-mono uppercase"
+                  class="uppercase"
                 />
               </div>
             </div>
@@ -150,7 +152,7 @@
               v-model="form.twitter"
               type="text"
               placeholder="https://x.com/yourproject"
-              class="font-mono text-xs"
+              class="text-xs"
             />
           </div>
 
@@ -160,7 +162,7 @@
               v-model="form.telegram"
               type="text"
               placeholder="https://t.me/yourproject"
-              class="font-mono text-xs"
+              class="text-xs"
             />
           </div>
 
@@ -170,7 +172,7 @@
               v-model="form.website"
               type="text"
               placeholder="https://yourproject.com"
-              class="font-mono text-xs"
+              class="text-xs"
             />
           </div>
         </div>
@@ -178,7 +180,7 @@
         <!-- Paired Asset (Tied to active network selected in navigation) -->
         <div class="space-y-2 pt-1">
           <div class="flex items-center justify-between">
-            <span class="text-[11px] font-mono text-muted-foreground">
+            <span class="text-xs text-muted-foreground">
               {{ activeNetwork.name }}
             </span>
           </div>
@@ -187,7 +189,7 @@
             id="paired-asset"
             class="w-full flex items-center justify-between px-4 py-3 h-12 rounded-xl border border-border bg-card text-foreground"
           >
-            <div class="flex items-center gap-2.5 font-mono">
+            <div class="flex items-center gap-2.5">
               <img
                 :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
                 alt=""
@@ -198,26 +200,28 @@
               />
               <span class="font-bold text-sm text-foreground">{{ currencySymbol }}</span>
             </div>
-            <span class="text-[11px] font-mono text-muted-foreground">
-              Locked on {{ activeNetwork.name }}
-            </span>
+            <span class="text-xs text-muted-foreground"> Locked on {{ activeNetwork.name }} </span>
           </div>
 
-          <p class="text-[11px] text-muted-foreground">
+          <p class="text-xs text-muted-foreground">
             {{
-              activeNetwork.chainId === 5042
-                ? 'Graduates once the curve raises 69,000 USDC into Uniswap liquidity.'
-                : t('v2GraduatesHint')
+              `Graduates once the curve raises ${graduationTargetFormatted} ${currencySymbol} into Uniswap liquidity.`
             }}
           </p>
         </div>
 
         <!-- Developer buy -->
         <div class="space-y-2 pt-1">
-          <div class="flex justify-between items-center">
-            <span class="text-[11px] text-muted-foreground font-mono">
+          <div class="flex justify-between items-center text-xs">
+            <span class="text-muted-foreground">
               {{ t('boughtInLaunchNotice') }}
             </span>
+            <div class="flex items-center gap-1.5 text-muted-foreground">
+              <span>Balance:</span>
+              <strong class="text-foreground font-semibold">
+                {{ isConnected ? `${formattedBalance} ${currencySymbol}` : '—' }}
+              </strong>
+            </div>
           </div>
           <div class="relative">
             <Input
@@ -227,7 +231,7 @@
               step="0.001"
               min="0"
               placeholder="0.00"
-              class="font-mono text-sm pr-20"
+              class="text-sm pr-20"
             />
             <div
               class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none select-none"
@@ -240,513 +244,62 @@
                 height="16"
                 class="w-4 h-4 rounded-full object-contain shrink-0"
               />
-              <span class="text-xs font-semibold font-mono text-muted-foreground">
+              <span class="text-xs font-semibold text-muted-foreground">
                 {{ currencySymbol }}
               </span>
             </div>
           </div>
+
+          <!-- Quick percentage selectors for initial buy -->
+          <div
+            v-if="isConnected && Number(formattedBalance) > 0"
+            class="flex items-center gap-1.5 pt-0.5"
+          >
+            <button
+              v-for="pct in [10, 25, 50, 75]"
+              :key="pct"
+              type="button"
+              class="px-2 py-0.5 text-xs rounded-md border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition cursor-pointer"
+              @click="setInitialBuyPercentage(pct)"
+            >
+              {{ pct }}%
+            </button>
+            <button
+              type="button"
+              class="px-2 py-0.5 text-xs rounded-md border border-border bg-muted/40 hover:bg-muted text-primary font-bold transition cursor-pointer"
+              @click="setInitialBuyMax"
+            >
+              MAX
+            </button>
+          </div>
+
+          <!-- Insufficient Balance Warning -->
+          <div
+            v-if="isConnected && isInsufficientBalance"
+            class="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-500 text-xs flex items-center gap-2"
+          >
+            <AlertCircle class="w-4 h-4 shrink-0" />
+            <span>
+              Insufficient balance for launch fee + initial buy (Need ~{{ totalDueDisplay }}
+              {{ currencySymbol }}, Have {{ formattedBalance }} {{ currencySymbol }}).
+            </span>
+          </div>
         </div>
 
-        <!-- Advanced Accordion -->
-        <Card class="rounded-2xl border border-border bg-card overflow-hidden p-0 shadow-xs">
-          <Button
-            type="button"
-            variant="ghost"
-            @click="advancedOpen = !advancedOpen"
-            class="w-full flex items-center justify-between px-5 py-4 h-auto text-xs font-semibold transition hover:bg-muted/40 cursor-pointer rounded-none"
-          >
-            <div class="flex items-center gap-2">
-              <span class="font-bold font-mono">{{ t('advanced') }}</span>
-              <span class="text-[10px] text-muted-foreground font-mono">
-                (Buy: {{ form.buyTax }}% &middot; Sell: {{ form.sellTax }}% &middot; Split:
-                {{ totalSplit }}/100%)
-              </span>
-            </div>
-            <ChevronDown
-              class="w-3.5 h-3.5 transition-transform duration-200 opacity-60"
-              :class="advancedOpen ? 'rotate-180' : ''"
-            />
-          </Button>
-
-          <div v-show="advancedOpen" class="p-6 sm:p-7 space-y-7 border-t border-border">
-            <!-- Connected Creator Wallet -->
-            <div class="space-y-2">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-1.5">
-                  <Label class="text-xs font-semibold">{{ t('creatorWallet') }}</Label>
-                  <InfoTooltip
-                    text="Receives creator fees, trading taxes, and governance permissions. Defaults to your connected wallet if left blank."
-                  />
-                </div>
-                <button
-                  v-if="account && form.creatorWallet !== account"
-                  type="button"
-                  class="text-[10px] text-primary hover:underline font-mono cursor-pointer"
-                  @click="form.creatorWallet = account"
-                >
-                  Use Connected Wallet
-                </button>
-              </div>
-              <Input
-                v-model="form.creatorWallet"
-                type="text"
-                :placeholder="account || '0x... (defaults to deployer)'"
-                class="h-10 text-xs font-mono rounded-xl bg-muted/20"
-              />
-              <p class="text-[10px] text-muted-foreground font-mono">
-                Recipient for fee revenue and tax collections. Defaults to
-                {{ account ? shortenAddress(account) : 'deployer' }}.
-              </p>
-            </div>
-
-            <!-- Trading Taxes (Buy & Sell Tax) with Quick Presets -->
-            <div class="space-y-3.5 pt-4 border-t border-border">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-1.5">
-                  <Label class="text-xs font-semibold text-foreground">Trading Taxes</Label>
-                  <InfoTooltip
-                    text="Taxes collected on automated market maker (DEX) swaps (max 10% per trade). Funds project development, liquidity deepening, and holder dividends."
-                  />
-                </div>
-                <span class="text-[10px] font-mono text-muted-foreground">Max 10% per trade</span>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                <!-- Buy Tax with Slider -->
-                <div class="space-y-3.5 p-4 sm:p-5 rounded-2xl border border-border bg-card">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-1">
-                      <span class="text-xs font-medium text-foreground">Buy Tax</span>
-                      <InfoTooltip
-                        text="Fee deducted when users purchase tokens. Recommended: 1% - 5%."
-                      />
-                    </div>
-                    <span class="text-xs font-mono font-bold text-foreground"
-                      >{{ form.buyTax }}%</span
-                    >
-                  </div>
-                  <Slider
-                    :model-value="[parseFloat(form.buyTax || '0')]"
-                    :max="10"
-                    :min="0"
-                    :step="0.5"
-                    range-class="bg-foreground"
-                    thumb-class="border-foreground focus-visible:ring-foreground"
-                    class="py-1"
-                    @update:model-value="form.buyTax = String($event ? $event[0] : 0)"
-                  />
-                  <div class="flex items-center gap-1.5 pt-1">
-                    <Button
-                      v-for="p in [0, 1, 2, 5, 10]"
-                      :key="p"
-                      type="button"
-                      size="sm"
-                      :variant="parseFloat(form.buyTax || '0') === p ? 'default' : 'outline'"
-                      class="flex-1 h-7 text-xs font-mono p-0 cursor-pointer"
-                      @click="form.buyTax = String(p)"
-                    >
-                      {{ p }}%
-                    </Button>
-                  </div>
-                </div>
-
-                <!-- Sell Tax with Slider -->
-                <div class="space-y-3.5 p-4 sm:p-5 rounded-2xl border border-border bg-card">
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-1">
-                      <span class="text-xs font-medium text-foreground">Sell Tax</span>
-                      <InfoTooltip
-                        text="Fee deducted when users sell tokens back into the pool. Discourages immediate dumping."
-                      />
-                    </div>
-                    <span class="text-xs font-mono font-bold text-foreground"
-                      >{{ form.sellTax }}%</span
-                    >
-                  </div>
-                  <Slider
-                    :model-value="[parseFloat(form.sellTax || '0')]"
-                    :max="10"
-                    :min="0"
-                    :step="0.5"
-                    range-class="bg-foreground"
-                    thumb-class="border-foreground focus-visible:ring-foreground"
-                    class="py-1"
-                    @update:model-value="form.sellTax = String($event ? $event[0] : 0)"
-                  />
-                  <div class="flex items-center gap-1.5 pt-1">
-                    <Button
-                      v-for="p in [0, 1, 2, 5, 10]"
-                      :key="p"
-                      type="button"
-                      size="sm"
-                      :variant="parseFloat(form.sellTax || '0') === p ? 'destructive' : 'outline'"
-                      class="flex-1 h-7 text-xs font-mono p-0 cursor-pointer"
-                      @click="form.sellTax = String(p)"
-                    >
-                      {{ p }}%
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Revenue Split Allocation -->
-            <div class="space-y-4 pt-4 border-t border-border">
-              <div class="flex items-center justify-between">
-                <div>
-                  <div class="flex items-center gap-1.5">
-                    <Label class="text-xs font-semibold text-foreground">Revenue Split</Label>
-                    <InfoTooltip
-                      text="Specifies how collected trading taxes are distributed on-chain. Allocations must sum to exactly 100% to launch."
-                    />
-                  </div>
-                  <p class="text-[11px] text-muted-foreground">Fee allocation (must total 100%)</p>
-                </div>
-                <div class="flex items-center gap-2">
-                  <Button
-                    v-if="totalSplit !== 100"
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    class="h-6 px-2 text-[10px] font-mono border-amber-500/50 text-amber-500 hover:bg-amber-500/10 cursor-pointer"
-                    @click="autoBalanceSplit"
-                  >
-                    Auto-balance
-                  </Button>
-                  <Badge
-                    :variant="totalSplit === 100 ? 'default' : 'outline'"
-                    class="font-mono text-xs"
-                    :class="totalSplit !== 100 ? 'border-amber-500 text-amber-500' : ''"
-                  >
-                    {{ totalSplit }}/100%
-                  </Badge>
-                </div>
-              </div>
-
-              <!-- Quick Presets with Shadcn Button -->
-              <div class="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  :variant="
-                    revenueSplit.creator === 50 &&
-                    revenueSplit.holders === 50 &&
-                    revenueSplit.buyback === 0 &&
-                    revenueSplit.growth === 0
-                      ? 'default'
-                      : 'outline'
-                  "
-                  class="h-7 text-xs font-mono cursor-pointer"
-                  @click="applySplitPreset(50, 0, 50, 0)"
-                >
-                  <span class="hidden sm:inline">50/50 Creator & Holders</span>
-                  <span class="sm:hidden">50/50 Split</span>
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  :variant="
-                    revenueSplit.creator === 100 &&
-                    revenueSplit.holders === 0 &&
-                    revenueSplit.buyback === 0 &&
-                    revenueSplit.growth === 0
-                      ? 'default'
-                      : 'outline'
-                  "
-                  class="h-7 text-xs font-mono cursor-pointer"
-                  @click="applySplitPreset(100, 0, 0, 0)"
-                >
-                  100% Creator
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  :variant="
-                    revenueSplit.creator === 40 &&
-                    revenueSplit.holders === 40 &&
-                    revenueSplit.buyback === 20 &&
-                    revenueSplit.growth === 0
-                      ? 'default'
-                      : 'outline'
-                  "
-                  class="h-7 text-xs font-mono cursor-pointer"
-                  @click="applySplitPreset(40, 20, 40, 0)"
-                >
-                  <span class="hidden sm:inline">40/40/20 Buyback</span>
-                  <span class="sm:hidden">40/40/20</span>
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  :variant="
-                    revenueSplit.creator === 25 &&
-                    revenueSplit.holders === 25 &&
-                    revenueSplit.buyback === 25 &&
-                    revenueSplit.growth === 25
-                      ? 'default'
-                      : 'outline'
-                  "
-                  class="h-7 text-xs font-mono cursor-pointer"
-                  @click="applySplitPreset(25, 25, 25, 25)"
-                >
-                  25% Equal
-                </Button>
-              </div>
-
-              <!-- Donut Chart & Sliders Section -->
-              <div
-                class="flex flex-col lg:flex-row gap-8 items-center lg:items-start p-6 sm:p-7 rounded-2xl border border-border bg-card"
-              >
-                <!-- Circular Donut Chart (Distinct 4-Color Breakdown) -->
-                <div class="relative w-36 h-36 shrink-0 flex items-center justify-center">
-                  <svg class="w-full h-full -rotate-90 transform" viewBox="0 0 100 100">
-                    <!-- Background ring -->
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="38"
-                      stroke="currentColor"
-                      stroke-width="12"
-                      fill="transparent"
-                      class="text-muted/60"
-                    />
-                    <!-- 1. Creator segment (Emerald var(--chart-2)) -->
-                    <circle
-                      v-if="revenueSplit.creator > 0"
-                      cx="50"
-                      cy="50"
-                      r="38"
-                      stroke="var(--chart-2)"
-                      stroke-width="12"
-                      fill="transparent"
-                      :stroke-dasharray="`${creatorStroke} ${donutCircumference}`"
-                      :stroke-dashoffset="creatorOffset"
-                      class="transition-all duration-300"
-                    />
-                    <!-- 2. Buyback & Burn segment (Rose var(--bearish)) -->
-                    <circle
-                      v-if="revenueSplit.buyback > 0"
-                      cx="50"
-                      cy="50"
-                      r="38"
-                      stroke="var(--bearish)"
-                      stroke-width="12"
-                      fill="transparent"
-                      :stroke-dasharray="`${buybackStroke} ${donutCircumference}`"
-                      :stroke-dashoffset="buybackOffset"
-                      class="transition-all duration-300"
-                    />
-                    <!-- 3. Holders segment (Violet var(--chart-4)) -->
-                    <circle
-                      v-if="revenueSplit.holders > 0"
-                      cx="50"
-                      cy="50"
-                      r="38"
-                      stroke="var(--chart-4)"
-                      stroke-width="12"
-                      fill="transparent"
-                      :stroke-dasharray="`${holdersStroke} ${donutCircumference}`"
-                      :stroke-dashoffset="holdersOffset"
-                      class="transition-all duration-300"
-                    />
-                    <!-- 4. Growth segment (Sky var(--chart-1)) -->
-                    <circle
-                      v-if="revenueSplit.growth > 0"
-                      cx="50"
-                      cy="50"
-                      r="38"
-                      stroke="var(--chart-1)"
-                      stroke-width="12"
-                      fill="transparent"
-                      :stroke-dasharray="`${growthStroke} ${donutCircumference}`"
-                      :stroke-dashoffset="growthOffset"
-                      class="transition-all duration-300"
-                    />
-                  </svg>
-
-                  <!-- Center Text inside Donut -->
-                  <div
-                    class="absolute inset-0 flex flex-col items-center justify-center text-center select-none"
-                  >
-                    <span
-                      class="text-lg font-mono font-bold leading-tight"
-                      :class="totalSplit === 100 ? 'text-foreground' : 'text-amber-500'"
-                    >
-                      {{ totalSplit }}%
-                    </span>
-                    <span
-                      class="text-[9px] font-mono text-muted-foreground uppercase tracking-wider"
-                      >Split</span
-                    >
-                  </div>
-                </div>
-
-                <!-- 4 Allocation Share Sliders -->
-                <div class="flex-1 w-full space-y-5">
-                  <!-- Creator Share Slider -->
-                  <div class="space-y-2">
-                    <div class="flex items-center justify-between text-xs">
-                      <div class="flex items-center gap-1.5 font-semibold text-foreground">
-                        <span>Creator</span>
-                        <InfoTooltip
-                          text="Portion of swap taxes sent directly to the creator wallet."
-                        />
-                      </div>
-                      <span class="font-mono font-bold text-foreground">
-                        {{ revenueSplit.creator }}%
-                      </span>
-                    </div>
-                    <Slider
-                      :model-value="[revenueSplit.creator]"
-                      :max="100"
-                      :min="0"
-                      :step="1"
-                      range-class="bg-foreground"
-                      thumb-class="border-foreground focus-visible:ring-foreground"
-                      @update:model-value="updateShare('creator', $event ? $event[0] : 0)"
-                    />
-                    <div
-                      class="flex items-center justify-between text-[10px] text-muted-foreground font-mono"
-                    >
-                      <span>max {{ maxCreator }}%: the other shares leave this much</span>
-                      <span>{{ revenueSplit.creator }}/{{ maxCreator }}%</span>
-                    </div>
-                  </div>
-
-                  <!-- Buyback & Burn Slider -->
-                  <div class="space-y-2">
-                    <div class="flex items-center justify-between text-xs">
-                      <div class="flex items-center gap-1.5 font-semibold text-foreground">
-                        <span>Buyback & Burn</span>
-                        <InfoTooltip
-                          text="Automatically buys tokens off the pool and permanently burns them to reduce supply."
-                        />
-                      </div>
-                      <span class="font-mono font-bold text-foreground">
-                        {{ revenueSplit.buyback }}%
-                      </span>
-                    </div>
-                    <Slider
-                      :model-value="[revenueSplit.buyback]"
-                      :max="100"
-                      :min="0"
-                      :step="1"
-                      range-class="bg-foreground"
-                      thumb-class="border-foreground focus-visible:ring-foreground"
-                      @update:model-value="updateShare('buyback', $event ? $event[0] : 0)"
-                    />
-                    <div
-                      class="flex items-center justify-between text-[10px] text-muted-foreground font-mono"
-                    >
-                      <span>max {{ maxBuyback }}%: the other shares leave this much</span>
-                      <span>{{ revenueSplit.buyback }}/{{ maxBuyback }}%</span>
-                    </div>
-                  </div>
-
-                  <!-- Holder Dividends Slider -->
-                  <div class="space-y-2">
-                    <div class="flex items-center justify-between text-xs">
-                      <div class="flex items-center gap-1.5 font-semibold text-foreground">
-                        <span>Holder Dividends</span>
-                        <InfoTooltip
-                          text="Distributed proportionally in native currency to all token holders as passive yield."
-                        />
-                      </div>
-                      <span class="font-mono font-bold text-foreground">
-                        {{ revenueSplit.holders }}%
-                      </span>
-                    </div>
-                    <Slider
-                      :model-value="[revenueSplit.holders]"
-                      :max="100"
-                      :min="0"
-                      :step="1"
-                      range-class="bg-foreground"
-                      thumb-class="border-foreground focus-visible:ring-foreground"
-                      @update:model-value="updateShare('holders', $event ? $event[0] : 0)"
-                    />
-                    <div
-                      class="flex items-center justify-between text-[10px] text-muted-foreground font-mono"
-                    >
-                      <span>max {{ maxHolders }}%: the other shares leave this much</span>
-                      <span>{{ revenueSplit.holders }}/{{ maxHolders }}%</span>
-                    </div>
-                  </div>
-
-                  <!-- Liquidity Growth Slider -->
-                  <div class="space-y-2">
-                    <div class="flex items-center justify-between text-xs">
-                      <div class="flex items-center gap-1.5 font-semibold text-foreground">
-                        <span>Liquidity Growth</span>
-                        <InfoTooltip
-                          text="Permanently injected into the liquidity pool to deepen market depth and reduce slippage."
-                        />
-                      </div>
-                      <span class="font-mono font-bold text-foreground">
-                        {{ revenueSplit.growth }}%
-                      </span>
-                    </div>
-                    <Slider
-                      :model-value="[revenueSplit.growth]"
-                      :max="100"
-                      :min="0"
-                      :step="1"
-                      range-class="bg-foreground"
-                      thumb-class="border-foreground focus-visible:ring-foreground"
-                      @update:model-value="updateShare('growth', $event ? $event[0] : 0)"
-                    />
-                    <div
-                      class="flex items-center justify-between text-[10px] text-muted-foreground font-mono"
-                    >
-                      <span>max {{ maxGrowth }}%: the other shares leave this much</span>
-                      <span>{{ revenueSplit.growth }}/{{ maxGrowth }}%</span>
-                    </div>
-                  </div>
-
-                  <!-- Bottom summary info matching Argus -->
-                  <div
-                    class="pt-4 mt-2 border-t border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
-                  >
-                    <span class="text-muted-foreground">
-                      Each share stops where the others leave off. They must total 100% to launch.
-                    </span>
-                    <span
-                      class="font-mono font-semibold shrink-0"
-                      :class="totalSplit === 100 ? 'text-foreground' : 'text-amber-500'"
-                    >
-                      {{
-                        totalSplit === 100
-                          ? 'Allocation totals 100%'
-                          : `${100 - totalSplit}% remaining`
-                      }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Anti-Snipe Notice -->
-            <div
-              class="p-4 rounded-xl border border-border bg-black text-xs text-muted-foreground space-y-1.5"
-            >
-              <div class="font-semibold text-foreground flex items-center gap-1">
-                <span>Fair Launch Anti-Snipe Safeguard</span>
-                <InfoTooltip
-                  text="Applies a decaying 99% snipe tax on block 0 that drops smoothly to 0% in 3 seconds to defend against MEV bots."
-                />
-              </div>
-              <p>
-                Connected creator wallet is automatically exempt from the initial 99% snipe tax.
-                External purchases decay smoothly to 0% in 3 seconds.
-              </p>
-            </div>
-          </div>
-        </Card>
+        <!-- Advanced Accordion Component -->
+        <CreateTokenAdvancedSection
+          v-model:open="advancedOpen"
+          v-model:creator-wallet="form.creatorWallet"
+          v-model:buy-tax="form.buyTax"
+          v-model:sell-tax="form.sellTax"
+          v-model:revenue-split="revenueSplit"
+          :account="account"
+        />
 
         <!-- Form Footer Rate & Submit Button -->
         <div class="pt-6 border-t border-border space-y-4">
           <!-- Launch Cost Summary Breakdown -->
-          <div class="rounded-2xl border border-border bg-black p-4 space-y-3 text-xs font-mono">
+          <div class="rounded-2xl border border-border bg-black p-4 space-y-3 text-xs">
             <div class="flex items-center justify-between text-muted-foreground">
               <span>{{ t('platformCreationFee') }}</span>
               <span class="font-bold text-foreground flex items-center gap-1.5">
@@ -783,10 +336,10 @@
             </div>
 
             <div class="pt-3 border-t border-border flex items-center justify-between">
-              <span class="font-bold text-foreground uppercase tracking-wider text-[11px]">
+              <span class="font-bold text-foreground uppercase tracking-wider text-xs">
                 {{ t('totalDue') }}
               </span>
-              <span class="text-sm font-bold text-foreground flex items-center gap-1.5 font-mono">
+              <span class="text-sm font-bold text-foreground flex items-center gap-1.5">
                 <img
                   :src="currencySymbol === 'USDC' ? '/tokens/usdc.svg' : '/tokens/eth.svg'"
                   alt=""
@@ -807,7 +360,7 @@
               isUploadingIpfs ||
               (isConnected &&
                 isCorrectNetwork &&
-                (!form.name.trim() || !form.symbol.trim() || totalSplit !== 100))
+                (!form.name.trim() || !form.symbol.trim() || (hasTax && totalSplit !== 100)))
             "
             class="w-full font-bold py-3.5 text-base h-12 rounded-xl shadow-md cursor-pointer transition active:scale-[0.99]"
             size="lg"
@@ -822,7 +375,7 @@
                     ? t('connectWallet')
                     : !isCorrectNetwork
                       ? `Switch to ${activeNetwork.name}`
-                      : totalSplit !== 100
+                      : hasTax && totalSplit !== 100
                         ? `Allocation must total 100% (${totalSplit}%)`
                         : `${t('launchTokenBtn')} (${totalPairDue})`
             }}
@@ -839,318 +392,43 @@
       </form>
     </Card>
 
-    <!-- Step-by-Step Launch Progress Modal -->
-    <Dialog
-      :open="isModalOpen"
-      @update:open="
-        (val: boolean) => {
-          if (!loading) closeModal();
-        }
-      "
-    >
-      <DialogContent
-        class="w-[calc(100vw-2rem)] sm:max-w-lg p-6 bg-card border border-border rounded-2xl shadow-2xl"
-      >
-        <DialogHeader class="mb-4">
-          <DialogTitle class="text-lg font-bold text-foreground flex items-center gap-2">
-            <Rocket class="w-5 h-5 text-foreground" />
-            <span>{{ t('launchingModalTitle') }}</span>
-          </DialogTitle>
-          <DialogDescription class="text-xs text-muted-foreground">
-            {{ form.name || 'Token' }} ({{ form.symbol || 'SYMBOL' }}) &middot;
-            {{ activeNetwork.name }}
-          </DialogDescription>
-        </DialogHeader>
-
-        <!-- Stepper Progress -->
-        <div class="space-y-3 my-2">
-          <!-- Step 1: Wallet Signature -->
-          <div
-            class="flex items-start gap-3 p-3 rounded-xl transition-colors"
-            :class="
-              launchStep === 'awaiting_signature'
-                ? 'bg-muted border border-border'
-                : 'bg-muted/40 border border-transparent'
-            "
-          >
-            <div class="mt-0.5 shrink-0">
-              <Loader2
-                v-if="launchStep === 'awaiting_signature'"
-                class="w-5 h-5 text-foreground animate-spin"
-              />
-              <CheckCircle
-                v-else-if="
-                  ['broadcasting', 'confirming', 'indexing', 'success'].includes(launchStep)
-                "
-                class="w-5 h-5 text-foreground"
-              />
-              <Clock v-else class="w-5 h-5 text-muted-foreground" />
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="text-sm font-semibold text-foreground flex items-center justify-between">
-                <span>{{ t('launchStepSign') }}</span>
-              </div>
-              <p class="text-xs text-muted-foreground mt-0.5">
-                {{ t('launchStepSignDesc') }}
-              </p>
-            </div>
-          </div>
-
-          <!-- Step 2: Transaction Broadcasted & Block Confirmation -->
-          <div
-            class="flex items-start gap-3 p-3 rounded-xl transition-colors"
-            :class="
-              ['broadcasting', 'confirming'].includes(launchStep)
-                ? 'bg-muted border border-border'
-                : 'bg-muted/40 border border-transparent'
-            "
-          >
-            <div class="mt-0.5 shrink-0">
-              <Loader2
-                v-if="['broadcasting', 'confirming'].includes(launchStep)"
-                class="w-5 h-5 text-foreground animate-spin"
-              />
-              <CheckCircle
-                v-else-if="['indexing', 'success'].includes(launchStep)"
-                class="w-5 h-5 text-foreground"
-              />
-              <AlertCircle
-                v-else-if="launchStep === 'error' && launchTxHash"
-                class="w-5 h-5 text-destructive"
-              />
-              <Clock v-else class="w-5 h-5 text-muted-foreground" />
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="text-sm font-semibold text-foreground flex items-center justify-between">
-                <span>{{ t('launchStepConfirm') }}</span>
-                <span
-                  v-if="['broadcasting', 'confirming'].includes(launchStep)"
-                  class="text-[10px] text-foreground animate-pulse font-mono"
-                >
-                  Confirming...
-                </span>
-              </div>
-              <p class="text-xs text-muted-foreground mt-0.5">
-                {{ t('launchStepConfirmDesc') }}
-              </p>
-              <!-- Tx Hash link -->
-              <div v-if="launchTxHash" class="mt-2 flex items-center gap-2">
-                <a
-                  :href="txExplorerUrl"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted text-foreground hover:opacity-80 text-xs font-mono transition-colors"
-                >
-                  <span>Tx: {{ formatHash(launchTxHash) }}</span>
-                  <ExternalLink class="w-3 h-3" />
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <!-- Step 3: Protocol Finalization -->
-          <div
-            class="flex items-start gap-3 p-3 rounded-xl transition-colors"
-            :class="
-              launchStep === 'indexing'
-                ? 'bg-muted border border-border'
-                : 'bg-muted/40 border border-transparent'
-            "
-          >
-            <div class="mt-0.5 shrink-0">
-              <Loader2
-                v-if="launchStep === 'indexing'"
-                class="w-5 h-5 text-foreground animate-spin"
-              />
-              <CheckCircle v-else-if="launchStep === 'success'" class="w-5 h-5 text-foreground" />
-              <Clock v-else class="w-5 h-5 text-muted-foreground" />
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="text-sm font-semibold text-foreground">
-                {{ t('launchStepIndexing') }}
-              </div>
-              <p class="text-xs text-muted-foreground mt-0.5">
-                {{ t('launchStepIndexingDesc') }}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Success State Details -->
-        <div
-          v-if="launchStep === 'success'"
-          class="mt-4 p-4 rounded-xl bg-muted border border-border text-center"
-        >
-          <CheckCircle class="w-10 h-10 text-foreground mx-auto mb-2" />
-          <h4 class="text-sm font-bold text-foreground">
-            {{ t('launchSuccessTitle') }}
-          </h4>
-          <p class="text-xs text-muted-foreground mt-1">
-            {{ t('launchSuccessDesc') }}
-          </p>
-          <div v-if="launchTokenAddress" class="mt-3 flex items-center justify-center gap-2">
-            <span
-              class="text-xs font-mono text-foreground bg-muted px-2 py-1 rounded border border-border"
-            >
-              {{ formatHash(launchTokenAddress) }}
-            </span>
-            <a
-              :href="tokenExplorerUrl"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="inline-flex items-center gap-1 text-xs text-foreground hover:underline font-mono"
-            >
-              <span>{{ t('viewOnExplorer') }}</span>
-              <ExternalLink class="w-3 h-3" />
-            </a>
-          </div>
-        </div>
-
-        <!-- Confirming State Details (shows Check Status button if confirmation takes time) -->
-        <div
-          v-if="launchStep === 'confirming' && launchTxHash"
-          class="mt-4 p-4 rounded-xl bg-muted border border-border"
-        >
-          <div class="flex items-start gap-2.5">
-            <Loader2 class="w-5 h-5 text-primary shrink-0 mt-0.5 animate-spin" />
-            <div class="flex-1 min-w-0 text-xs">
-              <h5 class="font-bold text-foreground">Confirming Transaction on Chain</h5>
-              <p class="text-muted-foreground mt-1 break-words leading-relaxed">
-                Transaction broadcasted to network. Waiting for block inclusion...
-              </p>
-              <div class="mt-3 flex items-center gap-2 flex-wrap">
-                <Button
-                  size="sm"
-                  variant="default"
-                  class="h-8 text-xs font-semibold gap-1.5 cursor-pointer"
-                  :disabled="isCheckingStatus"
-                  @click="handleCheckStatus"
-                >
-                  <Loader2 v-if="isCheckingStatus" class="w-3.5 h-3.5 animate-spin" />
-                  <RefreshCw v-else class="w-3.5 h-3.5" />
-                  <span>{{
-                    isCheckingStatus ? 'Checking confirmation...' : 'Check Confirmation'
-                  }}</span>
-                </Button>
-
-                <a
-                  :href="txExplorerUrl"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted text-foreground font-medium transition-colors border border-border h-8 text-xs"
-                >
-                  <span>{{ t('viewOnExplorer') }}</span>
-                  <ExternalLink class="w-3 h-3" />
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Error State Details -->
-        <div
-          v-if="launchStep === 'error'"
-          class="mt-4 p-4 rounded-xl bg-muted border border-border"
-        >
-          <div class="flex items-start gap-2.5">
-            <AlertCircle class="w-5 h-5 text-destructive shrink-0 mt-0.5" />
-            <div class="flex-1 min-w-0 text-xs">
-              <h5 class="font-bold text-foreground">{{ t('launchFailedTitle') }}</h5>
-              <p class="text-muted-foreground mt-1 break-words leading-relaxed">
-                {{ error || t('launchFailedDesc') }}
-              </p>
-              <div v-if="launchTxHash" class="mt-3 flex items-center gap-2 flex-wrap">
-                <Button
-                  size="sm"
-                  variant="default"
-                  class="h-8 text-xs font-semibold gap-1.5 cursor-pointer"
-                  :disabled="isCheckingStatus"
-                  @click="handleCheckStatus"
-                >
-                  <Loader2 v-if="isCheckingStatus" class="w-3.5 h-3.5 animate-spin" />
-                  <RefreshCw v-else class="w-3.5 h-3.5" />
-                  <span>{{
-                    isCheckingStatus ? 'Checking confirmation...' : 'Check Confirmation Again'
-                  }}</span>
-                </Button>
-
-                <a
-                  :href="txExplorerUrl"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted text-foreground font-medium transition-colors border border-border h-8 text-xs"
-                >
-                  <span>{{ t('viewOnExplorer') }}</span>
-                  <ExternalLink class="w-3 h-3" />
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Action Footer -->
-        <div class="mt-6 flex items-center justify-end gap-3">
-          <Button
-            v-if="launchStep === 'error' || launchStep === 'confirming'"
-            variant="outline"
-            size="sm"
-            @click="closeModal"
-            class="h-9 px-4 text-xs font-medium cursor-pointer"
-          >
-            {{ t('closeModal') }}
-          </Button>
-          <Button
-            v-if="launchStep === 'success'"
-            size="sm"
-            @click="goToTrade"
-            class="h-9 px-4 text-xs font-bold bg-primary text-primary-foreground hover:opacity-90 flex items-center gap-1.5"
-          >
-            <span>{{ t('tradeToken') }}</span>
-            <ArrowRight class="w-3.5 h-3.5" />
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <!-- Step-by-Step Launch Progress Modal Component -->
+    <LaunchProgressModal
+      :is-open="isModalOpen"
+      :loading="loading"
+      :token-name="form.name"
+      :token-symbol="form.symbol"
+      :network-name="activeNetwork.name"
+      :launch-step="launchStep"
+      :launch-tx-hash="launchTxHash"
+      :launch-token-address="launchTokenAddress"
+      :tx-explorer-url="txExplorerUrl"
+      :token-explorer-url="tokenExplorerUrl"
+      :error="error"
+      :is-checking-status="isCheckingStatus"
+      @close="closeModal"
+      @check-status="handleCheckStatus"
+      @trade="goToTrade"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import {
-  AlertCircle,
-  UploadCloud,
-  ChevronDown,
-  Loader2,
-  Check,
-  CheckCircle,
-  ExternalLink,
-  Clock,
-  ArrowRight,
-  Trash2,
-  RefreshCw,
-} from 'lucide-vue-next';
+import { ref, computed, watch, onMounted } from 'vue';
+import { AlertCircle, UploadCloud, Loader2, Check, Trash2 } from 'lucide-vue-next';
 import { useLaunchpad } from '../composables/useLaunchpad';
 import { useWallet } from '../composables/useWallet';
+import { uploadFile } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Slider } from '@/components/ui/slider';
-import { InfoTooltip } from '@/components/ui/tooltip';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
 import { useI18n } from '@/lib/i18n';
 import { compressAndConvertToWebp } from '@/lib/image-optimizer';
-import { shortenAddress } from '@/lib/utils';
 import { toast } from '@/components/ui/sonner';
-import { ARC_CHAIN } from '@proto/shared-types';
+import { type RevenueSplit, calculateTotalSplit, calculateLaunchTotalDue } from '@proto/math-sdk';
+import { CreateTokenAdvancedSection, LaunchProgressModal } from './create';
 
 const { t } = useI18n();
 const emit = defineEmits<{
@@ -1167,10 +445,68 @@ const {
   resetLaunchState,
   checkPendingTransaction,
 } = useLaunchpad();
-const { isConnected, account, activeNetwork, switchOrAddNetwork, isCorrectNetwork, openWallet } =
-  useWallet();
+const {
+  isConnected,
+  account,
+  activeNetwork,
+  formattedBalance,
+  balanceWei,
+  updateBalance,
+  switchOrAddNetwork,
+  isCorrectNetwork,
+  openWallet,
+} = useWallet();
+
+onMounted(() => {
+  if (account.value) {
+    updateBalance(undefined, activeNetwork.value.chainId, true);
+  }
+});
+
+watch(
+  () => [account.value, activeNetwork.value.chainId],
+  () => {
+    if (account.value) {
+      updateBalance(undefined, activeNetwork.value.chainId, true);
+    }
+  },
+);
+
+const isInsufficientBalance = computed(() => {
+  if (!isConnected.value) return false;
+  const launchFeeNum = Number(activeNetwork.value.launchConfig.launchFeeWei) / 1e18;
+  const buyNum = parseFloat(form.value.initialBuyEth || '0') || 0;
+  const totalNeeded = launchFeeNum + buyNum;
+  const userBal = parseFloat(formattedBalance.value) || 0;
+  return totalNeeded > userBal;
+});
+
+const totalDueDisplay = computed(() => {
+  const launchFeeNum = Number(activeNetwork.value.launchConfig.launchFeeWei) / 1e18;
+  const buyNum = parseFloat(form.value.initialBuyEth || '0') || 0;
+  return (launchFeeNum + buyNum).toFixed(currencySymbol.value === 'USDC' ? 2 : 4);
+});
+
+function setInitialBuyPercentage(pct: number) {
+  const userBal = parseFloat(formattedBalance.value) || 0;
+  const launchFeeNum = Number(activeNetwork.value.launchConfig.launchFeeWei) / 1e18;
+  const gasBuffer = currencySymbol.value === 'USDC' ? 0.05 : 0.005;
+  const availableForBuy = Math.max(0, userBal - launchFeeNum - gasBuffer);
+  const amount = availableForBuy * (pct / 100);
+  form.value.initialBuyEth =
+    amount > 0 ? amount.toFixed(currencySymbol.value === 'USDC' ? 2 : 4) : '';
+}
+
+function setInitialBuyMax() {
+  setInitialBuyPercentage(100);
+}
 
 const isModalOpen = ref(false);
+
+const graduationTargetFormatted = computed(() => {
+  const val = Number(activeNetwork.value.launchConfig.graduationThresholdWei) / 1e18;
+  return val >= 1000 ? `${(val / 1000).toFixed(0)}K` : val.toFixed(1);
+});
 
 const txExplorerUrl = computed(() => {
   if (!launchTxHash.value) return '';
@@ -1252,16 +588,9 @@ const launchFeeFormatted = computed(() => {
 const totalPairDue = computed(() => {
   const buyAmount = parseFloat(form.value.initialBuyEth) || 0;
   const fee = parseFloat(launchFeeFormatted.value) || 0;
-  const total = fee + buyAmount;
+  const total = calculateLaunchTotalDue(fee, buyAmount);
   return `${total.toFixed(currencySymbol.value === 'USDC' ? 2 : 4)} ${currencySymbol.value}`;
 });
-
-interface RevenueSplit {
-  creator: number;
-  buyback: number;
-  holders: number;
-  growth: number;
-}
 
 const revenueSplit = ref<RevenueSplit>({
   creator: 50,
@@ -1270,97 +599,13 @@ const revenueSplit = ref<RevenueSplit>({
   growth: 0,
 });
 
-const totalSplit = computed(() => {
-  return (
-    Number(revenueSplit.value.creator || 0) +
-    Number(revenueSplit.value.buyback || 0) +
-    Number(revenueSplit.value.holders || 0) +
-    Number(revenueSplit.value.growth || 0)
-  );
+const totalSplit = computed(() => calculateTotalSplit(revenueSplit.value));
+
+const hasTax = computed(() => {
+  const buy = parseFloat(form.value.buyTax || '0');
+  const sell = parseFloat(form.value.sellTax || '0');
+  return buy > 0 || sell > 0;
 });
-
-const donutRadius = 38;
-const donutCircumference = 2 * Math.PI * donutRadius; // 238.761
-
-const creatorStroke = computed(
-  () => (Number(revenueSplit.value.creator || 0) / 100) * donutCircumference,
-);
-const buybackStroke = computed(
-  () => (Number(revenueSplit.value.buyback || 0) / 100) * donutCircumference,
-);
-const holdersStroke = computed(
-  () => (Number(revenueSplit.value.holders || 0) / 100) * donutCircumference,
-);
-const growthStroke = computed(
-  () => (Number(revenueSplit.value.growth || 0) / 100) * donutCircumference,
-);
-
-const creatorOffset = 0;
-const buybackOffset = computed(() => -creatorStroke.value);
-const holdersOffset = computed(() => -(creatorStroke.value + buybackStroke.value));
-const growthOffset = computed(
-  () => -(creatorStroke.value + buybackStroke.value + holdersStroke.value),
-);
-
-const maxCreator = computed(() => {
-  const others =
-    Number(revenueSplit.value.buyback || 0) +
-    Number(revenueSplit.value.holders || 0) +
-    Number(revenueSplit.value.growth || 0);
-  return Math.max(0, 100 - others);
-});
-
-const maxBuyback = computed(() => {
-  const others =
-    Number(revenueSplit.value.creator || 0) +
-    Number(revenueSplit.value.holders || 0) +
-    Number(revenueSplit.value.growth || 0);
-  return Math.max(0, 100 - others);
-});
-
-const maxHolders = computed(() => {
-  const others =
-    Number(revenueSplit.value.creator || 0) +
-    Number(revenueSplit.value.buyback || 0) +
-    Number(revenueSplit.value.growth || 0);
-  return Math.max(0, 100 - others);
-});
-
-const maxGrowth = computed(() => {
-  const others =
-    Number(revenueSplit.value.creator || 0) +
-    Number(revenueSplit.value.buyback || 0) +
-    Number(revenueSplit.value.holders || 0);
-  return Math.max(0, 100 - others);
-});
-
-function applySplitPreset(creator: number, buyback: number, holders: number, growth: number) {
-  revenueSplit.value = { creator, buyback, holders, growth };
-}
-
-function autoBalanceSplit() {
-  const currentTotal = totalSplit.value;
-  if (currentTotal === 100) return;
-  const diff = 100 - currentTotal;
-  if (revenueSplit.value.holders + diff >= 0 && revenueSplit.value.holders + diff <= 100) {
-    revenueSplit.value.holders += diff;
-  } else if (revenueSplit.value.creator + diff >= 0 && revenueSplit.value.creator + diff <= 100) {
-    revenueSplit.value.creator += diff;
-  } else {
-    revenueSplit.value = { creator: 50, buyback: 0, holders: 50, growth: 0 };
-  }
-}
-
-function updateShare(key: keyof RevenueSplit, val: unknown): void {
-  const allKeys: (keyof RevenueSplit)[] = ['creator', 'buyback', 'holders', 'growth'];
-  const otherKeys = allKeys.filter((k) => k !== key);
-  const others = otherKeys.reduce((sum, k) => sum + Number(revenueSplit.value[k] || 0), 0);
-  const maxAllowed = Math.max(0, 100 - others);
-  const requested = Math.max(0, Math.round(Number(val) || 0));
-
-  // Each share stops where the others leave off; no ghost slider movement
-  revenueSplit.value[key] = Math.min(requested, maxAllowed);
-}
 
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const selectedFileName = ref('');
@@ -1372,6 +617,7 @@ const advancedOpen = ref(false);
 function clearImage() {
   selectedFileName.value = '';
   imagePreview.value = '';
+  pendingImageFile.value = null;
   form.value.logo = '';
   imageError.value = '';
   if (fileInputRef.value) fileInputRef.value.value = '';
@@ -1386,10 +632,11 @@ const form = ref({
   twitter: '',
   telegram: '',
   initialBuyEth: '',
-  buyTax: '1',
-  sellTax: '1',
+  buyTax: '0',
+  sellTax: '0',
   creatorWallet: '',
 });
+const pendingImageFile = ref<File | null>(null);
 
 function triggerFileInput() {
   fileInputRef.value?.click();
@@ -1408,34 +655,14 @@ async function processImageFile(file: File) {
 
   selectedFileName.value = file.name;
   try {
-    isUploadingIpfs.value = true;
-    // Compress and convert photo to modern WebP (max 512x512) before IPFS pinning
+    // Compress and convert to WebP preview locally — IPFS upload is deferred until user confirms launch
     const processed = await compressAndConvertToWebp(file, 512, 0.85);
     imagePreview.value = processed.dataUrl;
-
-    const formData = new FormData();
-    formData.append('file', processed.file);
-
-    const res = await fetch('/api/ipfs/upload', {
-      method: 'POST',
-      body: formData,
-    });
-    const data = await res.json();
-    const logoUri =
-      (data.data?.cid ? `ipfs://${data.data.cid}` : '') || data.data?.uri || data.data?.url || '';
-    if (data.success && logoUri) {
-      form.value.logo = logoUri;
-      imageError.value = '';
-    } else {
-      form.value.logo = '';
-      imageError.value = data?.error?.message || 'Failed to upload image to IPFS.';
-    }
-  } catch (err) {
-    console.warn('[CreateToken] Image upload error:', err);
+    pendingImageFile.value = processed.file;
     form.value.logo = '';
-    imageError.value = 'Failed to upload image to IPFS. Please try again.';
-  } finally {
-    isUploadingIpfs.value = false;
+  } catch (err) {
+    console.warn('[CreateToken] Image preview processing error:', err);
+    imageError.value = 'Failed to process image preview. Please try another file.';
   }
 }
 
@@ -1456,11 +683,6 @@ function handleDrop(event: DragEvent) {
 }
 
 async function handleLaunch() {
-  if (isUploadingIpfs.value) return;
-  if (imagePreview.value && !form.value.logo) {
-    imageError.value = 'Image upload incomplete or failed. Please re-upload before launching.';
-    return;
-  }
   if (!isConnected.value) {
     openWallet();
     return;
@@ -1475,6 +697,33 @@ async function handleLaunch() {
       `Revenue split allocation must equal 100% (currently ${totalSplit.value}%). Please auto-balance or adjust.`,
     );
     return;
+  }
+
+  // Upload image to IPFS only when user clicks launch and confirms payment
+  if (pendingImageFile.value && !form.value.logo) {
+    try {
+      isUploadingIpfs.value = true;
+      const data = await uploadFile<{
+        success: boolean;
+        data?: { cid?: string; uri?: string; url?: string };
+        error?: { message?: string };
+      }>('/api/ipfs/upload', pendingImageFile.value);
+      const logoUri =
+        (data.data?.cid ? `ipfs://${data.data.cid}` : '') || data.data?.uri || data.data?.url || '';
+      if (data.success && logoUri) {
+        form.value.logo = logoUri;
+        imageError.value = '';
+      } else {
+        imageError.value = data?.error?.message || 'Failed to upload image to IPFS.';
+        return;
+      }
+    } catch (err) {
+      console.warn('[CreateToken] IPFS upload error:', err);
+      imageError.value = 'Failed to upload image to IPFS. Please try again.';
+      return;
+    } finally {
+      isUploadingIpfs.value = false;
+    }
   }
   isModalOpen.value = true;
   const result = await launchToken({

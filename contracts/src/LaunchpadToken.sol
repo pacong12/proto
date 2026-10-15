@@ -57,6 +57,7 @@ contract LaunchpadToken is ILaunchpadToken {
 
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
+    mapping(address => bool) public isRestrictionExempt;
 
     error AlreadyInitialized();
     error Unauthorized();
@@ -76,8 +77,8 @@ contract LaunchpadToken is ILaunchpadToken {
     event TaxConfigProposed(uint16 buyTaxBps, uint16 sellTaxBps, address indexed taxRecipient, uint256 validAfter);
     event TaxConfigCancelled();
 
-    modifier onlyFactoryOrDeployer() {
-        if (msg.sender != deployer && msg.sender != factory) revert Unauthorized();
+    modifier onlyFactory() {
+        if (msg.sender != factory) revert Unauthorized();
         _;
     }
 
@@ -182,6 +183,32 @@ contract LaunchpadToken is ILaunchpadToken {
     // ---------------------------------------------------------------------------
     // Configuration
     // ---------------------------------------------------------------------------
+    /**
+     * @notice Set initial creator tax during the launch window without a 24h timelock.
+     * @dev Allows deployer to configure the baseline token tax directly at creation.
+     *      Can only be called by the deployer while the token is still in the launch restriction
+     *      window and the active tax is currently 0.
+     *      Subsequent post-launch tax changes must use the two-step proposeTaxConfig flow (24h timelock).
+     */
+    function setInitialTaxConfig(
+        uint16 buyTaxBps,
+        uint16 sellTaxBps,
+        address taxRecipient
+    ) external {
+        if (msg.sender != deployer && msg.sender != factory) revert Unauthorized();
+        if (block.number > restrictionsEndBlock) revert TimelockNotExpired();
+        if (buyTaxBps > MAX_TAX_BPS || sellTaxBps > MAX_TAX_BPS) revert ExcessiveTax();
+        if (_taxConfig.buyTaxBps != 0 || _taxConfig.sellTaxBps != 0) revert Unauthorized();
+
+        address recipient = taxRecipient != address(0) ? taxRecipient : deployer;
+        _taxConfig = TaxConfig({
+            buyTaxBps: buyTaxBps,
+            sellTaxBps: sellTaxBps,
+            taxRecipient: recipient
+        });
+
+        emit TaxConfigUpdated(buyTaxBps, sellTaxBps, recipient);
+    }
 
     /**
      * @notice Propose a tax configuration change. Takes effect after TAX_CHANGE_TIMELOCK (24h).
@@ -248,10 +275,15 @@ contract LaunchpadToken is ILaunchpadToken {
         return (p.config.buyTaxBps, p.config.sellTaxBps, p.config.taxRecipient, p.validAfter);
     }
 
-    function setLiquidityPool(address pool) external override onlyFactoryOrDeployer {
+    function setLiquidityPool(address pool) external override onlyFactory {
         if (liquidityPool != address(0)) revert PoolAlreadySet();
         if (pool == address(0)) revert ZeroAddress();
         liquidityPool = pool;
+    }
+
+    function setRestrictionExempt(address account, bool exempt) external onlyFactory {
+        if (account == address(0)) revert ZeroAddress();
+        isRestrictionExempt[account] = exempt;
     }
 
     // ---------------------------------------------------------------------------
@@ -306,9 +338,11 @@ contract LaunchpadToken is ILaunchpadToken {
 
         // Anti-snipe restriction window: blocks [launchBlock, restrictionsEndBlock].
         if (block.number <= restrictionsEndBlock && from == liquidityPool && liquidityPool != address(0)) {
-            if (block.number <= launchBlock) {
+            if (to == deployer || to == factory || to == _taxConfig.taxRecipient || isRestrictionExempt[to]) {
+                // Exempt from anti-snipe restrictions
+            } else if (block.number <= launchBlock) {
                 // At launch block only the deployer may receive tokens from the pool.
-                if (to != deployer) revert OnlyDeployerCanBuyAtLaunchBlock();
+                revert OnlyDeployerCanBuyAtLaunchBlock();
             } else {
                 // Blocks launchBlock+1 and launchBlock+2: enforce buy and wallet caps.
                 // M-02 fix: deployer is not exempt from quantity limits in post-launch

@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Clock, CheckCircle, XCircle, Loader2 } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import { Button } from '../ui/button';
 import type { PendingTaxConfig } from '../../composables/useTaxConfig';
+
+const { t } = useI18n();
 
 // ---------------------------------------------------------------------------
 // Props & emits
@@ -56,7 +59,7 @@ const timelockLabel = computed(() => {
 </script>
 
 <template>
-  <div class="space-y-4 font-mono text-xs">
+  <div class="space-y-4 text-xs">
     <!-- No pending proposal -->
     <div v-if="!hasPending" class="flex items-center gap-2 text-muted-foreground py-2">
       <CheckCircle class="w-4 h-4 text-emerald-500 shrink-0" />
@@ -67,11 +70,11 @@ const timelockLabel = computed(() => {
     <template v-else-if="pending">
       <div class="rounded-xl border border-border bg-muted/30 p-3.5 space-y-3">
         <div class="flex items-center justify-between gap-2">
-          <span class="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+          <span class="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
             Pending proposal
           </span>
           <span
-            class="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+            class="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full"
             :class="
               isReady
                 ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
@@ -83,13 +86,13 @@ const timelockLabel = computed(() => {
           </span>
         </div>
 
-        <div class="grid grid-cols-2 gap-2 text-[11px]">
+        <div class="grid grid-cols-2 gap-2 text-xs">
           <div>
-            <span class="text-muted-foreground">Buy tax</span>
+            <span class="text-muted-foreground">{{ t('buyTax') }}</span>
             <p class="font-bold text-foreground">{{ buyTaxPct }}%</p>
           </div>
           <div>
-            <span class="text-muted-foreground">Sell tax</span>
+            <span class="text-muted-foreground">{{ t('sellTax') }}</span>
             <p class="font-bold text-foreground">{{ sellTaxPct }}%</p>
           </div>
           <div class="col-span-2">
@@ -119,18 +122,18 @@ const timelockLabel = computed(() => {
           >
             <Loader2 v-if="actionLoading" class="w-3.5 h-3.5 animate-spin" />
             <XCircle v-else class="w-3.5 h-3.5" />
-            Cancel proposal
+            {{ t('cancel') }}
           </Button>
         </div>
 
-        <p v-if="!isReady" class="text-[10px] text-muted-foreground">
+        <p v-if="!isReady" class="text-xs text-muted-foreground">
           The 24-hour timelock has not elapsed. Holders can see this pending change and exit before
           it takes effect.
         </p>
       </div>
 
       <!-- Error -->
-      <p v-if="error" class="text-rose-500 text-[11px]">{{ error }}</p>
+      <p v-if="error" class="text-rose-500 text-xs">{{ error }}</p>
     </template>
   </div>
 </template>

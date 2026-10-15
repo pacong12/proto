@@ -45,7 +45,7 @@ const hasActivated = computed(() => {
 
 <template>
   <div
-    class="flex items-start gap-3 px-4 py-3 rounded-xl border font-mono text-xs"
+    class="flex items-start gap-3 px-4 py-3 rounded-xl border text-xs"
     :class="
       hasActivated
         ? 'bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400'
@@ -58,10 +58,10 @@ const hasActivated = computed(() => {
     <AlertTriangle class="w-4 h-4 mt-0.5 shrink-0" />
 
     <div class="min-w-0 space-y-0.5">
-      <p class="font-bold text-[11px] uppercase tracking-wide">
+      <p class="font-bold text-xs uppercase tracking-wide">
         {{ hasActivated ? 'Tax change ready to activate' : 'Pending tax configuration change' }}
       </p>
-      <p class="text-[11px] leading-relaxed">
+      <p class="text-xs leading-relaxed">
         <span v-if="symbol">${{ symbol }} </span>
         <span>
           Buy tax
@@ -74,7 +74,7 @@ const hasActivated = computed(() => {
           }}
         </span>
       </p>
-      <p v-if="!hasActivated" class="text-[10px] opacity-75">
+      <p v-if="!hasActivated" class="text-xs opacity-75">
         If you are holding {{ symbol ? `$${symbol}` : 'this token' }}, you have until
         {{ activatesAt }} to decide before the new tax takes effect.
       </p>

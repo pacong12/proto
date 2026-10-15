@@ -6,16 +6,14 @@
       <DialogHeader>
         <div class="flex items-center gap-2 text-foreground mb-1">
           <Edit3 class="w-5 h-5 text-primary" />
-          <DialogTitle>Edit Creator Profile</DialogTitle>
+          <DialogTitle>{{ t('editCreatorProfile') }}</DialogTitle>
         </div>
         <DialogDescription class="text-xs text-muted-foreground">
           Customize your public creator identity, avatar photo, cover banner, and social handles.
         </DialogDescription>
       </DialogHeader>
 
-      <div
-        class="p-2.5 rounded-xl border border-border bg-muted/40 text-[11px] text-muted-foreground font-mono"
-      >
+      <div class="p-2.5 rounded-xl border border-border bg-muted/40 text-xs text-muted-foreground">
         Profile metadata and media are pinned to decentralized IPFS and stored for this wallet
         address.
       </div>
@@ -24,8 +22,8 @@
         <!-- 1. Header Cover Banner Upload Zone -->
         <div class="space-y-1.5">
           <div class="flex items-center justify-between">
-            <Label class="text-xs font-medium">Cover Banner</Label>
-            <span class="text-[10px] text-muted-foreground font-mono">Recommended 1200x400</span>
+            <Label class="text-xs font-medium">{{ t('coverBanner') }}</Label>
+            <span class="text-xs text-muted-foreground">{{ t('recommendedBannerSize') }}</span>
           </div>
 
           <div
@@ -64,13 +62,13 @@
               <div class="p-2 rounded-full bg-muted/60 text-foreground">
                 <ImageIcon class="w-5 h-5" />
               </div>
-              <span class="text-xs font-bold text-foreground font-mono">Upload Cover Banner</span>
-              <p class="text-[10px]">Click or drag image (PNG, JPG, WEBP max 8MB)</p>
+              <span class="text-xs font-bold text-foreground">Upload Cover Banner</span>
+              <p class="text-xs">Click or drag image (PNG, JPG, WEBP max 8MB)</p>
             </div>
 
             <div
               v-if="isUploadingBanner"
-              class="absolute inset-0 bg-background/80 flex items-center justify-center gap-2 text-xs font-mono"
+              class="absolute inset-0 bg-background/80 flex items-center justify-center gap-2 text-xs"
             >
               <Loader2 class="w-4 h-4 animate-spin text-primary" />
               <span>Optimizing & Pinning Banner...</span>
@@ -82,7 +80,7 @@
               type="button"
               variant="destructive"
               size="sm"
-              class="absolute top-2 right-2 h-7 px-2 text-[10px] rounded-lg cursor-pointer opacity-90 hover:opacity-100"
+              class="absolute top-2 right-2 h-7 px-2 text-xs rounded-lg cursor-pointer opacity-90 hover:opacity-100"
               title="Remove cover banner"
               @click.stop="removeBanner"
             >
@@ -93,7 +91,7 @@
 
           <div
             v-if="bannerError"
-            class="text-[11px] text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2 font-mono flex items-center gap-1.5"
+            class="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2 flex items-center gap-1.5"
           >
             <AlertCircle class="w-3.5 h-3.5 shrink-0" />
             <span>{{ bannerError }}</span>
@@ -102,7 +100,7 @@
 
         <!-- 2. Profile Avatar Upload Zone -->
         <div class="space-y-1.5">
-          <Label class="text-xs font-medium">Profile Photo</Label>
+          <Label class="text-xs font-medium">{{ t('profilePhoto') }}</Label>
           <div
             @dragover.prevent="dragOverAvatar = true"
             @dragleave.prevent="dragOverAvatar = false"
@@ -151,7 +149,7 @@
             <div class="flex-1 min-w-0 space-y-0.5">
               <div class="flex items-center gap-1.5 min-w-0">
                 <span
-                  class="text-xs font-bold text-foreground truncate block flex-1 min-w-0 font-mono"
+                  class="text-xs font-bold text-foreground truncate block flex-1 min-w-0"
                   :title="
                     avatarFileName || (form.avatarUrl ? 'Custom Photo' : 'Upload from device')
                   "
@@ -160,13 +158,13 @@
                 </span>
                 <span
                   v-if="isUploadingAvatar"
-                  class="text-[10px] text-muted-foreground flex items-center gap-1 shrink-0 font-mono"
+                  class="text-xs text-muted-foreground flex items-center gap-1 shrink-0"
                 >
                   <Loader2 class="w-2.5 h-2.5 animate-spin text-primary" />
                   Pinning...
                 </span>
               </div>
-              <p class="text-[11px] text-muted-foreground truncate">
+              <p class="text-xs text-muted-foreground truncate">
                 Click or drag square image (PNG, JPG, WEBP max 5MB).
               </p>
             </div>
@@ -188,7 +186,7 @@
           <!-- Inline Avatar Error Banner -->
           <div
             v-if="avatarError"
-            class="text-[11px] text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2 flex items-start gap-1.5 font-mono"
+            class="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-2 flex items-start gap-1.5"
           >
             <AlertCircle class="w-3.5 h-3.5 shrink-0 mt-0.5" />
             <span>{{ avatarError }}</span>
@@ -197,7 +195,7 @@
 
         <!-- 3. Identity Text Inputs -->
         <div class="space-y-1.5">
-          <Label for="display-name" class="text-xs font-medium">Display Name</Label>
+          <Label for="display-name" class="text-xs font-medium">{{ t('displayName') }}</Label>
           <Input
             id="display-name"
             v-model="form.displayName"
@@ -208,7 +206,7 @@
         </div>
 
         <div class="space-y-1.5">
-          <Label for="bio" class="text-xs font-medium">Bio / Description</Label>
+          <Label for="bio" class="text-xs font-medium">{{ t('bioDescription') }}</Label>
           <Textarea
             id="bio"
             v-model="form.bio"
@@ -223,15 +221,14 @@
           <div class="space-y-1.5">
             <Label for="edit-x" class="text-xs font-medium">X (Twitter)</Label>
             <div class="relative">
-              <span
-                class="absolute left-2.5 top-2.5 text-xs font-mono text-muted-foreground select-none"
+              <span class="absolute left-2.5 top-2.5 text-xs text-muted-foreground select-none"
                 >@</span
               >
               <Input
                 id="edit-x"
                 v-model="form.twitter"
                 placeholder="handle"
-                class="text-xs pl-7 font-mono rounded-xl"
+                class="text-xs pl-7 rounded-xl"
               />
             </div>
           </div>
@@ -239,15 +236,14 @@
           <div class="space-y-1.5">
             <Label for="edit-tg" class="text-xs font-medium">Telegram</Label>
             <div class="relative">
-              <span
-                class="absolute left-2.5 top-2.5 text-xs font-mono text-muted-foreground select-none"
+              <span class="absolute left-2.5 top-2.5 text-xs text-muted-foreground select-none"
                 >t.me/</span
               >
               <Input
                 id="edit-tg"
                 v-model="form.telegram"
                 placeholder="handle"
-                class="text-xs pl-11 font-mono rounded-xl"
+                class="text-xs pl-11 rounded-xl"
               />
             </div>
           </div>
@@ -258,23 +254,23 @@
             type="button"
             variant="outline"
             size="sm"
-            class="cursor-pointer font-mono rounded-xl"
+            class="cursor-pointer rounded-xl"
             @click="emit('update:open', false)"
           >
-            Cancel
+            {{ t('cancel') }}
           </Button>
           <Button
             type="submit"
             variant="default"
             size="sm"
-            class="cursor-pointer font-bold font-mono rounded-xl px-5"
+            class="cursor-pointer font-bold rounded-xl px-5"
             :disabled="isUploadingAvatar || isUploadingBanner"
           >
             <Loader2
               v-if="isUploadingAvatar || isUploadingBanner"
               class="w-3.5 h-3.5 mr-1.5 animate-spin"
             />
-            <span>Save Profile</span>
+            <span>{{ t('saveProfile') }}</span>
           </Button>
         </DialogFooter>
       </form>
@@ -285,6 +281,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { Edit3, Loader2, Trash2, AlertCircle, Image as ImageIcon } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import {
   Dialog,
   DialogContent,
@@ -299,6 +296,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Avatar, Jazzicon } from '@/components/ui/avatar';
 import { compressAndConvertToWebp } from '@/lib/image-optimizer';
+import { uploadFile } from '@/lib/api-client';
 import type { ProfileStorageData } from './types';
 
 const props = defineProps<{
@@ -306,6 +304,8 @@ const props = defineProps<{
   profileAddress: string | null;
   initialData: ProfileStorageData;
 }>();
+
+const { t } = useI18n();
 
 const emit = defineEmits<{
   (e: 'update:open', val: boolean): void;
@@ -403,20 +403,15 @@ async function processAvatarFile(file: File) {
     form.value.avatarUrl = processed.dataUrl;
 
     // Pin file to IPFS storage
-    const formData = new FormData();
-    formData.append('file', processed.file);
-    const res = await fetch('/api/ipfs/upload', {
-      method: 'POST',
-      body: formData,
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const ipfsUri = data.data?.cid
-        ? `ipfs://${data.data.cid}`
-        : data.data?.uri || data.data?.url || '';
-      if (ipfsUri) {
-        form.value.avatarUrl = ipfsUri;
-      }
+    const data = await uploadFile<{ data?: { cid?: string; uri?: string; url?: string } }>(
+      '/api/ipfs/upload',
+      processed.file,
+    );
+    const ipfsUri = data.data?.cid
+      ? `ipfs://${data.data.cid}`
+      : data.data?.uri || data.data?.url || '';
+    if (ipfsUri) {
+      form.value.avatarUrl = ipfsUri;
     }
   } catch (err) {
     console.warn('[Profile] Avatar upload failed, retaining dataUrl preview:', err);
@@ -472,20 +467,15 @@ async function processBannerFile(file: File) {
     form.value.bannerUrl = processed.dataUrl;
 
     // Pin banner to IPFS storage
-    const formData = new FormData();
-    formData.append('file', processed.file);
-    const res = await fetch('/api/ipfs/upload', {
-      method: 'POST',
-      body: formData,
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const ipfsUri = data.data?.cid
-        ? `ipfs://${data.data.cid}`
-        : data.data?.uri || data.data?.url || '';
-      if (ipfsUri) {
-        form.value.bannerUrl = ipfsUri;
-      }
+    const data = await uploadFile<{ data?: { cid?: string; uri?: string; url?: string } }>(
+      '/api/ipfs/upload',
+      processed.file,
+    );
+    const ipfsUri = data.data?.cid
+      ? `ipfs://${data.data.cid}`
+      : data.data?.uri || data.data?.url || '';
+    if (ipfsUri) {
+      form.value.bannerUrl = ipfsUri;
     }
   } catch (err) {
     console.warn('[Profile] Banner upload failed, retaining dataUrl preview:', err);

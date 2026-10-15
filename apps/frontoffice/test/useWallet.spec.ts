@@ -10,10 +10,15 @@ import {
 describe('useWallet composable', () => {
   let fakeStore: Record<string, string> = {};
   let listeners: Record<string, ((event: unknown) => void)[]> = {};
+  let originalLocalStorage: Storage;
+  let originalWindow: typeof window;
 
   beforeEach(() => {
     fakeStore = {};
     listeners = {};
+    originalLocalStorage = globalThis.localStorage;
+    originalWindow = globalThis.window;
+
     const mockStorage = {
       getItem: vi.fn((key: string) => fakeStore[key] ?? null),
       setItem: vi.fn((key: string, val: string) => {
@@ -23,7 +28,11 @@ describe('useWallet composable', () => {
         delete fakeStore[key];
       }),
     };
-    vi.stubGlobal('localStorage', mockStorage);
+    Object.defineProperty(globalThis, 'localStorage', {
+      value: mockStorage,
+      writable: true,
+      configurable: true,
+    });
 
     const mockWindow = {
       localStorage: mockStorage,
@@ -42,12 +51,25 @@ describe('useWallet composable', () => {
         }
       }),
     };
-    vi.stubGlobal('window', mockWindow);
+    Object.defineProperty(globalThis, 'window', {
+      value: mockWindow,
+      writable: true,
+      configurable: true,
+    });
     clearWalletState();
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
+    Object.defineProperty(globalThis, 'localStorage', {
+      value: originalLocalStorage,
+      writable: true,
+      configurable: true,
+    });
+    Object.defineProperty(globalThis, 'window', {
+      value: originalWindow,
+      writable: true,
+      configurable: true,
+    });
   });
 
   it('initializes with clean and predictable state', () => {

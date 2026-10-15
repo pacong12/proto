@@ -1,5 +1,13 @@
 @import 'tailwindcss';
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 
+:root {
+  --vp-font-family-base:
+    'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', 'Noto Color Emoji';
+  --vp-font-family-mono: var(--vp-font-family-base);
+  font-optical-sizing: auto;
+}
 @theme {
   --breakpoint-xs: 30rem;
   --color-background: var(--background);
@@ -21,7 +29,7 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-  --color-brand: #FC4198;
+  --color-brand: #fc4198;
   --color-card-raised: var(--card-raised);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
@@ -31,25 +39,31 @@
   --color-bullish: var(--bullish);
   --color-bearish: var(--bearish);
 
-  --font-serif:
-    'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    sans-serif;
-  --font-sans:
-    'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    sans-serif;
-  --font-heading:
-    'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    sans-serif;
-  --font-mono:
-    ui-monospace, 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
+  --font-serif: var(--vp-font-family-base);
+  --font-sans: var(--vp-font-family-base);
+  --font-heading: var(--vp-font-family-base);
+  --font-mono: var(--vp-font-family-base);
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.75rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.5rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
+  --text-3xl: 2rem;
+  --text-3xl--line-height: 2.5rem;
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ==========================================================================
-   VITEPRESS DOCS & MODERN WEB3 TYPOGRAPHY STACK:
-   - Primary Stack   : "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont
-   - Monospace Stack : ui-monospace, "Menlo", "Monaco", "Consolas", monospace
+   MODERN WEB3 TYPOGRAPHY STACK:
+   - Primary Stack   : "Poppins", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont
    - Numbers & Code  : Tabular numbers (tabular-nums) for ticker accuracy
    - Retina Density  : Antialiasing & geometricPrecision
    ========================================================================== */
@@ -72,69 +86,96 @@ html {
   }
 }
 
-/* Universal Typography: Inter / System UI */
+/* Universal Typography: Enforces Poppins across all elements, portals, modals, and dropdowns */
+*,
+::before,
+::after,
 html,
+body,
+button,
+input,
+select,
+textarea,
+optgroup {
+  font-family: var(--vp-font-family-base) !important;
+  font-optical-sizing: auto;
+}
+
 body {
-  font-family:
-    'Inter',
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
+  font-weight: 500;
 }
-
-/* Headings: Space & weight hierarchy */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family:
-    'Inter',
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
-  letter-spacing: -0.02em;
-  line-height: 1.25;
-}
-
+/* Headings: Space & weight hierarchy matched to apps/docs */
 h1 {
-  font-weight: 800;
-}
-
-h2,
-h3 {
+  font-family: var(--vp-font-family-base) !important;
+  font-optical-sizing: auto;
+  font-size: 2rem; /* 32px */
+  line-height: 2.5rem;
   font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
-h4,
-h5,
-h6 {
+h2 {
+  font-family: var(--vp-font-family-base) !important;
+  font-optical-sizing: auto;
+  font-size: 1.5rem; /* 24px */
+  line-height: 2rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+h3 {
+  font-family: var(--vp-font-family-base) !important;
+  font-optical-sizing: auto;
+  font-size: 1.25rem; /* 20px */
+  line-height: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+h4 {
+  font-family: var(--vp-font-family-base) !important;
+  font-optical-sizing: auto;
+  font-size: 1.125rem; /* 18px */
+  line-height: 1.5rem;
   font-weight: 600;
 }
 
-/* Numbers, Addresses, Code, Tables: Tabular alignment for financial tickers */
+h5,
+h6 {
+  font-family: var(--vp-font-family-base) !important;
+  font-optical-sizing: auto;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 600;
+}
+
+/* Paragraph: 16px with comfortable line-height matched to apps/docs */
+p {
+  line-height: 1.65;
+}
+
+/* Code and Monospace classes use default style.css font with tabular numbers */
 code,
 kbd,
 samp,
 pre,
 .font-mono,
-[class*='font-mono'],
-table,
-th,
-td {
-  font-family:
-    ui-monospace, 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
+[class*='font-mono'] {
+  font-family: var(--vp-font-family-base) !important;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
+}
+
+/* Financial tables use 14px with tabular numbers matched to apps/docs */
+table th,
+table td {
+  font-family: var(--vp-font-family-base) !important;
+  font-size: 0.875rem; /* 14px */
+  line-height: 1.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+table th {
+  font-weight: 600;
 }
 
 /* ==========================================================================
@@ -238,44 +279,6 @@ td {
 }
 
 /* ==========================================================================
-   BODY TEXT SCALE & LEGIBILITY ENHANCEMENT:
-   - Preserves compact financial indicators, badges, and ticker alignment
-   ========================================================================== */
-
-.text-xs {
-  font-size: 0.75rem; /* 12px */
-  line-height: 1.35;
-}
-
-.text-sm {
-  font-size: 0.875rem; /* 14px */
-  line-height: 1.45;
-}
-
-.text-base {
-  font-size: 1rem; /* 16px */
-  line-height: 1.5;
-}
-
-.text-\[9px\],
-[class*='text-[9px]'] {
-  font-size: 9px;
-  line-height: 1.2;
-}
-
-.text-\[10px\],
-[class*='text-[10px]'] {
-  font-size: 10px;
-  line-height: 1.25;
-}
-
-.text-\[11px\],
-[class*='text-[11px]'] {
-  font-size: 11px;
-  line-height: 1.3;
-}
-
-/* ==========================================================================
    TRUE HIGH-CONTRAST MONOCHROME SYSTEM:
    - Deep Black Background  : #000000 (Pure Obsidian)
    - Pitch Black Cards      : #000000 (Zero muddy grays)
@@ -369,17 +372,9 @@ body {
   background-color: var(--background);
   color: var(--foreground);
 
-  font-family:
-    'Inter',
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    sans-serif !important;
-
-  font-weight: 400;
+  font-family: var(--vp-font-family-base) !important;
+  font-optical-sizing: auto;
+  font-weight: 500;
   line-height: 1.6;
   letter-spacing: -0.005em;
 
@@ -487,6 +482,24 @@ html:not(.dark) header {
   border-bottom-color: var(--border) !important;
 }
 
+/* Light Mode Hover States (Prevents black hover backgrounds in light mode) */
+html:not(.dark) [class*='hover:bg-zinc']:hover,
+html:not(.dark) [class*='hover:bg-black']:hover {
+  background-color: var(--muted) !important;
+  color: var(--foreground) !important;
+}
+
+html:not(.dark) [class*='group']:hover [class*='group-hover:bg-zinc'] {
+  background-color: var(--muted) !important;
+}
+
+/* Dark Mode Hover States */
+html.dark [class*='hover:bg-zinc-950']:hover,
+html.dark [class*='hover:bg-zinc-900']:hover,
+html.dark [class*='hover:bg-zinc-800']:hover {
+  background-color: #18181b !important;
+  color: #ffffff !important;
+}
 /* Buttons & Feedback */
 button,
 [role='button'],

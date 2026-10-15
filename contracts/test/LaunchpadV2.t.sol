@@ -89,7 +89,7 @@ contract LaunchpadV2Test is Test {
 
         // Initial token allocations
         assertEq(token.balanceOf(curveAddress), 1_000_000_000 * 1e18);
-        assertEq(curve.virtualEthReserve(), 3.0 ether);
+        assertEq(curve.virtualEthReserve(), 1.68 ether);
 
         // Buyer1 purchases tokens from the curve after snipe tax window.
         // vm.roll is required: LaunchpadToken's anti-snipe guard uses block.number,
@@ -369,5 +369,29 @@ contract LaunchpadV2Test is Test {
 
         assertEq(tokenAddress, predictedToken, "token address mismatch");
         assertEq(curveAddress, predictedCurve, "curve address mismatch");
+    }
+
+    function test_CurveBuy_RefundsExcessEthAtGraduation() public {
+        (, address curveAddress) = _launch();
+        BondingCurve curve = BondingCurve(payable(curveAddress));
+
+        // Advance beyond anti-snipe window
+        vm.warp(block.timestamp + 10);
+        vm.roll(block.number + 5);
+
+        uint256 buyerBalanceBefore = buyer1.balance;
+        // Target is 4.2 ETH. Buyer sends 10 ETH.
+        vm.startPrank(buyer1);
+        uint256 tokensBought = curve.buy{value: 10 ether}(0);
+        vm.stopPrank();
+
+        uint256 buyerBalanceAfter = buyer1.balance;
+        uint256 ethSpent = buyerBalanceBefore - buyerBalanceAfter;
+
+        assertTrue(curve.graduated(), "Curve must be graduated");
+        assertTrue(tokensBought > 700_000_000 * 1e18, "Buyer receives all curve tokens");
+        // Spent amount should be ~4.24 ETH (4.2 ETH net + 1% fee), not 10 ETH!
+        assertLt(ethSpent, 5 ether, "Excess ETH must be refunded to buyer");
+        assertGt(ethSpent, 4 ether, "Curve target must be fully paid");
     }
 }

@@ -1,6 +1,7 @@
-import { ref, computed } from 'vue';
-import type { FeedCalloutItem } from '@proto/shared-types';
+import { ref, computed, type Ref, type ComputedRef } from 'vue';
+import { type FeedCalloutItem, buildCommentSignMessage } from '@proto/shared-types';
 import { apiFetch } from '@/lib/api-client';
+import { getWalletClient } from '@/lib/viem-client';
 
 export type FeedFilterType = 'all' | 'target' | 'whale' | 'profit' | 'media';
 
@@ -12,7 +13,45 @@ export function isWhaleCaller(call: { positionUsd?: number; supplyPercent?: numb
   return (call.supplyPercent ?? 0) >= 1.0 || (call.positionUsd ?? 0) >= 500;
 }
 
-export function useFeed() {
+export function useFeed(): {
+  callouts: Ref<FeedCalloutItem[]>;
+  loading: Ref<boolean>;
+  error: Ref<string | null>;
+  activeFilter: Ref<FeedFilterType>;
+  searchQuery: Ref<string>;
+  currentPage: Ref<number>;
+  pageSize: number;
+  filteredCallouts: ComputedRef<FeedCalloutItem[]>;
+  paginatedCallouts: ComputedRef<FeedCalloutItem[]>;
+  fetchFeed: (viewerAddress?: string, authorAddress?: string) => Promise<void>;
+  fetchUserPosts: (userAddress: string, viewerAddress?: string) => Promise<FeedCalloutItem[]>;
+  postCallout: (params: {
+    tokenAddress: string;
+    authorAddress: string;
+    content: string;
+    imageUrl?: string;
+    targetMcap?: string;
+    positionUsd?: number;
+    profitUsd?: number;
+    parentId?: string;
+    quotedCalloutId?: string;
+    callType?: 'call' | 'comment';
+  }) => Promise<FeedCalloutItem | null>;
+  toggleLike: (
+    commentId: string,
+    userAddress: string,
+  ) => Promise<{ liked: boolean; likesCount: number } | null>;
+  toggleRepost: (
+    commentId: string,
+    userAddress: string,
+  ) => Promise<{ reposted: boolean; repostsCount: number } | null>;
+  recordView: (commentId: string) => Promise<number | null>;
+  fetchCalloutThread: (
+    calloutId: string,
+    viewerAddress?: string,
+  ) => Promise<FeedCalloutItem | null>;
+  fetchCallerBalance: (tokenAddress: string, accountAddress: string) => Promise<number>;
+} {
   const callouts = ref<FeedCalloutItem[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -63,7 +102,8 @@ export function useFeed() {
       if (res && typeof res === 'object' && 'data' in res && Array.isArray(res.data))
         return res.data;
       return [];
-    } catch {
+    } catch (e) {
+      console.warn('[useFeed] fetchUserPosts failed:', (e as Error).message);
       return [];
     }
   }
@@ -78,8 +118,40 @@ export function useFeed() {
     profitUsd?: number;
     parentId?: string;
     quotedCalloutId?: string;
+    callType?: 'call' | 'comment';
   }): Promise<FeedCalloutItem | null> {
     try {
+      let signature: `0x${string}` | undefined;
+      const timestamp = Date.now();
+
+      const walletClient = await getWalletClient();
+      if (walletClient) {
+        try {
+          const message = buildCommentSignMessage({
+            tokenAddress: params.tokenAddress,
+            authorAddress: params.authorAddress,
+            content: params.content,
+            timestamp,
+          });
+          signature = await walletClient.signMessage({
+            account: params.authorAddress as `0x${string}`,
+            message,
+          });
+        } catch (signErr) {
+          const msg = ((signErr as Error)?.message ?? '').toLowerCase();
+          if (
+            msg.includes('user reject') ||
+            msg.includes('user denied') ||
+            msg.includes('user cancelled') ||
+            msg.includes('user canceled') ||
+            msg.includes('action_rejected')
+          ) {
+            return null;
+          }
+          throw signErr;
+        }
+      }
+
       const res = await apiFetch<{ success: boolean; data: FeedCalloutItem }>(
         `/api/tokens/${params.tokenAddress}/comments`,
         {
@@ -94,7 +166,9 @@ export function useFeed() {
             profitUsd: params.profitUsd,
             parentId: params.parentId,
             quotedCalloutId: params.quotedCalloutId,
-            callType: params.parentId ? 'comment' : 'call',
+            callType: params.callType ?? (params.parentId ? 'comment' : 'call'),
+            signature,
+            timestamp,
           }),
         },
       );
@@ -130,7 +204,8 @@ export function useFeed() {
         return res.data;
       }
       return null;
-    } catch {
+    } catch (e) {
+      console.warn('[useFeed] toggleLike failed:', (e as Error).message);
       return null;
     }
   }
@@ -158,7 +233,8 @@ export function useFeed() {
         return res.data;
       }
       return null;
-    } catch {
+    } catch (e) {
+      console.warn('[useFeed] toggleRepost failed:', (e as Error).message);
       return null;
     }
   }
@@ -176,7 +252,8 @@ export function useFeed() {
         return res.data;
       }
       return null;
-    } catch {
+    } catch (e) {
+      console.warn('[useFeed] fetchCalloutThread failed:', (e as Error).message);
       return null;
     }
   }
@@ -197,8 +274,29 @@ export function useFeed() {
         return res.data.viewsCount;
       }
       return null;
-    } catch {
+    } catch (e) {
+      console.warn('[useFeed] recordView failed:', (e as Error).message);
       return null;
+    }
+  }
+
+  /**
+   * Fetch the token balance of a caller account for a given token.
+   * Used by FeedView to gate callout posting (skin-in-the-game check).
+   * Returns 0 on any error so the caller can safely default to no-position.
+   */
+  async function fetchCallerBalance(tokenAddress: string, accountAddress: string): Promise<number> {
+    try {
+      const res = await apiFetch<{ success: boolean; data: { balance: string | number } }>(
+        `/api/tokens/${tokenAddress}/balance?account=${accountAddress}`,
+      );
+      if (res?.success && res.data) {
+        return Number(res.data.balance || 0);
+      }
+      return 0;
+    } catch (e) {
+      console.warn('[useFeed] fetchCallerBalance failed:', (e as Error).message);
+      return 0;
     }
   }
 
@@ -251,5 +349,6 @@ export function useFeed() {
     recordView,
     fetchCalloutThread,
     fetchUserPosts,
+    fetchCallerBalance,
   };
 }

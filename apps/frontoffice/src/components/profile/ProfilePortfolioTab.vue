@@ -1,9 +1,9 @@
 <template>
-  <div class="space-y-4 font-mono">
+  <div class="space-y-4">
     <Empty
       v-if="portfolioPositions.length === 0"
-      title="No active holdings"
-      description="No active token holdings found for this wallet address."
+      :title="t('noHoldings')"
+      :description="t('noHoldingsDesc')"
       class="py-14"
     >
       <template #icon>
@@ -14,30 +14,34 @@
           as-child
           size="sm"
           variant="outline"
-          class="rounded-xl px-4 font-mono font-bold cursor-pointer"
+          class="rounded-xl px-4 font-bold cursor-pointer"
         >
-          <RouterLink to="/launchpad">Explore Tokens</RouterLink>
+          <RouterLink to="/launchpad">{{ t('exploreTokens') }}</RouterLink>
         </Button>
       </template>
     </Empty>
     <div v-else class="rounded-2xl border border-border overflow-hidden bg-black">
-      <Table class="text-xs font-mono bg-black">
+      <Table class="text-xs bg-black">
         <TableHeader>
           <TableRow class="border-b border-border text-muted-foreground bg-black hover:bg-black">
-            <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black"
-              >Asset</TableHead
+            <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">{{
+              t('asset')
+            }}</TableHead>
+            <TableHead
+              class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+              >{{ t('balance') }}</TableHead
             >
-            <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
-              >Balance</TableHead
+            <TableHead
+              class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+              >{{ t('priceUsdCol') }}</TableHead
             >
-            <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
-              >Price (USD)</TableHead
+            <TableHead
+              class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+              >{{ t('valueUsdCol') }}</TableHead
             >
-            <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
-              >Value (USD)</TableHead
-            >
-            <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
-              >Action</TableHead
+            <TableHead
+              class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+              >{{ t('action') }}</TableHead
             >
           </TableRow>
         </TableHeader>
@@ -49,11 +53,18 @@
           >
             <TableCell class="py-2.5 px-3">
               <div class="flex items-center gap-2">
-                <Avatar class="w-6 h-6 rounded border border-border overflow-hidden">
-                  <AvatarFallback class="text-[9px] bg-muted text-foreground font-mono">
-                    {{ pos.symbol.slice(0, 3) }}
-                  </AvatarFallback>
-                </Avatar>
+                <div class="relative shrink-0">
+                  <Avatar class="w-6 h-6 rounded border border-border overflow-hidden">
+                    <AvatarFallback class="text-xs bg-muted text-foreground">
+                      {{ pos.symbol.slice(0, 3) }}
+                    </AvatarFallback>
+                  </Avatar>
+                  <img
+                    :src="getChainIcon(getTokenNetwork(pos.tokenAddress))"
+                    :alt="getTokenNetwork(pos.tokenAddress).name"
+                    class="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border border-black bg-black object-contain shadow-xs"
+                  />
+                </div>
                 <span class="font-bold text-foreground">{{ pos.name }}</span>
                 <span class="text-muted-foreground">${{ pos.symbol }}</span>
               </div>
@@ -77,10 +88,10 @@
                 as-child
                 variant="outline"
                 size="sm"
-                class="h-7 px-2.5 text-xs font-semibold gap-1 border-border cursor-pointer font-mono"
+                class="h-7 px-2.5 text-xs font-semibold gap-1 border-border cursor-pointer"
               >
                 <RouterLink :to="`/token/${pos.tokenAddress}`">
-                  Trade
+                  {{ t('trade') }}
                   <ExternalLink class="w-3 h-3" />
                 </RouterLink>
               </Button>
@@ -94,8 +105,11 @@
 
 <script setup lang="ts">
 import { ExternalLink, PieChart } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { getChainIcon } from '@/lib/utils';
+import { useTokenStore } from '@/composables/useTokenStore';
 import { Empty } from '@/components/ui/empty';
 import {
   Table,
@@ -106,6 +120,9 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import type { PortfolioPosition } from './types';
+
+const { t } = useI18n();
+const { getTokenNetwork } = useTokenStore();
 
 defineProps<{
   portfolioPositions: PortfolioPosition[];

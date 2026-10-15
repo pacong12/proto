@@ -6,7 +6,7 @@
     </div>
     <Empty
       v-else-if="myLaunches.length === 0"
-      title="No created tokens"
+      :title="t('createdTokens')"
       description="No tokens have been launched from this address yet."
       class="py-14"
     >
@@ -14,8 +14,8 @@
         <Rocket class="w-6 h-6" />
       </template>
       <template v-if="isOwnProfile" #action>
-        <Button as-child size="sm" class="rounded-xl px-4 font-mono font-bold cursor-pointer">
-          <RouterLink to="/launchpad/create">Create a Coin</RouterLink>
+        <Button as-child size="sm" class="rounded-xl px-4 font-bold cursor-pointer">
+          <RouterLink to="/launchpad/create">{{ t('createToken') }}</RouterLink>
         </Button>
       </template>
     </Empty>
@@ -36,11 +36,7 @@
               class="rounded-lg border border-border"
             />
             <img
-              :src="
-                getTokenNetwork(token.address).chainId === 5042
-                  ? '/chains/arc.svg'
-                  : '/chains/robinhood.svg'
-              "
+              :src="getChainIcon(getTokenNetwork(token.address))"
               :alt="getTokenNetwork(token.address).name"
               :title="getTokenNetwork(token.address).name"
               class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-black bg-black object-contain shadow-xs"
@@ -52,59 +48,98 @@
               <h3 class="font-bold text-base text-foreground">
                 {{ token.name }}
               </h3>
-              <span class="text-xs font-mono text-muted-foreground">${{ token.symbol }}</span>
-              <Badge variant="outline" class="text-[9px] px-1.5 py-0 h-4 font-mono uppercase">
-                Curve
-              </Badge>
+              <span class="text-xs text-muted-foreground">${{ token.symbol }}</span>
+              <TaxTooltip
+                :buy-tax-bps="token.taxConfig?.buyTaxBps"
+                :sell-tax-bps="token.taxConfig?.sellTaxBps"
+                custom-class="text-xs"
+              />
+              <span
+                v-if="(token.taxConfig?.revenueSplit?.holders ?? 0) > 0"
+                class="text-xs text-sky-400 px-1.5 py-0.5 rounded border border-sky-500/20 bg-sky-500/5"
+                title="Holder Fee Sharing Enabled"
+              >
+                {{ token.taxConfig?.revenueSplit?.holders }}% Divs
+              </span>
             </div>
-            <p class="text-xs font-mono text-muted-foreground mt-0.5 break-all sm:break-normal">
-              {{ token.address }}
-            </p>
-            <div
-              class="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap font-mono"
+            <!-- CA copy button -->
+            <button
+              type="button"
+              class="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer group"
+              :title="'Copy contract address: ' + token.address"
+              @click.stop="copyCA(token.address)"
             >
+              <span class="break-all sm:break-normal">{{ token.address }}</span>
+              <Check
+                v-if="copiedCA === token.address"
+                class="w-3.5 h-3.5 text-emerald-500 shrink-0"
+              />
+              <Copy
+                v-else
+                class="w-3.5 h-3.5 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity"
+              />
+            </button>
+            <div class="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
               <span>
                 Accrued:
-                <strong class="text-foreground font-mono">
+                <strong class="text-foreground">
                   {{
-                    token.unclaimedWeth === '—'
+                    !token.isGraduated
                       ? 'Curve'
-                      : `${token.unclaimedWeth} ${nativeCurrencySymbol}`
+                      : `${token.unclaimedWeth || '0.0000'} ${nativeCurrencySymbol}`
                   }}
                 </strong>
               </span>
-              <span>•</span>
-              <span>
-                Redirect:
-                <strong class="font-mono text-foreground">
-                  {{ token.redirect ? `${token.redirect.slice(0, 6)}...` : 'None (Self)' }}
-                </strong>
-              </span>
+              <template v-if="token.redirect">
+                <span>•</span>
+                <span>
+                  Redirect:
+                  <strong class="text-foreground">
+                    {{ token.redirect.slice(0, 6) }}...{{ token.redirect.slice(-4) }}
+                  </strong>
+                </span>
+              </template>
             </div>
           </div>
         </div>
 
-        <div v-if="isOwnProfile" class="flex items-center gap-2 self-end sm:self-center font-mono">
+        <div class="flex items-center gap-2 self-end sm:self-center flex-wrap">
           <Button
-            @click="emit('claim', token.address)"
-            :disabled="loadingAction || claimingToken === token.address"
-            variant="default"
-            size="sm"
-            class="cursor-pointer"
-          >
-            <Loader2 v-if="claimingToken === token.address" class="w-3.5 h-3.5 mr-1 animate-spin" />
-            <ArrowDownToLine v-else class="w-3.5 h-3.5 mr-1" />
-            Claim Fees
-          </Button>
-          <Button
-            @click="emit('cto', token.address)"
+            as-child
             variant="outline"
             size="sm"
-            class="cursor-pointer"
+            class="h-8 px-2.5 text-xs font-semibold gap-1 border-border cursor-pointer"
           >
-            <Share2 class="w-3.5 h-3.5 mr-1" />
-            CTO Redirect
+            <RouterLink :to="`/token/${token.address}`">
+              Trade
+              <ExternalLink class="w-3 h-3" />
+            </RouterLink>
           </Button>
+          <template v-if="isOwnProfile">
+            <Button
+              @click="emit('claim', token.address)"
+              :disabled="loadingAction || claimingToken === token.address"
+              variant="default"
+              size="sm"
+              class="cursor-pointer"
+            >
+              <Loader2
+                v-if="claimingToken === token.address"
+                class="w-3.5 h-3.5 mr-1 animate-spin"
+              />
+              <ArrowDownToLine v-else class="w-3.5 h-3.5 mr-1" />
+              Claim Fees
+            </Button>
+            <Button
+              @click="emit('cto', token.address)"
+              variant="outline"
+              size="sm"
+              class="cursor-pointer"
+            >
+              <Share2 class="w-3.5 h-3.5 mr-1" />
+              CTO Redirect
+            </Button>
+          </template>
         </div>
       </Card>
     </div>
@@ -112,15 +147,27 @@
 </template>
 
 <script setup lang="ts">
-import { Loader2, ArrowDownToLine, Share2, Rocket } from 'lucide-vue-next';
+import { ref } from 'vue';
+import {
+  Loader2,
+  ArrowDownToLine,
+  Share2,
+  Rocket,
+  Copy,
+  Check,
+  ExternalLink,
+} from 'lucide-vue-next';
+import TaxTooltip from '@/components/ui/TaxTooltip.vue';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
+import { getChainIcon } from '@/lib/utils';
+import { useI18n } from '@/lib/i18n';
 import { useTokenStore } from '@/composables/useTokenStore';
 import type { MyLaunchItem } from './types';
 
+const { t } = useI18n();
 const { getTokenNetwork } = useTokenStore();
 
 defineProps<{
@@ -136,4 +183,15 @@ const emit = defineEmits<{
   (e: 'claim', address: string): void;
   (e: 'cto', address: string): void;
 }>();
+
+const copiedCA = ref<string | null>(null);
+
+function copyCA(address: string): void {
+  if (typeof navigator === 'undefined') return;
+  navigator.clipboard.writeText(address);
+  copiedCA.value = address;
+  setTimeout(() => {
+    copiedCA.value = null;
+  }, 2000);
+}
 </script>

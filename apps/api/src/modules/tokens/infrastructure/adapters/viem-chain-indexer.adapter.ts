@@ -4,161 +4,16 @@ import {
   GraduationStatus,
   ROBINHOOD_CHAIN,
   ARC_CHAIN,
+  DEFAULT_NETWORK,
   launchpadFactoryAbi,
   launchpadV2FactoryAbi,
   launchpadTokenAbi,
+  bondingCurveAbi,
   uniswapV3PoolAbi,
+  resolveTokenNetwork,
   type NetworkConfig,
 } from '@proto/shared-types';
 import { ChainIndexerPort } from '../../domain/ports/chain.indexer.port';
-
-// ---------------------------------------------------------------------------
-// Minimal ABI fragments for V2 BondingCurve reads
-// ---------------------------------------------------------------------------
-const bondingCurveAbi = [
-  {
-    name: 'totalEthRaised',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'uint256' }],
-  },
-  {
-    name: 'virtualEthReserve',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'uint256' }],
-  },
-  {
-    name: 'virtualTokenReserve',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'uint256' }],
-  },
-  {
-    name: 'graduationTarget',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'uint256' }],
-  },
-  {
-    name: 'graduated',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'bool' }],
-  },
-  {
-    name: 'creator',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'address' }],
-  },
-] as const;
-
-// V2 Factory ABI fragments for getLaunch lookup
-// Reserved for future factory readContract calls
-const _factoryV2Abi = [
-  {
-    name: 'launches',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'token', type: 'address' }],
-    outputs: [
-      { name: 'token', type: 'address' },
-      { name: 'curve', type: 'address' },
-      { name: 'creator', type: 'address' },
-      { name: 'createdAt', type: 'uint256' },
-      { name: 'graduated', type: 'bool' },
-    ],
-  },
-] as const;
-
-// V2 token ABI — only fields emitted by LaunchpadToken (name/symbol/logo etc.)
-const launchpadTokenV2Abi = [
-  {
-    name: 'name',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'string' }],
-  },
-  {
-    name: 'symbol',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'string' }],
-  },
-  {
-    name: 'decimals',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'uint8' }],
-  },
-  {
-    name: 'totalSupply',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'uint256' }],
-  },
-  {
-    name: 'logo',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'string' }],
-  },
-  {
-    name: 'description',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ type: 'string' }],
-  },
-  {
-    name: 'socials',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [
-      { name: 'twitter', type: 'string' },
-      { name: 'telegram', type: 'string' },
-      { name: 'discord', type: 'string' },
-      { name: 'website', type: 'string' },
-      { name: 'farcaster', type: 'string' },
-    ],
-  },
-  {
-    name: 'taxConfig',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [
-      { name: 'buyTaxBps', type: 'uint16' },
-      { name: 'sellTaxBps', type: 'uint16' },
-      { name: 'taxRecipient', type: 'address' },
-    ],
-  },
-  {
-    name: 'pendingTaxConfig',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [
-      { name: 'buyTaxBps', type: 'uint16' },
-      { name: 'sellTaxBps', type: 'uint16' },
-      { name: 'taxRecipient', type: 'address' },
-      { name: 'validAfter', type: 'uint256' },
-    ],
-  },
-] as const;
 
 function makeViemChain(cfg: NetworkConfig): Chain {
   return {
@@ -170,42 +25,48 @@ function makeViemChain(cfg: NetworkConfig): Chain {
 }
 
 export class ViemChainIndexerAdapter implements ChainIndexerPort {
-  private readonly robinhoodClient: PublicClient;
-  private readonly arcClient: PublicClient;
+  private readonly clients = new Map<number, PublicClient>();
 
   constructor() {
-    this.robinhoodClient = createPublicClient({
-      chain: makeViemChain(ROBINHOOD_CHAIN),
-      transport: http(ROBINHOOD_CHAIN.rpcUrl),
-    });
-    this.arcClient = createPublicClient({
-      chain: makeViemChain(ARC_CHAIN),
-      transport: http(ARC_CHAIN.rpcUrl),
-    });
+    this.getClient(ROBINHOOD_CHAIN);
+    this.getClient(ARC_CHAIN);
+  }
+
+  getClient(cfg: NetworkConfig): PublicClient {
+    let client = this.clients.get(cfg.chainId);
+    if (!client) {
+      client = createPublicClient({
+        chain: makeViemChain(cfg),
+        transport: http(cfg.rpcUrl, { retryCount: 0, timeout: 10_000 }),
+      });
+      this.clients.set(cfg.chainId, client);
+    }
+    return client;
+  }
+
+  get robinhoodClient(): PublicClient {
+    return this.getClient(ROBINHOOD_CHAIN);
+  }
+
+  get arcClient(): PublicClient {
+    return this.getClient(ARC_CHAIN);
   }
 
   /**
    * Resolve the correct viem client and network config for a given token.
-   * Detection strategy: check against ARC_CHAIN factory / weth addresses.
+   * Scalable: leverages resolveTokenNetwork across all registered chains.
    */
   private resolveNetwork(
     pairedToken?: string,
     poolAddress?: string,
+    curveAddress?: string,
+    chainId?: number,
   ): { client: PublicClient; network: NetworkConfig } {
-    const arcWeth = ARC_CHAIN.contracts.weth.toLowerCase();
-    const arcFactory = ARC_CHAIN.contracts.factory.toLowerCase();
-    const arcFactoryV2 = (
-      ARC_CHAIN.contracts.factoryV2 ?? ARC_CHAIN.contracts.factory
-    ).toLowerCase();
-
-    const pt = (pairedToken ?? '').toLowerCase();
-    const pa = (poolAddress ?? '').toLowerCase();
-
-    const isArc = pt === arcWeth || pa === arcFactory || pa === arcFactoryV2;
-
-    return isArc
-      ? { client: this.arcClient, network: ARC_CHAIN }
-      : { client: this.robinhoodClient, network: ROBINHOOD_CHAIN };
+    const network = resolveTokenNetwork(
+      { pairedToken, poolAddress, curveAddress, chainId },
+      chainId,
+    );
+    return { client: this.getClient(network), network };
   }
 
   // -------------------------------------------------------------------------
@@ -217,8 +78,7 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
     curveAddress: Address,
     networkConfig: NetworkConfig,
   ): Promise<LaunchedTokenEntity | null> {
-    const client =
-      networkConfig.chainId === ARC_CHAIN.chainId ? this.arcClient : this.robinhoodClient;
+    const client = this.getClient(networkConfig);
 
     try {
       const [
@@ -240,38 +100,38 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
       ] = await Promise.all([
         client.readContract({
           address: tokenAddress,
-          abi: launchpadTokenV2Abi,
+          abi: launchpadTokenAbi,
           functionName: 'name',
         }),
         client.readContract({
           address: tokenAddress,
-          abi: launchpadTokenV2Abi,
+          abi: launchpadTokenAbi,
           functionName: 'symbol',
         }),
         client.readContract({
           address: tokenAddress,
-          abi: launchpadTokenV2Abi,
+          abi: launchpadTokenAbi,
           functionName: 'decimals',
         }),
         client.readContract({
           address: tokenAddress,
-          abi: launchpadTokenV2Abi,
+          abi: launchpadTokenAbi,
           functionName: 'totalSupply',
         }),
         client
-          .readContract({ address: tokenAddress, abi: launchpadTokenV2Abi, functionName: 'logo' })
+          .readContract({ address: tokenAddress, abi: launchpadTokenAbi, functionName: 'logo' })
           .catch(() => ''),
         client
           .readContract({
             address: tokenAddress,
-            abi: launchpadTokenV2Abi,
+            abi: launchpadTokenAbi,
             functionName: 'description',
           })
           .catch(() => ''),
         client
           .readContract({
             address: tokenAddress,
-            abi: launchpadTokenV2Abi,
+            abi: launchpadTokenAbi,
             functionName: 'socials',
           })
           .catch(() => ['', '', '', '', '']),
@@ -308,14 +168,14 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
         client
           .readContract({
             address: tokenAddress,
-            abi: launchpadTokenV2Abi,
+            abi: launchpadTokenAbi,
             functionName: 'taxConfig',
           })
           .catch(() => [0, 0, '0x0000000000000000000000000000000000000000'] as const),
         client
           .readContract({
             address: tokenAddress,
-            abi: launchpadTokenV2Abi,
+            abi: launchpadTokenAbi,
             functionName: 'pendingTaxConfig',
           })
           .catch(() => [0, 0, '0x0000000000000000000000000000000000000000', 0n] as const),
@@ -365,8 +225,7 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
         graduationTarget: graduationTarget.toString(),
         isGraduated: graduated as boolean,
       };
-    } catch (err) {
-      console.error(`[ChainIndexer] fetchV2LaunchedToken failed for ${tokenAddress}:`, err);
+    } catch {
       return null;
     }
   }
@@ -378,15 +237,15 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
     tokenAddress: Address,
     networkConfig?: NetworkConfig,
   ): Promise<LaunchedTokenEntity | null> {
-    const cfg = networkConfig ?? ARC_CHAIN;
-    const client = cfg.chainId === ARC_CHAIN.chainId ? this.arcClient : this.robinhoodClient;
-    const factories = [
-      cfg.contracts.factoryV2,
-      cfg.contracts.factory,
-      cfg.chainId === ROBINHOOD_CHAIN.chainId
-        ? ('0xbA42499Cfe59abc05120A100EEc4f859F476034F' as Address)
-        : undefined,
-    ].filter((f): f is Address => Boolean(f && f !== '0x0000000000000000000000000000000000000000'));
+    const cfg = networkConfig ?? DEFAULT_NETWORK;
+    const client = this.getClient(cfg);
+    const factories = Array.from(
+      new Set(
+        [cfg.contracts.factoryV2, cfg.contracts.factory].filter((f): f is Address =>
+          Boolean(f && f !== '0x0000000000000000000000000000000000000000'),
+        ),
+      ),
+    );
 
     for (const factory of factories) {
       try {
@@ -416,8 +275,8 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
     tokenAddress: Address,
     networkConfig?: NetworkConfig,
   ): Promise<LaunchedTokenEntity | null> {
-    const cfg = networkConfig ?? ROBINHOOD_CHAIN;
-    const client = cfg.chainId === ARC_CHAIN.chainId ? this.arcClient : this.robinhoodClient;
+    const cfg = networkConfig ?? DEFAULT_NETWORK;
+    const client = this.getClient(cfg);
 
     try {
       const [tokenLaunchedData, name, symbol, decimals, logo, description, poolAddress, socials] =
@@ -506,8 +365,7 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
         initialBuyAmount: td.initialBuyAmount.toString(),
         version: 'v1',
       };
-    } catch (err) {
-      console.error(`[ChainIndexer] fetchLaunchedTokenFromChain failed for ${tokenAddress}:`, err);
+    } catch {
       return null;
     }
   }
@@ -525,8 +383,7 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
     graduationTarget: bigint;
     graduated: boolean;
   }> {
-    const client =
-      networkConfig.chainId === ARC_CHAIN.chainId ? this.arcClient : this.robinhoodClient;
+    const client = this.getClient(networkConfig);
     try {
       const [totalEthRaised, virtualEthReserve, virtualTokenReserve, graduationTarget, graduated] =
         await Promise.all([
@@ -564,13 +421,16 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
         graduated: graduated as boolean,
       };
     } catch {
-      // RPC unavailable: return safe defaults matching BondingCurve constructor values.
-      // CURVE_TOKEN_SUPPLY = 800_000_000 * 1e18 (not 1B — 200M is reserved for V4 LP).
+      // RPC unavailable: return safe defaults matching network launchConfigV2 parameters.
+      const vEthFallback =
+        networkConfig.launchConfigV2?.virtualReserveWei ??
+        (networkConfig.chainId === ARC_CHAIN.chainId
+          ? 24_420n * 10n ** 18n
+          : 1_680_000_000_000_000_000n);
       return {
         totalEthRaised: 0n,
-        virtualEthReserve:
-          networkConfig.chainId === ARC_CHAIN.chainId ? 4_200n * 10n ** 18n : 3n * 10n ** 18n,
-        virtualTokenReserve: 800_000_000n * 10n ** 18n,
+        virtualEthReserve: vEthFallback,
+        virtualTokenReserve: 1_000_000_000n * 10n ** 18n,
         graduationTarget: networkConfig.launchConfig.graduationThresholdWei,
         graduated: false,
       };
@@ -584,8 +444,8 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
     tokenAddress: Address,
     networkConfig?: NetworkConfig,
   ): Promise<GraduationStatus> {
-    const cfg = networkConfig ?? ROBINHOOD_CHAIN;
-    const client = cfg.chainId === ARC_CHAIN.chainId ? this.arcClient : this.robinhoodClient;
+    const cfg = networkConfig ?? DEFAULT_NETWORK;
+    const client = this.getClient(cfg);
     try {
       const [pairedPrincipal, threshold, graduated] = (await client.readContract({
         address: cfg.contracts.factory as Address,

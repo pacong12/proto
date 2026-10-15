@@ -13,3 +13,4 @@ contracts/cache
 components.d.ts
 uploads/
 apps/api/uploads/
+contracts/remappings.txt
