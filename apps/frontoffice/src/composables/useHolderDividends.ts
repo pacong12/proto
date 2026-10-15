@@ -110,6 +110,42 @@ export function useHolderDividends() {
   }
 
   /**
+   * Query earned() for a single token directly.
+   */
+  async function loadSingleTokenDividend(
+    holderAddress: `0x${string}`,
+    tokenAddress: `0x${string}`,
+    tokenSymbol: string,
+    tokenName: string,
+    distributorAddress: `0x${string}`,
+    chainId?: number,
+  ): Promise<HolderDividendEntry | null> {
+    const zero = '0x0000000000000000000000000000000000000000';
+    if (!distributorAddress || distributorAddress === zero || !holderAddress) {
+      return null;
+    }
+    try {
+      const client = getPublicClient(chainId);
+      const earned = (await client.readContract({
+        address: distributorAddress,
+        abi: holderFeeDistributorAbi,
+        functionName: 'earned',
+        args: [tokenAddress, holderAddress],
+      })) as bigint;
+
+      return {
+        tokenAddress,
+        tokenSymbol,
+        tokenName,
+        earnedWei: earned,
+        earnedFormatted: Number(formatEther(earned)).toFixed(4),
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Call claimReward(token) on the distributor. Returns tx hash on success.
    */
   async function claimDividend(
@@ -176,6 +212,7 @@ export function useHolderDividends() {
     totalEarnedFormatted,
     hasAnyEarned,
     loadDividends,
+    loadSingleTokenDividend,
     claimDividend,
     claimAllDividends,
     /** Reset entries to empty — call before loadDividends when switching wallet/profile. */

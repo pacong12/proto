@@ -79,4 +79,52 @@ export interface TokenRepositoryPort {
   // Indexer persistence
   getLastIndexedBlock?(networkName: string): Promise<bigint | null>;
   setLastIndexedBlock?(networkName: string, blockNumber: bigint): Promise<void>;
+
+  // Sentiment voting
+  getTokenSentiment?(
+    tokenAddress: string,
+    userAddress?: string,
+  ): Promise<{
+    bullVotes: number;
+    bearVotes: number;
+    totalVotes: number;
+    bullPercent: number;
+    bearPercent: number;
+    userVote?: 'bull' | 'bear';
+  }>;
+  voteTokenSentiment?(
+    tokenAddress: string,
+    userAddress: string,
+    sentiment: 'bull' | 'bear',
+  ): Promise<{
+    bullVotes: number;
+    bearVotes: number;
+    totalVotes: number;
+    bullPercent: number;
+    bearPercent: number;
+    userVote: 'bull' | 'bear';
+  }>;
+
+  // Buyback and Burn tracking
+  recordBuybackBurn?(burn: {
+    tokenAddress: string;
+    network: string;
+    wethSpent: string;
+    tokensBurned: string;
+    transactionHash: string;
+    timestamp: number;
+  }): Promise<void>;
+  getBuybackStats?(tokenAddress?: string): Promise<{
+    totalBurns: number;
+    totalTokensBurned: string;
+    recentBurns: Array<{
+      id: string;
+      tokenAddress: string;
+      network: string;
+      wethSpent: string;
+      tokensBurned: string;
+      transactionHash: string;
+      timestamp: number;
+    }>;
+  }>;
 }
