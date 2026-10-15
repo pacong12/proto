@@ -191,16 +191,24 @@ contract ProtoMemeHook is IHooks {
             pendingEthFees[poolId] = 0;
 
             uint256 creatorShare = (ethAvailable * config.creatorFeeShareBps) / 10_000;
-            uint256 protocolShare = ethAvailable - creatorShare;
+            uint256 buybackShare = (ethAvailable * config.buybackShareBps) / 10_000;
+            uint256 protocolShare = ethAvailable > (creatorShare + buybackShare)
+                ? ethAvailable - creatorShare - buybackShare
+                : 0;
 
             if (creatorShare > 0 && config.creator != address(0)) {
                 (bool ok1, ) = config.creator.call{value: creatorShare}("");
                 if (!ok1) revert TransferFailed();
             }
 
-            if (protocolShare > 0 && protocolFeeRecipient != address(0)) {
-                (bool ok2, ) = protocolFeeRecipient.call{value: protocolShare}("");
+            if (buybackShare > 0 && buybackVault != address(0)) {
+                (bool ok2, ) = buybackVault.call{value: buybackShare}("");
                 if (!ok2) revert TransferFailed();
+            }
+
+            if (protocolShare > 0 && protocolFeeRecipient != address(0)) {
+                (bool ok3, ) = protocolFeeRecipient.call{value: protocolShare}("");
+                if (!ok3) revert TransferFailed();
             }
 
             emit FeesSwept(poolId, creatorShare, protocolShare);

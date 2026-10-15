@@ -102,6 +102,24 @@ export const protoLiquidityLockerV4Abi = [
   },
   {
     type: 'function',
+    name: 'depositFees',
+    inputs: [
+      {
+        name: 'token',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'tokenAmount',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'payable',
+  },
+  {
+    type: 'function',
     name: 'factory',
     inputs: [],
     outputs: [
@@ -367,6 +385,25 @@ export const protoLiquidityLockerV4Abi = [
   },
   {
     type: 'function',
+    name: 'tokenEthFees',
+    inputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'tokenPositions',
     inputs: [
       {
@@ -387,6 +424,25 @@ export const protoLiquidityLockerV4Abi = [
   {
     type: 'function',
     name: 'tokenProtocolFeeShares',
+    inputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'tokenTokenFees',
     inputs: [
       {
         name: '',

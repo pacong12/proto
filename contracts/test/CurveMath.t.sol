@@ -67,7 +67,7 @@ contract CurveMathTest is Test {
 
     function test_CurveMath_ComputeSqrtPriceX96_RevertsOnOverflow() public {
         vm.expectRevert(CurveMath.Overflow.selector);
-        this.computeSqrtPriceX96Wrapper(type(uint256).max, 1);
+        this.computeSqrtPriceX96Wrapper(1, type(uint256).max);
     }
     function test_CurveMath_SpotPrice() public pure {
         uint256 spot = CurveMath.calculateSpotPrice(V_ETH, V_TOKEN);
