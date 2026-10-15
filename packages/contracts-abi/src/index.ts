@@ -6,6 +6,8 @@ export * from './v2/holder-fee-distributor.abi';
 export * from './v2/buyback-burner.abi';
 export * from './v2/liquidity-locker.abi';
 export * from './v2/vesting-vault.abi';
+export * from './v2/proto-liquidity-locker-v4.abi';
+export * from './v2/proto-meme-hook.abi';
 export * from './external/dex.abi';
 export * from './chains';
 

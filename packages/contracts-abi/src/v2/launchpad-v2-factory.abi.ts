@@ -298,6 +298,42 @@ export const launchpadV2FactoryAbi = [
   },
   {
     type: 'function',
+    name: 'migrateCurve',
+    inputs: [
+      {
+        name: 'curve',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'recipient',
+        type: 'address',
+        internalType: 'address payable',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'migrateCurveToV3',
+    inputs: [
+      {
+        name: 'curve',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'recipient',
+        type: 'address',
+        internalType: 'address payable',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'migrateCurveToV4',
     inputs: [
       {

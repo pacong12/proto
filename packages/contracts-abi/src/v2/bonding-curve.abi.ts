@@ -374,6 +374,19 @@ export const bondingCurveAbi = [
   },
   {
     type: 'function',
+    name: 'migrateLiquidity',
+    inputs: [
+      {
+        name: 'recipient',
+        type: 'address',
+        internalType: 'address payable',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'migrateToV4',
     inputs: [
       {

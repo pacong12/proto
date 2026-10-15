@@ -18,16 +18,6 @@ export const launchpadV2FactoryArcAbi = [
         type: 'address',
         internalType: 'address',
       },
-      {
-        name: '_poolManagerV4',
-        type: 'address',
-        internalType: 'address',
-      },
-      {
-        name: '_memeHook',
-        type: 'address',
-        internalType: 'address',
-      },
     ],
     stateMutability: 'nonpayable',
   },
@@ -285,16 +275,39 @@ export const launchpadV2FactoryArcAbi = [
   },
   {
     type: 'function',
-    name: 'memeHook',
-    inputs: [],
-    outputs: [
+    name: 'migrateCurve',
+    inputs: [
       {
-        name: '',
+        name: 'curve',
         type: 'address',
         internalType: 'address',
       },
+      {
+        name: 'recipient',
+        type: 'address',
+        internalType: 'address payable',
+      },
     ],
-    stateMutability: 'view',
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'migrateCurveToV3',
+    inputs: [
+      {
+        name: 'curve',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'recipient',
+        type: 'address',
+        internalType: 'address payable',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -330,19 +343,6 @@ export const launchpadV2FactoryArcAbi = [
   {
     type: 'function',
     name: 'pendingOwner',
-    inputs: [],
-    outputs: [
-      {
-        name: '',
-        type: 'address',
-        internalType: 'address',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'poolManagerV4',
     inputs: [],
     outputs: [
       {

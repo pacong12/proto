@@ -64,6 +64,18 @@ const CONTRACTS_TO_EXPORT: ContractExportConfig[] = [
     outputName: 'vesting-vault.abi.ts',
     exportVarName: 'vestingVaultAbi',
   },
+  {
+    sourceFile: 'ProtoLiquidityLockerV4.sol',
+    contractName: 'ProtoLiquidityLockerV4',
+    outputName: 'proto-liquidity-locker-v4.abi.ts',
+    exportVarName: 'protoLiquidityLockerV4Abi',
+  },
+  {
+    sourceFile: 'ProtoMemeHook.sol',
+    contractName: 'ProtoMemeHook',
+    outputName: 'proto-meme-hook.abi.ts',
+    exportVarName: 'protoMemeHookAbi',
+  },
 ];
 
 for (const item of CONTRACTS_TO_EXPORT) {
