@@ -2,18 +2,18 @@
 pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
-import {LaunchpadToken} from "../src/LaunchpadToken.sol";
-import {LiquidityLocker} from "../src/LiquidityLocker.sol";
-import {LaunchpadFactory} from "../src/LaunchpadFactory.sol";
-import {ILaunchpadToken} from "../src/interfaces/ILaunchpadToken.sol";
-import {ILaunchpadFactory} from "../src/interfaces/ILaunchpadFactory.sol";
-import {HolderFeeDistributor} from "../src/HolderFeeDistributor.sol";
+import {LaunchpadToken} from "../../src/core/LaunchpadToken.sol";
+import {LiquidityLocker} from "../../src/legacy/LiquidityLocker.sol";
+import {LaunchpadFactory} from "../../src/legacy/LaunchpadFactory.sol";
+import {ILaunchpadToken} from "../../src/interfaces/ILaunchpadToken.sol";
+import {ILaunchpadFactory} from "../../src/interfaces/ILaunchpadFactory.sol";
+import {HolderFeeDistributor} from "../../src/legacy/HolderFeeDistributor.sol";
 import {
     MockWETH,
     MockUniswapV3Factory,
     MockPositionManager,
     MockSwapRouter
-} from "./Mocks.sol";
+} from "../Mocks.sol";
 
 contract LaunchpadTest is Test {
     MockWETH public weth;

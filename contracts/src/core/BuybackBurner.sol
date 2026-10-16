@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {IBuybackBurner} from "./interfaces/IBuybackBurner.sol";
-import {ISwapRouter, IWETH} from "./interfaces/IUniswapV3.sol";
-import {ILaunchpadToken} from "./interfaces/ILaunchpadToken.sol";
+import {IBuybackBurner} from "../interfaces/IBuybackBurner.sol";
+import {ISwapRouter, IWETH} from "../interfaces/IUniswapV3.sol";
+import {ILaunchpadToken} from "../interfaces/ILaunchpadToken.sol";
 
 /**
  * @title BuybackBurner

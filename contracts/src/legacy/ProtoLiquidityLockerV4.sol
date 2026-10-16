@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {ILiquidityLocker} from "./interfaces/ILiquidityLocker.sol";
-import {IPositionManagerV4} from "./interfaces/IUniswapV4.sol";
-import {IWETH} from "./interfaces/IUniswapV3.sol";
-import {ILaunchpadToken} from "./interfaces/ILaunchpadToken.sol";
-import {IHolderFeeDistributor} from "./interfaces/IHolderFeeDistributor.sol";
-import {FeeMath} from "./libraries/FeeMath.sol";
+import {ILiquidityLocker} from "../interfaces/ILiquidityLocker.sol";
+import {IPositionManagerV4} from "../interfaces/IUniswapV4.sol";
+import {IWETH} from "../interfaces/IUniswapV3.sol";
+import {ILaunchpadToken} from "../interfaces/ILaunchpadToken.sol";
+import {IHolderFeeDistributor} from "../interfaces/IHolderFeeDistributor.sol";
+import {FeeMath} from "../libraries/FeeMath.sol";
 
 /**
  * @title ProtoLiquidityLockerV4

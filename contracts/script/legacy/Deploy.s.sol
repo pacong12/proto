@@ -2,8 +2,8 @@
 pragma solidity ^0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
-import {LaunchpadFactory} from "../src/LaunchpadFactory.sol";
-import {LiquidityLocker} from "../src/LiquidityLocker.sol";
+import {LaunchpadFactory} from "../../src/legacy/LaunchpadFactory.sol";
+import {LiquidityLocker} from "../../src/legacy/LiquidityLocker.sol";
 
 contract DeployScript is Script {
     // Official Robinhood Chain (ID: 4663) Uniswap V3 & WETH Addresses

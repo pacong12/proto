@@ -4,8 +4,8 @@ pragma solidity ^0.8.24;
 import {ILaunchpadV2Factory} from "../../interfaces/core/ILaunchpadV2Factory.sol";
 import {ILaunchpadToken} from "../../interfaces/core/ILaunchpadToken.sol";
 import {IBondingCurve} from "../../interfaces/core/IBondingCurve.sol";
-import {LaunchpadToken} from "../../LaunchpadToken.sol";
-import {BondingCurve} from "../../BondingCurve.sol";
+import {LaunchpadToken} from "../../core/LaunchpadToken.sol";
+import {BondingCurve} from "../../core/BondingCurve.sol";
 
 /**
  * @title BaseLaunchpadFactory

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {ILaunchpadToken} from "./interfaces/ILaunchpadToken.sol";
+import {ILaunchpadToken} from "../interfaces/ILaunchpadToken.sol";
 
 /**
  * @title VestingVault

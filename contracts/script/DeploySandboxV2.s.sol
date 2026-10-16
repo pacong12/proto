@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
-import {LaunchpadV2Factory} from "../src/LaunchpadV2Factory.sol";
+import {LaunchpadV2Factory} from "../src/chains/robinhood/LaunchpadV2Factory.sol";
 
 /**
  * @title DeploySandboxV2

@@ -2,9 +2,9 @@
 pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
-import {HolderFeeDistributor} from "../src/HolderFeeDistributor.sol";
-import {VestingVault} from "../src/VestingVault.sol";
-import {LaunchpadToken} from "../src/LaunchpadToken.sol";
+import {HolderFeeDistributor} from "../src/legacy/HolderFeeDistributor.sol";
+import {VestingVault} from "../src/core/VestingVault.sol";
+import {LaunchpadToken} from "../src/core/LaunchpadToken.sol";
 import {ILaunchpadToken} from "../src/interfaces/ILaunchpadToken.sol";
 import {MockWETH} from "./Mocks.sol";
 

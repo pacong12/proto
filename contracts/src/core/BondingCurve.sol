@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {ILaunchpadToken} from "./interfaces/ILaunchpadToken.sol";
-import {PoolKey, PoolIdLibrary, IPoolManager} from "./interfaces/IUniswapV4.sol";
-import {CurveMath} from "./libraries/CurveMath.sol";
-import {AntiSnipeLogic} from "./libraries/AntiSnipeLogic.sol";
+import {ILaunchpadToken} from "../interfaces/ILaunchpadToken.sol";
+import {PoolKey, PoolIdLibrary, IPoolManager} from "../interfaces/IUniswapV4.sol";
+import {CurveMath} from "../libraries/CurveMath.sol";
+import {AntiSnipeLogic} from "../libraries/AntiSnipeLogic.sol";
 
 /**
  * @title BondingCurve

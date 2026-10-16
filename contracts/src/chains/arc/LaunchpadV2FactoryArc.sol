@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {LaunchpadToken} from "./LaunchpadToken.sol";
-import {ILaunchpadToken} from "./interfaces/ILaunchpadToken.sol";
-import {BondingCurve} from "./BondingCurve.sol";
+import {LaunchpadToken} from "../../core/LaunchpadToken.sol";
+import {ILaunchpadToken} from "../../interfaces/ILaunchpadToken.sol";
+import {BondingCurve} from "../../core/BondingCurve.sol";
 
 /**
  * @title LaunchpadV2FactoryArc

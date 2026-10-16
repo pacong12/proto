@@ -2,8 +2,8 @@
 pragma solidity ^0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
-import {LaunchpadV2FactoryArc} from "../src/LaunchpadV2FactoryArc.sol";
-import {LiquidityLocker} from "../src/LiquidityLocker.sol";
+import {LaunchpadV2FactoryArc} from "../../src/chains/arc/LaunchpadV2FactoryArc.sol";
+import {LiquidityLocker} from "../../src/legacy/LiquidityLocker.sol";
 
 /**
  * @title DeployArc

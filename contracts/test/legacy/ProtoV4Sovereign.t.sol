@@ -2,11 +2,11 @@
 pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
-import {ProtoLiquidityLockerV4} from "../src/ProtoLiquidityLockerV4.sol";
-import {ProtoMemeHook} from "../src/ProtoMemeHook.sol";
-import {PoolKey, PoolIdLibrary, IPoolManager} from "../src/interfaces/IUniswapV4.sol";
-import {LaunchpadToken} from "../src/LaunchpadToken.sol";
-import {ILaunchpadToken} from "../src/interfaces/ILaunchpadToken.sol";
+import {ProtoLiquidityLockerV4} from "../../src/legacy/ProtoLiquidityLockerV4.sol";
+import {ProtoMemeHook} from "../../src/legacy/ProtoMemeHook.sol";
+import {PoolKey, PoolIdLibrary, IPoolManager} from "../../src/interfaces/IUniswapV4.sol";
+import {LaunchpadToken} from "../../src/core/LaunchpadToken.sol";
+import {ILaunchpadToken} from "../../src/interfaces/ILaunchpadToken.sol";
 
 contract ProtoV4SovereignTest is Test {
     using PoolIdLibrary for PoolKey;
