@@ -1,19 +1,35 @@
-import type { NetworkConfig } from '../constants/network';
-import { getEnv, getEnvBigInt } from './env';
+import { UNDEPLOYED, type NetworkConfig } from './types';
+import { getEnv } from './env';
 
-/** Canonical Proto curve address for Arc Network */
+/** Canonical Proto curve address for Arc Network (legacy bonding-curve launches). */
 export const ARC_PROTO_CURVE_ADDRESS = getEnv(
   'ARC_PROTO_CURVE_ADDRESS',
   '0x6c1c1a77771bf8961e27ea5b21f575eb17a7626e',
 ) as `0x${string}`;
 
+export const ARC_CHAIN_ID = 5042 as const;
+
+/** Native USDC precompile-backed ERC-20 (6 decimals); also the quote currency of every pool. */
+const ARC_USDC = '0x3600000000000000000000000000000000000000' as `0x${string}`;
+
+/** Pre-v4 deployments kept so their tokens still resolve to Arc. */
+const ARC_LEGACY_POOL_ADDRESS = '0x00689b589add3ee1995e26e7f4e5cbf262486eb4' as `0x${string}`;
+const ARC_LEGACY_CURVE_FACTORY = '0xf94d16c9E90fCd55b75D318d0104269146612abF' as `0x${string}`;
+
 /**
  * Arc Network (Chain ID: 5042)
  * Circle Stablecoin L1. Native gas asset is USDC with 18 decimals in msg.value (1 ether = 1.00 USDC).
- * All addresses and parameters are read dynamically from environment variables (.env).
+ *
+ * Launch model: in-pool Uniswap v4 (Argus portal parameters). Tokens trade in their v4 pool from
+ * the first block; there is no bonding-curve contract and no Uniswap V3 dependency. Values below
+ * mirror `ARC_MATH_CONFIG` in @proto/math-sdk (kept in sync by chain-registry.spec.ts).
+ *
+ * Set ARC_V4_FACTORY_ADDRESS / ARC_MEME_HOOK / ARC_V4_ROUTER after running contracts/script/arc/DeployArc.s.sol.
  */
 export const ARC_NETWORK: NetworkConfig = {
-  chainId: 5042,
+  chainId: ARC_CHAIN_ID,
+  slug: 'arc',
+  knownAddresses: [ARC_PROTO_CURVE_ADDRESS, ARC_LEGACY_POOL_ADDRESS, ARC_LEGACY_CURVE_FACTORY],
   name: 'Arc Network',
   icon: '/chains/arc.svg',
   nativeCurrency: {
@@ -30,55 +46,49 @@ export const ARC_NETWORK: NetworkConfig = {
   ],
   blockExplorer: getEnv('ARC_BLOCK_EXPLORER_URL', 'https://explorer.arc.io'),
   contracts: {
-    factory: getEnv(
-      'ARC_FACTORY_ADDRESS',
-      '0xf94d16c9E90fCd55b75D318d0104269146612abF',
+    factory: getEnv('ARC_V4_FACTORY_ADDRESS', UNDEPLOYED) as `0x${string}`,
+    factoryV2: getEnv('ARC_V4_FACTORY_ADDRESS', UNDEPLOYED) as `0x${string}`,
+    // LP is locked as a factory-owned v4 position; there is no separate locker.
+    locker: UNDEPLOYED,
+    // Holder dividends are paid by a per-token ProtoFeeSplitter.
+    holderFeeDistributor: UNDEPLOYED,
+    weth: ARC_USDC,
+    memeHook: getEnv('ARC_MEME_HOOK', UNDEPLOYED) as `0x${string}`,
+    router: getEnv('ARC_V4_ROUTER', UNDEPLOYED) as `0x${string}`,
+    buyback: getEnv('ARC_V4_BUYBACK', UNDEPLOYED) as `0x${string}`,
+    poolManagerV4: getEnv(
+      'ARC_POOL_MANAGER_V4',
+      '0x8366a39CC670B4001A1121B8F6A443A643e40951',
     ) as `0x${string}`,
-    factoryV2: getEnv(
-      'ARC_FACTORY_V2_ADDRESS',
-      getEnv('ARC_FACTORY_ADDRESS', '0xf94d16c9E90fCd55b75D318d0104269146612abF'),
+    positionManagerV4: getEnv(
+      'ARC_POSITION_MANAGER_V4',
+      '0x6049c9a0e26405C0985f9E3685C87d0aE917f82B',
     ) as `0x${string}`,
-    locker: getEnv(
-      'ARC_LOCKER_ADDRESS',
-      '0x173FF5D4eF626869a5a35FF0EA0c56c0A7e4Cd8b',
+    universalRouter: getEnv(
+      'ARC_UNIVERSAL_ROUTER',
+      '0x4fcA4a51Ab4F23A7447b3284fBd7D73289A89Fb1',
     ) as `0x${string}`,
-    // Not yet deployed to Arc mainnet. Fill in the address once deployed.
-    holderFeeDistributor: '0x0000000000000000000000000000000000000000' as `0x${string}`,
-    uniswapV3Factory: getEnv(
-      'ARC_V3_FACTORY',
-      '0xf0db7b58379503491d857dB50AC9ece64c653918',
-    ) as `0x${string}`,
-    positionManager: getEnv(
-      'ARC_POSITION_MANAGER',
-      '0x39654A85A4C05127f5Fd6ED22CAeC077A0fB1377',
-    ) as `0x${string}`,
-    swapRouter: getEnv(
-      'ARC_SWAP_ROUTER',
-      '0x53BF6B0684Ec7eF91e1387Da3D1a1769bC5A6F77',
-    ) as `0x${string}`,
-    quoterV2: getEnv(
-      'ARC_QUOTER_V2',
-      '0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7',
-    ) as `0x${string}`,
-    weth: getEnv('ARC_WETH_ADDRESS', '0x3600000000000000000000000000000000000000') as `0x${string}`, // Native USDC standard on Arc
+    permit2: getEnv('ARC_PERMIT2', '0x000000000022D473030F116dDEE9F6B43aC78BA3') as `0x${string}`,
+    canonicalUsdc: ARC_USDC,
   },
   launchConfigV2: {
     supply: 1_000_000_000n * 10n ** 18n,
-    curveTokenAllocation: 738_600_000n * 10n ** 18n, // 73.86% on curve (Arc/Argus standard: 69k target, 24.42k initial)
-    virtualReserveWei: 24_420n * 10n ** 18n, // 24,420 USDC (Arc/Argus standard)
-    graduationTargetWei: getEnvBigInt('ARC_GRADUATION_TARGET_WEI', 69_000n * 10n ** 18n),
-    platformFeeBps: 100, // 1% trading fee (Arc standard)
-    snipeTaxMaxBps: 9900, // 99% decaying anti-snipe
+    curveTokenAllocation: 765_412_706_077_574_168_345_161_816n, // tokens bought by graduation
+    virtualReserveWei: 2_480_744_058n * 10n ** 12n, // opening market cap ≈ $2,480.74 (tick 405400)
+    graduationTargetWei: 8_094_185_287n * 10n ** 12n, // USDC to reach bond tick 376400 (≈ $45,079 FDV)
+    platformFeeBps: 100, // 1% v4 pool fee
+    snipeTaxMaxBps: 9900, // 99% decaying anti-snipe (hook, first 3 seconds)
+    minPrebuyWei: 4_500_000_000_000_000_000n, // 4.50 USDC mandatory creator prebuy
   },
   launchConfig: {
     supply: 1_000_000_000n * 10n ** 18n,
     poolFee: 10000,
-    launchFeeWei: getEnvBigInt('ARC_LAUNCH_FEE_WEI', 1_000_000_000_000_000_000n), // 1.00 USDC
-    graduationThresholdWei: getEnvBigInt('ARC_GRADUATION_THRESHOLD_WEI', 69_000n * 10n ** 18n),
-    antiSnipeBlocks: 2,
-    maxHoldPercent: 5.0,
-    maxBuyPercent: 5.5,
-    protocolFeeSharePercent: 30,
+    launchFeeWei: 0n,
+    graduationThresholdWei: 8_094_185_287n * 10n ** 12n,
+    antiSnipeBlocks: 0, // anti-snipe is time-based in the hook
+    maxHoldPercent: 100, // no wallet cap; creator prebuy is capped at 5% of supply
+    maxBuyPercent: 5,
+    protocolFeeSharePercent: 30, // protocol cut of every tax payment
     creatorFeeSharePercent: 70,
   },
 };

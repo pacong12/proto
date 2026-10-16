@@ -1,14 +1,20 @@
-import type { NetworkConfig } from '../constants/network';
+import { UNDEPLOYED, type NetworkConfig } from './types';
 import { getEnv, getEnvBigInt } from './env';
 
 /**
  * Robinhood Chain (Chain ID: 4663)
  * EVM Layer 2 powered by Arbitrum Nitro stack.
  * Native gas asset: ETH (18 decimals).
+ * Launch model: bonding curve, then permissionless graduation into a locked native-ETH Uniswap v4
+ * pool via ProtoV4Graduator. Set ROBINHOOD_FACTORY_V2_ADDRESS / ROBINHOOD_GRADUATOR /
+ * ROBINHOOD_V4_HOOK / ROBINHOOD_V4_ROUTER after running contracts/script/robinhood/DeployRobinhoodV2.s.sol.
  * All addresses and parameters are read dynamically from environment variables (.env).
  */
+export const ROBINHOOD_CHAIN_ID = 4663 as const;
+
 export const ROBINHOOD_NETWORK: NetworkConfig = {
-  chainId: 4663,
+  chainId: ROBINHOOD_CHAIN_ID,
+  slug: 'robinhood',
   name: 'Robinhood Chain',
   icon: '/chains/robinhood.svg',
   nativeCurrency: {
@@ -57,10 +63,17 @@ export const ROBINHOOD_NETWORK: NetworkConfig = {
       'ROBINHOOD_WETH_ADDRESS',
       getEnv('WETH_ADDRESS', '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73'),
     ) as `0x${string}`,
-    memeHook: getEnv(
-      'ROBINHOOD_MEME_HOOK',
-      '0x6347Ee4710cBCBafa2ED1e837eDc7605cB80D9a7',
+    // The previously deployed ProtoMemeHook (0x6347…D9a7) has invalid v4 permission bits and is not used.
+    memeHook: getEnv('ROBINHOOD_V4_HOOK', UNDEPLOYED) as `0x${string}`,
+    graduator: getEnv('ROBINHOOD_GRADUATOR', UNDEPLOYED) as `0x${string}`,
+    router: getEnv('ROBINHOOD_V4_ROUTER', UNDEPLOYED) as `0x${string}`,
+    buyback: getEnv('ROBINHOOD_V4_BUYBACK', UNDEPLOYED) as `0x${string}`,
+    poolManagerV4: getEnv(
+      'ROBINHOOD_POOL_MANAGER_V4',
+      '0x8366a39CC670B4001A1121B8F6A443A643e40951',
     ) as `0x${string}`,
+    positionManagerV4: '0x58daec3116aae6D93017bAAea7749052E8a04fA7' as `0x${string}`,
+    permit2: '0x000000000022D473030F116dDEE9F6B43aC78BA3' as `0x${string}`,
   },
   launchConfigV2: {
     supply: 1_000_000_000n * 10n ** 18n,

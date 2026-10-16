@@ -23,7 +23,8 @@ export interface TokenTaxConfig {
  * - `'v1'` — @deprecated Direct Uniswap V3 pool (legacy only; no new tokens created with V1)
  *            Kept in the type so existing DB rows with `version: 'v1'` can still be read.
  */
-export type LaunchVersion = 'v1' | 'v2';
+/** v1: V3 factory · v2: bonding curve · v4: in-pool Uniswap v4 launch */
+export type LaunchVersion = 'v1' | 'v2' | 'v4';
 
 export interface LaunchedTokenEntity {
   address: `0x${string}`;
@@ -174,5 +175,21 @@ export function buildCommentSignMessage(params: CommentSignaturePayload): string
     `Author: ${params.authorAddress.toLowerCase()}`,
     `Timestamp: ${params.timestamp}`,
     `Content: ${params.content.trim()}`,
+  ].join('\n');
+}
+
+/** Lifetime of a social session token issued by POST /api/auth/session. */
+export const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Message a wallet signs once to open a social session (likes, reposts, sentiment votes).
+ * `issuedAt` must be recent when exchanged for a session token.
+ */
+export function buildSessionSignMessage(params: { address: string; issuedAt: number }): string {
+  return [
+    'Proto Sign-In',
+    `Wallet: ${params.address.toLowerCase()}`,
+    `Issued: ${params.issuedAt}`,
+    'Purpose: like, repost and vote as this wallet for 24 hours',
   ].join('\n');
 }
