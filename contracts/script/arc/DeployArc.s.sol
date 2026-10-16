@@ -3,23 +3,23 @@ pragma solidity ^0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
 import {LaunchpadV2FactoryArc} from "../../src/chains/arc/LaunchpadV2FactoryArc.sol";
-import {ProtoV4Hook} from "../../src/core/ProtoV4Hook.sol";
-import {ProtoFeeSplitterDeployer} from "../../src/core/ProtoFeeSplitter.sol";
-import {ProtoV4Router} from "../../src/core/ProtoV4Router.sol";
-import {ProtoV4Buyback} from "../../src/core/ProtoV4Buyback.sol";
+import {GotonV4Hook} from "../../src/core/GotonV4Hook.sol";
+import {GotonFeeSplitterDeployer} from "../../src/core/GotonFeeSplitter.sol";
+import {GotonV4Router} from "../../src/core/GotonV4Router.sol";
+import {GotonV4Buyback} from "../../src/core/GotonV4Buyback.sol";
 import {HookMiner} from "../lib/HookMiner.sol";
 import {IPoolManagerV4} from "../../src/interfaces/external/IUniswapV4Core.sol";
 
 /**
  * @title DeployArc
  * @notice Deploys Proto's in-pool Uniswap v4 launch stack on Arc Network (Chain ID: 5042):
- *           1. ProtoV4Hook via CREATE2 at an address whose low bits equal its permission
+ *           1. GotonV4Hook via CREATE2 at an address whose low bits equal its permission
  *              flags (0x20CC), mined in this script.
- *           2. ProtoFeeSplitterDeployer + LaunchpadV2FactoryArc (Argus portal defaults: open tick 405400, bond tick 376400,
+ *           2. GotonFeeSplitterDeployer + LaunchpadV2FactoryArc (Argus portal defaults: open tick 405400, bond tick 376400,
  *              4.50 USDC min prebuy, 5% max dev buy, 30% protocol cut, 0 launch fee).
  *           3. hook.setFactory(factory).
- *           4. ProtoV4Router (frontend swaps; accepts native USDC msg.value for buys).
- *           5. ProtoV4Buyback, set as the factory's buyback vault (TWAP-guarded buyback-and-burn).
+ *           4. GotonV4Router (frontend swaps; accepts native USDC msg.value for buys).
+ *           5. GotonV4Buyback, set as the factory's buyback vault (TWAP-guarded buyback-and-burn).
  *
  * Usage:
  *   forge script contracts/script/arc/DeployArc.s.sol \
@@ -79,8 +79,8 @@ contract DeployArc is Script {
 
         console.log("=== DEPLOYMENT COMPLETE ===");
         console.log("LaunchpadV2FactoryArc :", factoryAddress);
-        console.log("ProtoV4Hook           :", hookAddress);
-        console.log("ProtoV4Router         :", routerAddress);
+        console.log("GotonV4Hook           :", hookAddress);
+        console.log("GotonV4Router         :", routerAddress);
         LaunchpadV2FactoryArc factory = LaunchpadV2FactoryArc(factoryAddress);
         console.log("Opening tick          :", uint256(int256(factory.initialTick())), "(~$2,480 FDV)");
         console.log("Bond tick             :", uint256(int256(factory.bondTick())), "(~$45,079 FDV)");
@@ -94,14 +94,14 @@ contract DeployArc is Script {
         address deployer,
         bytes32 hookSalt
     ) internal returns (address factory, address hook, address router) {
-        ProtoV4Hook protoHook = new ProtoV4Hook{salt: hookSalt}(poolManager, deployer);
+        GotonV4Hook gotonHook = new GotonV4Hook{salt: hookSalt}(poolManager, deployer);
         factory = address(
-            new LaunchpadV2FactoryArc(poolManager, usdc, protoHook, new ProtoFeeSplitterDeployer(), feeRecipient)
+            new LaunchpadV2FactoryArc(poolManager, usdc, gotonHook, new GotonFeeSplitterDeployer(), feeRecipient)
         );
-        protoHook.setFactory(factory);
-        hook = address(protoHook);
-        router = address(new ProtoV4Router(poolManager, usdc, 1e12));
-        ProtoV4Buyback buyback = new ProtoV4Buyback(poolManager, protoHook);
+        gotonHook.setFactory(factory);
+        hook = address(gotonHook);
+        router = address(new GotonV4Router(poolManager, usdc, 1e12));
+        GotonV4Buyback buyback = new GotonV4Buyback(poolManager, gotonHook);
         LaunchpadV2FactoryArc(factory).setRecipients(feeRecipient, address(buyback), feeRecipient);
         // DR-01: optional incident-response guardian that can pause launches (unpause stays owner-only).
         address guardian = vm.envOr("EMERGENCY_GUARDIAN", address(0));

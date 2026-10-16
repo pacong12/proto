@@ -8,7 +8,7 @@ interface IERC20Minimal {
 }
 
 /**
- * @title ProtoFeeSplitter
+ * @title GotonFeeSplitter
  * @notice Per-token fee router for Proto tokens on any chain. The quote currency is either native
  *         (`quoteAsset == address(0)`, e.g. ETH on Robinhood) or an ERC-20 (e.g. USDC on Arc).
  *           1. `protocolBps` of every fee goes to the protocol treasury first.
@@ -24,7 +24,7 @@ interface IERC20Minimal {
  *         can never block swaps. The creator may redirect its payout (e.g. a community takeover)
  *         through a 48h propose/accept timelock. Splits are fixed at construction.
  */
-contract ProtoFeeSplitter {
+contract GotonFeeSplitter {
     struct Split {
         uint16 protocolBps;
         uint16 holdersBps;
@@ -331,15 +331,15 @@ contract ProtoFeeSplitter {
 }
 
 /**
- * @title ProtoFeeSplitterDeployer
- * @notice Deploys ProtoFeeSplitter instances so launchers stay under the EIP-170 bytecode limit.
+ * @title GotonFeeSplitterDeployer
+ * @notice Deploys GotonFeeSplitter instances so launchers stay under the EIP-170 bytecode limit.
  *         Permissionless: a splitter only matters if a hook / launcher routes fees to it.
  */
-contract ProtoFeeSplitterDeployer {
-    function deploy(ProtoFeeSplitter.Config calldata cfg, ProtoFeeSplitter.Split calldata split)
+contract GotonFeeSplitterDeployer {
+    function deploy(GotonFeeSplitter.Config calldata cfg, GotonFeeSplitter.Split calldata split)
         external
         returns (address)
     {
-        return address(new ProtoFeeSplitter(cfg, split));
+        return address(new GotonFeeSplitter(cfg, split));
     }
 }

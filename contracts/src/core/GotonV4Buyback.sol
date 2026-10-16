@@ -5,7 +5,7 @@ import {PoolKey, PoolIdLibrary} from "../interfaces/IUniswapV4.sol";
 import {IPoolManagerV4, IUnlockCallback, SwapParams} from "../interfaces/external/IUniswapV4Core.sol";
 import {TickMath} from "../libraries/v4/TickMath.sol";
 import {V4Lib} from "../libraries/v4/V4Lib.sol";
-import {ProtoV4Hook} from "./ProtoV4Hook.sol";
+import {GotonV4Hook} from "./GotonV4Hook.sol";
 
 interface IBuybackSource {
     function releaseBuyback() external returns (uint256 amount);
@@ -16,16 +16,16 @@ interface IERC20Buyback {
 }
 
 /**
- * @title ProtoV4Buyback
+ * @title GotonV4Buyback
  * @notice Chain-wide buyback-and-burn for Proto v4 pools (AUD-HIGH-05 / TKT-06).
  *
- *   - Each token's ProtoFeeSplitter accrues its burn share; `buyback(key)` pulls it (per-token
+ *   - Each token's GotonFeeSplitter accrues its burn share; `buyback(key)` pulls it (per-token
  *     accounting in `pending`), buys the token in its own pool and sends the tokens to 0xdEaD.
  *   - Callable by anyone (e.g. a keeper). The swap carries a sqrtPriceLimit at the hook's TWAP
  *     ± `maxDeviationTicks`, so a manipulated spot price can only make the swap stop early; the
  *     unspent quote stays pending for the next call. No caller-supplied minimum is trusted.
  */
-contract ProtoV4Buyback is IUnlockCallback {
+contract GotonV4Buyback is IUnlockCallback {
     using PoolIdLibrary for PoolKey;
 
     address private constant DEAD = 0x000000000000000000000000000000000000dEaD;
@@ -33,7 +33,7 @@ contract ProtoV4Buyback is IUnlockCallback {
     int24 public constant MAX_DEVIATION_TICKS = 2_000;
 
     IPoolManagerV4 public immutable poolManager;
-    ProtoV4Hook public immutable hook;
+    GotonV4Hook public immutable hook;
 
     address public owner;
     address public pendingOwner;
@@ -74,7 +74,7 @@ contract ProtoV4Buyback is IUnlockCallback {
         _locked = false;
     }
 
-    constructor(IPoolManagerV4 _poolManager, ProtoV4Hook _hook) {
+    constructor(IPoolManagerV4 _poolManager, GotonV4Hook _hook) {
         if (address(_poolManager) == address(0) || address(_hook) == address(0)) revert ZeroAddress();
         poolManager = _poolManager;
         hook = _hook;

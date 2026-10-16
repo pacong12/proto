@@ -12,7 +12,7 @@ interface IERC20Router {
 }
 
 /**
- * @title ProtoV4Router
+ * @title GotonV4Router
  * @notice Minimal exact-input single-pool swap router for Proto v4 pools, deployable on any chain
  *         (Uniswap's Universal Router is not deployed everywhere).
  *
@@ -24,7 +24,7 @@ interface IERC20Router {
  *           - any other ERC-20: exact approval to this router (no Permit2, no unlimited allowance).
  *         The router never holds funds between transactions; unspent value is refunded.
  */
-contract ProtoV4Router is IUnlockCallback {
+contract GotonV4Router is IUnlockCallback {
     IPoolManagerV4 public immutable poolManager;
     address public immutable nativeErc20;
     uint256 public immutable nativeErc20Scale;

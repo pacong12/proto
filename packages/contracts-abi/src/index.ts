@@ -9,11 +9,11 @@ export * from './v2/liquidity-locker.abi';
 export * from './v2/vesting-vault.abi';
 export * from './v2/proto-liquidity-locker-v4.abi';
 export * from './v2/proto-meme-hook.abi';
-export * from './v2/proto-v4-hook.abi';
-export * from './v2/proto-fee-splitter.abi';
-export * from './v2/proto-v4-graduator.abi';
-export * from './v2/proto-v4-router.abi';
-export * from './v2/proto-v4-buyback.abi';
+export * from './v2/goton-v4-hook.abi';
+export * from './v2/goton-fee-splitter.abi';
+export * from './v2/goton-v4-graduator.abi';
+export * from './v2/goton-v4-router.abi';
+export * from './v2/goton-v4-buyback.abi';
 export * from './external/dex.abi';
 export * from './chains';
 

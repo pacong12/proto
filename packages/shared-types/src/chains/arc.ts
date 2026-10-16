@@ -55,7 +55,7 @@ export const ARC_NETWORK: NetworkConfig = {
     factoryV2: getEnv('ARC_V4_FACTORY_ADDRESS', UNDEPLOYED) as `0x${string}`,
     // LP is locked as a factory-owned v4 position; there is no separate locker.
     locker: UNDEPLOYED,
-    // Holder dividends are paid by a per-token ProtoFeeSplitter.
+    // Holder dividends are paid by a per-token GotonFeeSplitter.
     holderFeeDistributor: UNDEPLOYED,
     weth: ARC_USDC,
     memeHook: getEnv('ARC_MEME_HOOK', UNDEPLOYED) as `0x${string}`,

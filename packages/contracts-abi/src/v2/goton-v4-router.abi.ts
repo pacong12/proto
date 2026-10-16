@@ -1,10 +1,10 @@
 /**
- * Canonical ABI for ProtoV4Router
- * Auto-generated from Foundry compilation output: contracts/out/ProtoV4Router.sol/ProtoV4Router.json
+ * Canonical ABI for GotonV4Router
+ * Auto-generated from Foundry compilation output: contracts/out/GotonV4Router.sol/GotonV4Router.json
  * Do not edit directly; run `bun run export-abis` in packages/contracts-abi.
  */
 
-export const protoV4RouterAbi = [
+export const gotonV4RouterAbi = [
   {
     type: 'constructor',
     inputs: [

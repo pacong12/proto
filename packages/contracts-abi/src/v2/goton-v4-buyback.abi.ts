@@ -1,10 +1,10 @@
 /**
- * Canonical ABI for ProtoV4Buyback
- * Auto-generated from Foundry compilation output: contracts/out/ProtoV4Buyback.sol/ProtoV4Buyback.json
+ * Canonical ABI for GotonV4Buyback
+ * Auto-generated from Foundry compilation output: contracts/out/GotonV4Buyback.sol/GotonV4Buyback.json
  * Do not edit directly; run `bun run export-abis` in packages/contracts-abi.
  */
 
-export const protoV4BuybackAbi = [
+export const gotonV4BuybackAbi = [
   {
     type: 'constructor',
     inputs: [
@@ -16,7 +16,7 @@ export const protoV4BuybackAbi = [
       {
         name: '_hook',
         type: 'address',
-        internalType: 'contract ProtoV4Hook',
+        internalType: 'contract GotonV4Hook',
       },
     ],
     stateMutability: 'nonpayable',
@@ -117,7 +117,7 @@ export const protoV4BuybackAbi = [
       {
         name: '',
         type: 'address',
-        internalType: 'contract ProtoV4Hook',
+        internalType: 'contract GotonV4Hook',
       },
     ],
     stateMutability: 'view',

@@ -1,5 +1,5 @@
 import { erc20Abi, type PublicClient, type WalletClient } from 'viem';
-import { protoV4PoolKey, protoV4RouterAbi, type NetworkConfig } from '@goton/shared-types';
+import { protoV4PoolKey, gotonV4RouterAbi, type NetworkConfig } from '@goton/shared-types';
 import type { ChainSwapParams } from '../types';
 import { waitForReceiptWithFallback } from '../../lib/viem-client';
 import { isDeployed, resolveMinAmountOut } from './utils';
@@ -15,7 +15,7 @@ export interface V4QuoteConfig {
 }
 
 /**
- * Exact-input swap in a Proto Uniswap v4 pool through ProtoV4Router.
+ * Exact-input swap in a Proto Uniswap v4 pool through GotonV4Router.
  * Buys pay the quote with msg.value (no approval). Sells approve exactly the sold amount.
  * `params.amountInWei` / `expectedAmountOut` use native 18-dp units for the quote side.
  */
@@ -68,7 +68,7 @@ export async function executeV4RouterSwap(
 
   const hash = await walletClient.writeContract({
     address: router,
-    abi: protoV4RouterAbi,
+    abi: gotonV4RouterAbi,
     functionName: 'swapExactIn',
     args: [
       poolKey,

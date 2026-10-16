@@ -27,10 +27,10 @@ All agents working on this codebase MUST reference and strictly follow the insta
 
 All code touching blockchain networks must adhere to the multi-chain separation documented in `docs/CHAINS.md`:
 
-- **Robinhood Chain (4663)**: Arbitrum Nitro L2, native ETH, bonding curve with 1.68 ETH virtual reserve, 4.20 ETH graduation target, 71.43% curve / 28.57% pool; graduation moves liquidity into a locked Uniswap V4 pool via `ProtoV4Graduator` (permissionless).
+- **Robinhood Chain (4663)**: Arbitrum Nitro L2, native ETH, bonding curve with 1.68 ETH virtual reserve, 4.20 ETH graduation target, 71.43% curve / 28.57% pool; graduation moves liquidity into a locked Uniswap V4 pool via `GotonV4Graduator` (permissionless).
 - **Arc Network (5042)**: Circle USDC L1, native USDC (18 decimals in `msg.value`); no bonding curve. Tokens launch directly into a Uniswap V4 pool (Argus parameters: opening FDV ~$2,480, in-pool graduation ~$45,079, 1% LP fee, 0-10% creator tax fixed at launch, 4.50 USDC minimum prebuy).
 - **Never Hardcode Chain IDs**: Use `ChainRegistry`, `resolveTokenNetwork`, or dedicated chain adapters in `apps/frontoffice/src/chains/` and `apps/api/src/modules/chains/`.
-- **Contract Layout**: Chain-agnostic contracts live in `contracts/src/core/` (`ProtoV4Hook`, `ProtoFeeSplitter`, `ProtoV4Router`, `ProtoV4Graduator`, `ProtoV4Buyback`, `EmergencyPause`), chain factories in `contracts/src/chains/<chain>/`, and superseded V3/V1 contracts in `contracts/src/legacy/`.
+- **Contract Layout**: Chain-agnostic contracts live in `contracts/src/core/` (`GotonV4Hook`, `GotonFeeSplitter`, `GotonV4Router`, `GotonV4Graduator`, `GotonV4Buyback`, `EmergencyPause`), chain factories in `contracts/src/chains/<chain>/`, and superseded V3/V1 contracts in `contracts/src/legacy/`.
 
 ## Quality Commands (with Bun)
 

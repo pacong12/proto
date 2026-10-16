@@ -17,7 +17,7 @@ Pool fees and taxes are split by each token's on-chain fee splitter:
 - **70% to the creator's share**, which the creator can divide once, before public trading starts, between:
   - **Creator**: claimable by the creator (or their redirected recipient).
   - **Holders**: streamed to token holders pro-rata over 24 hours.
-  - **Buyback & Burn**: bought back in the token's own pool by the `ProtoV4Buyback` contract and sent to the dead address. Each buyback is capped at the pool's 30-minute TWAP ± 2%, so a manipulated price only pauses the buyback until it normalises.
+  - **Buyback & Burn**: bought back in the token's own pool by the `GotonV4Buyback` contract and sent to the dead address. Each buyback is capped at the pool's 30-minute TWAP ± 2%, so a manipulated price only pauses the buyback until it normalises.
   - **Liquidity**: sent to the protocol liquidity vault.
 
 By default the whole 70% goes to the creator. The protocol share is not used for buybacks.

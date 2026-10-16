@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {ProtoV4Hook, PROTO_V4_HOOK_FLAGS} from "../../src/core/ProtoV4Hook.sol";
+import {GotonV4Hook, PROTO_V4_HOOK_FLAGS} from "../../src/core/GotonV4Hook.sol";
 import {IPoolManagerV4} from "../../src/interfaces/external/IUniswapV4Core.sol";
 
-/// @notice Finds a CREATE2 salt that gives ProtoV4Hook an address carrying exactly its permission flags.
+/// @notice Finds a CREATE2 salt that gives GotonV4Hook an address carrying exactly its permission flags.
 library HookMiner {
     /// @dev Deterministic deployer forge routes `new X{salt: ...}` through during broadcasts.
     address internal constant CREATE2_DEPLOYER = 0x4e59b44847b379578588920cA78FbF26c0B4956C;
@@ -12,7 +12,7 @@ library HookMiner {
 
     function mine(IPoolManagerV4 poolManager, address hookDeployer) internal pure returns (bytes32 salt, address hook) {
         bytes32 initCodeHash =
-            keccak256(abi.encodePacked(type(ProtoV4Hook).creationCode, abi.encode(poolManager, hookDeployer)));
+            keccak256(abi.encodePacked(type(GotonV4Hook).creationCode, abi.encode(poolManager, hookDeployer)));
         for (uint256 i = 0; i < 1_000_000; i++) {
             hook = address(
                 uint160(uint256(keccak256(abi.encodePacked(bytes1(0xff), CREATE2_DEPLOYER, bytes32(i), initCodeHash))))

@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue';
 import { formatUnits } from 'viem';
-import { protoFeeSplitterAbi, resolveFeeSplitter, type NetworkConfig } from '@goton/shared-types';
+import { gotonFeeSplitterAbi, resolveFeeSplitter, type NetworkConfig } from '@goton/shared-types';
 import { getPublicClient, getWalletClient } from '../lib/viem-client';
 
 function isUserRejection(err: unknown): boolean {
@@ -35,7 +35,7 @@ export interface HolderDividendEntry {
 // ---------------------------------------------------------------------------
 
 /**
- * Reads per-token claimable dividends from each token's ProtoFeeSplitter (dividends stream in
+ * Reads per-token claimable dividends from each token's GotonFeeSplitter (dividends stream in
  * over a day as fees are collected) and claims them with claim().
  *
  * Usage:
@@ -68,7 +68,7 @@ export function useHolderDividends() {
     quoteDecimals.value = splitter.quoteDecimals;
     const earned = await client.readContract({
       address: splitter.address,
-      abi: protoFeeSplitterAbi,
+      abi: gotonFeeSplitterAbi,
       functionName: 'claimable',
       args: [holderAddress],
     });
@@ -162,7 +162,7 @@ export function useHolderDividends() {
 
       const hash = await walletClient.writeContract({
         address: splitter.address,
-        abi: protoFeeSplitterAbi,
+        abi: gotonFeeSplitterAbi,
         functionName: 'claim',
         args: [account],
         account,

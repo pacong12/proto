@@ -1,10 +1,10 @@
 /**
- * Canonical ABI for ProtoV4Hook
- * Auto-generated from Foundry compilation output: contracts/out/ProtoV4Hook.sol/ProtoV4Hook.json
+ * Canonical ABI for GotonV4Hook
+ * Auto-generated from Foundry compilation output: contracts/out/GotonV4Hook.sol/GotonV4Hook.json
  * Do not edit directly; run `bun run export-abis` in packages/contracts-abi.
  */
 
-export const protoV4HookAbi = [
+export const gotonV4HookAbi = [
   {
     type: 'constructor',
     inputs: [
@@ -551,7 +551,7 @@ export const protoV4HookAbi = [
       {
         name: 'reg',
         type: 'tuple',
-        internalType: 'struct ProtoV4Hook.PoolRegistration',
+        internalType: 'struct GotonV4Hook.PoolRegistration',
         components: [
           {
             name: 'token',

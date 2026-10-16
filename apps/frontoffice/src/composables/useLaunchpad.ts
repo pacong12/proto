@@ -30,7 +30,7 @@ import {
   launchpadV2FactoryAbi,
   launchpadTokenAbi,
   bondingCurveAbi,
-  protoFeeSplitterAbi,
+  gotonFeeSplitterAbi,
   resolveFeeSplitter,
   type LaunchedTokenEntity,
   type TokenMarketData,
@@ -352,7 +352,7 @@ export function useLaunchpad() {
   }
 
   // ---------------------------------------------------------------------------
-  // Write: claim creator fees from the token's ProtoFeeSplitter
+  // Write: claim creator fees from the token's GotonFeeSplitter
   // ---------------------------------------------------------------------------
 
   async function resolveCreatorSplitter(tokenAddress: `0x${string}`) {
@@ -376,7 +376,7 @@ export function useLaunchpad() {
         await resolveCreatorSplitter(tokenAddress);
       const hash = await walletClient.writeContract({
         address: splitter,
-        abi: protoFeeSplitterAbi,
+        abi: gotonFeeSplitterAbi,
         functionName: 'claimCreatorFees',
         account,
         chain: walletClient.chain,
@@ -414,12 +414,12 @@ export function useLaunchpad() {
       const [pending, validAfter] = await Promise.all([
         publicClient.readContract({
           address: splitter,
-          abi: protoFeeSplitterAbi,
+          abi: gotonFeeSplitterAbi,
           functionName: 'pendingCreatorRecipient',
         }),
         publicClient.readContract({
           address: splitter,
-          abi: protoFeeSplitterAbi,
+          abi: gotonFeeSplitterAbi,
           functionName: 'pendingCreatorRecipientValidAfter',
         }),
       ]);
@@ -433,14 +433,14 @@ export function useLaunchpad() {
       const hash = accept
         ? await walletClient.writeContract({
             address: splitter,
-            abi: protoFeeSplitterAbi,
+            abi: gotonFeeSplitterAbi,
             functionName: 'acceptCreatorRecipient',
             account,
             chain: walletClient.chain,
           })
         : await walletClient.writeContract({
             address: splitter,
-            abi: protoFeeSplitterAbi,
+            abi: gotonFeeSplitterAbi,
             functionName: 'proposeCreatorRecipient',
             args: [redirectAddress],
             account,

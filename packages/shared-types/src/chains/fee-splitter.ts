@@ -2,8 +2,8 @@ import { erc20Abi, type PublicClient } from 'viem';
 import {
   getChainAbis,
   launchpadV2FactoryArcAbi,
-  protoFeeSplitterAbi,
-  protoV4GraduatorAbi,
+  gotonFeeSplitterAbi,
+  gotonV4GraduatorAbi,
 } from '@goton/contracts-abi';
 import { protoV4PoolKey, type V4PoolKey } from '@goton/contracts-abi';
 import { UNDEPLOYED, type NetworkConfig } from './types';
@@ -19,8 +19,8 @@ function isDeployed(address?: string | null): address is `0x${string}` {
 }
 
 /**
- * Locates a token's ProtoFeeSplitter. Bonding-curve chains create it at graduation
- * (ProtoV4Graduator.graduations); in-pool v4 chains create it at launch (factory.launches).
+ * Locates a token's GotonFeeSplitter. Bonding-curve chains create it at graduation
+ * (GotonV4Graduator.graduations); in-pool v4 chains create it at launch (factory.launches).
  * Returns null when the token has no splitter yet (not graduated / legacy token).
  */
 export async function resolveFeeSplitter(
@@ -34,7 +34,7 @@ export async function resolveFeeSplitter(
     if (!isDeployed(network.contracts.graduator)) return null;
     const [address] = await client.readContract({
       address: network.contracts.graduator,
-      abi: protoV4GraduatorAbi,
+      abi: gotonV4GraduatorAbi,
       functionName: 'graduations',
       args: [token],
     });
@@ -55,7 +55,7 @@ export async function resolveFeeSplitter(
 
   const quote = await client.readContract({
     address: splitter,
-    abi: protoFeeSplitterAbi,
+    abi: gotonFeeSplitterAbi,
     functionName: 'quoteAsset',
   });
   const quoteDecimals = isDeployed(quote)

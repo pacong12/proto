@@ -3,7 +3,7 @@ import { erc20Abi, formatUnits } from 'viem';
 import { apiFetch } from '@/lib/api-client';
 import { getPublicClient } from '@/lib/viem-client';
 import {
-  protoFeeSplitterAbi,
+  gotonFeeSplitterAbi,
   resolveFeeSplitter,
   UNDEPLOYED,
   type LaunchedTokenEntity,
@@ -75,17 +75,17 @@ export function useUserProfile({
                 const [accrued, recipient, creatorAddr] = await Promise.all([
                   tokenClient.readContract({
                     address: splitter.address,
-                    abi: protoFeeSplitterAbi,
+                    abi: gotonFeeSplitterAbi,
                     functionName: 'creatorAccrued',
                   }),
                   tokenClient.readContract({
                     address: splitter.address,
-                    abi: protoFeeSplitterAbi,
+                    abi: gotonFeeSplitterAbi,
                     functionName: 'creatorRecipient',
                   }),
                   tokenClient.readContract({
                     address: splitter.address,
-                    abi: protoFeeSplitterAbi,
+                    abi: gotonFeeSplitterAbi,
                     functionName: 'creator',
                   }),
                 ]);

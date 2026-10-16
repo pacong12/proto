@@ -3,11 +3,11 @@ pragma solidity ^0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
 import {LaunchpadV2Factory} from "../../src/chains/robinhood/LaunchpadV2Factory.sol";
-import {ProtoV4Hook} from "../../src/core/ProtoV4Hook.sol";
-import {ProtoV4Graduator} from "../../src/core/ProtoV4Graduator.sol";
-import {ProtoV4Router} from "../../src/core/ProtoV4Router.sol";
-import {ProtoV4Buyback} from "../../src/core/ProtoV4Buyback.sol";
-import {ProtoFeeSplitter, ProtoFeeSplitterDeployer} from "../../src/core/ProtoFeeSplitter.sol";
+import {GotonV4Hook} from "../../src/core/GotonV4Hook.sol";
+import {GotonV4Graduator} from "../../src/core/GotonV4Graduator.sol";
+import {GotonV4Router} from "../../src/core/GotonV4Router.sol";
+import {GotonV4Buyback} from "../../src/core/GotonV4Buyback.sol";
+import {GotonFeeSplitter, GotonFeeSplitterDeployer} from "../../src/core/GotonFeeSplitter.sol";
 import {IPoolManagerV4} from "../../src/interfaces/external/IUniswapV4Core.sol";
 import {HookMiner} from "../lib/HookMiner.sol";
 
@@ -15,11 +15,11 @@ import {HookMiner} from "../lib/HookMiner.sol";
  * @title DeployRobinhoodV2
  * @notice Deploys the Robinhood Chain (4663) stack: bonding-curve factory with trustless
  *         graduation into a locked native-ETH Uniswap v4 pool.
- *           1. ProtoV4Hook at a mined CREATE2 address (permission bits 0x20CC)
- *           2. ProtoFeeSplitterDeployer + ProtoV4Graduator (default LP-fee split 30% protocol / 70% creator)
+ *           1. GotonV4Hook at a mined CREATE2 address (permission bits 0x20CC)
+ *           2. GotonFeeSplitterDeployer + GotonV4Graduator (default LP-fee split 30% protocol / 70% creator)
  *           3. LaunchpadV2Factory, wired as the graduator's launcher; graduator wired as the hook's launcher
- *           4. ProtoV4Router for frontend swaps
- *           5. ProtoV4Buyback, set as the graduator's buyback vault (TWAP-guarded buyback-and-burn)
+ *           4. GotonV4Router for frontend swaps
+ *           5. GotonV4Buyback, set as the graduator's buyback vault (TWAP-guarded buyback-and-burn)
  *
  * Usage:
  *   PRIVATE_KEY=<hex> forge script script/robinhood/DeployRobinhoodV2.s.sol \
@@ -60,19 +60,19 @@ contract DeployRobinhoodV2 is Script {
             vm.startBroadcast();
         }
 
-        ProtoV4Hook hook = new ProtoV4Hook{salt: hookSalt}(poolManager, deployer);
-        ProtoV4Graduator graduator = new ProtoV4Graduator(
+        GotonV4Hook hook = new GotonV4Hook{salt: hookSalt}(poolManager, deployer);
+        GotonV4Graduator graduator = new GotonV4Graduator(
             poolManager,
             hook,
-            new ProtoFeeSplitterDeployer(),
+            new GotonFeeSplitterDeployer(),
             feeRecipient,
-            ProtoFeeSplitter.Split({protocolBps: 3_000, holdersBps: 0, burnBps: 0, creatorBps: 10_000, liquidityBps: 0})
+            GotonFeeSplitter.Split({protocolBps: 3_000, holdersBps: 0, burnBps: 0, creatorBps: 10_000, liquidityBps: 0})
         );
         LaunchpadV2Factory factory = new LaunchpadV2Factory(feeRecipient, graduator);
         graduator.setLauncher(address(factory));
         hook.setFactory(address(graduator));
-        ProtoV4Router router = new ProtoV4Router(poolManager, address(0), 0);
-        ProtoV4Buyback buyback = new ProtoV4Buyback(poolManager, hook);
+        GotonV4Router router = new GotonV4Router(poolManager, address(0), 0);
+        GotonV4Buyback buyback = new GotonV4Buyback(poolManager, hook);
         graduator.setRecipients(feeRecipient, address(buyback), feeRecipient);
         // DR-01: optional incident-response guardian that can pause launches, curve buys and graduations.
         address guardian = vm.envOr("EMERGENCY_GUARDIAN", address(0));
@@ -87,10 +87,10 @@ contract DeployRobinhoodV2 is Script {
 
         console.log("=== DEPLOYMENT SUCCESSFUL ===");
         console.log("LaunchpadV2Factory :", factoryAddress);
-        console.log("ProtoV4Graduator   :", graduatorAddress);
-        console.log("ProtoV4Hook        :", hookAddress);
-        console.log("ProtoV4Router      :", routerAddress);
-        console.log("ProtoV4Buyback     :", address(buyback));
+        console.log("GotonV4Graduator   :", graduatorAddress);
+        console.log("GotonV4Hook        :", hookAddress);
+        console.log("GotonV4Router      :", routerAddress);
+        console.log("GotonV4Buyback     :", address(buyback));
         console.log("Launch Fee         :", factory.launchFee(), "wei (0.0005 ETH)");
         console.log("Graduation Target  :", factory.GRADUATION_TARGET(), "wei (4.2 ETH)");
     }

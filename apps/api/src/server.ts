@@ -40,9 +40,9 @@ import {
   ROBINHOOD_CHAIN,
   ARC_CHAIN,
   bondingCurveAbi,
-  protoFeeSplitterAbi,
-  protoV4GraduatorAbi,
-  protoV4HookAbi,
+  gotonFeeSplitterAbi,
+  gotonV4GraduatorAbi,
+  gotonV4HookAbi,
   resolveFeeSplitter,
   launchpadTokenAbi,
   type LaunchedTokenEntity,
@@ -838,7 +838,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           try {
             const pool = await chain.client.readContract({
               address: hook,
-              abi: protoV4HookAbi,
+              abi: gotonV4HookAbi,
               functionName: 'pools',
               args: [existing.poolAddress],
             });
@@ -856,7 +856,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
                 (functionName) =>
                   chain.client.readContract({
                     address: splitter.address,
-                    abi: protoFeeSplitterAbi,
+                    abi: gotonFeeSplitterAbi,
                     functionName,
                   }),
               ),
@@ -873,14 +873,14 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
             if (graduator && graduator !== '0x0000000000000000000000000000000000000000') {
               const hasSplit = await chain.client.readContract({
                 address: graduator,
-                abi: protoV4GraduatorAbi,
+                abi: gotonV4GraduatorAbi,
                 functionName: 'hasTokenSplit',
                 args: [address],
               });
               if (hasSplit) {
                 const split = await chain.client.readContract({
                   address: graduator,
-                  abi: protoV4GraduatorAbi,
+                  abi: gotonV4GraduatorAbi,
                   functionName: 'tokenSplits',
                   args: [address],
                 });
@@ -983,7 +983,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       const chain = token
         ? chainRegistry.resolveForToken(token)
         : chainRegistry.getChainByParam(url.searchParams.get('chain'));
-      // Dividends are paid by the token's ProtoFeeSplitter (created at launch on in-pool v4
+      // Dividends are paid by the token's GotonFeeSplitter (created at launch on in-pool v4
       // chains, at graduation on bonding-curve chains).
       const splitter = await resolveFeeSplitter(chain.client, chain.network, tokenAddress).catch(
         () => null,
@@ -1007,7 +1007,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         chain.client
           .readContract({
             address: splitter.address,
-            abi: protoFeeSplitterAbi,
+            abi: gotonFeeSplitterAbi,
             functionName: 'claimable',
             args: [accountParam],
           })
@@ -1015,7 +1015,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         chain.client
           .readContract({
             address: splitter.address,
-            abi: protoFeeSplitterAbi,
+            abi: gotonFeeSplitterAbi,
             functionName: 'totalStreamed',
           })
           .catch(() => 0n),

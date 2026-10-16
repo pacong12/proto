@@ -13,7 +13,7 @@ const USDC_WEI_PER_UNIT = 10n ** 12n;
 /**
  * Arc Network: tokens launch straight into a Uniswap v4 pool (Argus portal model). Taxes and
  * the revenue split are fixed at launch by LaunchpadV2FactoryArc; trading goes through
- * ProtoV4Router. Tokens from the legacy bonding-curve factory still trade on their curve.
+ * GotonV4Router. Tokens from the legacy bonding-curve factory still trade on their curve.
  */
 export class ArcChainAdapter implements ChainAdapter {
   readonly network = ARC_CHAIN;

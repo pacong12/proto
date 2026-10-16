@@ -27,8 +27,8 @@
 ## 3. Contracts
 
 - **`LaunchpadV2Factory.sol`** (this folder) — bonding-curve launches; permissionless `graduate(token)`.
-- Shared (`../../core/`): `BondingCurve.sol`, `LaunchpadToken.sol`, **`ProtoV4Graduator.sol`**,
-  **`ProtoV4Hook.sol`**, **`ProtoFeeSplitter.sol`**, **`ProtoV4Router.sol`**.
+- Shared (`../../core/`): `BondingCurve.sol`, `LaunchpadToken.sol`, **`GotonV4Graduator.sol`**,
+  **`GotonV4Hook.sol`**, **`GotonFeeSplitter.sol`**, **`GotonV4Router.sol`**.
 - Legacy (`../../legacy/`): `ProtoLiquidityLockerV4.sol` (`0x7A1A…D63E`) and `ProtoMemeHook.sol`
   (`0x6347…D9a7`). The deployed hook has invalid v4 permission bits (`0x19A7`), so no pool could be
   initialized with it; the locker never held a position. Both are superseded.
@@ -39,20 +39,20 @@
 ## 4. Graduation into Uniswap v4
 
 - **Uniswap v4 PoolManager**: `0x8366a39CC670B4001A1121B8F6A443A643e40951` (same bytecode as Arc)
-- **Pool**: native ETH (currency0) / token, 1% fee, tick spacing 200, hook `ProtoV4Hook`.
+- **Pool**: native ETH (currency0) / token, 1% fee, tick spacing 200, hook `GotonV4Hook`.
 - **Flow**:
   1. The curve graduates once 4.20 ETH is raised; funds stay in the curve.
   2. Anyone calls `LaunchpadV2Factory.graduate(token)` (the frontend does it automatically before the
      first post-graduation trade). There is no owner-chosen recipient.
-  3. `ProtoV4Graduator` initializes the pool at the curve's final price (the hook only lets the
+  3. `GotonV4Graduator` initializes the pool at the curve's final price (the hook only lets the
      graduator initialize, so nobody can front-run it), adds all ETH plus matching tokens as a
      full-range position, and places the unpaired tokens as a token-only position just below the
      price. Nothing is burned and the price is continuous across graduation.
   4. Positions are owned by the graduator forever. `collectFees(token)` (permissionless) sends ETH fees
-     to the token's `ProtoFeeSplitter` (default 30% protocol / 70% creator) and burns token fees.
-  5. Post-graduation trades go through `ProtoV4Router` (native ETH buys, exact-approval sells).
+     to the token's `GotonFeeSplitter` (default 30% protocol / 70% creator) and burns token fees.
+  5. Post-graduation trades go through `GotonV4Router` (native ETH buys, exact-approval sells).
   6. The creator may fix the LP-fee split once, before any third-party buy
-     (`ProtoV4Graduator.setRevenueSplit`). The burn share is spent by `ProtoV4Buyback`, which buys
+     (`GotonV4Graduator.setRevenueSplit`). The burn share is spent by `GotonV4Buyback`, which buys
      the token at the hook's TWAP ± 2% and sends it to 0xdEaD.
   7. Circuit breaker (`EmergencyPause`): the owner or `guardian` (`EMERGENCY_GUARDIAN` at deploy) can
      pause launches, curve buys and graduations; curve sells, pool swaps and fee claims are never

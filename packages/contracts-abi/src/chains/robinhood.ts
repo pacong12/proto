@@ -4,11 +4,11 @@ import { bondingCurveAbi } from '../v2/bonding-curve.abi';
 import { launchpadTokenAbi } from '../v2/launchpad-token.abi';
 import { buybackBurnerAbi } from '../v2/buyback-burner.abi';
 import { vestingVaultAbi } from '../v2/vesting-vault.abi';
-import { protoV4HookAbi } from '../v2/proto-v4-hook.abi';
-import { protoFeeSplitterAbi } from '../v2/proto-fee-splitter.abi';
-import { protoV4GraduatorAbi } from '../v2/proto-v4-graduator.abi';
-import { protoV4RouterAbi } from '../v2/proto-v4-router.abi';
-import { protoV4BuybackAbi } from '../v2/proto-v4-buyback.abi';
+import { gotonV4HookAbi } from '../v2/goton-v4-hook.abi';
+import { gotonFeeSplitterAbi } from '../v2/goton-fee-splitter.abi';
+import { gotonV4GraduatorAbi } from '../v2/goton-v4-graduator.abi';
+import { gotonV4RouterAbi } from '../v2/goton-v4-router.abi';
+import { gotonV4BuybackAbi } from '../v2/goton-v4-buyback.abi';
 
 /**
  * Robinhood Chain (Chain ID: 4663) Smart Contract ABIs.
@@ -21,11 +21,11 @@ export const ROBINHOOD_ABIS = {
   factoryV2: launchpadV2FactoryAbi,
   bondingCurve: bondingCurveAbi,
   token: launchpadTokenAbi,
-  graduator: protoV4GraduatorAbi,
-  memeHook: protoV4HookAbi,
-  feeSplitter: protoFeeSplitterAbi,
-  router: protoV4RouterAbi,
-  buyback: protoV4BuybackAbi,
+  graduator: gotonV4GraduatorAbi,
+  memeHook: gotonV4HookAbi,
+  feeSplitter: gotonFeeSplitterAbi,
+  router: gotonV4RouterAbi,
+  buyback: gotonV4BuybackAbi,
   buybackBurner: buybackBurnerAbi,
   vestingVault: vestingVaultAbi,
 } as const;

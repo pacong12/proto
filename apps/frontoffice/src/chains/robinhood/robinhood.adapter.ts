@@ -3,7 +3,7 @@ import {
   ROBINHOOD_CHAIN,
   launchpadTokenAbi,
   launchpadV2FactoryAbi,
-  protoV4GraduatorAbi,
+  gotonV4GraduatorAbi,
 } from '@goton/shared-types';
 import { revenueSplitToBps, taxPercentToBps } from '@goton/math-sdk';
 import type { ChainAdapter, ChainLaunchParams, ChainLaunchResult, ChainSwapParams } from '../types';
@@ -16,7 +16,7 @@ const NATIVE_ETH = '0x0000000000000000000000000000000000000000' as const;
 
 /**
  * Robinhood Chain: bonding curve, then permissionless graduation into a locked native-ETH
- * Uniswap v4 pool (ProtoV4Graduator). Post-graduation trades go through ProtoV4Router.
+ * Uniswap v4 pool (GotonV4Graduator). Post-graduation trades go through GotonV4Router.
  */
 export class RobinhoodChainAdapter implements ChainAdapter {
   readonly network = ROBINHOOD_CHAIN;
@@ -99,14 +99,14 @@ export class RobinhoodChainAdapter implements ChainAdapter {
       }
     }
 
-    // The LP-fee split is enforced at graduation by ProtoV4Graduator (set once, before public trading).
+    // The LP-fee split is enforced at graduation by GotonV4Graduator (set once, before public trading).
     const { graduator } = this.network.contracts;
     if (params.revenueSplit && isDeployed(graduator)) {
       try {
         const split = revenueSplitToBps(params.revenueSplit);
         const splitHash = await walletClient.writeContract({
           address: graduator,
-          abi: protoV4GraduatorAbi,
+          abi: gotonV4GraduatorAbi,
           functionName: 'setRevenueSplit',
           args: [
             result.tokenAddress,
@@ -141,7 +141,7 @@ export class RobinhoodChainAdapter implements ChainAdapter {
     if (!isDeployed(graduator) || !isDeployed(factory)) return;
     const [splitter] = await publicClient.readContract({
       address: graduator,
-      abi: protoV4GraduatorAbi,
+      abi: gotonV4GraduatorAbi,
       functionName: 'graduations',
       args: [params.tokenAddress],
     });

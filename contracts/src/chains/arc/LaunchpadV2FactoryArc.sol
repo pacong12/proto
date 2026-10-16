@@ -13,8 +13,8 @@ import {
 } from "../../interfaces/external/IUniswapV4Core.sol";
 import {TickMath} from "../../libraries/v4/TickMath.sol";
 import {V4Lib} from "../../libraries/v4/V4Lib.sol";
-import {ProtoFeeSplitter, ProtoFeeSplitterDeployer} from "../../core/ProtoFeeSplitter.sol";
-import {ProtoV4Hook} from "../../core/ProtoV4Hook.sol";
+import {GotonFeeSplitter, GotonFeeSplitterDeployer} from "../../core/GotonFeeSplitter.sol";
+import {GotonV4Hook} from "../../core/GotonV4Hook.sol";
 
 interface IERC20Transfer {
     function transfer(address to, uint256 amount) external returns (bool);
@@ -29,7 +29,7 @@ interface IERC20Transfer {
  *      USDC/token v4 pool over [-887200, initialTick] (mirrored when the token sorts first).
  *      The position is owned by this factory, which has no way to remove it (locked forever).
  *   2. The creator's mandatory prebuy (>= 4.50 USDC, <= 5% of supply) is swapped atomically.
- *   3. Trading continues in the same pool forever; ProtoV4Hook charges the token's fixed
+ *   3. Trading continues in the same pool forever; GotonV4Hook charges the token's fixed
  *      buy/sell tax in USDC and flags graduation when price crosses `bondTick`.
  *
  * Defaults (Argus portal): opening tick 405400 (~$2,480 FDV), bondTick 376400 (~$45,079 FDV),
@@ -80,8 +80,8 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
 
     IPoolManagerV4 public immutable poolManager;
     address public immutable quoteAsset;
-    ProtoV4Hook public immutable hook;
-    ProtoFeeSplitterDeployer public immutable splitterDeployer;
+    GotonV4Hook public immutable hook;
+    GotonFeeSplitterDeployer public immutable splitterDeployer;
 
     // Owner-tunable launch parameters (Argus portal defaults).
     int24 public initialTick = 405_400;
@@ -155,8 +155,8 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
     constructor(
         IPoolManagerV4 _poolManager,
         address _quoteAsset,
-        ProtoV4Hook _hook,
-        ProtoFeeSplitterDeployer _splitterDeployer,
+        GotonV4Hook _hook,
+        GotonFeeSplitterDeployer _splitterDeployer,
         address payable _feeRecipient
     ) {
         if (
@@ -214,9 +214,9 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
             address(this)
         );
 
-        ProtoFeeSplitter splitter = ProtoFeeSplitter(
+        GotonFeeSplitter splitter = GotonFeeSplitter(
             payable(splitterDeployer.deploy(
-                    ProtoFeeSplitter.Config({
+                    GotonFeeSplitter.Config({
                         token: tokenAddress,
                         quoteAsset: quoteAsset,
                         hook: address(hook),
@@ -228,7 +228,7 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
                         liquidityVault: liquidityVault,
                         creator: msg.sender
                     }),
-                    ProtoFeeSplitter.Split({
+                    GotonFeeSplitter.Split({
                         protocolBps: protocolFeeBps,
                         holdersBps: tax.holdersBps,
                         burnBps: tax.burnBps,
@@ -254,7 +254,7 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
 
         hook.registerPool(
             key,
-            ProtoV4Hook.PoolRegistration({
+            GotonV4Hook.PoolRegistration({
                 token: tokenAddress,
                 splitter: address(splitter),
                 buyTaxBps: tax.buyTaxBps,
@@ -305,7 +305,7 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
             ),
             (uint256, uint256)
         );
-        if (quoteFees > 0) ProtoFeeSplitter(payable(l.splitter)).distributeFees(quoteFees);
+        if (quoteFees > 0) GotonFeeSplitter(payable(l.splitter)).distributeFees(quoteFees);
         emit LpFeesCollected(token, quoteFees, tokenFees);
     }
 

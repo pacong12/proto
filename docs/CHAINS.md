@@ -40,8 +40,8 @@ Rather than hardcoding conditional branches (`if (chainId === 5042)`), the codeb
 | **Frontend Adapters**      | `apps/frontoffice/src/chains/robinhood/`         | `apps/frontoffice/src/chains/arc/`         |
 
 Chain-agnostic contracts used by every chain live in `contracts/src/core/`: `LaunchpadToken`, `BondingCurve`,
-`ProtoV4Hook` (singleton v4 hook with TWAP oracle), `ProtoFeeSplitter` (per-token fees and streamed dividends),
-`ProtoV4Graduator` (trustless curve → v4 graduation), `ProtoV4Router` (swaps), `ProtoV4Buyback` (TWAP-guarded
+`GotonV4Hook` (singleton v4 hook with TWAP oracle), `GotonFeeSplitter` (per-token fees and streamed dividends),
+`GotonV4Graduator` (trustless curve → v4 graduation), `GotonV4Router` (swaps), `GotonV4Buyback` (TWAP-guarded
 buyback-and-burn), `VestingVault`, plus `src/libraries/`
 (incl. `v4/TickMath`, `v4/V4Lib`) and `src/interfaces/`. Superseded contracts (V1 factory, V3 `LiquidityLocker` / `BuybackBurner` path,
 `HolderFeeDistributor`, `ProtoLiquidityLockerV4`, `ProtoMemeHook`) live in `contracts/src/legacy/`.
