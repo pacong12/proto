@@ -230,6 +230,90 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
     }
   }
 
+  /**
+   * Builds the entity for a token launched straight into a Uniswap v4 pool (TokenLaunchedV4).
+   * `poolAddress` stores the v4 pool id so swaps can be matched to the token.
+   */
+  async fetchV4LaunchedToken(
+    tokenAddress: Address,
+    poolId: `0x${string}`,
+    creator: Address,
+    prebuyQuote: bigint,
+    networkConfig: NetworkConfig,
+  ): Promise<LaunchedTokenEntity | null> {
+    const client = this.getClient(networkConfig);
+    try {
+      const [name, symbol, decimals, totalSupply, logo, description, socialsRaw] =
+        await Promise.all([
+          client.readContract({
+            address: tokenAddress,
+            abi: launchpadTokenAbi,
+            functionName: 'name',
+          }),
+          client.readContract({
+            address: tokenAddress,
+            abi: launchpadTokenAbi,
+            functionName: 'symbol',
+          }),
+          client.readContract({
+            address: tokenAddress,
+            abi: launchpadTokenAbi,
+            functionName: 'decimals',
+          }),
+          client.readContract({
+            address: tokenAddress,
+            abi: launchpadTokenAbi,
+            functionName: 'totalSupply',
+          }),
+          client
+            .readContract({ address: tokenAddress, abi: launchpadTokenAbi, functionName: 'logo' })
+            .catch(() => ''),
+          client
+            .readContract({
+              address: tokenAddress,
+              abi: launchpadTokenAbi,
+              functionName: 'description',
+            })
+            .catch(() => ''),
+          client
+            .readContract({
+              address: tokenAddress,
+              abi: launchpadTokenAbi,
+              functionName: 'socials',
+            })
+            .catch(() => ['', '', '', '', ''] as const),
+        ]);
+      const [twitter, telegram, discord, website, farcaster] = socialsRaw as readonly string[];
+      const quote = networkConfig.contracts.weth;
+
+      return {
+        address: tokenAddress,
+        name: name as string,
+        symbol: symbol as string,
+        decimals: decimals as number,
+        totalSupply: (totalSupply as bigint).toString(),
+        logo: (logo as string) || '',
+        description: (description as string) || '',
+        socials: { twitter, telegram, discord, website, farcaster },
+        deployer: creator,
+        pairedToken: quote,
+        poolAddress: poolId,
+        isToken0: BigInt(tokenAddress) < BigInt(quote),
+        poolFee: networkConfig.launchConfig.poolFee,
+        positionId: 0n,
+        restrictionsEndBlock: 0n,
+        launchBlock: 0n,
+        createdAt: Date.now(),
+        initialBuyAmount: prebuyQuote.toString(),
+        version: 'v4',
+        isGraduated: false,
+        chainId: networkConfig.chainId,
+      };
+    } catch {
+      return null;
+    }
+  }
+
   // -------------------------------------------------------------------------
   // V2 on-demand factory resolver (hydrates newly created tokens even before event indexing)
   // -------------------------------------------------------------------------
