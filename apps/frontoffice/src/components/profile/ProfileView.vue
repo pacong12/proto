@@ -210,6 +210,7 @@
         :profile-address="targetAccount"
         :initial-data="profileData"
         @save="saveProfile"
+        @erase="eraseSocialData"
       />
 
       <!-- CTO Redirect Modal -->
@@ -256,6 +257,7 @@ import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { Check, AlertCircle, RefreshCw, X, Wallet, UserX } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
+import { toast } from '@/components/ui/sonner';
 import { useLaunchpad } from '@/composables/useLaunchpad';
 import { useWallet } from '@/composables/useWallet';
 import { useFeed } from '@/composables/useFeed';
@@ -264,6 +266,8 @@ import { useHolderDividends } from '@/composables/useHolderDividends';
 import { useUserProfile } from '@/composables/useUserProfile';
 import { walletAddress } from '@/lib/wallet-store';
 import { getPublicClient } from '@/lib/viem-client';
+import { getSessionHeaders } from '@/lib/session';
+import { resolveSafeUrl } from '@/lib/safe-url';
 import { resolveUserAddress, getUserIdentity, registerUserIdentity } from '@/lib/username';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -419,61 +423,90 @@ const profileData = ref<ProfileStorageData>({
   telegram: '',
 });
 
-function isSafeImageUrl(url: string): boolean {
-  if (!url) return false;
-  const trimmed = url.trim().toLowerCase();
-  return (
-    trimmed.startsWith('https://') ||
-    trimmed.startsWith('http://') ||
-    trimmed.startsWith('ipfs://') ||
-    trimmed.startsWith('data:image/') ||
-    trimmed.startsWith('blob:') ||
-    trimmed.startsWith('/api/ipfs/')
-  );
-}
-
-function resolveSafeUrl(url?: string): string {
-  if (!url) return '';
-  const trimmed = url.trim();
-  if (!isSafeImageUrl(trimmed)) return '';
-  if (trimmed.startsWith('ipfs://')) {
-    const hash = trimmed.replace('ipfs://', '');
-    return `/api/ipfs/${hash}`;
-  }
-  return trimmed;
-}
-
 const resolvedAvatarUrl = computed(() => resolveSafeUrl(profileData.value.avatarUrl));
 const resolvedBannerUrl = computed(() => resolveSafeUrl(profileData.value.bannerUrl));
 
-function loadLocalProfile() {
-  if (!targetAccount.value || typeof window === 'undefined') return;
+const EMPTY_PROFILE: ProfileStorageData = {
+  displayName: '',
+  bio: '',
+  avatarUrl: '',
+  bannerUrl: '',
+  twitter: '',
+  telegram: '',
+};
+
+/** Pre-FO-10 profiles lived only in this browser; shown to their owner until saved to the API. */
+function readLegacyProfile(address: string): ProfileStorageData | null {
   try {
-    const raw = localStorage.getItem(`proto_profile_${targetAccount.value}`);
-    if (raw) {
-      profileData.value = JSON.parse(raw);
-    } else {
-      profileData.value = {
-        displayName: '',
-        bio: '',
-        avatarUrl: '',
-        bannerUrl: '',
-        twitter: '',
-        telegram: '',
-      };
-    }
+    const raw = localStorage.getItem(`proto_profile_${address}`);
+    return raw ? (JSON.parse(raw) as ProfileStorageData) : null;
   } catch {
-    // Ignore storage parse errors
+    return null;
   }
 }
 
-function saveProfile(data: ProfileStorageData) {
-  if (!targetAccount.value || typeof window === 'undefined') return;
+/** FO-10: profiles are stored by the API so every visitor sees the same one. */
+async function loadLocalProfile() {
+  const address = targetAccount.value;
+  if (!address) return;
   try {
-    profileData.value = { ...data };
-    localStorage.setItem(`proto_profile_${targetAccount.value}`, JSON.stringify(data));
+    const res = await apiFetch<{ success: boolean; data: { profile: ProfileStorageData | null } }>(
+      `/api/profiles/${address}`,
+    );
+    if (targetAccount.value !== address) return;
+    const legacy = isOwnProfile.value ? readLegacyProfile(address) : null;
+    profileData.value = res.data?.profile ?? legacy ?? { ...EMPTY_PROFILE };
   } catch {
-    // Ignore storage errors
+    profileData.value = (isOwnProfile.value ? readLegacyProfile(address) : null) ?? {
+      ...EMPTY_PROFILE,
+    };
+  }
+}
+
+async function saveProfile(data: ProfileStorageData) {
+  const address = targetAccount.value;
+  if (!address) return;
+  actionError.value = null;
+  try {
+    const res = await apiFetch<{ success: boolean; data: { profile: ProfileStorageData } }>(
+      `/api/profiles/${address}`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...(await getSessionHeaders(address)) },
+        body: JSON.stringify(data),
+      },
+    );
+    profileData.value = res.data.profile;
+    try {
+      localStorage.removeItem(`proto_profile_${address}`);
+    } catch {
+      // Storage unavailable
+    }
+  } catch (err) {
+    actionError.value = (err as Error).message || 'Failed to save profile';
+  }
+}
+
+/** GRC-04: deletes this wallet's comments, likes, votes and profile from the API. */
+async function eraseSocialData() {
+  const address = targetAccount.value;
+  if (!address) return;
+  actionError.value = null;
+  try {
+    await apiFetch(`/api/users/${address}/data`, {
+      method: 'DELETE',
+      headers: await getSessionHeaders(address),
+    });
+    profileData.value = { ...EMPTY_PROFILE };
+    try {
+      localStorage.removeItem(`proto_profile_${address}`);
+    } catch {
+      // Storage unavailable
+    }
+    editModalOpen.value = false;
+    toast.success(t('eraseDataDone'));
+  } catch (err) {
+    actionError.value = (err as Error).message || 'Failed to delete data';
   }
 }
 
