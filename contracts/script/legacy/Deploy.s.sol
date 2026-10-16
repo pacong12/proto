@@ -47,13 +47,7 @@ contract DeployScript is Script {
             vm.startBroadcast();
         }
 
-        LaunchpadFactory factory = new LaunchpadFactory(
-            v3Factory,
-            positionManager,
-            swapRouter,
-            weth,
-            feeRecipient
-        );
+        LaunchpadFactory factory = new LaunchpadFactory(v3Factory, positionManager, swapRouter, weth, feeRecipient);
 
         factoryAddress = address(factory);
         lockerAddress = factory.locker();

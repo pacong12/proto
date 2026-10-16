@@ -11,6 +11,8 @@ import {ILaunchpadToken} from "../interfaces/ILaunchpadToken.sol";
  *   - L-03 fix: the schedule creator may revoke an unvested schedule via
  *     revokeVesting(). The vested portion is transferred to the beneficiary
  *     immediately; the remaining unvested amount is returned to the creator.
+ *   - S8 fix: schedules are keyed by (token, creator, beneficiary), so a third party creating a
+ *     1-wei schedule for a beneficiary can no longer block the real grant.
  *   - nonReentrant guard on all state-mutating functions.
  *   - CEI pattern: state mutations precede all token transfers.
  */
@@ -25,8 +27,8 @@ contract VestingVault {
         bool revoked;
     }
 
-    // token => beneficiary => Schedule
-    mapping(address => mapping(address => Schedule)) public vestingSchedules;
+    // token => creator => beneficiary => Schedule
+    mapping(address => mapping(address => mapping(address => Schedule))) public vestingSchedules;
 
     event VestingCreated(
         address indexed token,
@@ -82,12 +84,12 @@ contract VestingVault {
         if (token == address(0) || beneficiary == address(0)) revert ZeroAddress();
         if (amount == 0 || duration == 0) revert ZeroAmount();
         // L-01 fix: allow creating a new schedule if previous one is fully claimed or revoked.
-        Schedule storage existing = vestingSchedules[token][beneficiary];
+        Schedule storage existing = vestingSchedules[token][msg.sender][beneficiary];
         if (existing.exists && !existing.revoked && existing.claimedAmount < existing.totalAmount) {
             revert ScheduleExists();
         }
 
-        vestingSchedules[token][beneficiary] = Schedule({
+        vestingSchedules[token][msg.sender][beneficiary] = Schedule({
             creator: msg.sender,
             totalAmount: amount,
             claimedAmount: 0,
@@ -110,9 +112,8 @@ contract VestingVault {
      *      the beneficiary; the remainder is returned to the creator.
      */
     function revokeVesting(address token, address beneficiary) external nonReentrant {
-        Schedule storage s = vestingSchedules[token][beneficiary];
+        Schedule storage s = vestingSchedules[token][msg.sender][beneficiary];
         if (!s.exists) revert ScheduleNotFound();
-        if (msg.sender != s.creator) revert Unauthorized();
         if (s.revoked) revert AlreadyRevoked();
 
         s.revoked = true;
@@ -141,14 +142,14 @@ contract VestingVault {
     // Views
     // ---------------------------------------------------------------------------
 
-    function getVestedAmount(address token, address beneficiary) public view returns (uint256) {
-        Schedule memory s = vestingSchedules[token][beneficiary];
+    function getVestedAmount(address token, address creator, address beneficiary) public view returns (uint256) {
+        Schedule memory s = vestingSchedules[token][creator][beneficiary];
         if (!s.exists) return 0;
         return _computeVested(s);
     }
 
-    function getClaimableAmount(address token, address beneficiary) external view returns (uint256) {
-        Schedule memory s = vestingSchedules[token][beneficiary];
+    function getClaimableAmount(address token, address creator, address beneficiary) external view returns (uint256) {
+        Schedule memory s = vestingSchedules[token][creator][beneficiary];
         if (!s.exists || s.revoked) return 0;
         uint256 vested = _computeVested(s);
         return vested > s.claimedAmount ? vested - s.claimedAmount : 0;
@@ -158,8 +159,9 @@ contract VestingVault {
     // Claiming
     // ---------------------------------------------------------------------------
 
-    function claimVested(address token) external nonReentrant returns (uint256 claimable) {
-        Schedule storage s = vestingSchedules[token][msg.sender];
+    /// @param creator Address that created the schedule (one beneficiary may hold several).
+    function claimVested(address token, address creator) external nonReentrant returns (uint256 claimable) {
+        Schedule storage s = vestingSchedules[token][creator][msg.sender];
         if (!s.exists || s.revoked) return 0;
 
         uint256 vested = _computeVested(s);

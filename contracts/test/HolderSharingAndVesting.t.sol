@@ -130,24 +130,24 @@ contract HolderSharingAndVestingTest is Test {
         vm.stopPrank();
 
         // At t=0, claimable is 0
-        assertEq(vault.getClaimableAmount(address(token), bob), 0);
+        assertEq(vault.getClaimableAmount(address(token), alice, bob), 0);
         uint256 start = block.timestamp;
 
         // Advance 50 days (halfway) -> 50% unlocked (5,000 DIV)
         vm.warp(start + 50 days);
-        assertEq(vault.getClaimableAmount(address(token), bob), 5_000 * 1e18);
+        assertEq(vault.getClaimableAmount(address(token), alice, bob), 5_000 * 1e18);
 
         // Bob claims 5,000 DIV
         vm.prank(bob);
-        vault.claimVested(address(token));
-        assertEq(vault.getClaimableAmount(address(token), bob), 0);
+        vault.claimVested(address(token), alice);
+        assertEq(vault.getClaimableAmount(address(token), alice, bob), 0);
 
         // Advance to 100 days (full duration) -> remaining 50% unlocked
         vm.warp(start + 100 days);
-        assertEq(vault.getClaimableAmount(address(token), bob), 5_000 * 1e18);
+        assertEq(vault.getClaimableAmount(address(token), alice, bob), 5_000 * 1e18);
         vm.prank(bob);
-        vault.claimVested(address(token));
-        assertEq(vault.getClaimableAmount(address(token), bob), 0);
+        vault.claimVested(address(token), alice);
+        assertEq(vault.getClaimableAmount(address(token), alice, bob), 0);
     }
 
     function test_VestingRevoke() public {
@@ -175,11 +175,31 @@ contract HolderSharingAndVestingTest is Test {
         assertEq(token.balanceOf(alice) - aliceBalanceBefore, 7_500 * 1e18);
 
         // Claimable is now zero (schedule revoked)
-        assertEq(vault.getClaimableAmount(address(token), bob), 0);
+        assertEq(vault.getClaimableAmount(address(token), alice, bob), 0);
 
         // Cannot revoke twice
         vm.prank(alice);
         vm.expectRevert(VestingVault.AlreadyRevoked.selector);
         vault.revokeVesting(address(token), bob);
+    }
+
+    /// @dev S8: a third party's 1-wei schedule no longer blocks the creator's real grant.
+    function test_VestingSquatterCannotBlockRealGrant() public {
+        address squatter = makeAddr("squatter");
+        vm.prank(alice);
+        token.transfer(squatter, 1);
+        vm.startPrank(squatter);
+        token.approve(address(vault), 1);
+        vault.createVestingSchedule(address(token), bob, 1, 36_500 days);
+        vm.stopPrank();
+
+        vm.startPrank(alice);
+        token.approve(address(vault), 10_000 * 1e18);
+        vault.createVestingSchedule(address(token), bob, 10_000 * 1e18, 100 days);
+        vm.stopPrank();
+
+        vm.warp(block.timestamp + 100 days);
+        vm.prank(bob);
+        assertEq(vault.claimVested(address(token), alice), 10_000 * 1e18);
     }
 }

@@ -54,6 +54,7 @@ contract BuybackBurner is IBuybackBurner {
     error TransferFailed();
 
     event OwnershipTransferProposed(address indexed proposed);
+    event ReferenceRateReset(uint256 previousRate);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event RateUpdated(uint256 oldRate, uint256 newRate);
 
@@ -180,6 +181,17 @@ contract BuybackBurner is IBuybackBurner {
      *   cap that the off-chain bot MUST respect when computing minAmountOut — it is
      *   an operational parameter, not a redundant on-chain guard.
      */
+    /**
+     * @notice Clears the reference rate used to floor the next buyback.
+     * @dev AUD-HIGH-05 fix: lastKnownRate only reflects the last fill. After the token price rises
+     *      the old rate demands more tokens than the market can deliver and every buyback reverts.
+     *      The owner resets it, quotes the market off-chain and passes a fresh minAmountOut.
+     */
+    function resetReferenceRate() external onlyOwner {
+        emit ReferenceRateReset(lastKnownRate);
+        lastKnownRate = 0;
+    }
+
     // slither-disable-next-line reentrancy-no-eth,reentrancy-balance,divide-before-multiply
     function executeBuyback(uint256 minAmountOut) external override nonReentrant onlyOwner returns (uint256 tokensBurned) {
         if (lastBuybackTimestamp > 0 && block.timestamp < lastBuybackTimestamp + cooldown) {

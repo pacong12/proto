@@ -6,7 +6,10 @@ import {FeeMath} from "../libraries/FeeMath.sol";
 
 /**
  * @title ProtoMemeHook
- * @notice Sovereign Uniswap V4 Custom Hook for Proto Protocol on Robinhood Chain.
+ * @notice LEGACY — superseded by core/ProtoV4Hook. The deployed instance (0x6347…D9a7) has invalid
+ *         permission bits (0x19A7) and IHooks signatures that do not match v4-core, so pools
+ *         using it cannot be initialized.
+ *         Sovereign Uniswap V4 Custom Hook for Proto Protocol on Robinhood Chain.
  *         Manages dynamic trading fees, creator fee sharing, and buyback routing
  *         independently without third-party multisig dependency.
  */
