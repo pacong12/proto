@@ -8,14 +8,27 @@ updates:
       prefix: "chore(deps)"
     open-pull-requests-limit: 10
     groups:
-      dependencies:
+      # Minor and patch releases are batched into one PR. Major releases are left out of every
+      # group, so each one gets its own PR and a breaking upgrade can be reviewed and reverted alone.
+      minor-and-patch:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
     commit-message:
-      prefix: "chore(ci)"
+      # `ci` is not an allowed commitlint scope; dependency bumps use `deps` (AGENTS.md).
+      prefix: "chore(deps)"
     open-pull-requests-limit: 10
+    groups:
+      actions-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
