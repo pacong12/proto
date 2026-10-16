@@ -9,11 +9,12 @@ import {
   calculateGraduationProgress,
   calculateAntiSnipeTaxBps,
 } from '../src/bonding-curve';
+import { CURVE_TOKEN_SUPPLY_WEI } from '../src/constants';
 import {
   ROBINHOOD_GRADUATION_TARGET_WEI,
   ROBINHOOD_INITIAL_VIRTUAL_ETH_WEI,
-  CURVE_TOKEN_SUPPLY_WEI,
-} from '../src/constants';
+} from '../src/chains/robinhood';
+import { ARC_MATH_CONFIG, calculateArcV4FdvUsdc } from '../src/chains/arc';
 
 describe('Math SDK - Bonding Curve', () => {
   describe('calculateSpotPrice', () => {
@@ -129,5 +130,29 @@ describe('Math SDK - Bonding Curve', () => {
       expect(calculateAntiSnipeTaxBps(3)).toBe(0n); // 0%
       expect(calculateAntiSnipeTaxBps(10)).toBe(0n); // 0%
     });
+  });
+});
+
+describe('Math SDK - Arc in-pool v4 equivalence', () => {
+  it('reproduces the on-chain prebuy from the equivalent virtual reserves', () => {
+    // Fork test: 4.50 USDC prebuy with 1% hook tax + 1% pool fee bought 1,774,718.628 tokens.
+    const virtualUsdc = Number(ARC_MATH_CONFIG.virtualQuoteReserve) / 1e18;
+    const out = calculateCurveBuyOutput(4.5 * 0.99, virtualUsdc, 1e9, 1e9);
+    expect(out).toBeCloseTo(1_774_718.628, 0);
+  });
+
+  it('opens and graduates at the Argus market caps', () => {
+    expect(calculateArcV4FdvUsdc(ARC_MATH_CONFIG.initialTick)).toBeCloseTo(
+      ARC_MATH_CONFIG.openingFdvUsdc,
+      1,
+    );
+    expect(calculateArcV4FdvUsdc(ARC_MATH_CONFIG.bondTick)).toBeCloseTo(
+      ARC_MATH_CONFIG.graduationFdvUsdc,
+      0,
+    );
+    expect(calculateArcV4FdvUsdc(-ARC_MATH_CONFIG.initialTick, 1e9, false)).toBeCloseTo(
+      ARC_MATH_CONFIG.openingFdvUsdc,
+      1,
+    );
   });
 });

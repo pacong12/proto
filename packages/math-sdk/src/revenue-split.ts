@@ -137,3 +137,37 @@ export function calculateDonutSegments(
 
   return { circumference, segments };
 }
+
+/** On-chain ProtoFeeSplitter split of the post-protocol remainder (sums to exactly 10,000 bps). */
+export interface RevenueSplitBps {
+  holdersBps: number;
+  burnBps: number;
+  creatorBps: number;
+  liquidityBps: number;
+}
+
+/**
+ * Converts a UI revenue split (percentages: creator / buyback / holders / growth) into the
+ * ProtoFeeSplitter bps layout (buyback → burn, growth → liquidity). Shares are normalised to
+ * their total so the result always sums to 10,000; rounding dust goes to the largest share.
+ * An empty split sends everything to the creator.
+ */
+export function revenueSplitToBps(split?: Partial<RevenueSplit> | null): RevenueSplitBps {
+  const parts = {
+    holdersBps: Math.max(0, Number(split?.holders) || 0),
+    burnBps: Math.max(0, Number(split?.buyback) || 0),
+    creatorBps: Math.max(0, Number(split?.creator) || 0),
+    liquidityBps: Math.max(0, Number(split?.growth) || 0),
+  };
+  const total = parts.holdersBps + parts.burnBps + parts.creatorBps + parts.liquidityBps;
+  if (total <= 0) return { holdersBps: 0, burnBps: 0, creatorBps: 10_000, liquidityBps: 0 };
+
+  const keys = Object.keys(parts) as (keyof RevenueSplitBps)[];
+  const result = Object.fromEntries(
+    keys.map((k) => [k, Math.floor((parts[k] / total) * 10_000)]),
+  ) as unknown as RevenueSplitBps;
+  const dust = 10_000 - keys.reduce((sum, k) => sum + result[k], 0);
+  const largest = keys.reduce((a, b) => (parts[b] > parts[a] ? b : a));
+  result[largest] += dust;
+  return result;
+}
