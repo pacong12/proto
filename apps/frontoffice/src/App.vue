@@ -6,7 +6,11 @@
     <Navbar @open-search="searchOpen = true" />
 
     <main
-      :class="isTradeRoute ? 'flex-1 w-full' : 'flex-1 max-w-7xl w-full mx-auto px-4 py-6 sm:py-8'"
+      :class="
+        isTradeRoute
+          ? 'flex-1 w-full min-h-[100dvh]'
+          : 'flex-1 max-w-7xl w-full mx-auto px-4 py-6 sm:py-8 min-h-[100dvh]'
+      "
     >
       <RouterView />
     </main>
@@ -37,9 +41,9 @@
 
         <!-- Product Links -->
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold uppercase tracking-wider text-foreground">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-foreground">
             {{ t('product') }}
-          </h4>
+          </h2>
           <ul class="space-y-2 text-sm text-muted-foreground">
             <li>
               <RouterLink to="/launchpad" class="hover:text-primary transition">
@@ -82,9 +86,9 @@
 
         <!-- Resources & Network -->
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold uppercase tracking-wider text-foreground">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-foreground">
             {{ t('network') }}
-          </h4>
+          </h2>
           <ul class="space-y-2 text-sm text-muted-foreground">
             <li>{{ activeNetwork.name }} ({{ activeNetwork.chainId }})</li>
             <li>Uniswap V3 Factory (1% Fee)</li>
@@ -95,9 +99,9 @@
 
         <!-- Legal & Privacy Policy Modal Trigger -->
         <div class="space-y-2">
-          <h4 class="text-sm font-semibold uppercase tracking-wider text-foreground">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-foreground">
             {{ t('legal') }}
-          </h4>
+          </h2>
           <ul class="space-y-2 text-sm text-muted-foreground">
             <li>
               <RouterLink to="/terms-of-service" class="hover:text-primary transition">

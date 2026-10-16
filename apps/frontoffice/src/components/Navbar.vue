@@ -248,6 +248,7 @@ function copyAddress() {
           @update:model-value="handleChainSelect"
         >
           <SelectTrigger
+            :aria-label="`${t('network')}: ${activeNetwork.name}`"
             class="h-9 px-2 sm:px-3 gap-1.5 sm:gap-2 w-auto text-xs border-border bg-card hover:bg-muted cursor-pointer text-foreground rounded-xl shrink-0"
           >
             <div class="flex items-center gap-1.5 sm:gap-2">

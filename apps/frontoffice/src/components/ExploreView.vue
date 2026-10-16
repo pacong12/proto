@@ -129,6 +129,15 @@
               {{ tab.label }}
             </TabsTrigger>
           </TabsList>
+          <!-- The token grid below is the visible panel; these keep aria-controls valid. -->
+          <TabsContent
+            v-for="tab in marketTabs"
+            :key="`panel-${tab.value}`"
+            :value="tab.value"
+            class="sr-only"
+          >
+            {{ tab.label }}
+          </TabsContent>
         </Tabs>
 
         <!-- Search Bar -->
@@ -220,7 +229,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { Plus, Loader2, AlertCircle, Search, List, LayoutGrid } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Empty } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { useI18n } from '@/lib/i18n';
