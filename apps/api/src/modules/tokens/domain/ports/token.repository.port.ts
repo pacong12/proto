@@ -4,6 +4,7 @@ import {
   TradeEventEntity,
   CandlestickEntity,
   TokenCommentEntity,
+  type CreatorProfile,
 } from '@proto/shared-types';
 
 export interface TokenRepositoryPort {
@@ -87,6 +88,8 @@ export interface TokenRepositoryPort {
   setLastIndexedBlock?(networkName: string, blockNumber: bigint): Promise<void>;
 
   // Sentiment voting
+  getProfile?(address: string): Promise<CreatorProfile | null>;
+  saveProfile?(address: string, profile: CreatorProfile): Promise<void>;
   getTokenSentiment?(
     tokenAddress: string,
     userAddress?: string,
