@@ -107,6 +107,21 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
       .slice(0, limit);
   }
 
+  async getTradesInBlockRange(
+    fromBlock: bigint,
+    toBlock: bigint,
+    limit: number,
+  ): Promise<TradeEventEntity[]> {
+    return Array.from(this.trades.values())
+      .flat()
+      .filter((t) => {
+        const bn = BigInt(t.blockNumber ?? 0);
+        return bn >= fromBlock && (toBlock === 0n || bn <= toBlock);
+      })
+      .sort((a, b) => Number(BigInt(a.blockNumber ?? 0) - BigInt(b.blockNumber ?? 0)))
+      .slice(0, limit);
+  }
+
   async getTradesSince(sinceMs: number): Promise<TradeEventEntity[]> {
     const all = Array.from(this.trades.values()).flat();
     return all.filter((t) => t.timestamp >= sinceMs).sort((a, b) => a.timestamp - b.timestamp);

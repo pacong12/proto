@@ -38,6 +38,12 @@ export interface TokenRepositoryPort {
   getRecentTrades?(limit?: number): Promise<TradeEventEntity[]>;
   getTradesByTrader?(trader: string, limit?: number): Promise<TradeEventEntity[]>;
   getTradesSince?(sinceMs: number): Promise<TradeEventEntity[]>;
+  /** Trades with fromBlock <= block <= toBlock (toBlock 0 = no upper bound), oldest first. */
+  getTradesInBlockRange?(
+    fromBlock: bigint,
+    toBlock: bigint,
+    limit: number,
+  ): Promise<TradeEventEntity[]>;
   findTradeByHash?(txHash: string): Promise<TradeEventEntity | null>;
   findAddressByIdentity?(nameOrSlug: string): Promise<string | null>;
   getUserPositions?(address: string): Promise<
