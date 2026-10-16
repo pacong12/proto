@@ -66,32 +66,32 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks(id) {
-            if (id.includes('node_modules')) {
-              if (
-                id.includes('@reown') ||
-                id.includes('@walletconnect') ||
-                id.includes('@wagmi') ||
-                id.includes('viem')
-              ) {
-                return 'web3-wallet';
-              }
-              if (id.includes('lightweight-charts')) {
-                return 'charts';
-              }
-              if (
-                id.includes('radix-vue') ||
-                id.includes('reka-ui') ||
-                id.includes('components/ui/select')
-              ) {
-                return 'ui-radix';
-              }
-              if (id.includes('vue') || id.includes('vue-router') || id.includes('@vueuse')) {
-                return 'vue-core';
-              }
-              if (id.includes('lucide-vue-next')) {
-                return 'lucide-icons';
-              }
+            // Match package directories exactly: a loose includes('vue') also caught
+            // @reown/appkit/vue and pulled the whole wallet stack into the initial load.
+            // AppKit / wagmi / WalletConnect are only imported dynamically (lib/appkit-loader.ts),
+            // so Rollup splits them into async chunks on its own.
+            // Bun nests packages (node_modules/.bun/<name>@<ver>/node_modules/<name>), so use the last one.
+            const tail = id.slice(id.lastIndexOf('/node_modules/') + '/node_modules/'.length);
+            if (tail === id) return undefined;
+            const parts = tail.split('/');
+            const pkg = parts[0].startsWith('@') ? `${parts[0]}/${parts[1]}` : parts[0];
+            if (pkg === 'lightweight-charts') return 'charts';
+            if (pkg === 'radix-vue' || pkg === 'reka-ui') return 'ui-radix';
+            if (
+              [
+                'vue',
+                'vue-router',
+                '@vue/runtime-core',
+                '@vue/runtime-dom',
+                '@vue/reactivity',
+                '@vue/shared',
+              ].includes(pkg) ||
+              pkg.startsWith('@vueuse/')
+            ) {
+              return 'vue-core';
             }
+            if (pkg === 'lucide-vue-next') return 'lucide-icons';
+            return undefined;
           },
         },
       },
