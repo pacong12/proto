@@ -45,3 +45,33 @@ rebuild. `keep_vars = true` in `wrangler.toml` keeps them across deploys.
 
 The API proxy (`/api/*`, `/dex/*`, `/health`) stays reachable in every mode. Store the bypass token
 as a secret, not a plain variable.
+
+## Environments and Release Flow
+
+| Environment | Trigger                                   | Frontoffice worker             | Docs worker                         |
+| ----------- | ----------------------------------------- | ------------------------------ | ----------------------------------- |
+| Development | every push to `main`                      | `proto-dev` (workers.dev only) | `proto-docs-dev` (workers.dev only) |
+| Production  | a published release (`production` branch) | `proto` on goton.fun           | `proto-docs` on docs.goton.fun      |
+
+Development URLs are `https://proto-dev.mutingudin12.workers.dev` and
+`https://proto-docs-dev.mutingudin12.workers.dev`; both send `noindex` and use the production API.
+
+Production only changes on a release: when release-please publishes a release, `release.yml` moves
+the `production` branch to the released commit and dispatches the VPS deploy and the GHCR image
+publish. To redeploy or roll back, run **Promote Release to Production** (`promote-production.yml`)
+with a release tag.
+
+### Cloudflare Workers Builds settings
+
+Under **Workers & Pages > (worker) > Settings > Build**:
+
+| Worker           | Git branch   | Root directory | Build command   | Deploy command                           | Enable Preview Builds |
+| ---------------- | ------------ | -------------- | --------------- | ---------------------------------------- | --------------------- |
+| `proto`          | `production` | (repo root)    | (empty)         | `bunx wrangler deploy`                   | off                   |
+| `proto-docs`     | `production` | `apps/docs`    | `bun run build` | `bunx wrangler deploy`                   | off                   |
+| `proto-dev`      | `main`       | (repo root)    | (empty)         | `bunx wrangler deploy --env development` | off                   |
+| `proto-docs-dev` | `main`       | `apps/docs`    | (empty)         | `bunx wrangler deploy --env development` | off                   |
+
+The frontoffice build runs from the `[build]` command in `wrangler.toml` (per environment), so the
+dashboard build command stays empty. Create `proto-dev` and `proto-docs-dev` with **Import a
+repository**, using the same repository.

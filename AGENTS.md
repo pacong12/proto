@@ -21,6 +21,7 @@ All agents working on this codebase MUST reference and strictly follow the insta
 - **Clean Architecture**: Outer layers depend inward. Domain has zero external dependencies.
 - **Fail-Closed Security**: All transaction mutations must form a `TransactionIntent` and pass through `SecurityPolicy.evaluate()` before submission.
 - **Strict Quality Gates**: Every PR must pass all CI gates before merging (`lint`, `typecheck`, `test`, `test:contracts`, `build`, `format:check`, `codeql`, `gitleaks`, `slither`).
+- **Environments**: `main` deploys to development (Cloudflare workers `proto-dev` / `proto-docs-dev` on workers.dev, noindex). Production (goton.fun, VPS API, GHCR image) deploys only from releases via the `production` branch; never push to `production` by hand.
 - **No Direct Push to Main**: All changes must be developed on a dedicated branch, submitted via Pull Request, validated by GitHub Actions, and squash-merged only after green status.
 
 ## Multi-Chain Architecture (Robinhood Chain 4663 & Arc Network 5042)

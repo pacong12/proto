@@ -74,3 +74,15 @@ describe('edge worker maintenance mode', () => {
     expect((await get('/', env, { cookie: 'maintenance_bypass=' })).status).toBe(503);
   });
 });
+
+describe('edge worker indexing', () => {
+  it('marks development workers noindex', async () => {
+    const res = await get('/launchpad', makeEnv({ NOINDEX: 'true' }));
+    expect(res.headers.get('x-robots-tag')).toBe('noindex, nofollow');
+  });
+
+  it('leaves production indexable', async () => {
+    const res = await get('/launchpad', makeEnv());
+    expect(res.headers.get('x-robots-tag')).toBeNull();
+  });
+});

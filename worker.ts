@@ -18,6 +18,8 @@ export interface Env {
   MAINTENANCE_MESSAGE?: string;
   // Optional secret: open any page with ?maintenance_bypass=<token> to use the site during `full`.
   MAINTENANCE_BYPASS_TOKEN?: string;
+  // 'true' on non-production workers (development) to keep them out of search results.
+  NOINDEX?: string;
 }
 
 type MaintenanceMode = 'off' | 'banner' | 'full';
@@ -272,6 +274,7 @@ export default {
     newHeaders.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
     newHeaders.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
     newHeaders.set('x-request-id', rayId);
+    if (env.NOINDEX === 'true') newHeaders.set('X-Robots-Tag', 'noindex, nofollow');
     // Content-Security-Policy: use Report-Only mode in staging (CSP_REPORT_ONLY=true)
     // to catch violations before enforcing. Switch to enforcing in production.
     const cspValue = buildCsp(env.CSP_REPORT_URI);

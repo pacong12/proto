@@ -6,6 +6,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write
 
 jobs:
   release-please:
@@ -13,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Run Release Please
+        id: release
         uses: google-github-actions/release-please-action@v4
         with:
           # No `release-type` here: setting it makes the action ignore the config and manifest files
@@ -20,3 +22,29 @@ jobs:
           config-file: .github/release-please-config.json
           manifest-file: .github/.release-please-manifest.json
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+
+      # Production deploys only from releases: move the `production` branch to the released commit.
+      # Cloudflare Workers Builds (proto, proto-docs) watch that branch. Pushes made with
+      # GITHUB_TOKEN do not trigger other workflows, so the VPS and image deploys are dispatched.
+      - name: Checkout release commit
+        if: steps.release.outputs.release_created == 'true'
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Promote release to production
+        if: steps.release.outputs.release_created == 'true'
+        env:
+          SHA: ${{ steps.release.outputs.sha }}
+          TAG: ${{ steps.release.outputs.tag_name }}
+        run: |
+          git push origin "$SHA:refs/heads/production"
+          echo "Promoted $TAG ($SHA) to production" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Start production deploys
+        if: steps.release.outputs.release_created == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run deploy-vps.yml --ref production
+          gh workflow run deploy-api-docker.yml --ref production
