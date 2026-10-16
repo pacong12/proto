@@ -16,7 +16,12 @@ export interface SiteUrls {
   docsHost: string;
 }
 
-const trimSlash = (url: string): string => url.trim().replace(/\/+$/, '');
+function trimSlash(url: string): string {
+  const value = url.trim();
+  let end = value.length;
+  while (end > 0 && value[end - 1] === '/') end--;
+  return value.slice(0, end);
+}
 
 export function resolveSiteUrls(env: { appUrl?: string; docsUrl?: string } = {}): SiteUrls {
   const appUrl = trimSlash(env.appUrl || DEFAULT_APP_URL);
