@@ -20,6 +20,8 @@ export class RedisCacheAdapter implements CachePort {
         enableReadyCheck: true,
         connectTimeout: 3000,
         lazyConnect: true,
+        // Kept out of REDIS_URL so the URL never embeds a credential.
+        password: process.env.REDIS_PASSWORD || undefined,
       };
 
       this.client = new Redis(this.redisUrl, options);
