@@ -8,8 +8,8 @@ For transparency and safety, all Proto launchpad contracts across supported netw
 
 | Contract Name                         | Address                                      | Function                                     |
 | :------------------------------------ | :------------------------------------------- | :------------------------------------------- |
-| **Launchpad Factory (Bonding Curve)** | `0xbA42499Cfe59abc05120A100EEc4f859F476034F` | Deploys tokens and active bonding curves     |
-| **Liquidity Locker**                  | `0x070233B6F46ccD61CA2B7bc1E13520c3fE4614E4` | Holds and permanently locks LP position NFTs |
+| **Launchpad Factory (Bonding Curve)** | `0x9f1fAf78adE92C994AB188452338b45c52800748` | Deploys tokens and active bonding curves     |
+| **Liquidity Locker (Uniswap V4)**     | `0x7A1AD6AD30B1c9e276eD80a853E8dA897fE5D63E` | Holds and permanently locks LP position NFTs |
 | **Uniswap V3 Factory**                | `0x1f7d7550B1b028f7571E69A784071F0205FD2EfA` | Canonical decentralized pool registry        |
 | **Position Manager**                  | `0x73991a25C818Bf1f1128dEAaB1492D45638DE0D3` | Concentrated liquidity position NFT manager  |
 | **Swap Router**                       | `0xCaf681a66D020601342297493863E78C959E5cb2` | Direct trade and exact-input swap routing    |
@@ -22,11 +22,11 @@ For transparency and safety, all Proto launchpad contracts across supported netw
 | Contract Name                         | Address                                      | Function                                     |
 | :------------------------------------ | :------------------------------------------- | :------------------------------------------- |
 | **Launchpad Factory (Bonding Curve)** | `0xf94d16c9E90fCd55b75D318d0104269146612abF` | Deploys tokens and active bonding curves     |
-| **Liquidity Locker**                  | `0x9909ac8759dB233f546b644EF2CBDE1b3Af1dCE0` | Holds and permanently locks LP position NFTs |
+| **Liquidity Locker**                  | `0x173FF5D4eF626869a5a35FF0EA0c56c0A7e4Cd8b` | Holds and permanently locks LP position NFTs |
 | **Uniswap V3 Factory**                | `0xf0db7b58379503491d857dB50AC9ece64c653918` | Canonical decentralized pool registry        |
 | **Position Manager**                  | `0x39654A85A4C05127f5Fd6ED22CAeC077A0fB1377` | Concentrated liquidity position NFT manager  |
 | **Swap Router**                       | `0x53BF6B0684Ec7eF91e1387Da3D1a1769bC5A6F77` | Direct trade and exact-input swap routing    |
-| **Native Payment Token (USDC)**       | `0x3600000000000000000000000000000000000000` | Native gas and base pair currency (6 dec)    |
+| **Canonical Quote Token (USDC)**      | `0x3600000000000000000000000000000000000000` | Canonical ERC-20 USDC pair currency (6 dec)  |
 
 ## Security Audits
 

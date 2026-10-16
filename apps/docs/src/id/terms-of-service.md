@@ -18,7 +18,7 @@ Proto adalah protokol perangkat lunak terdesentralisasi dan non-kustodial. Proto
 
 ## 3. Struktur Fee & Aturan Protokol
 
-- **Biaya Peluncuran**: Biaya protokol tetap sebesar `0.0005 ETH` di Robinhood Chain atau `1 USDC` di Arc Network diperlukan saat menerapkan token untuk menutup biaya penerapan kontrak dan inisialisasi kunci likuiditas.
+- **Biaya Peluncuran**: Biaya protokol sebesar `0.0005 ETH` di Robinhood Chain atau `Gratis (0 USDC)` di Arc Network (dengan pre-buy awal minimal 4.50 USDC) diperlukan saat menerapkan token untuk menutup biaya penerapan kontrak dan inisialisasi kunci likuiditas.
 - **Penguncian Likuiditas**: NFT liquidity pool yang dibuat oleh Factory dikunci secara permanen dalam kontrak `LiquidityLocker` non-kustodial. Tidak ada pihak, termasuk Proto Labs, yang memiliki celah pintu belakang (_backdoor_) atau fungsi pembuka kunci.
 - **Pembagian Fee Trading**: Fee perdagangan standar yang dihasilkan dalam pool likuiditas dibagi 70% untuk pembuat token (atau dompet pengambilalihan komunitas yang ditunjuk) dan 30% untuk pemeliharaan protokol serta pembelian kembali (_buyback_) otomatis.
 

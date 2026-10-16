@@ -16,6 +16,7 @@ Il offre un cadre sécurisé et transparent permettant à chacun de créer, éch
 
 ## Deux modèles de lancement
 
-| Modèle               | Fonctionnement                                                                                                                               | Idéal pour                      |
-| :------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------ |
-| **v2 Bonding Curve** | Débute sur une courbe de prix ($x \cdot y = k$) puis migre automatiquement vers Uniswap une fois l'objectif atteint (4.2 ETH ou 8 400 USDC). | Tokens communautaires et mèmes. |
+| Modèle                                | Fonctionnement                                                                                                                                                                                                                 | Idéal pour                                                       |
+| :------------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
+| **Robinhood : Bonding Curve**         | Négociation sur une courbe de prix ($x \cdot y = k$). Environ 714,3 M de tokens (71,43 %) sont vendus sur la courbe ; à 4,2 ETH levés, le marché est migré vers un pool Uniswap v4 verrouillé contenant les ~285,7 M restants. | Tokens communautaires et mèmes.                                  |
+| **Arc : Uniswap v4 dès le lancement** | Toute l'offre est placée en liquidité unilatérale dans un pool Uniswap v4 dès le premier bloc (valeur d'ouverture ≈ 2 480 $). Le token est gradué dans le pool au-delà de ≈ 45 000 $ de capitalisation, sans migration.        | Tokens destinés à être échangés sur Uniswap dès le premier bloc. |

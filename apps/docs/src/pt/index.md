@@ -25,8 +25,8 @@ features:
     details: Limites automáticos impedem que robôs comprem todo o fornecimento inicial, garantindo igualdade para a comunidade.
   - title: 70% de Recompensas para Criadores
     details: Os criadores recebem 70% das taxas de negociação acumuladas de forma contínua.
-  - title: Recompra e Queima Automáticas
-    details: 80% da receita do protocolo é usada automaticamente para recomprar e queimar tokens via Uniswap TWAP.
+  - title: Recompra e Queima
+    details: 'Os criadores podem destinar parte da sua fatia de taxas para recompra e queima: um contrato compra o token no próprio pool, protegido por um TWAP de 30 minutos, e o envia para o endereço morto.'
   - title: Rápido e de Baixo Custo
     details: Operando na Robinhood Chain L2 e Arc Network para confirmações quase instantâneas com taxas mínimas.
 ---

@@ -16,6 +16,7 @@ Es bietet eine sichere und transparente Plattform, auf der jeder digitale Vermö
 
 ## Zwei einfache Startmodelle
 
-| Modell               | Funktionsweise                                                                                                                                          | Ideal für                                                 |
-| :------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------ | :-------------------------------------------------------- |
-| **v2 Bonding Curve** | Startet auf einer dynamischen Preiskurve ($x \cdot y = k$) und migriert automatisch zu Uniswap, sobald das Ziel (4.2 ETH oder 8.400 USDC) erreicht ist. | Community- und Meme-Token mit schrittweiser Preisfindung. |
+| Modell                       | Funktionsweise                                                                                                                                                                                                          | Ideal für                                                  |
+| :--------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------- |
+| **Robinhood: Bonding Curve** | Handel auf einer Preiskurve ($x \cdot y = k$). Rund 714,3 Mio. Token (71,43 %) werden auf der Kurve verkauft; bei 4,2 ETH graduiert der Markt in einen gesperrten Uniswap-v4-Pool mit den restlichen ~285,7 Mio. Token. | Community- und Meme-Token mit schrittweiser Preisfindung.  |
+| **Arc: Uniswap v4 ab Start** | Das gesamte Angebot liegt ab dem ersten Block als einseitige Liquidität in einem Uniswap-v4-Pool (Startwert ≈ 2.480 $). Ab ≈ 45.000 $ Marktkapitalisierung graduiert der Token im Pool – ohne Migration.                | Token, die ab dem ersten Block auf Uniswap handeln sollen. |

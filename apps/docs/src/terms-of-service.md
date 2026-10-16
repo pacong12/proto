@@ -18,7 +18,7 @@ Proto is a decentralized, non-custodial software protocol. Proto Labs does not t
 
 ## 3. Fee Structure & Protocol Rules
 
-- **Launch Fee**: A fixed protocol fee of `0.0005 ETH` is required upon deploying a token to cover contract deployment and liquidity lock initialization.
+- **Launch Fee**: A fixed protocol fee of `0.0005 ETH` on Robinhood Chain or `0 USDC` on Arc Network (free launch with minimum 4.50 USDC initial pre-buy) is required upon deploying a token to cover contract deployment and liquidity lock initialization.
 - **Liquidity Lock**: Liquidity pool NFTs created by the Factory are permanently locked in the non-custodial `LiquidityLocker` contract. No party, including Proto Labs, possesses backdoors or unlock functions.
 - **Trading Fee Split**: Standard trading fees generated in liquidity pools are split 70% to the token creator (or designated community takeover wallet) and 30% to protocol maintenance and automated buybacks.
 

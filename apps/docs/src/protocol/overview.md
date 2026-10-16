@@ -19,9 +19,10 @@ In typical crypto launchpads, everyday users face multiple common risks:
 
 ---
 
-## Launch Architecture: Pure Bonding Curve
+## Launch Architecture by Chain
 
-Proto tokens launch on a dynamic price curve. 800M tokens are sold gradually as buyers enter. Once the graduation target (4.2 ETH on Robinhood or 69,000 USDC on Arc) is raised, the market automatically graduates to permanently locked DEX liquidity.
+- **Robinhood Chain**: tokens trade on a bonding curve. About 714.3M tokens (71.43% of supply) are sold on the curve; once 4.2 ETH is raised, anyone can graduate the market into a permanently locked Uniswap v4 pool holding the remaining ~285.7M tokens.
+- **Arc Network**: there is no separate curve. The full supply sits as single-sided liquidity in a Uniswap v4 pool from the first block (opening value ≈ $2,480). The token graduates in-pool once its market cap passes ≈ $45,000; nothing migrates and the liquidity stays locked.
 
 ---
 
