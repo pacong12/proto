@@ -45,6 +45,7 @@ library V4Lib {
     }
 
     /// @notice Liquidity for a position holding only currency0 (current price at or below the range). Rounds down.
+    // slither-disable-next-line divide-before-multiply (intentional rounding; see docs/audit/AUDIT-VERIFICATION.md)
     function liquidityForAmount0(uint160 sqrtLower, uint160 sqrtUpper, uint256 amount) internal pure returns (uint128) {
         uint256 intermediate = (amount * sqrtLower) / Q96;
         return _toUint128((intermediate * sqrtUpper) / (sqrtUpper - sqrtLower));

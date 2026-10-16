@@ -200,6 +200,7 @@ contract GotonFeeSplitter {
         return block.timestamp < periodFinish ? block.timestamp : periodFinish;
     }
 
+    // slither-disable-next-line incorrect-equality (exact zero / same-block / sold-out checks; see docs/audit/AUDIT-VERIFICATION.md)
     function rewardPerToken() public view returns (uint256) {
         uint256 t = lastTimeRewardApplicable();
         uint256 circulating = circulatingSupply();
@@ -294,6 +295,7 @@ contract GotonFeeSplitter {
     // Internal
     // ---------------------------------------------------------------------------
 
+    // slither-disable-next-line divide-before-multiply (intentional rounding; see docs/audit/AUDIT-VERIFICATION.md)
     function _notifyHolders(uint256 amount) private {
         _updateStream();
         uint256 leftover = block.timestamp < periodFinish ? (periodFinish - block.timestamp) * rewardRate : 0;
@@ -318,7 +320,7 @@ contract GotonFeeSplitter {
         return account == poolManager || account == DEAD || (excluded != address(0) && account == excluded);
     }
 
-    // slither-disable-next-line arbitrary-send-eth (recipients are the configured protocol/creator/holder addresses)
+    // slither-disable-next-line arbitrary-send-eth,incorrect-equality (recipients are the configured protocol/creator/holder addresses) (exact zero / same-block / sold-out checks; see docs/audit/AUDIT-VERIFICATION.md)
     function _send(address to, uint256 amount) private {
         if (amount == 0) return;
         if (quoteAsset == address(0)) {

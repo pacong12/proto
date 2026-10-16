@@ -14,6 +14,7 @@ library TickMath {
 
     error InvalidTick(int24 tick);
 
+    // slither-disable-next-line divide-before-multiply (intentional rounding; see docs/audit/AUDIT-VERIFICATION.md)
     function getSqrtPriceAtTick(int24 tick) internal pure returns (uint160 sqrtPriceX96) {
         unchecked {
             uint256 absTick = tick < 0 ? uint256(-int256(tick)) : uint256(int256(tick));

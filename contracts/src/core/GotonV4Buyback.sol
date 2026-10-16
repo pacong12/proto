@@ -89,6 +89,7 @@ contract GotonV4Buyback is IUnlockCallback {
      * @return spent Quote spent in this call.
      * @return burned Tokens sent to 0xdEaD.
      */
+    // slither-disable-next-line reentrancy-no-eth,unused-return (guarded by nonReentrant / onlyPoolManager / trusted caller; unused tuple fields; see docs/audit/AUDIT-VERIFICATION.md)
     function buyback(PoolKey calldata key) external nonReentrant returns (uint256 spent, uint256 burned) {
         if (key.hooks != address(hook)) revert UnknownPool();
         bytes32 id = key.toId();
@@ -132,6 +133,7 @@ contract GotonV4Buyback is IUnlockCallback {
         emit BuybackExecuted(token, spent, burned, twapTick);
     }
 
+    // slither-disable-next-line unused-return (unused tuple fields; see docs/audit/AUDIT-VERIFICATION.md)
     function unlockCallback(bytes calldata data) external returns (bytes memory) {
         if (msg.sender != address(poolManager)) revert Unauthorized();
         SwapRequest memory r = abi.decode(data, (SwapRequest));

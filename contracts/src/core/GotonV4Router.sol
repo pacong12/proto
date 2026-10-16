@@ -104,6 +104,7 @@ contract GotonV4Router is IUnlockCallback {
         }
     }
 
+    // slither-disable-next-line unused-return (unused tuple fields; see docs/audit/AUDIT-VERIFICATION.md)
     function unlockCallback(bytes calldata data) external returns (bytes memory) {
         if (msg.sender != address(poolManager)) revert Unauthorized();
         SwapData memory s = abi.decode(data, (SwapData));
