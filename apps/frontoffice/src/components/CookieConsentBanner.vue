@@ -3,10 +3,9 @@ import { ref, onMounted } from 'vue';
 import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-vue-next';
+import { COOKIE_CONSENT_KEY, loadAnalytics } from '@/lib/analytics';
 
 const { t } = useI18n();
-
-const COOKIE_CONSENT_KEY = 'proto_cookie_consent_accepted_v1';
 
 const visible = ref(false);
 
@@ -29,6 +28,7 @@ function acceptCookies() {
     } catch {
       // Non-blocking
     }
+    loadAnalytics();
   }
   visible.value = false;
 }

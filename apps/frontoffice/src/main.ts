@@ -4,6 +4,7 @@ import { router } from './router';
 import './style.css';
 import 'vue-sonner/style.css';
 import './lib/appkit';
+import { initAnalytics } from './lib/analytics';
 
 const app = createApp(App);
 
@@ -35,3 +36,4 @@ router.afterEach((to) => {
 
 app.use(router);
 app.mount('#app');
+initAnalytics();
