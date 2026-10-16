@@ -28,6 +28,9 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Findings are printed in the job log and summary; the SARIF artifact upload only failed
+          # the job whenever the account's artifact storage quota was full.
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: false
 
   slither:
     name: Slither Smart Contract Static Analysis
