@@ -15,7 +15,8 @@ jobs:
       - name: Run Release Please
         uses: google-github-actions/release-please-action@v4
         with:
-          release-type: node
+          # No `release-type` here: setting it makes the action ignore the config and manifest files
+          # below and treat every run as the first release.
           config-file: .github/release-please-config.json
           manifest-file: .github/.release-please-manifest.json
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
