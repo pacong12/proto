@@ -3,36 +3,38 @@ pragma solidity ^0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
 import {LaunchpadV2FactoryArc} from "../../src/chains/arc/LaunchpadV2FactoryArc.sol";
-import {LiquidityLocker} from "../../src/legacy/LiquidityLocker.sol";
+import {ProtoV4Hook} from "../../src/core/ProtoV4Hook.sol";
+import {ProtoFeeSplitterDeployer} from "../../src/core/ProtoFeeSplitter.sol";
+import {ProtoV4Router} from "../../src/core/ProtoV4Router.sol";
+import {ProtoV4Buyback} from "../../src/core/ProtoV4Buyback.sol";
+import {HookMiner} from "../lib/HookMiner.sol";
+import {IPoolManagerV4} from "../../src/interfaces/external/IUniswapV4Core.sol";
 
 /**
  * @title DeployArc
- * @notice Deployment script for Arc Network (Chain ID: 5042).
- *
- * Arc Network Standard:
- *   - Native gas: USDC (18 decimals native msg.value)
- *   - Launch fee: 1.00 USDC (1 ether)
- *   - Opening FDV: $24,420 USDC
- *   - Graduation target: $69,000 USDC
- *   - Virtual USDC reserve: 24,420 ether
- *   - Virtual token reserve: 1,000,000,000 * 1e18
- *   - Curve allocation: 738,600,000 tokens (73.86%)
- *   - Pool allocation: 261,400,000 tokens (26.14%)
+ * @notice Deploys Proto's in-pool Uniswap v4 launch stack on Arc Network (Chain ID: 5042):
+ *           1. ProtoV4Hook via CREATE2 at an address whose low bits equal its permission
+ *              flags (0x20CC), mined in this script.
+ *           2. ProtoFeeSplitterDeployer + LaunchpadV2FactoryArc (Argus portal defaults: open tick 405400, bond tick 376400,
+ *              4.50 USDC min prebuy, 5% max dev buy, 30% protocol cut, 0 launch fee).
+ *           3. hook.setFactory(factory).
+ *           4. ProtoV4Router (frontend swaps; accepts native USDC msg.value for buys).
+ *           5. ProtoV4Buyback, set as the factory's buyback vault (TWAP-guarded buyback-and-burn).
  *
  * Usage:
- *   forge script contracts/script/DeployArc.s.sol \
+ *   forge script contracts/script/arc/DeployArc.s.sol \
  *     --rpc-url https://rpc.mainnet.arc.io \
  *     --broadcast \
  *     --private-key $PRIVATE_KEY
  *
  * Env vars (optional overrides):
- *   PRIVATE_KEY               - hex private key (no 0x prefix)
- *   MNEMONIC                  - BIP-39 mnemonic (alternative to PRIVATE_KEY)
- *   PROTOCOL_FEE_RECIPIENT    - override fee recipient address
- *   LIQUIDITY_LOCKER_ADDRESS  - use existing locker (skips LiquidityLocker deploy)
+ *   PRIVATE_KEY / MNEMONIC     - deployer key
+ *   PROTOCOL_FEE_RECIPIENT     - treasury (also default buyback & liquidity vault)
+ *   ARC_POOL_MANAGER_V4        - Uniswap v4 PoolManager
+ *   ARC_USDC                   - USDC ERC-20 (6 decimals)
  */
 contract DeployArc is Script {
-    function run() external returns (address factoryAddress, address lockerAddress) {
+    function run() external returns (address factoryAddress, address hookAddress, address routerAddress) {
         uint256 deployerPrivateKey;
         address deployer;
         bool hasExplicitKey = false;
@@ -51,40 +53,19 @@ contract DeployArc is Script {
             }
         }
 
-        address feeRecipient;
-        try vm.envAddress("PROTOCOL_FEE_RECIPIENT") returns (address r) {
-            feeRecipient = r;
-        } catch {
-            feeRecipient = 0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2;
-        }
+        address payable feeRecipient =
+            payable(vm.envOr("PROTOCOL_FEE_RECIPIENT", address(0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2)));
+        IPoolManagerV4 poolManager =
+            IPoolManagerV4(vm.envOr("ARC_POOL_MANAGER_V4", address(0x8366a39CC670B4001A1121B8F6A443A643e40951)));
+        address usdc = vm.envOr("ARC_USDC", address(0x3600000000000000000000000000000000000000));
 
-        address positionManager;
-        try vm.envAddress("POSITION_MANAGER") returns (address pm) {
-            positionManager = pm;
-        } catch {
-            positionManager = 0x39654A85A4C05127f5Fd6ED22CAeC077A0fB1377;
-        }
+        (bytes32 hookSalt,) = HookMiner.mine(poolManager, deployer);
 
-        address weth;
-        try vm.envAddress("WETH_ADDRESS") returns (address w) {
-            weth = w;
-        } catch {
-            // Native USDC standard on Arc Network
-            weth = 0x3600000000000000000000000000000000000000;
-        }
-
-        address existingLocker;
-        bool hasExistingLocker = false;
-        try vm.envAddress("LIQUIDITY_LOCKER_ADDRESS") returns (address l) {
-            existingLocker = l;
-            hasExistingLocker = true;
-        } catch {}
-
-        console.log("=== ARC NETWORK PROTO DEPLOYER ===");
+        console.log("=== ARC NETWORK PROTO V4 DEPLOYER ===");
         console.log("Chain ID          :", block.chainid);
         console.log("Deployer          :", deployer);
         console.log("Fee Recipient     :", feeRecipient);
-        console.log("Has existing locker:", hasExistingLocker);
+        console.log("PoolManager       :", address(poolManager));
 
         if (hasExplicitKey) {
             vm.startBroadcast(deployerPrivateKey);
@@ -92,31 +73,35 @@ contract DeployArc is Script {
             vm.startBroadcast();
         }
 
-        // 1. Deploy LiquidityLocker if not provided
-        if (hasExistingLocker) {
-            lockerAddress = existingLocker;
-            console.log("Reusing locker    :", lockerAddress);
-        } else {
-            LiquidityLocker locker = new LiquidityLocker(positionManager, weth, feeRecipient);
-            lockerAddress = address(locker);
-            console.log("LiquidityLocker   :", lockerAddress);
-        }
-
-        // 2. Deploy LaunchpadV2FactoryArc with Arc Standard constants (sovereign Uniswap V3)
-        LaunchpadV2FactoryArc factory = new LaunchpadV2FactoryArc(
-            payable(feeRecipient),
-            lockerAddress
-        );
-        factoryAddress = address(factory);
+        (factoryAddress, hookAddress, routerAddress) = _deploy(poolManager, usdc, feeRecipient, deployer, hookSalt);
 
         vm.stopBroadcast();
 
         console.log("=== DEPLOYMENT COMPLETE ===");
         console.log("LaunchpadV2FactoryArc :", factoryAddress);
-        console.log("LiquidityLocker       :", lockerAddress);
-        console.log("Fee Recipient         :", feeRecipient);
-        console.log("Launch Fee            :", factory.launchFee(), "wei (1.00 USDC)");
-        console.log("Graduation Target     :", factory.GRADUATION_TARGET(), "wei (69,000 USDC)");
-        console.log("Virtual USDC Reserve  :", factory.VIRTUAL_USDC_RESERVE(), "wei (4,200 USDC)");
+        console.log("ProtoV4Hook           :", hookAddress);
+        console.log("ProtoV4Router         :", routerAddress);
+        LaunchpadV2FactoryArc factory = LaunchpadV2FactoryArc(factoryAddress);
+        console.log("Opening tick          :", uint256(int256(factory.initialTick())), "(~$2,480 FDV)");
+        console.log("Bond tick             :", uint256(int256(factory.bondTick())), "(~$45,079 FDV)");
+        console.log("Min prebuy (USDC 6dp) :", factory.minPrebuyUsdc6());
+    }
+
+    function _deploy(
+        IPoolManagerV4 poolManager,
+        address usdc,
+        address payable feeRecipient,
+        address deployer,
+        bytes32 hookSalt
+    ) internal returns (address factory, address hook, address router) {
+        ProtoV4Hook protoHook = new ProtoV4Hook{salt: hookSalt}(poolManager, deployer);
+        factory = address(
+            new LaunchpadV2FactoryArc(poolManager, usdc, protoHook, new ProtoFeeSplitterDeployer(), feeRecipient)
+        );
+        protoHook.setFactory(factory);
+        hook = address(protoHook);
+        router = address(new ProtoV4Router(poolManager, usdc, 1e12));
+        ProtoV4Buyback buyback = new ProtoV4Buyback(poolManager, protoHook);
+        LaunchpadV2FactoryArc(factory).setRecipients(feeRecipient, address(buyback), feeRecipient);
     }
 }
