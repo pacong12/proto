@@ -59,3 +59,7 @@ apps/docs/.vitepress/cache/
 # Uploaded IPFS files
 uploads/
 apps/api/uploads/
+
+# Playwright output
+test-results/
+playwright-report/

@@ -1,10 +1,18 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Goton Frontoffice User Journeys', () => {
+  // A returning visitor: the first-visit privacy dialog and cookie banner would cover the page.
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('proto_privacy_policy_accepted_v1', 'true');
+      localStorage.setItem('proto_cookie_consent_accepted_v1', 'true');
+    });
+  });
+
   test('User can navigate between Explore, Create Token, and Analytics', async ({ page }) => {
     // 1. Visit Explore / Landing Page
     await page.goto('/');
-    await expect(page).toHaveTitle(/proto/i);
+    await expect(page).toHaveTitle(/goton/i);
 
     // Verify brand logo and navigation
     const brand = page.locator('header').getByText('goton', { exact: true });
@@ -33,13 +41,13 @@ test.describe('Goton Frontoffice User Journeys', () => {
     await expect(connectButton).toBeVisible();
     await connectButton.click();
 
-    // Verify modal overlay opens
-    const modal = page.locator('[role="dialog"], .fixed.inset-0');
+    // Without a Reown project id the built-in wallet dialog opens.
+    const modal = page.getByRole('dialog');
     await expect(modal.first()).toBeVisible();
 
     // Press Escape to dismiss
     await page.keyboard.press('Escape');
-    await expect(page.locator('.fixed.inset-0')).not.toBeVisible();
+    await expect(modal).toHaveCount(0);
   });
 
   test('Search Dialog triggers with shortcut and filters tokens', async ({ page }) => {
@@ -48,12 +56,13 @@ test.describe('Goton Frontoffice User Journeys', () => {
     // Press Cmd+K or Ctrl+K
     await page.keyboard.press('Control+K');
 
-    // Verify search input appears
-    const searchInput = page.getByPlaceholder(/search/i);
-    if (await searchInput.isVisible()) {
-      await searchInput.fill('GOTON');
-      await page.keyboard.press('Escape');
-    }
+    // The dialog's input (the Explore page has its own filter field).
+    const searchInput = page.getByPlaceholder(/search tokens by name/i);
+    await expect(searchInput).toBeVisible();
+    await searchInput.fill('GOTON');
+    await expect(searchInput).toHaveValue('GOTON');
+    await page.keyboard.press('Escape');
+    await expect(searchInput).toBeHidden();
   });
 
   test('Mobile viewport: Header and navigation drawer function without horizontal overflow', async ({
@@ -93,7 +102,7 @@ test.describe('Goton Frontoffice User Journeys', () => {
     await expect(searchBtn).toBeVisible();
     await searchBtn.click();
 
-    const searchInput = page.getByPlaceholder(/search/i);
+    const searchInput = page.getByPlaceholder(/search tokens by name/i);
     await expect(searchInput).toBeVisible();
 
     // Close search dialog using mobile close button

@@ -1,6 +1,9 @@
 <template>
   <div
     class="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-xs p-4"
+    role="dialog"
+    aria-modal="true"
+    :aria-label="t('connectWallet')"
     @click.self="close"
   >
     <Card
