@@ -4,15 +4,19 @@ pragma solidity ^0.8.24;
 import {LaunchpadToken} from "../../core/LaunchpadToken.sol";
 import {ILaunchpadToken} from "../../interfaces/ILaunchpadToken.sol";
 import {BondingCurve} from "../../core/BondingCurve.sol";
+import {ProtoV4Graduator} from "../../core/ProtoV4Graduator.sol";
 
 /**
  * @title LaunchpadV2Factory
  * @notice Factory for launching tokens on the V2 bonding curve architecture.
  *
+ * Graduation is trustless: once a curve reaches its target anyone may call `graduate(token)`,
+ * which moves the curve's ETH and tokens into a locked native-ETH Uniswap v4 pool through
+ * ProtoV4Graduator. There is no owner-chosen migration recipient.
+ *
  * Security notes:
- *   - C-03 fix: constructor validates that feeRecipient and locker are non-zero.
- *   - C-02 fix: exposes migrateToV4() and emergencyWithdraw() pass-throughs so the
- *               factory owner can act as the authorised caller on deployed curves.
+ *   - C-03 fix: constructor validates that feeRecipient and graduator are non-zero.
+ *   - emergencyWithdrawFromCurve only applies to graduated curves left unmigrated past the deadline.
  *   - CEI pattern: state storage and event emission precede external fee transfer and curve buy.
  *   - nonReentrant guard on launchTokenV2.
  *   - CREATE2 deploy: token and curve bytecode contains no constructor args, enabling
@@ -25,9 +29,7 @@ contract LaunchpadV2Factory {
     uint256 public constant VIRTUAL_TOKEN_RESERVE = 1_000_000_000 * 1e18;
 
     address payable public immutable protocolFeeRecipient;
-    address public immutable defaultLocker;
-    address public immutable poolManagerV4;
-    address public immutable memeHook;
+    ProtoV4Graduator public immutable graduator;
 
     address public owner;
     address public pendingOwner;
@@ -58,6 +60,7 @@ contract LaunchpadV2Factory {
         string symbol,
         uint256 initialBuy
     );
+    event TokenGraduated(address indexed token, bytes32 indexed poolId, address splitter);
     event LaunchFeeUpdated(uint256 oldFee, uint256 newFee);
     event OwnershipTransferProposed(address indexed proposed);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
@@ -68,6 +71,8 @@ contract LaunchpadV2Factory {
     error Unauthorized();
     error NoPendingOwner();
     error NotFactory();
+    error NotGraduated();
+    error UnknownToken();
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert Unauthorized();
@@ -81,16 +86,17 @@ contract LaunchpadV2Factory {
         _locked = false;
     }
 
-    constructor(address payable _feeRecipient, address _locker, address _poolManagerV4, address _memeHook) {
+    constructor(address payable _feeRecipient, ProtoV4Graduator _graduator) {
         // C-03 fix: validate all addresses that receive value or tokens.
-        if (_feeRecipient == address(0) || _locker == address(0)) revert ZeroAddress();
+        if (_feeRecipient == address(0) || address(_graduator) == address(0)) revert ZeroAddress();
 
         protocolFeeRecipient = _feeRecipient;
-        defaultLocker = _locker;
-        poolManagerV4 = _poolManagerV4;
-        memeHook = _memeHook;
+        graduator = _graduator;
         owner = msg.sender;
     }
+
+    /// @dev Receives BondingCurve refunds when a creator's initial buy hits the curve cap (S4).
+    receive() external payable {}
 
     function setLaunchFee(uint256 _newFee) external onlyOwner {
         uint256 oldFee = launchFee;
@@ -141,9 +147,7 @@ contract LaunchpadV2Factory {
     }
 
     function _predict(bytes memory creationCode, bytes32 salt) internal view returns (address) {
-        bytes32 hash = keccak256(
-            abi.encodePacked(bytes1(0xff), address(this), salt, keccak256(creationCode))
-        );
+        bytes32 hash = keccak256(abi.encodePacked(bytes1(0xff), address(this), salt, keccak256(creationCode)));
         return address(uint160(uint256(hash)));
     }
 
@@ -196,8 +200,8 @@ contract LaunchpadV2Factory {
             GRADUATION_TARGET,
             VIRTUAL_ETH_RESERVE,
             VIRTUAL_TOKEN_RESERVE,
-            poolManagerV4,
-            memeHook
+            address(graduator.poolManager()),
+            address(graduator.hook())
         );
 
         bool tokenSent = token.transfer(curveAddress, token.totalSupply());
@@ -224,34 +228,42 @@ contract LaunchpadV2Factory {
         if (initialBuyEth > 0) {
             uint256 tokensBought = curve.buyFor{value: initialBuyEth}(msg.sender, minInitialTokensOut);
             require(tokensBought >= minInitialTokensOut, "Slippage");
+            // S4: forward any cap-reached refund the curve sent back to this factory.
+            uint256 refund = address(this).balance;
+            if (refund > 0) {
+                (bool refundOk,) = payable(msg.sender).call{value: refund}("");
+                if (!refundOk) revert TransferFailed();
+            }
         }
 
         token.setLiquidityPool(curveAddress);
     }
 
     // ---------------------------------------------------------------------------
-    // Migration management (C-02 fix)
+    // Graduation
     // ---------------------------------------------------------------------------
 
     /**
-     * @notice Trigger liquidity migration for a graduated bonding curve to DEX locker.
-     *         Only callable by owner.
-     * @dev F-11 fix: updates launches[token].graduated to true after successful migration.
+     * @notice Moves a graduated curve's liquidity into its locked Uniswap v4 pool. Permissionless.
      */
-    function migrateCurve(address curve, address payable recipient) public onlyOwner {
-        BondingCurve(payable(curve)).migrateToV4(recipient);
-        address token = curveToToken[curve];
-        if (token != address(0)) {
-            launches[token].graduated = true;
-        }
-    }
+    function graduate(address tokenAddress)
+        external
+        nonReentrant
+        returns (bytes32 poolId, address splitter)
+    {
+        V2Launch storage launch = launches[tokenAddress];
+        if (launch.curve == address(0)) revert UnknownToken();
+        BondingCurve curve = BondingCurve(payable(launch.curve));
+        if (!curve.graduated()) revert NotGraduated();
 
-    function migrateCurveToV3(address curve, address payable recipient) external onlyOwner {
-        migrateCurve(curve, recipient);
-    }
+        uint160 sqrtPriceX96 = curve.graduationSqrtPriceX96();
+        curve.migrateLiquidity(payable(address(graduator)));
+        (poolId, splitter) = graduator.graduate(tokenAddress, launch.creator, launch.curve, sqrtPriceX96);
 
-    function migrateCurveToV4(address curve, address payable recipient) external onlyOwner {
-        migrateCurve(curve, recipient);
+        // Holder dividends from LP fees are checkpointed on every transfer from now on.
+        LaunchpadToken(tokenAddress).setRewardTracker(splitter);
+        launch.graduated = true;
+        emit TokenGraduated(tokenAddress, poolId, splitter);
     }
 
     /**

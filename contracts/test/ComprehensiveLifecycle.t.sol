@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {TestGraduator} from "./utils/TestGraduator.sol";
 import {Test, console} from "forge-std/Test.sol";
 import {LaunchpadFactory} from "../src/legacy/LaunchpadFactory.sol";
 import {LaunchpadV2Factory} from "../src/chains/robinhood/LaunchpadV2Factory.sol";
@@ -63,7 +64,7 @@ contract ComprehensiveLifecycleTest is Test {
         locker = LiquidityLocker(factoryV1.locker());
 
         // 2. Deploy Factory V2 (Bonding Curve)
-        factoryV2 = new LaunchpadV2Factory(protocolTreasury, address(locker), address(0), address(0));
+        factoryV2 = new LaunchpadV2Factory(protocolTreasury, TestGraduator.deploy(protocolTreasury));
 
         // 3. Deploy Holder Fee Distributor & Vesting Vault
         feeDistributor = new HolderFeeDistributor(address(weth), address(locker));

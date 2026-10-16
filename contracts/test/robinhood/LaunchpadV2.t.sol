@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {TestGraduator} from "../utils/TestGraduator.sol";
 import {Test} from "forge-std/Test.sol";
 import {LaunchpadV2Factory} from "../../src/chains/robinhood/LaunchpadV2Factory.sol";
 import {BondingCurve} from "../../src/core/BondingCurve.sol";
@@ -59,7 +60,7 @@ contract LaunchpadV2Test is Test {
 
     function setUp() public {
         // C-03 fix: feeRecipient and locker must be non-zero.
-        factory = new LaunchpadV2Factory(feeRecipient, mockLocker, address(0), address(0));
+        factory = new LaunchpadV2Factory(feeRecipient, TestGraduator.deploy(feeRecipient));
         vm.deal(creator, 100 ether);
         vm.deal(buyer1, 100 ether);
     }
@@ -249,11 +250,6 @@ contract LaunchpadV2Test is Test {
         vm.expectRevert(LaunchpadV2Factory.Unauthorized.selector);
         factory.transferOwnership(nonOwner);
 
-        // Non-owner cannot call migrateCurveToV4
-        vm.prank(nonOwner);
-        vm.expectRevert(LaunchpadV2Factory.Unauthorized.selector);
-        factory.migrateCurveToV4(address(0x1), payable(nonOwner));
-
         // Non-owner cannot call emergencyWithdrawFromCurve
         vm.prank(nonOwner);
         vm.expectRevert(LaunchpadV2Factory.Unauthorized.selector);
@@ -273,7 +269,7 @@ contract LaunchpadV2Test is Test {
     function test_LaunchTokenV2_ReentrancyGuardAndCEI() public {
         ReentrantAttackerRecipient attacker = new ReentrantAttackerRecipient();
         LaunchpadV2Factory factoryWithAttacker =
-            new LaunchpadV2Factory(payable(address(attacker)), mockLocker, address(0), address(0));
+            new LaunchpadV2Factory(payable(address(attacker)), TestGraduator.deploy(payable(address(attacker))));
         attacker.setFactory(factoryWithAttacker);
 
         vm.prank(creator);
@@ -295,7 +291,7 @@ contract LaunchpadV2Test is Test {
     function test_LaunchTokenV2_FeeTransferFailureReverts() public {
         RejectingFeeRecipient rejecter = new RejectingFeeRecipient();
         LaunchpadV2Factory factoryReject =
-            new LaunchpadV2Factory(payable(address(rejecter)), mockLocker, address(0), address(0));
+            new LaunchpadV2Factory(payable(address(rejecter)), TestGraduator.deploy(payable(address(rejecter))));
         vm.prank(creator);
         vm.expectRevert(LaunchpadV2Factory.TransferFailed.selector);
         factoryReject.launchTokenV2{value: 0.0005 ether}("Fail", "FAIL", "", "", "", "", "", 0);
@@ -323,8 +319,7 @@ contract LaunchpadV2Test is Test {
 
         // Launching with 1.0 ether succeeds
         vm.prank(creator);
-        (address tokenAddress,) =
-            factory.launchTokenV2{value: 1.0 ether}("Arc Token", "ARC", "", "", "", "", "", 0);
+        (address tokenAddress,) = factory.launchTokenV2{value: 1.0 ether}("Arc Token", "ARC", "", "", "", "", "", 0);
         assertNotEq(tokenAddress, address(0));
     }
 
@@ -393,5 +388,53 @@ contract LaunchpadV2Test is Test {
         // Spent amount should be ~4.24 ETH (4.2 ETH net + 1% fee), not 10 ETH!
         assertLt(ethSpent, 5 ether, "Excess ETH must be refunded to buyer");
         assertGt(ethSpent, 4 ether, "Curve target must be fully paid");
+    }
+
+    /// @dev S4: a creator initial buy that hits the curve cap is refunded instead of reverting.
+    function test_InitialBuyReachingCapRefundsCreator() public {
+        uint256 before = creator.balance;
+        vm.prank(creator);
+        (, address curveAddress) =
+            factory.launchTokenV2{value: 0.0005 ether + 10 ether}("Cap", "CAP", "", "", "", "", "", 0);
+        BondingCurve curve = BondingCurve(payable(curveAddress));
+        assertTrue(curve.graduated());
+        uint256 spent = before - creator.balance;
+        assertLt(spent, 6 ether, "excess over the cap was refunded");
+        assertEq(address(factory).balance, 0);
+    }
+
+    /// @dev Active curves can never be emptied by the owner, even after the deadline.
+    function test_EmergencyWithdrawRejectsActiveCurve() public {
+        vm.prank(creator);
+        (, address curveAddress) =
+            factory.launchTokenV2{value: 0.0005 ether + 0.1 ether}("A", "A", "", "", "", "", "", 0);
+        vm.warp(block.timestamp + 400 days);
+        vm.expectRevert(BondingCurve.NotGraduated.selector);
+        factory.emergencyWithdrawFromCurve(curveAddress, payable(address(this)));
+    }
+
+    function test_GraduateRejectsUnknownAndActiveTokens() public {
+        vm.expectRevert(LaunchpadV2Factory.UnknownToken.selector);
+        factory.graduate(address(0xBEEF));
+        vm.prank(creator);
+        (address tokenAddress,) = factory.launchTokenV2{value: 0.0005 ether}("B", "B", "", "", "", "", "", 0);
+        vm.expectRevert(LaunchpadV2Factory.NotGraduated.selector);
+        factory.graduate(tokenAddress);
+    }
+
+    /// @dev S18: the instant initial tax is locked once a third party has bought.
+    function test_InitialTaxLockedAfterFirstPublicBuy() public {
+        vm.prank(creator);
+        (address tokenAddress, address curveAddress) =
+            factory.launchTokenV2{value: 0.0005 ether}("T", "T", "", "", "", "", "", 0);
+        vm.roll(block.number + 1);
+        vm.warp(block.timestamp + 10);
+        vm.deal(buyer1, 1 ether);
+        vm.prank(buyer1);
+        BondingCurve(payable(curveAddress)).buy{value: 0.01 ether}(0);
+
+        vm.prank(creator);
+        vm.expectRevert(LaunchpadToken.TimelockNotExpired.selector);
+        LaunchpadToken(tokenAddress).setInitialTaxConfig(0, 1_000, creator);
     }
 }
