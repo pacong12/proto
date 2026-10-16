@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Run Trivy Vulnerability Scanner (Repository)
         # Pinned by SHA: trivy-action tags were rewritten in March 2026 (CVE-2026-33634).
