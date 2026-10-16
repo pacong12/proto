@@ -11,6 +11,7 @@
     "source-map-js": "^1.2.2"
   },
   "scripts": {
+    "prepare": "sh scripts/setup-git-hooks.sh || true",
     "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
     "typecheck": "bun run --filter '*' typecheck",
