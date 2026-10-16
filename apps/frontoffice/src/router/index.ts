@@ -93,7 +93,8 @@ export const router = createRouter({
     },
     {
       path: '/:pathMatch(.*)*',
-      redirect: '/launchpad',
+      name: 'not-found',
+      component: () => import('@/pages/NotFoundPage.vue'),
     },
   ],
 });

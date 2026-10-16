@@ -368,6 +368,11 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     eraseDataConfirm:
       'This permanently deletes your comments, likes, sentiment votes and profile. On-chain trades and launches are public and cannot be deleted.',
     eraseDataDone: 'Your social data has been deleted',
+    notFoundTitle: 'Page not found',
+    notFoundBody: 'The page you are looking for does not exist or has moved.',
+    notFoundHome: 'Back to launchpad',
+    notFoundBack: 'Go back',
+    notFoundDocs: 'Read the docs',
   },
   id: {
     explore: 'Jelajahi',
@@ -704,6 +709,11 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     eraseDataConfirm:
       'Ini menghapus permanen komentar, like, vote sentimen, dan profil Anda. Transaksi dan peluncuran on-chain bersifat publik dan tidak dapat dihapus.',
     eraseDataDone: 'Data sosial Anda telah dihapus',
+    notFoundTitle: 'Halaman tidak ditemukan',
+    notFoundBody: 'Halaman yang Anda cari tidak ada atau sudah dipindahkan.',
+    notFoundHome: 'Kembali ke launchpad',
+    notFoundBack: 'Kembali',
+    notFoundDocs: 'Baca dokumentasi',
   },
   zh: {
     explore: '探索',
@@ -1028,6 +1038,11 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     eraseDataConfirm:
       '这将永久删除您的评论、点赞、情绪投票和个人资料。链上交易和发行记录是公开的，无法删除。',
     eraseDataDone: '您的社交数据已删除',
+    notFoundTitle: '页面未找到',
+    notFoundBody: '您访问的页面不存在或已被移动。',
+    notFoundHome: '返回 Launchpad',
+    notFoundBack: '返回上一页',
+    notFoundDocs: '查看文档',
   },
   ja: {
     explore: '見つける',
@@ -1360,6 +1375,11 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     eraseDataConfirm:
       'コメント、いいね、センチメント投票、プロフィールを完全に削除します。オンチェーンの取引とローンチは公開情報のため削除できません。',
     eraseDataDone: 'ソーシャルデータを削除しました',
+    notFoundTitle: 'ページが見つかりません',
+    notFoundBody: 'お探しのページは存在しないか、移動されました。',
+    notFoundHome: 'Launchpadに戻る',
+    notFoundBack: '前のページへ',
+    notFoundDocs: 'ドキュメントを読む',
   },
   ko: {
     explore: '탐색',
@@ -1689,6 +1709,11 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     eraseDataConfirm:
       '댓글, 좋아요, 심리 투표, 프로필이 영구 삭제됩니다. 온체인 거래와 출시 기록은 공개 정보라 삭제할 수 없습니다.',
     eraseDataDone: '소셜 데이터가 삭제되었습니다',
+    notFoundTitle: '페이지를 찾을 수 없습니다',
+    notFoundBody: '찾으시는 페이지가 존재하지 않거나 이동되었습니다.',
+    notFoundHome: '런치패드로 돌아가기',
+    notFoundBack: '뒤로 가기',
+    notFoundDocs: '문서 보기',
   },
   es: {
     explore: 'Explorar',
@@ -2027,6 +2052,11 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     eraseDataConfirm:
       'Esto elimina para siempre tus comentarios, me gusta, votos de sentimiento y perfil. Las operaciones y lanzamientos on-chain son públicos y no se pueden eliminar.',
     eraseDataDone: 'Tus datos sociales se han eliminado',
+    notFoundTitle: 'Página no encontrada',
+    notFoundBody: 'La página que buscas no existe o se ha movido.',
+    notFoundHome: 'Volver al launchpad',
+    notFoundBack: 'Volver',
+    notFoundDocs: 'Leer la documentación',
   },
   ru: {
     explore: 'Обзор',
@@ -2363,6 +2393,11 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     eraseDataConfirm:
       'Ваши комментарии, лайки, голоса настроения и профиль будут удалены навсегда. Сделки и запуски в блокчейне публичны и не могут быть удалены.',
     eraseDataDone: 'Ваши социальные данные удалены',
+    notFoundTitle: 'Страница не найдена',
+    notFoundBody: 'Страница, которую вы ищете, не существует или была перемещена.',
+    notFoundHome: 'Вернуться в Launchpad',
+    notFoundBack: 'Назад',
+    notFoundDocs: 'Документация',
   },
   ar: {
     explore: 'استكشاف',
@@ -2690,6 +2725,11 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     eraseDataConfirm:
       'سيؤدي هذا إلى حذف تعليقاتك وإعجاباتك وأصوات المشاعر وملفك الشخصي نهائياً. الصفقات والإطلاقات على السلسلة عامة ولا يمكن حذفها.',
     eraseDataDone: 'تم حذف بياناتك الاجتماعية',
+    notFoundTitle: 'الصفحة غير موجودة',
+    notFoundBody: 'الصفحة التي تبحث عنها غير موجودة أو تم نقلها.',
+    notFoundHome: 'العودة إلى المنصة',
+    notFoundBack: 'رجوع',
+    notFoundDocs: 'قراءة الوثائق',
   },
   fr: {
     explore: 'Explorer',
@@ -3027,6 +3067,11 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     eraseDataConfirm:
       'Cela supprime définitivement vos commentaires, likes, votes de sentiment et votre profil. Les transactions et lancements on-chain sont publics et ne peuvent pas être supprimés.',
     eraseDataDone: 'Vos données sociales ont été supprimées',
+    notFoundTitle: 'Page introuvable',
+    notFoundBody: "La page que vous cherchez n'existe pas ou a été déplacée.",
+    notFoundHome: 'Retour au launchpad',
+    notFoundBack: 'Retour',
+    notFoundDocs: 'Lire la documentation',
   },
   de: {
     explore: 'Erkunden',
@@ -3365,6 +3410,11 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     eraseDataConfirm:
       'Dadurch werden deine Kommentare, Likes, Stimmungsabstimmungen und dein Profil endgültig gelöscht. On-Chain-Trades und Launches sind öffentlich und können nicht gelöscht werden.',
     eraseDataDone: 'Deine Social-Daten wurden gelöscht',
+    notFoundTitle: 'Seite nicht gefunden',
+    notFoundBody: 'Die gesuchte Seite existiert nicht oder wurde verschoben.',
+    notFoundHome: 'Zurück zum Launchpad',
+    notFoundBack: 'Zurück',
+    notFoundDocs: 'Dokumentation lesen',
   },
   pt: {
     explore: 'Explorar',
@@ -3700,6 +3750,11 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     eraseDataConfirm:
       'Isso exclui permanentemente seus comentários, curtidas, votos de sentimento e perfil. Negociações e lançamentos on-chain são públicos e não podem ser excluídos.',
     eraseDataDone: 'Seus dados sociais foram excluídos',
+    notFoundTitle: 'Página não encontrada',
+    notFoundBody: 'A página que você procura não existe ou foi movida.',
+    notFoundHome: 'Voltar ao launchpad',
+    notFoundBack: 'Voltar',
+    notFoundDocs: 'Ler a documentação',
   },
 };
 
