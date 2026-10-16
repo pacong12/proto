@@ -23,6 +23,7 @@ library PoolIdLibrary {
 interface IPoolManager {
     function initialize(PoolKey memory key, uint160 sqrtPriceX96) external returns (int24 tick);
     function unlock(bytes calldata data) external returns (bytes memory);
+    function getSlot0(bytes32 id) external view returns (uint160 sqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee);
 }
 
 interface IHooks {

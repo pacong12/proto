@@ -3,6 +3,10 @@ pragma solidity ^0.8.24;
 
 import {ILaunchpadToken} from "../interfaces/ILaunchpadToken.sol";
 
+interface IRewardTracker {
+    function setShare(address from, address to, uint256 amount) external;
+}
+
 /**
  * @title LaunchpadToken
  * @notice Fixed-supply ERC-20 with onchain metadata, block-based anti-snipe
@@ -50,6 +54,9 @@ contract LaunchpadToken is ILaunchpadToken {
     address public override pairedToken;
     address public override liquidityPool;
 
+    address public rewardTracker;
+    /// @notice True once anyone other than the deployer / exempt accounts has bought from the pool.
+    bool public publicTradingStarted;
     uint256 public launchBlock;
     uint256 public override restrictionsEndBlock;
 
@@ -187,7 +194,7 @@ contract LaunchpadToken is ILaunchpadToken {
      * @notice Set initial creator tax during the launch window without a 24h timelock.
      * @dev Allows deployer to configure the baseline token tax directly at creation.
      *      Can only be called by the deployer while the token is still in the launch restriction
-     *      window and the active tax is currently 0.
+     *      window, before any third-party buy, and while the active tax is currently 0.
      *      Subsequent post-launch tax changes must use the two-step proposeTaxConfig flow (24h timelock).
      */
     function setInitialTaxConfig(
@@ -197,6 +204,9 @@ contract LaunchpadToken is ILaunchpadToken {
     ) external {
         if (msg.sender != deployer && msg.sender != factory) revert Unauthorized();
         if (block.number > restrictionsEndBlock) revert TimelockNotExpired();
+        // S18: the instant initial tax can only be set before any third party has bought,
+        // so early buyers can never be baited into a tax they did not see.
+        if (publicTradingStarted) revert TimelockNotExpired();
         if (buyTaxBps > MAX_TAX_BPS || sellTaxBps > MAX_TAX_BPS) revert ExcessiveTax();
         if (_taxConfig.buyTaxBps != 0 || _taxConfig.sellTaxBps != 0) revert Unauthorized();
 
@@ -285,6 +295,10 @@ contract LaunchpadToken is ILaunchpadToken {
         isRestrictionExempt[account] = exempt;
     }
 
+    function setRewardTracker(address tracker) external onlyFactory {
+        rewardTracker = tracker;
+    }
+
     // ---------------------------------------------------------------------------
     // ERC-20
     // ---------------------------------------------------------------------------
@@ -359,6 +373,12 @@ contract LaunchpadToken is ILaunchpadToken {
         uint256 taxAmount = 0;
         if (liquidityPool != address(0)) {
             bool isBuy = from == liquidityPool;
+            if (
+                isBuy && !publicTradingStarted && to != deployer && to != factory && to != _taxConfig.taxRecipient
+                    && !isRestrictionExempt[to]
+            ) {
+                publicTradingStarted = true;
+            }
             bool isSell = to == liquidityPool;
 
             if (isBuy && _taxConfig.buyTaxBps > 0) {
@@ -372,6 +392,12 @@ contract LaunchpadToken is ILaunchpadToken {
 
         uint256 transferAmount = value - taxAmount;
 
+
+        // Called without try/catch on purpose: a swallowed failure (e.g. a caller supplying just
+        // too little gas) would skip the dividend checkpoint and let the receiver claim history.
+        if (rewardTracker != address(0)) {
+            IRewardTracker(rewardTracker).setShare(from, to, value);
+        }
         unchecked {
             _balances[from] = fromBalance - value;
             _balances[to] += transferAmount;
