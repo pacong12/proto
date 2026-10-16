@@ -7,6 +7,7 @@ import {
   adjustShareDynamically,
   calculateDonutSegments,
 } from '../src/revenue-split';
+import { revenueSplitToBps } from '../src/revenue-split';
 
 describe('Math SDK - Revenue Split Allocation', () => {
   describe('calculateTotalSplit', () => {
@@ -78,6 +79,28 @@ describe('Math SDK - Revenue Split Allocation', () => {
       // Holders takes 50% and starts where creator ends
       expect(segments.holders.stroke).toBeCloseTo(circumference * 0.5, 1);
       expect(segments.holders.offset).toBeCloseTo(-segments.creator.stroke, 1);
+    });
+  });
+});
+
+describe('revenueSplitToBps', () => {
+  it('maps UI shares onto the on-chain splitter and sums to 10,000', () => {
+    expect(revenueSplitToBps({ creator: 50, buyback: 20, holders: 20, growth: 10 })).toEqual({
+      holdersBps: 2_000,
+      burnBps: 2_000,
+      creatorBps: 5_000,
+      liquidityBps: 1_000,
+    });
+    const odd = revenueSplitToBps({ creator: 33.3, buyback: 33.3, holders: 33.3, growth: 0 });
+    expect(odd.holdersBps + odd.burnBps + odd.creatorBps + odd.liquidityBps).toBe(10_000);
+  });
+
+  it('defaults to 100% creator when no split is given', () => {
+    expect(revenueSplitToBps(undefined)).toEqual({
+      holdersBps: 0,
+      burnBps: 0,
+      creatorBps: 10_000,
+      liquidityBps: 0,
     });
   });
 });

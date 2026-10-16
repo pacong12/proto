@@ -1,13 +1,13 @@
-import {
-  TOTAL_SUPPLY_NUM,
-  TOTAL_SUPPLY_WEI,
-  ROBINHOOD_GRADUATION_TARGET_WEI,
-  ROBINHOOD_INITIAL_VIRTUAL_ETH_WEI,
-  ROBINHOOD_CURVE_TOKEN_SUPPLY_NUM,
-  ROBINHOOD_POOL_RESERVE_SUPPLY_NUM,
-  ROBINHOOD_CURVE_TOKEN_SUPPLY_WEI,
-  ROBINHOOD_POOL_RESERVE_SUPPLY_WEI,
-} from '../constants';
+import { TOTAL_SUPPLY_NUM, TOTAL_SUPPLY_WEI } from '../constants';
+import type { ChainMathConfig } from './types';
+
+export const ROBINHOOD_GRADUATION_TARGET_WEI = 4_200_000_000_000_000_000n; // 4.2 ETH
+export const ROBINHOOD_INITIAL_VIRTUAL_ETH_WEI = 1_680_000_000_000_000_000n; // 1.68 ETH (Pons standard)
+
+export const ROBINHOOD_CURVE_TOKEN_SUPPLY_NUM = 714_285_714;
+export const ROBINHOOD_POOL_RESERVE_SUPPLY_NUM = 285_714_286;
+export const ROBINHOOD_CURVE_TOKEN_SUPPLY_WEI = 714_285_714n * 10n ** 18n;
+export const ROBINHOOD_POOL_RESERVE_SUPPLY_WEI = 285_714_286n * 10n ** 18n;
 
 /**
  * Robinhood Chain (Chain ID: 4663) Math Specification
@@ -22,7 +22,9 @@ import {
  */
 export const ROBINHOOD_MATH_CONFIG = {
   chainId: 4663,
+  slug: 'robinhood',
   name: 'Robinhood Chain',
+  model: 'bonding-curve',
   quoteSymbol: 'ETH',
   quoteDecimals: 18,
   totalSupply: TOTAL_SUPPLY_WEI,
@@ -33,4 +35,4 @@ export const ROBINHOOD_MATH_CONFIG = {
   poolSupplyNum: ROBINHOOD_POOL_RESERVE_SUPPLY_NUM,
   virtualQuoteReserve: ROBINHOOD_INITIAL_VIRTUAL_ETH_WEI,
   graduationTarget: ROBINHOOD_GRADUATION_TARGET_WEI,
-} as const;
+} as const satisfies ChainMathConfig;
