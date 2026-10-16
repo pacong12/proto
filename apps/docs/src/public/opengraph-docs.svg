@@ -6,7 +6,7 @@
   <circle cx="600" cy="315" r="450" fill="#18181b" opacity="0.65"/>
   
   <g transform="translate(100, 110)">
-    <!-- Brand Mark (Official Proto Logo Emblem in Brand Pink) -->
+    <!-- Brand Mark (Official Goton Logo Emblem in Brand Pink) -->
     <rect width="96" height="96" rx="22" fill="#141416" stroke="#27272a" stroke-width="2"/>
     <g transform="translate(19, 16) scale(0.038)">
       <path d="M1532.8 835.77V1503.68C1532.8 1596.45 1457.59 1671.66 1364.82 1671.66H1041.89V1245.83C1041.89 1176.25 985.49 1119.85 915.91 1119.85H550.13L785.01 884.97C816.51 853.47 859.24 835.77 903.79 835.77H1532.8Z" fill="#E7239F"/>
@@ -14,7 +14,7 @@
     </g>
     
     <!-- Title & Tagline -->
-    <text x="0" y="165" font-family="Poppins, -apple-system, system-ui, sans-serif" font-size="54" font-weight="800" fill="#ffffff" letter-spacing="-0.03em">Proto Knowledge Base</text>
+    <text x="0" y="165" font-family="Poppins, -apple-system, system-ui, sans-serif" font-size="54" font-weight="800" fill="#ffffff" letter-spacing="-0.03em">Goton Knowledge Base</text>
     <text x="0" y="225" font-family="Poppins, -apple-system, system-ui, sans-serif" font-size="28" font-weight="600" fill="#a1a1aa" letter-spacing="-0.01em">Official User Guide, Trading Handbooks &amp; Protocol Reference</text>
     <text x="0" y="265" font-family="Poppins, -apple-system, system-ui, sans-serif" font-size="18" fill="#71717a">Robinhood Chain (L2) &amp; Arc Network · Uniswap V4 Integration</text>
     

@@ -211,8 +211,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { Empty } from '@/components/ui/empty';
-import type { LaunchedTokenEntity, TokenMarketData, TradeEventEntity } from '@proto/shared-types';
-import { ARC_CHAIN, ARC_PROTO_CURVE_ADDRESS } from '@proto/shared-types';
+import type { LaunchedTokenEntity, TokenMarketData, TradeEventEntity } from '@goton/shared-types';
+import { ARC_CHAIN, ARC_PROTO_CURVE_ADDRESS } from '@goton/shared-types';
 
 const { t } = useI18n();
 const { activeNetwork } = useWallet();

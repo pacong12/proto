@@ -1,10 +1,10 @@
 /**
- * Canonical ABI for ProtoV4Graduator
- * Auto-generated from Foundry compilation output: contracts/out/ProtoV4Graduator.sol/ProtoV4Graduator.json
+ * Canonical ABI for GotonV4Graduator
+ * Auto-generated from Foundry compilation output: contracts/out/GotonV4Graduator.sol/GotonV4Graduator.json
  * Do not edit directly; run `bun run export-abis` in packages/contracts-abi.
  */
 
-export const protoV4GraduatorAbi = [
+export const gotonV4GraduatorAbi = [
   {
     type: 'constructor',
     inputs: [
@@ -16,12 +16,12 @@ export const protoV4GraduatorAbi = [
       {
         name: '_hook',
         type: 'address',
-        internalType: 'contract ProtoV4Hook',
+        internalType: 'contract GotonV4Hook',
       },
       {
         name: '_splitterDeployer',
         type: 'address',
-        internalType: 'contract ProtoFeeSplitterDeployer',
+        internalType: 'contract GotonFeeSplitterDeployer',
       },
       {
         name: '_feeRecipient',
@@ -31,7 +31,7 @@ export const protoV4GraduatorAbi = [
       {
         name: '_defaultSplit',
         type: 'tuple',
-        internalType: 'struct ProtoFeeSplitter.Split',
+        internalType: 'struct GotonFeeSplitter.Split',
         components: [
           {
             name: 'protocolBps',
@@ -278,7 +278,7 @@ export const protoV4GraduatorAbi = [
       {
         name: '',
         type: 'address',
-        internalType: 'contract ProtoV4Hook',
+        internalType: 'contract GotonV4Hook',
       },
     ],
     stateMutability: 'view',
@@ -414,7 +414,7 @@ export const protoV4GraduatorAbi = [
       {
         name: 'split',
         type: 'tuple',
-        internalType: 'struct ProtoFeeSplitter.Split',
+        internalType: 'struct GotonFeeSplitter.Split',
         components: [
           {
             name: 'protocolBps',
@@ -524,7 +524,7 @@ export const protoV4GraduatorAbi = [
       {
         name: '',
         type: 'address',
-        internalType: 'contract ProtoFeeSplitterDeployer',
+        internalType: 'contract GotonFeeSplitterDeployer',
       },
     ],
     stateMutability: 'view',

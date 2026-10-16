@@ -1,5 +1,5 @@
 /**
- * Centralized API client for Proto Frontoffice.
+ * Centralized API client for Goton Frontoffice.
  * In production or Docker environments, requests use VITE_API_BASE_URL or
  * fallback to relative paths, which are proxied by Vite (dev) or Nginx (prod).
  */

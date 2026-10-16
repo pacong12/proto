@@ -1,18 +1,18 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { SqliteTokenRepository } from '../src/modules/tokens/infrastructure/adapters/sqlite-token.repository';
-import { LaunchedTokenEntity, TradeEventEntity, TokenMarketData } from '@proto/shared-types';
+import { LaunchedTokenEntity, TradeEventEntity, TokenMarketData } from '@goton/shared-types';
 
 describe('SqliteTokenRepository', () => {
   let repository: SqliteTokenRepository;
 
   const sampleToken: LaunchedTokenEntity = {
     address: '0x1111111111111111111111111111111111111111',
-    name: 'Proto Token',
-    symbol: 'PROTO',
+    name: 'Goton Token',
+    symbol: 'GOTON',
     decimals: 18,
     totalSupply: '1000000000000000000000000',
     logo: 'ipfs://logo-hash',
-    description: 'A test token on proto launchpad',
+    description: 'A test token on goton launchpad',
     socials: {
       twitter: 'https://x.com/proto',
       website: 'https://proto.fun',
@@ -42,8 +42,8 @@ describe('SqliteTokenRepository', () => {
 
     const found = await repository.findByAddress(sampleToken.address);
     expect(found).not.toBeNull();
-    expect(found?.name).toBe('Proto Token');
-    expect(found?.symbol).toBe('PROTO');
+    expect(found?.name).toBe('Goton Token');
+    expect(found?.symbol).toBe('GOTON');
     expect(found?.positionId).toBe(42n);
     expect(found?.restrictionsEndBlock).toBe(120n);
     expect(found?.launchBlock).toBe(100n);
@@ -73,7 +73,7 @@ describe('SqliteTokenRepository', () => {
     const list = await repository.findAll(10, 0);
     expect(list).toHaveLength(2);
     expect(list[0].symbol).toBe('SECOND');
-    expect(list[1].symbol).toBe('PROTO');
+    expect(list[1].symbol).toBe('GOTON');
 
     const paged = await repository.findAll(1, 0);
     expect(paged).toHaveLength(1);
@@ -319,8 +319,8 @@ describe('SqliteTokenRepository', () => {
 
     const feed = await repository.getFeedCallouts(10, 0);
     expect(feed.length).toBeGreaterThanOrEqual(1);
-    expect(feed[0].tokenSymbol).toBe('PROTO');
-    expect(feed[0].tokenName).toBe('Proto Token');
+    expect(feed[0].tokenSymbol).toBe('GOTON');
+    expect(feed[0].tokenName).toBe('Goton Token');
   });
 
   it('supports threaded replies, reposts, quotes, and view tracking', async () => {
@@ -330,7 +330,7 @@ describe('SqliteTokenRepository', () => {
       id: rootCallId,
       tokenAddress: sampleToken.address,
       authorAddress: '0x3333333333333333333333333333333333333333',
-      content: 'LFG $PROTO looking prime!',
+      content: 'LFG $GOTON looking prime!',
       targetMcap: '$1M MC',
       positionUsd: 500,
       callType: 'call',
@@ -350,7 +350,7 @@ describe('SqliteTokenRepository', () => {
       id: quoteId,
       tokenAddress: sampleToken.address,
       authorAddress: viewer,
-      content: 'I agree with this thesis, added more $PROTO!',
+      content: 'I agree with this thesis, added more $GOTON!',
       quotedCalloutId: rootCallId,
       callType: 'call',
       likesCount: 0,

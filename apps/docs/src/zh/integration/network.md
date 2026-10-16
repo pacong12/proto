@@ -1,6 +1,6 @@
 # 网络配置与钱包连接
 
-Proto 作为原生多链发射协议，同时支持 **Robinhood Chain Layer 2** 与 **Arc Network (Circle 稳定币底层 L1)**，具备极高的交易吞吐速度、极低延迟以及可预测的执行成本。
+Goton 作为原生多链发射协议，同时支持 **Robinhood Chain Layer 2** 与 **Arc Network (Circle 稳定币底层 L1)**，具备极高的交易吞吐速度、极低延迟以及可预测的执行成本。
 
 在参与交互前，请将目标网络添加至您的 Web3 钱包。
 

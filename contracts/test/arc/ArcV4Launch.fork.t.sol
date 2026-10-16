@@ -3,10 +3,10 @@ pragma solidity ^0.8.24;
 
 import {Test, Vm} from "forge-std/Test.sol";
 import {LaunchpadV2FactoryArc} from "../../src/chains/arc/LaunchpadV2FactoryArc.sol";
-import {ProtoV4Hook} from "../../src/core/ProtoV4Hook.sol";
-import {ProtoFeeSplitter, ProtoFeeSplitterDeployer} from "../../src/core/ProtoFeeSplitter.sol";
-import {ProtoV4Router} from "../../src/core/ProtoV4Router.sol";
-import {ProtoV4Buyback} from "../../src/core/ProtoV4Buyback.sol";
+import {GotonV4Hook} from "../../src/core/GotonV4Hook.sol";
+import {GotonFeeSplitter, GotonFeeSplitterDeployer} from "../../src/core/GotonFeeSplitter.sol";
+import {GotonV4Router} from "../../src/core/GotonV4Router.sol";
+import {GotonV4Buyback} from "../../src/core/GotonV4Buyback.sol";
 import {LaunchpadToken} from "../../src/core/LaunchpadToken.sol";
 import {PoolKey} from "../../src/interfaces/IUniswapV4.sol";
 import {IPoolManagerV4} from "../../src/interfaces/external/IUniswapV4Core.sol";
@@ -50,7 +50,7 @@ contract MockArcBlocklistPrecompile {
 
 /**
  * Fork tests against Arc mainnet's real Uniswap v4 PoolManager, USDC, Permit2 and Universal Router.
- * Trader swaps go through ProtoV4Router (buys paid with native USDC msg.value).
+ * Trader swaps go through GotonV4Router (buys paid with native USDC msg.value).
  * Run with: ARC_RPC_URL=https://rpc.mainnet.arc.io forge test --match-path test/arc/ArcV4Launch.fork.t.sol
  */
 contract ArcV4LaunchForkTest is Test {
@@ -64,8 +64,8 @@ contract ArcV4LaunchForkTest is Test {
     address constant DEAD = 0x000000000000000000000000000000000000dEaD;
 
     LaunchpadV2FactoryArc factory;
-    ProtoV4Hook hook;
-    ProtoV4Router router;
+    GotonV4Hook hook;
+    GotonV4Router router;
     address payable treasury = payable(makeAddr("treasury"));
     address buyback = makeAddr("buyback");
     address liquidityVault = makeAddr("liquidityVault");
@@ -83,12 +83,12 @@ contract ArcV4LaunchForkTest is Test {
         vm.allowCheatcodes(NATIVE_PRECOMPILE);
         vm.etch(BLOCKLIST_PRECOMPILE, type(MockArcBlocklistPrecompile).runtimeCode);
 
-        deployCodeTo("ProtoV4Hook.sol:ProtoV4Hook", abi.encode(PM, address(this)), HOOK_ADDRESS);
-        hook = ProtoV4Hook(HOOK_ADDRESS);
-        factory = new LaunchpadV2FactoryArc(PM, USDC, hook, new ProtoFeeSplitterDeployer(), treasury);
+        deployCodeTo("GotonV4Hook.sol:GotonV4Hook", abi.encode(PM, address(this)), HOOK_ADDRESS);
+        hook = GotonV4Hook(HOOK_ADDRESS);
+        factory = new LaunchpadV2FactoryArc(PM, USDC, hook, new GotonFeeSplitterDeployer(), treasury);
         hook.setFactory(address(factory));
         factory.setRecipients(treasury, buyback, liquidityVault);
-        router = new ProtoV4Router(PM, USDC, 1e12);
+        router = new GotonV4Router(PM, USDC, 1e12);
 
         vm.deal(creator, 100_000 ether);
         vm.deal(trader, 100_000 ether);
@@ -116,7 +116,7 @@ contract ArcV4LaunchForkTest is Test {
         return IERC20Full(USDC).balanceOf(a);
     }
 
-    /// @dev Buy paid with native USDC (msg.value, 18 decimals) through ProtoV4Router.
+    /// @dev Buy paid with native USDC (msg.value, 18 decimals) through GotonV4Router.
     function _buy(address token, uint256 usdc6) internal returns (uint256) {
         PoolKey memory key = factory.poolKeyOf(token);
         vm.prank(trader);
@@ -172,9 +172,9 @@ contract ArcV4LaunchForkTest is Test {
         // 1% buy tax = 45,000 units; 30% protocol cut goes to treasury immediately.
         // 1% buy tax = 45,000 units: 30% protocol, then 10% burn / 10% liquidity of the remaining 31,500.
         assertEq(_usdc(treasury) - treasuryBefore, 13_500, "protocol cut");
-        assertEq(ProtoFeeSplitter(_splitter(token)).buybackAccrued(), 3_150, "burn share held for buyback");
+        assertEq(GotonFeeSplitter(_splitter(token)).buybackAccrued(), 3_150, "burn share held for buyback");
         assertEq(_usdc(liquidityVault), 3_150, "liquidity share");
-        assertEq(ProtoFeeSplitter(_splitter(token)).totalStreamed(), 45_000 - 13_500 - 3_150 - 3_150, "holders");
+        assertEq(GotonFeeSplitter(_splitter(token)).totalStreamed(), 45_000 - 13_500 - 3_150 - 3_150, "holders");
         assertTrue(hook.bonded(poolId));
         assertEq(factory.getLaunchCount(), 1);
     }
@@ -242,7 +242,7 @@ contract ArcV4LaunchForkTest is Test {
 
     function test_BuyAndSellChargeUsdcTaxAndPayHolders() public {
         (address token,) = _launch(creator, 4.5 ether);
-        ProtoFeeSplitter splitter = ProtoFeeSplitter(_splitter(token));
+        GotonFeeSplitter splitter = GotonFeeSplitter(_splitter(token));
         vm.warp(block.timestamp + 10);
 
         uint256 treasuryBefore = _usdc(treasury);
@@ -370,7 +370,7 @@ contract ArcV4LaunchForkTest is Test {
         (address token,) = _launch(creator, 4.5 ether);
         PoolKey memory key = factory.poolKeyOf(token);
         vm.prank(trader);
-        vm.expectRevert(ProtoV4Router.InvalidValue.selector);
+        vm.expectRevert(GotonV4Router.InvalidValue.selector);
         router.swapExactIn{value: 1 ether}(key, key.currency0 == USDC, 2e6, 0, trader, block.timestamp);
     }
 
@@ -378,14 +378,14 @@ contract ArcV4LaunchForkTest is Test {
         LaunchpadV2FactoryArc.TaxConfig memory tax = LaunchpadV2FactoryArc.TaxConfig(500, 500, 0, 0, 10_000, 0);
         vm.prank(creator);
         (address token,) = factory.launchToken{value: 4.5 ether}(_meta(), tax, 0);
-        ProtoFeeSplitter splitter = ProtoFeeSplitter(_splitter(token));
+        GotonFeeSplitter splitter = GotonFeeSplitter(_splitter(token));
         vm.warp(block.timestamp + 10);
         _buy(token, 100e6); // 5 USDC tax: 30% protocol, 70% creator
 
         uint256 accrued = splitter.creatorAccrued();
         assertEq(accrued, 157_500 + 3_500_000, "70% of prebuy tax (225,000) + trade tax (5,000,000)");
         vm.prank(trader);
-        vm.expectRevert(ProtoFeeSplitter.Unauthorized.selector);
+        vm.expectRevert(GotonFeeSplitter.Unauthorized.selector);
         splitter.claimCreatorFees();
         uint256 before = _usdc(creator);
         vm.prank(creator);
@@ -397,9 +397,9 @@ contract ArcV4LaunchForkTest is Test {
     // TWAP-guarded buyback (AUD-HIGH-05 / TKT-06)
     // ---------------------------------------------------------------------------
 
-    /// @dev Launch with a burn share routed to a real ProtoV4Buyback, then build oracle history.
-    function _launchWithBuyback() internal returns (address token, PoolKey memory key, ProtoV4Buyback bb) {
-        bb = new ProtoV4Buyback(PM, hook);
+    /// @dev Launch with a burn share routed to a real GotonV4Buyback, then build oracle history.
+    function _launchWithBuyback() internal returns (address token, PoolKey memory key, GotonV4Buyback bb) {
+        bb = new GotonV4Buyback(PM, hook);
         factory.setRecipients(treasury, address(bb), liquidityVault);
         creator = _creatorWithOrder(true);
         vm.prank(creator);
@@ -423,15 +423,15 @@ contract ArcV4LaunchForkTest is Test {
     }
 
     function test_BuybackNeedsOracleHistory() public {
-        (, PoolKey memory key, ProtoV4Buyback bb) = _launchWithBuyback();
-        vm.expectRevert(ProtoV4Hook.OracleNotReady.selector);
+        (, PoolKey memory key, GotonV4Buyback bb) = _launchWithBuyback();
+        vm.expectRevert(GotonV4Hook.OracleNotReady.selector);
         bb.buyback(key);
     }
 
     function test_BuybackBurnsTokensWithinTwapGuard() public {
-        (address token, PoolKey memory key, ProtoV4Buyback bb) = _launchWithBuyback();
+        (address token, PoolKey memory key, GotonV4Buyback bb) = _launchWithBuyback();
         _tradeOverTime(token);
-        uint256 accrued = ProtoFeeSplitter(_splitter(token)).buybackAccrued();
+        uint256 accrued = GotonFeeSplitter(_splitter(token)).buybackAccrued();
         assertGt(accrued, 0);
 
         uint256 deadBefore = LaunchpadToken(token).balanceOf(DEAD);
@@ -445,7 +445,7 @@ contract ArcV4LaunchForkTest is Test {
     }
 
     function test_BuybackSkipsManipulatedPrice() public {
-        (address token, PoolKey memory key, ProtoV4Buyback bb) = _launchWithBuyback();
+        (address token, PoolKey memory key, GotonV4Buyback bb) = _launchWithBuyback();
         _tradeOverTime(token);
         // Attacker pumps the price in the same block, hoping the buyback buys the top.
         vm.deal(trader, 1_000_000 ether);

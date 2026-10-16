@@ -291,7 +291,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Empty } from '@/components/ui/empty';
 import { Pagination } from '@/components/ui/pagination';
 import TaxTooltip from '@/components/ui/TaxTooltip.vue';
-import { ARC_CHAIN, type LaunchedTokenEntity, type TokenMarketData } from '@proto/shared-types';
+import { ARC_CHAIN, type LaunchedTokenEntity, type TokenMarketData } from '@goton/shared-types';
 import { formatCompactUsd, formatRelativeTime, shortenAddress, getChainIcon } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { useWallet } from '@/composables/useWallet';

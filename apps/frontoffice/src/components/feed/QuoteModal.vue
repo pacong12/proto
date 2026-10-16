@@ -113,7 +113,7 @@ import { Button } from '@/components/ui/button';
 import { Jazzicon } from '@/components/ui/avatar';
 import { shortenAddress, formatRelativeTime } from '@/lib/utils';
 import { toast } from '@/components/ui/sonner';
-import type { FeedCalloutItem } from '@proto/shared-types';
+import type { FeedCalloutItem } from '@goton/shared-types';
 
 const props = defineProps<{
   isOpen: boolean;

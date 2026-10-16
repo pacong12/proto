@@ -1,5 +1,5 @@
 import { parseEther } from 'viem';
-import { UNDEPLOYED } from '@proto/shared-types';
+import { UNDEPLOYED } from '@goton/shared-types';
 
 export function isDeployed(address?: string | null): address is `0x${string}` {
   return Boolean(address) && address!.toLowerCase() !== UNDEPLOYED;

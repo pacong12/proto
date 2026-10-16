@@ -78,7 +78,7 @@ describe('Observability & DevOps Tracking', () => {
     expect(prom).toContain('process_resident_memory_bytes');
 
     const html = controller.getDashboardHtml();
-    expect(html).toContain('Proto Protocol · DevOps Observability');
+    expect(html).toContain('Goton Protocol · DevOps Observability');
     expect(html).toContain('Live Request Stream');
   });
 
@@ -88,7 +88,7 @@ describe('Observability & DevOps Tracking', () => {
     expect(dashboardRes.status).toBe(200);
     expect(dashboardRes.headers.get('content-type')).toContain('text/html');
     const html = await dashboardRes.text();
-    expect(html).toContain('Proto Protocol · DevOps Observability');
+    expect(html).toContain('Goton Protocol · DevOps Observability');
 
     const telemetryReq = new Request('http://localhost:3001/api/devops/telemetry');
     const telemetryRes = await server.fetch(telemetryReq);

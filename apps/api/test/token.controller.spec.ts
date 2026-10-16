@@ -6,7 +6,7 @@ import { GetTokenByAddressUseCase } from '../src/modules/tokens/application/use-
 import { CalculatePricingUseCase } from '../src/modules/tokens/application/use-cases/calculate-pricing.use-case';
 import { CoinGeckoPriceFeedAdapter } from '../src/modules/tokens/infrastructure/adapters/coingecko-price-feed.adapter';
 import type { ViemChainIndexerAdapter } from '../src/modules/tokens/infrastructure/adapters/viem-chain-indexer.adapter';
-import type { LaunchedTokenEntity } from '@proto/shared-types';
+import type { LaunchedTokenEntity } from '@goton/shared-types';
 
 // Minimal partial mock — only the methods called by GetTokenByAddressUseCase
 const fakeChainIndexer = {

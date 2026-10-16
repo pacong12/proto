@@ -21,12 +21,12 @@ export const launchpadV2FactoryArcAbi = [
       {
         name: '_hook',
         type: 'address',
-        internalType: 'contract ProtoV4Hook',
+        internalType: 'contract GotonV4Hook',
       },
       {
         name: '_splitterDeployer',
         type: 'address',
-        internalType: 'contract ProtoFeeSplitterDeployer',
+        internalType: 'contract GotonFeeSplitterDeployer',
       },
       {
         name: '_feeRecipient',
@@ -198,7 +198,7 @@ export const launchpadV2FactoryArcAbi = [
       {
         name: '',
         type: 'address',
-        internalType: 'contract ProtoV4Hook',
+        internalType: 'contract GotonV4Hook',
       },
     ],
     stateMutability: 'view',
@@ -681,7 +681,7 @@ export const launchpadV2FactoryArcAbi = [
       {
         name: '',
         type: 'address',
-        internalType: 'contract ProtoFeeSplitterDeployer',
+        internalType: 'contract GotonFeeSplitterDeployer',
       },
     ],
     stateMutability: 'view',

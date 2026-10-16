@@ -1,5 +1,5 @@
 import type { Address } from 'viem';
-import { ARC_CHAIN } from '@proto/shared-types';
+import { ARC_CHAIN } from '@goton/shared-types';
 import type { TradeRepositoryPort } from '../../domain/ports/trade-repository.port';
 import type { TokenRepositoryPort } from '../../../tokens/domain/ports/token.repository.port';
 import type { PriceFeedPort } from '../../../tokens/domain/ports/price-feed.port';

@@ -1,4 +1,4 @@
-import { LaunchedTokenEntity, TokenMarketData, resolveTokenNetwork } from '@proto/shared-types';
+import { LaunchedTokenEntity, TokenMarketData, resolveTokenNetwork } from '@goton/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import { ChainIndexerPort } from '../../domain/ports/chain.indexer.port';
 import { PriceFeedPort } from '../../domain/ports/price-feed.port';

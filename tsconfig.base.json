@@ -18,10 +18,10 @@
     "noImplicitAny": true,
     "strictNullChecks": true,
     "paths": {
-      "@proto/shared-types": ["packages/shared-types/src/index.ts"],
-      "@proto/contracts": ["packages/contracts/src/index.ts"],
-      "@proto/contracts-abi": ["packages/contracts-abi/src/index.ts"],
-      "@proto/math-sdk": ["packages/math-sdk/src/index.ts"]
+      "@goton/shared-types": ["packages/shared-types/src/index.ts"],
+      "@goton/contracts": ["packages/contracts/src/index.ts"],
+      "@goton/contracts-abi": ["packages/contracts-abi/src/index.ts"],
+      "@goton/math-sdk": ["packages/math-sdk/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp", "dist"]

@@ -7,8 +7,8 @@ contract, no liquidity migration and no Uniswap V3 dependency.
 
 | Contract                   | Source                                               | Notes                                                                     |
 | :------------------------- | :--------------------------------------------------- | :------------------------------------------------------------------------ |
-| `ProtoV4Hook`              | `contracts/src/core/ProtoV4Hook.sol`                 | Singleton v4 hook; CREATE2 address must end in permission bits `0x20CC`.  |
-| `ProtoFeeSplitterDeployer` | `contracts/src/core/ProtoFeeSplitter.sol`            | Deploys one `ProtoFeeSplitter` per token (keeps the factory under 24 KB). |
+| `GotonV4Hook`              | `contracts/src/core/GotonV4Hook.sol`                 | Singleton v4 hook; CREATE2 address must end in permission bits `0x20CC`.  |
+| `GotonFeeSplitterDeployer` | `contracts/src/core/GotonFeeSplitter.sol`            | Deploys one `GotonFeeSplitter` per token (keeps the factory under 24 KB). |
 | `LaunchpadV2FactoryArc`    | `contracts/src/chains/arc/LaunchpadV2FactoryArc.sol` | Launch portal; owns every launch position (liquidity locked forever).     |
 
 External dependencies (Arc mainnet): Uniswap v4 PoolManager `0x8366a39CC670B4001A1121B8F6A443A643e40951`,
@@ -78,9 +78,9 @@ address, so always mine and broadcast with the same key.
 
    ```bash
    ARC_V4_FACTORY_ADDRESS=0x...   # LaunchpadV2FactoryArc
-   ARC_MEME_HOOK=0x...            # ProtoV4Hook
-   ARC_V4_ROUTER=0x...            # ProtoV4Router (frontend swaps)
-   ARC_V4_BUYBACK=0x...           # ProtoV4Buyback (TWAP-guarded buyback-and-burn)
+   ARC_MEME_HOOK=0x...            # GotonV4Hook
+   ARC_V4_ROUTER=0x...            # GotonV4Router (frontend swaps)
+   ARC_V4_BUYBACK=0x...           # GotonV4Buyback (TWAP-guarded buyback-and-burn)
    ```
 
 3. Update `packages/shared-types/src/chains/arc.ts` fallbacks once the addresses are final.
@@ -90,7 +90,7 @@ address, so always mine and broadcast with the same key.
 - `SESSION_SECRET` — HMAC key for wallet sessions (likes, reposts, votes, profile edits). Without it
   sessions only last until the API restarts.
 - `KEEPER_PRIVATE_KEY` — enables the buyback keeper (every `BUYBACK_KEEPER_INTERVAL_MS`, default
-  10 min). The key only pays gas: `ProtoV4Buyback` enforces the TWAP guard itself, so the keeper can
+  10 min). The key only pays gas: `GotonV4Buyback` enforces the TWAP guard itself, so the keeper can
   never choose a price. Each token needs ~30 min of trading history before its first buyback.
 - `INDEXER_CONFIRMATIONS` — blocks the indexer stays behind the head (default 2).
 - `TRUST_PROXY=true` — only when the API is reachable exclusively through Cloudflare / a reverse proxy.
@@ -105,7 +105,7 @@ address, so always mine and broadcast with the same key.
 
 ```bash
 forge verify-contract <HOOK_ADDRESS> \
-  src/core/ProtoV4Hook.sol:ProtoV4Hook \
+  src/core/GotonV4Hook.sol:GotonV4Hook \
   --chain-id 5042 --verifier-url "https://api.etherscan.io/v2/api?chainid=5042" \
   --etherscan-api-key "$ETHERSCAN_API_KEY" \
   --constructor-args $(cast abi-encode "constructor(address,address)" <POOL_MANAGER> <DEPLOYER>)

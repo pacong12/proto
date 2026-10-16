@@ -1,7 +1,7 @@
 import type { ChainAdapter } from './types';
 import { arcChainAdapter } from './arc/arc.adapter';
 import { robinhoodChainAdapter } from './robinhood/robinhood.adapter';
-import { type TokenAddressPair, resolveTokenNetwork } from '@proto/shared-types';
+import { type TokenAddressPair, resolveTokenNetwork } from '@goton/shared-types';
 
 export * from './types';
 export * from './arc/arc.adapter';

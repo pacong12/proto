@@ -1,5 +1,5 @@
 /**
- * Base Application Error for Proto API.
+ * Base Application Error for Goton API.
  * Carries an error code and HTTP status code for unified presentation mapping.
  */
 export class AppError extends Error {

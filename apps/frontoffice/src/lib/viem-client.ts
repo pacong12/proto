@@ -16,7 +16,7 @@ import {
   ARC_CHAIN,
   SUPPORTED_CHAINS,
   type NetworkConfig,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 import { walletProvider, walletChainId, STORAGE_PROVIDER_ID_KEY } from './wallet-store';
 
 // ---------------------------------------------------------------------------

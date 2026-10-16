@@ -3,12 +3,12 @@
 <Badge variant="graduated">最近更新：2026 年 9 月</Badge>
 
 <Card>
-Proto 建立在去中心化隐私的核心理念之上。我们不使用追踪 Cookie、商业广告分析器或任何第三方跨站画像脚本。
+Goton 建立在去中心化隐私的核心理念之上。我们不使用追踪 Cookie、商业广告分析器或任何第三方跨站画像脚本。
 </Card>
 
 ## 1. 我们使用的技术说明
 
-与传统互联网网站不同，Proto 不使用持久化 HTTP Cookie 来跨站追踪您的浏览行为。我们仅使用浏览器原生的客户端存储（`localStorage` 和 `sessionStorage`）来保存必要的前端界面状态。
+与传统互联网网站不同，Goton 不使用持久化 HTTP Cookie 来跨站追踪您的浏览行为。我们仅使用浏览器原生的客户端存储（`localStorage` 和 `sessionStorage`）来保存必要的前端界面状态。
 
 ## 2. 本地存储的数据项
 

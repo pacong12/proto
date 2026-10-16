@@ -1,4 +1,4 @@
-import { buildSessionSignMessage } from '@proto/shared-types';
+import { buildSessionSignMessage } from '@goton/shared-types';
 import { apiFetch } from './api-client';
 import { getWalletClient } from './viem-client';
 

@@ -535,7 +535,7 @@ const contractEntries = computed(() => {
   const entries: { name: string; address?: `0x${string}` }[] = [
     { name: 'Launchpad Factory', address: c.factoryV2 || c.factory },
     { name: 'Liquidity Locker', address: c.locker },
-    { name: 'Proto Hook (Uniswap V4)', address: c.memeHook },
+    { name: 'Goton Hook (Uniswap V4)', address: c.memeHook },
     { name: 'Uniswap V4 PoolManager', address: c.poolManagerV4 },
     { name: 'Uniswap Universal Router', address: c.universalRouter },
     { name: 'Uniswap V3 Factory', address: c.uniswapV3Factory },

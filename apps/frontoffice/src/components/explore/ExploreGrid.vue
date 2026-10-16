@@ -176,7 +176,7 @@ import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { formatRelativeTime, formatCompactUsd, getChainIcon } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { useTokenStore } from '@/composables/useTokenStore';
-import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
+import type { LaunchedTokenEntity, TokenMarketData } from '@goton/shared-types';
 
 interface TokenItem {
   token: LaunchedTokenEntity;

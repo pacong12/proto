@@ -445,7 +445,7 @@ import {
 } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { toast } from '@/components/ui/sonner';
-import type { FeedCalloutItem } from '@proto/shared-types';
+import type { FeedCalloutItem } from '@goton/shared-types';
 
 const route = useRoute();
 const router = useRouter();
@@ -508,7 +508,7 @@ async function loadPost(): Promise<void> {
     const viewerParam = account.value ? `?viewer=${account.value}` : '';
     const data = await apiFetch<{
       success: boolean;
-      data: import('@proto/shared-types').FeedCalloutItem;
+      data: import('@goton/shared-types').FeedCalloutItem;
     }>(`/api/callouts/${targetId}${viewerParam}`);
     if (data.success && data.data) {
       post.value = data.data;

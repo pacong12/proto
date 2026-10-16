@@ -1,4 +1,4 @@
-import { TokenMarketData } from '@proto/shared-types';
+import { TokenMarketData } from '@goton/shared-types';
 
 const DEFAULT_SUPPLY = 1_000_000_000n * 10n ** 18n; // 1 billion tokens standard
 

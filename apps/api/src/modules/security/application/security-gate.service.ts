@@ -1,4 +1,4 @@
-import { TransactionIntent, SecurityEvaluationResult } from '@proto/shared-types';
+import { TransactionIntent, SecurityEvaluationResult } from '@goton/shared-types';
 import { SecurityPolicy } from '../domain/security-policy';
 
 export class SecurityGateService {

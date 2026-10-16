@@ -1,5 +1,5 @@
 import { type PublicClient, type WalletClient, type Address, erc20Abi, formatEther } from 'viem';
-import { buybackBurnerAbi, type NetworkConfig } from '@proto/shared-types';
+import { buybackBurnerAbi, type NetworkConfig } from '@goton/shared-types';
 import type { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 
 export interface BuybackKeeperConfig {

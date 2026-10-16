@@ -1,6 +1,6 @@
 {
-  "name": "proto",
-  "short_name": "proto",
+  "name": "goton",
+  "short_name": "goton",
   "description": "Multi-chain launchpad for fixed-supply tokens on Robinhood & Arc Chain",
   "start_url": "/launchpad",
   "display": "standalone",

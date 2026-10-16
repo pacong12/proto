@@ -1,13 +1,13 @@
 import type { PublicClient, WalletClient } from 'viem';
 import {
   UNDEPLOYED,
-  protoFeeSplitterAbi,
-  protoV4BuybackAbi,
+  gotonFeeSplitterAbi,
+  gotonV4BuybackAbi,
   protoV4PoolKeyFor,
   resolveFeeSplitter,
   type LaunchedTokenEntity,
   type NetworkConfig,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 import type { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 
 /** A pending keeper transaction older than this is replaced (DR-03). */
@@ -23,7 +23,7 @@ export interface V4BuybackResult {
 }
 
 /**
- * Triggers ProtoV4Buyback for every v4 pool on a chain whose burn share is waiting.
+ * Triggers GotonV4Buyback for every v4 pool on a chain whose burn share is waiting.
  * The contract enforces the TWAP price guard itself, so the keeper only decides *when* to call;
  * it never supplies a price or minimum (red-team "Echo"). Each call is simulated first so tokens
  * whose oracle is not ready, or whose spot price is outside the guard, cost no gas.
@@ -123,12 +123,12 @@ export class V4BuybackKeeperService {
       const [accrued, pending] = await Promise.all([
         this.publicClient.readContract({
           address: splitter.address,
-          abi: protoFeeSplitterAbi,
+          abi: gotonFeeSplitterAbi,
           functionName: 'buybackAccrued',
         }),
         this.publicClient.readContract({
           address: buyback,
-          abi: protoV4BuybackAbi,
+          abi: gotonV4BuybackAbi,
           functionName: 'pending',
           args: [token],
         }),
@@ -139,7 +139,7 @@ export class V4BuybackKeeperService {
 
       const { result, request } = await this.publicClient.simulateContract({
         address: buyback,
-        abi: protoV4BuybackAbi,
+        abi: gotonV4BuybackAbi,
         functionName: 'buyback',
         args: [key],
         account,

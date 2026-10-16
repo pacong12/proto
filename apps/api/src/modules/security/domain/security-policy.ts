@@ -6,7 +6,7 @@ import {
   ARC_CHAIN,
   LaunchTokenIntentPayload,
   SwapIntentPayload,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 
 export class SecurityPolicy {
   static evaluate(intent: TransactionIntent): SecurityEvaluationResult {

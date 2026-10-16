@@ -17,7 +17,7 @@ export interface ChainAbis {
   feeSplitter?: Abi;
   /** Moves graduated bonding curves into their Uniswap v4 pool (bonding-curve chains). */
   graduator?: Abi;
-  /** Proto's exact-input v4 swap router. */
+  /** Goton's exact-input v4 swap router. */
   router?: Abi;
   /** TWAP-guarded buyback-and-burn for v4 pools. */
   buyback?: Abi;

@@ -10,7 +10,7 @@ import {FeeMath} from "../libraries/FeeMath.sol";
 
 /**
  * @title ProtoLiquidityLockerV4
- * @notice LEGACY — superseded by ProtoV4Graduator (positions are never locked here).
+ * @notice LEGACY — superseded by GotonV4Graduator (positions are never locked here).
  *         Sovereign Liquidity Locker for Uniswap V4 on Robinhood Chain.
  *         Permanently locks Uniswap V4 LP NFT positions (UNI-V4-POSM)
  *         and manages protocol/creator fee distributions without third-party dependency.

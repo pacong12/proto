@@ -1,6 +1,6 @@
 # Verified Smart Contracts
 
-For transparency and safety, all Proto launchpad contracts across supported networks are public, non-custodial, and verifiable on the official block explorers.
+For transparency and safety, all Goton launchpad contracts across supported networks are public, non-custodial, and verifiable on the official block explorers.
 
 ---
 

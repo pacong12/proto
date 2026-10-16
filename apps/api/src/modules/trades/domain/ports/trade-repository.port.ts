@@ -1,5 +1,5 @@
 import type { Address } from 'viem';
-import type { TradeEventEntity } from '@proto/shared-types';
+import type { TradeEventEntity } from '@goton/shared-types';
 
 export interface TradeRepositoryPort {
   saveTrade(trade: TradeEventEntity): Promise<void>;

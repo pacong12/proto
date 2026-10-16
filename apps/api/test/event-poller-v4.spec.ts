@@ -5,7 +5,7 @@ import {
   ROBINHOOD_CHAIN,
   type LaunchedTokenEntity,
   type NetworkConfig,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 import { EventPollerService } from '../src/modules/tokens/infrastructure/indexer/event-poller.service';
 import { InMemoryTokenRepository } from '../src/modules/tokens/infrastructure/adapters/in-memory-token.repository';
 import type { ViemChainIndexerAdapter } from '../src/modules/tokens/infrastructure/adapters/viem-chain-indexer.adapter';

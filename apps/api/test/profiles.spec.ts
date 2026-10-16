@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { privateKeyToAccount } from 'viem/accounts';
-import { sanitizeCreatorProfile } from '@proto/shared-types';
+import { sanitizeCreatorProfile } from '@goton/shared-types';
 import { createSessionToken } from '../src/core/auth/session';
 import { server } from '../src/server';
 
@@ -10,7 +10,7 @@ const owner = privateKeyToAccount(
 const other = '0x2222222222222222222222222222222222222222';
 
 const profile = {
-  displayName: 'Proto Dev',
+  displayName: 'Goton Dev',
   bio: 'Building on Arc and Robinhood',
   avatarUrl: 'ipfs://bafkreiexample',
   bannerUrl: 'https://example.com/banner.png',

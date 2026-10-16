@@ -159,7 +159,7 @@ import { Copy, Check, ExternalLink } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { formatCompactUsd, formatPriceUsd } from '@/lib/utils';
-import type { LaunchedTokenEntity, TokenMarketData, NetworkConfig } from '@proto/shared-types';
+import type { LaunchedTokenEntity, TokenMarketData, NetworkConfig } from '@goton/shared-types';
 
 const { t } = useI18n();
 

@@ -2,7 +2,7 @@
 
 What happens if a token developer steps away or abandons a project?
 
-Unlike typical launchpads where abandoned projects immediately wither away, Proto features a native **Community Takeover (CTO)** framework that allows active holders to revive the project and claim creator fee revenues.
+Unlike typical launchpads where abandoned projects immediately wither away, Goton features a native **Community Takeover (CTO)** framework that allows active holders to revive the project and claim creator fee revenues.
 
 ---
 
@@ -10,7 +10,7 @@ Unlike typical launchpads where abandoned projects immediately wither away, Prot
 
 A Community Takeover occurs when enthusiastic community members organize to adopt an abandoned token, take over marketing, update social links, and maintain community growth.
 
-Proto supports this through smart contract fee redirection:
+Goton supports this through smart contract fee redirection:
 
 1. **Creator Delegation**: The original creator can voluntarily transfer their 70% trading fee stream to a trusted community wallet, multisig, or DAO address via the **Profile** interface.
 2. **Community Application**: If a creator has disappeared or sold their entire position, community members can submit verifiable proof of adoption. Upon verification, the creator fee stream is redirected to benefit the community.

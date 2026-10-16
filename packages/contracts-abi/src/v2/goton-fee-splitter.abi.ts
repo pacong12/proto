@@ -1,17 +1,17 @@
 /**
- * Canonical ABI for ProtoFeeSplitter
- * Auto-generated from Foundry compilation output: contracts/out/ProtoFeeSplitter.sol/ProtoFeeSplitter.json
+ * Canonical ABI for GotonFeeSplitter
+ * Auto-generated from Foundry compilation output: contracts/out/GotonFeeSplitter.sol/GotonFeeSplitter.json
  * Do not edit directly; run `bun run export-abis` in packages/contracts-abi.
  */
 
-export const protoFeeSplitterAbi = [
+export const gotonFeeSplitterAbi = [
   {
     type: 'constructor',
     inputs: [
       {
         name: 'cfg',
         type: 'tuple',
-        internalType: 'struct ProtoFeeSplitter.Config',
+        internalType: 'struct GotonFeeSplitter.Config',
         components: [
           {
             name: 'token',
@@ -68,7 +68,7 @@ export const protoFeeSplitterAbi = [
       {
         name: 'split',
         type: 'tuple',
-        internalType: 'struct ProtoFeeSplitter.Split',
+        internalType: 'struct GotonFeeSplitter.Split',
         components: [
           {
             name: 'protocolBps',

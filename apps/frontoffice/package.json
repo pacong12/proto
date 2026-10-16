@@ -1,5 +1,5 @@
 {
-  "name": "@proto/frontoffice",
+  "name": "@goton/frontoffice",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,8 +12,8 @@
   "dependencies": {
     "@headlessui/vue": "^1.7.23",
     "@lucide/vue": "^1.46.0",
-    "@proto/shared-types": "*",
-    "@proto/math-sdk": "*",
+    "@goton/shared-types": "*",
+    "@goton/math-sdk": "*",
     "@reown/appkit": "^1.8.23",
     "@reown/appkit-adapter-wagmi": "^1.8.23",
     "@tanstack/vue-query": "^5.102.8",

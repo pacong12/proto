@@ -1,5 +1,5 @@
 import { shallowRef } from 'vue';
-import { ROBINHOOD_CHAIN, ARC_CHAIN } from '@proto/shared-types';
+import { ROBINHOOD_CHAIN, ARC_CHAIN } from '@goton/shared-types';
 
 export interface WalletRequestArgs {
   method: string;

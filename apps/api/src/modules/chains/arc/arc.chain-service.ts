@@ -1,4 +1,4 @@
-import { ARC_CHAIN } from '@proto/shared-types';
+import { ARC_CHAIN } from '@goton/shared-types';
 import type { PublicClient } from 'viem';
 import { GenericChainService } from '../generic-chain.service';
 import type { PriceFeedPort } from '../../tokens/domain/ports/price-feed.port';

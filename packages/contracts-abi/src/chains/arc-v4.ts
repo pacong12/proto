@@ -1,6 +1,6 @@
 import { encodeAbiParameters, encodePacked, parseAbi, type Address, type Hex } from 'viem';
 
-/** Pool parameters every Proto launch on Arc uses (LaunchpadV2FactoryArc constants). */
+/** Pool parameters every Goton launch on Arc uses (LaunchpadV2FactoryArc constants). */
 export const ARC_V4_POOL_FEE = 10_000;
 export const ARC_V4_TICK_SPACING = 200;
 
@@ -13,7 +13,7 @@ export interface V4PoolKey {
 }
 
 /**
- * Builds the PoolKey of a Proto token's v4 pool on any chain (currencies sorted by address;
+ * Builds the PoolKey of a Goton token's v4 pool on any chain (currencies sorted by address;
  * native ETH is `address(0)` and therefore always currency0). Fee 1%, tick spacing 200.
  */
 export function protoV4PoolKey(token: Address, quote: Address, hook: Address): V4PoolKey {

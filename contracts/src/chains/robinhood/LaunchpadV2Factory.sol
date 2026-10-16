@@ -5,7 +5,7 @@ import {EmergencyPause} from "../../core/EmergencyPause.sol";
 import {LaunchpadToken} from "../../core/LaunchpadToken.sol";
 import {ILaunchpadToken} from "../../interfaces/ILaunchpadToken.sol";
 import {BondingCurve} from "../../core/BondingCurve.sol";
-import {ProtoV4Graduator} from "../../core/ProtoV4Graduator.sol";
+import {GotonV4Graduator} from "../../core/GotonV4Graduator.sol";
 
 /**
  * @title LaunchpadV2Factory
@@ -13,7 +13,7 @@ import {ProtoV4Graduator} from "../../core/ProtoV4Graduator.sol";
  *
  * Graduation is trustless: once a curve reaches its target anyone may call `graduate(token)`,
  * which moves the curve's ETH and tokens into a locked native-ETH Uniswap v4 pool through
- * ProtoV4Graduator. There is no owner-chosen migration recipient.
+ * GotonV4Graduator. There is no owner-chosen migration recipient.
  *
  * Security notes:
  *   - C-03 fix: constructor validates that feeRecipient and graduator are non-zero.
@@ -30,7 +30,7 @@ contract LaunchpadV2Factory is EmergencyPause {
     uint256 public constant VIRTUAL_TOKEN_RESERVE = 1_000_000_000 * 1e18;
 
     address payable public immutable protocolFeeRecipient;
-    ProtoV4Graduator public immutable graduator;
+    GotonV4Graduator public immutable graduator;
 
     address public owner;
     address public pendingOwner;
@@ -87,7 +87,7 @@ contract LaunchpadV2Factory is EmergencyPause {
         _locked = false;
     }
 
-    constructor(address payable _feeRecipient, ProtoV4Graduator _graduator) {
+    constructor(address payable _feeRecipient, GotonV4Graduator _graduator) {
         // C-03 fix: validate all addresses that receive value or tokens.
         if (_feeRecipient == address(0) || address(_graduator) == address(0)) revert ZeroAddress();
 

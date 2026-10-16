@@ -31,7 +31,7 @@
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/lib/i18n';
 import { formatPriceUsd } from '@/lib/utils';
-import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
+import type { LaunchedTokenEntity, TokenMarketData } from '@goton/shared-types';
 
 interface Props {
   currentToken: LaunchedTokenEntity;

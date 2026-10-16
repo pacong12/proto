@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { privateKeyToAccount } from 'viem/accounts';
-import { buildCommentSignMessage } from '@proto/shared-types';
+import { buildCommentSignMessage } from '@goton/shared-types';
 import { server } from '../src/server';
 
 describe('Tokens HTTP Endpoints Integration', () => {
@@ -124,7 +124,7 @@ describe('Tokens HTTP Endpoints Integration', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         authorAddress: author,
-        content: 'Alpha call on $PROTO! Send it to $100K MC!',
+        content: 'Alpha call on $GOTON! Send it to $100K MC!',
         targetMcap: '$100K MC',
         positionUsd: 150.25,
         callType: 'call',
@@ -149,7 +149,7 @@ describe('Tokens HTTP Endpoints Integration', () => {
 
     const match = feedJson.data.find((c: { id: string }) => c.id === postJson.data.id);
     expect(match).toBeDefined();
-    expect(match.content).toContain('Alpha call on $PROTO');
+    expect(match.content).toContain('Alpha call on $GOTON');
 
     // Test GET /api/callouts alias
     const calloutsReq = new Request('http://localhost:3001/api/callouts?limit=5');

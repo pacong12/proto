@@ -337,8 +337,8 @@ contract BondingCurve {
     /**
      * @notice Records the canonical Uniswap v4 pool id and emits the Graduated event.
      *         Funds stay here until the factory's permissionless `graduate` moves them into the
-     *         pool through ProtoV4Graduator (which initializes the pool behind its hook guard).
-     * @dev The key must match ProtoV4Graduator._poolKey (native ETH, 1% fee, spacing 200).
+     *         pool through GotonV4Graduator (which initializes the pool behind its hook guard).
+     * @dev The key must match GotonV4Graduator._poolKey (native ETH, 1% fee, spacing 200).
      */
     function _prepareGraduationV4() internal {
         PoolKey memory key =

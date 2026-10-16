@@ -8,7 +8,7 @@ import {
   GetCandlesticksUseCase,
   TradeController,
 } from '../src/modules/trades';
-import type { TradeEventEntity, LaunchedTokenEntity } from '@proto/shared-types';
+import type { TradeEventEntity, LaunchedTokenEntity } from '@goton/shared-types';
 
 describe('Trades Module Clean Architecture Tests', () => {
   let repository: InMemoryTokenRepository;

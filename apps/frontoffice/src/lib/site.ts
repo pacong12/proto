@@ -1,4 +1,4 @@
-import { resolveSiteUrls } from '@proto/shared-types';
+import { resolveSiteUrls } from '@goton/shared-types';
 
 /**
  * Public URLs of this deployment. vite.config.ts always defines VITE_APP_URL / VITE_DOCS_URL

@@ -426,7 +426,7 @@ Explore feed Arc akan selalu kosong. DEX Screener tidak bisa mengambil data Arc.
 **Fix konkret** — tambahkan ke `apps/api/src/server.ts`:
 
 ```ts
-import { ARC_CHAIN } from '@proto/shared-types';
+import { ARC_CHAIN } from '@goton/shared-types';
 
 const arcChainDef = defineChain({
   id: ARC_CHAIN.chainId,

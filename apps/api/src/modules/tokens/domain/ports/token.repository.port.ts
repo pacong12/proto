@@ -5,7 +5,7 @@ import {
   CandlestickEntity,
   TokenCommentEntity,
   type CreatorProfile,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 
 export interface TokenRepositoryPort {
   save(token: LaunchedTokenEntity): Promise<void>;
@@ -68,11 +68,11 @@ export interface TokenRepositoryPort {
     offset?: number,
     viewerAddress?: string,
     authorAddress?: string,
-  ): Promise<import('@proto/shared-types').FeedCalloutItem[]>;
+  ): Promise<import('@goton/shared-types').FeedCalloutItem[]>;
   getCalloutThread?(
     calloutId: string,
     viewerAddress?: string,
-  ): Promise<import('@proto/shared-types').FeedCalloutItem | null>;
+  ): Promise<import('@goton/shared-types').FeedCalloutItem | null>;
   toggleCommentLike?(
     commentId: string,
     userAddress: string,

@@ -3,12 +3,12 @@
 <Badge variant="graduated">Terakhir Diperbarui: September 2026</Badge>
 
 <Card>
-Proto dibangun di atas prinsip privasi terdesentralisasi. Kami tidak menggunakan cookie pelacak, pelacak iklan komersial, atau skrip profiling pihak ketiga.
+Goton dibangun di atas prinsip privasi terdesentralisasi. Kami tidak menggunakan cookie pelacak, pelacak iklan komersial, atau skrip profiling pihak ketiga.
 </Card>
 
 ## 1. Teknologi yang Kami Gunakan
 
-Tidak seperti layanan web tradisional, Proto tidak menggunakan cookie HTTP persisten untuk melacak kebiasaan browsing Anda di berbagai situs web. Kami hanya menggunakan penyimpanan sisi klien asli peramban Anda (`localStorage` dan `sessionStorage`) khusus untuk fungsi antarmuka yang diperlukan.
+Tidak seperti layanan web tradisional, Goton tidak menggunakan cookie HTTP persisten untuk melacak kebiasaan browsing Anda di berbagai situs web. Kami hanya menggunakan penyimpanan sisi klien asli peramban Anda (`localStorage` dan `sessionStorage`) khusus untuk fungsi antarmuka yang diperlukan.
 
 ## 2. Informasi yang Tersimpan Secara Lokal
 

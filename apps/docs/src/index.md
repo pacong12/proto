@@ -2,12 +2,12 @@
 layout: home
 
 hero:
-  name: 'Proto Knowledge Base'
+  name: 'Goton Knowledge Base'
   text: 'The Fair Token Launchpad on Robinhood Chain'
   tagline: 'A simple, clean guide to creating, discovering, and trading fixed-supply tokens with permanently locked liquidity.'
   actions:
     - theme: brand
-      text: What is Proto?
+      text: What is Goton?
       link: /protocol/overview
     - theme: alt
       text: How to Launch a Token
@@ -18,7 +18,7 @@ hero:
 
 features:
   - title: 100% Non-Custodial
-    details: Your wallet controls every action. Proto never holds your assets, private keys, or creator funds.
+    details: Your wallet controls every action. Goton never holds your assets, private keys, or creator funds.
   - title: Rug-Proof Liquidity Lock
     details: Liquidity is minted and locked permanently inside smart contracts on day one. No developer or admin can withdraw pool reserves.
   - title: Built-In Sniper Protection

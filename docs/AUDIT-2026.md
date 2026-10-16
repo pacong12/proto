@@ -13,7 +13,7 @@ Audit komprehensif ini mencakup keamanan smart contract, keandalan dan skalabili
 
 Seluruh temuan telah diverifikasi secara matematis dan empiris. Solusi telah diimplementasikan penuh dan seluruh quality gates berhasil dilewati dengan hasil:
 
-- **TypeScript Typecheck**: 4 workspace lulus tanpa error (`@proto/shared-types`, `@proto/docs`, `@proto/api`, `@proto/frontoffice`).
+- **TypeScript Typecheck**: 4 workspace lulus tanpa error (`@goton/shared-types`, `@goton/docs`, `@goton/api`, `@goton/frontoffice`).
 - **ESLint**: 0 warning, 0 error.
 - **Vitest Unit Tests**: 23 file pengujian, 96/96 test lulus.
 - **Foundry Smart Contract Tests**: 7 test suite, 44/44 test lulus.
@@ -377,7 +377,7 @@ bun run test --run
 
 # 3. Validasi Static Typing (TypeScript)
 bun run typecheck
-# Output: Clean across @proto/shared-types, @proto/docs, @proto/api, @proto/frontoffice.
+# Output: Clean across @goton/shared-types, @goton/docs, @goton/api, @goton/frontoffice.
 
 # 4. Validasi Linter (ESLint)
 bun run lint

@@ -453,7 +453,7 @@ import {
   autoBalanceSplit,
   adjustShareDynamically,
   calculateDonutSegments,
-} from '@proto/math-sdk';
+} from '@goton/math-sdk';
 
 const { t } = useI18n();
 

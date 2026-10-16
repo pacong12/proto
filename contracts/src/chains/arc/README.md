@@ -15,10 +15,10 @@
 ## 2. Launch Model: In-Pool Uniswap v4 (Argus portal parameters)
 
 Tokens trade in their Uniswap v4 pool from the first block. There is no bonding-curve contract, no
-migration and no Uniswap V3 dependency (V3 is deployed on Arc, but Proto does not use it).
+migration and no Uniswap V3 dependency (V3 is deployed on Arc, but Goton does not use it).
 
 1. `LaunchpadV2FactoryArc.launchToken` deploys the token and initializes a USDC/token pool
-   (fee 1%, tickSpacing 200, hook `ProtoV4Hook`) at tick 405400 (≈ $2,480.74 market cap).
+   (fee 1%, tickSpacing 200, hook `GotonV4Hook`) at tick 405400 (≈ $2,480.74 market cap).
 2. 100% of supply is added as single-sided liquidity over `[-887200, 405400]` (mirrored when the token
    sorts before USDC). The position is owned by the factory, which cannot remove it: locked forever.
 3. The creator's prebuy (≥ 4.50 USDC, ≤ 5% of supply) is swapped in the same transaction.
@@ -35,12 +35,12 @@ tokens (liquidity `1575037795897358225`, identical to Argus pools on-chain).
 - **`LaunchpadV2FactoryArc.sol`** (this folder) — launch portal and owner of every launch position;
   `collectFees(token)` routes LP fees (USDC to the splitter, token side burned).
 - Shared with other chains (`../../core/`):
-  - **`ProtoV4Hook.sol`** — singleton v4 hook (permission bits `0x20CC`): launcher-only pool
+  - **`GotonV4Hook.sol`** — singleton v4 hook (permission bits `0x20CC`): launcher-only pool
     initialization, fixed buy/sell tax in USDC, decaying anti-snipe tax, graduation tracking.
-  - **`ProtoFeeSplitter.sol`** — per-token fee router: 30% protocol cut, remainder to holders (USDC
+  - **`GotonFeeSplitter.sol`** — per-token fee router: 30% protocol cut, remainder to holders (USDC
     dividends streamed over a day, checkpointed on every transfer) / burn / creator (pulled, 48h
-    redirect timelock) / liquidity. `ProtoFeeSplitterDeployer` creates them.
-  - **`ProtoV4Router.sol`** — exact-input swaps; buys can be paid with native USDC `msg.value`.
+    redirect timelock) / liquidity. `GotonFeeSplitterDeployer` creates them.
+  - **`GotonV4Router.sol`** — exact-input swaps; buys can be paid with native USDC `msg.value`.
   - `LaunchpadToken.sol`, `../../libraries/v4/` (TickMath, V4Lib), `../../interfaces/external/IUniswapV4Core.sol`.
 
 ---

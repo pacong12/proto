@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-Proto Labs and the Proto Protocol operate a non-custodial token launch and decentralized exchange interface on Robinhood Chain (Chain ID: 4663). We prioritize data minimization, user sovereignty, and cryptographic privacy.
+Goton Labs and the Goton Protocol operate a non-custodial token launch and decentralized exchange interface on Robinhood Chain (Chain ID: 4663). We prioritize data minimization, user sovereignty, and cryptographic privacy.
 
 ## 2. Non-Custodial Architecture
 

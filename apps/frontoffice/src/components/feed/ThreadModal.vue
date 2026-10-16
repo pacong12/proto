@@ -285,7 +285,7 @@ import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import CashtagText from './CashtagText.vue';
 import { shortenAddress, formatRelativeTime } from '@/lib/utils';
 import { toast } from '@/components/ui/sonner';
-import type { FeedCalloutItem, LaunchedTokenEntity } from '@proto/shared-types';
+import type { FeedCalloutItem, LaunchedTokenEntity } from '@goton/shared-types';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -332,7 +332,7 @@ async function loadThreadData(calloutId: string): Promise<void> {
     const viewerParam = props.account ? `?viewer=${props.account}` : '';
     const data = await apiFetch<{
       success: boolean;
-      data: { replies?: import('@proto/shared-types').FeedCalloutItem[] };
+      data: { replies?: import('@goton/shared-types').FeedCalloutItem[] };
     }>(`/api/callouts/${calloutId}${viewerParam}`);
     if (data.success && data.data) {
       replies.value = data.data.replies || [];

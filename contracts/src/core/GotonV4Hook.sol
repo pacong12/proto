@@ -14,19 +14,19 @@ interface IFeeSplitter {
 }
 
 /**
- * @title ProtoV4Hook
- * @notice Chain-agnostic singleton Uniswap v4 hook for every Proto pool on a chain.
+ * @title GotonV4Hook
+ * @notice Chain-agnostic singleton Uniswap v4 hook for every Goton pool on a chain.
  *         - Restricts pool initialization to the registered launcher (factory / graduator).
  *         - Charges each pool's fixed buy/sell tax (optionally raised to a decaying anti-snipe
  *           tax) in the quote currency — native ETH or an ERC-20 such as Arc USDC — and forwards
- *           it to the token's ProtoFeeSplitter.
+ *           it to the token's GotonFeeSplitter.
  *         - Tracks in-pool graduation: `bonded` flips to false once price crosses `bondTick`.
  *         - Keeps a tick accumulator per pool (Uniswap V3 oracle semantics) so `consultTick` returns
  *           a TWAP over at least ORACLE_PERIOD, used to price-guard protocol buybacks.
  *
  *         The hook address's low 14 bits must equal PROTO_V4_HOOK_FLAGS (mined via CREATE2).
  */
-contract ProtoV4Hook {
+contract GotonV4Hook {
     using PoolIdLibrary for PoolKey;
 
     uint160 public constant FLAGS = PROTO_V4_HOOK_FLAGS;

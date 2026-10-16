@@ -1,5 +1,5 @@
 import { defineChain, fallback, http, type Chain, type Transport } from 'viem';
-import type { NetworkConfig } from '@proto/shared-types';
+import type { NetworkConfig } from '@goton/shared-types';
 
 /** The configured RPC endpoints for a network, primary first and without duplicates. */
 export function rpcUrlsFor(cfg: NetworkConfig): string[] {

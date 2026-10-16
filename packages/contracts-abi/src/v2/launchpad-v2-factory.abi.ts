@@ -16,7 +16,7 @@ export const launchpadV2FactoryAbi = [
       {
         name: '_graduator',
         type: 'address',
-        internalType: 'contract ProtoV4Graduator',
+        internalType: 'contract GotonV4Graduator',
       },
     ],
     stateMutability: 'nonpayable',
@@ -185,7 +185,7 @@ export const launchpadV2FactoryAbi = [
       {
         name: '',
         type: 'address',
-        internalType: 'contract ProtoV4Graduator',
+        internalType: 'contract GotonV4Graduator',
       },
     ],
     stateMutability: 'view',

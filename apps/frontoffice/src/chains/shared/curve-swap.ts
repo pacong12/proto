@@ -1,5 +1,5 @@
 import { erc20Abi, type PublicClient, type WalletClient } from 'viem';
-import { bondingCurveAbi } from '@proto/shared-types';
+import { bondingCurveAbi } from '@goton/shared-types';
 import type { ChainSwapParams } from '../types';
 import { waitForReceiptWithFallback } from '../../lib/viem-client';
 import { resolveMinAmountOut } from './utils';
@@ -14,7 +14,7 @@ export function isCurveTrade(params: ChainSwapParams): boolean {
 }
 
 /**
- * Buys / sells on a Proto BondingCurve (chain-agnostic; the quote is the native currency).
+ * Buys / sells on a Goton BondingCurve (chain-agnostic; the quote is the native currency).
  * Sells approve exactly the amount being sold (FO-03: no unlimited allowances).
  */
 export async function executeCurveSwap(

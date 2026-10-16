@@ -13,7 +13,7 @@ const SITE = resolveSiteUrls({ appUrl: env.VITE_APP_URL, docsUrl: env.VITE_DOCS_
 const SITE_URL_FILES = ['robots.txt', 'llms.txt', 'opengraph-docs.svg'];
 
 export default defineConfig({
-  title: 'Proto User Guide',
+  title: 'Goton User Guide',
   description:
     'Clean, step-by-step user guide and knowledge base for trading, launching, and exploring tokens on Robinhood Chain and Arc Network.',
   srcDir: './src',
@@ -84,18 +84,18 @@ export default defineConfig({
       {
         name: 'keywords',
         content:
-          'proto,docs,guide,launchpad,token launch,bonding curve,uniswap,robinhood chain,crypto,web3,defi',
+          'goton,docs,guide,launchpad,token launch,bonding curve,uniswap,robinhood chain,crypto,web3,defi',
       },
     ],
-    ['meta', { name: 'author', content: 'Proto Labs' }],
+    ['meta', { name: 'author', content: 'Goton Labs' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:locale', content: 'en_US' }],
-    ['meta', { property: 'og:site_name', content: 'Proto Knowledge Base' }],
+    ['meta', { property: 'og:site_name', content: 'Goton Knowledge Base' }],
     [
       'meta',
       {
         property: 'og:title',
-        content: 'Proto User Guide · Fair Token Launchpad',
+        content: 'Goton User Guide · Fair Token Launchpad',
       },
     ],
     [
@@ -120,7 +120,7 @@ export default defineConfig({
       'meta',
       {
         property: 'og:image:alt',
-        content: 'Proto Knowledge Base & User Guide',
+        content: 'Goton Knowledge Base & User Guide',
       },
     ],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
@@ -129,7 +129,7 @@ export default defineConfig({
       'meta',
       {
         name: 'twitter:title',
-        content: 'Proto User Guide · Fair Token Launchpad',
+        content: 'Goton User Guide · Fair Token Launchpad',
       },
     ],
     [
@@ -151,7 +151,7 @@ export default defineConfig({
       'meta',
       {
         name: 'twitter:image:alt',
-        content: 'Proto Knowledge Base & User Guide',
+        content: 'Goton Knowledge Base & User Guide',
       },
     ],
     [
@@ -164,12 +164,12 @@ export default defineConfig({
             '@type': 'WebSite',
             '@id': `${SITE.docsUrl}/#website`,
             url: `${SITE.docsUrl}`,
-            name: 'Proto Documentation & User Guide',
+            name: 'Goton Documentation & User Guide',
             description:
               'Clean, step-by-step user guide and knowledge base for trading, launching, and exploring tokens on Robinhood Chain.',
             publisher: {
               '@type': 'Organization',
-              name: 'Proto Labs',
+              name: 'Goton Labs',
               url: `${SITE.appUrl}`,
               logo: `${SITE.appUrl}/favicon.svg`,
             },
@@ -178,7 +178,7 @@ export default defineConfig({
             '@type': 'TechArticle',
             '@id': `${SITE.docsUrl}/#article`,
             url: `${SITE.docsUrl}`,
-            name: 'Proto Protocol User Documentation',
+            name: 'Goton Protocol User Documentation',
             headline: 'Fair Token Launchpad Protocol Guides & Reference',
           },
         ],
@@ -212,7 +212,7 @@ export default defineConfig({
             text: 'Getting Started',
             collapsed: false,
             items: [
-              { text: 'What is Proto?', link: '/protocol/overview' },
+              { text: 'What is Goton?', link: '/protocol/overview' },
               { text: 'Frequently Asked Questions', link: '/protocol/faq' },
             ],
           },
@@ -272,7 +272,7 @@ export default defineConfig({
             text: 'Panduan Pengguna',
             collapsed: false,
             items: [
-              { text: 'Apa itu Proto?', link: '/id/protocol/overview' },
+              { text: 'Apa itu Goton?', link: '/id/protocol/overview' },
               { text: 'Pertanyaan Umum (FAQ)', link: '/id/protocol/faq' },
             ],
           },
@@ -332,7 +332,7 @@ export default defineConfig({
             text: '新手指南',
             collapsed: false,
             items: [
-              { text: '什么是 Proto？', link: '/zh/protocol/overview' },
+              { text: '什么是 Goton？', link: '/zh/protocol/overview' },
               { text: '常见问题 (FAQ)', link: '/zh/protocol/faq' },
             ],
           },
@@ -388,7 +388,7 @@ export default defineConfig({
           {
             text: 'Guía del Usuario',
             collapsed: false,
-            items: [{ text: '¿Qué es Proto?', link: '/es/protocol/overview' }],
+            items: [{ text: '¿Qué es Goton?', link: '/es/protocol/overview' }],
           },
         ],
       },
@@ -408,7 +408,7 @@ export default defineConfig({
           {
             text: 'ユーザーハンドブック',
             collapsed: false,
-            items: [{ text: 'Proto とは？', link: '/ja/protocol/overview' }],
+            items: [{ text: 'Goton とは？', link: '/ja/protocol/overview' }],
           },
         ],
       },
@@ -428,7 +428,7 @@ export default defineConfig({
           {
             text: '사용자 가이드',
             collapsed: false,
-            items: [{ text: 'Proto란 무엇인가요?', link: '/ko/protocol/overview' }],
+            items: [{ text: 'Goton란 무엇인가요?', link: '/ko/protocol/overview' }],
           },
         ],
       },
@@ -448,7 +448,7 @@ export default defineConfig({
           {
             text: 'Руководство пользователя',
             collapsed: false,
-            items: [{ text: 'Что такое Proto?', link: '/ru/protocol/overview' }],
+            items: [{ text: 'Что такое Goton?', link: '/ru/protocol/overview' }],
           },
         ],
       },
@@ -468,7 +468,7 @@ export default defineConfig({
           {
             text: 'دليل المستخدم',
             collapsed: false,
-            items: [{ text: 'ما هو Proto؟', link: '/ar/protocol/overview' }],
+            items: [{ text: 'ما هو Goton؟', link: '/ar/protocol/overview' }],
           },
         ],
       },
@@ -488,7 +488,7 @@ export default defineConfig({
           {
             text: 'Guide Utilisateur',
             collapsed: false,
-            items: [{ text: 'Qu’est-ce que Proto ?', link: '/fr/protocol/overview' }],
+            items: [{ text: 'Qu’est-ce que Goton ?', link: '/fr/protocol/overview' }],
           },
         ],
       },
@@ -508,7 +508,7 @@ export default defineConfig({
           {
             text: 'Benutzerhandbuch',
             collapsed: false,
-            items: [{ text: 'Was ist Proto?', link: '/de/protocol/overview' }],
+            items: [{ text: 'Was ist Goton?', link: '/de/protocol/overview' }],
           },
         ],
       },
@@ -528,7 +528,7 @@ export default defineConfig({
           {
             text: 'Manual do Usuário',
             collapsed: false,
-            items: [{ text: 'O que é o Proto?', link: '/pt/protocol/overview' }],
+            items: [{ text: 'O que é o Goton?', link: '/pt/protocol/overview' }],
           },
         ],
       },
@@ -543,11 +543,11 @@ export default defineConfig({
       linkLabel: 'Go to the guide home',
       linkText: 'Back to the guide',
     },
-    siteTitle: 'Proto Guide',
+    siteTitle: 'Goton Guide',
     logo: {
       light: '/logo-black.svg',
       dark: '/logo-white.svg',
-      alt: 'Proto',
+      alt: 'Goton',
     },
     search: {
       provider: 'local',
@@ -563,7 +563,7 @@ export default defineConfig({
     footer: {
       message: 'Released under the MIT License.',
       copyright:
-        'Copyright © 2026 Proto Labs. Multi-chain launchpad protocol on Robinhood Chain and Arc Network.',
+        'Copyright © 2026 Goton Labs. Multi-chain launchpad protocol on Robinhood Chain and Arc Network.',
     },
   },
 });

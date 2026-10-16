@@ -1,5 +1,5 @@
 /**
- * Canonical Protocol Constants for Proto Launchpad V2
+ * Canonical Protocol Constants for Goton Launchpad V2
  * Mirrors BondingCurve.sol, LiquidityLocker.sol, and HolderFeeDistributor.sol exactly.
  */
 

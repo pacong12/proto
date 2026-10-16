@@ -40,9 +40,9 @@ import {
   ROBINHOOD_CHAIN,
   ARC_CHAIN,
   bondingCurveAbi,
-  protoFeeSplitterAbi,
-  protoV4GraduatorAbi,
-  protoV4HookAbi,
+  gotonFeeSplitterAbi,
+  gotonV4GraduatorAbi,
+  gotonV4HookAbi,
   resolveFeeSplitter,
   launchpadTokenAbi,
   type LaunchedTokenEntity,
@@ -59,7 +59,7 @@ import {
   type CreatorProfile,
   ok,
   err,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 import {
   safeStringify,
   parseJsonBody,
@@ -562,7 +562,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
               status: 401,
               headers: {
                 'Content-Type': 'text/html; charset=utf-8',
-                'WWW-Authenticate': 'Bearer realm="Proto DevOps"',
+                'WWW-Authenticate': 'Bearer realm="Goton DevOps"',
               },
             },
           );
@@ -575,7 +575,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           }),
           {
             status: 401,
-            headers: { ...headers, 'WWW-Authenticate': 'Bearer realm="Proto DevOps"' },
+            headers: { ...headers, 'WWW-Authenticate': 'Bearer realm="Goton DevOps"' },
           },
         );
       }
@@ -838,7 +838,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           try {
             const pool = await chain.client.readContract({
               address: hook,
-              abi: protoV4HookAbi,
+              abi: gotonV4HookAbi,
               functionName: 'pools',
               args: [existing.poolAddress],
             });
@@ -856,7 +856,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
                 (functionName) =>
                   chain.client.readContract({
                     address: splitter.address,
-                    abi: protoFeeSplitterAbi,
+                    abi: gotonFeeSplitterAbi,
                     functionName,
                   }),
               ),
@@ -873,14 +873,14 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
             if (graduator && graduator !== '0x0000000000000000000000000000000000000000') {
               const hasSplit = await chain.client.readContract({
                 address: graduator,
-                abi: protoV4GraduatorAbi,
+                abi: gotonV4GraduatorAbi,
                 functionName: 'hasTokenSplit',
                 args: [address],
               });
               if (hasSplit) {
                 const split = await chain.client.readContract({
                   address: graduator,
-                  abi: protoV4GraduatorAbi,
+                  abi: gotonV4GraduatorAbi,
                   functionName: 'tokenSplits',
                   args: [address],
                 });
@@ -983,7 +983,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       const chain = token
         ? chainRegistry.resolveForToken(token)
         : chainRegistry.getChainByParam(url.searchParams.get('chain'));
-      // Dividends are paid by the token's ProtoFeeSplitter (created at launch on in-pool v4
+      // Dividends are paid by the token's GotonFeeSplitter (created at launch on in-pool v4
       // chains, at graduation on bonding-curve chains).
       const splitter = await resolveFeeSplitter(chain.client, chain.network, tokenAddress).catch(
         () => null,
@@ -1007,7 +1007,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         chain.client
           .readContract({
             address: splitter.address,
-            abi: protoFeeSplitterAbi,
+            abi: gotonFeeSplitterAbi,
             functionName: 'claimable',
             args: [accountParam],
           })
@@ -1015,7 +1015,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         chain.client
           .readContract({
             address: splitter.address,
-            abi: protoFeeSplitterAbi,
+            abi: gotonFeeSplitterAbi,
             functionName: 'totalStreamed',
           })
           .catch(() => 0n),
@@ -1991,8 +1991,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     if (!res.success || !res.data) return replyError('NOT_FOUND', 'Asset not found', 404);
 
     const td = res.data as {
-      token: import('@proto/shared-types').LaunchedTokenEntity;
-      marketData: import('@proto/shared-types').TokenMarketData;
+      token: import('@goton/shared-types').LaunchedTokenEntity;
+      marketData: import('@goton/shared-types').TokenMarketData;
     };
     const t = td.token;
     const network = resolveTokenNetwork(t);
@@ -2245,8 +2245,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const res = await tokenController.getToken(tokenAddr);
     if (!res.success || !res.data) return replyError('NOT_FOUND', 'Token not found', 404);
     const td = res.data as {
-      token: import('@proto/shared-types').LaunchedTokenEntity;
-      marketData: import('@proto/shared-types').TokenMarketData;
+      token: import('@goton/shared-types').LaunchedTokenEntity;
+      marketData: import('@goton/shared-types').TokenMarketData;
     };
     const t = td.token;
     const m = td.marketData;
@@ -2299,7 +2299,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
     const resolution = timeframe === 'minute' ? 1 : timeframe === 'hour' ? 60 : 1440;
     const ohlcvRes = await tokenController.getCandlesticks(token.address, resolution);
-    const candles = (ohlcvRes.data ?? []) as import('@proto/shared-types').CandlestickEntity[];
+    const candles = (ohlcvRes.data ?? []) as import('@goton/shared-types').CandlestickEntity[];
     const sliced = candles.slice(-limit);
 
     const payload = {
@@ -2493,4 +2493,4 @@ process.on('uncaughtException', (err) => {
   logger.error('[Server] Uncaught exception (non-fatal):', { message: err.message });
 });
 
-console.info(`Proto API Server & Indexer running at http://localhost:${PORT}`);
+console.info(`Goton API Server & Indexer running at http://localhost:${PORT}`);

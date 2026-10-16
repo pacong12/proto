@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
   <rect width="1200" height="630" fill="#09090b"/>
-  <!-- Ambient Pink & Indigo Glow (Proto Brand Accent) -->
+  <!-- Ambient Pink & Indigo Glow (Goton Brand Accent) -->
   <circle cx="1020" cy="180" r="340" fill="#E7239F" opacity="0.22" filter="blur(110px)"/>
   <circle cx="220" cy="520" r="260" fill="#7928CA" opacity="0.20" filter="blur(95px)"/>
   <circle cx="600" cy="315" r="450" fill="#18181b" opacity="0.65"/>
   
   <g transform="translate(100, 110)">
-    <!-- Brand Mark (Official Proto Logo Emblem) -->
+    <!-- Brand Mark (Official Goton Logo Emblem) -->
     <rect width="96" height="96" rx="22" fill="#141416" stroke="#27272a" stroke-width="2"/>
     <g transform="translate(19, 16) scale(0.038)">
       <path d="M1532.8 835.77V1503.68C1532.8 1596.45 1457.59 1671.66 1364.82 1671.66H1041.89V1245.83C1041.89 1176.25 985.49 1119.85 915.91 1119.85H550.13L785.01 884.97C816.51 853.47 859.24 835.77 903.79 835.77H1532.8Z" fill="#E7239F"/>
@@ -14,7 +14,7 @@
     </g>
     
     <!-- Title & Tagline with Poppins Typography -->
-    <text x="0" y="165" font-family="Poppins, -apple-system, system-ui, sans-serif" font-size="54" font-weight="800" fill="#ffffff" letter-spacing="-0.03em">proto</text>
+    <text x="0" y="165" font-family="Poppins, -apple-system, system-ui, sans-serif" font-size="54" font-weight="800" fill="#ffffff" letter-spacing="-0.03em">goton</text>
     <text x="0" y="225" font-family="Poppins, -apple-system, system-ui, sans-serif" font-size="28" font-weight="600" fill="#a1a1aa" letter-spacing="-0.01em">Launch fixed-supply tokens on Robinhood Chain &amp; Arc Network</text>
     <text x="0" y="265" font-family="Poppins, -apple-system, system-ui, sans-serif" font-size="18" fill="#71717a">Pure Bonding Curves · Zero-Migration Uniswap V4 LP · Holder Dividends</text>
     

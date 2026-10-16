@@ -66,12 +66,12 @@ HOOK_DEPLOYER=$(read_addr "$HOOK" "deployer()(address)")
 # defaultSplit() returns (protocolBps, holdersBps, burnBps, creatorBps, liquidityBps), one per line.
 mapfile -t SPLIT < <(cast call "$GRADUATOR" "defaultSplit()(uint16,uint16,uint16,uint16,uint16)" --rpc-url "$RPC_URL")
 
-verify "$HOOK" src/core/ProtoV4Hook.sol:ProtoV4Hook \
+verify "$HOOK" src/core/GotonV4Hook.sol:GotonV4Hook \
   "$(cast abi-encode "constructor(address,address)" "$POOL_MANAGER" "$HOOK_DEPLOYER")"
 
-verify "$SPLITTER_DEPLOYER" src/core/ProtoFeeSplitter.sol:ProtoFeeSplitterDeployer
+verify "$SPLITTER_DEPLOYER" src/core/GotonFeeSplitter.sol:GotonFeeSplitterDeployer
 
-verify "$GRADUATOR" src/core/ProtoV4Graduator.sol:ProtoV4Graduator \
+verify "$GRADUATOR" src/core/GotonV4Graduator.sol:GotonV4Graduator \
   "$(cast abi-encode "constructor(address,address,address,address,(uint16,uint16,uint16,uint16,uint16))" \
     "$POOL_MANAGER" "$HOOK" "$SPLITTER_DEPLOYER" "$GRAD_FEE_RECIPIENT" \
     "(${SPLIT[0]},${SPLIT[1]},${SPLIT[2]},${SPLIT[3]},${SPLIT[4]})")"
@@ -80,13 +80,13 @@ verify "$FACTORY" src/chains/robinhood/LaunchpadV2Factory.sol:LaunchpadV2Factory
   "$(cast abi-encode "constructor(address,address)" "$FEE_RECIPIENT" "$GRADUATOR")"
 
 if [[ -n "${ROBINHOOD_V4_ROUTER:-}" ]]; then
-  verify "$ROBINHOOD_V4_ROUTER" src/core/ProtoV4Router.sol:ProtoV4Router \
+  verify "$ROBINHOOD_V4_ROUTER" src/core/GotonV4Router.sol:GotonV4Router \
     "$(cast abi-encode "constructor(address,address,uint256)" "$POOL_MANAGER" \
       0x0000000000000000000000000000000000000000 0)"
 fi
 
 if [[ -n "${ROBINHOOD_V4_BUYBACK:-}" ]]; then
-  verify "$ROBINHOOD_V4_BUYBACK" src/core/ProtoV4Buyback.sol:ProtoV4Buyback \
+  verify "$ROBINHOOD_V4_BUYBACK" src/core/GotonV4Buyback.sol:GotonV4Buyback \
     "$(cast abi-encode "constructor(address,address)" "$POOL_MANAGER" "$HOOK")"
 fi
 

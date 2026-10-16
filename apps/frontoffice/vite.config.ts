@@ -110,12 +110,12 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
-        '@proto/shared-types': path.resolve(__dirname, '../../packages/shared-types/src/index.ts'),
-        '@proto/contracts-abi': path.resolve(
+        '@goton/shared-types': path.resolve(__dirname, '../../packages/shared-types/src/index.ts'),
+        '@goton/contracts-abi': path.resolve(
           __dirname,
           '../../packages/contracts-abi/src/index.ts',
         ),
-        '@proto/math-sdk': path.resolve(__dirname, '../../packages/math-sdk/src/index.ts'),
+        '@goton/math-sdk': path.resolve(__dirname, '../../packages/math-sdk/src/index.ts'),
       },
     },
   };

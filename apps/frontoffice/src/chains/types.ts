@@ -1,5 +1,5 @@
 import type { PublicClient, WalletClient } from 'viem';
-import type { TokenSocials, NetworkConfig } from '@proto/shared-types';
+import type { TokenSocials, NetworkConfig } from '@goton/shared-types';
 
 export interface ChainLaunchParams {
   name: string;

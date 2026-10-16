@@ -6,14 +6,14 @@
  * instead of duplicating network filter checks across multiple pages.
  */
 import { ref, readonly, computed, watch } from 'vue';
-import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
+import type { LaunchedTokenEntity, TokenMarketData } from '@goton/shared-types';
 import {
   resolveTokenNetwork,
   resolveNetworkByParam,
   ARC_NETWORK,
   ROBINHOOD_NETWORK,
   type NetworkConfig,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 import { apiFetch } from '@/lib/api-client';
 import { useWallet } from './useWallet';
 

@@ -138,7 +138,7 @@ export function calculateDonutSegments(
   return { circumference, segments };
 }
 
-/** On-chain ProtoFeeSplitter split of the post-protocol remainder (sums to exactly 10,000 bps). */
+/** On-chain GotonFeeSplitter split of the post-protocol remainder (sums to exactly 10,000 bps). */
 export interface RevenueSplitBps {
   holdersBps: number;
   burnBps: number;
@@ -148,7 +148,7 @@ export interface RevenueSplitBps {
 
 /**
  * Converts a UI revenue split (percentages: creator / buyback / holders / growth) into the
- * ProtoFeeSplitter bps layout (buyback → burn, growth → liquidity). Shares are normalised to
+ * GotonFeeSplitter bps layout (buyback → burn, growth → liquidity). Shares are normalised to
  * their total so the result always sums to 10,000; rounding dust goes to the largest share.
  * An empty split sends everything to the creator.
  */

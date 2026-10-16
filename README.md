@@ -1,6 +1,6 @@
-# Proto - Decentralized Fixed-Supply Launchpad Protocol
+# Goton - Decentralized Fixed-Supply Launchpad Protocol
 
-Proto is an institutional-grade, non-custodial token launchpad and trading protocol built on **Robinhood Chain** (Chain ID: 4663).
+Goton is an institutional-grade, non-custodial token launchpad and trading protocol built on **Robinhood Chain** (Chain ID: 4663).
 
 ## Features
 

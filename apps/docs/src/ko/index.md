@@ -2,12 +2,12 @@
 layout: home
 
 hero:
-  name: 'Proto 지식 베이스'
+  name: 'Goton 지식 베이스'
   text: 'Robinhood Chain 및 Arc Network 공정 토큰 런치패드'
   tagline: '영구 잠금된 유동성을 갖춘 고정 공급 토큰을 생성, 발견 및 거래하기 위한 깔끔한 사용자 가이드.'
   actions:
     - theme: brand
-      text: Proto란 무엇인가요?
+      text: Goton란 무엇인가요?
       link: /ko/protocol/overview
     - theme: alt
       text: 토큰 생성 방법
@@ -18,7 +18,7 @@ hero:
 
 features:
   - title: 100% 비수탁형 (Non-Custodial)
-    details: 모든 트랜잭션은 사용자의 지갑이 직접 제어합니다. Proto는 개인 키나 자산을 보관하지 않습니다.
+    details: 모든 트랜잭션은 사용자의 지갑이 직접 제어합니다. Goton은 개인 키나 자산을 보관하지 않습니다.
   - title: 영구 유동성 잠금 (Rug-Proof)
     details: 유동성 포지션은 첫 블록에서 오픈소스 스마트 컨트랙트에 영구적으로 잠기며 인출이 불가능합니다.
   - title: 내장형 스나이핑 방지

@@ -6,7 +6,7 @@ Status: implemented, awaiting public API deployment + manual submissions.
 
 ## Problem
 
-Token yang diluncurkan via Proto tidak otomatis muncul di agregator seperti
+Token yang diluncurkan via Goton tidak otomatis muncul di agregator seperti
 DEX Screener, GMGN, GeckoTerminal, Birdeye, dll. Agregator tersebut hanya
 meng-index chain dan DEX yang sudah mereka kenal. Untuk chain baru (Robinhood
 Chain ID 4663 dan Arc Network ID 5042), diperlukan:
@@ -125,7 +125,7 @@ Semua langkah ini harus dikerjakan oleh owner setelah API di-deploy ke domain pu
 ### DEX Screener
 
 1. Kirim email ke **partners@dexscreener.com** dengan subject:
-   `Partner API Integration Request — Proto (Robinhood Chain)`
+   `Partner API Integration Request — Goton (Robinhood Chain)`
 
    Isi email:
 
@@ -134,7 +134,7 @@ Semua langkah ini harus dikerjakan oleh owner setelah API di-deploy ke domain pu
    Chain ID         : 4663
    RPC URL          : https://rpc.mainnet.chain.robinhood.com
    Block Explorer   : https://robinhoodchain.blockscout.com
-   DEX Name         : Proto
+   DEX Name         : Goton
    Partner API URL  : https://api.proto.fun
    Protocol Type    : Bonding Curve + Uniswap V3
    Contact          : [email owner]
@@ -147,7 +147,7 @@ Semua langkah ini harus dikerjakan oleh owner setelah API di-deploy ke domain pu
    Chain ID         : 5042
    RPC URL          : https://rpc.mainnet.arc.io
    Block Explorer   : https://explorer.arc.io
-   DEX Name         : Proto
+   DEX Name         : Goton
    Partner API URL  : https://api.proto.fun
    ```
 

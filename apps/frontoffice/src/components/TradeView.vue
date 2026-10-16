@@ -61,7 +61,7 @@
       <SentimentGauge :token-address="currentToken.address" :account="account || undefined" />
 
       <!-- ============================================================
-           HYBRID PONS X PROTO TRADING GRID
+           HYBRID PONS X GOTON TRADING GRID
            - Desktop: 2 Columns (Col 1: Chart, Facts, Tabs | Col 2: Sticky Swap Panel)
            - Mobile: Responsive Stacking (Chart -> Swap Panel -> Facts -> Tabs)
            ============================================================ -->
@@ -493,14 +493,14 @@ import {
   type TokenCommentEntity,
   type FeedCalloutItem,
   type TradeEventEntity,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 import {
   calculateCurveBuyOutput,
   calculateCurveSellOutput,
   calculateRealizedPnl,
   calculateTraderTotalPnl,
   getChainMathConfig,
-} from '@proto/math-sdk';
+} from '@goton/math-sdk';
 
 const props = defineProps<{
   tokenAddress?: string;

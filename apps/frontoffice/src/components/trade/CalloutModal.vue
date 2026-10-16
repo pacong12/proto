@@ -175,7 +175,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { formatCompactUsd, formatPriceUsd, shortenAddress } from '@/lib/utils';
-import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
+import type { LaunchedTokenEntity, TokenMarketData } from '@goton/shared-types';
 
 const { t } = useI18n();
 

@@ -1,7 +1,7 @@
-# proto
+# goton
 > Multi-chain launchpad for fixed-supply tokens on Robinhood Chain and Arc Network.
 
-proto is the premier multi-chain launchpad for fixed-supply tokens. Explore new launches, create tokens, and trade with permanently locked liquidity or dynamic bonding curves across Robinhood Chain and Arc Network.
+goton is the premier multi-chain launchpad for fixed-supply tokens. Explore new launches, create tokens, and trade with permanently locked liquidity or dynamic bonding curves across Robinhood Chain and Arc Network.
 
 ## Products & Features
 - Explore newest token launches on Robinhood Chain and Arc Network

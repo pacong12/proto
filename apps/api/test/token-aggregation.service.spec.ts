@@ -3,7 +3,7 @@ import {
   aggregateCandlesticks,
   computeHoldersDistribution,
 } from '../src/modules/tokens/domain/services/token-aggregation.service';
-import { LaunchedTokenEntity, TradeEventEntity } from '@proto/shared-types';
+import { LaunchedTokenEntity, TradeEventEntity } from '@goton/shared-types';
 
 describe('TokenAggregationService', () => {
   describe('aggregateCandlesticks', () => {

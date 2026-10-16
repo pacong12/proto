@@ -2,13 +2,13 @@
 
 Salah satu kendala terbesar dalam peluncuran token kripto adalah serangan bot sniper otomatis yang memborong likuiditas awal dalam hitungan milidetik dan merugikan komunitas.
 
-Proto menerapkan aturan smart contract yang terkunci secara permanen pada blok awal peluncuran untuk memastikan anggota komunitas mendapatkan peluang yang adil.
+Goton menerapkan aturan smart contract yang terkunci secara permanen pada blok awal peluncuran untuk memastikan anggota komunitas mendapatkan peluang yang adil.
 
 ---
 
 ## Mekanisme Kerja
 
-Pada arsitektur kurva bonding, Proto menerapkan **pajak sniper peluruhan dinamis**:
+Pada arsitektur kurva bonding, Goton menerapkan **pajak sniper peluruhan dinamis**:
 
 - Pada detik pertama peluncuran ($t=0$), pajak otomatis sebesar 99% berlaku bagi bot predator yang mencoba eksekusi instan.
 - Pajak ini meluruh dengan cepat dalam 3 detik berikutnya ($t=1 \to 25\%$, $t=2 \to 3\%$, $t \ge 3 \to 0\%$).

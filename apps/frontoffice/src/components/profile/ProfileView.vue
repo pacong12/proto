@@ -297,7 +297,7 @@ import {
   type LaunchedTokenEntity,
   type TokenMarketData,
   type TradeEventEntity,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 import { apiFetch } from '@/lib/api-client';
 
 const props = defineProps<{

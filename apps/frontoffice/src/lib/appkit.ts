@@ -1,7 +1,7 @@
 import { defineChain, type AppKitNetwork } from '@reown/appkit/networks';
 import { createAppKit } from '@reown/appkit/vue';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
-import { ROBINHOOD_CHAIN, ARC_CHAIN } from '@proto/shared-types';
+import { ROBINHOOD_CHAIN, ARC_CHAIN } from '@goton/shared-types';
 import { SITE } from './site';
 
 const projectId = import.meta.env.VITE_REOWN_PROJECT_ID as string | undefined;
@@ -79,8 +79,8 @@ export const appKit =
         networks,
         projectId,
         metadata: {
-          name: 'proto',
-          description: 'Proto - Multi-chain token launchpad on Robinhood & Arc Chain',
+          name: 'goton',
+          description: 'Goton - Multi-chain token launchpad on Robinhood & Arc Chain',
           // Must match the domain the app runs on (WalletConnect domain verification).
           url: typeof window !== 'undefined' ? window.location.origin : SITE.appUrl,
           icons: ['/favicon.svg'],

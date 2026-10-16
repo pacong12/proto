@@ -1,4 +1,4 @@
-import type { TradeEventEntity } from '@proto/shared-types';
+import type { TradeEventEntity } from '@goton/shared-types';
 
 export type { TradeEventEntity };
 

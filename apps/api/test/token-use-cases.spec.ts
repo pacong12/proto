@@ -6,7 +6,7 @@ import { GetTokenByAddressUseCase } from '../src/modules/tokens/application/use-
 import { TokenController } from '../src/modules/tokens/presentation/token.controller';
 import { CoinGeckoPriceFeedAdapter } from '../src/modules/tokens/infrastructure/adapters/coingecko-price-feed.adapter';
 import type { ViemChainIndexerAdapter } from '../src/modules/tokens/infrastructure/adapters/viem-chain-indexer.adapter';
-import { LaunchedTokenEntity, GraduationStatus } from '@proto/shared-types';
+import { LaunchedTokenEntity, GraduationStatus } from '@goton/shared-types';
 
 // Minimal mock that satisfies the methods actually called by use-cases
 const mockChainIndexer = {

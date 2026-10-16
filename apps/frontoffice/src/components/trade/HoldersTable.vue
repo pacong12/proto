@@ -142,7 +142,7 @@ import { Badge, TraderTagBadge } from '@/components/ui/badge';
 import { Jazzicon } from '@/components/ui/avatar';
 import { formatTokenNumber } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
-import type { TokenHolder } from '@proto/shared-types';
+import type { TokenHolder } from '@goton/shared-types';
 
 interface Props {
   holders: TokenHolder[];

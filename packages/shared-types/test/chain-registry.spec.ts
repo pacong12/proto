@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { getChainMathConfig, CHAIN_MATH_CONFIGS } from '@proto/math-sdk';
-import { CHAIN_ABIS, getFactoryV2Abi } from '@proto/contracts-abi';
+import { getChainMathConfig, CHAIN_MATH_CONFIGS } from '@goton/math-sdk';
+import { CHAIN_ABIS, getFactoryV2Abi } from '@goton/contracts-abi';
 import {
   CHAINS,
   DEFAULT_NETWORK,

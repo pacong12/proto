@@ -36,13 +36,13 @@ export interface NetworkConfig {
     quoterV2?: `0x${string}`;
     /** Wrapped native / quote currency of launch pools (USDC ERC-20 on Arc). */
     weth: `0x${string}`;
-    /** ProtoV4Hook (singleton per chain). */
+    /** GotonV4Hook (singleton per chain). */
     memeHook?: `0x${string}`;
-    /** ProtoV4Graduator — moves graduated bonding curves into their v4 pool (bonding-curve chains). */
+    /** GotonV4Graduator — moves graduated bonding curves into their v4 pool (bonding-curve chains). */
     graduator?: `0x${string}`;
-    /** ProtoV4Router — exact-input v4 swaps (native value for buys, exact approvals for sells). */
+    /** GotonV4Router — exact-input v4 swaps (native value for buys, exact approvals for sells). */
     router?: `0x${string}`;
-    /** ProtoV4Buyback — TWAP-guarded buyback-and-burn of each token's burn share. */
+    /** GotonV4Buyback — TWAP-guarded buyback-and-burn of each token's burn share. */
     buyback?: `0x${string}`;
     poolManagerV4?: `0x${string}`;
     positionManagerV4?: `0x${string}`;

@@ -1,6 +1,6 @@
 # Trading & Swaps Guide
 
-Buying and selling tokens on Proto is designed to be fast, responsive, and safe. Every trade is executed non-custodially through your personal wallet.
+Buying and selling tokens on Goton is designed to be fast, responsive, and safe. Every trade is executed non-custodially through your personal wallet.
 
 ---
 

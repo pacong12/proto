@@ -108,7 +108,7 @@
         <p class="text-sm sm:text-base text-foreground/90 max-w-2xl font-sans leading-relaxed">
           {{
             profileData.bio ||
-            'Non-custodial creator and alpha trader on Proto multi-chain launchpad.'
+            'Non-custodial creator and alpha trader on Goton multi-chain launchpad.'
           }}
         </p>
 
@@ -156,7 +156,7 @@ import { Jazzicon } from '@/components/ui/avatar';
 import { shortenAddress } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import type { ProfileStorageData } from './types';
-import type { NetworkConfig } from '@proto/shared-types';
+import type { NetworkConfig } from '@goton/shared-types';
 
 const { t } = useI18n();
 

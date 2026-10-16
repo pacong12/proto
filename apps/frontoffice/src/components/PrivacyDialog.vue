@@ -47,7 +47,7 @@ function handleAccept() {
         class="space-y-3 py-2 text-xs text-muted-foreground max-h-48 overflow-y-auto pr-2 border-y border-border"
       >
         <p>
-          1. <strong class="text-foreground">Non-Custodial:</strong> Proto Labs does not custody
+          1. <strong class="text-foreground">Non-Custodial:</strong> Goton Labs does not custody
           user assets, private keys, or control liquidity after deployment.
         </p>
         <p>

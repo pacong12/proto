@@ -5,7 +5,7 @@ import {
   ok,
   err,
   resolveTokenNetwork,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 import {
   GetTokensUseCase,
   TokenWithMarketData,

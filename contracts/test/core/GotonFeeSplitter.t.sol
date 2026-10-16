@@ -2,14 +2,14 @@
 pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
-import {ProtoFeeSplitter} from "../../src/core/ProtoFeeSplitter.sol";
+import {GotonFeeSplitter} from "../../src/core/GotonFeeSplitter.sol";
 import {LaunchpadToken} from "../../src/core/LaunchpadToken.sol";
 import {ILaunchpadToken} from "../../src/interfaces/ILaunchpadToken.sol";
 
 /// @dev Native-quote splitter driven directly by this test (acting as hook and factory).
-contract ProtoFeeSplitterTest is Test {
+contract GotonFeeSplitterTest is Test {
     LaunchpadToken token;
-    ProtoFeeSplitter splitter;
+    GotonFeeSplitter splitter;
 
     address pool = makeAddr("poolManager");
     address payable treasury = payable(makeAddr("treasury"));
@@ -23,8 +23,8 @@ contract ProtoFeeSplitterTest is Test {
     function setUp() public {
         token = new LaunchpadToken();
         token.initialize("T", "T", "", "", ILaunchpadToken.Socials("", "", "", "", ""), creator, address(0), address(this));
-        splitter = new ProtoFeeSplitter(
-            ProtoFeeSplitter.Config({
+        splitter = new GotonFeeSplitter(
+            GotonFeeSplitter.Config({
                 token: address(token),
                 quoteAsset: address(0),
                 hook: address(this),
@@ -36,7 +36,7 @@ contract ProtoFeeSplitterTest is Test {
                 liquidityVault: liquidity,
                 creator: creator
             }),
-            ProtoFeeSplitter.Split({protocolBps: 3_000, holdersBps: 5_000, burnBps: 1_000, creatorBps: 3_000, liquidityBps: 1_000})
+            GotonFeeSplitter.Split({protocolBps: 3_000, holdersBps: 5_000, burnBps: 1_000, creatorBps: 3_000, liquidityBps: 1_000})
         );
         token.setRewardTracker(address(splitter));
 
@@ -97,12 +97,12 @@ contract ProtoFeeSplitterTest is Test {
         _distribute(10 ether);
 
         vm.prank(alice);
-        vm.expectRevert(ProtoFeeSplitter.Unauthorized.selector);
+        vm.expectRevert(GotonFeeSplitter.Unauthorized.selector);
         splitter.claimCreatorFees();
 
         vm.prank(creator);
         splitter.proposeCreatorRecipient(community);
-        vm.expectRevert(ProtoFeeSplitter.TimelockActive.selector);
+        vm.expectRevert(GotonFeeSplitter.TimelockActive.selector);
         vm.prank(community);
         splitter.acceptCreatorRecipient();
 
@@ -119,7 +119,7 @@ contract ProtoFeeSplitterTest is Test {
 
     function test_CancelOnlyRemovesPendingRedirect() public {
         vm.prank(creator);
-        vm.expectRevert(ProtoFeeSplitter.NoPendingRecipient.selector);
+        vm.expectRevert(GotonFeeSplitter.NoPendingRecipient.selector);
         splitter.cancelCreatorRecipient();
 
         vm.prank(creator);
@@ -131,12 +131,12 @@ contract ProtoFeeSplitterTest is Test {
 
     function test_OnlyHookOrFactoryDistribute() public {
         vm.prank(alice);
-        vm.expectRevert(ProtoFeeSplitter.Unauthorized.selector);
+        vm.expectRevert(GotonFeeSplitter.Unauthorized.selector);
         splitter.distributeFees(1);
     }
 
     function test_OnlyTokenCheckpoints() public {
-        vm.expectRevert(ProtoFeeSplitter.Unauthorized.selector);
+        vm.expectRevert(GotonFeeSplitter.Unauthorized.selector);
         splitter.setShare(alice, bob, 1);
     }
 
@@ -145,7 +145,7 @@ contract ProtoFeeSplitterTest is Test {
     function test_OnlyBuybackVaultReleasesBurnShare() public {
         _distribute(10 ether);
         vm.prank(alice);
-        vm.expectRevert(ProtoFeeSplitter.Unauthorized.selector);
+        vm.expectRevert(GotonFeeSplitter.Unauthorized.selector);
         splitter.releaseBuyback();
 
         vm.prank(buyback);

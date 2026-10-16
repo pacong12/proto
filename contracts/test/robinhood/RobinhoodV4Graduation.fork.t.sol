@@ -5,11 +5,11 @@ import {Test} from "forge-std/Test.sol";
 import {LaunchpadV2Factory} from "../../src/chains/robinhood/LaunchpadV2Factory.sol";
 import {BondingCurve} from "../../src/core/BondingCurve.sol";
 import {LaunchpadToken} from "../../src/core/LaunchpadToken.sol";
-import {ProtoV4Hook} from "../../src/core/ProtoV4Hook.sol";
-import {ProtoV4Graduator} from "../../src/core/ProtoV4Graduator.sol";
-import {ProtoV4Router} from "../../src/core/ProtoV4Router.sol";
-import {ProtoV4Buyback} from "../../src/core/ProtoV4Buyback.sol";
-import {ProtoFeeSplitter, ProtoFeeSplitterDeployer} from "../../src/core/ProtoFeeSplitter.sol";
+import {GotonV4Hook} from "../../src/core/GotonV4Hook.sol";
+import {GotonV4Graduator} from "../../src/core/GotonV4Graduator.sol";
+import {GotonV4Router} from "../../src/core/GotonV4Router.sol";
+import {GotonV4Buyback} from "../../src/core/GotonV4Buyback.sol";
+import {GotonFeeSplitter, GotonFeeSplitterDeployer} from "../../src/core/GotonFeeSplitter.sol";
 import {PoolKey, PoolIdLibrary} from "../../src/interfaces/IUniswapV4.sol";
 import {IPoolManagerV4} from "../../src/interfaces/external/IUniswapV4Core.sol";
 import {V4Lib} from "../../src/libraries/v4/V4Lib.sol";
@@ -27,9 +27,9 @@ contract RobinhoodV4GraduationForkTest is Test {
     address constant DEAD = 0x000000000000000000000000000000000000dEaD;
 
     LaunchpadV2Factory factory;
-    ProtoV4Graduator graduator;
-    ProtoV4Hook hook;
-    ProtoV4Router router;
+    GotonV4Graduator graduator;
+    GotonV4Hook hook;
+    GotonV4Router router;
 
     address payable treasury = payable(makeAddr("treasury"));
     address creator = makeAddr("creator");
@@ -45,20 +45,20 @@ contract RobinhoodV4GraduationForkTest is Test {
         }
         vm.createSelectFork(rpc);
 
-        deployCodeTo("ProtoV4Hook.sol:ProtoV4Hook", abi.encode(PM, address(this)), HOOK_ADDRESS);
-        hook = ProtoV4Hook(HOOK_ADDRESS);
+        deployCodeTo("GotonV4Hook.sol:GotonV4Hook", abi.encode(PM, address(this)), HOOK_ADDRESS);
+        hook = GotonV4Hook(HOOK_ADDRESS);
         // 30% protocol, then 50% holders / 50% creator so dividend streaming is exercised.
-        graduator = new ProtoV4Graduator(
+        graduator = new GotonV4Graduator(
             PM,
             hook,
-            new ProtoFeeSplitterDeployer(),
+            new GotonFeeSplitterDeployer(),
             treasury,
-            ProtoFeeSplitter.Split({protocolBps: 3_000, holdersBps: 5_000, burnBps: 0, creatorBps: 5_000, liquidityBps: 0})
+            GotonFeeSplitter.Split({protocolBps: 3_000, holdersBps: 5_000, burnBps: 0, creatorBps: 5_000, liquidityBps: 0})
         );
         factory = new LaunchpadV2Factory(treasury, graduator);
         graduator.setLauncher(address(factory));
         hook.setFactory(address(graduator));
-        router = new ProtoV4Router(PM, address(0), 0);
+        router = new GotonV4Router(PM, address(0), 0);
 
         vm.deal(creator, 100 ether);
         vm.deal(buyer, 100 ether);
@@ -88,9 +88,9 @@ contract RobinhoodV4GraduationForkTest is Test {
         assertTrue(curve.graduated(), "curve graduated");
     }
 
-    function _splitter(address token) internal view returns (ProtoFeeSplitter) {
+    function _splitter(address token) internal view returns (GotonFeeSplitter) {
         (address s,,) = graduator.graduations(token);
-        return ProtoFeeSplitter(payable(s));
+        return GotonFeeSplitter(payable(s));
     }
 
     function _buy(address token, uint256 ethIn) internal returns (uint256) {
@@ -176,7 +176,7 @@ contract RobinhoodV4GraduationForkTest is Test {
         (address token, BondingCurve curve) = _launch();
         _fillCurve(curve);
         factory.graduate(token);
-        ProtoFeeSplitter splitter = _splitter(token);
+        GotonFeeSplitter splitter = _splitter(token);
 
         uint256 bought = _buy(token, 1 ether);
         assertGt(_sell(trader, token, bought / 2), 0);
@@ -208,7 +208,7 @@ contract RobinhoodV4GraduationForkTest is Test {
         (address token, BondingCurve curve) = _launch();
         _fillCurve(curve);
         factory.graduate(token);
-        ProtoFeeSplitter splitter = _splitter(token);
+        GotonFeeSplitter splitter = _splitter(token);
 
         _buy(token, 2 ether);
         vm.warp(block.timestamp + 2 days); // fees from that trade have accrued in the position
@@ -231,7 +231,7 @@ contract RobinhoodV4GraduationForkTest is Test {
         factory.graduate(token);
         PoolKey memory key = graduator.poolKeyOf(token);
         vm.prank(trader);
-        vm.expectRevert(ProtoV4Router.InvalidValue.selector);
+        vm.expectRevert(GotonV4Router.InvalidValue.selector);
         router.swapExactIn{value: 1 ether}(key, true, 2 ether, 0, trader, block.timestamp);
     }
 
@@ -246,7 +246,7 @@ contract RobinhoodV4GraduationForkTest is Test {
 
         _fillCurve(curve);
         factory.graduate(token);
-        ProtoFeeSplitter splitter = _splitter(token);
+        GotonFeeSplitter splitter = _splitter(token);
         assertEq(splitter.protocolBps(), 3_000, "protocol cut stays the default");
         assertEq(splitter.holdersBps(), 2_000);
         assertEq(splitter.burnBps(), 1_000);
@@ -258,17 +258,17 @@ contract RobinhoodV4GraduationForkTest is Test {
         (address token, BondingCurve curve) = _launch();
 
         vm.prank(buyer);
-        vm.expectRevert(ProtoV4Graduator.Unauthorized.selector);
+        vm.expectRevert(GotonV4Graduator.Unauthorized.selector);
         graduator.setRevenueSplit(token, 0, 0, 10_000, 0);
 
         vm.prank(creator);
-        vm.expectRevert(ProtoV4Graduator.InvalidSplit.selector);
+        vm.expectRevert(GotonV4Graduator.InvalidSplit.selector);
         graduator.setRevenueSplit(token, 5_000, 0, 4_000, 0);
 
         vm.prank(creator);
         graduator.setRevenueSplit(token, 5_000, 0, 5_000, 0);
         vm.prank(creator);
-        vm.expectRevert(ProtoV4Graduator.SplitLocked.selector);
+        vm.expectRevert(GotonV4Graduator.SplitLocked.selector);
         graduator.setRevenueSplit(token, 0, 0, 10_000, 0);
 
         // A fresh token whose curve already sold to a third party is locked too.
@@ -278,7 +278,7 @@ contract RobinhoodV4GraduationForkTest is Test {
         vm.prank(buyer);
         curve2.buy{value: 0.01 ether}(0);
         vm.prank(creator);
-        vm.expectRevert(ProtoV4Graduator.SplitLocked.selector);
+        vm.expectRevert(GotonV4Graduator.SplitLocked.selector);
         graduator.setRevenueSplit(token2, 0, 0, 10_000, 0);
         curve;
     }
@@ -288,7 +288,7 @@ contract RobinhoodV4GraduationForkTest is Test {
     // ---------------------------------------------------------------------------
 
     function test_BuybackBurnsWithNativeEth() public {
-        ProtoV4Buyback bb = new ProtoV4Buyback(PM, hook);
+        GotonV4Buyback bb = new GotonV4Buyback(PM, hook);
         graduator.setRecipients(treasury, address(bb), treasury);
 
         (address token, BondingCurve curve) = _launch();
@@ -307,7 +307,7 @@ contract RobinhoodV4GraduationForkTest is Test {
         vm.warp(vm.getBlockTimestamp() + 1 minutes);
 
         graduator.collectFees(token); // LP fees → splitter → burn share accrues
-        ProtoFeeSplitter splitter = _splitter(token);
+        GotonFeeSplitter splitter = _splitter(token);
         uint256 accrued = splitter.buybackAccrued();
         assertGt(accrued, 0);
 

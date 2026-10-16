@@ -3,12 +3,12 @@
 <Badge variant="graduated">Last Updated: October 2026</Badge>
 
 <Card>
-Proto Labs and the Proto Protocol operate a non-custodial token launch and decentralized exchange interface on Robinhood Chain (Chain ID: 4663) and Arc Network (Chain ID: 5042). We prioritize data minimization, user sovereignty, and cryptographic privacy.
+Goton Labs and the Goton Protocol operate a non-custodial token launch and decentralized exchange interface on Robinhood Chain (Chain ID: 4663) and Arc Network (Chain ID: 5042). We prioritize data minimization, user sovereignty, and cryptographic privacy.
 </Card>
 
 ## 1. Information We Do Not Collect
 
-Because Proto is non-custodial and direct-to-contract:
+Because Goton is non-custodial and direct-to-contract:
 
 - **No Private Keys**: We never generate, handle, or store private keys or seed phrases.
 - **No Custodial Accounts**: There are no email registrations, passwords, or custodial user balances.
@@ -16,7 +16,7 @@ Because Proto is non-custodial and direct-to-contract:
 
 ## 2. Information Handled Onchain
 
-When you interact with the Proto smart contracts on Robinhood Chain or Arc Network:
+When you interact with the Goton smart contracts on Robinhood Chain or Arc Network:
 
 - **Public Wallet Address**: Your Ethereum-compatible address interacts with the Launchpad Factory, bonding curve and Uniswap v4 pool contracts.
 - **Transaction Data**: Token deployments, liquidity locks, fee claims, and swaps are publicly broadcast and permanently recorded on the blockchain ledger.
@@ -34,7 +34,7 @@ You may clear your browser storage at any time to remove these local settings.
 
 ## 3a. Off-chain Data, Analytics & Your Rights
 
-- **Social features**: comments, likes, reposts, sentiment votes and creator profiles you submit are stored by the Proto API together with your wallet address and shown publicly.
+- **Social features**: comments, likes, reposts, sentiment votes and creator profiles you submit are stored by the Goton API together with your wallet address and shown publicly.
 - **Server logs**: the API keeps request logs for security and rate limiting. Client IP addresses are written to logs only as a one-way hash.
 - **Analytics**: the web app loads Google Analytics (`gtag.js`), which sets cookies and sends page-view and device data to Google.
 - **Erasure**: you can delete your comments, likes, reposts, sentiment votes and profile at any time from **Profile → Edit Profile → Delete my social data** (API: `DELETE /api/users/{address}/data`, signed in with that wallet). Onchain records cannot be erased by anyone.

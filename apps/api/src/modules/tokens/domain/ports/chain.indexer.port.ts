@@ -1,4 +1,4 @@
-import { LaunchedTokenEntity, GraduationStatus, type NetworkConfig } from '@proto/shared-types';
+import { LaunchedTokenEntity, GraduationStatus, type NetworkConfig } from '@goton/shared-types';
 
 /** Shape of on-chain V2 bonding-curve state returned by the indexer. */
 export interface V2CurveState {

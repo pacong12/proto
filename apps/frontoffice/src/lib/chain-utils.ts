@@ -4,7 +4,7 @@ import {
   resolveTokenNetwork,
   type TokenAddressPair,
   type LaunchedTokenEntity,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 
 /**
  * Returns the chain badge icon path for any given NetworkConfig or chain ID.

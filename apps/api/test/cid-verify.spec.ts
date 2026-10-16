@@ -17,7 +17,7 @@ describe('IPFS CID verification (TKT-10)', () => {
   });
 
   it('verifies raw-leaf CIDv1, including the API fallback CID', () => {
-    const content = enc('proto logo bytes');
+    const content = enc('goton logo bytes');
     const cid = generateDeterministicCid(Buffer.from(content));
     expect(cid.startsWith('bafkrei')).toBe(true);
     expect(verifyCidContent(cid, content)).toBe('match');

@@ -2,12 +2,12 @@
 layout: home
 
 hero:
-  name: 'Proto 官方指南'
+  name: 'Goton 官方指南'
   text: 'Robinhood 与 Arc 链上的公平代币发射平台'
   tagline: '简单、清晰的固定供应量代币创建、发现与交易指南，提供永久锁定的流动性保障。'
   actions:
     - theme: brand
-      text: 什么是 Proto？
+      text: 什么是 Goton？
       link: /zh/protocol/overview
     - theme: alt
       text: 如何发行代币
@@ -18,7 +18,7 @@ hero:
 
 features:
   - title: 100% 非托管
-    details: 您的钱包掌控每笔交易。Proto 从不托管您的资产、私钥或创作者资金。
+    details: 您的钱包掌控每笔交易。Goton 从不托管您的资产、私钥或创作者资金。
   - title: 永久防撤池流动性锁
     details: 流动性在代币发射的第一个区块即永久锁定在开源智能合约中，任何开发者或管理员均无法撤出池子储备。
   - title: 内置反抢跑与防夹机制

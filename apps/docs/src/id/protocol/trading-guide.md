@@ -1,6 +1,6 @@
 # Panduan Trading & Swap
 
-Membeli dan menjual token di Proto dirancang agar cepat, aman, dan responsif. Setiap transaksi dieksekusi secara non-kustodial langsung melalui dompet pribadi Anda.
+Membeli dan menjual token di Goton dirancang agar cepat, aman, dan responsif. Setiap transaksi dieksekusi secara non-kustodial langsung melalui dompet pribadi Anda.
 
 ---
 

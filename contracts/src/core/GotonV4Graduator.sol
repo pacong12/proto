@@ -5,8 +5,8 @@ import {PoolKey, PoolIdLibrary} from "../interfaces/IUniswapV4.sol";
 import {IPoolManagerV4, IUnlockCallback, ModifyLiquidityParams} from "../interfaces/external/IUniswapV4Core.sol";
 import {TickMath} from "../libraries/v4/TickMath.sol";
 import {V4Lib} from "../libraries/v4/V4Lib.sol";
-import {ProtoV4Hook} from "./ProtoV4Hook.sol";
-import {ProtoFeeSplitter, ProtoFeeSplitterDeployer} from "./ProtoFeeSplitter.sol";
+import {GotonV4Hook} from "./GotonV4Hook.sol";
+import {GotonFeeSplitter, GotonFeeSplitterDeployer} from "./GotonFeeSplitter.sol";
 
 interface IERC20Graduation {
     function balanceOf(address account) external view returns (uint256);
@@ -25,21 +25,21 @@ interface ILauncherLaunches {
 }
 
 /**
- * @title ProtoV4Graduator
+ * @title GotonV4Graduator
  * @notice Trustless graduation of a bonding curve into a native-ETH / token Uniswap v4 pool.
  *         Replaces the custodial `migrateCurve(curve, recipient)` flow:
  *
  *   1. The launcher (bonding-curve factory) forwards the curve's ETH and tokens here and calls
  *      `graduate` in the same transaction (graduation itself is permissionless on the factory).
  *   2. The pool is initialized at the curve's final spot price. Initialization is gated by
- *      ProtoV4Hook, so nobody can front-run it at a manipulated price.
+ *      GotonV4Hook, so nobody can front-run it at a manipulated price.
  *   3. All ETH plus the matching tokens become a full-range position. Tokens the ETH cannot pair
  *      with (the curve's virtual ETH reserve is not real ETH) become a token-only position just
  *      below the current tick: price is continuous at graduation and nothing is burned.
  *   4. Positions are owned by this contract, which has no way to remove liquidity (locked
- *      forever). `collectFees` sends ETH fees to the token's ProtoFeeSplitter and burns token fees.
+ *      forever). `collectFees` sends ETH fees to the token's GotonFeeSplitter and burns token fees.
  */
-contract ProtoV4Graduator is IUnlockCallback {
+contract GotonV4Graduator is IUnlockCallback {
     using PoolIdLibrary for PoolKey;
 
     uint24 public constant POOL_FEE = 10_000;
@@ -58,8 +58,8 @@ contract ProtoV4Graduator is IUnlockCallback {
     }
 
     IPoolManagerV4 public immutable poolManager;
-    ProtoV4Hook public immutable hook;
-    ProtoFeeSplitterDeployer public immutable splitterDeployer;
+    GotonV4Hook public immutable hook;
+    GotonFeeSplitterDeployer public immutable splitterDeployer;
 
     address public launcher;
     address public owner;
@@ -67,11 +67,11 @@ contract ProtoV4Graduator is IUnlockCallback {
     address payable public protocolFeeRecipient;
     address public buybackVault;
     address public liquidityVault;
-    ProtoFeeSplitter.Split public defaultSplit;
+    GotonFeeSplitter.Split public defaultSplit;
 
     mapping(address => Graduation) public graduations;
     /// @notice Creator-chosen split of the post-protocol remainder, fixed before public trading.
-    mapping(address => ProtoFeeSplitter.Split) public tokenSplits;
+    mapping(address => GotonFeeSplitter.Split) public tokenSplits;
     mapping(address => bool) public hasTokenSplit;
 
     bool private _locked;
@@ -121,10 +121,10 @@ contract ProtoV4Graduator is IUnlockCallback {
 
     constructor(
         IPoolManagerV4 _poolManager,
-        ProtoV4Hook _hook,
-        ProtoFeeSplitterDeployer _splitterDeployer,
+        GotonV4Hook _hook,
+        GotonFeeSplitterDeployer _splitterDeployer,
         address payable _feeRecipient,
-        ProtoFeeSplitter.Split memory _defaultSplit
+        GotonFeeSplitter.Split memory _defaultSplit
     ) {
         if (
             address(_poolManager) == address(0) || address(_hook) == address(0)
@@ -171,7 +171,7 @@ contract ProtoV4Graduator is IUnlockCallback {
                 || IGraduationToken(token).publicTradingStarted()
         ) revert SplitLocked();
         if (uint256(holdersBps) + burnBps + creatorBps + liquidityBps != 10_000) revert InvalidSplit();
-        tokenSplits[token] = ProtoFeeSplitter.Split({
+        tokenSplits[token] = GotonFeeSplitter.Split({
             protocolBps: 0, // replaced by the default protocol cut at graduation
             holdersBps: holdersBps,
             burnBps: burnBps,
@@ -182,7 +182,7 @@ contract ProtoV4Graduator is IUnlockCallback {
         emit TokenSplitSet(token, holdersBps, burnBps, creatorBps, liquidityBps);
     }
 
-    function _splitFor(address token) private view returns (ProtoFeeSplitter.Split memory split) {
+    function _splitFor(address token) private view returns (GotonFeeSplitter.Split memory split) {
         if (!hasTokenSplit[token]) return defaultSplit;
         split = tokenSplits[token];
         split.protocolBps = defaultSplit.protocolBps;
@@ -208,7 +208,7 @@ contract ProtoV4Graduator is IUnlockCallback {
         if (graduations[token].splitter != address(0)) revert AlreadyGraduated();
 
         splitter = splitterDeployer.deploy(
-            ProtoFeeSplitter.Config({
+            GotonFeeSplitter.Config({
                 token: token,
                 quoteAsset: address(0),
                 hook: address(hook),
@@ -228,7 +228,7 @@ contract ProtoV4Graduator is IUnlockCallback {
         poolId = key.toId();
         hook.registerPool(
             key,
-            ProtoV4Hook.PoolRegistration({
+            GotonV4Hook.PoolRegistration({
                 token: token,
                 splitter: splitter,
                 buyTaxBps: 0,
@@ -259,7 +259,7 @@ contract ProtoV4Graduator is IUnlockCallback {
 
     /**
      * @notice Collects LP fees from the token's locked positions. Callable by anyone: ETH fees
-     *         are split by the token's ProtoFeeSplitter (holder dividends stream over a day),
+     *         are split by the token's GotonFeeSplitter (holder dividends stream over a day),
      *         token fees are burned.
      */
     function collectFees(address token) external nonReentrant returns (uint256 ethFees, uint256 tokenFees) {
@@ -267,7 +267,7 @@ contract ProtoV4Graduator is IUnlockCallback {
         if (g.splitter == address(0)) revert UnknownToken();
         (ethFees, tokenFees) =
             abi.decode(poolManager.unlock(abi.encode(Action.CollectFees, abi.encode(token))), (uint256, uint256));
-        if (ethFees > 0) ProtoFeeSplitter(payable(g.splitter)).distributeFees(ethFees);
+        if (ethFees > 0) GotonFeeSplitter(payable(g.splitter)).distributeFees(ethFees);
         emit FeesCollected(token, ethFees, tokenFees);
     }
 
@@ -412,11 +412,11 @@ contract ProtoV4Graduator is IUnlockCallback {
         emit RecipientsUpdated(_protocolFeeRecipient, _buybackVault, _liquidityVault);
     }
 
-    function setDefaultSplit(ProtoFeeSplitter.Split calldata split) external onlyOwner {
+    function setDefaultSplit(GotonFeeSplitter.Split calldata split) external onlyOwner {
         _setDefaultSplit(split);
     }
 
-    function _setDefaultSplit(ProtoFeeSplitter.Split memory split) private {
+    function _setDefaultSplit(GotonFeeSplitter.Split memory split) private {
         if (
             split.protocolBps > 10_000
                 || uint256(split.holdersBps) + split.burnBps + split.creatorBps + split.liquidityBps != 10_000

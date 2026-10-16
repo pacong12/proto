@@ -6,7 +6,7 @@ import { getEnv, getEnvBigInt } from './env';
  * EVM Layer 2 powered by Arbitrum Nitro stack.
  * Native gas asset: ETH (18 decimals).
  * Launch model: bonding curve, then permissionless graduation into a locked native-ETH Uniswap v4
- * pool via ProtoV4Graduator. Set ROBINHOOD_FACTORY_V2_ADDRESS / ROBINHOOD_GRADUATOR /
+ * pool via GotonV4Graduator. Set ROBINHOOD_FACTORY_V2_ADDRESS / ROBINHOOD_GRADUATOR /
  * ROBINHOOD_V4_HOOK / ROBINHOOD_V4_ROUTER after running contracts/script/robinhood/DeployRobinhoodV2.s.sol.
  * All addresses and parameters are read dynamically from environment variables (.env).
  */

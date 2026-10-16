@@ -4,7 +4,7 @@ import {
   bondingCurveAbi,
   type NetworkConfig,
   type TradeEventEntity,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import { ViemChainIndexerAdapter } from '../adapters/viem-chain-indexer.adapter';
 import { PriceFeedPort } from '../../domain/ports/price-feed.port';
@@ -31,7 +31,7 @@ const V4_SWAP_EVENT = parseAbiItem(
 
 /** V2 BondingCurve - TokenLaunched from factory (same event name as V1 but different signature).
  * topic0: 0x8d4aad4953d0ca700d468f3753aa14432d1b35b43ec6409f051fb6aa43a89607
- * Canonical Proto V2 Factory: 0xbA42499Cfe59abc05120A100EEc4f859F476034F
+ * Canonical Goton V2 Factory: 0xbA42499Cfe59abc05120A100EEc4f859F476034F
  */
 export const TOKEN_LAUNCHED_V2_EVENT = parseAbiItem(
   'event TokenLaunched(address indexed token, address indexed curve, address indexed creator, address pairedToken, uint256 positionId, uint256 initialBuyAmount)',

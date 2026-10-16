@@ -11,7 +11,7 @@ Audit Date: 2026-09-11
 
 - **Contract Tests (Foundry)**: 6 test suites, 21 tests passed, 0 failed.
 - **Unit Tests (Vitest)**: 18 test files, 66 tests passed, 0 failed.
-- **Typecheck (TypeScript)**: Clean across all 4 workspaces (`@proto/shared-types`, `@proto/docs`, `@proto/api`, `@proto/frontoffice`).
+- **Typecheck (TypeScript)**: Clean across all 4 workspaces (`@goton/shared-types`, `@goton/docs`, `@goton/api`, `@goton/frontoffice`).
 
 ---
 
