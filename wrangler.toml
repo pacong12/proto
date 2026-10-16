@@ -16,6 +16,9 @@ DOCS_URL = "https://docs.goton.fun"
 directory = "apps/frontoffice/dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
+# Every request runs worker.ts first. Without this, browser navigations and static files were served
+# straight from assets, skipping the security headers, maintenance mode and legal redirects.
+run_worker_first = true
 
 [observability.logs]
 enabled = true

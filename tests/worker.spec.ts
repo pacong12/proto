@@ -122,3 +122,31 @@ describe('edge worker legal redirects', () => {
     expect((await get('/terms-and-more', makeEnv())).status).toBe(200);
   });
 });
+
+describe('edge worker caching', () => {
+  const assetEnv = (contentType: string) =>
+    makeEnv({
+      ASSETS: {
+        fetch: async () =>
+          new Response('x', { status: 200, headers: { 'content-type': contentType } }),
+      },
+    });
+
+  it('marks hashed build files immutable', async () => {
+    const res = await get('/assets/index-abc123.js', assetEnv('text/javascript'));
+    expect(res.headers.get('cache-control')).toBe('public, max-age=31536000, immutable');
+  });
+
+  it('revalidates HTML so a deploy shows up at once', async () => {
+    const res = await get('/launchpad', assetEnv('text/html; charset=utf-8'));
+    expect(res.headers.get('cache-control')).toBe('no-cache');
+  });
+
+  it('sends the same security headers on every page', async () => {
+    for (const path of ['/', '/launchpad', '/assets/a.js']) {
+      const res = await get(path, assetEnv('text/html'));
+      expect(res.headers.get('strict-transport-security'), path).toContain('max-age=');
+      expect(res.headers.get('content-security-policy'), path).toContain("frame-ancestors 'none'");
+    }
+  });
+});

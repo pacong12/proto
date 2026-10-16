@@ -139,7 +139,8 @@ async function hashIp(ip: string): Promise<string> {
 function buildCsp(reportUri?: string): string {
   const directives: string[] = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' blob:",
+    // static.cloudflareinsights.com: Cloudflare Web Analytics beacon (cookie-free), injected by Cloudflare.
+    "script-src 'self' 'unsafe-inline' blob: https://static.cloudflareinsights.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com https://fonts.reown.com data:",
     [
@@ -299,6 +300,12 @@ export default {
     newHeaders.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
     newHeaders.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
     newHeaders.set('x-request-id', rayId);
+    // Hashed build files never change; HTML must always be revalidated so deploys show up at once.
+    if (url.pathname.startsWith('/assets/')) {
+      newHeaders.set('Cache-Control', 'public, max-age=31536000, immutable');
+    } else if ((newHeaders.get('content-type') ?? '').includes('text/html')) {
+      newHeaders.set('Cache-Control', 'no-cache');
+    }
     if (env.NOINDEX === 'true') newHeaders.set('X-Robots-Tag', 'noindex, nofollow');
     // Content-Security-Policy: use Report-Only mode in staging (CSP_REPORT_ONLY=true)
     // to catch violations before enforcing. Switch to enforcing in production.
