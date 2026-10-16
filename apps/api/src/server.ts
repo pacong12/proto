@@ -562,7 +562,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
               status: 401,
               headers: {
                 'Content-Type': 'text/html; charset=utf-8',
-                'WWW-Authenticate': 'Bearer realm="Proto DevOps"',
+                'WWW-Authenticate': 'Bearer realm="Goton DevOps"',
               },
             },
           );
@@ -575,7 +575,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           }),
           {
             status: 401,
-            headers: { ...headers, 'WWW-Authenticate': 'Bearer realm="Proto DevOps"' },
+            headers: { ...headers, 'WWW-Authenticate': 'Bearer realm="Goton DevOps"' },
           },
         );
       }
@@ -2493,4 +2493,4 @@ process.on('uncaughtException', (err) => {
   logger.error('[Server] Uncaught exception (non-fatal):', { message: err.message });
 });
 
-console.info(`Proto API Server & Indexer running at http://localhost:${PORT}`);
+console.info(`Goton API Server & Indexer running at http://localhost:${PORT}`);

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Proto is a decentralized launchpad and liquidity bonding protocol operating across EVM-compatible networks, primarily Robinhood Chain (Chain ID: 4663) and Arc Network (Chain ID: 5042). We take the security of our smart contracts, backend indexer services, and client interfaces seriously.
+Goton is a decentralized launchpad and liquidity bonding protocol operating across EVM-compatible networks, primarily Robinhood Chain (Chain ID: 4663) and Arc Network (Chain ID: 5042). We take the security of our smart contracts, backend indexer services, and client interfaces seriously.
 
 ## Supported Versions
 
@@ -40,7 +40,7 @@ Only the latest active release branch is eligible for active security patches an
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in the Proto protocol, please report it privately:
+If you discover a security vulnerability in the Goton protocol, please report it privately:
 
 1. **GitHub Advisory**: Open a confidential report via [GitHub Private Vulnerability Reporting](https://github.com/pacong12/proto/security/advisories/new).
 2. **Details Required**:

@@ -147,13 +147,13 @@ function copyAddress() {
           >
             <img
               src="/logo-pink.svg"
-              alt="proto"
+              alt="goton"
               draggable="false"
               oncontextmenu="return false;"
               class="w-6.5 h-6.5 object-contain transition-transform group-hover:scale-105 select-none pointer-events-none"
             />
           </div>
-          <span class="tracking-tight">proto</span>
+          <span class="tracking-tight">goton</span>
         </RouterLink>
 
         <!-- Desktop Navigation Routes: visible on lg and up -->

@@ -1,7 +1,7 @@
 import { UNDEPLOYED, type NetworkConfig } from './types';
 import { getEnv } from './env';
 
-/** Canonical Proto curve address for Arc Network (legacy bonding-curve launches). */
+/** Canonical Goton curve address for Arc Network (legacy bonding-curve launches). */
 export const ARC_PROTO_CURVE_ADDRESS = getEnv(
   'ARC_PROTO_CURVE_ADDRESS',
   '0x6c1c1a77771bf8961e27ea5b21f575eb17a7626e',

@@ -2,12 +2,12 @@
 layout: home
 
 hero:
-  name: 'Proto ナレッジベース'
+  name: 'Goton ナレッジベース'
   text: 'Robinhood Chain & Arc Network のフェアローンチパッド'
   tagline: '永久ロックされた流動性を備えた固定供給トークンの作成、発見、取引のためのクリーンで分かりやすいユーザーガイド。'
   actions:
     - theme: brand
-      text: Protoとは？
+      text: Gotonとは？
       link: /ja/protocol/overview
     - theme: alt
       text: トークンの作成手順
@@ -18,7 +18,7 @@ hero:
 
 features:
   - title: 100% ノンカストディアル
-    details: すべての取引はあなたのウォレットが管理します。Proto が秘密鍵やユーザー資産を預かることは一切ありません。
+    details: すべての取引はあなたのウォレットが管理します。Goton が秘密鍵やユーザー資産を預かることは一切ありません。
   - title: 永久流動性ロック
     details: 流動性ポジションはブロック0でスマートコントラクトに直接預け入れられ、誰にも引き出すことはできません。
   - title: 内蔵型スナイパー防御

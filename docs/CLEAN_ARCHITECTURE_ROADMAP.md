@@ -10,7 +10,7 @@
 
 ## 1. Executive Context & Objectives
 
-Proto is a multi-chain bonding-curve memecoin launchpad and trading terminal deployed on **Robinhood Chain (Chain ID: 4663)** and **Arc Network (Chain ID: 5042)**.
+Goton is a multi-chain bonding-curve memecoin launchpad and trading terminal deployed on **Robinhood Chain (Chain ID: 4663)** and **Arc Network (Chain ID: 5042)**.
 
 ### Current Architectural Debt:
 

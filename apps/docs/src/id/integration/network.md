@@ -1,8 +1,8 @@
 # Konfigurasi Jaringan & Pengaturan Dompet
 
-Proto beroperasi sebagai launchpad multi-chain yang mendukung **Robinhood Chain Layer 2** dan **Arc Network (Circle Stablecoin L1)**, menghadirkan kecepatan transaksi tinggi, latensi rendah, dan biaya eksekusi yang stabil.
+Goton beroperasi sebagai launchpad multi-chain yang mendukung **Robinhood Chain Layer 2** dan **Arc Network (Circle Stablecoin L1)**, menghadirkan kecepatan transaksi tinggi, latensi rendah, dan biaya eksekusi yang stabil.
 
-Untuk berinteraksi dengan Proto, tambahkan jaringan yang diinginkan ke dompet Web3 Anda.
+Untuk berinteraksi dengan Goton, tambahkan jaringan yang diinginkan ke dompet Web3 Anda.
 
 ---
 

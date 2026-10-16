@@ -9,7 +9,7 @@ interface IERC20Minimal {
 
 /**
  * @title GotonFeeSplitter
- * @notice Per-token fee router for Proto tokens on any chain. The quote currency is either native
+ * @notice Per-token fee router for Goton tokens on any chain. The quote currency is either native
  *         (`quoteAsset == address(0)`, e.g. ETH on Robinhood) or an ERC-20 (e.g. USDC on Arc).
  *           1. `protocolBps` of every fee goes to the protocol treasury first.
  *           2. The remainder is split holders / burn (buyback-and-burn via `buybackVault`) /

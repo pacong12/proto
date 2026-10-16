@@ -1,8 +1,8 @@
 # Supported Networks & Wallet Setup
 
-Proto operates as a multi-chain launchpad supporting both **Robinhood Chain Layer 2** and **Arc Network (Circle Stablecoin L1)**, providing fast transaction speeds, deterministic finality, and predictable execution costs.
+Goton operates as a multi-chain launchpad supporting both **Robinhood Chain Layer 2** and **Arc Network (Circle Stablecoin L1)**, providing fast transaction speeds, deterministic finality, and predictable execution costs.
 
-To interact with Proto, add either network to your Web3 wallet.
+To interact with Goton, add either network to your Web3 wallet.
 
 ---
 

@@ -3,12 +3,12 @@
 <Badge variant="graduated">Last Updated: September 2026</Badge>
 
 <Card>
-Proto is built on the core principle of decentralized privacy. We do not use tracking cookies, commercial ad trackers, or third-party profiling scripts.
+Goton is built on the core principle of decentralized privacy. We do not use tracking cookies, commercial ad trackers, or third-party profiling scripts.
 </Card>
 
 ## 1. What Technologies We Use
 
-Unlike traditional web services, Proto does not use persistent HTTP cookies to track your browsing habits across different websites. Instead, we use your browser's native client-side storage (`localStorage` and `sessionStorage`) strictly for necessary interface state.
+Unlike traditional web services, Goton does not use persistent HTTP cookies to track your browsing habits across different websites. Instead, we use your browser's native client-side storage (`localStorage` and `sessionStorage`) strictly for necessary interface state.
 
 ## 2. Information Stored Locally
 

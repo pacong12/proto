@@ -13,7 +13,7 @@ interface IERC20Router {
 
 /**
  * @title GotonV4Router
- * @notice Minimal exact-input single-pool swap router for Proto v4 pools, deployable on any chain
+ * @notice Minimal exact-input single-pool swap router for Goton v4 pools, deployable on any chain
  *         (Uniswap's Universal Router is not deployed everywhere).
  *
  *         Payment for the input currency:

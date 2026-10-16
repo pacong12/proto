@@ -21,7 +21,7 @@ Panduan dan template resmi untuk mengajukan integrasi Launchpad dan indexing tok
 
 ## 2. Arsitektur: Pure Bonding Curve
 
-Proto Launchpad menggunakan arsitektur **Pure Bonding Curve** (V2). Token tidak langsung dibuat di Uniswap V3 — melainkan diperdagangkan di dalam kontrak bonding curve hingga mencapai target graduasi **4.2 ETH**, setelah itu likuiditas secara otomatis dipindah ke Uniswap V3 dan dikunci permanen.
+Goton Launchpad menggunakan arsitektur **Pure Bonding Curve** (V2). Token tidak langsung dibuat di Uniswap V3 — melainkan diperdagangkan di dalam kontrak bonding curve hingga mencapai target graduasi **4.2 ETH**, setelah itu likuiditas secara otomatis dipindah ke Uniswap V3 dan dikunci permanen.
 
 ### TokenLaunched Event (Bonding Curve Factory)
 
@@ -62,7 +62,7 @@ Tokens trade on an internal AMM until 4.2 ETH is reached, then graduate automati
 to Uniswap V3 with liquidity locked permanently.
 
 === PROTOCOL SPECIFICATION ===
-- Platform Name: Proto Launchpad
+- Platform Name: Goton Launchpad
 - Website: https://yourdomain.com
 - Documentation: https://docs.yourdomain.com
 - Network: Robinhood Chain (Chain ID: 4663)

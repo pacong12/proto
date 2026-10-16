@@ -2,12 +2,12 @@
 layout: home
 
 hero:
-  name: 'Base de Conhecimento Proto'
+  name: 'Base de Conhecimento Goton'
   text: 'O Launchpad Justo de Tokens na Robinhood Chain & Arc'
   tagline: 'Guia simples e direto para criar, descobrir e negociar tokens de fornecimento fixo com liquidez permanentemente bloqueada.'
   actions:
     - theme: brand
-      text: O que é o Proto?
+      text: O que é o Goton?
       link: /pt/protocol/overview
     - theme: alt
       text: Como Criar um Token
@@ -18,7 +18,7 @@ hero:
 
 features:
   - title: 100% Não Custodial
-    details: Sua carteira controla cada transação. O Proto nunca retém seus ativos, chaves privadas ou fundos.
+    details: Sua carteira controla cada transação. O Goton nunca retém seus ativos, chaves privadas ou fundos.
   - title: Liquidez Bloqueada Anti-Rug
     details: As posições de liquidez são bloqueadas para sempre em contratos inteligentes a partir do bloco zero.
   - title: Proteção Anti-Sniper Nativa

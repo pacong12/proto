@@ -1,4 +1,4 @@
-export const MAX_TAX_PERCENT = 10; // Maximum allowed trading tax on Proto (10%)
+export const MAX_TAX_PERCENT = 10; // Maximum allowed trading tax on Goton (10%)
 export const MAX_TAX_BPS = 1000; // 1000 bps = 10%
 
 /**

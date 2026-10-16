@@ -54,7 +54,7 @@ contract DeployScript is Script {
 
         vm.stopBroadcast();
 
-        console.log("=== PROTO V1 DEPLOYED SUCCESSFULLY ===");
+        console.log("=== GOTON V1 DEPLOYED SUCCESSFULLY ===");
         console.log("LaunchpadFactory:", factoryAddress);
         console.log("LiquidityLocker :", lockerAddress);
         console.log("WETH Address    :", weth);

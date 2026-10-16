@@ -5,7 +5,7 @@ import {PoolKey} from "./IUniswapV4.sol";
 
 /**
  * @title IUniswapV4Core
- * @notice ABI-exact subset of Uniswap v4-core used by Proto's in-pool launch flow.
+ * @notice ABI-exact subset of Uniswap v4-core used by Goton's in-pool launch flow.
  *         Currencies are plain addresses and BalanceDelta / BeforeSwapDelta are packed int256
  *         values (amount0 / specified in the upper 128 bits, amount1 / unspecified in the lower).
  */

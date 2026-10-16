@@ -15,7 +15,7 @@
 ## 2. Launch Model: In-Pool Uniswap v4 (Argus portal parameters)
 
 Tokens trade in their Uniswap v4 pool from the first block. There is no bonding-curve contract, no
-migration and no Uniswap V3 dependency (V3 is deployed on Arc, but Proto does not use it).
+migration and no Uniswap V3 dependency (V3 is deployed on Arc, but Goton does not use it).
 
 1. `LaunchpadV2FactoryArc.launchToken` deploys the token and initializes a USDC/token pool
    (fee 1%, tickSpacing 200, hook `GotonV4Hook`) at tick 405400 (≈ $2,480.74 market cap).

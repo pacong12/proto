@@ -1,6 +1,6 @@
 # Fee Kreator & Mekanisme Pembakaran
 
-Proto menyelaraskan keberlanjutan proyek antara kreator token dan komunitasnya dengan menawarkan struktur pembagian fee yang sangat menguntungkan kreator.
+Goton menyelaraskan keberlanjutan proyek antara kreator token dan komunitasnya dengan menawarkan struktur pembagian fee yang sangat menguntungkan kreator.
 
 ---
 

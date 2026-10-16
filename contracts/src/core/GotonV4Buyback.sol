@@ -17,7 +17,7 @@ interface IERC20Buyback {
 
 /**
  * @title GotonV4Buyback
- * @notice Chain-wide buyback-and-burn for Proto v4 pools (AUD-HIGH-05 / TKT-06).
+ * @notice Chain-wide buyback-and-burn for Goton v4 pools (AUD-HIGH-05 / TKT-06).
  *
  *   - Each token's GotonFeeSplitter accrues its burn share; `buyback(key)` pulls it (per-token
  *     accounting in `pending`), buys the token in its own pool and sends the tokens to 0xdEaD.

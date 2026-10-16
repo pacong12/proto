@@ -170,7 +170,7 @@ export interface CommentSignaturePayload {
  */
 export function buildCommentSignMessage(params: CommentSignaturePayload): string {
   return [
-    'Proto Community Signal',
+    'Goton Community Signal',
     `Token: ${params.tokenAddress.toLowerCase()}`,
     `Author: ${params.authorAddress.toLowerCase()}`,
     `Timestamp: ${params.timestamp}`,
@@ -187,7 +187,7 @@ export const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
  */
 export function buildSessionSignMessage(params: { address: string; issuedAt: number }): string {
   return [
-    'Proto Sign-In',
+    'Goton Sign-In',
     `Wallet: ${params.address.toLowerCase()}`,
     `Issued: ${params.issuedAt}`,
     'Purpose: like, repost and vote as this wallet for 24 hours',

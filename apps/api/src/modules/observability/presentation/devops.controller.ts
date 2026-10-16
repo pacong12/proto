@@ -51,7 +51,7 @@ export class DevopsController {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Proto DevOps · Observability & Request Tracking</title>
+  <title>Goton DevOps · Observability & Request Tracking</title>
   <style>
     :root {
       --bg: #121212;
@@ -165,7 +165,7 @@ export class DevopsController {
 <body>
   <header>
     <div>
-      <h1>Proto Protocol · DevOps Observability</h1>
+      <h1>Goton Protocol · DevOps Observability</h1>
       <p class="mono" style="font-size: 12px; color: var(--muted); margin-top: 4px;">Service: proto-api | Engine: Bun | Port: 3001</p>
     </div>
     <div style="display: flex; gap: 8px; align-items: center;">

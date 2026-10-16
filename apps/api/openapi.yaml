@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: Proto Protocol API
-  description: Public on-chain indexer, analytics, and non-custodial security gate for Proto Launchpad on Robinhood Chain (Chain ID 4663).
+  title: Goton Protocol API
+  description: Public on-chain indexer, analytics, and non-custodial security gate for Goton Launchpad on Robinhood Chain (Chain ID 4663).
   version: 0.1.0
 
 servers:

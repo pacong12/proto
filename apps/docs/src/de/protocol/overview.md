@@ -1,12 +1,12 @@
-# Was ist Proto?
+# Was ist Goton?
 
-**Proto** ist ein dezentrales, nicht-verwahrendes Token-Launchpad und Handelsprotokoll auf **Robinhood Chain (Chain ID: 4663)** und **Arc Network (Chain ID: 5042)**.
+**Goton** ist ein dezentrales, nicht-verwahrendes Token-Launchpad und Handelsprotokoll auf **Robinhood Chain (Chain ID: 4663)** und **Arc Network (Chain ID: 5042)**.
 
 Es bietet eine sichere und transparente Plattform, auf der jeder digitale Vermögenswerte ohne komplexe Hürden oder Rug-Pull-Risiken erstellen und handeln kann.
 
 ---
 
-## Warum Proto?
+## Warum Goton?
 
 1. **Kein Rug-Pull-Risiko**: Alle Liquiditätspositionen werden dauerhaft im Open-Source-Vertrag `LiquidityLocker.sol` gesperrt.
 2. **Anti-Snipe-Schutz**: In den ersten Blöcken nach dem Start gelten strenge Kauf- und Wallet-Limits gegen Bots.

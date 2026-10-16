@@ -108,7 +108,7 @@
         <p class="text-sm sm:text-base text-foreground/90 max-w-2xl font-sans leading-relaxed">
           {{
             profileData.bio ||
-            'Non-custodial creator and alpha trader on Proto multi-chain launchpad.'
+            'Non-custodial creator and alpha trader on Goton multi-chain launchpad.'
           }}
         </p>
 

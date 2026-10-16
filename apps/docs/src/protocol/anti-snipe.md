@@ -2,13 +2,13 @@
 
 One of the biggest frustrations in crypto trading is losing early opportunities to automated sniper bots that buy up pool liquidity within milliseconds.
 
-Proto incorporates built-in, hardcoded smart contract rules during the opening blocks of a launch to ensure everyday community members have a fair chance to participate.
+Goton incorporates built-in, hardcoded smart contract rules during the opening blocks of a launch to ensure everyday community members have a fair chance to participate.
 
 ---
 
 ## How It Works
 
-Proto employs a **dynamic decaying sniper fee** on its bonding curve architecture:
+Goton employs a **dynamic decaying sniper fee** on its bonding curve architecture:
 
 - At the exact second of launch ($t=0$), an automated 99% tax applies to any predatory bot attempting instant execution.
 - The fee rapidly decays over the next 3 seconds ($t=1 \to 25\%$, $t=2 \to 3\%$, $t \ge 3 \to 0\%$).

@@ -72,7 +72,7 @@ export function supportsFeeSplitters(network: NetworkConfig): boolean {
 }
 
 /**
- * PoolKey of a token's Proto v4 pool. Bonding-curve chains (with a graduator) pair the token with
+ * PoolKey of a token's Goton v4 pool. Bonding-curve chains (with a graduator) pair the token with
  * native ETH; in-pool chains pair it with the chain's quote ERC-20 (`contracts.weth`, USDC on Arc).
  */
 export function protoV4PoolKeyFor(network: NetworkConfig, token: `0x${string}`): V4PoolKey | null {

@@ -1,7 +1,7 @@
 {
-  "name": "Proto Docs",
-  "short_name": "Proto Docs",
-  "description": "Official User Guide & Knowledge Base for Proto Protocol",
+  "name": "Goton Docs",
+  "short_name": "Goton Docs",
+  "description": "Official User Guide & Knowledge Base for Goton Protocol",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#09090b",

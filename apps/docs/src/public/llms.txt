@@ -1,7 +1,7 @@
-# Proto Documentation & Knowledge Base
-> Official user guide and reference for Proto Protocol on Robinhood Chain.
+# Goton Documentation & Knowledge Base
+> Official user guide and reference for Goton Protocol on Robinhood Chain.
 
-Proto is a decentralized, non-custodial crypto launchpad on Robinhood Chain (L2). It allows anyone to launch fixed-supply tokens, trade on interactive bonding curves or Uniswap V3 pools, and participate in fair launches with permanently locked liquidity.
+Goton is a decentralized, non-custodial crypto launchpad on Robinhood Chain (L2). It allows anyone to launch fixed-supply tokens, trade on interactive bonding curves or Uniswap V3 pools, and participate in fair launches with permanently locked liquidity.
 
 ## Documentation Sections
 - Getting Started: %DOCS_URL%/protocol/overview

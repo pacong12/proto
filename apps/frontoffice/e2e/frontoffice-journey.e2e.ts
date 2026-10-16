@@ -1,13 +1,13 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Proto Frontoffice User Journeys', () => {
+test.describe('Goton Frontoffice User Journeys', () => {
   test('User can navigate between Explore, Create Token, and Analytics', async ({ page }) => {
     // 1. Visit Explore / Landing Page
     await page.goto('/');
     await expect(page).toHaveTitle(/proto/i);
 
     // Verify brand logo and navigation
-    const brand = page.locator('header').getByText('proto', { exact: true });
+    const brand = page.locator('header').getByText('goton', { exact: true });
     await expect(brand).toBeVisible();
 
     // 2. Navigate to Create Token view
@@ -51,7 +51,7 @@ test.describe('Proto Frontoffice User Journeys', () => {
     // Verify search input appears
     const searchInput = page.getByPlaceholder(/search/i);
     if (await searchInput.isVisible()) {
-      await searchInput.fill('PROTO');
+      await searchInput.fill('GOTON');
       await page.keyboard.press('Escape');
     }
   });
@@ -64,7 +64,7 @@ test.describe('Proto Frontoffice User Journeys', () => {
     await page.goto('/');
 
     // Verify brand logo
-    const brand = page.locator('header').getByText('proto', { exact: true });
+    const brand = page.locator('header').getByText('goton', { exact: true });
     await expect(brand).toBeVisible();
 
     // Verify no horizontal page overflow

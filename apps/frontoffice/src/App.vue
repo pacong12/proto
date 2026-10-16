@@ -23,12 +23,12 @@
           <div class="flex items-center gap-2.5">
             <img
               src="/logo-pink.svg"
-              alt="proto"
+              alt="goton"
               draggable="false"
               oncontextmenu="return false;"
               class="w-6 h-6 object-contain shrink-0 select-none pointer-events-none"
             />
-            <span class="text-foreground font-bold tracking-tight text-xl">proto</span>
+            <span class="text-foreground font-bold tracking-tight text-xl">goton</span>
           </div>
           <p class="text-sm text-muted-foreground leading-relaxed">
             {{ t('footerSubtitle') }}

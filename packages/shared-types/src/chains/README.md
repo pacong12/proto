@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-This package defines the single source of truth for supported blockchain networks in the Proto protocol.
+This package defines the single source of truth for supported blockchain networks in the Goton protocol.
 It decouples chain-specific logic and eliminates magic chain IDs across all applications and smart contracts.
 
 ---

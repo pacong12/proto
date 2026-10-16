@@ -1,4 +1,4 @@
-# Proto Development Roadmap
+# Goton Development Roadmap
 
 ## Phase 1: Foundation & Workspace Scaffolding
 

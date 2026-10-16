@@ -11,7 +11,7 @@
       <section class="space-y-2">
         <h2 class="text-base font-bold text-foreground">1. Strict Zero-Tracking Philosophy</h2>
         <p>
-          Proto does not use commercial advertising cookies, tracking pixels, or third-party
+          Goton does not use commercial advertising cookies, tracking pixels, or third-party
           behavioral analytics scripts. We do not sell, rent, or monetize your browser data.
         </p>
       </section>

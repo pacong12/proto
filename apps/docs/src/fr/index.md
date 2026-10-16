@@ -2,12 +2,12 @@
 layout: home
 
 hero:
-  name: 'Base de Connaissances Proto'
+  name: 'Base de Connaissances Goton'
   text: 'Le Launchpad Equitable sur Robinhood Chain & Arc'
   tagline: 'Guide simple et clair pour créer, découvrir et échanger des tokens à offre fixe avec liquidité verrouillée en permanence.'
   actions:
     - theme: brand
-      text: Qu’est-ce que Proto ?
+      text: Qu’est-ce que Goton ?
       link: /fr/protocol/overview
     - theme: alt
       text: Comment Lancer un Token
@@ -18,7 +18,7 @@ hero:
 
 features:
   - title: 100% Non-Dépositaire
-    details: Votre portefeuille contrôle chaque transaction. Proto ne détient jamais vos actifs ni vos clés privées.
+    details: Votre portefeuille contrôle chaque transaction. Goton ne détient jamais vos actifs ni vos clés privées.
   - title: Liquidité Verrouillée Anti-Rug
     details: Les positions de liquidité sont verrouillées à tout jamais dans les smart contracts dès le premier bloc.
   - title: Protection Anti-Snipe Intégrée

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Proto protocol is designed from the ground up for multi-chain scalability.
+The Goton protocol is designed from the ground up for multi-chain scalability.
 Rather than hardcoding conditional branches (`if (chainId === 5042)`), the codebase uses dedicated chain modules across all architectural layers.
 
 ---
@@ -74,8 +74,8 @@ registries, so they pick up the new chain without code changes.
 
 ## 3. Sovereign Protocol vs Third-Party Infrastructure
 
-Proto adopts **Sovereign Infrastructure (Opsi 2)**:
+Goton adopts **Sovereign Infrastructure (Opsi 2)**:
 
-- Robinhood Chain graduates into Uniswap V4 using Proto's sovereign `ProtoLiquidityLockerV4` (`0x7A1A...`) and `ProtoMemeHook` (`0x6347...`) with `LaunchpadV2Factory` (`0x9f1f...`).
-- Arc Network launches directly into Uniswap V4 (Argus portal model): the factory-owned launch position is locked forever, `ProtoMemeHookArc` charges fixed USDC taxes and tracks in-place graduation, and per-token `ArcFeeSplitter`s pay holders in USDC. Proto does not use Uniswap V3 on Arc.
-- Protocol fees, locker fees, and trading incentives flow directly to Proto (`0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2`) and token creators without dependency on third-party multisigs (e.g. Pons Multisig `0x263ed...`).
+- Robinhood Chain graduates into Uniswap V4 using Goton's sovereign `ProtoLiquidityLockerV4` (`0x7A1A...`) and `ProtoMemeHook` (`0x6347...`) with `LaunchpadV2Factory` (`0x9f1f...`).
+- Arc Network launches directly into Uniswap V4 (Argus portal model): the factory-owned launch position is locked forever, `ProtoMemeHookArc` charges fixed USDC taxes and tracks in-place graduation, and per-token `ArcFeeSplitter`s pay holders in USDC. Goton does not use Uniswap V3 on Arc.
+- Protocol fees, locker fees, and trading incentives flow directly to Goton (`0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2`) and token creators without dependency on third-party multisigs (e.g. Pons Multisig `0x263ed...`).

@@ -79,8 +79,8 @@ export const appKit =
         networks,
         projectId,
         metadata: {
-          name: 'proto',
-          description: 'Proto - Multi-chain token launchpad on Robinhood & Arc Chain',
+          name: 'goton',
+          description: 'Goton - Multi-chain token launchpad on Robinhood & Arc Chain',
           // Must match the domain the app runs on (WalletConnect domain verification).
           url: typeof window !== 'undefined' ? window.location.origin : SITE.appUrl,
           icons: ['/favicon.svg'],

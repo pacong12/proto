@@ -61,7 +61,7 @@
       <SentimentGauge :token-address="currentToken.address" :account="account || undefined" />
 
       <!-- ============================================================
-           HYBRID PONS X PROTO TRADING GRID
+           HYBRID PONS X GOTON TRADING GRID
            - Desktop: 2 Columns (Col 1: Chart, Facts, Tabs | Col 2: Sticky Swap Panel)
            - Mobile: Responsive Stacking (Chart -> Swap Panel -> Facts -> Tabs)
            ============================================================ -->

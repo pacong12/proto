@@ -7,7 +7,7 @@ import {ILaunchpadToken} from "../interfaces/ILaunchpadToken.sol";
 
 /**
  * @title BuybackBurner
- * @notice Automated buyback-and-burn engine for the Proto protocol.
+ * @notice Automated buyback-and-burn engine for the Goton protocol.
  *
  * Security notes:
  *   - M-01 fix: executeBuyback() requires a strictly positive minAmountOut.

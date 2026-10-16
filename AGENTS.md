@@ -1,4 +1,4 @@
-# Proto Agent & Engineering Guidelines
+# Goton Agent & Engineering Guidelines
 
 ## Mandatory Skills Binding
 

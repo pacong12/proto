@@ -15,7 +15,7 @@ export interface V4QuoteConfig {
 }
 
 /**
- * Exact-input swap in a Proto Uniswap v4 pool through GotonV4Router.
+ * Exact-input swap in a Goton Uniswap v4 pool through GotonV4Router.
  * Buys pay the quote with msg.value (no approval). Sells approve exactly the sold amount.
  * `params.amountInWei` / `expectedAmountOut` use native 18-dp units for the quote side.
  */

@@ -168,7 +168,7 @@
                     ${{ call.tokenSymbol || 'TOKEN' }}
                   </h3>
                   <p class="text-xs text-muted-foreground">
-                    {{ call.tokenName || 'Proto Token' }}
+                    {{ call.tokenName || 'Goton Token' }}
                   </p>
                 </div>
               </div>
@@ -345,7 +345,7 @@ async function exportPnlCardCanvas(): Promise<string | null> {
   // Top header banner
   ctx.fillStyle = '#10b981';
   ctx.font = 'bold 14px monospace';
-  ctx.fillText('PROTO ALPHA SIGNAL', 30, 45);
+  ctx.fillText('GOTON ALPHA SIGNAL', 30, 45);
 
   ctx.fillStyle = '#a1a1aa';
   ctx.font = '12px monospace';
@@ -366,7 +366,7 @@ async function exportPnlCardCanvas(): Promise<string | null> {
 
   ctx.fillStyle = '#71717a';
   ctx.font = '16px sans-serif';
-  ctx.fillText(call.tokenName || 'Proto Token', 30, 130);
+  ctx.fillText(call.tokenName || 'Goton Token', 30, 130);
 
   // Caller Position Box
   ctx.fillStyle = '#18181b';

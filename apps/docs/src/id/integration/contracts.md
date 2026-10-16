@@ -1,6 +1,6 @@
 # Kontrak Pintar Terverifikasi
 
-Untuk menjaga transparansi dan keamanan, seluruh smart contract launchpad Proto di jaringan yang didukung bersifat publik, non-kustodial, dan dapat diverifikasi langsung di penjelajah blok resmi.
+Untuk menjaga transparansi dan keamanan, seluruh smart contract launchpad Goton di jaringan yang didukung bersifat publik, non-kustodial, dan dapat diverifikasi langsung di penjelajah blok resmi.
 
 ---
 

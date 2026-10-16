@@ -2,12 +2,12 @@
 layout: home
 
 hero:
-  name: 'Proto Wissensdatenbank'
+  name: 'Goton Wissensdatenbank'
   text: 'Das faire Token-Launchpad auf Robinhood Chain & Arc'
   tagline: 'Ein einfacher, übersichtlicher Leitfaden zum Erstellen, Entdecken und Handeln von Token mit festem Angebot und dauerhaft gesperrter Liquidität.'
   actions:
     - theme: brand
-      text: Was ist Proto?
+      text: Was ist Goton?
       link: /de/protocol/overview
     - theme: alt
       text: Token erstellen
@@ -18,7 +18,7 @@ hero:
 
 features:
   - title: 100% Non-Custodial
-    details: Ihre Wallet kontrolliert jede Transaktion. Proto verwahrt niemals Ihre Vermögenswerte oder privaten Schlüssel.
+    details: Ihre Wallet kontrolliert jede Transaktion. Goton verwahrt niemals Ihre Vermögenswerte oder privaten Schlüssel.
   - title: Dauerhaft gesperrte Liquidität
     details: Liquiditätspositionen werden ab Block 0 für immer in Smart Contracts gesperrt – kein Rug-Pull möglich.
   - title: Integrierter Anti-Snipe-Schutz

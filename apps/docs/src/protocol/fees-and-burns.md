@@ -1,6 +1,6 @@
 # Creator Fees & Rewards
 
-Proto aligns the long-term success of token creators with their communities by offering one of the most creator-friendly fee structures in the entire blockchain ecosystem.
+Goton aligns the long-term success of token creators with their communities by offering one of the most creator-friendly fee structures in the entire blockchain ecosystem.
 
 ---
 

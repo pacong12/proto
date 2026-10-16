@@ -11,8 +11,8 @@
       <section class="space-y-2">
         <h2 class="text-base font-bold text-foreground">1. Non-Custodial Protocol</h2>
         <p>
-          Proto is a decentralized, non-custodial software protocol deployed on EVM-compatible
-          networks, including Robinhood Chain and Arc Network. Proto Labs does not take custody of
+          Goton is a decentralized, non-custodial software protocol deployed on EVM-compatible
+          networks, including Robinhood Chain and Arc Network. Goton Labs does not take custody of
           user assets, tokens, or private keys at any point. Every token launch, liquidity lock,
           swap, or fee claim is executed directly between your cryptographic wallet and open-source
           smart contracts.
@@ -23,12 +23,12 @@
         <h2 class="text-base font-bold text-foreground">2. Token Creation & Risk Disclosures</h2>
         <ul class="list-disc pl-5 space-y-1">
           <li>
-            <strong>User-Generated Assets:</strong> Tokens created through Proto are experimental,
+            <strong>User-Generated Assets:</strong> Tokens created through Goton are experimental,
             community-driven, and launched permissionlessly. Anyone may create a token with any
             name, ticker, or symbol.
           </li>
           <li>
-            <strong>No Guarantees:</strong> Proto does not endorse, verify, audit, or guarantee the
+            <strong>No Guarantees:</strong> Goton does not endorse, verify, audit, or guarantee the
             value, legality, or future liquidity of any launched token.
           </li>
           <li>
@@ -61,7 +61,7 @@
       <section class="space-y-2">
         <h2 class="text-base font-bold text-foreground">4. Limitation of Liability</h2>
         <p>
-          To the maximum extent permitted by law, Proto Labs, its contributors, and developers shall
+          To the maximum extent permitted by law, Goton Labs, its contributors, and developers shall
           not be liable for any direct, indirect, incidental, or consequential damages resulting
           from your use of the smart contracts, RPC providers, wallet connection interfaces, or
           third-party decentralized protocols.

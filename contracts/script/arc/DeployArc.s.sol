@@ -12,7 +12,7 @@ import {IPoolManagerV4} from "../../src/interfaces/external/IUniswapV4Core.sol";
 
 /**
  * @title DeployArc
- * @notice Deploys Proto's in-pool Uniswap v4 launch stack on Arc Network (Chain ID: 5042):
+ * @notice Deploys Goton's in-pool Uniswap v4 launch stack on Arc Network (Chain ID: 5042):
  *           1. GotonV4Hook via CREATE2 at an address whose low bits equal its permission
  *              flags (0x20CC), mined in this script.
  *           2. GotonFeeSplitterDeployer + LaunchpadV2FactoryArc (Argus portal defaults: open tick 405400, bond tick 376400,
@@ -61,7 +61,7 @@ contract DeployArc is Script {
 
         (bytes32 hookSalt,) = HookMiner.mine(poolManager, deployer);
 
-        console.log("=== ARC NETWORK PROTO V4 DEPLOYER ===");
+        console.log("=== ARC NETWORK GOTON V4 DEPLOYER ===");
         console.log("Chain ID          :", block.chainid);
         console.log("Deployer          :", deployer);
         console.log("Fee Recipient     :", feeRecipient);

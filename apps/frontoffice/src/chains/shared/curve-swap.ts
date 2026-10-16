@@ -14,7 +14,7 @@ export function isCurveTrade(params: ChainSwapParams): boolean {
 }
 
 /**
- * Buys / sells on a Proto BondingCurve (chain-agnostic; the quote is the native currency).
+ * Buys / sells on a Goton BondingCurve (chain-agnostic; the quote is the native currency).
  * Sells approve exactly the amount being sold (FO-03: no unlimited allowances).
  */
 export async function executeCurveSwap(

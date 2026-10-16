@@ -1,14 +1,14 @@
 # Pertanyaan yang Sering Diajukan (FAQ)
 
-Temukan jawaban atas pertanyaan umum seputar perdagangan, peluncuran, dan pengelolaan token di Proto.
+Temukan jawaban atas pertanyaan umum seputar perdagangan, peluncuran, dan pengelolaan token di Goton.
 
 ---
 
 ## Pertanyaan Umum
 
-### Apa itu Proto?
+### Apa itu Goton?
 
-Proto adalah launchpad kripto non-kustodial terdesentralisasi yang mendukung **Robinhood Chain** (L2) dan **Arc Network** (Circle Stablecoin L1). Platform ini memungkinkan siapa saja untuk meluncurkan token pasokan tetap, bertransaksi dengan grafik real-time, dan berpartisipasi dalam fair launch dengan likuiditas yang terkunci permanen.
+Goton adalah launchpad kripto non-kustodial terdesentralisasi yang mendukung **Robinhood Chain** (L2) dan **Arc Network** (Circle Stablecoin L1). Platform ini memungkinkan siapa saja untuk meluncurkan token pasokan tetap, bertransaksi dengan grafik real-time, dan berpartisipasi dalam fair launch dengan likuiditas yang terkunci permanen.
 
 ### Apakah pengembang dapat melakukan rug pull atau menguras likuiditas?
 
@@ -16,7 +16,7 @@ Proto adalah launchpad kripto non-kustodial terdesentralisasi yang mendukung **R
 
 ### Dompet apa saja yang didukung?
 
-Proto mendukung semua dompet Web3 standar yang kompatibel dengan EVM, termasuk:
+Goton mendukung semua dompet Web3 standar yang kompatibel dengan EVM, termasuk:
 
 - MetaMask
 - Coinbase Wallet
@@ -43,7 +43,7 @@ Kegagalan transaksi umumnya disebabkan oleh dua faktor:
 
 ### Apakah ada batasan saat menjual token?
 
-**Tidak pernah ada batasan.** Pengguna dapat menjual token mereka kapan saja. Proto tidak pernah menerapkan penguncian saldo (_lockup_), jeda penarikan (_cooldown_), maupun pembekuan transfer pada pemegang token.
+**Tidak pernah ada batasan.** Pengguna dapat menjual token mereka kapan saja. Goton tidak pernah menerapkan penguncian saldo (_lockup_), jeda penarikan (_cooldown_), maupun pembekuan transfer pada pemegang token.
 
 ---
 
@@ -55,7 +55,7 @@ Biaya protokol sebesar **0.0005 ETH** di Robinhood Chain atau **Gratis (0 USDC)*
 
 ### Bisakah pasokan token ditambah di masa depan?
 
-**Tidak bisa.** Setiap token di Proto memiliki pasokan tetap tepat **1.000.000.000 token** (1 Miliar). Smart contract tidak memiliki fungsi pencetakan tambahan (_mint_).
+**Tidak bisa.** Setiap token di Goton memiliki pasokan tetap tepat **1.000.000.000 token** (1 Miliar). Smart contract tidak memiliki fungsi pencetakan tambahan (_mint_).
 
 ### Bagaimana kreator mendapatkan pendapatan?
 
@@ -65,9 +65,9 @@ Kreator secara otomatis mengakumulasi **70% dari fee transaksi sebesar 1%** yang
 
 ## Jaringan & Bantuan
 
-### Jaringan apa saja yang didukung oleh Proto?
+### Jaringan apa saja yang didukung oleh Goton?
 
-Proto beroperasi secara multi-chain pada **Robinhood Chain** (Chain ID: `4663`) dan **Arc Network** (Chain ID: `5042`).
+Goton beroperasi secara multi-chain pada **Robinhood Chain** (Chain ID: `4663`) dan **Arc Network** (Chain ID: `5042`).
 
 ### Di mana saya bisa mendapatkan bantuan lebih lanjut?
 

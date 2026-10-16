@@ -41,7 +41,7 @@
           >
             <div class="flex items-center gap-2">
               <span class="font-extrabold text-sm tracking-tight text-foreground font-mono"
-                >proto</span
+                >goton</span
               >
               <span class="text-zinc-600 font-mono">/</span>
               <span class="text-[11px] font-mono text-muted-foreground">{{
@@ -238,7 +238,7 @@ async function generateCanvasImage(): Promise<string> {
   // 4. Header Bar
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 36px monospace';
-  ctx.fillText('proto', 70, 95);
+  ctx.fillText('goton', 70, 95);
 
   ctx.fillStyle = '#71717a';
   ctx.font = '28px monospace';

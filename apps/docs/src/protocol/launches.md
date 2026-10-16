@@ -1,6 +1,6 @@
 # Launching a Token
 
-Creating your own token on Proto takes less than two minutes and requires zero coding or blockchain development experience.
+Creating your own token on Goton takes less than two minutes and requires zero coding or blockchain development experience.
 
 ---
 
@@ -21,7 +21,7 @@ Enter the essential information for your token:
 - **Token Name**: The full name (e.g., `Robin Gold`).
 - **Ticker Symbol**: 3 to 6 uppercase letters (e.g., `GOLD`).
 - **Description**: A short introduction describing your token, purpose, or community vision.
-- **Token Logo**: Upload an image file (PNG, JPG, SVG, or WebP). Proto automatically compresses your picture and securely pins it to IPFS.
+- **Token Logo**: Upload an image file (PNG, JPG, SVG, or WebP). Goton automatically compresses your picture and securely pins it to IPFS.
 
 ### 4. Add Community Links (Optional)
 
@@ -46,7 +46,7 @@ Click **Launch Token** and confirm the transaction in your wallet:
 
 ## What Happens to Token Supply?
 
-Every token created on Proto has a strictly fixed supply:
+Every token created on Goton has a strictly fixed supply:
 
 - **Total Supply**: Exactly **1,000,000,000 tokens** (1 Billion).
 - **Decimals**: 18.

@@ -1,6 +1,6 @@
 # Cara Meluncurkan Token
 
-Membuat token sendiri di Proto dapat diselesaikan dalam waktu kurang dari dua menit tanpa memerlukan keahlian coding atau pemrograman blockchain.
+Membuat token sendiri di Goton dapat diselesaikan dalam waktu kurang dari dua menit tanpa memerlukan keahlian coding atau pemrograman blockchain.
 
 ---
 
@@ -46,7 +46,7 @@ Klik **Launch Token** dan konfirmasikan transaksi melalui dompet Web3 Anda:
 
 ## Ketentuan Pasokan Token
 
-Setiap token yang dibuat melalui Proto memiliki pasokan yang mutlak dan tidak dapat diubah:
+Setiap token yang dibuat melalui Goton memiliki pasokan yang mutlak dan tidak dapat diubah:
 
 - **Total Pasokan**: Tepat **1.000.000.000 token** (1 Miliar).
 - **Desimal**: 18.

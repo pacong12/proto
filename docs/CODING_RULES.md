@@ -1,4 +1,4 @@
-# Coding Rules -- Proto Launchpad Protocol
+# Coding Rules -- Goton Launchpad Protocol
 
 Version: 1.0  
 Applies to: all agents, all contributors  

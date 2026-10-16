@@ -2,12 +2,12 @@
 layout: home
 
 hero:
-  name: 'Pusat Panduan Proto'
+  name: 'Pusat Panduan Goton'
   text: 'Launchpad Token yang Adil di Robinhood & Arc Chain'
   tagline: 'Panduan sederhana dan jelas untuk membuat, menemukan, dan memperdagangkan token pasokan tetap dengan likuiditas terkunci permanen.'
   actions:
     - theme: brand
-      text: Apa itu Proto?
+      text: Apa itu Goton?
       link: /id/protocol/overview
     - theme: alt
       text: Cara Meluncurkan Token
@@ -18,7 +18,7 @@ hero:
 
 features:
   - title: 100% Non-Kustodial
-    details: Dompet Anda mengendalikan setiap transaksi. Proto tidak pernah menyimpan aset, kunci privat, maupun dana kreator.
+    details: Dompet Anda mengendalikan setiap transaksi. Goton tidak pernah menyimpan aset, kunci privat, maupun dana kreator.
   - title: Kunci Likuiditas Anti-Rug
     details: Posisi likuiditas dicetak dan dikunci secara permanen di smart contract sejak blok pertama. Tidak ada pihak yang dapat menarik dana cadangan pool.
   - title: Perlindungan Sniper Terintegrasi

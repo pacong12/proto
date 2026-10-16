@@ -1,8 +1,8 @@
-# Proto Protocol Goals & Technical Requirements
+# Goton Protocol Goals & Technical Requirements
 
 ## 1. High-Level Vision
 
-Proto is a decentralized, non-custodial token launchpad and trading platform deployed on Robinhood Chain (Chain ID: 4663). The protocol simplifies token creation and trading by eliminating artificial bonding curves and deploying directly into permanently locked Uniswap V3 liquidity positions.
+Goton is a decentralized, non-custodial token launchpad and trading platform deployed on Robinhood Chain (Chain ID: 4663). The protocol simplifies token creation and trading by eliminating artificial bonding curves and deploying directly into permanently locked Uniswap V3 liquidity positions.
 
 ## 2. Key Objectives
 

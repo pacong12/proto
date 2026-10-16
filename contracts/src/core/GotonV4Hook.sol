@@ -15,7 +15,7 @@ interface IFeeSplitter {
 
 /**
  * @title GotonV4Hook
- * @notice Chain-agnostic singleton Uniswap v4 hook for every Proto pool on a chain.
+ * @notice Chain-agnostic singleton Uniswap v4 hook for every Goton pool on a chain.
  *         - Restricts pool initialization to the registered launcher (factory / graduator).
  *         - Charges each pool's fixed buy/sell tax (optionally raised to a decaying anti-snipe
  *           tax) in the quote currency — native ETH or an ERC-20 such as Arc USDC — and forwards

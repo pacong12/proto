@@ -10,7 +10,7 @@ const owner = privateKeyToAccount(
 const other = '0x2222222222222222222222222222222222222222';
 
 const profile = {
-  displayName: 'Proto Dev',
+  displayName: 'Goton Dev',
   bio: 'Building on Arc and Robinhood',
   avatarUrl: 'ipfs://bafkreiexample',
   bannerUrl: 'https://example.com/banner.png',
