@@ -482,6 +482,7 @@ import {
   SUPPORTED_CHAINS,
   ARC_PROTO_CURVE_ADDRESS,
   resolveTokenNetwork,
+  supportsFeeSplitters,
   launchpadTokenAbi,
   launchpadV2FactoryAbi,
   bondingCurveAbi,
@@ -496,8 +497,7 @@ import {
   calculateCurveSellOutput,
   calculateRealizedPnl,
   calculateTraderTotalPnl,
-  ROBINHOOD_INITIAL_VIRTUAL_ETH_WEI,
-  ARC_INITIAL_VIRTUAL_ETH_WEI,
+  getChainMathConfig,
 } from '@proto/math-sdk';
 
 const props = defineProps<{
@@ -579,13 +579,7 @@ const unclaimedDividend = ref<HolderDividendEntry | null>(null);
 const isClaimingDividends = ref(false);
 const isPnlModalOpen = ref(false);
 
-const isDividendsConfigured = computed(() => {
-  return (
-    Boolean(tokenNetwork.value.contracts.holderFeeDistributor) &&
-    tokenNetwork.value.contracts.holderFeeDistributor !==
-      '0x0000000000000000000000000000000000000000'
-  );
-});
+const isDividendsConfigured = computed(() => supportsFeeSplitters(tokenNetwork.value));
 
 const hasDividends = computed(() => {
   return (unclaimedDividend.value?.earnedWei ?? 0n) > 0n;
@@ -606,8 +600,7 @@ async function refreshLiveDividends() {
       currentToken.value.address as `0x${string}`,
       currentToken.value.symbol,
       currentToken.value.name,
-      tokenNetwork.value.contracts.holderFeeDistributor as `0x${string}`,
-      tokenNetwork.value.chainId,
+      tokenNetwork.value,
     );
     unclaimedDividend.value = entry;
   } catch {
@@ -621,8 +614,7 @@ async function handleClaimDividends() {
   try {
     const hash = await claimHolderDividend(
       currentToken.value.address as `0x${string}`,
-      tokenNetwork.value.contracts.holderFeeDistributor as `0x${string}`,
-      tokenNetwork.value.chainId,
+      tokenNetwork.value,
     );
     if (hash) {
       toast.success('Dividends claimed successfully!');
@@ -1296,14 +1288,10 @@ function onVisibility() {
 }
 
 // -----------------------------------------------------------------------
-// Bonding curve AMM preview math
-// Mirrors BondingCurve.sol constants exactly:
-//   CURVE_TOKEN_SUPPLY = 800_000_000 (tokens allocated to curve, not wei)
-//   POOL_RESERVE_SUPPLY = 200_000_000 (reserved for V4 LP)
-//   fee = 1% (100 bps)
+// Constant-product preview math (BondingCurve, or the equivalent reserves of an in-pool v4
+// launch). Prefers the curve's indexed virtual reserves; otherwise rebuilds them from the chain's
+// math config: k = initial virtual quote × initial virtual token supply.
 // -----------------------------------------------------------------------
-const CURVE_TOKEN_SUPPLY = 800_000_000; // tokens (not wei)
-
 function getVirtualReserves() {
   const vEthRaw = currentToken.value.virtualEthReserve;
   const vTokenRaw = currentToken.value.virtualTokenReserve;
@@ -1314,23 +1302,24 @@ function getVirtualReserves() {
       return { vEth, vToken };
     }
   }
-  // Fallback: reconstruct from pairedPrincipalWeth + contract initial virtual reserves.
-  // BondingCurve constructor: virtualEthReserve = 3 ETH (Robinhood) / 4200 USDC (Arc),
-  // virtualTokenReserve = CURVE_TOKEN_SUPPLY = 800_000_000.
+  // SDK-02: virtual token reserve starts at the full supply (not 800M) and shrinks as quote
+  // flows in; chain parameters come from math-sdk instead of guessing from the currency symbol.
+  const math = getChainMathConfig(tokenNetwork.value.chainId);
+  const baseVirtualQuote = Number(math?.virtualQuoteReserve ?? 0n) / 1e18;
+  const baseVirtualToken = math?.totalSupplyNum ?? 1_000_000_000;
   const currentRaised = parseFloat(currentMarketData.value.pairedPrincipalWeth) || 0;
-  const isArc = currencySymbol.value === 'USDC';
-  const baseVirtualEth =
-    Number(isArc ? ARC_INITIAL_VIRTUAL_ETH_WEI : ROBINHOOD_INITIAL_VIRTUAL_ETH_WEI) / 1e18;
+  const vEth = baseVirtualQuote + currentRaised;
   return {
-    vEth: baseVirtualEth + currentRaised,
-    vToken: CURVE_TOKEN_SUPPLY,
+    vEth,
+    vToken: vEth > 0 ? (baseVirtualQuote * baseVirtualToken) / vEth : baseVirtualToken,
   };
 }
 
 function computeCurveBuyOutput(ethIn: number): number {
   if (ethIn <= 0) return 0;
   const { vEth, vToken } = getVirtualReserves();
-  return calculateCurveBuyOutput(ethIn, vEth, vToken);
+  const cap = getChainMathConfig(tokenNetwork.value.chainId)?.curveSupplyNum;
+  return calculateCurveBuyOutput(ethIn, vEth, vToken, cap);
 }
 
 function computeCurveSellOutput(tokensIn: number): number {

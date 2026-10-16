@@ -1,9 +1,10 @@
 import { ref, computed, type Ref } from 'vue';
-import { erc20Abi } from 'viem';
+import { erc20Abi, formatUnits } from 'viem';
 import { apiFetch } from '@/lib/api-client';
 import { getPublicClient } from '@/lib/viem-client';
 import {
-  liquidityLockerAbi,
+  protoFeeSplitterAbi,
+  resolveFeeSplitter,
   UNDEPLOYED,
   type LaunchedTokenEntity,
   type TokenMarketData,
@@ -62,40 +63,43 @@ export function useUserProfile({
 
             const tokenNetwork = getTokenNetwork(item.token.address);
             const tokenClient = getPublicClient(tokenNetwork.chainId);
-            const lockerAddr = tokenNetwork.contracts.locker;
-            const hasLocker = lockerAddr && lockerAddr !== UNDEPLOYED;
-
-            if (hasLocker) {
-              try {
-                const r = (await tokenClient.readContract({
-                  address: lockerAddr,
-                  abi: liquidityLockerAbi,
-                  functionName: 'feeRedirects',
-                  args: [item.token.address as `0x${string}`],
-                })) as string;
-                if (r && r !== UNDEPLOYED) {
-                  redirect = r;
+            // FO-06: read the creator's real accrued fees from the token's splitter instead of
+            // simulating the legacy locker (whose fallback reported other tokens' balances).
+            try {
+              const splitter = await resolveFeeSplitter(
+                tokenClient,
+                tokenNetwork,
+                item.token.address as `0x${string}`,
+              );
+              if (splitter) {
+                const [accrued, recipient, creatorAddr] = await Promise.all([
+                  tokenClient.readContract({
+                    address: splitter.address,
+                    abi: protoFeeSplitterAbi,
+                    functionName: 'creatorAccrued',
+                  }),
+                  tokenClient.readContract({
+                    address: splitter.address,
+                    abi: protoFeeSplitterAbi,
+                    functionName: 'creatorRecipient',
+                  }),
+                  tokenClient.readContract({
+                    address: splitter.address,
+                    abi: protoFeeSplitterAbi,
+                    functionName: 'creator',
+                  }),
+                ]);
+                const amount = Number(formatUnits(accrued, splitter.quoteDecimals));
+                unclaimedWeth = isNaN(amount) ? '0.0000' : amount.toFixed(4);
+                if (
+                  recipient.toLowerCase() !== creatorAddr.toLowerCase() &&
+                  recipient !== UNDEPLOYED
+                ) {
+                  redirect = recipient;
                 }
-              } catch {
-                // Non-blocking
               }
-
-              if (item.marketData?.isGraduated) {
-                try {
-                  const { result } = await tokenClient.simulateContract({
-                    address: lockerAddr,
-                    abi: liquidityLockerAbi,
-                    functionName: 'claimFees',
-                    args: [item.token.address as `0x${string}`],
-                    account: target as `0x${string}`,
-                  });
-                  const [, creatorWethFee] = result as [bigint, bigint];
-                  const wethNum = Number(creatorWethFee) / 1e18;
-                  unclaimedWeth = isNaN(wethNum) ? '0.0000' : wethNum.toFixed(4);
-                } catch {
-                  // Non-blocking
-                }
-              }
+            } catch {
+              // Non-blocking
             }
 
             return {
