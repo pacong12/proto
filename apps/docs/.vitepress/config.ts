@@ -536,6 +536,13 @@ export default defineConfig({
   },
 
   themeConfig: {
+    notFound: {
+      title: 'PAGE NOT FOUND',
+      quote:
+        'This page does not exist or has moved. Use the search, or start again from the guide home.',
+      linkLabel: 'Go to the guide home',
+      linkText: 'Back to the guide',
+    },
     siteTitle: 'Proto Guide',
     logo: {
       light: '/logo-black.svg',
