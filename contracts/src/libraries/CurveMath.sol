@@ -115,7 +115,8 @@ library CurveMath {
 
     /**
      * @notice Compute sqrtPriceX96 for Uniswap V3/V4 pool initialization from reserves.
-     * @dev sqrtPriceX96 = (sqrt(ethReserve) * 2^96) / sqrt(tokenReserve)
+     * @dev Pools pair native ETH (currency0) with the token (currency1), and v4 prices are
+     *      currency1 per currency0: sqrtPriceX96 = sqrt(tokenReserve) * 2^96 / sqrt(ethReserve).
      * @param ethReserve Current quote asset reserve.
      * @param tokenReserve Current token reserve.
      * @return uint160 Sqrt price in X96 fixed-point format.
