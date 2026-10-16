@@ -25,12 +25,13 @@ jobs:
 
     steps:
       - name: Deploy via SSH
-        if: env.SSH_KEY != ''
+        if: env.SSH_KEY != '' && env.VPS_HOST != ''
         uses: appleboy/ssh-action@v1.0.3
         env:
           SSH_KEY: ${{ secrets.VPS_SSH_KEY || secrets.DEPLOY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
         with:
-          host: ${{ secrets.VPS_HOST || '31.97.189.81' }}
+          host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER || 'deploy' }}
           key: ${{ secrets.VPS_SSH_KEY || secrets.DEPLOY }}
           port: ${{ secrets.VPS_PORT || 22 }}
@@ -60,7 +61,8 @@ jobs:
             echo "[Deploy] VPS backend deployment completed successfully."
 
       - name: Skip VPS deployment (secrets not configured)
-        if: env.SSH_KEY == ''
+        if: env.SSH_KEY == '' || env.VPS_HOST == ''
         env:
           SSH_KEY: ${{ secrets.VPS_SSH_KEY || secrets.DEPLOY }}
-        run: echo "VPS_SSH_KEY or DEPLOY secret not configured. Skipping deployment."
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: echo "VPS_SSH_KEY/DEPLOY or VPS_HOST secret not configured. Skipping deployment."
