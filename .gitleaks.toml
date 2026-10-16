@@ -11,7 +11,11 @@ paths = [
 regexes = [
   '''proto_privacy_policy_accepted_v1''',
   '''(?i)0x6c1c1a77771bf8961e27ea5b21f575eb17a7626e''',
-  '''(?i)generic-api-key'''
+  '''(?i)generic-api-key''',
+  # Solidity: `address token = quoteIsCurrency0 ? ...` matches generic-api-key (LaunchpadV2FactoryArc)
+  '''quoteIsCurrency0''',
+  # Public EVM contract / wallet addresses (0x + 40 hex) are not secrets
+  '''^0x[a-fA-F0-9]{40}$'''
 ]
 stopwords = [
   "0x6c1c1a77771bf8961e27ea5b21f575eb17a7626e",
