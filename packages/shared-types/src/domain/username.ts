@@ -278,13 +278,21 @@ export const PROFILE_LIMITS = {
 } as const;
 
 /**
+ * Control characters (except tab and newline), zero-width characters and bidirectional overrides.
+ * They are invisible but can reorder or hide text, e.g. to make one name look like another.
+ */
+const INVISIBLE_OR_CONTROL =
+  // eslint-disable-next-line no-control-regex
+  /[\u0000-\u0008\u000B-\u001F\u007F\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF]/g;
+
+/**
  * Normalises a profile for storage. Images must be https:// or ipfs:// (or the API's IPFS path) so a
  * stored profile can never carry javascript:, data: or blob: URLs. Returns an error message instead
  * when a field is invalid.
  */
 export function sanitizeCreatorProfile(input: Partial<CreatorProfile>): CreatorProfile | string {
   const text = (value: unknown, max: number, field: string): string | Error => {
-    const v = typeof value === 'string' ? value.trim() : '';
+    const v = typeof value === 'string' ? value.replace(INVISIBLE_OR_CONTROL, '').trim() : '';
     return v.length > max ? new Error(`${field} is longer than ${max} characters`) : v;
   };
   const url = (value: unknown, field: string): string | Error => {
