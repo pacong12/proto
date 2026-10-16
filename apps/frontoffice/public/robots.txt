@@ -17,5 +17,5 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
-Sitemap: https://proto.family/sitemap.xml
-Host: https://proto.family
+Sitemap: %APP_URL%/sitemap.xml
+Host: %APP_URL%

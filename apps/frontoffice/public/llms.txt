@@ -10,13 +10,13 @@ proto is the premier multi-chain launchpad for fixed-supply tokens. Explore new 
 - Built-in metadata storage pinned to IPFS
 
 ## Public Surfaces
-- App / Explore: https://proto.family/launchpad
-- Create Token: https://proto.family/launchpad/create
-- Analytics: https://proto.family/analytics
-- Memestock Community Feed: https://proto.family/memestock
-- Documentation: https://docs.proto.family
-- Robots: https://proto.family/robots.txt
-- Sitemap: https://proto.family/sitemap.xml
+- App / Explore: %APP_URL%/launchpad
+- Create Token: %APP_URL%/launchpad/create
+- Analytics: %APP_URL%/analytics
+- Memestock Community Feed: %APP_URL%/memestock
+- Documentation: %DOCS_URL%
+- Robots: %APP_URL%/robots.txt
+- Sitemap: %APP_URL%/sitemap.xml
 
 ## Supported Networks
 - **Robinhood Chain** (Chain ID: 4663): Native gas ETH (18 decimals)

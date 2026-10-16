@@ -133,7 +133,7 @@
                 {{ account ? getUserIdentity(account).displayName : t('pnlAnonTrader') }}
               </span>
             </div>
-            <span class="text-primary font-bold shrink-0">proto.family</span>
+            <span class="text-primary font-bold shrink-0">{{ SITE.appHost }}</span>
           </div>
         </div>
 
@@ -175,6 +175,7 @@ import { formatCompactUsd } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { toast } from '@/components/ui/sonner';
 import { useI18n } from '@/lib/i18n';
+import { SITE } from '@/lib/site';
 import type { LaunchedTokenEntity, TokenMarketData, NetworkConfig } from '@proto/shared-types';
 
 interface Props {
@@ -327,7 +328,7 @@ async function generateCanvasImage(): Promise<string> {
   ctx.fillStyle = '#ec4899';
   ctx.font = 'bold 24px monospace';
   ctx.textAlign = 'right';
-  ctx.fillText('proto.family', 1130, 560);
+  ctx.fillText(SITE.appHost, 1130, 560);
 
   return canvas.toDataURL('image/png');
 }

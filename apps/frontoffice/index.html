@@ -48,7 +48,7 @@
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://proto.family" />
+    <meta property="og:url" content="%VITE_APP_URL%" />
     <meta property="og:site_name" content="proto" />
     <meta property="og:locale" content="en_US" />
     <meta
@@ -59,7 +59,7 @@
       property="og:description"
       content="Deploy fixed-supply tokens with permanently locked Uniswap V3 liquidity or trading curves on Robinhood Chain and Arc Network."
     />
-    <meta property="og:image" content="https://proto.family/opengraph-image.svg" />
+    <meta property="og:image" content="%VITE_APP_URL%/opengraph-image.svg" />
     <meta property="og:image:type" content="image/svg+xml" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -72,7 +72,7 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@protodotfun" />
     <meta name="twitter:creator" content="@protodotfun" />
-    <meta name="twitter:url" content="https://proto.family" />
+    <meta name="twitter:url" content="%VITE_APP_URL%" />
     <meta
       name="twitter:title"
       content="proto · Launch fixed-supply tokens on Robinhood & Arc Chain"
@@ -81,14 +81,14 @@
       name="twitter:description"
       content="Deploy fixed-supply tokens with permanently locked Uniswap V3 liquidity or trading curves on Robinhood Chain and Arc Network."
     />
-    <meta name="twitter:image" content="https://proto.family/opengraph-image.svg" />
+    <meta name="twitter:image" content="%VITE_APP_URL%/opengraph-image.svg" />
     <meta
       name="twitter:image:alt"
       content="proto: Launch fixed-supply tokens on Robinhood & Arc Chain"
     />
 
     <!-- Canonical link -->
-    <link rel="canonical" href="https://proto.family" />
+    <link rel="canonical" href="%VITE_APP_URL%" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.json" />
 
@@ -99,9 +99,9 @@
         "@graph": [
           {
             "@type": "WebApplication",
-            "@id": "https://proto.family/#webapp",
+            "@id": "%VITE_APP_URL%/#webapp",
             "name": "proto",
-            "url": "https://proto.family",
+            "url": "%VITE_APP_URL%",
             "description": "Multi-chain launchpad for fixed-supply tokens on Robinhood Chain and Arc Network with locked liquidity and bonding curves.",
             "applicationCategory": "FinanceApplication",
             "operatingSystem": "All",
@@ -113,10 +113,10 @@
           },
           {
             "@type": "Organization",
-            "@id": "https://proto.family/#organization",
+            "@id": "%VITE_APP_URL%/#organization",
             "name": "proto",
-            "url": "https://proto.family",
-            "logo": "https://proto.family/favicon.svg"
+            "url": "%VITE_APP_URL%",
+            "logo": "%VITE_APP_URL%/favicon.svg"
           }
         ]
       }
