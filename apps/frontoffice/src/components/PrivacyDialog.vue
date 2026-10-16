@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useI18n } from '@/lib/i18n';
+import { legalUrl } from '@/lib/site';
 import {
   Dialog,
   DialogContent,
@@ -14,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { ShieldCheck } from 'lucide-vue-next';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const emit = defineEmits<{
   (e: 'accept'): void;
@@ -71,7 +72,7 @@ function handleAccept() {
           class="text-xs font-normal text-foreground normal-case cursor-pointer select-none"
         >
           <a
-            href="/terms-of-service"
+            :href="legalUrl('terms-of-service', locale)"
             target="_blank"
             rel="noopener noreferrer"
             class="text-primary hover:underline underline-offset-2 transition"
@@ -81,7 +82,7 @@ function handleAccept() {
           </a>
           &amp;
           <a
-            href="/privacy-policy"
+            :href="legalUrl('privacy-policy', locale)"
             target="_blank"
             rel="noopener noreferrer"
             class="text-primary hover:underline underline-offset-2 transition"

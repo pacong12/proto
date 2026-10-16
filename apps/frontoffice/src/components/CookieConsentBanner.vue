@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useI18n } from '@/lib/i18n';
+import { legalUrl } from '@/lib/site';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-vue-next';
 import { COOKIE_CONSENT_KEY, loadAnalytics } from '@/lib/analytics';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const visible = ref(false);
 
@@ -75,7 +76,7 @@ function dismissBanner() {
 
       <div class="flex items-center justify-between pt-1 text-xs">
         <a
-          href="/cookie-policy"
+          :href="legalUrl('cookie-policy', locale)"
           target="_blank"
           rel="noopener noreferrer"
           class="text-muted-foreground hover:text-foreground underline underline-offset-2 transition"

@@ -27,3 +27,14 @@ export function resolveDocsUrl(location: Location | undefined = globalThis.locat
   }
   return SITE.docsUrl;
 }
+
+export type LegalPage = 'terms-of-service' | 'privacy-policy' | 'cookie-policy';
+
+/** Docs locales with translated legal pages; other languages get the English page. */
+const LEGAL_LOCALES = new Set(['id', 'zh']);
+
+/** Legal documents live on the docs site (single source); the app links there. */
+export function legalUrl(page: LegalPage, locale?: string): string {
+  const prefix = locale && LEGAL_LOCALES.has(locale) ? `/${locale}` : '';
+  return `${resolveDocsUrl()}${prefix}/${page}`;
+}
