@@ -1,15 +1,8 @@
 name: Auto Deploy Backend to VPS
 
+# Production API deploy. Runs only for releases: release.yml / promote-production.yml dispatch it on
+# the `production` branch after promoting a release.
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'apps/api/**'
-      - 'packages/shared-types/**'
-      - 'Dockerfile.api'
-      - 'docker-compose.yml'
-      - '.github/workflows/deploy-vps.yml'
   workflow_dispatch:
 
 concurrency:
@@ -21,6 +14,7 @@ permissions: {}
 jobs:
   deploy:
     name: Deploy API & Services to VPS via SSH
+    if: github.ref == 'refs/heads/production'
     runs-on: ubuntu-latest
 
     steps:
@@ -42,8 +36,8 @@ jobs:
             cd ${{ secrets.VPS_APP_DIR || '/var/www/proto' }}
 
             echo "[Deploy] Pulling latest commits from GitHub..."
-            git fetch origin main
-            git reset --hard origin/main
+            git fetch origin production
+            git reset --hard origin/production
 
             echo "[Deploy] Rebuilding and restarting API and Redis containers via Docker Compose..."
             if docker compose version > /dev/null 2>&1; then

@@ -71,3 +71,9 @@ Pastikan secrets berikut telah diisi di **GitHub Repository** -> **Settings** ->
 | `VPS_APP_DIR`               | `/var/www/proto`                       | Opsional (default `/var/www/proto`)     |
 
 _Catatan: Jika secret `VPS_SSH_KEY` dan `DEPLOY` belum diisi, workflow akan otomatis di-skip secara aman tanpa menyebabkan build merah._
+
+## Release-only deploys
+
+`deploy-vps.yml` no longer runs on pushes to `main`. It runs only on the `production` branch, which
+`release.yml` moves to each published release (or `promote-production.yml` moves for a redeploy or
+rollback). The VPS checks out `origin/production`, so the server always runs a released version.

@@ -1,0 +1,48 @@
+name: Promote Release to Production
+
+# Manual redeploy or rollback: points the `production` branch at an existing release tag and starts
+# the production deploys. Normal releases are promoted automatically by release.yml.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to deploy, e.g. v0.3.0'
+        required: true
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: promote-production
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: Point production at a release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Move production to the release tag
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Not a release tag: $TAG" >&2
+            exit 1
+          fi
+          SHA=$(git rev-parse "refs/tags/$TAG^{commit}")
+          # --force allows rollbacks to an older release.
+          git push --force origin "$SHA:refs/heads/production"
+          echo "production -> $TAG ($SHA)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Start production deploys
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run deploy-vps.yml --ref production
+          gh workflow run deploy-api-docker.yml --ref production

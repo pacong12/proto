@@ -15,6 +15,8 @@ on:
       - 'packages/shared-types/**'
       - 'Dockerfile.api'
       - '.github/workflows/deploy-api-docker.yml'
+  # PRs and pushes to main only build and smoke-test the image. It is published to GHCR only when
+  # release.yml / promote-production.yml dispatch this workflow on the `production` branch.
   workflow_dispatch:
 
 concurrency:
@@ -65,7 +67,7 @@ jobs:
           exit 1
 
       - name: Log in to GitHub Container Registry
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/production'
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -73,17 +75,18 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata for Docker
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/production'
         id: meta
         uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository }}-api
+          # Production only: development runs on Cloudflare workers and has no API image.
           tags: |
             type=raw,value=latest
             type=sha,format=short
 
-      - name: Push Production Docker Image to GHCR
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Push Docker Image to GHCR
+        if: github.ref == 'refs/heads/production'
         uses: docker/build-push-action@v7
         with:
           context: .
