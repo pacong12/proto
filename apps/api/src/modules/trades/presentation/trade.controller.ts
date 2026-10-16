@@ -1,7 +1,7 @@
-import type { ApiEnvelope, TradeEventEntity } from '@proto/shared-types';
-import { ok, err } from '@proto/shared-types';
+import type { ApiEnvelope, TradeEventEntity } from '@goton/shared-types';
+import { ok, err } from '@goton/shared-types';
 import type { TopTraderItem } from '../domain/entities/trade.entity';
-import type { CandlestickBar } from '@proto/math-sdk';
+import type { CandlestickBar } from '@goton/math-sdk';
 import { GetTradesUseCase } from '../application/use-cases/get-trades.use-case';
 import { GetRecentTradesUseCase } from '../application/use-cases/get-recent-trades.use-case';
 import { GetTopTradersUseCase } from '../application/use-cases/get-top-traders.use-case';

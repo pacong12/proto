@@ -102,7 +102,7 @@ import {
   getTokenChainName as getChainName,
 } from '@/lib/utils';
 import { useTokenStore } from '@/composables/useTokenStore';
-import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
+import type { LaunchedTokenEntity, TokenMarketData } from '@goton/shared-types';
 
 interface TokenItem {
   token: LaunchedTokenEntity;

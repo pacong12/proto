@@ -4,8 +4,8 @@ import {
   launchpadTokenAbi,
   launchpadV2FactoryAbi,
   protoV4GraduatorAbi,
-} from '@proto/shared-types';
-import { revenueSplitToBps, taxPercentToBps } from '@proto/math-sdk';
+} from '@goton/shared-types';
+import { revenueSplitToBps, taxPercentToBps } from '@goton/math-sdk';
 import type { ChainAdapter, ChainLaunchParams, ChainLaunchResult, ChainSwapParams } from '../types';
 import { waitForReceiptWithFallback } from '../../lib/viem-client';
 import { executeCurveSwap, isCurveTrade } from '../shared/curve-swap';

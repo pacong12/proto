@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue';
-import { launchpadTokenAbi } from '@proto/shared-types';
+import { launchpadTokenAbi } from '@goton/shared-types';
 import { getPublicClient, getWalletClient } from '../lib/viem-client';
 
 // ---------------------------------------------------------------------------

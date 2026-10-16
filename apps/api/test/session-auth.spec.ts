@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { privateKeyToAccount } from 'viem/accounts';
-import { buildSessionSignMessage, SESSION_TTL_MS } from '@proto/shared-types';
+import { buildSessionSignMessage, SESSION_TTL_MS } from '@goton/shared-types';
 import { createSessionToken, verifySessionToken } from '../src/core/auth/session';
 import { server } from '../src/server';
 

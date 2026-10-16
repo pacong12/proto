@@ -295,7 +295,7 @@ import { Badge } from '@/components/ui/badge';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { shortenAddress, formatRelativeTime, getChainIcon } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
-import type { LaunchedTokenEntity, TokenMarketData, NetworkConfig } from '@proto/shared-types';
+import type { LaunchedTokenEntity, TokenMarketData, NetworkConfig } from '@goton/shared-types';
 
 interface Props {
   currentToken: LaunchedTokenEntity;

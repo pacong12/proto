@@ -156,7 +156,7 @@ import { Jazzicon } from '@/components/ui/avatar';
 import { shortenAddress } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import type { ProfileStorageData } from './types';
-import type { NetworkConfig } from '@proto/shared-types';
+import type { NetworkConfig } from '@goton/shared-types';
 
 const { t } = useI18n();
 

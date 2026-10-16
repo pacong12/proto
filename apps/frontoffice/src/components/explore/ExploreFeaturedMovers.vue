@@ -87,7 +87,7 @@ import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import TaxTooltip from '@/components/ui/TaxTooltip.vue';
 import { useTokenStore } from '@/composables/useTokenStore';
 import { formatRelativeTime, getChainIcon } from '@/lib/utils';
-import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
+import type { LaunchedTokenEntity, TokenMarketData } from '@goton/shared-types';
 
 interface TokenItem {
   token: LaunchedTokenEntity;

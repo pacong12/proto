@@ -1,5 +1,5 @@
 {
-  "name": "@proto/shared-types",
+  "name": "@goton/shared-types",
   "version": "0.1.0",
   "private": true,
   "main": "./src/index.ts",
@@ -8,7 +8,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@proto/contracts-abi": "*",
+    "@goton/contracts-abi": "*",
     "viem": "^2.23.0"
   },
   "devDependencies": {

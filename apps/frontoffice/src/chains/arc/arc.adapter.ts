@@ -1,6 +1,6 @@
 import { formatEther, parseEventLogs, type PublicClient, type WalletClient } from 'viem';
-import { ARC_CHAIN, launchpadV2FactoryArcAbi } from '@proto/shared-types';
-import { revenueSplitToBps, taxPercentToBps } from '@proto/math-sdk';
+import { ARC_CHAIN, launchpadV2FactoryArcAbi } from '@goton/shared-types';
+import { revenueSplitToBps, taxPercentToBps } from '@goton/math-sdk';
 import type { ChainAdapter, ChainLaunchParams, ChainLaunchResult, ChainSwapParams } from '../types';
 import { waitForReceiptWithFallback } from '../../lib/viem-client';
 import { executeCurveSwap, isCurveTrade } from '../shared/curve-swap';

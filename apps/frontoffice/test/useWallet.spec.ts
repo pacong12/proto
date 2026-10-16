@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { ARC_CHAIN, ROBINHOOD_CHAIN } from '@proto/shared-types';
+import { ARC_CHAIN, ROBINHOOD_CHAIN } from '@goton/shared-types';
 import { useWallet } from '../src/composables/useWallet';
 import {
   clearWalletState,

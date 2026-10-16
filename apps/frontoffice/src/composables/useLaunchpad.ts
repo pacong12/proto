@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { decodeEventLog, parseEventLogs, type TransactionReceipt } from 'viem';
 import { apiFetch } from '@/lib/api-client';
-import { getChainMathConfig, taxPercentToBps } from '@proto/math-sdk';
+import { getChainMathConfig, taxPercentToBps } from '@goton/math-sdk';
 
 /**
  * Return true when the error originates from the user explicitly rejecting
@@ -35,7 +35,7 @@ import {
   type LaunchedTokenEntity,
   type TokenMarketData,
   type TokenSocials,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 import { getPublicClient, getWalletClient } from '../lib/viem-client';
 import { getChainAdapter } from '../chains';
 import { walletChainId } from '../lib/wallet-store';

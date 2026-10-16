@@ -171,7 +171,7 @@ import { Jazzicon } from '@/components/ui/avatar';
 import { TraderTagBadge, type TraderTagType } from '@/components/ui/badge';
 import { formatTokenNumber } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
-import { calculateRealizedPnl, calculateTraderTotalPnl } from '@proto/math-sdk';
+import { calculateRealizedPnl, calculateTraderTotalPnl } from '@goton/math-sdk';
 
 export interface TopTraderRow {
   address: string;

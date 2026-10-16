@@ -1,5 +1,5 @@
 import type { PublicClient } from 'viem';
-import type { NetworkConfig } from '@proto/shared-types';
+import type { NetworkConfig } from '@goton/shared-types';
 
 export interface IChainService {
   readonly chainId: number;

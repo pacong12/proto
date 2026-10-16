@@ -1,11 +1,11 @@
 {
   "nodes": {
-    "@proto/shared-types": {
-      "name": "@proto/shared-types",
+    "@goton/shared-types": {
+      "name": "@goton/shared-types",
       "type": "lib",
       "data": {
         "root": "packages/shared-types",
-        "name": "@proto/shared-types",
+        "name": "@goton/shared-types",
         "tags": [
           "npm:private"
         ],
@@ -16,7 +16,7 @@
             ]
           },
           "js": {
-            "packageName": "@proto/shared-types",
+            "packageName": "@goton/shared-types",
             "packageMain": "./src/index.ts",
             "isInPackageManagerWorkspaces": true
           }
@@ -42,12 +42,12 @@
         "implicitDependencies": []
       }
     },
-    "@proto/frontoffice": {
-      "name": "@proto/frontoffice",
+    "@goton/frontoffice": {
+      "name": "@goton/frontoffice",
       "type": "lib",
       "data": {
         "root": "apps/frontoffice",
-        "name": "@proto/frontoffice",
+        "name": "@goton/frontoffice",
         "tags": [
           "npm:private"
         ],
@@ -61,7 +61,7 @@
             ]
           },
           "js": {
-            "packageName": "@proto/frontoffice",
+            "packageName": "@goton/frontoffice",
             "isInPackageManagerWorkspaces": true
           }
         },
@@ -135,12 +135,12 @@
         "implicitDependencies": []
       }
     },
-    "@proto/docs": {
-      "name": "@proto/docs",
+    "@goton/docs": {
+      "name": "@goton/docs",
       "type": "lib",
       "data": {
         "root": "apps/docs",
-        "name": "@proto/docs",
+        "name": "@goton/docs",
         "tags": [
           "npm:private"
         ],
@@ -153,7 +153,7 @@
             ]
           },
           "js": {
-            "packageName": "@proto/docs",
+            "packageName": "@goton/docs",
             "isInPackageManagerWorkspaces": true
           }
         },
@@ -210,12 +210,12 @@
         "implicitDependencies": []
       }
     },
-    "@proto/api": {
-      "name": "@proto/api",
+    "@goton/api": {
+      "name": "@goton/api",
       "type": "lib",
       "data": {
         "root": "apps/api",
-        "name": "@proto/api",
+        "name": "@goton/api",
         "tags": [
           "npm:private"
         ],
@@ -228,7 +228,7 @@
             ]
           },
           "js": {
-            "packageName": "@proto/api",
+            "packageName": "@goton/api",
             "isInPackageManagerWorkspaces": true
           }
         },
@@ -293,25 +293,25 @@
   },
   "externalNodes": {},
   "dependencies": {
-    "@proto/shared-types": [],
-    "@proto/frontoffice": [
+    "@goton/shared-types": [],
+    "@goton/frontoffice": [
       {
-        "source": "@proto/frontoffice",
-        "target": "@proto/shared-types",
+        "source": "@goton/frontoffice",
+        "target": "@goton/shared-types",
         "type": "static"
       }
     ],
-    "@proto/docs": [
+    "@goton/docs": [
       {
-        "source": "@proto/docs",
-        "target": "@proto/shared-types",
+        "source": "@goton/docs",
+        "target": "@goton/shared-types",
         "type": "static"
       }
     ],
-    "@proto/api": [
+    "@goton/api": [
       {
-        "source": "@proto/api",
-        "target": "@proto/shared-types",
+        "source": "@goton/api",
+        "target": "@goton/shared-types",
         "type": "static"
       }
     ]

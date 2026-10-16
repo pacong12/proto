@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { SecurityPolicy } from '../src/modules/security/domain/security-policy';
-import { TransactionIntent } from '@proto/shared-types';
+import { TransactionIntent } from '@goton/shared-types';
 
 describe('SecurityPolicy & Security Gate', () => {
   const validSender = '0x1111111111111111111111111111111111111111' as `0x${string}`;

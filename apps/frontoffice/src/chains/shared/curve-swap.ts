@@ -1,5 +1,5 @@
 import { erc20Abi, type PublicClient, type WalletClient } from 'viem';
-import { bondingCurveAbi } from '@proto/shared-types';
+import { bondingCurveAbi } from '@goton/shared-types';
 import type { ChainSwapParams } from '../types';
 import { waitForReceiptWithFallback } from '../../lib/viem-client';
 import { resolveMinAmountOut } from './utils';

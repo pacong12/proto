@@ -1,5 +1,5 @@
 import { erc20Abi, type PublicClient, type WalletClient } from 'viem';
-import { protoV4PoolKey, protoV4RouterAbi, type NetworkConfig } from '@proto/shared-types';
+import { protoV4PoolKey, protoV4RouterAbi, type NetworkConfig } from '@goton/shared-types';
 import type { ChainSwapParams } from '../types';
 import { waitForReceiptWithFallback } from '../../lib/viem-client';
 import { isDeployed, resolveMinAmountOut } from './utils';

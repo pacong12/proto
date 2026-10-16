@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { SESSION_TTL_MS } from '@proto/shared-types';
+import { SESSION_TTL_MS } from '@goton/shared-types';
 
 /**
  * Stateless wallet sessions for social actions (API-09). A session token binds a wallet address

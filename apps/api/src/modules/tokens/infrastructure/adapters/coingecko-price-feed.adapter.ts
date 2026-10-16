@@ -1,4 +1,4 @@
-import { getNetworkConfig } from '@proto/shared-types';
+import { getNetworkConfig } from '@goton/shared-types';
 import { PriceFeedPort } from '../../domain/ports/price-feed.port';
 
 export interface CoinGeckoConfig {

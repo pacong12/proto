@@ -442,7 +442,7 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { useI18n } from '@/lib/i18n';
 import { formatCompactUsd } from '@/lib/utils';
-import type { LaunchedTokenEntity, NetworkConfig } from '@proto/shared-types';
+import type { LaunchedTokenEntity, NetworkConfig } from '@goton/shared-types';
 
 interface Props {
   currentToken: LaunchedTokenEntity;

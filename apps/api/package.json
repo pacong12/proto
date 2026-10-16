@@ -1,5 +1,5 @@
 {
-  "name": "@proto/api",
+  "name": "@goton/api",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,8 +9,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@proto/shared-types": "*",
-    "@proto/math-sdk": "*",
+    "@goton/shared-types": "*",
+    "@goton/math-sdk": "*",
     "ioredis": "^6.0.0",
     "viem": "^2.23.0"
   },

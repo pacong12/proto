@@ -15,7 +15,7 @@
 
 ## Phase 3: Shared Types & Backend API (Clean Architecture)
 
-- [x] `@proto/shared-types`: Domain models, intent definitions, ApiEnvelope.
+- [x] `@goton/shared-types`: Domain models, intent definitions, ApiEnvelope.
 - [x] `apps/api`: Modular backend with strict domain, application, and infrastructure separation.
 - [x] Security Gate: Intent validation and evaluation pipeline.
 
@@ -43,7 +43,7 @@
 Master implementation specification: [`docs/CLEAN_ARCHITECTURE_ROADMAP.md`](./CLEAN_ARCHITECTURE_ROADMAP.md).  
 _Anti-Bloat Mandate: Coding agents are explicitly authorized and required to create new files, sub-folders, and composables rather than accumulating code in monolithic files._
 
-- [ ] **Phase 7.1 — Shared Monorepo Packages**: Create `@proto/math-sdk` (pure bonding curve and PnL math) and `@proto/contracts-abi` (single source of truth for Foundry ABIs).
+- [ ] **Phase 7.1 — Shared Monorepo Packages**: Create `@goton/math-sdk` (pure bonding curve and PnL math) and `@goton/contracts-abi` (single source of truth for Foundry ABIs).
 - [ ] **Phase 7.2 — Smart Contracts Clean Architecture**: Extract pure math into `contracts/src/libraries/` (`CurveMath.sol`, `FeeMath.sol`), segregate interfaces into `interfaces/core/`, and DRY factory orchestrators.
 - [ ] **Phase 7.3 — Backend Shared Core & Middleware**: Extract `core/errors/`, `core/http/`, and `core/middleware/` (tiered rate limiting, CORS) from `server.ts`.
 - [ ] **Phase 7.4 — Backend Trade Domain Extraction**: Modularize `modules/trades/` with dedicated domain ports, application use cases (`get-top-traders`, `get-trades`), and in-memory cache.

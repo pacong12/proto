@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { PublicClient, WalletClient } from 'viem';
-import { ARC_CHAIN, type LaunchedTokenEntity } from '@proto/shared-types';
+import { ARC_CHAIN, type LaunchedTokenEntity } from '@goton/shared-types';
 import { V4BuybackKeeperService } from '../src/modules/tokens/infrastructure/keeper/v4-buyback-keeper.service';
 import { InMemoryTokenRepository } from '../src/modules/tokens/infrastructure/adapters/in-memory-token.repository';
 

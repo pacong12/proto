@@ -211,7 +211,7 @@ import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { CashtagText } from '@/components/feed';
 import { formatCompactUsd, formatRelativeTime } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
-import type { LaunchedTokenEntity, TokenMarketData, TokenCommentEntity } from '@proto/shared-types';
+import type { LaunchedTokenEntity, TokenMarketData, TokenCommentEntity } from '@goton/shared-types';
 
 interface Props {
   currentToken: LaunchedTokenEntity;

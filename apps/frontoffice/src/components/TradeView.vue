@@ -493,14 +493,14 @@ import {
   type TokenCommentEntity,
   type FeedCalloutItem,
   type TradeEventEntity,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 import {
   calculateCurveBuyOutput,
   calculateCurveSellOutput,
   calculateRealizedPnl,
   calculateTraderTotalPnl,
   getChainMathConfig,
-} from '@proto/math-sdk';
+} from '@goton/math-sdk';
 
 const props = defineProps<{
   tokenAddress?: string;

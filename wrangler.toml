@@ -5,7 +5,7 @@ compatibility_date = "2026-09-16"
 keep_vars = true
 
 [build]
-command = "VITE_REOWN_PROJECT_ID=4832fd788725bf7c34d6bc2ca2d54a85 bun run --filter @proto/frontoffice build"
+command = "VITE_REOWN_PROJECT_ID=4832fd788725bf7c34d6bc2ca2d54a85 bun run --filter @goton/frontoffice build"
 
 [vars]
 VITE_REOWN_PROJECT_ID = "4832fd788725bf7c34d6bc2ca2d54a85"

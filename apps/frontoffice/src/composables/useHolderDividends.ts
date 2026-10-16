@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue';
 import { formatUnits } from 'viem';
-import { protoFeeSplitterAbi, resolveFeeSplitter, type NetworkConfig } from '@proto/shared-types';
+import { protoFeeSplitterAbi, resolveFeeSplitter, type NetworkConfig } from '@goton/shared-types';
 import { getPublicClient, getWalletClient } from '../lib/viem-client';
 
 function isUserRejection(err: unknown): boolean {

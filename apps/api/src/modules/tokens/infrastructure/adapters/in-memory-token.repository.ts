@@ -6,7 +6,7 @@ import {
   TokenCommentEntity,
   getUserIdentity,
   type CreatorProfile,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import {
   aggregateCandlesticks,
@@ -271,8 +271,8 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
     offset = 0,
     viewerAddress?: string,
     authorAddress?: string,
-  ): Promise<import('@proto/shared-types').FeedCalloutItem[]> {
-    const allComments: import('@proto/shared-types').FeedCalloutItem[] = [];
+  ): Promise<import('@goton/shared-types').FeedCalloutItem[]> {
+    const allComments: import('@goton/shared-types').FeedCalloutItem[] = [];
     const viewer = viewerAddress?.toLowerCase();
 
     for (const [tokenAddr, list] of this.comments.entries()) {
@@ -311,7 +311,7 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
   async getCalloutThread(
     calloutId: string,
     viewerAddress?: string,
-  ): Promise<import('@proto/shared-types').FeedCalloutItem | null> {
+  ): Promise<import('@goton/shared-types').FeedCalloutItem | null> {
     for (const [tokenAddr, list] of this.comments.entries()) {
       const match = list.find((c) => c.id === calloutId);
       if (match) {

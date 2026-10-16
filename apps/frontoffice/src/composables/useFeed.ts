@@ -1,5 +1,5 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue';
-import { type FeedCalloutItem, buildCommentSignMessage } from '@proto/shared-types';
+import { type FeedCalloutItem, buildCommentSignMessage } from '@goton/shared-types';
 import { getSessionHeaders } from '../lib/session';
 import { apiFetch } from '@/lib/api-client';
 import { getWalletClient } from '@/lib/viem-client';

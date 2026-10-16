@@ -1,5 +1,5 @@
 import { parseUnits } from 'viem';
-import { LaunchedTokenEntity, TradeEventEntity, CandlestickEntity } from '@proto/shared-types';
+import { LaunchedTokenEntity, TradeEventEntity, CandlestickEntity } from '@goton/shared-types';
 
 export interface RawTradeForCandles {
   timestamp: number;

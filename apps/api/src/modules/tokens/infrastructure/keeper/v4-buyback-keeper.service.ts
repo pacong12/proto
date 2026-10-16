@@ -7,7 +7,7 @@ import {
   resolveFeeSplitter,
   type LaunchedTokenEntity,
   type NetworkConfig,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 import type { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 
 /** A pending keeper transaction older than this is replaced (DR-03). */

@@ -1,5 +1,5 @@
 {
-  "name": "@proto/docs",
+  "name": "@goton/docs",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
     "deploy": "bunx wrangler deploy"
   },
   "dependencies": {
-    "@proto/shared-types": "*",
+    "@goton/shared-types": "*",
     "@tailwindcss/vite": "^4.3.3",
     "@vue/server-renderer": "^3.5.42",
     "class-variance-authority": "^0.7.1",

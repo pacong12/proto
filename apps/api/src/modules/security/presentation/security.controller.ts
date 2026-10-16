@@ -4,7 +4,7 @@ import {
   SecurityEvaluationResult,
   ok,
   err,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 import { SecurityGateService } from '../application/security-gate.service';
 
 export class SecurityController {

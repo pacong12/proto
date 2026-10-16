@@ -11,7 +11,7 @@ import {
   SUPPORTED_CHAINS,
   getNetworkConfig,
   type NetworkConfig,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 import { getPublicClient } from '../lib/viem-client';
 import { appKitConfigured, appKit, getAppKitChain } from '../lib/appkit';
 import {

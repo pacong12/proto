@@ -4,7 +4,7 @@ import {
   bondingCurveAbi,
   type NetworkConfig,
   type TradeEventEntity,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import { ViemChainIndexerAdapter } from '../adapters/viem-chain-indexer.adapter';
 import { PriceFeedPort } from '../../domain/ports/price-feed.port';

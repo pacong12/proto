@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { SqliteTokenRepository } from '../src/modules/tokens/infrastructure/adapters/sqlite-token.repository';
-import { LaunchedTokenEntity, TradeEventEntity, TokenMarketData } from '@proto/shared-types';
+import { LaunchedTokenEntity, TradeEventEntity, TokenMarketData } from '@goton/shared-types';
 
 describe('SqliteTokenRepository', () => {
   let repository: SqliteTokenRepository;

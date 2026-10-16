@@ -4,7 +4,7 @@ import {
   ARC_CHAIN,
   ROBINHOOD_CHAIN,
   resolveTokenNetwork,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import { ChainIndexerPort } from '../../domain/ports/chain.indexer.port';
 import { PriceFeedPort } from '../../domain/ports/price-feed.port';

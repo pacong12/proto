@@ -219,7 +219,7 @@ import { Jazzicon } from '@/components/ui/avatar';
 import { TraderTagBadge } from '@/components/ui/badge';
 import { formatRelativeTime, formatTokenNumber, formatSubscriptPrice } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
-import type { TradeEventEntity } from '@proto/shared-types';
+import type { TradeEventEntity } from '@goton/shared-types';
 
 const { t } = useI18n();
 

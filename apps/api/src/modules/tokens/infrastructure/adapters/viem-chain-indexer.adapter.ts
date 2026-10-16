@@ -12,7 +12,7 @@ import {
   uniswapV3PoolAbi,
   resolveTokenNetwork,
   type NetworkConfig,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 import { ChainIndexerPort } from '../../domain/ports/chain.indexer.port';
 
 function makeViemChain(cfg: NetworkConfig): Chain {

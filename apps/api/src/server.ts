@@ -59,7 +59,7 @@ import {
   type CreatorProfile,
   ok,
   err,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 import {
   safeStringify,
   parseJsonBody,
@@ -1991,8 +1991,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     if (!res.success || !res.data) return replyError('NOT_FOUND', 'Asset not found', 404);
 
     const td = res.data as {
-      token: import('@proto/shared-types').LaunchedTokenEntity;
-      marketData: import('@proto/shared-types').TokenMarketData;
+      token: import('@goton/shared-types').LaunchedTokenEntity;
+      marketData: import('@goton/shared-types').TokenMarketData;
     };
     const t = td.token;
     const network = resolveTokenNetwork(t);
@@ -2245,8 +2245,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const res = await tokenController.getToken(tokenAddr);
     if (!res.success || !res.data) return replyError('NOT_FOUND', 'Token not found', 404);
     const td = res.data as {
-      token: import('@proto/shared-types').LaunchedTokenEntity;
-      marketData: import('@proto/shared-types').TokenMarketData;
+      token: import('@goton/shared-types').LaunchedTokenEntity;
+      marketData: import('@goton/shared-types').TokenMarketData;
     };
     const t = td.token;
     const m = td.marketData;
@@ -2299,7 +2299,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
     const resolution = timeframe === 'minute' ? 1 : timeframe === 'hour' ? 60 : 1440;
     const ohlcvRes = await tokenController.getCandlesticks(token.address, resolution);
-    const candles = (ohlcvRes.data ?? []) as import('@proto/shared-types').CandlestickEntity[];
+    const candles = (ohlcvRes.data ?? []) as import('@goton/shared-types').CandlestickEntity[];
     const sliced = candles.slice(-limit);
 
     const payload = {

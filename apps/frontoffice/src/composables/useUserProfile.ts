@@ -10,7 +10,7 @@ import {
   type TokenMarketData,
   type TradeEventEntity,
   type NetworkConfig,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 import type { MyLaunchItem, PortfolioPosition, UserActivity } from '@/components/profile/types';
 
 export interface UseUserProfileOptions {

@@ -16,7 +16,7 @@ const ARC_USDC = '0x3600000000000000000000000000000000000000' as `0x${string}`;
 const ARC_LEGACY_POOL_ADDRESS = '0x00689b589add3ee1995e26e7f4e5cbf262486eb4' as `0x${string}`;
 const ARC_LEGACY_CURVE_FACTORY = '0xf94d16c9E90fCd55b75D318d0104269146612abF' as `0x${string}`;
 
-/** Launch position parameters (same values as ARC_MATH_CONFIG in @proto/math-sdk). */
+/** Launch position parameters (same values as ARC_MATH_CONFIG in @goton/math-sdk). */
 const ARC_LAUNCH_LIQUIDITY = 1575037795897358225n;
 const ARC_INITIAL_SQRT_PRICE_X96 = 50302388120867331857465247907496697271n;
 const ARC_BOND_SQRT_PRICE_X96 = 11800301107109846379556182205197121619n;
@@ -27,7 +27,7 @@ const ARC_BOND_SQRT_PRICE_X96 = 11800301107109846379556182205197121619n;
  *
  * Launch model: in-pool Uniswap v4 (Argus portal parameters). Tokens trade in their v4 pool from
  * the first block; there is no bonding-curve contract and no Uniswap V3 dependency. Values below
- * mirror `ARC_MATH_CONFIG` in @proto/math-sdk (kept in sync by chain-registry.spec.ts).
+ * mirror `ARC_MATH_CONFIG` in @goton/math-sdk (kept in sync by chain-registry.spec.ts).
  *
  * Set ARC_V4_FACTORY_ADDRESS / ARC_MEME_HOOK / ARC_V4_ROUTER after running contracts/script/arc/DeployArc.s.sol.
  */

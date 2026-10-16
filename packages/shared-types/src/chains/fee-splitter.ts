@@ -4,8 +4,8 @@ import {
   launchpadV2FactoryArcAbi,
   protoFeeSplitterAbi,
   protoV4GraduatorAbi,
-} from '@proto/contracts-abi';
-import { protoV4PoolKey, type V4PoolKey } from '@proto/contracts-abi';
+} from '@goton/contracts-abi';
+import { protoV4PoolKey, type V4PoolKey } from '@goton/contracts-abi';
 import { UNDEPLOYED, type NetworkConfig } from './types';
 
 export interface FeeSplitterInfo {

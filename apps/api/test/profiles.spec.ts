@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { privateKeyToAccount } from 'viem/accounts';
-import { sanitizeCreatorProfile } from '@proto/shared-types';
+import { sanitizeCreatorProfile } from '@goton/shared-types';
 import { createSessionToken } from '../src/core/auth/session';
 import { server } from '../src/server';
 

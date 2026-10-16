@@ -1,5 +1,5 @@
 import { ref, onUnmounted } from 'vue';
-import { type TokenMarketData } from '@proto/shared-types';
+import { type TokenMarketData } from '@goton/shared-types';
 import { API_BASE_URL } from '@/lib/api-client';
 
 /**

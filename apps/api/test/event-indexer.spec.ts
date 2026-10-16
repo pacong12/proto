@@ -6,7 +6,7 @@ import { GetTokenByAddressUseCase } from '../src/modules/tokens/application/use-
 import { TokenController } from '../src/modules/tokens/presentation/token.controller';
 import { CoinGeckoPriceFeedAdapter } from '../src/modules/tokens/infrastructure/adapters/coingecko-price-feed.adapter';
 import type { ViemChainIndexerAdapter } from '../src/modules/tokens/infrastructure/adapters/viem-chain-indexer.adapter';
-import { TradeEventEntity } from '@proto/shared-types';
+import { TradeEventEntity } from '@goton/shared-types';
 
 // Minimal stub: only covers methods called by GetTokenByAddressUseCase for v1 tokens
 const stubIndexer = {

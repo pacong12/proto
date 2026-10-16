@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "@proto/source",
+      "name": "@goton/source",
       "dependencies": {
         "viem": "^2.23.0",
       },
@@ -29,11 +29,11 @@
       },
     },
     "apps/api": {
-      "name": "@proto/api",
+      "name": "@goton/api",
       "version": "0.1.0",
       "dependencies": {
-        "@proto/math-sdk": "*",
-        "@proto/shared-types": "*",
+        "@goton/math-sdk": "*",
+        "@goton/shared-types": "*",
         "ioredis": "^6.0.0",
         "viem": "^2.23.0",
       },
@@ -46,10 +46,10 @@
       },
     },
     "apps/docs": {
-      "name": "@proto/docs",
+      "name": "@goton/docs",
       "version": "0.1.0",
       "dependencies": {
-        "@proto/shared-types": "*",
+        "@goton/shared-types": "*",
         "@tailwindcss/vite": "^4.3.3",
         "@vue/server-renderer": "^3.5.42",
         "class-variance-authority": "^0.7.1",
@@ -66,13 +66,13 @@
       },
     },
     "apps/frontoffice": {
-      "name": "@proto/frontoffice",
+      "name": "@goton/frontoffice",
       "version": "0.1.0",
       "dependencies": {
+        "@goton/math-sdk": "*",
+        "@goton/shared-types": "*",
         "@headlessui/vue": "^1.7.23",
         "@lucide/vue": "^1.46.0",
-        "@proto/math-sdk": "*",
-        "@proto/shared-types": "*",
         "@reown/appkit": "^1.8.23",
         "@reown/appkit-adapter-wagmi": "^1.8.23",
         "@tanstack/vue-query": "^5.102.8",
@@ -103,7 +103,7 @@
       },
     },
     "packages/contracts-abi": {
-      "name": "@proto/contracts-abi",
+      "name": "@goton/contracts-abi",
       "version": "0.1.0",
       "dependencies": {
         "viem": "^2.23.0",
@@ -113,17 +113,17 @@
       },
     },
     "packages/math-sdk": {
-      "name": "@proto/math-sdk",
+      "name": "@goton/math-sdk",
       "version": "0.1.0",
       "devDependencies": {
         "typescript": "^5.7.3",
       },
     },
     "packages/shared-types": {
-      "name": "@proto/shared-types",
+      "name": "@goton/shared-types",
       "version": "0.1.0",
       "dependencies": {
-        "@proto/contracts-abi": "*",
+        "@goton/contracts-abi": "*",
         "viem": "^2.23.0",
       },
       "devDependencies": {
@@ -317,6 +317,18 @@
 
     "@floating-ui/vue": ["@floating-ui/vue@1.1.11", "", { "dependencies": { "@floating-ui/dom": "^1.7.6", "@floating-ui/utils": "^0.2.11", "vue-demi": ">=0.13.0" } }, "sha512-HzHKCNVxnGS35r9fCHBc3+uCnjw9IWIlCPL683cGgM9Kgj2BiAl8x1mS7vtvP6F9S/e/q4O6MApwSHj8hNLGfw=="],
 
+    "@goton/api": ["@goton/api@workspace:apps/api"],
+
+    "@goton/contracts-abi": ["@goton/contracts-abi@workspace:packages/contracts-abi"],
+
+    "@goton/docs": ["@goton/docs@workspace:apps/docs"],
+
+    "@goton/frontoffice": ["@goton/frontoffice@workspace:apps/frontoffice"],
+
+    "@goton/math-sdk": ["@goton/math-sdk@workspace:packages/math-sdk"],
+
+    "@goton/shared-types": ["@goton/shared-types@workspace:packages/shared-types"],
+
     "@headlessui/vue": ["@headlessui/vue@1.7.23", "", { "dependencies": { "@tanstack/vue-virtual": "^3.0.0-beta.60" }, "peerDependencies": { "vue": "^3.2.0" } }, "sha512-JzdCNqurrtuu0YW6QaDtR2PIYCKPUWq28csDyMvN4zmGccmE7lz40Is6hc3LA4HFeCI7sekZ/PQMTNmn9I/4Wg=="],
 
     "@humanfs/core": ["@humanfs/core@0.19.2", "", { "dependencies": { "@humanfs/types": "^0.15.0" } }, "sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA=="],
@@ -374,18 +386,6 @@
     "@phosphor-icons/webcomponents": ["@phosphor-icons/webcomponents@2.1.5", "", { "dependencies": { "lit": "^3" } }, "sha512-JcvQkZxvcX2jK+QCclm8+e8HXqtdFW9xV4/kk2aL9Y3dJA2oQVt+pzbv1orkumz3rfx4K9mn9fDoMr1He1yr7Q=="],
 
     "@playwright/test": ["@playwright/test@1.63.0", "", { "dependencies": { "playwright": "1.63.0" }, "bin": { "playwright": "cli.js" } }, "sha512-oxMK4vllB9RK5NQ2l1pq1IfOf2AvnEuj/vYGDj0H2nMtmtZpKtCwt/l00GEO6xjGfpBNAvjovvYdCm50dRQkpQ=="],
-
-    "@proto/api": ["@proto/api@workspace:apps/api"],
-
-    "@proto/contracts-abi": ["@proto/contracts-abi@workspace:packages/contracts-abi"],
-
-    "@proto/docs": ["@proto/docs@workspace:apps/docs"],
-
-    "@proto/frontoffice": ["@proto/frontoffice@workspace:apps/frontoffice"],
-
-    "@proto/math-sdk": ["@proto/math-sdk@workspace:packages/math-sdk"],
-
-    "@proto/shared-types": ["@proto/shared-types@workspace:packages/shared-types"],
 
     "@reown/appkit": ["@reown/appkit@1.8.23", "", { "dependencies": { "@reown/appkit-common": "1.8.23", "@reown/appkit-controllers": "1.8.23", "@reown/appkit-pay": "1.8.23", "@reown/appkit-polyfills": "1.8.23", "@reown/appkit-scaffold-ui": "1.8.23", "@reown/appkit-ui": "1.8.23", "@reown/appkit-utils": "1.8.23", "@reown/appkit-wallet": "1.8.23", "@walletconnect/universal-provider": "2.23.7", "bs58": "6.0.0", "semver": "7.7.2", "valtio": "2.1.7", "viem": ">=2.45.0" }, "optionalDependencies": { "@lit/react": "1.0.8" } }, "sha512-oW97J0ZJ1tEsrdDz2fzilsP8m0+9q8CT0uxMOpZbz3ZTkpn4Vo7QCafAbTTYVO5XYjIWztoQtXCW/McGc0hWbg=="],
 

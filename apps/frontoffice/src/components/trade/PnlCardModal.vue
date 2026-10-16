@@ -176,7 +176,7 @@ import { getUserIdentity } from '@/lib/username';
 import { toast } from '@/components/ui/sonner';
 import { useI18n } from '@/lib/i18n';
 import { SITE } from '@/lib/site';
-import type { LaunchedTokenEntity, TokenMarketData, NetworkConfig } from '@proto/shared-types';
+import type { LaunchedTokenEntity, TokenMarketData, NetworkConfig } from '@goton/shared-types';
 
 interface Props {
   isOpen: boolean;

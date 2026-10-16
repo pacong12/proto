@@ -440,7 +440,7 @@ import {
   calculateTotalSplit,
   calculateLaunchTotalDue,
   getChainMathConfig,
-} from '@proto/math-sdk';
+} from '@goton/math-sdk';
 import { CreateTokenAdvancedSection, LaunchProgressModal } from './create';
 
 const { t } = useI18n();

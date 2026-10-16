@@ -20,7 +20,7 @@ import {
 import { useWallet } from '../composables/useWallet';
 import { useI18n } from '../lib/i18n';
 import { getChainIcon, getChainShortName } from '@/lib/utils';
-import { SUPPORTED_CHAINS } from '@proto/shared-types';
+import { SUPPORTED_CHAINS } from '@goton/shared-types';
 import { Button } from '@/components/ui/button';
 import { Jazzicon } from '@/components/ui/avatar';
 import {

@@ -1,5 +1,5 @@
 import type { Address } from 'viem';
-import { aggregateCandlesticks, type CandlestickBar } from '@proto/math-sdk';
+import { aggregateCandlesticks, type CandlestickBar } from '@goton/math-sdk';
 import type { TradeRepositoryPort } from '../../domain/ports/trade-repository.port';
 import type { TokenRepositoryPort } from '../../../tokens/domain/ports/token.repository.port';
 import { ValidationError } from '../../../../core/errors/app-error';

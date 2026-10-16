@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { FeedView, CashtagText, ShareModal, ThreadModal } from '../src/components/feed';
 import PostDetailPage from '../src/pages/PostDetailPage.vue';
 import { useFeed, isWhaleCaller } from '../src/composables/useFeed';
-import type { FeedCalloutItem } from '@proto/shared-types';
+import type { FeedCalloutItem } from '@goton/shared-types';
 
 describe('FeedView Component & Callouts Logic', () => {
   it('verifies FeedView component is properly defined', () => {

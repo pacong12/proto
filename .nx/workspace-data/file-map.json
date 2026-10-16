@@ -2,22 +2,22 @@
   "version": "6.0",
   "nxVersion": "20.8.4",
   "pathMappings": {
-    "@proto/shared-types": [
+    "@goton/shared-types": [
       "packages/shared-types/src/index.ts"
     ],
-    "@proto/contracts": [
+    "@goton/contracts": [
       "packages/contracts/src/index.ts"
     ]
   },
   "nxJsonPlugins": [],
   "fileMap": {
     "projectFileMap": {
-      "@proto/api": [
+      "@goton/api": [
         {
           "file": "apps/api/package.json",
           "hash": "4490039627958227950",
           "deps": [
-            "@proto/shared-types"
+            "@goton/shared-types"
           ]
         },
         {
@@ -28,77 +28,77 @@
           "file": "apps/api/src/modules/security/application/security-gate.service.ts",
           "hash": "11397006491347261495",
           "deps": [
-            "@proto/shared-types"
+            "@goton/shared-types"
           ]
         },
         {
           "file": "apps/api/src/modules/security/domain/security-policy.ts",
           "hash": "10848964052428143983",
           "deps": [
-            "@proto/shared-types"
+            "@goton/shared-types"
           ]
         },
         {
           "file": "apps/api/src/modules/security/presentation/security.controller.ts",
           "hash": "14062132115550584983",
           "deps": [
-            "@proto/shared-types"
+            "@goton/shared-types"
           ]
         },
         {
           "file": "apps/api/src/modules/tokens/application/use-cases/calculate-pricing.use-case.ts",
           "hash": "16225337669221896316",
           "deps": [
-            "@proto/shared-types"
+            "@goton/shared-types"
           ]
         },
         {
           "file": "apps/api/src/modules/tokens/application/use-cases/get-token-by-address.use-case.ts",
           "hash": "8588321235648093498",
           "deps": [
-            "@proto/shared-types"
+            "@goton/shared-types"
           ]
         },
         {
           "file": "apps/api/src/modules/tokens/application/use-cases/get-tokens.use-case.ts",
           "hash": "5785970271408513746",
           "deps": [
-            "@proto/shared-types"
+            "@goton/shared-types"
           ]
         },
         {
           "file": "apps/api/src/modules/tokens/domain/ports/chain.indexer.port.ts",
           "hash": "14978481857107583013",
           "deps": [
-            "@proto/shared-types"
+            "@goton/shared-types"
           ]
         },
         {
           "file": "apps/api/src/modules/tokens/domain/ports/token.repository.port.ts",
           "hash": "411141415815820391",
           "deps": [
-            "@proto/shared-types"
+            "@goton/shared-types"
           ]
         },
         {
           "file": "apps/api/src/modules/tokens/infrastructure/adapters/in-memory-token.repository.ts",
           "hash": "8258877527963541800",
           "deps": [
-            "@proto/shared-types"
+            "@goton/shared-types"
           ]
         },
         {
           "file": "apps/api/src/modules/tokens/infrastructure/adapters/viem-chain-indexer.adapter.ts",
           "hash": "17137072052306083351",
           "deps": [
-            "@proto/shared-types"
+            "@goton/shared-types"
           ]
         },
         {
           "file": "apps/api/src/modules/tokens/presentation/token.controller.ts",
           "hash": "6107462825277353191",
           "deps": [
-            "@proto/shared-types"
+            "@goton/shared-types"
           ]
         },
         {
@@ -109,14 +109,14 @@
           "file": "apps/api/test/security-policy.spec.ts",
           "hash": "18356336402385517413",
           "deps": [
-            "@proto/shared-types"
+            "@goton/shared-types"
           ]
         },
         {
           "file": "apps/api/test/token-use-cases.spec.ts",
           "hash": "2686462973233027981",
           "deps": [
-            "@proto/shared-types"
+            "@goton/shared-types"
           ]
         },
         {
@@ -124,7 +124,7 @@
           "hash": "2632389489240081456"
         }
       ],
-      "@proto/docs": [
+      "@goton/docs": [
         {
           "file": "apps/docs/index.html",
           "hash": "5237652329263153973"
@@ -133,7 +133,7 @@
           "file": "apps/docs/package.json",
           "hash": "17396420321999353877",
           "deps": [
-            "@proto/shared-types"
+            "@goton/shared-types"
           ]
         },
         {
@@ -153,7 +153,7 @@
           "hash": "14962746463424285868"
         }
       ],
-      "@proto/frontoffice": [
+      "@goton/frontoffice": [
         {
           "file": "apps/frontoffice/index.html",
           "hash": "15008252528026056201"
@@ -168,7 +168,7 @@
             "npm:vite",
             "npm:vitest",
             "npm:vue-tsc",
-            "@proto/shared-types",
+            "@goton/shared-types",
             "npm:viem",
             "npm:vue"
           ]
@@ -184,7 +184,7 @@
           "file": "apps/frontoffice/src/components/AnalyticsView.vue",
           "hash": "5464481182533580315",
           "deps": [
-            "@proto/shared-types"
+            "@goton/shared-types"
           ]
         },
         {
@@ -199,7 +199,7 @@
           "hash": "4758911114445466802",
           "deps": [
             "npm:vue",
-            "@proto/shared-types"
+            "@goton/shared-types"
           ]
         },
         {
@@ -214,7 +214,7 @@
           "hash": "11220109944065490306",
           "deps": [
             "npm:vue",
-            "@proto/shared-types"
+            "@goton/shared-types"
           ]
         },
         {
@@ -222,7 +222,7 @@
           "hash": "6356563691046343144",
           "deps": [
             "npm:vue",
-            "@proto/shared-types"
+            "@goton/shared-types"
           ]
         },
         {
@@ -231,7 +231,7 @@
           "deps": [
             "npm:vue",
             "npm:viem",
-            "@proto/shared-types"
+            "@goton/shared-types"
           ]
         },
         {
@@ -239,7 +239,7 @@
           "hash": "11753913138444189619",
           "deps": [
             "npm:viem",
-            "@proto/shared-types"
+            "@goton/shared-types"
           ]
         },
         {
@@ -269,7 +269,7 @@
           ]
         }
       ],
-      "@proto/shared-types": [
+      "@goton/shared-types": [
         {
           "file": "packages/shared-types/package.json",
           "hash": "7819011366306026086"

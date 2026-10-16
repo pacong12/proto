@@ -270,7 +270,7 @@ import { shortenAddress, formatRelativeTime } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';
 import { toast } from '@/components/ui/sonner';
 import { SITE } from '@/lib/site';
-import type { FeedCalloutItem } from '@proto/shared-types';
+import type { FeedCalloutItem } from '@goton/shared-types';
 
 const { t } = useI18n();
 

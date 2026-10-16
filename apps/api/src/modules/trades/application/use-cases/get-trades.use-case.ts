@@ -1,5 +1,5 @@
 import type { Address } from 'viem';
-import type { TradeEventEntity } from '@proto/shared-types';
+import type { TradeEventEntity } from '@goton/shared-types';
 import type { TradeRepositoryPort } from '../../domain/ports/trade-repository.port';
 import { ValidationError } from '../../../../core/errors/app-error';
 

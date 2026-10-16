@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { privateKeyToAccount } from 'viem/accounts';
-import { buildCommentSignMessage } from '@proto/shared-types';
+import { buildCommentSignMessage } from '@goton/shared-types';
 import { server } from '../src/server';
 
 describe('Tokens HTTP Endpoints Integration', () => {

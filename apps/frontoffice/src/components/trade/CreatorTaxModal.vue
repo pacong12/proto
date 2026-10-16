@@ -92,7 +92,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import TaxTimelockPanel from '../tax/TaxTimelockPanel.vue';
-import type { LaunchedTokenEntity } from '@proto/shared-types';
+import type { LaunchedTokenEntity } from '@goton/shared-types';
 
 const { t } = useI18n();
 

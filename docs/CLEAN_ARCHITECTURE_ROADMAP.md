@@ -181,7 +181,7 @@ apps/frontoffice/src/
 ```text
 packages/
 │
-├── contracts-abi/                            # [@proto/contracts-abi]
+├── contracts-abi/                            # [@goton/contracts-abi]
 │   │                                         # Single source of truth for contract ABIs
 │   ├── src/
 │   │   ├── v2/                               # Active V2 Bonding Curve ABI definitions
@@ -193,7 +193,7 @@ packages/
 │   └── scripts/
 │       └── export-foundry-abis.ts            # Automation: contracts/out/*.json -> TS const
 │
-├── math-sdk/                                 # [@proto/math-sdk]
+├── math-sdk/                                 # [@goton/math-sdk]
 │   │                                         # Pure Domain Math — Shared by Backend & Frontend
 │   │                                         # Eliminates dual-calculation drift (e.g. $7k vs $7.6k)
 │   ├── src/
@@ -203,7 +203,7 @@ packages/
 │   │   └── pnl-calculator.ts                 # Realized & unrealized PnL derivations
 │   └── index.ts                              # Zero external dependencies, pure TS functions
 │
-└── shared-types/                             # [@proto/shared-types]
+└── shared-types/                             # [@goton/shared-types]
     │                                         # Pure TypeScript Domain Models & Constants
     ├── src/
     │   ├── domain/                           # Entity interfaces (Token, Trade, Comment, User)
@@ -278,12 +278,12 @@ contracts/
 Dependencies flow strictly inward in one direction without cycles (_Acyclic Dependencies Principle_):
 
 ```text
-  [ contracts/ ] ──(forge build)──> [ @proto/contracts-abi ]
+  [ contracts/ ] ──(forge build)──> [ @goton/contracts-abi ]
                                              │
-  [ @proto/math-sdk ] <──────────────────────┤ (types & decimals)
+  [ @goton/math-sdk ] <──────────────────────┤ (types & decimals)
           │                                  │
           ▼                                  ▼
-  [ @proto/shared-types ] (Pure Domain Interfaces & Constants)
+  [ @goton/shared-types ] (Pure Domain Interfaces & Constants)
           │
           ├──────────────────────────┐
           ▼                          ▼
@@ -304,22 +304,22 @@ Agents MUST execute this roadmap strictly sequentially. Never begin a new step u
 
 ---
 
-### Phase 1: Shared Monorepo Packages Setup (`@proto/math-sdk` & `@proto/contracts-abi`)
+### Phase 1: Shared Monorepo Packages Setup (`@goton/math-sdk` & `@goton/contracts-abi`)
 
 **Goal:** Eliminate duplicate calculations between backend and frontend, and establish single-source-of-truth ABIs.
 
 #### Actions:
 
-1. **Scaffold `@proto/math-sdk` in `packages/math-sdk/`:**
+1. **Scaffold `@goton/math-sdk` in `packages/math-sdk/`:**
    - Extract pure bonding curve functions (`getAmountOut`, `getAmountIn`, `spotPrice`, `priceImpact`).
    - Extract fee splitting (`calculateFeeSplit`: 70% creator, 20% holders, 10% buyback/burn).
    - Extract candlestick gap-filling math (`aggregateCandlesticks`).
    - Extract PnL formulas (`calculateRealizedPnl`, `calculateUnrealizedPnl`).
    - Zero dependencies: pure TypeScript functions with unit test suite.
-2. **Scaffold `@proto/contracts-abi` in `packages/contracts-abi/`:**
+2. **Scaffold `@goton/contracts-abi` in `packages/contracts-abi/`:**
    - Create script `scripts/export-foundry-abis.ts` to export TypeScript `as const` ABIs from `contracts/out/`.
    - Re-export active V2 ABIs: `bondingCurveAbi`, `launchpadTokenV2Abi`, `liquidityLockerAbi`, `launchpadV2FactoryAbi`.
-   - Update `packages/shared-types` to re-export from `@proto/contracts-abi`.
+   - Update `packages/shared-types` to re-export from `@goton/contracts-abi`.
 
 #### Verification Gate:
 
@@ -392,7 +392,7 @@ bun run test
      - _Invariant:_ Retain the 3-second in-memory memoization cache.
      - _Invariant:_ Maintain resilient fallback quote price ($2500) if CoinGecko throws.
    - Create `modules/trades/application/use-cases/get-trades.use-case.ts`.
-   - Create `modules/trades/application/use-cases/get-candlesticks.use-case.ts` (importing from `@proto/math-sdk`).
+   - Create `modules/trades/application/use-cases/get-candlesticks.use-case.ts` (importing from `@goton/math-sdk`).
 2. Implement `modules/trades/presentation/trade.controller.ts`.
 3. Create `modules/trades/presentation/trade.routes.ts`.
 
@@ -437,7 +437,7 @@ bun run format:check
 #### Actions:
 
 1. **Extract Domain Math:**
-   - Use `@proto/math-sdk/bonding-curve` for AMM spot price, output estimation, and reserve math.
+   - Use `@goton/math-sdk/bonding-curve` for AMM spot price, output estimation, and reserve math.
    - Create `features/trade/domain/slippage.ts` (minimum received, price impact calculations).
 2. **Extract Composables:**
    - Create `features/trade/composables/useTradesStream.ts`:

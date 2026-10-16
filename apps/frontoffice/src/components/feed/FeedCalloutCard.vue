@@ -321,8 +321,8 @@ import {
   getTokenChainName as getChainName,
 } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
-import { calculateUnrealizedPnl } from '@proto/math-sdk';
-import type { FeedCalloutItem } from '@proto/shared-types';
+import { calculateUnrealizedPnl } from '@goton/math-sdk';
+import type { FeedCalloutItem } from '@goton/shared-types';
 
 interface Props {
   call: FeedCalloutItem;

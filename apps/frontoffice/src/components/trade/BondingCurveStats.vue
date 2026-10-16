@@ -206,7 +206,7 @@ import { useI18n } from '@/lib/i18n';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { shortenAddress, formatCompactUsd, formatPriceUsd } from '@/lib/utils';
-import type { LaunchedTokenEntity, TokenMarketData } from '@proto/shared-types';
+import type { LaunchedTokenEntity, TokenMarketData } from '@goton/shared-types';
 
 const { t } = useI18n();
 

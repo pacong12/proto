@@ -150,7 +150,7 @@ Every HTTP response body must be shaped as:
 { success: boolean; data: T | null; error: { code: string; message: string } | null; timestamp: number }
 ```
 
-Use `ok(data)` and `err(code, message)` from `@proto/shared-types`. Never construct raw JSON responses.
+Use `ok(data)` and `err(code, message)` from `@goton/shared-types`. Never construct raw JSON responses.
 
 **API-02. HTTP status codes must match the envelope.**
 `success: false` with `TOKEN_NOT_FOUND` or `INVALID_ADDRESS` -> HTTP 404.
@@ -223,7 +223,7 @@ All user feedback goes through inline error refs displayed in the template.
 Use the `AlertCircle` icon from `lucide-vue-next` with a rose-colored error box.
 
 **FE-05. No hardcoded addresses in components.**
-Import contract and WETH addresses from `@proto/shared-types` constants (`ARC_CHAIN`, `ROBINHOOD_CHAIN`).
+Import contract and WETH addresses from `@goton/shared-types` constants (`ARC_CHAIN`, `ROBINHOOD_CHAIN`).
 The pattern `'0x3600000000000000000000000000000000000000'` must not appear in Vue components.
 
 **FE-06. No magic numbers for slippage, fees, or thresholds.**
@@ -470,7 +470,7 @@ These patterns are rejected in any PR, no exceptions.
 | `JSON.stringify(bigint)` without replacer             | Throws or produces `undefined`                     | BigInt-safe replacer `(_k, v) => typeof v === 'bigint' ? v.toString() : v` |
 | `// @ts-ignore` or `// @ts-nocheck`                   | Hides real type errors                             | Fix the underlying type error                                              |
 | `any` type annotation                                 | Defeats type safety                                | `unknown` + type narrowing                                                 |
-| Hardcoded contract addresses in `.vue` files          | Duplicates source of truth, breaks on chain change | Import from `@proto/shared-types` constants                                |
+| Hardcoded contract addresses in `.vue` files          | Duplicates source of truth, breaks on chain change | Import from `@goton/shared-types` constants                                |
 | Raw `fetch('/api/...')` in Vue components             | Bypasses error handling and loading state          | Use composable from `src/composables/`                                     |
 | Empty `catch {}`                                      | Silently swallows errors                           | `catch (e) { logger.warn(...) }` minimum                                   |
 | `!` non-null assertion without comment                | Hides null bugs                                    | Use `?.` or narrow the type explicitly                                     |

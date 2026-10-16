@@ -1,5 +1,5 @@
 import { type PublicClient, type WalletClient, type Address, parseAbi } from 'viem';
-import { ARC_CHAIN } from '@proto/shared-types';
+import { ARC_CHAIN } from '@goton/shared-types';
 
 export interface RelayedLaunchParams {
   name: string;

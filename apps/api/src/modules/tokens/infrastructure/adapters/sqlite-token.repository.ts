@@ -10,7 +10,7 @@ import {
   TokenCommentEntity,
   getUserIdentity,
   type CreatorProfile,
-} from '@proto/shared-types';
+} from '@goton/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import { backupDatabase, openCheckedDatabase } from './sqlite-maintenance';
 import {
@@ -925,7 +925,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     offset = 0,
     viewerAddress?: string,
     authorAddress?: string,
-  ): Promise<import('@proto/shared-types').FeedCalloutItem[]> {
+  ): Promise<import('@goton/shared-types').FeedCalloutItem[]> {
     let sql = `
       SELECT 
         c.id, c.token_address, c.author_address, c.content, c.image_url, 
@@ -994,7 +994,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       viewerRepostedIds = new Set(repostRows.map((r) => r.comment_id));
     }
 
-    const feedItems: import('@proto/shared-types').FeedCalloutItem[] = rows.map((r) => ({
+    const feedItems: import('@goton/shared-types').FeedCalloutItem[] = rows.map((r) => ({
       id: r.id,
       tokenAddress: r.token_address,
       authorAddress: r.author_address,
@@ -1036,7 +1036,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
 
   private getSingleCallout(
     calloutId: string,
-  ): import('@proto/shared-types').FeedCalloutItem | null {
+  ): import('@goton/shared-types').FeedCalloutItem | null {
     const stmt = this.db.prepare(`
       SELECT 
         c.id, c.token_address, c.author_address, c.content, c.image_url, 
@@ -1125,7 +1125,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
   async getCalloutThread(
     calloutId: string,
     viewerAddress?: string,
-  ): Promise<import('@proto/shared-types').FeedCalloutItem | null> {
+  ): Promise<import('@goton/shared-types').FeedCalloutItem | null> {
     // Automatically increment views on thread detail fetch
     try {
       this.db

@@ -1,4 +1,4 @@
-import { ApiEnvelope, ok, err } from '@proto/shared-types';
+import { ApiEnvelope, ok, err } from '@goton/shared-types';
 import { IpfsService } from './ipfs.service';
 
 export interface IpfsUploadResult {
