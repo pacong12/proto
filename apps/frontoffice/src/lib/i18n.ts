@@ -373,6 +373,9 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     notFoundHome: 'Back to launchpad',
     notFoundBack: 'Go back',
     notFoundDocs: 'Read the docs',
+    maintenanceBanner:
+      'Scheduled maintenance is in progress. Some features may be unavailable for a short time.',
+    maintenanceDismiss: 'Dismiss notice',
   },
   id: {
     explore: 'Jelajahi',
@@ -714,6 +717,9 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     notFoundHome: 'Kembali ke launchpad',
     notFoundBack: 'Kembali',
     notFoundDocs: 'Baca dokumentasi',
+    maintenanceBanner:
+      'Pemeliharaan terjadwal sedang berlangsung. Beberapa fitur mungkin tidak tersedia untuk sementara.',
+    maintenanceDismiss: 'Tutup pemberitahuan',
   },
   zh: {
     explore: '探索',
@@ -1043,6 +1049,8 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     notFoundHome: '返回 Launchpad',
     notFoundBack: '返回上一页',
     notFoundDocs: '查看文档',
+    maintenanceBanner: '计划维护正在进行中，部分功能可能暂时无法使用。',
+    maintenanceDismiss: '关闭通知',
   },
   ja: {
     explore: '見つける',
@@ -1380,6 +1388,9 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     notFoundHome: 'Launchpadに戻る',
     notFoundBack: '前のページへ',
     notFoundDocs: 'ドキュメントを読む',
+    maintenanceBanner:
+      '定期メンテナンスを実施中です。一部の機能が一時的にご利用いただけない場合があります。',
+    maintenanceDismiss: 'お知らせを閉じる',
   },
   ko: {
     explore: '탐색',
@@ -1714,6 +1725,8 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     notFoundHome: '런치패드로 돌아가기',
     notFoundBack: '뒤로 가기',
     notFoundDocs: '문서 보기',
+    maintenanceBanner: '정기 점검이 진행 중입니다. 일부 기능을 잠시 사용할 수 없을 수 있습니다.',
+    maintenanceDismiss: '알림 닫기',
   },
   es: {
     explore: 'Explorar',
@@ -2057,6 +2070,9 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     notFoundHome: 'Volver al launchpad',
     notFoundBack: 'Volver',
     notFoundDocs: 'Leer la documentación',
+    maintenanceBanner:
+      'Mantenimiento programado en curso. Algunas funciones pueden no estar disponibles por un tiempo.',
+    maintenanceDismiss: 'Cerrar aviso',
   },
   ru: {
     explore: 'Обзор',
@@ -2398,6 +2414,9 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     notFoundHome: 'Вернуться в Launchpad',
     notFoundBack: 'Назад',
     notFoundDocs: 'Документация',
+    maintenanceBanner:
+      'Идут плановые технические работы. Некоторые функции могут быть временно недоступны.',
+    maintenanceDismiss: 'Закрыть уведомление',
   },
   ar: {
     explore: 'استكشاف',
@@ -2730,6 +2749,8 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     notFoundHome: 'العودة إلى المنصة',
     notFoundBack: 'رجوع',
     notFoundDocs: 'قراءة الوثائق',
+    maintenanceBanner: 'تجري صيانة مجدولة حاليًا. قد لا تتوفر بعض الميزات لفترة قصيرة.',
+    maintenanceDismiss: 'إغلاق الإشعار',
   },
   fr: {
     explore: 'Explorer',
@@ -3072,6 +3093,9 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     notFoundHome: 'Retour au launchpad',
     notFoundBack: 'Retour',
     notFoundDocs: 'Lire la documentation',
+    maintenanceBanner:
+      'Maintenance planifiée en cours. Certaines fonctionnalités peuvent être indisponibles pendant un moment.',
+    maintenanceDismiss: "Fermer l'avis",
   },
   de: {
     explore: 'Erkunden',
@@ -3415,6 +3439,9 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     notFoundHome: 'Zurück zum Launchpad',
     notFoundBack: 'Zurück',
     notFoundDocs: 'Dokumentation lesen',
+    maintenanceBanner:
+      'Geplante Wartung läuft. Einige Funktionen sind vorübergehend nicht verfügbar.',
+    maintenanceDismiss: 'Hinweis schließen',
   },
   pt: {
     explore: 'Explorar',
@@ -3755,6 +3782,9 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     notFoundHome: 'Voltar ao launchpad',
     notFoundBack: 'Voltar',
     notFoundDocs: 'Ler a documentação',
+    maintenanceBanner:
+      'Manutenção programada em andamento. Alguns recursos podem ficar indisponíveis por um curto período.',
+    maintenanceDismiss: 'Fechar aviso',
   },
 };
 

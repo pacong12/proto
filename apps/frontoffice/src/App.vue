@@ -2,6 +2,7 @@
   <div
     class="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-foreground selection:text-background"
   >
+    <MaintenanceBanner />
     <Navbar @open-search="searchOpen = true" />
 
     <main
@@ -177,6 +178,7 @@ import { ExternalLink, BookOpen } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { resolveDocsUrl } from '@/lib/site';
 import Navbar from './components/Navbar.vue';
+import MaintenanceBanner from './components/MaintenanceBanner.vue';
 import { Toaster } from '@/components/ui/sonner';
 import { walletAddress, walletModalOpen } from './lib/wallet-store';
 import { useWallet } from './composables/useWallet';
