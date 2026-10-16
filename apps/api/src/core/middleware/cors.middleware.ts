@@ -33,7 +33,7 @@ export function buildSecurityHeaders(corsOrigin: string): Record<string, string>
   return {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     Vary: 'Origin',
     'X-Content-Type-Options': 'nosniff',

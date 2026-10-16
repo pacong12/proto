@@ -24,29 +24,38 @@
 
 ---
 
-## 3. Sovereign Smart Contract Infrastructure
+## 3. Contracts
 
-Proto maintains 100% sovereign ownership over its protocol contracts on Robinhood Chain:
-
-- **Factory V2 Contract**: `LaunchpadV2Factory.sol` (`0x9f1fAf78adE92C994AB188452338b45c52800748`)
-- **Liquidity Locker V4**: `ProtoLiquidityLockerV4.sol` (`0x7A1AD6AD30B1c9e276eD80a853E8dA897fE5D63E`)
-- **Proto MemeHook V4**: `ProtoMemeHook.sol` (`0x6347Ee4710cBCBafa2ED1e837eDc7605cB80D9a7`)
+- **`LaunchpadV2Factory.sol`** (this folder) — bonding-curve launches; permissionless `graduate(token)`.
+- Shared (`../../core/`): `BondingCurve.sol`, `LaunchpadToken.sol`, **`ProtoV4Graduator.sol`**,
+  **`ProtoV4Hook.sol`**, **`ProtoFeeSplitter.sol`**, **`ProtoV4Router.sol`**.
+- Legacy (`../../legacy/`): `ProtoLiquidityLockerV4.sol` (`0x7A1A…D63E`) and `ProtoMemeHook.sol`
+  (`0x6347…D9a7`). The deployed hook has invalid v4 permission bits (`0x19A7`), so no pool could be
+  initialized with it; the locker never held a position. Both are superseded.
 - **Protocol Fee Recipient**: `0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2`
 
 ---
 
-## 4. DEX Graduation & Post-Graduation Routing
+## 4. Graduation into Uniswap v4
 
-- **Canonical DEX**: Uniswap V3 on Robinhood Chain
-- **Uniswap V3 Factory**: `0x1f7d7550B1b028f7571E69A784071F0205FD2EfA`
-- **NonfungiblePositionManager**: `0x73991a25C818Bf1f1128dEAaB1492D45638DE0D3`
-- **SwapRouter**: `0xCaf681a66D020601342297493863E78C959E5cb2`
-- **QuoterV2**: `0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7`
-- **WETH Address**: `0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73`
-- **Graduation Flow**:
-  1. Once total raised ETH reaches 4.20 ETH, bonding curve transitions to `graduated = true`.
-  2. Factory calls `migrateCurve(curve, recipient)`:
-     - 4.20 ETH and 285,714,286 tokens are migrated to liquidity locker.
-     - Liquidity is deposited into full-range Uniswap V3 position.
-     - The minted NFT position is locked into `LiquidityLocker.sol`.
-  3. Post-graduation trades are executed via Uniswap V3 SwapRouter (`0xCaf6...5cb2`).
+- **Uniswap v4 PoolManager**: `0x8366a39CC670B4001A1121B8F6A443A643e40951` (same bytecode as Arc)
+- **Pool**: native ETH (currency0) / token, 1% fee, tick spacing 200, hook `ProtoV4Hook`.
+- **Flow**:
+  1. The curve graduates once 4.20 ETH is raised; funds stay in the curve.
+  2. Anyone calls `LaunchpadV2Factory.graduate(token)` (the frontend does it automatically before the
+     first post-graduation trade). There is no owner-chosen recipient.
+  3. `ProtoV4Graduator` initializes the pool at the curve's final price (the hook only lets the
+     graduator initialize, so nobody can front-run it), adds all ETH plus matching tokens as a
+     full-range position, and places the unpaired tokens as a token-only position just below the
+     price. Nothing is burned and the price is continuous across graduation.
+  4. Positions are owned by the graduator forever. `collectFees(token)` (permissionless) sends ETH fees
+     to the token's `ProtoFeeSplitter` (default 30% protocol / 70% creator) and burns token fees.
+  5. Post-graduation trades go through `ProtoV4Router` (native ETH buys, exact-approval sells).
+  6. The creator may fix the LP-fee split once, before any third-party buy
+     (`ProtoV4Graduator.setRevenueSplit`). The burn share is spent by `ProtoV4Buyback`, which buys
+     the token at the hook's TWAP ± 2% and sends it to 0xdEaD.
+  7. Circuit breaker (`EmergencyPause`): the owner or `guardian` (`EMERGENCY_GUARDIAN` at deploy) can
+     pause launches, curve buys and graduations; curve sells, pool swaps and fee claims are never
+     pausable. Only the owner can unpause.
+- Deployment: `contracts/script/robinhood/DeployRobinhoodV2.s.sol`; fork tests:
+  `ROBINHOOD_RPC_URL=… forge test --match-path test/robinhood/RobinhoodV4Graduation.fork.t.sol`.

@@ -402,6 +402,19 @@ export const launchpadTokenAbi = [
   },
   {
     type: 'function',
+    name: 'publicTradingStarted',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'bool',
+        internalType: 'bool',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'restrictionsEndBlock',
     inputs: [],
     outputs: [
@@ -409,6 +422,19 @@ export const launchpadTokenAbi = [
         name: '',
         type: 'uint256',
         internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'rewardTracker',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'address',
       },
     ],
     stateMutability: 'view',
@@ -462,6 +488,19 @@ export const launchpadTokenAbi = [
         name: 'exempt',
         type: 'bool',
         internalType: 'bool',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'setRewardTracker',
+    inputs: [
+      {
+        name: 'tracker',
+        type: 'address',
+        internalType: 'address',
       },
     ],
     outputs: [],

@@ -1,0 +1,172 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+import {ILaunchpadToken} from "../interfaces/ILaunchpadToken.sol";
+import {IWETH} from "../interfaces/IUniswapV3.sol";
+import {FeeMath} from "../libraries/FeeMath.sol";
+
+/**
+ * @title HolderFeeDistributor
+ * @notice Distributes accrued Uniswap V3 trading fees pro-rata to token holders
+ *         using a cumulative reward-per-token accounting model (O(1) per claim).
+ *
+ * Security notes:
+ *   - F-03 fix: earned() uses the balance snapshotted at the last _updateReward
+ *     checkpoint, not the real-time balanceOf(). This prevents flash-loan or
+ *     same-block balance inflation: an attacker who acquires tokens after the
+ *     reward accumulator advances cannot retroactively earn from prior deposits
+ *     because their snapshotBalance is still zero (or their pre-buy value) until
+ *     they call a function that triggers _updateReward (i.e. claimReward).
+ *     The snapshot is written in _updateReward using the live balance at that
+ *     moment — callers cannot inflate it after rewards have already accumulated
+ *     because the delta (cum - paid) is zeroed out simultaneously.
+ *   - nonReentrant guard on all state-mutating functions.
+ *   - Only the registered locker address may deposit rewards (I-05 fix).
+ */
+contract HolderFeeDistributor {
+    uint256 private constant PRECISION = 1e36;
+
+    address public immutable weth;
+    address public immutable locker;
+
+    struct TokenFeeState {
+        uint256 rewardPerTokenCumulative;
+        uint256 totalDistributedWeth;
+    }
+
+    mapping(address => TokenFeeState) public tokenFeeStates;
+    mapping(address => mapping(address => uint256)) public userRewardPerTokenPaid;
+    mapping(address => mapping(address => uint256)) public userEarnedWeth;
+    /// @notice Balance snapshot captured at the last _updateReward checkpoint.
+    ///         Used instead of live balanceOf() to neutralise flash-loan inflation:
+    ///         tokens acquired *after* the accumulator has advanced cannot
+    ///         retroactively earn from prior deposits because their snapshot is
+    ///         still zero (or the pre-buy value) until _updateReward fires again.
+    mapping(address => mapping(address => uint256)) public snapshotBalance;
+
+    event RewardDeposited(address indexed token, uint256 wethAmount);
+    event RewardClaimed(address indexed token, address indexed holder, uint256 amount);
+
+    error ZeroAddress();
+    error ZeroAmount();
+    error TransferFailed();
+    error Reentrancy();
+    error Unauthorized();
+
+    uint256 private _locked;
+
+    modifier nonReentrant() {
+        if (_locked == 1) revert Reentrancy();
+        _locked = 1;
+        _;
+        _locked = 0;
+    }
+
+    modifier onlyLocker() {
+        if (msg.sender != locker) revert Unauthorized();
+        _;
+    }
+
+    constructor(address _weth, address _locker) {
+        if (_weth == address(0) || _locker == address(0)) revert ZeroAddress();
+        weth = _weth;
+        locker = _locker;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Reward accounting
+    // ---------------------------------------------------------------------------
+
+    /**
+     * @notice Deposit WETH rewards for distribution to token holders.
+     * @dev I-05 fix: restricted to the locker contract. Only the locker collects
+     *      Uniswap V3 fees and forwards them here, preventing arbitrary deposits
+     *      that could distort the reward-per-token accumulator.
+     */
+    function depositRewards(address token, uint256 amount) external nonReentrant onlyLocker {
+        if (amount == 0) revert ZeroAmount();
+        if (token == address(0)) revert ZeroAddress();
+
+        bool success = IWETH(weth).transferFrom(msg.sender, address(this), amount);
+        if (!success) revert TransferFailed();
+
+        uint256 supply = ILaunchpadToken(token).totalSupply();
+        address pool = ILaunchpadToken(token).liquidityPool();
+        uint256 nonCirculating = 0;
+        if (pool != address(0)) {
+            nonCirculating += ILaunchpadToken(token).balanceOf(pool);
+        }
+        nonCirculating += ILaunchpadToken(token).balanceOf(address(0x000000000000000000000000000000000000dEaD));
+        uint256 circulatingSupply = supply > nonCirculating ? supply - nonCirculating : supply;
+
+        if (circulatingSupply > 0) {
+            tokenFeeStates[token].rewardPerTokenCumulative += (amount * PRECISION) / circulatingSupply;
+        }
+        tokenFeeStates[token].totalDistributedWeth += amount;
+
+        emit RewardDeposited(token, amount);
+    }
+
+    /**
+     * @notice Compute unclaimed WETH for a holder based on their snapshotted balance
+     *         capped by their current live balance, and the cumulative reward-per-token.
+     * @dev H-03 & GitHub Security remediation: uses effectiveBalance = min(snapshotBalance, liveBalance).
+     *      This prevents a snapshotted high balance (e.g. from a flash-loan or pre-sale holding)
+     *      from continuing to earn rewards after the tokens have been sold or transferred away.
+     *      If an attacker flash-loans tokens, calls checkpoint(), and repays in the same block,
+     *      their live balance drops to 0, making effectiveBalance 0 so they earn nothing.
+     */
+    function earned(address token, address holder) public view returns (uint256) {
+        uint256 liveBalance = ILaunchpadToken(token).balanceOf(holder);
+        uint256 snap = snapshotBalance[token][holder];
+        // A holder that never checkpointed has userRewardPerTokenPaid == 0; crediting their live
+        // balance would pay them every reward ever deposited (dividend theft). Accrual therefore
+        // starts at the first checkpoint, as originally designed.
+        uint256 balance = snap == 0 ? 0 : FeeMath.calculateEffectiveBalance(snap, liveBalance);
+        uint256 cum = tokenFeeStates[token].rewardPerTokenCumulative;
+        uint256 paid = userRewardPerTokenPaid[token][holder];
+
+        uint256 newlyEarned = (balance * (cum - paid)) / PRECISION;
+        return userEarnedWeth[token][holder] + newlyEarned;
+    }
+
+    function _updateReward(address token, address holder) internal {
+        userEarnedWeth[token][holder] = earned(token, holder);
+        userRewardPerTokenPaid[token][holder] = tokenFeeStates[token].rewardPerTokenCumulative;
+        // Snapshot the live balance now so future reward calculations use this
+        // checkpoint rather than a potentially manipulated live balance.
+        snapshotBalance[token][holder] = ILaunchpadToken(token).balanceOf(holder);
+    }
+
+
+    /**
+     * @notice Snapshot caller's balance into the reward accounting system.
+     */
+    function checkpoint(address token) external nonReentrant {
+        _updateReward(token, msg.sender);
+    }
+
+    /**
+     * @notice Snapshot specified holder's balance into reward accounting.
+     * @dev CRIT-02 fix: restricted to the holder themselves or the locker contract.
+     *      Unrestricted third-party checkpointing allowed attackers to force-checkpoint
+     *      a holder whose balance had temporarily dropped, wiping their accrued rewards.
+     */
+    function checkpoint(address token, address holder) external nonReentrant {
+        if (msg.sender != holder && msg.sender != locker) revert Unauthorized();
+        _updateReward(token, holder);
+    }
+    /**
+     * @notice Claim accrued WETH rewards for the caller.
+     */
+    function claimReward(address token) external nonReentrant returns (uint256 reward) {
+        _updateReward(token, msg.sender);
+        reward = userEarnedWeth[token][msg.sender];
+        if (reward > 0) {
+            userEarnedWeth[token][msg.sender] = 0;
+            bool success = IWETH(weth).transfer(msg.sender, reward);
+            if (!success) revert TransferFailed();
+            emit RewardClaimed(token, msg.sender, reward);
+        }
+    }
+}

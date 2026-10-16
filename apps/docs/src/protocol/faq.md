@@ -38,7 +38,7 @@ Trades usually fail for two reasons:
 ### What is the difference between On Curve and Graduated?
 
 - **On Curve (v2)**: The token is currently trading on the mathematical bonding curve. Price increases as tokens are bought.
-- **Graduated**: The token accumulated the required liquidity target (4.2 ETH on Robinhood or 8,400 USDC on Arc) on the curve and migrated permanently into a canonical Uniswap DEX liquidity pool.
+- **Graduated**: On Robinhood Chain, the curve raised its 4.2 ETH target and the market moved permanently into a locked Uniswap v4 pool. On Arc Network, tokens trade in a Uniswap v4 pool from launch and graduate in-pool once the market cap passes about $45,000.
 
 ### Are there any selling restrictions?
 
@@ -50,7 +50,7 @@ Trades usually fail for two reasons:
 
 ### How much does it cost to launch a token?
 
-The protocol deployment fee is **0.0005 ETH** on Robinhood Chain or **1 USDC** on Arc Network. This covers smart contract deployment, token minting, and initial liquidity locking.
+The protocol deployment fee is **0.0005 ETH** on Robinhood Chain or **Free (0 USDC)** on Arc Network (requires minimum 4.50 USDC initial pre-buy). This covers smart contract deployment, token minting, and initial liquidity locking.
 
 ### Can more tokens be minted later?
 

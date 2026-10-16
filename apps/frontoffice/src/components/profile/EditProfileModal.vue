@@ -249,6 +249,23 @@
           </div>
         </div>
 
+        <!-- GRC-04: right to erasure of off-chain social data -->
+        <div class="rounded-xl border border-destructive/30 p-3 space-y-2">
+          <p v-if="confirmErase" class="text-[11px] text-destructive">
+            {{ t('eraseDataConfirm') }}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            class="cursor-pointer rounded-xl text-destructive border-destructive/40"
+            @click="onErase"
+          >
+            <Trash2 class="w-3.5 h-3.5 mr-1.5" />
+            {{ confirmErase ? t('eraseDataConfirmButton') : t('eraseDataButton') }}
+          </Button>
+        </div>
+
         <DialogFooter class="pt-3 gap-2">
           <Button
             type="button"
@@ -279,6 +296,7 @@
 </template>
 
 <script setup lang="ts">
+import { resolveSafeUrl } from '@/lib/safe-url';
 import { ref, computed, watch } from 'vue';
 import { Edit3, Loader2, Trash2, AlertCircle, Image as ImageIcon } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
@@ -310,7 +328,18 @@ const { t } = useI18n();
 const emit = defineEmits<{
   (e: 'update:open', val: boolean): void;
   (e: 'save', data: ProfileStorageData): void;
+  (e: 'erase'): void;
 }>();
+
+const confirmErase = ref(false);
+function onErase() {
+  if (!confirmErase.value) {
+    confirmErase.value = true;
+    return;
+  }
+  confirmErase.value = false;
+  emit('erase');
+}
 
 const form = ref<ProfileStorageData>({ ...props.initialData });
 
@@ -335,30 +364,6 @@ watch(
   },
   { deep: true, immediate: true },
 );
-
-function isSafeImageUrl(url: string): boolean {
-  if (!url) return false;
-  const trimmed = url.trim().toLowerCase();
-  return (
-    trimmed.startsWith('https://') ||
-    trimmed.startsWith('http://') ||
-    trimmed.startsWith('ipfs://') ||
-    trimmed.startsWith('data:image/') ||
-    trimmed.startsWith('blob:') ||
-    trimmed.startsWith('/api/ipfs/')
-  );
-}
-
-function resolveSafeUrl(url?: string): string {
-  if (!url) return '';
-  const trimmed = url.trim();
-  if (!isSafeImageUrl(trimmed)) return '';
-  if (trimmed.startsWith('ipfs://')) {
-    const hash = trimmed.replace('ipfs://', '');
-    return `/api/ipfs/${hash}`;
-  }
-  return trimmed;
-}
 
 const editResolvedAvatar = computed(() => resolveSafeUrl(form.value.avatarUrl));
 const editResolvedBanner = computed(() => resolveSafeUrl(form.value.bannerUrl));

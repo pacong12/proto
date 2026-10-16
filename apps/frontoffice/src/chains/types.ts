@@ -12,12 +12,17 @@ export interface ChainLaunchParams {
   buyTaxPercent?: number;
   sellTaxPercent?: number;
   creatorTaxWallet?: `0x${string}`;
+  /** UI revenue split percentages (creator / buyback / holders / growth). */
+  revenueSplit?: { creator: number; buyback: number; holders: number; growth: number };
 }
 
 export interface ChainLaunchResult {
   tokenAddress: `0x${string}`;
+  /** Bonding curve address, or the Uniswap v4 pool id for in-pool launches. */
   poolAddress?: `0x${string}`;
   curveAddress?: `0x${string}`;
+  /** Whether the requested creator tax is live on-chain (only then is it synced to the API). */
+  taxApplied?: boolean;
 }
 
 export interface ChainSwapParams {

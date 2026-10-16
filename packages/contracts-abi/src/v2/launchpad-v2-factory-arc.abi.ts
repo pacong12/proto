@@ -9,66 +9,81 @@ export const launchpadV2FactoryArcAbi = [
     type: 'constructor',
     inputs: [
       {
+        name: '_poolManager',
+        type: 'address',
+        internalType: 'contract IPoolManagerV4',
+      },
+      {
+        name: '_quoteAsset',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: '_hook',
+        type: 'address',
+        internalType: 'contract ProtoV4Hook',
+      },
+      {
+        name: '_splitterDeployer',
+        type: 'address',
+        internalType: 'contract ProtoFeeSplitterDeployer',
+      },
+      {
         name: '_feeRecipient',
         type: 'address',
         internalType: 'address payable',
-      },
-      {
-        name: '_locker',
-        type: 'address',
-        internalType: 'address',
       },
     ],
     stateMutability: 'nonpayable',
   },
   {
     type: 'function',
-    name: 'GRADUATION_TARGET',
+    name: 'FULL_RANGE_TICK',
     inputs: [],
     outputs: [
       {
         name: '',
-        type: 'uint256',
-        internalType: 'uint256',
+        type: 'int24',
+        internalType: 'int24',
       },
     ],
     stateMutability: 'view',
   },
   {
     type: 'function',
-    name: 'LAUNCH_FEE',
+    name: 'MAX_TAX_BPS',
     inputs: [],
     outputs: [
       {
         name: '',
-        type: 'uint256',
-        internalType: 'uint256',
+        type: 'uint16',
+        internalType: 'uint16',
       },
     ],
     stateMutability: 'view',
   },
   {
     type: 'function',
-    name: 'VIRTUAL_TOKEN_RESERVE',
+    name: 'POOL_FEE',
     inputs: [],
     outputs: [
       {
         name: '',
-        type: 'uint256',
-        internalType: 'uint256',
+        type: 'uint24',
+        internalType: 'uint24',
       },
     ],
     stateMutability: 'view',
   },
   {
     type: 'function',
-    name: 'VIRTUAL_USDC_RESERVE',
+    name: 'TICK_SPACING',
     inputs: [],
     outputs: [
       {
         name: '',
-        type: 'uint256',
-        internalType: 'uint256',
+        type: 'int24',
+        internalType: 'int24',
       },
     ],
     stateMutability: 'view',
@@ -101,26 +116,20 @@ export const launchpadV2FactoryArcAbi = [
   },
   {
     type: 'function',
-    name: 'curveToToken',
-    inputs: [
-      {
-        name: '',
-        type: 'address',
-        internalType: 'address',
-      },
-    ],
+    name: 'bondTick',
+    inputs: [],
     outputs: [
       {
         name: '',
-        type: 'address',
-        internalType: 'address',
+        type: 'int24',
+        internalType: 'int24',
       },
     ],
     stateMutability: 'view',
   },
   {
     type: 'function',
-    name: 'defaultLocker',
+    name: 'buybackVault',
     inputs: [],
     outputs: [
       {
@@ -133,20 +142,26 @@ export const launchpadV2FactoryArcAbi = [
   },
   {
     type: 'function',
-    name: 'emergencyWithdrawFromCurve',
+    name: 'collectFees',
     inputs: [
       {
-        name: 'curve',
+        name: 'token',
         type: 'address',
         internalType: 'address',
       },
+    ],
+    outputs: [
       {
-        name: 'recipient',
-        type: 'address',
-        internalType: 'address payable',
+        name: 'quoteFees',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'tokenFees',
+        type: 'uint256',
+        internalType: 'uint256',
       },
     ],
-    outputs: [],
     stateMutability: 'nonpayable',
   },
   {
@@ -158,6 +173,45 @@ export const launchpadV2FactoryArcAbi = [
         name: '',
         type: 'uint256',
         internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'guardian',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'hook',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'contract ProtoV4Hook',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'initialTick',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'int24',
+        internalType: 'int24',
       },
     ],
     stateMutability: 'view',
@@ -177,45 +231,89 @@ export const launchpadV2FactoryArcAbi = [
   },
   {
     type: 'function',
-    name: 'launchTokenV2',
+    name: 'launchToken',
     inputs: [
       {
-        name: 'name',
-        type: 'string',
-        internalType: 'string',
+        name: 'meta',
+        type: 'tuple',
+        internalType: 'struct LaunchpadV2FactoryArc.TokenMetadata',
+        components: [
+          {
+            name: 'name',
+            type: 'string',
+            internalType: 'string',
+          },
+          {
+            name: 'symbol',
+            type: 'string',
+            internalType: 'string',
+          },
+          {
+            name: 'logo',
+            type: 'string',
+            internalType: 'string',
+          },
+          {
+            name: 'description',
+            type: 'string',
+            internalType: 'string',
+          },
+          {
+            name: 'twitter',
+            type: 'string',
+            internalType: 'string',
+          },
+          {
+            name: 'telegram',
+            type: 'string',
+            internalType: 'string',
+          },
+          {
+            name: 'website',
+            type: 'string',
+            internalType: 'string',
+          },
+        ],
       },
       {
-        name: 'symbol',
-        type: 'string',
-        internalType: 'string',
+        name: 'tax',
+        type: 'tuple',
+        internalType: 'struct LaunchpadV2FactoryArc.TaxConfig',
+        components: [
+          {
+            name: 'buyTaxBps',
+            type: 'uint16',
+            internalType: 'uint16',
+          },
+          {
+            name: 'sellTaxBps',
+            type: 'uint16',
+            internalType: 'uint16',
+          },
+          {
+            name: 'holdersBps',
+            type: 'uint16',
+            internalType: 'uint16',
+          },
+          {
+            name: 'burnBps',
+            type: 'uint16',
+            internalType: 'uint16',
+          },
+          {
+            name: 'creatorBps',
+            type: 'uint16',
+            internalType: 'uint16',
+          },
+          {
+            name: 'liquidityBps',
+            type: 'uint16',
+            internalType: 'uint16',
+          },
+        ],
       },
       {
-        name: 'logo',
-        type: 'string',
-        internalType: 'string',
-      },
-      {
-        name: 'description',
-        type: 'string',
-        internalType: 'string',
-      },
-      {
-        name: 'twitter',
-        type: 'string',
-        internalType: 'string',
-      },
-      {
-        name: 'telegram',
-        type: 'string',
-        internalType: 'string',
-      },
-      {
-        name: 'website',
-        type: 'string',
-        internalType: 'string',
-      },
-      {
-        name: 'minInitialTokensOut',
+        name: 'minTokensOut',
         type: 'uint256',
         internalType: 'uint256',
       },
@@ -227,9 +325,9 @@ export const launchpadV2FactoryArcAbi = [
         internalType: 'address',
       },
       {
-        name: 'curveAddress',
-        type: 'address',
-        internalType: 'address',
+        name: 'poolId',
+        type: 'bytes32',
+        internalType: 'bytes32',
       },
     ],
     stateMutability: 'payable',
@@ -246,27 +344,27 @@ export const launchpadV2FactoryArcAbi = [
     ],
     outputs: [
       {
-        name: 'token',
-        type: 'address',
-        internalType: 'address',
-      },
-      {
-        name: 'curve',
-        type: 'address',
-        internalType: 'address',
-      },
-      {
         name: 'creator',
         type: 'address',
         internalType: 'address',
       },
       {
-        name: 'createdAt',
-        type: 'uint256',
-        internalType: 'uint256',
+        name: 'splitter',
+        type: 'address',
+        internalType: 'address',
       },
       {
-        name: 'graduated',
+        name: 'poolId',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+      {
+        name: 'createdAt',
+        type: 'uint64',
+        internalType: 'uint64',
+      },
+      {
+        name: 'quoteIsCurrency0',
         type: 'bool',
         internalType: 'bool',
       },
@@ -275,57 +373,55 @@ export const launchpadV2FactoryArcAbi = [
   },
   {
     type: 'function',
-    name: 'migrateCurve',
-    inputs: [
+    name: 'liquidityVault',
+    inputs: [],
+    outputs: [
       {
-        name: 'curve',
+        name: '',
         type: 'address',
         internalType: 'address',
       },
-      {
-        name: 'recipient',
-        type: 'address',
-        internalType: 'address payable',
-      },
     ],
-    outputs: [],
-    stateMutability: 'nonpayable',
+    stateMutability: 'view',
   },
   {
     type: 'function',
-    name: 'migrateCurveToV3',
-    inputs: [
+    name: 'maxDevBuyBps',
+    inputs: [],
+    outputs: [
       {
-        name: 'curve',
-        type: 'address',
-        internalType: 'address',
-      },
-      {
-        name: 'recipient',
-        type: 'address',
-        internalType: 'address payable',
+        name: '',
+        type: 'uint16',
+        internalType: 'uint16',
       },
     ],
-    outputs: [],
-    stateMutability: 'nonpayable',
+    stateMutability: 'view',
   },
   {
     type: 'function',
-    name: 'migrateCurveToV4',
-    inputs: [
+    name: 'minPrebuyUsdc6',
+    inputs: [],
+    outputs: [
       {
-        name: 'curve',
-        type: 'address',
-        internalType: 'address',
-      },
-      {
-        name: 'recipient',
-        type: 'address',
-        internalType: 'address payable',
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
       },
     ],
-    outputs: [],
-    stateMutability: 'nonpayable',
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'nextNonce',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -336,6 +432,26 @@ export const launchpadV2FactoryArcAbi = [
         name: '',
         type: 'address',
         internalType: 'address',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'pause',
+    inputs: [],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'paused',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'bool',
+        internalType: 'bool',
       },
     ],
     stateMutability: 'view',
@@ -355,12 +471,76 @@ export const launchpadV2FactoryArcAbi = [
   },
   {
     type: 'function',
-    name: 'predictCurveAddress',
+    name: 'poolKeyOf',
     inputs: [
       {
-        name: 'salt',
-        type: 'bytes32',
-        internalType: 'bytes32',
+        name: 'token',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'tuple',
+        internalType: 'struct PoolKey',
+        components: [
+          {
+            name: 'currency0',
+            type: 'address',
+            internalType: 'address',
+          },
+          {
+            name: 'currency1',
+            type: 'address',
+            internalType: 'address',
+          },
+          {
+            name: 'fee',
+            type: 'uint24',
+            internalType: 'uint24',
+          },
+          {
+            name: 'tickSpacing',
+            type: 'int24',
+            internalType: 'int24',
+          },
+          {
+            name: 'hooks',
+            type: 'address',
+            internalType: 'address',
+          },
+        ],
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'poolManager',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'contract IPoolManagerV4',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'predictTokenAddress',
+    inputs: [
+      {
+        name: 'creator',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'nonce',
+        type: 'uint256',
+        internalType: 'uint256',
       },
     ],
     outputs: [
@@ -374,19 +554,13 @@ export const launchpadV2FactoryArcAbi = [
   },
   {
     type: 'function',
-    name: 'predictTokenAddress',
-    inputs: [
-      {
-        name: 'salt',
-        type: 'bytes32',
-        internalType: 'bytes32',
-      },
-    ],
+    name: 'protocolFeeBps',
+    inputs: [],
     outputs: [
       {
         name: '',
-        type: 'address',
-        internalType: 'address',
+        type: 'uint16',
+        internalType: 'uint16',
       },
     ],
     stateMutability: 'view',
@@ -406,16 +580,111 @@ export const launchpadV2FactoryArcAbi = [
   },
   {
     type: 'function',
+    name: 'quoteAsset',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'setGuardian',
+    inputs: [
+      {
+        name: 'newGuardian',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'setLaunchFee',
     inputs: [
       {
-        name: '_newFee',
+        name: 'newFee',
         type: 'uint256',
         internalType: 'uint256',
       },
     ],
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'setLaunchParams',
+    inputs: [
+      {
+        name: '_initialTick',
+        type: 'int24',
+        internalType: 'int24',
+      },
+      {
+        name: '_bondTick',
+        type: 'int24',
+        internalType: 'int24',
+      },
+      {
+        name: '_minPrebuyUsdc6',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: '_maxDevBuyBps',
+        type: 'uint16',
+        internalType: 'uint16',
+      },
+      {
+        name: '_protocolFeeBps',
+        type: 'uint16',
+        internalType: 'uint16',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'setRecipients',
+    inputs: [
+      {
+        name: '_protocolFeeRecipient',
+        type: 'address',
+        internalType: 'address payable',
+      },
+      {
+        name: '_buybackVault',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: '_liquidityVault',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'splitterDeployer',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'contract ProtoFeeSplitterDeployer',
+      },
+    ],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -431,6 +700,45 @@ export const launchpadV2FactoryArcAbi = [
     stateMutability: 'nonpayable',
   },
   {
+    type: 'function',
+    name: 'unlockCallback',
+    inputs: [
+      {
+        name: 'data',
+        type: 'bytes',
+        internalType: 'bytes',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'bytes',
+        internalType: 'bytes',
+      },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'unpause',
+    inputs: [],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'event',
+    name: 'GuardianUpdated',
+    inputs: [
+      {
+        name: 'guardian',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+    ],
+    anonymous: false,
+  },
+  {
     type: 'event',
     name: 'LaunchFeeUpdated',
     inputs: [
@@ -442,6 +750,68 @@ export const launchpadV2FactoryArcAbi = [
       },
       {
         name: 'newFee',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'LaunchParamsUpdated',
+    inputs: [
+      {
+        name: 'initialTick',
+        type: 'int24',
+        indexed: false,
+        internalType: 'int24',
+      },
+      {
+        name: 'bondTick',
+        type: 'int24',
+        indexed: false,
+        internalType: 'int24',
+      },
+      {
+        name: 'minPrebuyUsdc6',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+      {
+        name: 'maxDevBuyBps',
+        type: 'uint16',
+        indexed: false,
+        internalType: 'uint16',
+      },
+      {
+        name: 'protocolFeeBps',
+        type: 'uint16',
+        indexed: false,
+        internalType: 'uint16',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'LpFeesCollected',
+    inputs: [
+      {
+        name: 'token',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+      {
+        name: 'quoteFees',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+      {
+        name: 'tokenFeesBurned',
         type: 'uint256',
         indexed: false,
         internalType: 'uint256',
@@ -483,7 +853,51 @@ export const launchpadV2FactoryArcAbi = [
   },
   {
     type: 'event',
-    name: 'TokenLaunchedV2',
+    name: 'PauseChanged',
+    inputs: [
+      {
+        name: 'paused',
+        type: 'bool',
+        indexed: false,
+        internalType: 'bool',
+      },
+      {
+        name: 'by',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'RecipientsUpdated',
+    inputs: [
+      {
+        name: 'protocolFeeRecipient',
+        type: 'address',
+        indexed: false,
+        internalType: 'address',
+      },
+      {
+        name: 'buybackVault',
+        type: 'address',
+        indexed: false,
+        internalType: 'address',
+      },
+      {
+        name: 'liquidityVault',
+        type: 'address',
+        indexed: false,
+        internalType: 'address',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'TokenLaunchedV4',
     inputs: [
       {
         name: 'token',
@@ -492,15 +906,21 @@ export const launchpadV2FactoryArcAbi = [
         internalType: 'address',
       },
       {
-        name: 'curve',
-        type: 'address',
+        name: 'poolId',
+        type: 'bytes32',
         indexed: true,
-        internalType: 'address',
+        internalType: 'bytes32',
       },
       {
         name: 'creator',
         type: 'address',
         indexed: true,
+        internalType: 'address',
+      },
+      {
+        name: 'splitter',
+        type: 'address',
+        indexed: false,
         internalType: 'address',
       },
       {
@@ -516,7 +936,13 @@ export const launchpadV2FactoryArcAbi = [
         internalType: 'string',
       },
       {
-        name: 'initialBuy',
+        name: 'prebuyUsdc6',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+      {
+        name: 'creatorTokens',
         type: 'uint256',
         indexed: false,
         internalType: 'uint256',
@@ -526,12 +952,63 @@ export const launchpadV2FactoryArcAbi = [
   },
   {
     type: 'error',
+    name: 'DevBuyTooLarge',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'EmergencyPaused',
+    inputs: [],
+  },
+  {
+    type: 'error',
     name: 'InvalidFee',
     inputs: [],
   },
   {
     type: 'error',
+    name: 'InvalidParams',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'InvalidPrebuy',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'InvalidTax',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'InvalidTick',
+    inputs: [
+      {
+        name: 'tick',
+        type: 'int24',
+        internalType: 'int24',
+      },
+    ],
+  },
+  {
+    type: 'error',
     name: 'NoPendingOwner',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'NotGuardian',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'Reentrancy',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'Slippage',
     inputs: [],
   },
   {
@@ -542,6 +1019,11 @@ export const launchpadV2FactoryArcAbi = [
   {
     type: 'error',
     name: 'Unauthorized',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'UnknownToken',
     inputs: [],
   },
   {

@@ -19,9 +19,10 @@ Pada launchpad konvensional, pengguna sering kali menghadapi berbagai risiko umu
 
 ---
 
-## Model Peluncuran: Kurva Bonding (Bonding Curve)
+## Model Peluncuran per Jaringan
 
-Proto menggunakan arsitektur kurva bonding dinamis. Sebanyak 800 juta token diperdagangkan secara bertahap saat pembeli masuk. Ketika target kelulusan (4.2 ETH di Robinhood Chain atau 69.000 USDC di Arc Network) tercapai, pasar otomatis bermigrasi dan meluncurkan likuiditas DEX yang terkunci secara permanen.
+- **Robinhood Chain**: token diperdagangkan di kurva bonding. Sekitar 714,3 juta token (71,43% suplai) dijual di kurva; setelah 4,2 ETH terkumpul, siapa pun dapat memindahkan pasar ke pool Uniswap v4 yang terkunci permanen berisi sisa ~285,7 juta token.
+- **Arc Network**: tidak ada kurva terpisah. Seluruh suplai ditempatkan sebagai likuiditas satu sisi di pool Uniswap v4 sejak blok pertama (nilai awal ≈ $2.480). Token lulus di dalam pool saat kapitalisasi pasarnya melewati ≈ $45.000; tidak ada migrasi dan likuiditas tetap terkunci.
 
 ---
 

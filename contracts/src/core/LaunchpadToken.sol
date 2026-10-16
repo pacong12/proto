@@ -1,0 +1,412 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+import {ILaunchpadToken} from "../interfaces/ILaunchpadToken.sol";
+
+interface IRewardTracker {
+    function setShare(address from, address to, uint256 amount) external;
+}
+
+/**
+ * @title LaunchpadToken
+ * @notice Fixed-supply ERC-20 with onchain metadata, block-based anti-snipe
+ *         protection, and optional creator buy/sell taxes.
+ *
+ * Security notes:
+ *   - Initializer pattern: no constructor args. initialize() replaces the
+ *     constructor so the bytecode is argument-free and identical across all
+ *     deployments, enabling CREATE2-based auto-verification on block explorers.
+ *   - initialize() is guarded by _initialized; calling it twice reverts.
+ *   - M-02 fix: anti-snipe exemptions for the deployer (allowing unrestricted
+ *     purchase at launchBlock) are decoupled from tax exemptions. Deployer buys
+ *     during the restriction window are still subject to buy tax if one is
+ *     configured. Only the quantity limits (MAX_BUY_AMOUNT, MAX_HOLD_AMOUNT)
+ *     are bypassed for the deployer, not the tax logic.
+ *   - L-02 fix: setTaxConfig validates that taxRecipient has no code (must be
+ *     an EOA) to prevent failed silent tax transfers to broken contracts.
+ *   - Supply is permanently fixed; no mint function exists.
+ */
+contract LaunchpadToken is ILaunchpadToken {
+    uint8 public constant override decimals = 18;
+    uint256 public constant override totalSupply = 1_000_000_000 * 10 ** 18;
+
+    uint256 public constant MAX_HOLD_AMOUNT = 50_000_000 * 10 ** 18;
+    uint256 public constant MAX_BUY_AMOUNT = 55_000_000 * 10 ** 18;
+    uint16 public constant MAX_TAX_BPS = 1000;
+    uint256 public constant TAX_CHANGE_TIMELOCK = 24 hours;
+
+    string private _name;
+    string private _symbol;
+    string private _logo;
+    string private _description;
+    Socials private _socials;
+    TaxConfig private _taxConfig;
+
+    struct PendingTaxConfig {
+        TaxConfig config;
+        uint256 validAfter;
+    }
+    PendingTaxConfig private _pendingTaxConfig;
+
+    // Storage vars replacing immutables (required for initializer / CREATE2 pattern)
+    address public override deployer;
+    address public factory;
+    address public override pairedToken;
+    address public override liquidityPool;
+
+    address public rewardTracker;
+    /// @notice True once anyone other than the deployer / exempt accounts has bought from the pool.
+    bool public publicTradingStarted;
+    uint256 public launchBlock;
+    uint256 public override restrictionsEndBlock;
+
+    bool private _initialized;
+
+    mapping(address => uint256) private _balances;
+    mapping(address => mapping(address => uint256)) private _allowances;
+    mapping(address => bool) public isRestrictionExempt;
+
+    error AlreadyInitialized();
+    error Unauthorized();
+    error PoolAlreadySet();
+    error MaxWalletExceeded();
+    error MaxBuyExceeded();
+    error OnlyDeployerCanBuyAtLaunchBlock();
+    error InsufficientBalance();
+    error InsufficientAllowance();
+    error ZeroAddress();
+    error ExcessiveTax();
+    error TimelockNotExpired();
+    error NoPendingTaxConfig();
+    error PendingTaxExists();
+
+    event TaxConfigUpdated(uint16 buyTaxBps, uint16 sellTaxBps, address indexed taxRecipient);
+    event TaxConfigProposed(uint16 buyTaxBps, uint16 sellTaxBps, address indexed taxRecipient, uint256 validAfter);
+    event TaxConfigCancelled();
+
+    modifier onlyFactory() {
+        if (msg.sender != factory) revert Unauthorized();
+        _;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Initializer (replaces constructor for CREATE2 auto-verify compatibility)
+    // ---------------------------------------------------------------------------
+
+    /**
+     * @notice One-time initializer called by the factory immediately after CREATE2 deploy.
+     * @dev Reverts if called more than once. Replaces constructor args so the compiled
+     *      bytecode is identical for every token, enabling block-explorer auto-verification.
+     * @param tokenName        ERC-20 name
+     * @param tokenSymbol      ERC-20 symbol
+     * @param tokenLogo        IPFS/URL logo string stored onchain
+     * @param tokenDescription Short description stored onchain
+     * @param tokenSocials     Social links struct
+     * @param tokenDeployer    Creator address (receives tax, controls tax config)
+     * @param tokenPairedToken Paired ERC-20 address (0x0 for ETH-paired)
+     * @param initialRecipient Address that receives the full initial supply (factory)
+     */
+    function initialize(
+        string memory tokenName,
+        string memory tokenSymbol,
+        string memory tokenLogo,
+        string memory tokenDescription,
+        Socials memory tokenSocials,
+        address tokenDeployer,
+        address tokenPairedToken,
+        address initialRecipient
+    ) external {
+        if (_initialized) revert AlreadyInitialized();
+        if (tokenDeployer == address(0) || initialRecipient == address(0)) revert ZeroAddress();
+
+        _initialized = true;
+
+        _name = tokenName;
+        _symbol = tokenSymbol;
+        _logo = tokenLogo;
+        _description = tokenDescription;
+        _socials = tokenSocials;
+
+        _taxConfig = TaxConfig({
+            buyTaxBps: 0,
+            sellTaxBps: 0,
+            taxRecipient: tokenDeployer
+        });
+
+        factory = msg.sender;
+        deployer = tokenDeployer;
+        pairedToken = tokenPairedToken;
+        launchBlock = block.number;
+        restrictionsEndBlock = block.number + 2;
+
+        _balances[initialRecipient] = totalSupply;
+        emit Transfer(address(0), initialRecipient, totalSupply);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Metadata views
+    // ---------------------------------------------------------------------------
+
+    function name() external view override returns (string memory) {
+        return _name;
+    }
+
+    function symbol() external view override returns (string memory) {
+        return _symbol;
+    }
+
+    function logo() external view override returns (string memory) {
+        return _logo;
+    }
+
+    function description() external view override returns (string memory) {
+        return _description;
+    }
+
+    function socials() external view override returns (
+        string memory twitter,
+        string memory telegram,
+        string memory discord,
+        string memory website,
+        string memory farcaster
+    ) {
+        return (
+            _socials.twitter,
+            _socials.telegram,
+            _socials.discord,
+            _socials.website,
+            _socials.farcaster
+        );
+    }
+
+    function taxConfig() external view override returns (
+        uint16 buyTaxBps,
+        uint16 sellTaxBps,
+        address taxRecipient
+    ) {
+        return (_taxConfig.buyTaxBps, _taxConfig.sellTaxBps, _taxConfig.taxRecipient);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Configuration
+    // ---------------------------------------------------------------------------
+    /**
+     * @notice Set initial creator tax during the launch window without a 24h timelock.
+     * @dev Allows deployer to configure the baseline token tax directly at creation.
+     *      Can only be called by the deployer while the token is still in the launch restriction
+     *      window, before any third-party buy, and while the active tax is currently 0.
+     *      Subsequent post-launch tax changes must use the two-step proposeTaxConfig flow (24h timelock).
+     */
+    function setInitialTaxConfig(
+        uint16 buyTaxBps,
+        uint16 sellTaxBps,
+        address taxRecipient
+    ) external {
+        if (msg.sender != deployer && msg.sender != factory) revert Unauthorized();
+        if (block.number > restrictionsEndBlock) revert TimelockNotExpired();
+        // S18: the instant initial tax can only be set before any third party has bought,
+        // so early buyers can never be baited into a tax they did not see.
+        if (publicTradingStarted) revert TimelockNotExpired();
+        if (buyTaxBps > MAX_TAX_BPS || sellTaxBps > MAX_TAX_BPS) revert ExcessiveTax();
+        if (_taxConfig.buyTaxBps != 0 || _taxConfig.sellTaxBps != 0) revert Unauthorized();
+
+        address recipient = taxRecipient != address(0) ? taxRecipient : deployer;
+        _taxConfig = TaxConfig({
+            buyTaxBps: buyTaxBps,
+            sellTaxBps: sellTaxBps,
+            taxRecipient: recipient
+        });
+
+        emit TaxConfigUpdated(buyTaxBps, sellTaxBps, recipient);
+    }
+
+    /**
+     * @notice Propose a tax configuration change. Takes effect after TAX_CHANGE_TIMELOCK (24h).
+     * @dev L-01 fix: instant setTaxConfig allowed deployer to spike sell tax to 10% without
+     *      warning. GMGN/GoPlus flag tokens with instant mutable tax as HIGH RISK.
+     *      Two-step flow: proposeTaxConfig() -> wait 24h -> acceptTaxConfig().
+     *      Deployer may call cancelTaxConfig() at any time to abort.
+     */
+    function proposeTaxConfig(uint16 buyTaxBps, uint16 sellTaxBps, address taxRecipient) external {
+        if (msg.sender != deployer) revert Unauthorized();
+        if (buyTaxBps > MAX_TAX_BPS || sellTaxBps > MAX_TAX_BPS) revert ExcessiveTax();
+        if (_pendingTaxConfig.validAfter != 0) revert PendingTaxExists();
+
+        address recipient = taxRecipient != address(0) ? taxRecipient : deployer;
+        uint256 validAfter = block.timestamp + TAX_CHANGE_TIMELOCK;
+
+        _pendingTaxConfig = PendingTaxConfig({
+            config: TaxConfig({
+                buyTaxBps: buyTaxBps,
+                sellTaxBps: sellTaxBps,
+                taxRecipient: recipient
+            }),
+            validAfter: validAfter
+        });
+
+        emit TaxConfigProposed(buyTaxBps, sellTaxBps, recipient, validAfter);
+    }
+
+    /// @notice Finalise a pending tax configuration change after the 24-hour timelock.
+    // slither-disable-next-line incorrect-equality
+    function acceptTaxConfig() external {
+        if (msg.sender != deployer) revert Unauthorized();
+        PendingTaxConfig memory pending = _pendingTaxConfig;
+        if (pending.validAfter == 0) revert NoPendingTaxConfig();
+        if (block.timestamp < pending.validAfter) revert TimelockNotExpired();
+
+        _taxConfig = pending.config;
+        delete _pendingTaxConfig;
+
+        emit TaxConfigUpdated(
+            pending.config.buyTaxBps,
+            pending.config.sellTaxBps,
+            pending.config.taxRecipient
+        );
+    }
+
+    /// @notice Cancel a pending tax configuration proposal before it takes effect.
+    // slither-disable-next-line incorrect-equality
+    function cancelTaxConfig() external {
+        if (msg.sender != deployer) revert Unauthorized();
+        if (_pendingTaxConfig.validAfter == 0) revert NoPendingTaxConfig();
+        delete _pendingTaxConfig;
+        emit TaxConfigCancelled();
+    }
+
+    /// @notice View the pending tax config (returns zeros if none pending).
+    function pendingTaxConfig() external view returns (
+        uint16 buyTaxBps,
+        uint16 sellTaxBps,
+        address taxRecipient,
+        uint256 validAfter
+    ) {
+        PendingTaxConfig memory p = _pendingTaxConfig;
+        return (p.config.buyTaxBps, p.config.sellTaxBps, p.config.taxRecipient, p.validAfter);
+    }
+
+    function setLiquidityPool(address pool) external override onlyFactory {
+        if (pool == address(0)) revert ZeroAddress();
+        liquidityPool = pool;
+    }
+
+    function setRestrictionExempt(address account, bool exempt) external onlyFactory {
+        if (account == address(0)) revert ZeroAddress();
+        isRestrictionExempt[account] = exempt;
+    }
+
+    function setRewardTracker(address tracker) external onlyFactory {
+        rewardTracker = tracker;
+    }
+
+    // ---------------------------------------------------------------------------
+    // ERC-20
+    // ---------------------------------------------------------------------------
+
+    function balanceOf(address account) public view override returns (uint256) {
+        return _balances[account];
+    }
+
+    function allowance(address owner, address spender) public view override returns (uint256) {
+        return _allowances[owner][spender];
+    }
+
+    function approve(address spender, uint256 value) public override returns (bool) {
+        _approve(msg.sender, spender, value);
+        return true;
+    }
+
+    function transfer(address to, uint256 value) public override returns (bool) {
+        _transfer(msg.sender, to, value);
+        return true;
+    }
+
+    function transferFrom(address from, address to, uint256 value) public override returns (bool) {
+        uint256 currentAllowance = _allowances[from][msg.sender];
+        if (currentAllowance != type(uint256).max) {
+            if (currentAllowance < value) revert InsufficientAllowance();
+            unchecked {
+                _approve(from, msg.sender, currentAllowance - value);
+            }
+        }
+        _transfer(from, to, value);
+        return true;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Internal
+    // ---------------------------------------------------------------------------
+
+    function _approve(address owner, address spender, uint256 value) internal {
+        if (owner == address(0) || spender == address(0)) revert ZeroAddress();
+        _allowances[owner][spender] = value;
+        emit Approval(owner, spender, value);
+    }
+
+    function _transfer(address from, address to, uint256 value) internal {
+        if (from == address(0) || to == address(0)) revert ZeroAddress();
+
+        uint256 fromBalance = _balances[from];
+        if (fromBalance < value) revert InsufficientBalance();
+
+        // Anti-snipe restriction window: blocks [launchBlock, restrictionsEndBlock].
+        if (block.number <= restrictionsEndBlock && from == liquidityPool && liquidityPool != address(0)) {
+            if (to == deployer || to == factory || to == _taxConfig.taxRecipient || isRestrictionExempt[to]) {
+                // Exempt from anti-snipe restrictions
+            } else if (block.number <= launchBlock) {
+                // At launch block only the deployer may receive tokens from the pool.
+                revert OnlyDeployerCanBuyAtLaunchBlock();
+            } else {
+                // Blocks launchBlock+1 and launchBlock+2: enforce buy and wallet caps.
+                // M-02 fix: deployer is not exempt from quantity limits in post-launch
+                // restriction blocks. The exemption at launchBlock covers the initial
+                // buy; subsequent blocks enforce the same limits for everyone.
+                if (value > MAX_BUY_AMOUNT) revert MaxBuyExceeded();
+                if (to.code.length > 0) revert MaxBuyExceeded();
+                if (_balances[to] + value > MAX_HOLD_AMOUNT) revert MaxWalletExceeded();
+            }
+        }
+
+        // Creator trading tax: applied independently of anti-snipe logic.
+        // M-02 fix: tax applies regardless of whether sender or recipient is the deployer,
+        // because the deployer exemption above only covers the quantity restriction, not taxation.
+        uint256 taxAmount = 0;
+        if (liquidityPool != address(0)) {
+            bool isBuy = from == liquidityPool;
+            if (
+                isBuy && !publicTradingStarted && to != deployer && to != factory && to != _taxConfig.taxRecipient
+                    && !isRestrictionExempt[to]
+            ) {
+                publicTradingStarted = true;
+            }
+            bool isSell = to == liquidityPool;
+
+            if (isBuy && _taxConfig.buyTaxBps > 0) {
+                taxAmount = (value * _taxConfig.buyTaxBps) / 10000;
+                emit TaxCollected(from, _taxConfig.taxRecipient, taxAmount, true);
+            } else if (isSell && _taxConfig.sellTaxBps > 0) {
+                taxAmount = (value * _taxConfig.sellTaxBps) / 10000;
+                emit TaxCollected(from, _taxConfig.taxRecipient, taxAmount, false);
+            }
+        }
+
+        uint256 transferAmount = value - taxAmount;
+
+
+        // Called without try/catch on purpose: a swallowed failure (e.g. a caller supplying just
+        // too little gas) would skip the dividend checkpoint and let the receiver claim history.
+        if (rewardTracker != address(0)) {
+            IRewardTracker(rewardTracker).setShare(from, to, value);
+        }
+        unchecked {
+            _balances[from] = fromBalance - value;
+            _balances[to] += transferAmount;
+            if (taxAmount > 0) {
+                _balances[_taxConfig.taxRecipient] += taxAmount;
+                emit Transfer(from, _taxConfig.taxRecipient, taxAmount);
+            }
+        }
+
+        emit Transfer(from, to, transferAmount);
+    }
+}

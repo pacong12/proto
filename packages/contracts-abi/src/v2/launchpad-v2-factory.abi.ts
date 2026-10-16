@@ -14,22 +14,16 @@ export const launchpadV2FactoryAbi = [
         internalType: 'address payable',
       },
       {
-        name: '_locker',
+        name: '_graduator',
         type: 'address',
-        internalType: 'address',
-      },
-      {
-        name: '_poolManagerV4',
-        type: 'address',
-        internalType: 'address',
-      },
-      {
-        name: '_memeHook',
-        type: 'address',
-        internalType: 'address',
+        internalType: 'contract ProtoV4Graduator',
       },
     ],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'receive',
+    stateMutability: 'payable',
   },
   {
     type: 'function',
@@ -130,19 +124,6 @@ export const launchpadV2FactoryAbi = [
   },
   {
     type: 'function',
-    name: 'defaultLocker',
-    inputs: [],
-    outputs: [
-      {
-        name: '',
-        type: 'address',
-        internalType: 'address',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     name: 'emergencyWithdrawFromCurve',
     inputs: [
       {
@@ -168,6 +149,56 @@ export const launchpadV2FactoryAbi = [
         name: '',
         type: 'uint256',
         internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'graduate',
+    inputs: [
+      {
+        name: 'tokenAddress',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    outputs: [
+      {
+        name: 'poolId',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+      {
+        name: 'splitter',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'graduator',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'contract ProtoV4Graduator',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'guardian',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'address',
       },
     ],
     stateMutability: 'view',
@@ -285,73 +316,6 @@ export const launchpadV2FactoryAbi = [
   },
   {
     type: 'function',
-    name: 'memeHook',
-    inputs: [],
-    outputs: [
-      {
-        name: '',
-        type: 'address',
-        internalType: 'address',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'migrateCurve',
-    inputs: [
-      {
-        name: 'curve',
-        type: 'address',
-        internalType: 'address',
-      },
-      {
-        name: 'recipient',
-        type: 'address',
-        internalType: 'address payable',
-      },
-    ],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'migrateCurveToV3',
-    inputs: [
-      {
-        name: 'curve',
-        type: 'address',
-        internalType: 'address',
-      },
-      {
-        name: 'recipient',
-        type: 'address',
-        internalType: 'address payable',
-      },
-    ],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'migrateCurveToV4',
-    inputs: [
-      {
-        name: 'curve',
-        type: 'address',
-        internalType: 'address',
-      },
-      {
-        name: 'recipient',
-        type: 'address',
-        internalType: 'address payable',
-      },
-    ],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
     name: 'owner',
     inputs: [],
     outputs: [
@@ -365,20 +329,27 @@ export const launchpadV2FactoryAbi = [
   },
   {
     type: 'function',
-    name: 'pendingOwner',
+    name: 'pause',
+    inputs: [],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'paused',
     inputs: [],
     outputs: [
       {
         name: '',
-        type: 'address',
-        internalType: 'address',
+        type: 'bool',
+        internalType: 'bool',
       },
     ],
     stateMutability: 'view',
   },
   {
     type: 'function',
-    name: 'poolManagerV4',
+    name: 'pendingOwner',
     inputs: [],
     outputs: [
       {
@@ -442,6 +413,19 @@ export const launchpadV2FactoryAbi = [
   },
   {
     type: 'function',
+    name: 'setGuardian',
+    inputs: [
+      {
+        name: 'newGuardian',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'setLaunchFee',
     inputs: [
       {
@@ -465,6 +449,26 @@ export const launchpadV2FactoryAbi = [
     ],
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'unpause',
+    inputs: [],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'event',
+    name: 'GuardianUpdated',
+    inputs: [
+      {
+        name: 'guardian',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+    ],
+    anonymous: false,
   },
   {
     type: 'event',
@@ -519,6 +523,50 @@ export const launchpadV2FactoryAbi = [
   },
   {
     type: 'event',
+    name: 'PauseChanged',
+    inputs: [
+      {
+        name: 'paused',
+        type: 'bool',
+        indexed: false,
+        internalType: 'bool',
+      },
+      {
+        name: 'by',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'TokenGraduated',
+    inputs: [
+      {
+        name: 'token',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+      {
+        name: 'poolId',
+        type: 'bytes32',
+        indexed: true,
+        internalType: 'bytes32',
+      },
+      {
+        name: 'splitter',
+        type: 'address',
+        indexed: false,
+        internalType: 'address',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
     name: 'TokenLaunchedV2',
     inputs: [
       {
@@ -562,6 +610,11 @@ export const launchpadV2FactoryAbi = [
   },
   {
     type: 'error',
+    name: 'EmergencyPaused',
+    inputs: [],
+  },
+  {
+    type: 'error',
     name: 'InvalidFee',
     inputs: [],
   },
@@ -577,12 +630,27 @@ export const launchpadV2FactoryAbi = [
   },
   {
     type: 'error',
+    name: 'NotGraduated',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'NotGuardian',
+    inputs: [],
+  },
+  {
+    type: 'error',
     name: 'TransferFailed',
     inputs: [],
   },
   {
     type: 'error',
     name: 'Unauthorized',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'UnknownToken',
     inputs: [],
   },
   {

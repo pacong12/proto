@@ -25,8 +25,8 @@ features:
     details: Límites automatizados evitan que los bots acaparen el suministro inicial, asegurando igualdad para la comunidad.
   - title: 70% Recompensas para Creadores
     details: Los creadores ganan el 70% de las comisiones de trading acumuladas de forma continua.
-  - title: Recompra y Quema Automática
-    details: El 80% de los ingresos del protocolo se utiliza automáticamente para comprar y quemar tokens via TWAP.
+  - title: Recompra y Quema
+    details: 'Los creadores pueden destinar parte de su cuota de comisiones a recompra y quema: un contrato compra el token en su propio pool, protegido por un TWAP de 30 minutos, y lo envía a la dirección muerta.'
   - title: Rápido y Bajo Costo
     details: Opera en Robinhood Chain L2 y Arc Network con confirmaciones casi instantáneas y gas mínimo.
 ---

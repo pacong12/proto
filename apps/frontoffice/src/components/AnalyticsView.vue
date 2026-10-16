@@ -530,16 +530,21 @@ const topCoins = computed(() => {
     .slice(0, 5);
 });
 
-const contractEntries = computed(() => [
-  {
-    name: 'Launchpad Factory (Bonding Curve)',
-    address: activeNetwork.value.contracts.factoryV2 || activeNetwork.value.contracts.factory,
-  },
-  { name: 'Liquidity Locker', address: activeNetwork.value.contracts.locker },
-  { name: 'Uniswap V3 Factory', address: activeNetwork.value.contracts.uniswapV3Factory },
-  { name: 'Position Manager', address: activeNetwork.value.contracts.positionManager },
-  { name: 'Swap Router', address: activeNetwork.value.contracts.swapRouter },
-]);
+const contractEntries = computed(() => {
+  const c = activeNetwork.value.contracts;
+  const entries: { name: string; address?: `0x${string}` }[] = [
+    { name: 'Launchpad Factory', address: c.factoryV2 || c.factory },
+    { name: 'Liquidity Locker', address: c.locker },
+    { name: 'Proto Hook (Uniswap V4)', address: c.memeHook },
+    { name: 'Uniswap V4 PoolManager', address: c.poolManagerV4 },
+    { name: 'Uniswap Universal Router', address: c.universalRouter },
+    { name: 'Uniswap V3 Factory', address: c.uniswapV3Factory },
+    { name: 'Position Manager', address: c.positionManager },
+    { name: 'Swap Router', address: c.swapRouter },
+  ];
+  // Only list contracts that exist on this chain (Arc has no V3; Robinhood may lack V4 entries).
+  return entries.filter((e): e is { name: string; address: `0x${string}` } => Boolean(e.address));
+});
 
 function isContractDeployed(address?: string): boolean {
   if (!address) return false;

@@ -1,0 +1,249 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+import {ILiquidityLocker} from "../interfaces/ILiquidityLocker.sol";
+import {INonfungiblePositionManager, IWETH} from "../interfaces/IUniswapV3.sol";
+import {ILaunchpadToken} from "../interfaces/ILaunchpadToken.sol";
+import {IHolderFeeDistributor} from "../interfaces/IHolderFeeDistributor.sol";
+import {FeeMath} from "../libraries/FeeMath.sol";
+
+/**
+ * @title LiquidityLocker
+ * @notice Permanently locks Uniswap V3 LP positions and handles fee distribution between creator and protocol.
+ */
+contract LiquidityLocker is ILiquidityLocker {
+    struct FeeDistribution {
+        uint256 totalTokenFee;
+        uint256 totalWethFee;
+        uint256 protocolTokenFee;
+        uint256 protocolWethFee;
+        uint256 creatorTokenFee;
+        uint256 creatorWethFee;
+        address creatorRecipient;
+    }
+
+    /// @notice Pending fee redirect: (token => (pendingAddress, validAfter timestamp))
+    struct PendingRedirect {
+        address pendingAddress;
+        uint256 validAfter;
+    }
+
+    uint256 public constant REDIRECT_TIMELOCK = 48 hours;
+
+    INonfungiblePositionManager public immutable positionManager;
+    address public immutable factory;
+    address public immutable weth;
+    address public protocolFeeRecipient;
+    address public holderFeeDistributor;
+    address public owner;
+    address public pendingOwner;
+
+    mapping(address => uint256) public override tokenPositions;
+    mapping(address => address) public override tokenDeployers;
+    mapping(address => uint256) public override tokenProtocolFeeShares;
+    mapping(address => address) public override feeRedirects;
+    mapping(address => PendingRedirect) public pendingFeeRedirects;
+
+    error Unauthorized();
+    error AlreadyLocked();
+    error NotLocked();
+    error ZeroAddress();
+    error InvalidShare();
+    error TransferFailed();
+    error Reentrancy();
+    error TimelockNotExpired();
+    error NoPendingRedirect();
+
+    bool private _locked;
+
+    event PendingFeeRedirectProposed(address indexed token, address indexed redirect, uint256 validAfter);
+    event PendingOwnershipProposed(address indexed proposedOwner);
+
+    modifier onlyOwner() {
+        if (msg.sender != owner) revert Unauthorized();
+        _;
+    }
+
+    modifier onlyFactory() {
+        if (msg.sender != factory) revert Unauthorized();
+        _;
+    }
+
+    modifier nonReentrant() {
+        if (_locked) revert Reentrancy();
+        _locked = true;
+        _;
+        _locked = false;
+    }
+
+    constructor(
+        address _positionManager,
+        address _weth,
+        address _protocolFeeRecipient
+    ) {
+        if (_positionManager == address(0) || _weth == address(0) || _protocolFeeRecipient == address(0)) {
+            revert ZeroAddress();
+        }
+        positionManager = INonfungiblePositionManager(_positionManager);
+        weth = _weth;
+        protocolFeeRecipient = _protocolFeeRecipient;
+        factory = msg.sender;
+        owner = msg.sender;
+    }
+
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external pure returns (bytes4) {
+        return this.onERC721Received.selector;
+    }
+
+    function lockPosition(
+        address token,
+        uint256 positionId,
+        address deployer,
+        uint256 protocolFeeShare
+    ) external override onlyFactory {
+        if (token == address(0) || deployer == address(0)) revert ZeroAddress();
+        if (tokenPositions[token] != 0) revert AlreadyLocked();
+        if (protocolFeeShare > 100) revert InvalidShare();
+
+        tokenPositions[token] = positionId;
+        tokenDeployers[token] = deployer;
+        tokenProtocolFeeShares[token] = protocolFeeShare;
+
+        emit PositionLocked(token, positionId, deployer, protocolFeeShare);
+    }
+
+    function setFeeRedirect(address token, address redirect) external override {
+        // H-01 & BUG-06 Fix: only the token deployer may redirect creator fees.
+        // Direct instant redirect is removed; uses two-step timelock flow.
+        address deployer = tokenDeployers[token];
+        if (msg.sender != deployer) revert Unauthorized();
+        if (redirect == address(0)) revert ZeroAddress();
+        uint256 validAfter = block.timestamp + REDIRECT_TIMELOCK;
+        pendingFeeRedirects[token] = PendingRedirect({pendingAddress: redirect, validAfter: validAfter});
+        emit PendingFeeRedirectProposed(token, redirect, validAfter);
+    }
+
+    /// @notice Finalize fee redirect after the 48-hour timelock has passed.
+    function acceptFeeRedirect(address token) external {
+        address deployer = tokenDeployers[token];
+        if (msg.sender != deployer) revert Unauthorized();
+        PendingRedirect memory pending = pendingFeeRedirects[token];
+        if (pending.pendingAddress == address(0)) revert NoPendingRedirect();
+        if (block.timestamp < pending.validAfter) revert TimelockNotExpired();
+        feeRedirects[token] = pending.pendingAddress;
+        delete pendingFeeRedirects[token];
+        emit FeeRedirectUpdated(token, pending.pendingAddress);
+    }
+
+    /// @notice Cancel a pending fee redirect before it takes effect.
+    function cancelFeeRedirect(address token) external {
+        address deployer = tokenDeployers[token];
+        if (msg.sender != deployer) revert Unauthorized();
+        delete pendingFeeRedirects[token];
+        emit FeeRedirectCancelled(token);
+    }
+
+    function setProtocolFeeRecipient(address recipient) external onlyOwner {
+        if (recipient == address(0)) revert ZeroAddress();
+        protocolFeeRecipient = recipient;
+    }
+
+    function setHolderFeeDistributor(address distributor) external onlyOwner {
+        holderFeeDistributor = distributor;
+    }
+
+    /// @notice Two-step ownership transfer: Step 1 — propose new owner.
+    function transferOwnership(address newOwner) external onlyOwner {
+        if (newOwner == address(0)) revert ZeroAddress();
+        pendingOwner = newOwner;
+        emit PendingOwnershipProposed(newOwner);
+    }
+
+    /// @notice Two-step ownership transfer: Step 2 — new owner accepts.
+    function acceptOwnership() external {
+        if (msg.sender != pendingOwner) revert Unauthorized();
+        owner = pendingOwner;
+        pendingOwner = address(0);
+    }
+
+    function claimFees(address token) external override nonReentrant returns (uint256 creatorTokenFee, uint256 creatorWethFee) {
+        address redirect = feeRedirects[token];
+        // H-04 fix: remove owner privilege on claimFees. Only deployer or active redirect may claim.
+        if (msg.sender != tokenDeployers[token] && (redirect == address(0) || msg.sender != redirect)) {
+            revert Unauthorized();
+        }
+        uint256 positionId = tokenPositions[token];
+        if (positionId == 0) revert NotLocked();
+
+        (uint256 amount0, uint256 amount1) = positionManager.collect(
+            INonfungiblePositionManager.CollectParams({
+                tokenId: positionId,
+                recipient: address(this),
+                amount0Max: type(uint128).max,
+                amount1Max: type(uint128).max
+            })
+        );
+
+        // slither-disable-next-line unused-return
+        (, , address token0, , , , , , , , , ) = positionManager.positions(positionId);
+        require(token0 != address(0), "Invalid position");
+
+        FeeDistribution memory dist = FeeDistribution({
+            totalTokenFee: token == token0 ? amount0 : amount1,
+            totalWethFee: token == token0 ? amount1 : amount0,
+            protocolTokenFee: 0,
+            protocolWethFee: 0,
+            creatorTokenFee: 0,
+            creatorWethFee: 0,
+            creatorRecipient: address(0)
+        });
+
+        uint256 protocolSharePercent = tokenProtocolFeeShares[token];
+        (dist.creatorTokenFee, dist.protocolTokenFee) = FeeMath.calculateLockerSplit(
+            dist.totalTokenFee,
+            protocolSharePercent
+        );
+        (dist.creatorWethFee, dist.protocolWethFee) = FeeMath.calculateLockerSplit(
+            dist.totalWethFee,
+            protocolSharePercent
+        );
+
+        dist.creatorRecipient = redirect != address(0) ? redirect : tokenDeployers[token];
+
+        _routeFees(token, dist);
+
+        emit FeesClaimed(token, dist.creatorTokenFee, dist.creatorWethFee, dist.creatorRecipient);
+        return (dist.creatorTokenFee, dist.creatorWethFee);
+    }
+
+    function _routeFees(address token, FeeDistribution memory dist) internal {
+        // F-04 fix: check return value of every transfer; silently-false returns lose fees.
+        if (dist.protocolTokenFee > 0) {
+            bool ok = ILaunchpadToken(token).transfer(protocolFeeRecipient, dist.protocolTokenFee);
+            if (!ok) revert TransferFailed();
+        }
+        if (dist.protocolWethFee > 0) {
+            bool ok = IWETH(weth).transfer(protocolFeeRecipient, dist.protocolWethFee);
+            if (!ok) revert TransferFailed();
+        }
+        if (dist.creatorTokenFee > 0) {
+            bool ok = ILaunchpadToken(token).transfer(dist.creatorRecipient, dist.creatorTokenFee);
+            if (!ok) revert TransferFailed();
+        }
+        if (dist.creatorWethFee > 0) {
+            if (holderFeeDistributor != address(0) && dist.creatorRecipient == holderFeeDistributor) {
+                bool okApprove = IWETH(weth).approve(holderFeeDistributor, dist.creatorWethFee);
+                if (!okApprove) revert TransferFailed();
+                IHolderFeeDistributor(holderFeeDistributor).depositRewards(token, dist.creatorWethFee);
+            } else {
+                bool ok = IWETH(weth).transfer(dist.creatorRecipient, dist.creatorWethFee);
+                if (!ok) revert TransferFailed();
+            }
+        }
+    }
+}

@@ -39,7 +39,7 @@ Jika Anda ingin memiliki alokasi awal sebagai kreator pada harga terendah pelunc
 
 Klik **Launch Token** dan konfirmasikan transaksi melalui dompet Web3 Anda:
 
-- **Biaya Peluncuran**: Tetap sebesar `0.0005 ETH` di Robinhood Chain atau `1 USDC` di Arc Network untuk penyebaran kontrak dan penguncian likuiditas.
+- **Biaya Peluncuran**: Tetap sebesar `0.0005 ETH` di Robinhood Chain atau `Gratis (0 USDC)` di Arc Network (dengan pre-buy awal minimal 4.50 USDC).
 - Setelah transaksi terkonfirmasi, token Anda langsung aktif dan dapat diperdagangkan seketika!
 
 ---

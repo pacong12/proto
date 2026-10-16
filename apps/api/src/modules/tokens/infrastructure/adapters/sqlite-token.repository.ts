@@ -9,8 +9,10 @@ import {
   CandlestickEntity,
   TokenCommentEntity,
   getUserIdentity,
+  type CreatorProfile,
 } from '@proto/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
+import { backupDatabase, openCheckedDatabase } from './sqlite-maintenance';
 import {
   aggregateCandlesticks,
   computeHoldersDistribution,
@@ -77,6 +79,7 @@ const defaultDbPath =
 
 export class SqliteTokenRepository implements TokenRepositoryPort {
   private db: Database;
+  private readonly dbPath: string;
 
   constructor(dbPath?: string) {
     const resolvedPath = dbPath ?? defaultDbPath;
@@ -92,7 +95,8 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
         );
       }
     }
-    this.db = new Database(resolvedPath);
+    this.dbPath = resolvedPath;
+    this.db = openCheckedDatabase(resolvedPath);
     try {
       this.db.run('PRAGMA journal_mode = WAL;');
       this.db.run('PRAGMA busy_timeout = 10000;');
@@ -358,6 +362,56 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
         updated_at INTEGER NOT NULL
       );
     `);
+
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS token_sentiment (
+        token_address TEXT NOT NULL COLLATE NOCASE,
+        user_address TEXT NOT NULL COLLATE NOCASE,
+        sentiment TEXT NOT NULL,
+        updated_at INTEGER NOT NULL,
+        PRIMARY KEY (token_address, user_address)
+      );
+    `);
+    this.db.run(
+      `CREATE INDEX IF NOT EXISTS idx_sentiment_token ON token_sentiment(token_address COLLATE NOCASE);`,
+    );
+
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS buyback_burns (
+        id TEXT PRIMARY KEY,
+        token_address TEXT NOT NULL COLLATE NOCASE,
+        network TEXT NOT NULL,
+        weth_spent TEXT NOT NULL,
+        tokens_burned TEXT NOT NULL,
+        transaction_hash TEXT NOT NULL,
+        timestamp INTEGER NOT NULL
+      );
+    `);
+    this.db.run(
+      `CREATE INDEX IF NOT EXISTS idx_buyback_token ON buyback_burns(token_address COLLATE NOCASE);`,
+    );
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS profiles (
+        address TEXT PRIMARY KEY COLLATE NOCASE,
+        profile_json TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+    `);
+  }
+
+  async getProfile(address: string): Promise<CreatorProfile | null> {
+    const row = this.db
+      .prepare('SELECT profile_json FROM profiles WHERE address = ? LIMIT 1')
+      .get(address.toLowerCase()) as { profile_json: string } | undefined;
+    return row ? (JSON.parse(row.profile_json) as CreatorProfile) : null;
+  }
+
+  async saveProfile(address: string, profile: CreatorProfile): Promise<void> {
+    this.db
+      .prepare(
+        'INSERT OR REPLACE INTO profiles (address, profile_json, updated_at) VALUES (?, ?, ?)',
+      )
+      .run(address.toLowerCase(), JSON.stringify(profile), Date.now());
   }
 
   async save(token: LaunchedTokenEntity): Promise<void> {
@@ -590,6 +644,22 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       LIMIT ?
     `);
     const rows = stmt.all(trader, limit) as TradeRow[];
+    return rows.map((row) => this.mapRowToTrade(row));
+  }
+
+  async getTradesInBlockRange(
+    fromBlock: bigint,
+    toBlock: bigint,
+    limit: number,
+  ): Promise<TradeEventEntity[]> {
+    const stmt = this.db.prepare(`
+      SELECT * FROM trades
+      WHERE CAST(blockNumber AS INTEGER) >= ?
+        AND (? = 0 OR CAST(blockNumber AS INTEGER) <= ?)
+      ORDER BY CAST(blockNumber AS INTEGER) ASC, rowid ASC
+      LIMIT ?
+    `);
+    const rows = stmt.all(Number(fromBlock), Number(toBlock), Number(toBlock), limit) as TradeRow[];
     return rows.map((row) => this.mapRowToTrade(row));
   }
 
@@ -1270,6 +1340,75 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     });
   }
 
+  /**
+   * GRC-04 (GDPR Art. 17): erases the off-chain social data tied to a wallet — its comments, likes,
+   * reposts, sentiment votes and profile — and keeps the counters on other users' posts consistent.
+   * Replies written by other users stay. On-chain data (trades, launches) is public and not erasable.
+   */
+  async deleteUserData(address: string): Promise<{
+    comments: number;
+    likes: number;
+    reposts: number;
+    sentiment: number;
+    profile: number;
+  }> {
+    return this.runInTransaction(() => {
+      const user = address.toLowerCase();
+      const changes = (r: unknown) => Number((r as { changes?: number | bigint }).changes ?? 0);
+
+      // Counters on other users' posts
+      this.db
+        .prepare(
+          `UPDATE comments SET likes_count = MAX(0, likes_count - 1)
+           WHERE id IN (SELECT comment_id FROM comment_likes WHERE LOWER(user_address) = ?)`,
+        )
+        .run(user);
+      this.db
+        .prepare(
+          `UPDATE comments SET reposts_count = MAX(0, reposts_count - 1)
+           WHERE id IN (SELECT comment_id FROM comment_reposts WHERE LOWER(user_address) = ?)`,
+        )
+        .run(user);
+      this.db
+        .prepare(
+          `UPDATE comments SET replies_count = MAX(0, replies_count - 1)
+           WHERE id IN (SELECT parent_id FROM comments
+                        WHERE LOWER(author_address) = ? AND parent_id IS NOT NULL)`,
+        )
+        .run(user);
+
+      const likes = changes(
+        this.db.prepare(`DELETE FROM comment_likes WHERE LOWER(user_address) = ?`).run(user),
+      );
+      const reposts = changes(
+        this.db.prepare(`DELETE FROM comment_reposts WHERE LOWER(user_address) = ?`).run(user),
+      );
+      // Others' likes/reposts on the user's own comments go with those comments
+      for (const table of ['comment_likes', 'comment_reposts']) {
+        this.db
+          .prepare(
+            `DELETE FROM ${table} WHERE comment_id IN
+             (SELECT id FROM comments WHERE LOWER(author_address) = ?)`,
+          )
+          .run(user);
+      }
+      const comments = changes(
+        this.db.prepare(`DELETE FROM comments WHERE LOWER(author_address) = ?`).run(user),
+      );
+      const sentiment = changes(
+        this.db.prepare(`DELETE FROM token_sentiment WHERE user_address = ?`).run(user),
+      );
+      const profile = changes(this.db.prepare(`DELETE FROM profiles WHERE address = ?`).run(user));
+      return { comments, likes, reposts, sentiment, profile };
+    });
+  }
+
+  /** DR-04: hot snapshot into `<db dir>/backups`, keeping the newest `keep` files. */
+  backup(keep?: number): string | null {
+    if (this.dbPath === ':memory:') return null;
+    return backupDatabase(this.db, this.dbPath, keep);
+  }
+
   close(): void {
     this.db.close();
   }
@@ -1330,10 +1469,8 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
   async getLastIndexedBlock(networkName: string): Promise<bigint | null> {
     try {
       const row = this.db
-        .query<{ last_block: string }, [string]>(
-          'SELECT last_block FROM indexer_cursor WHERE network = ? LIMIT 1',
-        )
-        .get(networkName);
+        .prepare('SELECT last_block FROM indexer_cursor WHERE network = ? LIMIT 1')
+        .get(networkName) as { last_block?: string } | undefined;
       if (!row || !row.last_block) return null;
       return BigInt(row.last_block);
     } catch {
@@ -1344,7 +1481,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
   async setLastIndexedBlock(networkName: string, blockNumber: bigint): Promise<void> {
     try {
       this.db
-        .query(
+        .prepare(
           `INSERT INTO indexer_cursor (network, last_block, updated_at)
            VALUES (?, ?, ?)
            ON CONFLICT(network) DO UPDATE SET
@@ -1356,6 +1493,162 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       console.warn(
         `[SqliteTokenRepository] Could not persist indexer block: ${(err as Error).message}`,
       );
+    }
+  }
+
+  async getTokenSentiment(
+    tokenAddress: string,
+    userAddress?: string,
+  ): Promise<{
+    bullVotes: number;
+    bearVotes: number;
+    totalVotes: number;
+    bullPercent: number;
+    bearPercent: number;
+    userVote?: 'bull' | 'bear';
+  }> {
+    try {
+      const rows = this.db
+        .prepare(
+          `SELECT sentiment, COUNT(*) as count FROM token_sentiment WHERE LOWER(token_address) = LOWER(?) GROUP BY sentiment`,
+        )
+        .all(tokenAddress) as Array<{ sentiment: string; count: number }>;
+
+      let bullVotes = 0;
+      let bearVotes = 0;
+      for (const r of rows) {
+        if (r.sentiment === 'bull') bullVotes = Number(r.count);
+        if (r.sentiment === 'bear') bearVotes = Number(r.count);
+      }
+      const totalVotes = bullVotes + bearVotes;
+      const bullPercent = totalVotes > 0 ? Math.round((bullVotes / totalVotes) * 100) : 50;
+      const bearPercent = totalVotes > 0 ? 100 - bullPercent : 50;
+
+      let userVote: 'bull' | 'bear' | undefined;
+      if (userAddress) {
+        const u = this.db
+          .prepare(
+            `SELECT sentiment FROM token_sentiment WHERE LOWER(token_address) = LOWER(?) AND LOWER(user_address) = LOWER(?) LIMIT 1`,
+          )
+          .get(tokenAddress, userAddress) as { sentiment?: string } | undefined;
+        if (u?.sentiment) userVote = u.sentiment as 'bull' | 'bear';
+      }
+
+      return { bullVotes, bearVotes, totalVotes, bullPercent, bearPercent, userVote };
+    } catch {
+      return { bullVotes: 0, bearVotes: 0, totalVotes: 0, bullPercent: 50, bearPercent: 50 };
+    }
+  }
+
+  async voteTokenSentiment(
+    tokenAddress: string,
+    userAddress: string,
+    sentiment: 'bull' | 'bear',
+  ): Promise<{
+    bullVotes: number;
+    bearVotes: number;
+    totalVotes: number;
+    bullPercent: number;
+    bearPercent: number;
+    userVote: 'bull' | 'bear';
+  }> {
+    this.db
+      .prepare(
+        `INSERT INTO token_sentiment (token_address, user_address, sentiment, updated_at)
+         VALUES (?, ?, ?, ?)
+         ON CONFLICT(token_address, user_address) DO UPDATE SET
+           sentiment = excluded.sentiment,
+           updated_at = excluded.updated_at`,
+      )
+      .run(tokenAddress.toLowerCase(), userAddress.toLowerCase(), sentiment, Date.now());
+
+    const result = await this.getTokenSentiment(tokenAddress, userAddress);
+    return {
+      ...result,
+      userVote: sentiment,
+    };
+  }
+
+  async recordBuybackBurn(burn: {
+    tokenAddress: string;
+    network: string;
+    wethSpent: string;
+    tokensBurned: string;
+    transactionHash: string;
+    timestamp: number;
+  }): Promise<void> {
+    const id = `burn_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    this.db
+      .prepare(
+        `INSERT OR REPLACE INTO buyback_burns (id, token_address, network, weth_spent, tokens_burned, transaction_hash, timestamp)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        id,
+        burn.tokenAddress.toLowerCase(),
+        burn.network,
+        burn.wethSpent,
+        burn.tokensBurned,
+        burn.transactionHash,
+        burn.timestamp,
+      );
+  }
+
+  async getBuybackStats(tokenAddress?: string): Promise<{
+    totalBurns: number;
+    totalTokensBurned: string;
+    recentBurns: Array<{
+      id: string;
+      tokenAddress: string;
+      network: string;
+      wethSpent: string;
+      tokensBurned: string;
+      transactionHash: string;
+      timestamp: number;
+    }>;
+  }> {
+    try {
+      let query = `SELECT * FROM buyback_burns`;
+      const params: string[] = [];
+      if (tokenAddress) {
+        query += ` WHERE LOWER(token_address) = LOWER(?)`;
+        params.push(tokenAddress);
+      }
+      query += ` ORDER BY timestamp DESC LIMIT 20`;
+
+      const rows = this.db.prepare(query).all(...params) as Array<{
+        id: string;
+        token_address: string;
+        network: string;
+        weth_spent: string;
+        tokens_burned: string;
+        transaction_hash: string;
+        timestamp: number;
+      }>;
+      let totalTokens = 0n;
+      for (const r of rows) {
+        try {
+          totalTokens += BigInt(r.tokens_burned);
+        } catch {
+          // ignore parsing error
+        }
+      }
+
+      return {
+        totalBurns: rows.length,
+        totalTokensBurned: totalTokens.toString(),
+        recentBurns: rows.map((r) => ({
+          id: r.id,
+          tokenAddress: r.token_address,
+          network: r.network,
+          wethSpent: r.weth_spent,
+          tokensBurned: r.tokens_burned,
+          transactionHash: r.transaction_hash,
+          timestamp: Number(r.timestamp),
+        })),
+      };
+    } catch {
+      return { totalBurns: 0, totalTokensBurned: '0', recentBurns: [] };
     }
   }
 }

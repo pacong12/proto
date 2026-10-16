@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {TestGraduator} from "./utils/TestGraduator.sol";
 import {Test, console} from "forge-std/Test.sol";
-import {LaunchpadFactory} from "../src/LaunchpadFactory.sol";
-import {LaunchpadV2Factory} from "../src/LaunchpadV2Factory.sol";
-import {LiquidityLocker} from "../src/LiquidityLocker.sol";
-import {LaunchpadToken} from "../src/LaunchpadToken.sol";
-import {BondingCurve} from "../src/BondingCurve.sol";
-import {BuybackBurner} from "../src/BuybackBurner.sol";
-import {HolderFeeDistributor} from "../src/HolderFeeDistributor.sol";
-import {VestingVault} from "../src/VestingVault.sol";
+import {LaunchpadFactory} from "../src/legacy/LaunchpadFactory.sol";
+import {LaunchpadV2Factory} from "../src/chains/robinhood/LaunchpadV2Factory.sol";
+import {LiquidityLocker} from "../src/legacy/LiquidityLocker.sol";
+import {LaunchpadToken} from "../src/core/LaunchpadToken.sol";
+import {BondingCurve} from "../src/core/BondingCurve.sol";
+import {BuybackBurner} from "../src/core/BuybackBurner.sol";
+import {HolderFeeDistributor} from "../src/legacy/HolderFeeDistributor.sol";
+import {VestingVault} from "../src/core/VestingVault.sol";
 import {ILaunchpadToken} from "../src/interfaces/ILaunchpadToken.sol";
 import {
     MockWETH,
@@ -63,7 +64,7 @@ contract ComprehensiveLifecycleTest is Test {
         locker = LiquidityLocker(factoryV1.locker());
 
         // 2. Deploy Factory V2 (Bonding Curve)
-        factoryV2 = new LaunchpadV2Factory(protocolTreasury, address(locker), address(0), address(0));
+        factoryV2 = new LaunchpadV2Factory(protocolTreasury, TestGraduator.deploy(protocolTreasury));
 
         // 3. Deploy Holder Fee Distributor & Vesting Vault
         feeDistributor = new HolderFeeDistributor(address(weth), address(locker));
@@ -245,20 +246,20 @@ contract ComprehensiveLifecycleTest is Test {
         vestingVault.createVestingSchedule(address(token), traderAlice, grant, duration);
 
         // At day 0 -> 0 unlocked
-        assertEq(vestingVault.getClaimableAmount(address(token), traderAlice), 0);
+        assertEq(vestingVault.getClaimableAmount(address(token), address(this), traderAlice), 0);
 
         // Advance 25 days -> 25% unlocked (25,000 VEST)
         vm.warp(block.timestamp + 25 days);
         assertEq(
-            vestingVault.getClaimableAmount(address(token), traderAlice),
+            vestingVault.getClaimableAmount(address(token), address(this), traderAlice),
             25_000 * 1e18
         );
 
         // Alice claims 25,000 VEST
         vm.prank(traderAlice);
-        vestingVault.claimVested(address(token));
+        vestingVault.claimVested(address(token), address(this));
         assertEq(token.balanceOf(traderAlice), 25_000 * 1e18);
-        assertEq(vestingVault.getClaimableAmount(address(token), traderAlice), 0);
+        assertEq(vestingVault.getClaimableAmount(address(token), address(this), traderAlice), 0);
     }
 
     // ==========================================

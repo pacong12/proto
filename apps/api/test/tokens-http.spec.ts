@@ -309,4 +309,44 @@ describe('Tokens HTTP Endpoints Integration', () => {
     expect(json.data).toHaveProperty('earnedWei');
     expect(json.data).toHaveProperty('rewardAssetSymbol');
   });
+
+  it('GET & POST /api/tokens/:address/sentiment records community votes', async () => {
+    const voter = '0x3333333333333333333333333333333333333333';
+
+    // 1. Initial sentiment query
+    const getReq = new Request(
+      `http://localhost:3001/api/tokens/${testAddress}/sentiment?user=${voter}`,
+    );
+    const getRes = await server.fetch(getReq);
+    expect(getRes.status).toBe(200);
+    const getJson = await getRes.json();
+    expect(getJson.success).toBe(true);
+    expect(getJson.data).toHaveProperty('bullPercent');
+    expect(getJson.data).toHaveProperty('bearPercent');
+
+    // 2. Cast Bullish vote
+    const postReq = new Request(`http://localhost:3001/api/tokens/${testAddress}/sentiment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userAddress: voter, sentiment: 'bull' }),
+    });
+    const postRes = await server.fetch(postReq);
+    expect(postRes.status).toBe(200);
+    const postJson = await postRes.json();
+    expect(postJson.success).toBe(true);
+    expect(postJson.data.bullVotes).toBeGreaterThanOrEqual(1);
+    expect(postJson.data.bullPercent).toBeGreaterThanOrEqual(50);
+    expect(postJson.data.userVote).toBe('bull');
+  });
+
+  it('GET /api/buyback/stats returns buyback tracking statistics', async () => {
+    const req = new Request('http://localhost:3001/api/buyback/stats');
+    const res = await server.fetch(req);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    expect(json.data).toHaveProperty('totalBurns');
+    expect(json.data).toHaveProperty('totalTokensBurned');
+    expect(Array.isArray(json.data.recentBurns)).toBe(true);
+  });
 });

@@ -17,6 +17,12 @@ interface ContractExportConfig {
 
 const CONTRACTS_TO_EXPORT: ContractExportConfig[] = [
   {
+    sourceFile: 'LaunchpadFactory.sol',
+    contractName: 'LaunchpadFactory',
+    outputName: 'launchpad-factory-v1.abi.ts',
+    exportVarName: 'launchpadFactoryAbi',
+  },
+  {
     sourceFile: 'BondingCurve.sol',
     contractName: 'BondingCurve',
     outputName: 'bonding-curve.abi.ts',
@@ -75,6 +81,36 @@ const CONTRACTS_TO_EXPORT: ContractExportConfig[] = [
     contractName: 'ProtoMemeHook',
     outputName: 'proto-meme-hook.abi.ts',
     exportVarName: 'protoMemeHookAbi',
+  },
+  {
+    sourceFile: 'ProtoV4Hook.sol',
+    contractName: 'ProtoV4Hook',
+    outputName: 'proto-v4-hook.abi.ts',
+    exportVarName: 'protoV4HookAbi',
+  },
+  {
+    sourceFile: 'ProtoFeeSplitter.sol',
+    contractName: 'ProtoFeeSplitter',
+    outputName: 'proto-fee-splitter.abi.ts',
+    exportVarName: 'protoFeeSplitterAbi',
+  },
+  {
+    sourceFile: 'ProtoV4Graduator.sol',
+    contractName: 'ProtoV4Graduator',
+    outputName: 'proto-v4-graduator.abi.ts',
+    exportVarName: 'protoV4GraduatorAbi',
+  },
+  {
+    sourceFile: 'ProtoV4Buyback.sol',
+    contractName: 'ProtoV4Buyback',
+    outputName: 'proto-v4-buyback.abi.ts',
+    exportVarName: 'protoV4BuybackAbi',
+  },
+  {
+    sourceFile: 'ProtoV4Router.sol',
+    contractName: 'ProtoV4Router',
+    outputName: 'proto-v4-router.abi.ts',
+    exportVarName: 'protoV4RouterAbi',
   },
 ];
 

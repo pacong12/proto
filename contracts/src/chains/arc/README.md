@@ -5,47 +5,52 @@
 - **Network Name**: Arc Network
 - **Chain ID**: 5042
 - **Network Type**: Circle Stablecoin Layer 1
-- **Native Gas Asset**: USD Coin (USDC) with 18 decimals in `msg.value` (1 ether = 1.00 USDC)
+- **Native Gas Asset**: USDC with 18 decimals in `msg.value` (1 ether = 1.00 USDC); the same balance is
+  exposed as a 6-decimal ERC-20 at `0x3600000000000000000000000000000000000000`
 - **RPC Endpoint**: `https://rpc.mainnet.arc.io` (Fallbacks: `https://rpc.blockdaemon.mainnet.arc.io`, `https://arc.drpc.org`)
 - **Block Explorer**: `https://explorer.arc.io`
 
 ---
 
-## 2. Bonding Curve Mathematics & Tokenomics
+## 2. Launch Model: In-Pool Uniswap v4 (Argus portal parameters)
 
-- **Total Supply**: 1,000,000,000 tokens (fixed supply, 18 decimals)
-- **Curve Allocation**: 738,600,000 tokens (73.86%, Argus standard)
-- **Pool Reserve Supply**: 261,400,000 tokens (26.14%, Argus standard)
-- **Initial Virtual USDC Reserve**: 24,420 USDC (`24_420 ether`)
-- **Graduation Target**: 69,000 USDC (`69_000 ether`)
-- **Opening Spot Price**: 24,420 / 1,000,000,000 = `$0.00002442` USDC
-- **Opening FDV**: $24,420 USD
-- **Graduation FDV**: ~$357,383 USD
+Tokens trade in their Uniswap v4 pool from the first block. There is no bonding-curve contract, no
+migration and no Uniswap V3 dependency (V3 is deployed on Arc, but Proto does not use it).
+
+1. `LaunchpadV2FactoryArc.launchToken` deploys the token and initializes a USDC/token pool
+   (fee 1%, tickSpacing 200, hook `ProtoV4Hook`) at tick 405400 (≈ $2,480.74 market cap).
+2. 100% of supply is added as single-sided liquidity over `[-887200, 405400]` (mirrored when the token
+   sorts before USDC). The position is owned by the factory, which cannot remove it: locked forever.
+3. The creator's prebuy (≥ 4.50 USDC, ≤ 5% of supply) is swapped in the same transaction.
+4. Graduation is in place: the hook flips `bonded` to false once price crosses bond tick 376400
+   (≈ $45,078.87 market cap, ~8,094 USDC bought). Trading continues in the same pool.
+
+Equivalent constant-product reserves of the launch position: 2,480.744058 USDC virtual / 1,000,000,000
+tokens (liquidity `1575037795897358225`, identical to Argus pools on-chain).
 
 ---
 
-## 3. Sovereign Smart Contract Infrastructure
+## 3. Contracts
 
-Proto maintains 100% sovereign ownership over its protocol contracts on Arc Network:
+- **`LaunchpadV2FactoryArc.sol`** (this folder) — launch portal and owner of every launch position;
+  `collectFees(token)` routes LP fees (USDC to the splitter, token side burned).
+- Shared with other chains (`../../core/`):
+  - **`ProtoV4Hook.sol`** — singleton v4 hook (permission bits `0x20CC`): launcher-only pool
+    initialization, fixed buy/sell tax in USDC, decaying anti-snipe tax, graduation tracking.
+  - **`ProtoFeeSplitter.sol`** — per-token fee router: 30% protocol cut, remainder to holders (USDC
+    dividends streamed over a day, checkpointed on every transfer) / burn / creator (pulled, 48h
+    redirect timelock) / liquidity. `ProtoFeeSplitterDeployer` creates them.
+  - **`ProtoV4Router.sol`** — exact-input swaps; buys can be paid with native USDC `msg.value`.
+  - `LaunchpadToken.sol`, `../../libraries/v4/` (TickMath, V4Lib), `../../interfaces/external/IUniswapV4Core.sol`.
 
-- **Factory V2 Contract**: `LaunchpadV2FactoryArc.sol` (`0xf94d16c9E90fCd55b75D318d0104269146612abF`)
-- **Liquidity Locker**: `LiquidityLocker.sol` (`0x173FF5D4eF626869a5a35FF0EA0c56c0A7e4Cd8b`)
+---
+
+## 4. External Uniswap v4 Infrastructure
+
+- **PoolManager**: `0x8366a39CC670B4001A1121B8F6A443A643e40951`
+- **PositionManager**: `0x6049c9a0e26405C0985f9E3685C87d0aE917f82B` (not used by launches)
+- **Universal Router**: `0x4fcA4a51Ab4F23A7447b3284fBd7D73289A89Fb1` (frontend trading path, via Permit2)
+- **Permit2**: `0x000000000022D473030F116dDEE9F6B43aC78BA3`
 - **Protocol Fee Recipient**: `0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2`
 
----
-
-## 4. DEX Graduation & Post-Graduation Routing
-
-- **Canonical DEX**: Uniswap V3 on Arc Network (Uniswap V4 is not present on Arc)
-- **Uniswap V3 Factory**: `0xf0db7b58379503491d857dB50AC9ece64c653918`
-- **NonfungiblePositionManager**: `0x39654A85A4C05127f5Fd6ED22CAeC077A0fB1377`
-- **SwapRouter**: `0x53BF6B0684Ec7eF91e1387Da3D1a1769bC5A6F77`
-- **QuoterV2**: `0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7`
-- **WETH / Native USDC Address**: `0x3600000000000000000000000000000000000000`
-- **Graduation Flow**:
-  1. Once total raised USDC reaches 69,000 USDC, bonding curve transitions to `graduated = true`.
-  2. Factory calls `migrateCurve(curve, recipient)`:
-     - 69,000 USDC and 261,400,000 tokens are migrated to liquidity locker.
-     - Liquidity is deposited into full-range Uniswap V3 position with fee tier `10000` (1.00%).
-     - The minted NFT position is locked into `LiquidityLocker.sol`.
-  3. Post-graduation trades are executed via Uniswap V3 SwapRouter (`0x53BF...6F77`).
+Deployment, verification and fork testing: see `docs/ARC_DEPLOY.md`.

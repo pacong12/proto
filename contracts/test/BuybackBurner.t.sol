@@ -2,8 +2,8 @@
 pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
-import {BuybackBurner} from "../src/BuybackBurner.sol";
-import {LaunchpadToken} from "../src/LaunchpadToken.sol";
+import {BuybackBurner} from "../src/core/BuybackBurner.sol";
+import {LaunchpadToken} from "../src/core/LaunchpadToken.sol";
 import {ILaunchpadToken} from "../src/interfaces/ILaunchpadToken.sol";
 import {MockWETH, MockSwapRouter} from "./Mocks.sol";
 

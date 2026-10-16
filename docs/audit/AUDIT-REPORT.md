@@ -1,5 +1,7 @@
 # Laporan Audit Keamanan dan Keselarasan Sistem Proto
 
+> Status remediasi per 2026-10-16: ✅ = sudah diperbaiki, 🟡 = diperbaiki sebagian, ❌ = tidak valid, ⚪ = risiko diterima; verifikasi lengkap di [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
+
 ## Analisis Mendalam Arsitektur Berbasis Model Pons (ponsfamily.com) dan Argus (argus.world)
 
 Tanggal: 14 Oktober 2026  
@@ -94,7 +96,9 @@ Audit ini menemukan bahwa perpaduan kedua paradigma ini di Proto memiliki inkons
 
 ## 4. Temuan Audit: Tinggi (High Severity)
 
-### AUD-HIGH-01: Integrasi Factory Pons Mengabaikan Initial Buy Kreator
+### AUD-HIGH-01: Integrasi Factory Pons Mengabaikan Initial Buy Kreator — ❌ INVALID
+
+> **Status: ❌ INVALID (2026-10-16)** — Tidak ada integrasi factory Pons di kode; Proto memakai factory sendiri dan initial buy kreator diteruskan atomik. Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - Komponen: apps/frontoffice/src/composables/useLaunchpad.ts:153-186
 - Deskripsi:
@@ -115,7 +119,9 @@ Audit ini menemukan bahwa perpaduan kedua paradigma ini di Proto memiliki inkons
 - Rekomendasi:
   Teruskan initialBuyWei ke argumen kedua launchToken dan tambahkan nilai tersebut ke msg.value transaksi.
 
-### AUD-HIGH-02: Isolasi Total HolderFeeDistributor Menjebak WETH/USDC Dividen Argus
+### AUD-HIGH-02: Isolasi Total HolderFeeDistributor Menjebak WETH/USDC Dividen Argus — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — `HolderFeeDistributor` digantikan `ProtoFeeSplitter` per token (dividen USDC/ETH on-chain). Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - Komponen: contracts/src/HolderFeeDistributor.sol:86-100, contracts/src/LiquidityLocker.sol:183-238
 - Deskripsi:
@@ -128,7 +134,9 @@ Audit ini menemukan bahwa perpaduan kedua paradigma ini di Proto memiliki inkons
 - Rekomendasi:
   Bangun fungsi perutean otomatis di LiquidityLocker yang memanggil depositRewards, serta hitung dividen berdasarkan suplai beredar di luar pool likuiditas.
 
-### AUD-HIGH-03: Ilusi 4-Way Split Argus: Pembagian Pajak Hanya Hidup di Database Lokal
+### AUD-HIGH-03: Ilusi 4-Way Split Argus: Pembagian Pajak Hanya Hidup di Database Lokal — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Split ditegakkan on-chain oleh `ProtoFeeSplitter`: Arc saat launch; Robinhood lewat `ProtoV4Graduator.setRevenueSplit` (sekali, oleh kreator, sebelum pembeli pihak ketiga) yang dipakai saat graduasi. Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - Komponen: packages/math-sdk/src/revenue-split.ts, apps/api/src/server.ts:720-760, contracts/src/LaunchpadToken.sol:192-210
 - Deskripsi:
@@ -155,7 +163,9 @@ Audit ini menemukan bahwa perpaduan kedua paradigma ini di Proto memiliki inkons
 - Rekomendasi:
   Bebaskan alamat feeRecipient dari pengecekan to.code.length > 0 dan batas dompet maksimal pada LaunchpadToken._transfer.
 
-### AUD-HIGH-05: Pembekuan Mesin Buyback & Burn Saat Harga Token Mengalami Kenaikan
+### AUD-HIGH-05: Pembekuan Mesin Buyback & Burn Saat Harga Token Mengalami Kenaikan — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — `ProtoV4Buyback` membeli dan membakar token dari bagian burn tiap splitter dengan `sqrtPriceLimit` di TWAP hook (≥ 30 menit) ± 2%; harga yang dimanipulasi hanya membuat swap berhenti, dana disimpan. Keeper API (`KEEPER_PRIVATE_KEY`) hanya memicu, tidak memilih harga (fork test Arc USDC & Robinhood ETH). Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - Komponen: contracts/src/BuybackBurner.sol:194-201, 230
 - Deskripsi:
@@ -169,7 +179,9 @@ Audit ini menemukan bahwa perpaduan kedua paradigma ini di Proto memiliki inkons
 - Rekomendasi:
   Gunakan oracle TWAP Uniswap V3 untuk menghitung harga referensi dinamis alih-alih menguncinya pada harga transaksi terakhir.
 
-### AUD-HIGH-06: Risiko Kustodial Migrasi Likuiditas Uniswap V4
+### AUD-HIGH-06: Risiko Kustodial Migrasi Likuiditas Uniswap V4 — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Migrasi kustodial dihapus: `graduate(token)` permissionless → `ProtoV4Graduator`, posisi terkunci selamanya (fork test Robinhood). Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - Komponen: contracts/src/BondingCurve.sol:349-370, contracts/src/LaunchpadV2Factory.sol:240-248
 - Deskripsi:
@@ -203,7 +215,9 @@ Audit ini menemukan bahwa perpaduan kedua paradigma ini di Proto memiliki inkons
 - Rekomendasi:
   Wajibkan verifikasi tanda tangan SIWE (Sign-In with Ethereum) atau EIP-712 pada seluruh endpoint pembuatan konten sosial.
 
-### AUD-MED-02: Pengunduhan IPFS Tidak Dibatasi Membuka Celah DoS Memori
+### AUD-MED-02: Pengunduhan IPFS Tidak Dibatasi Membuka Celah DoS Memori — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Unduhan IPFS dibaca sebagai stream berbatas 5 MiB dan tidak ditulis ke disk. Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - Komponen: apps/api/src/modules/ipfs/ipfs.service.ts:150-180
 - Deskripsi:
@@ -211,7 +225,9 @@ Audit ini menemukan bahwa perpaduan kedua paradigma ini di Proto memiliki inkons
 - Rekomendasi:
   Pasang batas unduhan maksimum (misal 5 MiB) dan verifikasi hash multihash sebelum data disimpan ke disk.
 
-### AUD-MED-03: Resolusi IP Klien Rentan Spoofing dan Membagi Kuota Rate Limit Tunggal
+### AUD-MED-03: Resolusi IP Klien Rentan Spoofing dan Membagi Kuota Rate Limit Tunggal — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Rate limit memakai IP socket; header proxy hanya dengan `TRUST_PROXY=true`. Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - Komponen: apps/api/src/server.ts:2050-2070
 - Deskripsi:
@@ -239,7 +255,9 @@ Audit ini menemukan bahwa perpaduan kedua paradigma ini di Proto memiliki inkons
 - Rekomendasi:
   Hapus receive() atau buat revert agar seluruh transfer ETH wajib melalui fungsi buy().
 
-### AUD-LOW-02: Dead Code dan msg.value pada Fungsi Non-Payable di BaseLaunchpadFactory
+### AUD-LOW-02: Dead Code dan msg.value pada Fungsi Non-Payable di BaseLaunchpadFactory — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — `BaseLaunchpadFactory` dihapus. Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - Komponen: contracts/src/factories/base/BaseLaunchpadFactory.sol:123-210, contracts/src/BondingCurve.sol:341-343
 - Deskripsi:

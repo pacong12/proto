@@ -6,19 +6,83 @@
     <!-- User Position Card (Displayed when user holds tokens) -->
     <div
       v-if="isConnected && userHoldingTokensCount > 0"
-      class="p-3.5 rounded-2xl bg-card border border-border flex items-center justify-between text-xs font-sans shadow-xs"
+      class="p-3.5 rounded-2xl bg-card border border-border space-y-2 text-xs font-sans shadow-xs"
     >
-      <div class="space-y-0.5">
-        <span class="text-muted-foreground text-xs block">{{ t('yourHoldings') }}</span>
-        <span class="font-bold text-foreground text-sm">
-          {{ formatTokenBalance(userTokenBalance) }} ${{ currentToken.symbol }}
+      <div class="flex items-center justify-between">
+        <div class="space-y-0.5">
+          <span class="text-muted-foreground text-xs block">{{ t('yourHoldings') }}</span>
+          <span class="font-bold text-foreground text-sm">
+            {{ formatTokenBalance(userTokenBalance) }} ${{ currentToken.symbol }}
+          </span>
+        </div>
+        <div class="text-right space-y-0.5">
+          <span class="text-muted-foreground text-xs block">{{ t('currentValue') }}</span>
+          <span class="font-bold text-emerald-500 text-sm">
+            ${{ formatCompactUsd(userHoldingUsd) }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Quick Action: Share PnL Card -->
+      <div class="pt-1.5 border-t border-border/60 flex items-center justify-between">
+        <span class="text-[11px] text-muted-foreground font-mono">Unrealized position</span>
+        <Button
+          variant="outline"
+          size="sm"
+          class="h-6 px-2 text-[11px] font-bold gap-1 rounded-lg border-primary/30 text-primary hover:bg-primary/10 cursor-pointer"
+          @click="$emit('openPnlCard')"
+        >
+          <Sparkles class="w-3 h-3" />
+          <span>Share PnL</span>
+        </Button>
+      </div>
+    </div>
+
+    <!-- Live Holder Dividends Card (Argus style) -->
+    <div
+      v-if="isConnected && (hasDividends || isDividendsConfigured)"
+      class="p-3.5 rounded-2xl bg-card border border-sky-500/30 text-xs font-sans shadow-xs space-y-2"
+    >
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-1.5 text-sky-400 font-bold">
+          <span class="relative flex h-2 w-2">
+            <span
+              class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"
+            ></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
+          </span>
+          <span>Live Dividends</span>
+        </div>
+        <span
+          class="text-[10px] font-mono uppercase tracking-wider text-muted-foreground font-bold"
+        >
+          Holder Share
         </span>
       </div>
-      <div class="text-right space-y-0.5">
-        <span class="text-muted-foreground text-xs block">{{ t('currentValue') }}</span>
-        <span class="font-bold text-emerald-500 text-sm">
-          ${{ formatCompactUsd(userHoldingUsd) }}
-        </span>
+
+      <div class="flex items-center justify-between gap-3 pt-0.5">
+        <div>
+          <span class="text-sm sm:text-base font-bold font-mono text-foreground block">
+            {{ unclaimedDividendFormatted || '0.0000' }} {{ currencySymbol }}
+          </span>
+          <span class="text-[11px] font-mono text-muted-foreground block">
+            {{
+              Number(unclaimedDividendFormatted || 0) > 0
+                ? 'Accumulated from trades'
+                : 'Awaiting next trade'
+            }}
+          </span>
+        </div>
+
+        <Button
+          size="sm"
+          class="h-8 px-3 text-xs font-bold rounded-xl bg-sky-500 hover:bg-sky-600 text-white cursor-pointer shadow-xs"
+          :disabled="isClaimingDividends || Number(unclaimedDividendFormatted || 0) <= 0"
+          @click="$emit('claimDividends')"
+        >
+          <Loader2 v-if="isClaimingDividends" class="w-3 h-3 animate-spin mr-1" />
+          <span>Claim</span>
+        </Button>
       </div>
     </div>
 
@@ -371,7 +435,7 @@
 </template>
 
 <script setup lang="ts">
-import { AlertCircle, Settings, ArrowUpDown, Loader2 } from 'lucide-vue-next';
+import { AlertCircle, Settings, ArrowUpDown, Loader2, Sparkles } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -404,6 +468,10 @@ interface Props {
   isSwapDisabled: boolean;
   isSwapping: boolean;
   swapButtonText: string;
+  unclaimedDividendFormatted?: string;
+  isClaimingDividends?: boolean;
+  isDividendsConfigured?: boolean;
+  hasDividends?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -423,6 +491,8 @@ const emit = defineEmits<{
   (e: 'openWallet'): void;
   (e: 'switchNetwork'): void;
   (e: 'executeSwap'): void;
+  (e: 'claimDividends'): void;
+  (e: 'openPnlCard'): void;
 }>();
 
 const { t } = useI18n();

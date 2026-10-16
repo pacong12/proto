@@ -57,6 +57,9 @@
         :symbol="currentToken.symbol"
       />
 
+      <!-- Community Sentiment Gauge (Bull vs Bear 1-click voting) -->
+      <SentimentGauge :token-address="currentToken.address" :account="account || undefined" />
+
       <!-- ============================================================
            HYBRID PONS X PROTO TRADING GRID
            - Desktop: 2 Columns (Col 1: Chart, Facts, Tabs | Col 2: Sticky Swap Panel)
@@ -139,6 +142,10 @@
           :is-swap-disabled="isSwapDisabled"
           :is-swapping="isSwapping"
           :swap-button-text="swapButtonText"
+          :unclaimed-dividend-formatted="unclaimedDividendFormatted"
+          :is-claiming-dividends="isClaimingDividends"
+          :is-dividends-configured="isDividendsConfigured"
+          :has-dividends="hasDividends"
           @update:trade-tab="tradeTab = $event"
           @update:amount-in="amountIn = $event"
           @update:pay-in-usd="payInUsd = $event"
@@ -153,6 +160,8 @@
           @open-wallet="openWallet"
           @switch-network="switchOrAddNetwork(tokenNetwork)"
           @execute-swap="handleSwap"
+          @claim-dividends="handleClaimDividends"
+          @open-pnl-card="isPnlModalOpen = true"
         />
 
         <!-- 3. Bonding Curve & Protocol Facts Card (Pons app-facts style) -->
@@ -354,6 +363,18 @@
         @reply-posted="onReplyPosted"
       />
 
+      <!-- PnL Card Share Modal -->
+      <PnlCardModal
+        :is-open="isPnlModalOpen"
+        :current-token="currentToken"
+        :current-market-data="currentMarketData"
+        :user-holding-usd="userHoldingUsd"
+        :user-token-balance="userTokenBalance"
+        :account="account || undefined"
+        :token-network="tokenNetwork"
+        @close="isPnlModalOpen = false"
+      />
+
       <!-- Mobile Sticky Quick Trade Floating Dock (Mobile only: sm:hidden) -->
       <MobileTradeDock
         :current-token="currentToken"
@@ -365,6 +386,8 @@
 </template>
 
 <script setup lang="ts">
+import { getSessionHeaders } from '../lib/session';
+import { resolveSafeUrl } from '../lib/safe-url';
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { parseAbi, parseEther, erc20Abi } from 'viem';
 import { useI18n } from '@/lib/i18n';
@@ -397,7 +420,7 @@ import { useLaunchpad } from '../composables/useLaunchpad';
 import { useTaxConfig } from '../composables/useTaxConfig';
 import { usePinnedTokens } from '../composables/usePinnedTokens';
 import { useFeed } from '../composables/useFeed';
-import { getPublicClient } from '../lib/viem-client';
+import { getPublicClient, waitForReceiptWithFallback } from '../lib/viem-client';
 import { toast } from '@/components/ui/sonner';
 import { Badge, TraderTagBadge, type TraderTagType } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -442,7 +465,10 @@ import {
   TradeAboutTab,
   TradeCalloutsTab,
   MobileTradeDock,
+  SentimentGauge,
+  PnlCardModal,
 } from './trade';
+import { useHolderDividends, type HolderDividendEntry } from '../composables/useHolderDividends';
 import {
   shortenAddress,
   formatTokenNumber,
@@ -458,6 +484,7 @@ import {
   SUPPORTED_CHAINS,
   ARC_PROTO_CURVE_ADDRESS,
   resolveTokenNetwork,
+  supportsFeeSplitters,
   launchpadTokenAbi,
   launchpadV2FactoryAbi,
   bondingCurveAbi,
@@ -472,8 +499,7 @@ import {
   calculateCurveSellOutput,
   calculateRealizedPnl,
   calculateTraderTotalPnl,
-  ROBINHOOD_INITIAL_VIRTUAL_ETH_WEI,
-  ARC_INITIAL_VIRTUAL_ETH_WEI,
+  getChainMathConfig,
 } from '@proto/math-sdk';
 
 const props = defineProps<{
@@ -531,7 +557,7 @@ const {
 } = useTaxConfig();
 
 async function handleAcceptTax() {
-  const hash = await acceptTaxConfig(currentToken.value.address);
+  const hash = await acceptTaxConfig(currentToken.value.address, tokenNetwork.value.chainId);
   if (hash) {
     toast.success('Tax configuration applied onchain');
     await loadOnchainTax(currentToken.value.address);
@@ -541,11 +567,66 @@ async function handleAcceptTax() {
 }
 
 async function handleCancelTax() {
-  const hash = await cancelTaxConfig(currentToken.value.address);
+  const hash = await cancelTaxConfig(currentToken.value.address, tokenNetwork.value.chainId);
   if (hash) {
     toast.success('Tax proposal cancelled');
   } else if (taxError.value) {
     toast.error('Failed to cancel tax proposal: ' + taxError.value);
+  }
+}
+
+// Live Holder Dividends State (Argus style)
+const { loadSingleTokenDividend, claimDividend: claimHolderDividend } = useHolderDividends();
+const unclaimedDividend = ref<HolderDividendEntry | null>(null);
+const isClaimingDividends = ref(false);
+const isPnlModalOpen = ref(false);
+
+const isDividendsConfigured = computed(() => supportsFeeSplitters(tokenNetwork.value));
+
+const hasDividends = computed(() => {
+  return (unclaimedDividend.value?.earnedWei ?? 0n) > 0n;
+});
+
+const unclaimedDividendFormatted = computed(() => {
+  return unclaimedDividend.value?.earnedFormatted ?? '0.0000';
+});
+
+async function refreshLiveDividends() {
+  if (!account.value || !currentToken.value.address || !isDividendsConfigured.value) {
+    unclaimedDividend.value = null;
+    return;
+  }
+  try {
+    const entry = await loadSingleTokenDividend(
+      account.value as `0x${string}`,
+      currentToken.value.address as `0x${string}`,
+      currentToken.value.symbol,
+      currentToken.value.name,
+      tokenNetwork.value,
+    );
+    unclaimedDividend.value = entry;
+  } catch {
+    // Non-blocking
+  }
+}
+
+async function handleClaimDividends() {
+  if (!account.value || !currentToken.value.address || !isDividendsConfigured.value) return;
+  isClaimingDividends.value = true;
+  try {
+    const hash = await claimHolderDividend(
+      currentToken.value.address as `0x${string}`,
+      tokenNetwork.value,
+    );
+    if (hash) {
+      toast.success('Dividends claimed successfully!');
+      await refreshLiveDividends();
+      await updateBalance(undefined, tokenNetwork.value.chainId, true);
+    }
+  } catch (err) {
+    toast.error('Failed to claim dividends: ' + (err as Error).message);
+  } finally {
+    isClaimingDividends.value = false;
   }
 }
 
@@ -722,16 +803,6 @@ function shareCalloutToX(cmt: TokenCommentEntity) {
 // Watchlist Pin Feature (shared singleton composable)
 const { isPinned, togglePin } = usePinnedTokens();
 
-function resolveSafeUrl(url?: string): string {
-  if (!url) return '';
-  const trimmed = url.trim();
-  if (trimmed.startsWith('ipfs://')) {
-    const hash = trimmed.replace('ipfs://', '');
-    return `/api/ipfs/${hash}`;
-  }
-  return trimmed;
-}
-
 function isHolderAddress(addr: string): boolean {
   if (!addr || holders.value.length === 0) return false;
   return holders.value.some((h) => h.address.toLowerCase() === addr.toLowerCase());
@@ -794,7 +865,13 @@ async function handleUpdateTax() {
     const buyVal = parseFloat(editBuyTax.value || '0');
     const sellVal = parseFloat(editSellTax.value || '0');
     const recipient = (editTaxRecipient.value.trim() as `0x${string}`) || account.value;
-    const hash = await setTokenTax(currentToken.value.address, buyVal, sellVal, recipient);
+    const hash = await setTokenTax(
+      currentToken.value.address,
+      buyVal,
+      sellVal,
+      recipient,
+      tokenNetwork.value.chainId,
+    );
     if (hash) {
       toast.success('Tax change proposed — activates in 24 hours', {
         description: `Buy Tax: ${buyVal}%, Sell Tax: ${sellVal}%`,
@@ -1209,14 +1286,10 @@ function onVisibility() {
 }
 
 // -----------------------------------------------------------------------
-// Bonding curve AMM preview math
-// Mirrors BondingCurve.sol constants exactly:
-//   CURVE_TOKEN_SUPPLY = 800_000_000 (tokens allocated to curve, not wei)
-//   POOL_RESERVE_SUPPLY = 200_000_000 (reserved for V4 LP)
-//   fee = 1% (100 bps)
+// Constant-product preview math (BondingCurve, or the equivalent reserves of an in-pool v4
+// launch). Prefers the curve's indexed virtual reserves; otherwise rebuilds them from the chain's
+// math config: k = initial virtual quote × initial virtual token supply.
 // -----------------------------------------------------------------------
-const CURVE_TOKEN_SUPPLY = 800_000_000; // tokens (not wei)
-
 function getVirtualReserves() {
   const vEthRaw = currentToken.value.virtualEthReserve;
   const vTokenRaw = currentToken.value.virtualTokenReserve;
@@ -1227,23 +1300,24 @@ function getVirtualReserves() {
       return { vEth, vToken };
     }
   }
-  // Fallback: reconstruct from pairedPrincipalWeth + contract initial virtual reserves.
-  // BondingCurve constructor: virtualEthReserve = 3 ETH (Robinhood) / 4200 USDC (Arc),
-  // virtualTokenReserve = CURVE_TOKEN_SUPPLY = 800_000_000.
+  // SDK-02: virtual token reserve starts at the full supply (not 800M) and shrinks as quote
+  // flows in; chain parameters come from math-sdk instead of guessing from the currency symbol.
+  const math = getChainMathConfig(tokenNetwork.value.chainId);
+  const baseVirtualQuote = Number(math?.virtualQuoteReserve ?? 0n) / 1e18;
+  const baseVirtualToken = math?.totalSupplyNum ?? 1_000_000_000;
   const currentRaised = parseFloat(currentMarketData.value.pairedPrincipalWeth) || 0;
-  const isArc = currencySymbol.value === 'USDC';
-  const baseVirtualEth =
-    Number(isArc ? ARC_INITIAL_VIRTUAL_ETH_WEI : ROBINHOOD_INITIAL_VIRTUAL_ETH_WEI) / 1e18;
+  const vEth = baseVirtualQuote + currentRaised;
   return {
-    vEth: baseVirtualEth + currentRaised,
-    vToken: CURVE_TOKEN_SUPPLY,
+    vEth,
+    vToken: vEth > 0 ? (baseVirtualQuote * baseVirtualToken) / vEth : baseVirtualToken,
   };
 }
 
 function computeCurveBuyOutput(ethIn: number): number {
   if (ethIn <= 0) return 0;
   const { vEth, vToken } = getVirtualReserves();
-  return calculateCurveBuyOutput(ethIn, vEth, vToken);
+  const cap = getChainMathConfig(tokenNetwork.value.chainId)?.curveSupplyNum;
+  return calculateCurveBuyOutput(ethIn, vEth, vToken, cap);
 }
 
 function computeCurveSellOutput(tokensIn: number): number {
@@ -1646,7 +1720,10 @@ async function toggleLike(commentId: string) {
       data: { liked: boolean; likesCount: number };
     }>(`/api/tokens/${currentToken.value.address}/comments/${commentId}/like`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(await getSessionHeaders(account.value)),
+      },
       body: JSON.stringify({ userAddress: account.value }),
     });
     if (envelope.success && envelope.data) {
@@ -1913,10 +1990,35 @@ async function handleSwap() {
   });
 
   if (hash) {
+    const txExplorerLink = `${explorerUrl.value}/tx/${hash}`;
+    // FO-01: only announce success once the swap is mined and did not revert.
+    const receipt = await waitForReceiptWithFallback(
+      getPublicClient(tokenNetwork.value.chainId),
+      hash as `0x${string}`,
+    );
+    if (!receipt || receipt.status !== 'success') {
+      const reverted = receipt?.status === 'reverted';
+      toast.error(reverted ? 'Swap Reverted' : 'Swap Still Pending', {
+        id: loadingToastId,
+        description: reverted
+          ? 'The transaction was mined but reverted. No tokens were exchanged.'
+          : 'No confirmation yet. Check the explorer before retrying.',
+        action: {
+          label: 'View on Explorer',
+          onClick: () => {
+            if (typeof window !== 'undefined') {
+              window.open(txExplorerLink, '_blank', 'noopener,noreferrer');
+            }
+          },
+        },
+        duration: 10000,
+      });
+      return;
+    }
+
     swapSuccessTx.value = hash;
     isMaxSell.value = false;
 
-    const txExplorerLink = `${explorerUrl.value}/tx/${hash}`;
     toast.success('Swap Confirmed', {
       id: loadingToastId,
       description: isBuy.value
@@ -1946,6 +2048,7 @@ async function handleSwap() {
     await Promise.allSettled([
       updateBalance(),
       fetchUserTokenBalance(true),
+      refreshLiveDividends(),
       fetchTrades(currentToken.value.address, true),
       fetchCandlesticks(currentToken.value.address, selectedResolution.value, true),
       fetchHolders(currentToken.value.address, true),
@@ -2151,6 +2254,7 @@ watch(
       await Promise.allSettled([
         fetchUserTokenBalance(true),
         updateBalance(undefined, tokenNetwork.value.chainId, true),
+        refreshLiveDividends(),
       ]);
     }
   },
@@ -2163,10 +2267,12 @@ watch(
       Promise.allSettled([
         fetchUserTokenBalance(true),
         updateBalance(undefined, tokenNetwork.value.chainId, true),
+        refreshLiveDividends(),
         fetchCallouts(currentToken.value.address),
       ]);
     } else if (!newAcc) {
       userTokenBalance.value = 0n;
+      unclaimedDividend.value = null;
     }
   },
 );
@@ -2198,6 +2304,7 @@ onMounted(async () => {
     await Promise.allSettled([
       fetchUserTokenBalance(true),
       updateBalance(undefined, tokenNetwork.value.chainId, true),
+      refreshLiveDividends(),
     ]);
   }
 

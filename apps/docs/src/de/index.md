@@ -25,8 +25,8 @@ features:
     details: Automatisierte Limits verhindern, dass Bots beim Start das Angebot aufkaufen, und sichern faire Chancen für alle.
   - title: 70% Creator-Belohnungen
     details: Token-Ersteller erhalten 70% der anfallenden Handelsgebühren fortlaufend gutgeschrieben.
-  - title: Automatischer Rückkauf & Burn
-    details: 80% der Protokolleinnahmen werden automatisch für Rückkäufe und die dauerhafte Verbrennung von Token genutzt.
+  - title: Rückkauf & Burn
+    details: 'Creator können einen Teil ihres Gebührenanteils für Rückkauf und Burn bestimmen: Ein Contract kauft den Token im eigenen Pool, abgesichert durch einen 30-Minuten-TWAP, und sendet ihn an die Dead-Adresse.'
   - title: Schnell und kostengünstig
     details: Betrieben auf Robinhood Chain L2 und Arc Network für sofortige Bestätigungen bei minimalen Gasgebühren.
 ---

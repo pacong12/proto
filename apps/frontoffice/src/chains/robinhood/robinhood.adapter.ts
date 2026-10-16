@@ -1,88 +1,23 @@
-import {
-  parseEther,
-  erc20Abi,
-  decodeEventLog,
-  parseEventLogs,
-  type PublicClient,
-  type WalletClient,
-  type TransactionReceipt,
-} from 'viem';
+import { parseEventLogs, type PublicClient, type WalletClient } from 'viem';
 import {
   ROBINHOOD_CHAIN,
+  launchpadTokenAbi,
   launchpadV2FactoryAbi,
-  bondingCurveAbi,
-  swapRouterAbi,
+  protoV4GraduatorAbi,
 } from '@proto/shared-types';
+import { revenueSplitToBps, taxPercentToBps } from '@proto/math-sdk';
 import type { ChainAdapter, ChainLaunchParams, ChainLaunchResult, ChainSwapParams } from '../types';
 import { waitForReceiptWithFallback } from '../../lib/viem-client';
+import { executeCurveSwap, isCurveTrade } from '../shared/curve-swap';
+import { executeV4RouterSwap } from '../shared/v4-swap';
+import { isDeployed, parseInitialBuyWei } from '../shared/utils';
 
-function parseInitialBuyWei(raw?: string): bigint {
-  if (!raw) return 0n;
-  const clean = raw.trim();
-  if (!clean || clean === '0') return 0n;
-  try {
-    return parseEther(clean);
-  } catch {
-    const num = parseFloat(clean);
-    if (!Number.isFinite(num) || num <= 0) return 0n;
-    return parseEther(num.toFixed(6));
-  }
-}
+const NATIVE_ETH = '0x0000000000000000000000000000000000000000' as const;
 
-function resolveMinAmountOut(
-  explicitMin: bigint | undefined,
-  expectedOut: bigint | undefined,
-  slippagePercent: number,
-): bigint {
-  if (explicitMin !== undefined && explicitMin > 0n) return explicitMin;
-  if (expectedOut && expectedOut > 0n) {
-    const clampedSlippage = Math.min(Math.max(slippagePercent, 0), 49.0);
-    const factor = BigInt(Math.floor((100 - clampedSlippage) * 100));
-    return (expectedOut * factor) / 10_000n;
-  }
-  throw new Error('Swap output estimate unavailable. Please retry in a few seconds.');
-}
-
-function extractRobinhoodV2LaunchData(receipt: TransactionReceipt): ChainLaunchResult | null {
-  try {
-    const events = parseEventLogs({
-      abi: launchpadV2FactoryAbi,
-      logs: receipt.logs,
-      eventName: 'TokenLaunchedV2',
-    });
-    if (events.length > 0) {
-      return {
-        tokenAddress: events[0].args.token,
-        curveAddress: events[0].args.curve,
-        poolAddress: events[0].args.curve,
-      };
-    }
-  } catch {
-    // fallback
-  }
-
-  for (const log of receipt.logs) {
-    try {
-      const decoded = decodeEventLog({
-        abi: launchpadV2FactoryAbi,
-        eventName: 'TokenLaunchedV2',
-        topics: log.topics,
-        data: log.data,
-      });
-      if (decoded?.args?.token) {
-        return {
-          tokenAddress: decoded.args.token,
-          curveAddress: decoded.args.curve,
-          poolAddress: decoded.args.curve,
-        };
-      }
-    } catch {
-      // continue
-    }
-  }
-  return null;
-}
-
+/**
+ * Robinhood Chain: bonding curve, then permissionless graduation into a locked native-ETH
+ * Uniswap v4 pool (ProtoV4Graduator). Post-graduation trades go through ProtoV4Router.
+ */
 export class RobinhoodChainAdapter implements ChainAdapter {
   readonly network = ROBINHOOD_CHAIN;
   readonly chainId = ROBINHOOD_CHAIN.chainId;
@@ -95,17 +30,14 @@ export class RobinhoodChainAdapter implements ChainAdapter {
     account: `0x${string}`,
     onHashEmitted?: (hash: `0x${string}`) => void,
   ): Promise<ChainLaunchResult | null> {
-    const targetFactory = this.network.contracts.factoryV2 ?? this.network.contracts.factory;
-    if (!targetFactory || targetFactory === '0x0000000000000000000000000000000000000000') {
+    const factory = this.network.contracts.factoryV2 ?? this.network.contracts.factory;
+    if (!isDeployed(factory)) {
       throw new Error(`Factory contract not deployed on ${this.network.name}`);
     }
 
     const initialBuyWei = parseInitialBuyWei(params.initialBuyAmountEth);
-    const totalValue = this.network.launchConfig.launchFeeWei + initialBuyWei;
-
-    // Proto Sovereign LaunchpadV2Factory on Robinhood Chain
     const hash = await walletClient.writeContract({
-      address: targetFactory,
+      address: factory,
       abi: launchpadV2FactoryAbi,
       functionName: 'launchTokenV2',
       args: [
@@ -118,7 +50,7 @@ export class RobinhoodChainAdapter implements ChainAdapter {
         params.socials.website ?? '',
         params.minInitialTokensOut ?? 0n,
       ],
-      value: totalValue,
+      value: this.network.launchConfig.launchFeeWei + initialBuyWei,
       account,
       chain: walletClient.chain,
     });
@@ -131,8 +63,103 @@ export class RobinhoodChainAdapter implements ChainAdapter {
         `Transaction reverted on-chain. Hash: ${hash}. Block: ${receipt.blockNumber}.`,
       );
     }
-    const launchResult = extractRobinhoodV2LaunchData(receipt);
-    return launchResult;
+
+    const [launch] = parseEventLogs({
+      abi: launchpadV2FactoryAbi,
+      logs: receipt.logs,
+      eventName: 'TokenLaunchedV2',
+    });
+    if (!launch) return null;
+    const result: ChainLaunchResult = {
+      tokenAddress: launch.args.token,
+      curveAddress: launch.args.curve,
+      poolAddress: launch.args.curve,
+      taxApplied: false,
+    };
+
+    // Creator tax and revenue split are follow-up transactions that only succeed before any
+    // third-party buy (S18), so they are sent right after the launch is mined.
+    const buyTaxBps = taxPercentToBps(params.buyTaxPercent ?? 0);
+    const sellTaxBps = taxPercentToBps(params.sellTaxPercent ?? 0);
+    result.taxApplied = buyTaxBps === 0 && sellTaxBps === 0;
+    if (!result.taxApplied) {
+      try {
+        const taxHash = await walletClient.writeContract({
+          address: result.tokenAddress,
+          abi: launchpadTokenAbi,
+          functionName: 'setInitialTaxConfig',
+          args: [buyTaxBps, sellTaxBps, params.creatorTaxWallet ?? account],
+          account,
+          chain: walletClient.chain,
+        });
+        const taxReceipt = await waitForReceiptWithFallback(publicClient, taxHash, walletClient);
+        result.taxApplied = taxReceipt?.status === 'success';
+      } catch (err) {
+        console.warn('[RobinhoodChainAdapter] Initial tax was not applied:', err);
+      }
+    }
+
+    // The LP-fee split is enforced at graduation by ProtoV4Graduator (set once, before public trading).
+    const { graduator } = this.network.contracts;
+    if (params.revenueSplit && isDeployed(graduator)) {
+      try {
+        const split = revenueSplitToBps(params.revenueSplit);
+        const splitHash = await walletClient.writeContract({
+          address: graduator,
+          abi: protoV4GraduatorAbi,
+          functionName: 'setRevenueSplit',
+          args: [
+            result.tokenAddress,
+            split.holdersBps,
+            split.burnBps,
+            split.creatorBps,
+            split.liquidityBps,
+          ],
+          account,
+          chain: walletClient.chain,
+        });
+        await waitForReceiptWithFallback(publicClient, splitHash, walletClient);
+      } catch (err) {
+        console.warn('[RobinhoodChainAdapter] Revenue split was not applied:', err);
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Graduation is permissionless: if the curve finished but nobody has moved its liquidity into
+   * the v4 pool yet, the first post-graduation trader does it (factory.graduate) before swapping.
+   */
+  private async ensureGraduated(
+    params: ChainSwapParams,
+    walletClient: WalletClient,
+    publicClient: PublicClient,
+    account: `0x${string}`,
+  ): Promise<void> {
+    const { graduator } = this.network.contracts;
+    const factory = this.network.contracts.factoryV2 ?? this.network.contracts.factory;
+    if (!isDeployed(graduator) || !isDeployed(factory)) return;
+    const [splitter] = await publicClient.readContract({
+      address: graduator,
+      abi: protoV4GraduatorAbi,
+      functionName: 'graduations',
+      args: [params.tokenAddress],
+    });
+    if (isDeployed(splitter)) return;
+
+    const hash = await walletClient.writeContract({
+      address: factory,
+      abi: launchpadV2FactoryAbi,
+      functionName: 'graduate',
+      args: [params.tokenAddress],
+      account,
+      chain: walletClient.chain,
+    });
+    params.onApproveSubmitted?.(hash);
+    const receipt = await waitForReceiptWithFallback(publicClient, hash, walletClient);
+    if (receipt?.status !== 'success') {
+      throw new Error(`Graduating the token into its Uniswap v4 pool failed. Hash: ${hash}`);
+    }
   }
 
   async executeSwap(
@@ -141,200 +168,18 @@ export class RobinhoodChainAdapter implements ChainAdapter {
     publicClient: PublicClient,
     account: `0x${string}`,
   ): Promise<string | null> {
-    const isV2Curve =
-      !params.isGraduated &&
-      Boolean(params.curveAddress) &&
-      params.curveAddress !== '0x0000000000000000000000000000000000000000';
-
-    if (isV2Curve) {
-      if (params.isBuy) {
-        let expectedOut = params.expectedAmountOut;
-        if (!expectedOut || expectedOut <= 0n) {
-          try {
-            const [quoted] = await publicClient.readContract({
-              address: params.curveAddress!,
-              abi: bondingCurveAbi,
-              functionName: 'getAmountOutBuy',
-              args: [params.amountInWei],
-            });
-            if (quoted > 0n) expectedOut = quoted;
-          } catch {
-            // fallback
-          }
-        }
-
-        const minTokensOut = resolveMinAmountOut(
-          params.amountOutMinimum,
-          expectedOut,
-          params.slippagePercent,
-        );
-
-        const txHash = await walletClient.writeContract({
-          address: params.curveAddress!,
-          abi: bondingCurveAbi,
-          functionName: 'buy',
-          args: [minTokensOut],
-          value: params.amountInWei,
-          account,
-          chain: walletClient.chain,
-        });
-
-        params.onSubmitted?.(txHash);
-        waitForReceiptWithFallback(publicClient, txHash, walletClient).catch(() => {});
-        return txHash;
-      } else {
-        // Curve Sell on Robinhood
-        let sellTokenAmount = params.amountInWei;
-        try {
-          const curveBalance = await publicClient.getBalance({ address: params.curveAddress! });
-          if (curveBalance > 0n) {
-            let [quoteEth, quoteFee] = await publicClient.readContract({
-              address: params.curveAddress!,
-              abi: bondingCurveAbi,
-              functionName: 'getAmountOutSell',
-              args: [sellTokenAmount],
-            });
-            let it = 0;
-            while (
-              quoteEth + quoteFee > curveBalance &&
-              it < 5 &&
-              sellTokenAmount > 1_000_000_000n
-            ) {
-              const step = 1_000_000_000n * BigInt(10 ** it);
-              sellTokenAmount = sellTokenAmount > step ? sellTokenAmount - step : 0n;
-              [quoteEth, quoteFee] = await publicClient.readContract({
-                address: params.curveAddress!,
-                abi: bondingCurveAbi,
-                functionName: 'getAmountOutSell',
-                args: [sellTokenAmount],
-              });
-              it++;
-            }
-          }
-        } catch {
-          // fallback
-        }
-
-        let currentAllowance = 0n;
-        try {
-          currentAllowance = await publicClient.readContract({
-            address: params.tokenAddress,
-            abi: erc20Abi,
-            functionName: 'allowance',
-            args: [account, params.curveAddress!],
-          });
-        } catch {
-          currentAllowance = 0n;
-        }
-
-        if (currentAllowance < sellTokenAmount) {
-          const maxUint256 = 2n ** 256n - 1n;
-          const approveHash = await walletClient.writeContract({
-            address: params.tokenAddress,
-            abi: erc20Abi,
-            functionName: 'approve',
-            args: [params.curveAddress!, maxUint256],
-            account,
-            chain: walletClient.chain,
-          });
-          params.onApproveSubmitted?.(approveHash);
-        }
-
-        let expectedOut = params.expectedAmountOut;
-        try {
-          const [quoted] = await publicClient.readContract({
-            address: params.curveAddress!,
-            abi: bondingCurveAbi,
-            functionName: 'getAmountOutSell',
-            args: [sellTokenAmount],
-          });
-          if (quoted > 0n) expectedOut = quoted;
-        } catch {
-          // fallback
-        }
-
-        const minEthOut = resolveMinAmountOut(
-          params.amountOutMinimum,
-          expectedOut,
-          params.slippagePercent,
-        );
-
-        const txHash = await walletClient.writeContract({
-          address: params.curveAddress!,
-          abi: bondingCurveAbi,
-          functionName: 'sell',
-          args: [sellTokenAmount, minEthOut],
-          account,
-          chain: walletClient.chain,
-        });
-
-        params.onSubmitted?.(txHash);
-        waitForReceiptWithFallback(publicClient, txHash, walletClient).catch(() => {});
-        return txHash;
-      }
+    if (isCurveTrade(params)) {
+      return executeCurveSwap(params, walletClient, publicClient, account);
     }
-
-    // Default: Uniswap V3 SwapRouter on Robinhood
-    const tokenIn = params.isBuy ? this.network.contracts.weth : params.tokenAddress;
-    const tokenOut = params.isBuy ? params.tokenAddress : this.network.contracts.weth;
-
-    if (!params.isBuy) {
-      let currentAllowance = 0n;
-      try {
-        currentAllowance = await publicClient.readContract({
-          address: params.tokenAddress,
-          abi: erc20Abi,
-          functionName: 'allowance',
-          args: [account, this.network.contracts.swapRouter],
-        });
-      } catch {
-        currentAllowance = 0n;
-      }
-
-      if (currentAllowance < params.amountInWei) {
-        const maxUint256 = 2n ** 256n - 1n;
-        const approveHash = await walletClient.writeContract({
-          address: params.tokenAddress,
-          abi: erc20Abi,
-          functionName: 'approve',
-          args: [this.network.contracts.swapRouter, maxUint256],
-          account,
-          chain: walletClient.chain,
-        });
-        params.onApproveSubmitted?.(approveHash);
-      }
-    }
-
-    const minAmountOut = resolveMinAmountOut(
-      params.amountOutMinimum,
-      params.expectedAmountOut,
-      params.slippagePercent,
-    );
-
-    const swapHash = await walletClient.writeContract({
-      address: this.network.contracts.swapRouter,
-      abi: swapRouterAbi,
-      functionName: 'exactInputSingle',
-      args: [
-        {
-          tokenIn,
-          tokenOut,
-          fee: this.network.launchConfig.poolFee,
-          recipient: account,
-          deadline: BigInt(Math.floor(Date.now() / 1000) + 1200),
-          amountIn: params.amountInWei,
-          amountOutMinimum: minAmountOut,
-          sqrtPriceLimitX96: 0n,
-        },
-      ],
-      value: params.isBuy ? params.amountInWei : 0n,
+    await this.ensureGraduated(params, walletClient, publicClient, account);
+    return executeV4RouterSwap(
+      this.network,
+      { quote: NATIVE_ETH, nativeScale: 1n },
+      params,
+      walletClient,
+      publicClient,
       account,
-      chain: walletClient.chain,
-    });
-
-    params.onSubmitted?.(swapHash);
-    waitForReceiptWithFallback(publicClient, swapHash, walletClient).catch(() => {});
-    return swapHash;
+    );
   }
 }
 

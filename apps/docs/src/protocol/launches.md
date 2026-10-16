@@ -39,7 +39,7 @@ If you wish to purchase an initial allocation as the creator at the launch price
 
 Click **Launch Token** and confirm the transaction in your wallet:
 
-- **Launch Fee**: Fixed at `0.0005 ETH` to deploy contracts and set up liquidity.
+- **Launch Fee**: Fixed at `0.0005 ETH` on Robinhood Chain, or `0 USDC` on Arc Network (free launch with minimum 4.50 USDC pre-buy).
 - Once the transaction confirms, your token is live, verifiable, and tradable immediately!
 
 ---

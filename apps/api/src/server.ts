@@ -1,5 +1,7 @@
 import crypto from 'crypto';
 import { ChainRegistry } from './modules/chains';
+import { privateKeyToAccount } from 'viem/accounts';
+import { V4BuybackKeeperService } from './modules/tokens/infrastructure/keeper/v4-buyback-keeper.service';
 import {
   SqliteTokenRepository,
   ViemChainIndexerAdapter,
@@ -21,9 +23,12 @@ import {
   TOKEN_LAUNCHED_V2_EVENT,
 } from './index';
 import {
+  ArcLaunchRelayerService,
+  type RelayedLaunchParams,
+} from './modules/chains/arc/arc.relayer.service';
+import {
   createPublicClient,
-  http,
-  defineChain,
+  createWalletClient,
   decodeEventLog,
   parseAbiItem,
   verifyMessage,
@@ -35,8 +40,12 @@ import {
   ROBINHOOD_CHAIN,
   ARC_CHAIN,
   bondingCurveAbi,
-  holderFeeDistributorAbi,
+  protoFeeSplitterAbi,
+  protoV4GraduatorAbi,
+  protoV4HookAbi,
+  resolveFeeSplitter,
   launchpadTokenAbi,
+  type LaunchedTokenEntity,
   type NetworkConfig,
   TransactionIntent,
   type TokenCommentEntity,
@@ -45,16 +54,24 @@ import {
   resolveTokenNetwork,
   resolveNetworkByParam,
   buildCommentSignMessage,
+  buildSessionSignMessage,
+  sanitizeCreatorProfile,
+  type CreatorProfile,
   ok,
   err,
 } from '@proto/shared-types';
 import {
   safeStringify,
   parseJsonBody,
+  createSessionToken,
+  sessionAddressFromRequest,
   resolveCorsOrigin,
   buildSecurityHeaders,
   resolveRateLimitTier,
   deriveEnvelopeStatus,
+  chainFor,
+  rpcTransport,
+  anonymizeIp,
 } from './core';
 import {
   GetTradesUseCase,
@@ -65,20 +82,7 @@ import {
 } from './modules/trades';
 
 function createClientForNetwork(cfg: NetworkConfig) {
-  const c = defineChain({
-    id: cfg.chainId,
-    name: cfg.name,
-    nativeCurrency: cfg.nativeCurrency,
-    rpcUrls: {
-      default: { http: [cfg.rpcUrl] },
-    },
-  });
-  return createPublicClient({
-    chain: c,
-    // retryCount=0: polling errors are already caught in try/catch blocks;
-    // viem default retry=3 with backoff causes CPU spikes on reverted calls.
-    transport: http(cfg.rpcUrl, { retryCount: 0, timeout: 10_000 }),
-  });
+  return createPublicClient({ chain: chainFor(cfg), transport: rpcTransport(cfg) });
 }
 
 export const robinhoodClient: PublicClient = createClientForNetwork(ROBINHOOD_CHAIN);
@@ -141,6 +145,7 @@ const ipfsService = new IpfsService();
 const ipfsController = new IpfsController(ipfsService);
 
 export const chainRegistry = new ChainRegistry(robinhoodClient, arcClient, priceFeed);
+export const arcLaunchRelayer = new ArcLaunchRelayerService(arcClient, null);
 
 // Dedicated pollers for each supported chain (Robinhood Chain & Arc Network)
 const robinhoodPoller = new EventPollerService(
@@ -180,7 +185,9 @@ async function checkRateLimit(
     return count <= limit;
   } catch {
     // Redis unavailable: fall through to in-memory counter so rate limiting still applies.
-    logger.warn('Rate limit Redis unavailable, using in-memory fallback', { ip });
+    logger.warn('Rate limit Redis unavailable, using in-memory fallback', {
+      ip: anonymizeIp(ip),
+    });
     const count = await memoryCache.increment(key, windowMs);
     return count <= limit;
   }
@@ -255,6 +262,62 @@ function scheduleArcPoll(): void {
 scheduleRobinhoodPoll();
 // Stagger Arc chain by 30s to avoid simultaneous RPC bursts
 setTimeout(scheduleArcPoll, 30_000);
+
+// ---------------------------------------------------------------------------
+// TWAP-guarded buyback keeper (AUD-HIGH-05 / TKT-06). Enabled with KEEPER_PRIVATE_KEY; the
+// contract enforces the price guard, so the key only pays gas and can never pick a bad price.
+// ---------------------------------------------------------------------------
+const BUYBACK_KEEPER_INTERVAL_MS = Number(process.env.BUYBACK_KEEPER_INTERVAL_MS ?? 10 * 60_000);
+
+function startBuybackKeepers(): void {
+  const key = process.env.KEEPER_PRIVATE_KEY?.trim();
+  if (!key || process.env.NODE_ENV === 'test') return;
+  const account = privateKeyToAccount((key.startsWith('0x') ? key : `0x${key}`) as Hex);
+  for (const [network, client] of [
+    [ROBINHOOD_CHAIN, robinhoodClient],
+    [ARC_CHAIN, arcClient],
+  ] as const) {
+    const walletClient = createWalletClient({
+      account,
+      chain: client.chain,
+      transport: rpcTransport(network, 30_000),
+    });
+    const keeper = new V4BuybackKeeperService(client, walletClient, repository, network);
+    const tick = (): void => {
+      setTimeout(async () => {
+        try {
+          const executed = (await keeper.runOnce()).filter((r) => r.executed);
+          if (executed.length > 0) {
+            logger.info(`[BuybackKeeper:${network.name}] executed ${executed.length} buyback(s)`);
+          }
+        } catch (e) {
+          logger.warn(`[BuybackKeeper:${network.name}] cycle failed`, {
+            error: { name: (e as Error).name, message: (e as Error).message },
+          });
+        }
+        tick();
+      }, BUYBACK_KEEPER_INTERVAL_MS);
+    };
+    tick();
+  }
+}
+startBuybackKeepers();
+
+// DR-04: daily hot backups of the SQLite database (DB_BACKUP_INTERVAL_MS=0 disables).
+const DB_BACKUP_INTERVAL_MS = Number(process.env.DB_BACKUP_INTERVAL_MS ?? 24 * 60 * 60_000);
+const DB_BACKUP_KEEP = Number(process.env.DB_BACKUP_KEEP ?? 7);
+if (DB_BACKUP_INTERVAL_MS > 0 && process.env.NODE_ENV !== 'test') {
+  setInterval(() => {
+    try {
+      const file = repository.backup(DB_BACKUP_KEEP);
+      if (file) logger.info(`[SQLite] backup written to ${file}`);
+    } catch (e) {
+      logger.error('[SQLite] backup failed', {
+        error: { name: (e as Error).name, message: (e as Error).message },
+      });
+    }
+  }, DB_BACKUP_INTERVAL_MS).unref();
+}
 
 const TRADE_EVENT = parseAbiItem(
   'event Trade(address indexed trader, bool indexed isBuy, uint256 ethAmount, uint256 tokenAmount, uint256 feeEth)',
@@ -679,6 +742,23 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     });
   }
 
+  // POST /api/chains/arc/relayed-launch — gas-sponsored token launch on Arc Network
+  if (url.pathname === '/api/chains/arc/relayed-launch' && req.method === 'POST') {
+    try {
+      const body = await parseJsonBody<RelayedLaunchParams>(req, 16_384);
+      if (!body.name || !body.symbol || !body.creator) {
+        return replyError('INVALID_PARAM', 'name, symbol, and creator address are required', 400);
+      }
+      const res = await arcLaunchRelayer.relayLaunch(body);
+      if (res.success) {
+        return replyEnvelope(ok(res));
+      }
+      return replyError('RELAY_FAILED', res.error || 'Failed to broadcast relayed launch', 500);
+    } catch (e) {
+      return replyError('RELAY_ERROR', (e as Error).message, 500);
+    }
+  }
+
   // POST /api/tokens/:address/sync — trigger immediate on-demand blockchain event polling & receipt indexing
   const syncMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/sync$/);
   if (syncMatch && req.method === 'POST') {
@@ -723,17 +803,12 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         }
       }
       if (existing) {
+        // API-02: the request body is never trusted for tax data (this endpoint is public).
+        // Taxes and the revenue split are read from chain; the body only triggers re-indexing.
         let buyTaxBps = existing.taxConfig?.buyTaxBps ?? 0;
         let sellTaxBps = existing.taxConfig?.sellTaxBps ?? 0;
         let taxRecipient = existing.taxConfig?.taxRecipient ?? existing.deployer;
         let revenueSplit = existing.taxConfig?.revenueSplit;
-
-        if (body.taxConfig) {
-          if (typeof body.taxConfig.buyTaxBps === 'number') buyTaxBps = body.taxConfig.buyTaxBps;
-          if (typeof body.taxConfig.sellTaxBps === 'number') sellTaxBps = body.taxConfig.sellTaxBps;
-          if (body.taxConfig.taxRecipient) taxRecipient = body.taxConfig.taxRecipient;
-          if (body.taxConfig.revenueSplit) revenueSplit = body.taxConfig.revenueSplit;
-        }
 
         const chain = chainRegistry.resolveForToken(existing);
         try {
@@ -747,6 +822,75 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
             sellTaxBps = Number(onchainCfg[1]);
             if (onchainCfg[2] && onchainCfg[2] !== '0x0000000000000000000000000000000000000000') {
               taxRecipient = onchainCfg[2];
+            }
+          }
+        } catch {
+          // non-fatal
+        }
+
+        // In-pool v4 tokens: the fixed-forever tax lives in the hook, the split in the splitter.
+        const hook = chain.network.contracts.memeHook;
+        if (
+          existing.version === 'v4' &&
+          hook &&
+          hook !== '0x0000000000000000000000000000000000000000'
+        ) {
+          try {
+            const pool = await chain.client.readContract({
+              address: hook,
+              abi: protoV4HookAbi,
+              functionName: 'pools',
+              args: [existing.poolAddress],
+            });
+            buyTaxBps = Number(pool[3]);
+            sellTaxBps = Number(pool[4]);
+          } catch {
+            // non-fatal
+          }
+        }
+        try {
+          const splitter = await resolveFeeSplitter(chain.client, chain.network, address);
+          if (splitter) {
+            const [holders, burn, creatorShare, liquidity] = await Promise.all(
+              (['holdersBps', 'burnBps', 'creatorBps', 'liquidityBps'] as const).map(
+                (functionName) =>
+                  chain.client.readContract({
+                    address: splitter.address,
+                    abi: protoFeeSplitterAbi,
+                    functionName,
+                  }),
+              ),
+            );
+            revenueSplit = {
+              holders: Number(holders) / 100,
+              buyback: Number(burn) / 100,
+              creator: Number(creatorShare) / 100,
+              growth: Number(liquidity) / 100,
+            };
+          } else {
+            // Before graduation the creator's split is held by the graduator (if one was set).
+            const graduator = chain.network.contracts.graduator;
+            if (graduator && graduator !== '0x0000000000000000000000000000000000000000') {
+              const hasSplit = await chain.client.readContract({
+                address: graduator,
+                abi: protoV4GraduatorAbi,
+                functionName: 'hasTokenSplit',
+                args: [address],
+              });
+              if (hasSplit) {
+                const split = await chain.client.readContract({
+                  address: graduator,
+                  abi: protoV4GraduatorAbi,
+                  functionName: 'tokenSplits',
+                  args: [address],
+                });
+                revenueSplit = {
+                  holders: Number(split[1]) / 100,
+                  buyback: Number(split[2]) / 100,
+                  creator: Number(split[3]) / 100,
+                  growth: Number(split[4]) / 100,
+                };
+              }
             }
           }
         } catch {
@@ -839,9 +983,12 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       const chain = token
         ? chainRegistry.resolveForToken(token)
         : chainRegistry.getChainByParam(url.searchParams.get('chain'));
-      const distributorAddr = chain.network.contracts.holderFeeDistributor;
-
-      if (!distributorAddr || distributorAddr === '0x0000000000000000000000000000000000000000') {
+      // Dividends are paid by the token's ProtoFeeSplitter (created at launch on in-pool v4
+      // chains, at graduation on bonding-curve chains).
+      const splitter = await resolveFeeSplitter(chain.client, chain.network, tokenAddress).catch(
+        () => null,
+      );
+      if (!splitter) {
         return replyEnvelope(
           ok({
             tokenAddress,
@@ -856,47 +1003,35 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         );
       }
 
-      const client = chain.client;
-      const [earnedWei, feeState, snapBal] = await Promise.all([
-        client
+      const [earnedWei, totalStreamed] = await Promise.all([
+        chain.client
           .readContract({
-            address: distributorAddr,
-            abi: holderFeeDistributorAbi,
-            functionName: 'earned',
-            args: [tokenAddress, accountParam],
+            address: splitter.address,
+            abi: protoFeeSplitterAbi,
+            functionName: 'claimable',
+            args: [accountParam],
           })
-          .catch(() => 0n) as Promise<bigint>,
-        client
+          .catch(() => 0n),
+        chain.client
           .readContract({
-            address: distributorAddr,
-            abi: holderFeeDistributorAbi,
-            functionName: 'tokenFeeStates',
-            args: [tokenAddress],
+            address: splitter.address,
+            abi: protoFeeSplitterAbi,
+            functionName: 'totalStreamed',
           })
-          .catch(() => [0n, 0n]) as Promise<[bigint, bigint]>,
-        client
-          .readContract({
-            address: distributorAddr,
-            abi: holderFeeDistributorAbi,
-            functionName: 'snapshotBalance',
-            args: [tokenAddress, accountParam],
-          })
-          .catch(() => 0n) as Promise<bigint>,
+          .catch(() => 0n),
       ]);
-
-      const decimals = chain.network.nativeCurrency.decimals;
-      const earnedFormatted = Number(earnedWei) / 10 ** decimals;
 
       return replyEnvelope(
         ok({
           tokenAddress,
           account: accountParam,
           distributorAvailable: true,
-          distributorAddress: distributorAddr,
+          distributorAddress: splitter.address,
           earnedWei: earnedWei.toString(),
-          earnedFormatted,
-          snapshotBalanceWei: snapBal.toString(),
-          totalDistributedWei: feeState[1].toString(),
+          earnedFormatted: Number(earnedWei) / 10 ** splitter.quoteDecimals,
+          // Splitters checkpoint on every transfer; there is no separate balance snapshot.
+          snapshotBalanceWei: '0',
+          totalDistributedWei: totalStreamed.toString(),
           rewardAssetSymbol: chain.network.nativeCurrency.symbol,
         }),
       );
@@ -1226,6 +1361,74 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     }
   }
 
+  // GET / PUT /api/profiles/:address — public creator profiles (FO-10); writes need the owner's session
+  const profileMatch = url.pathname.match(/^\/api\/profiles\/(0x[a-fA-F0-9]{40})$/);
+  if (profileMatch && req.method === 'GET') {
+    const profile = (await repository.getProfile?.(profileMatch[1])) ?? null;
+    return replyEnvelope(ok({ address: profileMatch[1].toLowerCase(), profile }));
+  }
+  if (profileMatch && req.method === 'PUT') {
+    const address = profileMatch[1];
+    const sessionError = requireSocialSession(req, address, 'edit this profile');
+    if (sessionError)
+      return replyError(sessionError.code, sessionError.message, sessionError.status);
+    try {
+      const body = await parseJsonBody<Partial<CreatorProfile>>(req, 8192);
+      const profile = sanitizeCreatorProfile(body);
+      if (typeof profile === 'string') return replyError('INVALID_PROFILE', profile, 400);
+      await repository.saveProfile?.(address, profile);
+      return replyEnvelope(ok({ address: address.toLowerCase(), profile }));
+    } catch {
+      return replyError('PROFILE_ERROR', 'Failed to save profile', 400);
+    }
+  }
+
+  // DELETE /api/users/:address/data — GDPR erasure of the wallet's off-chain social data (GRC-04)
+  const eraseMatch = url.pathname.match(/^\/api\/users\/(0x[a-fA-F0-9]{40})\/data$/);
+  if (eraseMatch && req.method === 'DELETE') {
+    const address = eraseMatch[1];
+    const sessionError = requireSocialSession(req, address, 'delete this data', true);
+    if (sessionError)
+      return replyError(sessionError.code, sessionError.message, sessionError.status);
+    if (!repository.deleteUserData) return replyError('NOT_SUPPORTED', 'Erasure unavailable', 501);
+    const deleted = await repository.deleteUserData(address);
+    logger.info('[Privacy] user data erased', { address: address.toLowerCase(), ...deleted });
+    return replyEnvelope(ok({ address: address.toLowerCase(), deleted }));
+  }
+
+  // POST /api/auth/session — exchange one wallet signature for a 24h social session token (API-09)
+  if (url.pathname === '/api/auth/session' && req.method === 'POST') {
+    try {
+      const body = await parseJsonBody<{ address?: string; issuedAt?: number; signature?: Hex }>(
+        req,
+        2048,
+      );
+      const address = String(body.address || '').trim();
+      const issuedAt = Number(body.issuedAt);
+      if (!/^0x[a-fA-F0-9]{40}$/.test(address) || !body.signature || !Number.isFinite(issuedAt)) {
+        return replyError(
+          'INVALID_SESSION_REQUEST',
+          'address, issuedAt and signature are required',
+          400,
+        );
+      }
+      if (Math.abs(Date.now() - issuedAt) > 10 * 60 * 1000) {
+        return replyError('EXPIRED_SIGNATURE', 'Sign-in message is older than 10 minutes', 401);
+      }
+      const valid = await verifyMessage({
+        address: address as Address,
+        message: buildSessionSignMessage({ address, issuedAt }),
+        signature: body.signature,
+      }).catch(() => false);
+      if (!valid) {
+        return replyError('INVALID_SIGNATURE', 'Signature does not match the wallet address', 401);
+      }
+      return replyEnvelope(ok(createSessionToken(address)));
+    } catch {
+      return replyError('SESSION_ERROR', 'Failed to create session', 400);
+    }
+  }
+
   // POST /api/comments/:commentId/like OR /api/tokens/:address/comments/:commentId/like
   const directLikeMatch = url.pathname.match(/^\/api\/comments\/([a-zA-Z0-9_-]+)\/like$/);
   const tokenLikeMatch = url.pathname.match(
@@ -1239,6 +1442,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       if (!userAddress || !/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
         return replyError('INVALID_ADDRESS', 'Valid Ethereum address required to like', 400);
       }
+      const sessionError = requireSocialSession(req, userAddress, 'like');
+      if (sessionError)
+        return replyError(sessionError.code, sessionError.message, sessionError.status);
       const result = (await repository.toggleCommentLike?.(commentId, userAddress)) ?? {
         liked: false,
         likesCount: 0,
@@ -1264,6 +1470,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       if (!userAddress || !/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
         return replyError('INVALID_ADDRESS', 'Valid Ethereum address required to repost', 400);
       }
+      const sessionError = requireSocialSession(req, userAddress, 'repost');
+      if (sessionError)
+        return replyError(sessionError.code, sessionError.message, sessionError.status);
       const result = (await repository.toggleCommentRepost?.(commentId, userAddress)) ?? {
         reposted: false,
         repostsCount: 0,
@@ -1299,6 +1508,80 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       return replyError('NOT_FOUND', 'Callout not found', 404);
     }
     return new Response(safeStringify({ success: true, data: item, timestamp: Date.now() }), {
+      headers,
+    });
+  }
+
+  // GET & POST /api/tokens/:address/sentiment — Community Bull vs Bear sentiment gauge
+  const sentimentMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/sentiment$/);
+  if (sentimentMatch && req.method === 'GET') {
+    const address = sentimentMatch[1];
+    const user = url.searchParams.get('user') || undefined;
+    const sentiment = (await repository.getTokenSentiment?.(address, user)) || {
+      bullVotes: 0,
+      bearVotes: 0,
+      totalVotes: 0,
+      bullPercent: 50,
+      bearPercent: 50,
+    };
+    return new Response(safeStringify({ success: true, data: sentiment, timestamp: Date.now() }), {
+      headers,
+    });
+  }
+
+  if (sentimentMatch && req.method === 'POST') {
+    try {
+      const address = sentimentMatch[1];
+      const body = await parseJsonBody<{ userAddress?: string; sentiment?: string }>(req, 4096);
+      const userAddress = String(body.userAddress || '')
+        .trim()
+        .toLowerCase();
+      const sentiment = String(body.sentiment || '')
+        .trim()
+        .toLowerCase();
+
+      if (!userAddress || !/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
+        return replyError('INVALID_USER_ADDRESS', 'Valid Ethereum wallet address is required', 400);
+      }
+      if (sentiment !== 'bull' && sentiment !== 'bear') {
+        return replyError('INVALID_SENTIMENT', "Sentiment must be either 'bull' or 'bear'", 400);
+      }
+      const sessionError = requireSocialSession(req, userAddress, 'vote');
+      if (sessionError)
+        return replyError(sessionError.code, sessionError.message, sessionError.status);
+
+      const updated = await repository.voteTokenSentiment?.(address, userAddress, sentiment);
+      return new Response(safeStringify({ success: true, data: updated, timestamp: Date.now() }), {
+        status: 200,
+        headers,
+      });
+    } catch (e) {
+      console.error('[Sentiment POST Error]', e);
+      return replyError('SENTIMENT_ERROR', (e as Error).message, 500);
+    }
+  }
+
+  // GET /api/tokens/:address/buyback OR /api/buyback/stats — automated buyback & burn tracker
+  const buybackMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/buyback$/);
+  if (buybackMatch && req.method === 'GET') {
+    const address = buybackMatch[1];
+    const stats = (await repository.getBuybackStats?.(address)) || {
+      totalBurns: 0,
+      totalTokensBurned: '0',
+      recentBurns: [],
+    };
+    return new Response(safeStringify({ success: true, data: stats, timestamp: Date.now() }), {
+      headers,
+    });
+  }
+
+  if (url.pathname === '/api/buyback/stats' && req.method === 'GET') {
+    const stats = (await repository.getBuybackStats?.()) || {
+      totalBurns: 0,
+      totalTokensBurned: '0',
+      recentBurns: [],
+    };
+    return new Response(safeStringify({ success: true, data: stats, timestamp: Date.now() }), {
       headers,
     });
   }
@@ -1649,10 +1932,13 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       if (!file) {
         return replyError('FILE_NOT_FOUND', 'IPFS file not found', 404);
       }
+      // API-05 hardening: only images are rendered inline; anything else is a download.
+      const isImage = /^image\/(png|jpe?g|gif|webp|avif)$/i.test(file.mimeType);
       return new Response(req.method === 'HEAD' ? null : new Uint8Array(file.data), {
         status: 200,
         headers: {
-          'Content-Type': file.mimeType,
+          'Content-Type': isImage ? file.mimeType : 'application/octet-stream',
+          ...(isImage ? {} : { 'Content-Disposition': 'attachment' }),
           'Content-Length': file.data.byteLength.toString(),
           'Cache-Control': 'public, max-age=31536000, immutable',
           'Access-Control-Allow-Origin': '*',
@@ -1802,52 +2088,59 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const cached = await cache.get<unknown>(cacheKey);
     if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
 
-    // Use findByPoolAddress when a specific pool id is requested to avoid the 200-token cap.
+    // API-07: one indexed block-range query instead of a per-token query loop.
     const eventsToken = poolAddress
       ? ((repository.findByPoolAddress ? await repository.findByPoolAddress(poolAddress) : null) ??
         (await repository.findByAddress(poolAddress)))
       : null;
-    const allTokens = poolAddress ? (eventsToken ? [eventsToken] : []) : await repository.findAll();
+    if (poolAddress && !eventsToken) {
+      const empty = { events: [] };
+      await cache.set(cacheKey, empty, 5);
+      return replyJson(empty, 200, { 'x-cache': 'MISS' });
+    }
+    const trades = eventsToken
+      ? (await repository.getTrades(eventsToken.address, 1000, 0)).filter((t) => {
+          const bn = BigInt(t.blockNumber ?? 0);
+          return bn >= fromBlock && (toBlock === 0n || bn <= toBlock);
+        })
+      : ((await repository.getTradesInBlockRange?.(fromBlock, toBlock, 1000)) ?? []);
+
+    const tokens = new Map<string, LaunchedTokenEntity | null>();
     const swaps: unknown[] = [];
-
-    for (const token of allTokens) {
-      if (poolAddress && token.poolAddress.toLowerCase() !== poolAddress) continue;
-
-      const chain = chainRegistry.resolveForToken(token);
-      const network = chain.network;
-      const quotePriceUsd = await chain.getQuotePriceUsd();
-
-      const trades = await repository.getTrades(token.address, 100, 0);
-      for (const trade of trades) {
-        const bn =
-          typeof trade.blockNumber === 'bigint'
-            ? trade.blockNumber
-            : BigInt(trade.blockNumber ?? 0);
-        if (fromBlock > 0n && bn < fromBlock) continue;
-        if (toBlock > 0n && bn > toBlock) continue;
-
-        swaps.push({
-          block: {
-            blockNumber: Number(bn),
-            blockTimestamp: trade.timestamp,
-          },
-          eventType: trade.isBuy ? 'buy' : 'sell',
-          txnId: trade.transactionHash,
-          txnIndex: 0,
-          eventIndex: 0,
-          maker: trade.trader,
-          pairId: `${network.chainId}_${token.poolAddress}`,
-          asset0In: trade.isBuy ? (parseFloat(trade.wethAmount) / quotePriceUsd).toFixed(8) : '0',
-          asset1In: trade.isBuy ? '0' : trade.tokenAmount,
-          asset0Out: trade.isBuy ? '0' : (parseFloat(trade.wethAmount) / quotePriceUsd).toFixed(8),
-          asset1Out: trade.isBuy ? trade.tokenAmount : '0',
-          priceNative: (parseFloat(trade.tokenAmount) > 0
-            ? parseFloat(trade.wethAmount) / parseFloat(trade.tokenAmount)
-            : 0
-          ).toFixed(18),
-          priceUsd: trade.priceUsd.toFixed(8),
-        });
+    for (const trade of trades) {
+      const key = trade.tokenAddress.toLowerCase();
+      if (!tokens.has(key)) {
+        tokens.set(key, eventsToken ?? (await repository.findByAddress(trade.tokenAddress)));
       }
+      const token = tokens.get(key);
+      if (!token) continue;
+      const network = chainRegistry.resolveForToken(token).network;
+      const bn =
+        typeof trade.blockNumber === 'bigint' ? trade.blockNumber : BigInt(trade.blockNumber ?? 0);
+      // wethAmount is already denominated in the quote asset (ETH / USDC), not USD.
+      const quoteAmount = parseFloat(trade.wethAmount).toFixed(8);
+
+      swaps.push({
+        block: {
+          blockNumber: Number(bn),
+          blockTimestamp: trade.timestamp,
+        },
+        eventType: trade.isBuy ? 'buy' : 'sell',
+        txnId: trade.transactionHash,
+        txnIndex: 0,
+        eventIndex: 0,
+        maker: trade.trader,
+        pairId: `${network.chainId}_${token.poolAddress}`,
+        asset0In: trade.isBuy ? quoteAmount : '0',
+        asset1In: trade.isBuy ? '0' : trade.tokenAmount,
+        asset0Out: trade.isBuy ? '0' : quoteAmount,
+        asset1Out: trade.isBuy ? trade.tokenAmount : '0',
+        priceNative: (parseFloat(trade.tokenAmount) > 0
+          ? parseFloat(trade.wethAmount) / parseFloat(trade.tokenAmount)
+          : 0
+        ).toFixed(18),
+        priceUsd: trade.priceUsd.toFixed(8),
+      });
     }
 
     const payload = { events: swaps };
@@ -2084,26 +2377,61 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   return replyError('NOT_FOUND', `Route ${url.pathname} not found`, 404);
 }
 
-function extractClientIp(req: Request): string {
-  // C-02 fix: strictly resolve client IP. Only trust proxy headers when
-  // explicitly configured via TRUST_PROXY=true or behind Cloudflare in production.
-  const trustProxy = process.env.TRUST_PROXY === 'true';
-  const cfConnectingIp = req.headers.get('cf-connecting-ip')?.trim();
-  if (cfConnectingIp && (trustProxy || process.env.NODE_ENV === 'production')) {
-    return cfConnectingIp;
+/**
+ * API-09: social actions must come from the wallet they are attributed to. Requires a session
+ * token (POST /api/auth/session) for `userAddress`; tests may omit it, like signed comments.
+ */
+function requireSocialSession(
+  req: Request,
+  userAddress: string,
+  action: string,
+  strict = false,
+): { code: string; message: string; status: number } | null {
+  const sessionAddress = sessionAddressFromRequest(req);
+  // Tests may skip sessions on social routes; destructive routes (strict) never do.
+  if (!sessionAddress && !strict && process.env.NODE_ENV === 'test') return null;
+  if (!sessionAddress) {
+    return {
+      code: 'SESSION_REQUIRED',
+      message: `Sign in with your wallet to ${action}`,
+      status: 401,
+    };
   }
-  if (trustProxy) {
-    const xRealIp = req.headers.get('x-real-ip')?.trim();
-    if (xRealIp) return xRealIp;
-    const xff = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
-    if (xff) return xff;
+  if (sessionAddress !== userAddress.toLowerCase()) {
+    return {
+      code: 'SESSION_MISMATCH',
+      message: `Session wallet does not match the address used to ${action}`,
+      status: 403,
+    };
   }
-  return '127.0.0.1';
+  return null;
 }
 
-async function handleRequest(req: Request): Promise<Response> {
+/** Minimal view of Bun's server used to read the TCP peer address. */
+interface PeerAddressSource {
+  requestIP?(req: Request): { address: string } | null;
+}
+
+/**
+ * Resolves the client IP for rate limiting (API-03 / AUD-MED-03).
+ * The TCP peer address is used by default, so every client gets its own quota and forged
+ * headers are ignored. Proxy headers are honoured only with TRUST_PROXY=true, i.e. when the
+ * origin is reachable exclusively through Cloudflare / a trusted reverse proxy.
+ */
+function extractClientIp(req: Request, server?: PeerAddressSource): string {
+  if (process.env.TRUST_PROXY === 'true') {
+    const forwarded =
+      req.headers.get('cf-connecting-ip')?.trim() ||
+      req.headers.get('x-real-ip')?.trim() ||
+      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
+    if (forwarded) return forwarded;
+  }
+  return server?.requestIP?.(req)?.address ?? '127.0.0.1';
+}
+
+async function handleRequest(req: Request, server?: PeerAddressSource): Promise<Response> {
   const startTime = performance.now();
-  const clientIp = extractClientIp(req);
+  const clientIp = extractClientIp(req, server);
   const requestId = requestTracker.extractRequestId(req);
   try {
     const response = await routeRequest(req, clientIp);
@@ -2112,7 +2440,7 @@ async function handleRequest(req: Request): Promise<Response> {
     const error = err as Error;
     logger.error(`Unhandled error on ${req.method} ${new URL(req.url).pathname}`, {
       requestId,
-      ip: clientIp,
+      ip: anonymizeIp(clientIp),
       error: {
         name: error.name,
         // Only log message in production; stack is internal and must not be reflected to clients.
@@ -2125,7 +2453,7 @@ async function handleRequest(req: Request): Promise<Response> {
     const corsHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     };
     const errorResponse = new Response(

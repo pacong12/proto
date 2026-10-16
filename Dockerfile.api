@@ -23,15 +23,22 @@ COPY apps/api ./apps/api
 EXPOSE 3001
 ENV PORT=3001
 ENV NODE_ENV=production
+# Writable state lives on the data volume (the app runs as the unprivileged `bun` user).
+ENV DB_PATH=/app/data/proto.sqlite
+ENV UPLOADS_DIR=/app/data/uploads
 
 # Health check using wget (available in alpine)
 HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -qO- http://localhost:3001/health || exit 1
+  CMD wget -qO- http://127.0.0.1:3001/health || exit 1
 
+# DEVOPS-05: the API runs as the unprivileged `bun` user. The entrypoint starts as root only to
+# fix ownership of volumes created by older (root) images, then drops privileges via su-exec.
+RUN apk add --no-cache su-exec sqlite
 COPY apps/api/entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh \
+RUN chmod 755 /app/entrypoint.sh \
   && mkdir -p /app/data \
-  && chmod 777 /app/data
+  && chown -R bun:bun /app/data \
+  && chmod 750 /app/data
 
 ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["bun", "run", "apps/api/src/server.ts"]

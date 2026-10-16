@@ -5,6 +5,7 @@ import {
   CandlestickEntity,
   TokenCommentEntity,
   getUserIdentity,
+  type CreatorProfile,
 } from '@proto/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import {
@@ -19,6 +20,16 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
 
   async save(token: LaunchedTokenEntity): Promise<void> {
     this.tokens.set(token.address.toLowerCase(), token);
+  }
+
+  private profiles = new Map<string, CreatorProfile>();
+
+  async getProfile(address: string): Promise<CreatorProfile | null> {
+    return this.profiles.get(address.toLowerCase()) ?? null;
+  }
+
+  async saveProfile(address: string, profile: CreatorProfile): Promise<void> {
+    this.profiles.set(address.toLowerCase(), profile);
   }
 
   async findByAddress(address: `0x${string}`): Promise<LaunchedTokenEntity | null> {
@@ -104,6 +115,21 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
     return all
       .filter((t) => t.trader.toLowerCase() === target)
       .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, limit);
+  }
+
+  async getTradesInBlockRange(
+    fromBlock: bigint,
+    toBlock: bigint,
+    limit: number,
+  ): Promise<TradeEventEntity[]> {
+    return Array.from(this.trades.values())
+      .flat()
+      .filter((t) => {
+        const bn = BigInt(t.blockNumber ?? 0);
+        return bn >= fromBlock && (toBlock === 0n || bn <= toBlock);
+      })
+      .sort((a, b) => Number(BigInt(a.blockNumber ?? 0) - BigInt(b.blockNumber ?? 0)))
       .slice(0, limit);
   }
 

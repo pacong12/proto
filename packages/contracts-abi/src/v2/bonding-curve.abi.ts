@@ -282,6 +282,19 @@ export const bondingCurveAbi = [
   },
   {
     type: 'function',
+    name: 'graduationSqrtPriceX96',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'uint160',
+        internalType: 'uint160',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'graduationTarget',
     inputs: [],
     outputs: [
@@ -682,6 +695,11 @@ export const bondingCurveAbi = [
   {
     type: 'error',
     name: 'Overflow',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'Paused',
     inputs: [],
   },
   {

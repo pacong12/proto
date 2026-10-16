@@ -259,3 +259,51 @@ export function generateUsername(address?: string | null): string {
 export function formatHandle(address?: string | null): string {
   return getUserIdentity(address).handle;
 }
+
+/** Public creator profile, stored by the API and visible to everyone (FO-10). */
+export interface CreatorProfile {
+  displayName: string;
+  bio: string;
+  avatarUrl: string;
+  bannerUrl?: string;
+  twitter: string;
+  telegram: string;
+}
+
+export const PROFILE_LIMITS = {
+  displayName: 40,
+  bio: 280,
+  handle: 64,
+  url: 2048,
+} as const;
+
+/**
+ * Normalises a profile for storage. Images must be https:// or ipfs:// (or the API's IPFS path) so a
+ * stored profile can never carry javascript:, data: or blob: URLs. Returns an error message instead
+ * when a field is invalid.
+ */
+export function sanitizeCreatorProfile(input: Partial<CreatorProfile>): CreatorProfile | string {
+  const text = (value: unknown, max: number, field: string): string | Error => {
+    const v = typeof value === 'string' ? value.trim() : '';
+    return v.length > max ? new Error(`${field} is longer than ${max} characters`) : v;
+  };
+  const url = (value: unknown, field: string): string | Error => {
+    const v = text(value, PROFILE_LIMITS.url, field);
+    if (v instanceof Error || v === '') return v;
+    return /^(https:\/\/|ipfs:\/\/|\/api\/ipfs\/)/i.test(v)
+      ? v
+      : new Error(`${field} must be an https:// or ipfs:// URL`);
+  };
+  const profile = {
+    displayName: text(input.displayName, PROFILE_LIMITS.displayName, 'displayName'),
+    bio: text(input.bio, PROFILE_LIMITS.bio, 'bio'),
+    avatarUrl: url(input.avatarUrl, 'avatarUrl'),
+    bannerUrl: url(input.bannerUrl, 'bannerUrl'),
+    twitter: text(input.twitter, PROFILE_LIMITS.handle, 'twitter'),
+    telegram: text(input.telegram, PROFILE_LIMITS.handle, 'telegram'),
+  };
+  for (const value of Object.values(profile)) {
+    if (value instanceof Error) return value.message;
+  }
+  return profile as CreatorProfile;
+}

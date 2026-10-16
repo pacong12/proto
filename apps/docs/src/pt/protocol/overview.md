@@ -16,6 +16,7 @@ Proporciona uma experiência segura e transparente para qualquer pessoa criar e 
 
 ## Dois Modelos de Lançamento
 
-| Modelo               | Funcionamento                                                                                                                                | Ideal para                    |
-| :------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------- |
-| **v2 Bonding Curve** | Começa em uma curva de preço algorítmica ($x \cdot y = k$) e migra automaticamente para a Uniswap ao atingir a meta (4.2 ETH ou 8.400 USDC). | Tokens de comunidade e memes. |
+| Modelo                                 | Funcionamento                                                                                                                                                                                                                | Ideal para                                                   |
+| :------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------- |
+| **Robinhood: Bonding Curve**           | Negociação em uma curva de preço ($x \cdot y = k$). Cerca de 714,3 M de tokens (71,43%) são vendidos na curva; ao arrecadar 4,2 ETH o mercado se gradua para um pool Uniswap v4 bloqueado com os ~285,7 M restantes.         | Tokens de comunidade e memes.                                |
+| **Arc: Uniswap v4 desde o lançamento** | Todo o fornecimento é colocado como liquidez de um lado em um pool Uniswap v4 desde o primeiro bloco (valor inicial ≈ US$ 2.480). O token se gradua dentro do pool ao passar de ≈ US$ 45.000 de capitalização, sem migração. | Tokens que devem negociar na Uniswap desde o primeiro bloco. |

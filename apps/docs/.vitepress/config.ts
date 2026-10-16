@@ -13,6 +13,22 @@ export default defineConfig({
     hostname: 'https://docs.proto.family',
   },
   head: [
+    [
+      'meta',
+      { name: 'google-site-verification', content: 'l9eLMSYaQIM97O5MwBLUS5_vtevxk4QnDqRrequPcbQ' },
+    ],
+    [
+      'script',
+      {
+        async: '',
+        src: 'https://www.googletagmanager.com/gtag/js?id=G-WEG4HF874Z',
+      },
+    ],
+    [
+      'script',
+      {},
+      "window.dataLayer = window.dataLayer || [];\nfunction gtag(){dataLayer.push(arguments);}\ngtag('js', new Date());\ngtag('config', 'G-WEG4HF874Z');",
+    ],
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
     ['link', { rel: 'manifest', href: '/manifest.json' }],
     ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
