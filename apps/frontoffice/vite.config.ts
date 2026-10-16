@@ -17,6 +17,7 @@ const SITE_URL_FILES: Record<string, string> = {
   'sitemap.xml': 'application/xml; charset=utf-8',
   'llms.txt': 'text/plain; charset=utf-8',
   'opengraph-image.svg': 'image/svg+xml',
+  '.well-known/security.txt': 'text/plain; charset=utf-8',
 };
 
 function siteUrlsPlugin(urls: SiteUrls): Plugin {

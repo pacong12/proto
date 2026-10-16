@@ -10,7 +10,7 @@ import { renderSiteUrls, resolveSiteUrls } from '../../../packages/shared-types/
 // SITE_URL_FILES use %APP_URL% / %APP_HOST% / %DOCS_URL% placeholders rendered from these.
 const env = loadEnv('production', path.resolve(__dirname, '../../..'), 'VITE_');
 const SITE = resolveSiteUrls({ appUrl: env.VITE_APP_URL, docsUrl: env.VITE_DOCS_URL });
-const SITE_URL_FILES = ['robots.txt', 'llms.txt', 'opengraph-docs.svg'];
+const SITE_URL_FILES = ['robots.txt', 'llms.txt', 'opengraph-docs.svg', '.well-known/security.txt'];
 
 export default defineConfig({
   title: 'Goton User Guide',
