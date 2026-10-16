@@ -90,6 +90,14 @@ export interface TokenRepositoryPort {
   // Sentiment voting
   getProfile?(address: string): Promise<CreatorProfile | null>;
   saveProfile?(address: string, profile: CreatorProfile): Promise<void>;
+  /** GRC-04: erase off-chain social data tied to a wallet. */
+  deleteUserData?(address: string): Promise<{
+    comments: number;
+    likes: number;
+    reposts: number;
+    sentiment: number;
+    profile: number;
+  }>;
   getTokenSentiment?(
     tokenAddress: string,
     userAddress?: string,

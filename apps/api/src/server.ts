@@ -71,6 +71,7 @@ import {
   deriveEnvelopeStatus,
   chainFor,
   rpcTransport,
+  anonymizeIp,
 } from './core';
 import {
   GetTradesUseCase,
@@ -184,7 +185,9 @@ async function checkRateLimit(
     return count <= limit;
   } catch {
     // Redis unavailable: fall through to in-memory counter so rate limiting still applies.
-    logger.warn('Rate limit Redis unavailable, using in-memory fallback', { ip });
+    logger.warn('Rate limit Redis unavailable, using in-memory fallback', {
+      ip: anonymizeIp(ip),
+    });
     const count = await memoryCache.increment(key, windowMs);
     return count <= limit;
   }
@@ -1380,6 +1383,19 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     }
   }
 
+  // DELETE /api/users/:address/data — GDPR erasure of the wallet's off-chain social data (GRC-04)
+  const eraseMatch = url.pathname.match(/^\/api\/users\/(0x[a-fA-F0-9]{40})\/data$/);
+  if (eraseMatch && req.method === 'DELETE') {
+    const address = eraseMatch[1];
+    const sessionError = requireSocialSession(req, address, 'delete this data', true);
+    if (sessionError)
+      return replyError(sessionError.code, sessionError.message, sessionError.status);
+    if (!repository.deleteUserData) return replyError('NOT_SUPPORTED', 'Erasure unavailable', 501);
+    const deleted = await repository.deleteUserData(address);
+    logger.info('[Privacy] user data erased', { address: address.toLowerCase(), ...deleted });
+    return replyEnvelope(ok({ address: address.toLowerCase(), deleted }));
+  }
+
   // POST /api/auth/session — exchange one wallet signature for a 24h social session token (API-09)
   if (url.pathname === '/api/auth/session' && req.method === 'POST') {
     try {
@@ -2424,7 +2440,7 @@ async function handleRequest(req: Request, server?: PeerAddressSource): Promise<
     const error = err as Error;
     logger.error(`Unhandled error on ${req.method} ${new URL(req.url).pathname}`, {
       requestId,
-      ip: clientIp,
+      ip: anonymizeIp(clientIp),
       error: {
         name: error.name,
         // Only log message in production; stack is internal and must not be reflected to clients.
@@ -2437,7 +2453,7 @@ async function handleRequest(req: Request, server?: PeerAddressSource): Promise<
     const corsHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     };
     const errorResponse = new Response(

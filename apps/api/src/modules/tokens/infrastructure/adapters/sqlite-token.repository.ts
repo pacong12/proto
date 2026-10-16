@@ -1340,6 +1340,69 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     });
   }
 
+  /**
+   * GRC-04 (GDPR Art. 17): erases the off-chain social data tied to a wallet — its comments, likes,
+   * reposts, sentiment votes and profile — and keeps the counters on other users' posts consistent.
+   * Replies written by other users stay. On-chain data (trades, launches) is public and not erasable.
+   */
+  async deleteUserData(address: string): Promise<{
+    comments: number;
+    likes: number;
+    reposts: number;
+    sentiment: number;
+    profile: number;
+  }> {
+    return this.runInTransaction(() => {
+      const user = address.toLowerCase();
+      const changes = (r: unknown) => Number((r as { changes?: number | bigint }).changes ?? 0);
+
+      // Counters on other users' posts
+      this.db
+        .prepare(
+          `UPDATE comments SET likes_count = MAX(0, likes_count - 1)
+           WHERE id IN (SELECT comment_id FROM comment_likes WHERE LOWER(user_address) = ?)`,
+        )
+        .run(user);
+      this.db
+        .prepare(
+          `UPDATE comments SET reposts_count = MAX(0, reposts_count - 1)
+           WHERE id IN (SELECT comment_id FROM comment_reposts WHERE LOWER(user_address) = ?)`,
+        )
+        .run(user);
+      this.db
+        .prepare(
+          `UPDATE comments SET replies_count = MAX(0, replies_count - 1)
+           WHERE id IN (SELECT parent_id FROM comments
+                        WHERE LOWER(author_address) = ? AND parent_id IS NOT NULL)`,
+        )
+        .run(user);
+
+      const likes = changes(
+        this.db.prepare(`DELETE FROM comment_likes WHERE LOWER(user_address) = ?`).run(user),
+      );
+      const reposts = changes(
+        this.db.prepare(`DELETE FROM comment_reposts WHERE LOWER(user_address) = ?`).run(user),
+      );
+      // Others' likes/reposts on the user's own comments go with those comments
+      for (const table of ['comment_likes', 'comment_reposts']) {
+        this.db
+          .prepare(
+            `DELETE FROM ${table} WHERE comment_id IN
+             (SELECT id FROM comments WHERE LOWER(author_address) = ?)`,
+          )
+          .run(user);
+      }
+      const comments = changes(
+        this.db.prepare(`DELETE FROM comments WHERE LOWER(author_address) = ?`).run(user),
+      );
+      const sentiment = changes(
+        this.db.prepare(`DELETE FROM token_sentiment WHERE user_address = ?`).run(user),
+      );
+      const profile = changes(this.db.prepare(`DELETE FROM profiles WHERE address = ?`).run(user));
+      return { comments, likes, reposts, sentiment, profile };
+    });
+  }
+
   /** DR-04: hot snapshot into `<db dir>/backups`, keeping the newest `keep` files. */
   backup(keep?: number): string | null {
     if (this.dbPath === ':memory:') return null;
