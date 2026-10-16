@@ -14,6 +14,11 @@ export const vestingVaultAbi = [
         type: 'address',
         internalType: 'address',
       },
+      {
+        name: 'creator',
+        type: 'address',
+        internalType: 'address',
+      },
     ],
     outputs: [
       {
@@ -62,6 +67,11 @@ export const vestingVaultAbi = [
         internalType: 'address',
       },
       {
+        name: 'creator',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
         name: 'beneficiary',
         type: 'address',
         internalType: 'address',
@@ -82,6 +92,11 @@ export const vestingVaultAbi = [
     inputs: [
       {
         name: 'token',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'creator',
         type: 'address',
         internalType: 'address',
       },
@@ -122,6 +137,11 @@ export const vestingVaultAbi = [
     type: 'function',
     name: 'vestingSchedules',
     inputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
       {
         name: '',
         type: 'address',
