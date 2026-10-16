@@ -11,3 +11,12 @@ html_handling = "auto-trailing-slash"
 
 [observability.logs]
 enabled = true
+
+# Environments: "proto-docs" (top level) serves docs.goton.fun from the `production` branch, which
+# only moves on releases. "proto-docs-dev" serves https://proto-docs-dev.mutingudin12.workers.dev from `main`
+# (workers.dev only, noindex; deploy command `bunx wrangler deploy --env development`).
+[env.development]
+name = "proto-docs-dev"
+
+[env.development.build]
+command = "VITE_APP_URL=https://proto-dev.mutingudin12.workers.dev VITE_DOCS_URL=https://proto-docs-dev.mutingudin12.workers.dev bun run build"

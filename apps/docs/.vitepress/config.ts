@@ -41,6 +41,15 @@ export default defineConfig({
     }
   },
   head: [
+    // Development deploys (workers.dev) must not be indexed.
+    ...(SITE.docsHost.endsWith('.workers.dev')
+      ? [
+          ['meta', { name: 'robots', content: 'noindex, nofollow' }] as [
+            string,
+            Record<string, string>,
+          ],
+        ]
+      : []),
     [
       'meta',
       { name: 'google-site-verification', content: 'l9eLMSYaQIM97O5MwBLUS5_vtevxk4QnDqRrequPcbQ' },

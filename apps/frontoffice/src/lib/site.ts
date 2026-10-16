@@ -20,9 +20,9 @@ export function resolveDocsUrl(location: Location | undefined = globalThis.locat
     if (port === '3010' || hostname === 'localhost' || hostname === '127.0.0.1') {
       return `${protocol}//${hostname}:3002`;
     }
-    // Workers preview domain: proto.<account>.workers.dev -> proto-docs.<account>.workers.dev
+    // workers.dev: proto.<account> -> proto-docs.<account>, proto-dev.<account> -> proto-docs-dev.<account>
     if (hostname.endsWith('.workers.dev')) {
-      return `${protocol}//${hostname.replace(/^proto\./, 'proto-docs.')}`;
+      return `${protocol}//${hostname.replace(/^proto(-dev)?\./, 'proto-docs$1.')}`;
     }
   }
   return SITE.docsUrl;
