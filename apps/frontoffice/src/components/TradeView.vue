@@ -478,6 +478,7 @@ import {
   formatSubscriptPrice,
 } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
+import { setPageSeo } from '@/lib/seo';
 import {
   ROBINHOOD_CHAIN,
   ARC_CHAIN,
@@ -925,6 +926,21 @@ const tokenNetwork = computed(() =>
 );
 
 const isArcToken = computed(() => tokenNetwork.value.chainId === ARC_CHAIN.chainId);
+
+// SEO: name the page after the token once its metadata has loaded.
+watch(
+  () => [currentToken.value.name, currentToken.value.symbol, currentToken.value.address] as const,
+  ([name, symbol, address]) => {
+    if (!name || !symbol) return;
+    setPageSeo(`/token/${address}`, {
+      title: `${name} ($${symbol})`,
+      description:
+        currentToken.value.description?.slice(0, 155) ||
+        `Trade ${name} ($${symbol}) on ${tokenNetwork.value.name}: price, chart, holders and live trades on goton.`,
+    });
+  },
+  { immediate: true },
+);
 
 const currencySymbol = computed(() => tokenNetwork.value.nativeCurrency.symbol);
 const explorerUrl = computed(() => tokenNetwork.value.blockExplorer);

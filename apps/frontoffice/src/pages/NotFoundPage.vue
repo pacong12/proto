@@ -34,7 +34,6 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
 import { ArrowLeft, BookOpen, Home } from 'lucide-vue-next';
 import { buttonVariants } from '@/components/ui/button';
@@ -50,14 +49,4 @@ function goBack(): void {
   if (window.history.length > 1) router.back();
   else router.push('/launchpad');
 }
-
-// The SPA answers every path with 200, so tell crawlers not to index this view.
-let robotsMeta: HTMLMetaElement | null = null;
-onMounted(() => {
-  robotsMeta = document.createElement('meta');
-  robotsMeta.name = 'robots';
-  robotsMeta.content = 'noindex';
-  document.head.appendChild(robotsMeta);
-});
-onUnmounted(() => robotsMeta?.remove());
 </script>
