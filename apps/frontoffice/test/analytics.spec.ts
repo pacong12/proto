@@ -6,7 +6,9 @@ async function freshModule() {
   return import('../src/lib/analytics');
 }
 const gtagScripts = () =>
-  [...document.head.querySelectorAll('script')].filter((s) => s.src.includes('googletagmanager'));
+  Array.from(document.head.querySelectorAll('script')).filter((s) =>
+    s.src.includes('googletagmanager'),
+  );
 
 describe('analytics consent gate', () => {
   beforeEach(() => {
