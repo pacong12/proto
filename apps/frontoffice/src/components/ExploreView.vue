@@ -120,7 +120,7 @@
         class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-border text-sm"
       >
         <!-- Filter Tabs -->
-        <Tabs v-model="activeMarketTab" class="w-full md:w-auto">
+        <Tabs v-model="activeMarketTab" class="w-full min-w-0 md:w-auto md:flex-1">
           <TabsList
             variant="line"
             class="overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0 w-auto"

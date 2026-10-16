@@ -292,11 +292,11 @@ function copyAddress() {
           </SelectContent>
         </Select>
 
-        <!-- Theme Switcher (Always accessible on desktop) -->
+        <!-- Theme Switcher: header from sm up; on phones the drawer has the theme control. -->
         <Button
           variant="outline"
           size="sm"
-          class="h-9 w-9 p-0 border-border bg-card hover:bg-muted text-foreground rounded-xl cursor-pointer shrink-0"
+          class="hidden sm:inline-flex h-9 w-9 p-0 border-border bg-card hover:bg-muted text-foreground rounded-xl cursor-pointer shrink-0"
           :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
           :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
           @click="toggleTheme"
