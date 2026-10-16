@@ -1,0 +1,45 @@
+name: Post-deploy Smoke Checks
+
+# Sanity checks against the live site (scripts/smoke.ts): pages, security headers, indexing,
+# API proxy, maintenance status, robots/sitemap, security.txt, legal redirects and docs.
+on:
+  # Production: after each release, once Cloudflare has had time to build the production branch.
+  workflow_run:
+    workflows: ['Release Automation & Changelog']
+    types: [completed]
+  schedule:
+    - cron: '30 6 * * *' # daily, catches drift and expired certificates or files
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to check'
+        type: choice
+        options: [production, development]
+        default: production
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Smoke checks (${{ inputs.environment || 'production' }})
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Wait for the Cloudflare production build
+        if: github.event_name == 'workflow_run'
+        run: sleep 300
+
+      - name: Run smoke checks
+        env:
+          SMOKE_ENV: ${{ inputs.environment || 'production' }}
+        run: bun run scripts/smoke.ts

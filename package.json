@@ -19,6 +19,7 @@
     "test:contracts": "cd contracts && forge test",
     "test:e2e": "playwright test",
     "test:load": "bun run scripts/load-test.ts",
+    "test:smoke": "bun run scripts/smoke.ts",
     "deploy:local": "cd contracts && forge script script/robinhood/DeployRobinhoodV2.s.sol --rpc-url http://127.0.0.1:8545 --broadcast",
     "deploy:robinhood": "cd contracts && forge script script/robinhood/DeployRobinhoodV2.s.sol --rpc-url https://rpc.mainnet.chain.robinhood.com --broadcast",
     "deploy:arc": "cd contracts && forge script script/arc/DeployArc.s.sol --rpc-url https://rpc.mainnet.arc.io --broadcast",
