@@ -4,7 +4,7 @@ interface Env {
   };
   // Set to 'true' in wrangler.toml [vars] to send CSP as Report-Only.
   // Use this in staging before enforcing in production.
-  // Backend API URL on VPS (e.g. http://31.97.189.81:3011 or https://api.proto.family)
+  // Backend API URL on VPS (e.g. https://api.robinmood.xyz)
   BACKEND_API_URL?: string;
   // Set to 'true' in wrangler.toml [vars] to send CSP as Report-Only.
   // Use this in staging before enforcing in production.

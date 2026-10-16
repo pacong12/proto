@@ -38,7 +38,7 @@ git clone https://github.com/pacong12/proto.git .
 cat << 'EOF' > .env
 PORT=3001
 NODE_ENV=production
-ALLOWED_ORIGINS=https://proto.mutingudin12.workers.dev,https://proto.family
+CORS_ALLOWED_ORIGINS=https://goton.fun,https://docs.goton.fun
 
 # Kunci untuk autentikasi live dashboard /devops
 DEVOPS_AUTH_TOKEN=ganti_dengan_token_rahasia_anda

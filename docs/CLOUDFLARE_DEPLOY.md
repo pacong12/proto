@@ -12,10 +12,10 @@
 
 ## Environment Variables (Cloudflare Pages Dashboard)
 
-| Variable                | Value                      | Notes                      |
-| ----------------------- | -------------------------- | -------------------------- |
-| `VITE_REOWN_PROJECT_ID` | `<your_reown_project_id>`  | Required for wallet modal  |
-| `VITE_API_BASE_URL`     | `https://api.proto.family` | URL of deployed API server |
+| Variable                | Value                       | Notes                      |
+| ----------------------- | --------------------------- | -------------------------- |
+| `VITE_REOWN_PROJECT_ID` | `<your_reown_project_id>`   | Required for wallet modal  |
+| `VITE_API_BASE_URL`     | `https://api.robinmood.xyz` | URL of deployed API server |
 
 ## Files Added
 
