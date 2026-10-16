@@ -363,6 +363,11 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     pnlShareOnX: 'Share on X',
     pnlVerifiedProfit: 'Verified Profit',
     pnlOpenPosition: 'Open Position',
+    eraseDataButton: 'Delete my social data',
+    eraseDataConfirmButton: 'Confirm permanent deletion',
+    eraseDataConfirm:
+      'This permanently deletes your comments, likes, sentiment votes and profile. On-chain trades and launches are public and cannot be deleted.',
+    eraseDataDone: 'Your social data has been deleted',
   },
   id: {
     explore: 'Jelajahi',
@@ -694,6 +699,11 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     pnlShareOnX: 'Bagikan ke X',
     pnlVerifiedProfit: 'Profit Terverifikasi',
     pnlOpenPosition: 'Posisi Terbuka',
+    eraseDataButton: 'Hapus data sosial saya',
+    eraseDataConfirmButton: 'Konfirmasi hapus permanen',
+    eraseDataConfirm:
+      'Ini menghapus permanen komentar, like, vote sentimen, dan profil Anda. Transaksi dan peluncuran on-chain bersifat publik dan tidak dapat dihapus.',
+    eraseDataDone: 'Data sosial Anda telah dihapus',
   },
   zh: {
     explore: '探索',
@@ -1013,6 +1023,11 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     pnlShareOnX: '分享到 X',
     pnlVerifiedProfit: '已验证盈利',
     pnlOpenPosition: '持仓中',
+    eraseDataButton: '删除我的社交数据',
+    eraseDataConfirmButton: '确认永久删除',
+    eraseDataConfirm:
+      '这将永久删除您的评论、点赞、情绪投票和个人资料。链上交易和发行记录是公开的，无法删除。',
+    eraseDataDone: '您的社交数据已删除',
   },
   ja: {
     explore: '見つける',
@@ -1340,6 +1355,11 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     pnlShareOnX: 'Xで共有',
     pnlVerifiedProfit: '確定済み利益',
     pnlOpenPosition: '保有中ポジション',
+    eraseDataButton: 'ソーシャルデータを削除',
+    eraseDataConfirmButton: '完全削除を確認',
+    eraseDataConfirm:
+      'コメント、いいね、センチメント投票、プロフィールを完全に削除します。オンチェーンの取引とローンチは公開情報のため削除できません。',
+    eraseDataDone: 'ソーシャルデータを削除しました',
   },
   ko: {
     explore: '탐색',
@@ -1664,6 +1684,11 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     pnlShareOnX: 'X에 공유',
     pnlVerifiedProfit: '검증된 수익',
     pnlOpenPosition: '보유 포지션',
+    eraseDataButton: '내 소셜 데이터 삭제',
+    eraseDataConfirmButton: '영구 삭제 확인',
+    eraseDataConfirm:
+      '댓글, 좋아요, 심리 투표, 프로필이 영구 삭제됩니다. 온체인 거래와 출시 기록은 공개 정보라 삭제할 수 없습니다.',
+    eraseDataDone: '소셜 데이터가 삭제되었습니다',
   },
   es: {
     explore: 'Explorar',
@@ -1997,6 +2022,11 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     pnlShareOnX: 'Compartir en X',
     pnlVerifiedProfit: 'Ganancia verificada',
     pnlOpenPosition: 'Posición abierta',
+    eraseDataButton: 'Eliminar mis datos sociales',
+    eraseDataConfirmButton: 'Confirmar eliminación permanente',
+    eraseDataConfirm:
+      'Esto elimina para siempre tus comentarios, me gusta, votos de sentimiento y perfil. Las operaciones y lanzamientos on-chain son públicos y no se pueden eliminar.',
+    eraseDataDone: 'Tus datos sociales se han eliminado',
   },
   ru: {
     explore: 'Обзор',
@@ -2328,6 +2358,11 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     pnlShareOnX: 'Поделиться в X',
     pnlVerifiedProfit: 'Подтверждённая прибыль',
     pnlOpenPosition: 'Открытая позиция',
+    eraseDataButton: 'Удалить мои социальные данные',
+    eraseDataConfirmButton: 'Подтвердить безвозвратное удаление',
+    eraseDataConfirm:
+      'Ваши комментарии, лайки, голоса настроения и профиль будут удалены навсегда. Сделки и запуски в блокчейне публичны и не могут быть удалены.',
+    eraseDataDone: 'Ваши социальные данные удалены',
   },
   ar: {
     explore: 'استكشاف',
@@ -2650,6 +2685,11 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     pnlShareOnX: 'مشاركة على X',
     pnlVerifiedProfit: 'ربح موثق',
     pnlOpenPosition: 'مركز مفتوح',
+    eraseDataButton: 'حذف بياناتي الاجتماعية',
+    eraseDataConfirmButton: 'تأكيد الحذف النهائي',
+    eraseDataConfirm:
+      'سيؤدي هذا إلى حذف تعليقاتك وإعجاباتك وأصوات المشاعر وملفك الشخصي نهائياً. الصفقات والإطلاقات على السلسلة عامة ولا يمكن حذفها.',
+    eraseDataDone: 'تم حذف بياناتك الاجتماعية',
   },
   fr: {
     explore: 'Explorer',
@@ -2982,6 +3022,11 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     pnlShareOnX: 'Partager sur X',
     pnlVerifiedProfit: 'Profit vérifié',
     pnlOpenPosition: 'Position ouverte',
+    eraseDataButton: 'Supprimer mes données sociales',
+    eraseDataConfirmButton: 'Confirmer la suppression définitive',
+    eraseDataConfirm:
+      'Cela supprime définitivement vos commentaires, likes, votes de sentiment et votre profil. Les transactions et lancements on-chain sont publics et ne peuvent pas être supprimés.',
+    eraseDataDone: 'Vos données sociales ont été supprimées',
   },
   de: {
     explore: 'Erkunden',
@@ -3315,6 +3360,11 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     pnlShareOnX: 'Auf X teilen',
     pnlVerifiedProfit: 'Bestätigter Gewinn',
     pnlOpenPosition: 'Offene Position',
+    eraseDataButton: 'Meine Social-Daten löschen',
+    eraseDataConfirmButton: 'Endgültiges Löschen bestätigen',
+    eraseDataConfirm:
+      'Dadurch werden deine Kommentare, Likes, Stimmungsabstimmungen und dein Profil endgültig gelöscht. On-Chain-Trades und Launches sind öffentlich und können nicht gelöscht werden.',
+    eraseDataDone: 'Deine Social-Daten wurden gelöscht',
   },
   pt: {
     explore: 'Explorar',
@@ -3645,6 +3695,11 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     pnlShareOnX: 'Compartilhar no X',
     pnlVerifiedProfit: 'Lucro verificado',
     pnlOpenPosition: 'Posição aberta',
+    eraseDataButton: 'Excluir meus dados sociais',
+    eraseDataConfirmButton: 'Confirmar exclusão permanente',
+    eraseDataConfirm:
+      'Isso exclui permanentemente seus comentários, curtidas, votos de sentimento e perfil. Negociações e lançamentos on-chain são públicos e não podem ser excluídos.',
+    eraseDataDone: 'Seus dados sociais foram excluídos',
   },
 };
 
