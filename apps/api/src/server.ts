@@ -59,6 +59,8 @@ import {
   buildSecurityHeaders,
   resolveRateLimitTier,
   deriveEnvelopeStatus,
+  chainFor,
+  rpcTransport,
 } from './core';
 import {
   GetTradesUseCase,
@@ -69,20 +71,7 @@ import {
 } from './modules/trades';
 
 function createClientForNetwork(cfg: NetworkConfig) {
-  const c = defineChain({
-    id: cfg.chainId,
-    name: cfg.name,
-    nativeCurrency: cfg.nativeCurrency,
-    rpcUrls: {
-      default: { http: [cfg.rpcUrl] },
-    },
-  });
-  return createPublicClient({
-    chain: c,
-    // retryCount=0: polling errors are already caught in try/catch blocks;
-    // viem default retry=3 with backoff causes CPU spikes on reverted calls.
-    transport: http(cfg.rpcUrl, { retryCount: 0, timeout: 10_000 }),
-  });
+  return createPublicClient({ chain: chainFor(cfg), transport: rpcTransport(cfg) });
 }
 
 export const robinhoodClient: PublicClient = createClientForNetwork(ROBINHOOD_CHAIN);
@@ -259,6 +248,22 @@ function scheduleArcPoll(): void {
 scheduleRobinhoodPoll();
 // Stagger Arc chain by 30s to avoid simultaneous RPC bursts
 setTimeout(scheduleArcPoll, 30_000);
+
+// DR-04: daily hot backups of the SQLite database (DB_BACKUP_INTERVAL_MS=0 disables).
+const DB_BACKUP_INTERVAL_MS = Number(process.env.DB_BACKUP_INTERVAL_MS ?? 24 * 60 * 60_000);
+const DB_BACKUP_KEEP = Number(process.env.DB_BACKUP_KEEP ?? 7);
+if (DB_BACKUP_INTERVAL_MS > 0 && process.env.NODE_ENV !== 'test') {
+  setInterval(() => {
+    try {
+      const file = repository.backup(DB_BACKUP_KEEP);
+      if (file) logger.info(`[SQLite] backup written to ${file}`);
+    } catch (e) {
+      logger.error('[SQLite] backup failed', {
+        error: { name: (e as Error).name, message: (e as Error).message },
+      });
+    }
+  }, DB_BACKUP_INTERVAL_MS).unref();
+}
 
 const TRADE_EVENT = parseAbiItem(
   'event Trade(address indexed trader, bool indexed isBuy, uint256 ethAmount, uint256 tokenAmount, uint256 feeEth)',
