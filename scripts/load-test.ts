@@ -13,6 +13,8 @@ interface BenchResult {
   p50Ms: number;
   p99Ms: number;
   errors: number;
+  /** Responses with 5xx status or 429 (rate limited): both count as failures. */
+  failedResponses: number;
   passed: boolean;
 }
 
@@ -22,14 +24,38 @@ const SLA = {
   maxErrors: 0,
 };
 
-async function bench(url: string, connections = 20, duration = 5): Promise<BenchResult> {
+const CONNECTIONS = Number(process.env.LOAD_CONNECTIONS ?? 20);
+const DURATION_S = Number(process.env.LOAD_DURATION ?? 5);
+
+/** A random client IP per request, so the per-IP rate limiter sees many clients (needs TRUST_PROXY=true). */
+function randomClientIp(): string {
+  const octet = () => Math.floor(Math.random() * 254) + 1;
+  return `10.${octet()}.${octet()}.${octet()}`;
+}
+
+async function bench(url: string): Promise<BenchResult> {
   const result = await autocannon({
     url,
-    connections,
-    duration,
+    connections: CONNECTIONS,
+    duration: DURATION_S,
     pipelining: 1,
     headers: { 'content-type': 'application/json' },
+    requests: [
+      {
+        setupRequest: (req) => ({
+          ...req,
+          headers: { ...(req.headers ?? {}), 'x-real-ip': randomClientIp() },
+        }),
+      },
+    ],
   });
+
+  const codes =
+    (result as unknown as { statusCodeStats?: Record<string, { count: number }> })
+      .statusCodeStats ?? {};
+  const failedResponses = Object.entries(codes)
+    .filter(([code]) => code === '429' || code.startsWith('5'))
+    .reduce((sum, [, stat]) => sum + stat.count, 0);
 
   return {
     endpoint: url,
@@ -38,7 +64,9 @@ async function bench(url: string, connections = 20, duration = 5): Promise<Bench
     p50Ms: result.latency.p50,
     p99Ms: result.latency.p99,
     errors: result.errors,
-    passed: result.errors <= SLA.maxErrors && result.latency.p99 <= SLA.maxP99Ms,
+    failedResponses,
+    passed:
+      result.errors <= SLA.maxErrors && failedResponses === 0 && result.latency.p99 <= SLA.maxP99Ms,
   };
 }
 
@@ -50,6 +78,7 @@ function printResult(r: BenchResult) {
   console.log(`  P50 Latency    : ${r.p50Ms}ms`);
   console.log(`  P99 Latency    : ${r.p99Ms}ms  (SLA: <=${SLA.maxP99Ms}ms)`);
   console.log(`  Errors         : ${r.errors}`);
+  console.log(`  5xx / 429      : ${r.failedResponses}`);
 }
 
 async function runLoadBenchmark() {
@@ -90,6 +119,11 @@ async function runLoadBenchmark() {
     for (const r of failed) {
       if (r.errors > SLA.maxErrors) {
         console.error(`  ERROR: ${r.endpoint} had ${r.errors} connection error(s)`);
+      }
+      if (r.failedResponses > 0) {
+        console.error(
+          `  FAIL:  ${r.endpoint} answered ${r.failedResponses} request(s) with 5xx/429`,
+        );
       }
       if (r.p99Ms > SLA.maxP99Ms) {
         console.error(`  SLOW:  ${r.endpoint} P99=${r.p99Ms}ms > ${SLA.maxP99Ms}ms`);
