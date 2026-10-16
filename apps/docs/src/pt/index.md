@@ -14,7 +14,7 @@ hero:
       link: /pt/protocol/overview
     - theme: alt
       text: Ir para o Launchpad
-      link: https://proto.family
+      link: '%APP_URL%'
 
 features:
   - title: 100% Não Custodial

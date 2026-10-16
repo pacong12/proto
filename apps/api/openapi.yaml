@@ -7,7 +7,7 @@ info:
 servers:
   - url: http://localhost:3001
     description: Local development server
-  - url: https://api.proto.family
+  - url: https://api.robinmood.xyz
     description: Production API server
 
 paths:

@@ -8,7 +8,7 @@
 
 ### 1. 连接您的钱包
 
-访问 [proto.family](https://proto.family) 并点击顶部导航栏中的 **Connect Wallet**。确保钱包已切换至 **Robinhood Chain** 或 **Arc Network**。
+访问 [%APP_HOST%](%APP_URL%) 并点击顶部导航栏中的 **Connect Wallet**。确保钱包已切换至 **Robinhood Chain** 或 **Arc Network**。
 
 ### 2. 进入创建页面
 

@@ -38,5 +38,5 @@
     </g>
   </g>
   
-  <text x="100" y="575" font-family="Poppins, -apple-system, system-ui, sans-serif" font-size="15" font-weight="600" fill="#71717a">proto.family · Decentralized Multi-Chain Launchpad &amp; Trading Floor</text>
+  <text x="100" y="575" font-family="Poppins, -apple-system, system-ui, sans-serif" font-size="15" font-weight="600" fill="#71717a">%APP_HOST% · Decentralized Multi-Chain Launchpad &amp; Trading Floor</text>
 </svg>

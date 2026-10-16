@@ -2,6 +2,7 @@
   <div
     class="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-foreground selection:text-background"
   >
+    <MaintenanceBanner />
     <Navbar @open-search="searchOpen = true" />
 
     <main
@@ -175,7 +176,9 @@ import { defineAsyncComponent, onMounted, onUnmounted, ref, watch, computed } fr
 import { useRouter, useRoute, RouterLink, RouterView } from 'vue-router';
 import { ExternalLink, BookOpen } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
+import { resolveDocsUrl } from '@/lib/site';
 import Navbar from './components/Navbar.vue';
+import MaintenanceBanner from './components/MaintenanceBanner.vue';
 import { Toaster } from '@/components/ui/sonner';
 import { walletAddress, walletModalOpen } from './lib/wallet-store';
 import { useWallet } from './composables/useWallet';
@@ -192,24 +195,7 @@ const { t } = useI18n();
 const { activeNetwork } = useWallet();
 const router = useRouter();
 const route = useRoute();
-const docsUrl = computed(() => {
-  if (import.meta.env.VITE_DOCS_URL) return import.meta.env.VITE_DOCS_URL;
-  if (typeof window !== 'undefined') {
-    const { hostname, port, protocol } = window.location;
-    // In local dev, frontoffice is on 3010 and docs is on 3002
-    if (port === '3010' || hostname === 'localhost' || hostname === '127.0.0.1') {
-      return `${protocol}//${hostname}:3002`;
-    }
-    // Cloudflare Workers dev domain: proto.mutingudin12.workers.dev -> proto-docs.mutingudin12.workers.dev
-    if (hostname.endsWith('.workers.dev')) {
-      const docsHost = hostname.replace(/^proto\./, 'proto-docs.');
-      return `${protocol}//${docsHost}`;
-    }
-    // In custom domain production, derive docs subdomain from current host
-    return `${protocol}//docs.${window.location.host}`;
-  }
-  return '/docs';
-});
+const docsUrl = computed(() => resolveDocsUrl());
 
 const userProfileUrl = computed(() => {
   if (walletAddress.value) {

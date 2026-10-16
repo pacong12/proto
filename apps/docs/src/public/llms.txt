@@ -4,18 +4,18 @@
 Proto is a decentralized, non-custodial crypto launchpad on Robinhood Chain (L2). It allows anyone to launch fixed-supply tokens, trade on interactive bonding curves or Uniswap V3 pools, and participate in fair launches with permanently locked liquidity.
 
 ## Documentation Sections
-- Getting Started: https://docs.proto.family/protocol/overview
-- How to Launch a Token: https://docs.proto.family/protocol/launches
-- Trading & Swaps Guide: https://docs.proto.family/protocol/trading-guide
-- Frequently Asked Questions: https://docs.proto.family/protocol/faq
-- Anti-Snipe Safeguards: https://docs.proto.family/protocol/anti-snipe
-- Creator Rewards & Fees: https://docs.proto.family/protocol/fees-and-burns
-- Community Takeovers: https://docs.proto.family/protocol/community-takeovers
-- Network Setup: https://docs.proto.family/integration/network
-- Verified Contracts: https://docs.proto.family/integration/contracts
-- Terms of Service: https://docs.proto.family/terms-of-service
-- Privacy Policy: https://docs.proto.family/privacy-policy
-- Cookie Policy: https://docs.proto.family/cookie-policy
+- Getting Started: %DOCS_URL%/protocol/overview
+- How to Launch a Token: %DOCS_URL%/protocol/launches
+- Trading & Swaps Guide: %DOCS_URL%/protocol/trading-guide
+- Frequently Asked Questions: %DOCS_URL%/protocol/faq
+- Anti-Snipe Safeguards: %DOCS_URL%/protocol/anti-snipe
+- Creator Rewards & Fees: %DOCS_URL%/protocol/fees-and-burns
+- Community Takeovers: %DOCS_URL%/protocol/community-takeovers
+- Network Setup: %DOCS_URL%/integration/network
+- Verified Contracts: %DOCS_URL%/integration/contracts
+- Terms of Service: %DOCS_URL%/terms-of-service
+- Privacy Policy: %DOCS_URL%/privacy-policy
+- Cookie Policy: %DOCS_URL%/cookie-policy
 
 ## Protocol Key Parameters
 - Network: Robinhood Chain (Chain ID: 4663)

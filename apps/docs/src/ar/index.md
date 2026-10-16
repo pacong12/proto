@@ -14,7 +14,7 @@ hero:
       link: /ar/protocol/overview
     - theme: alt
       text: فتح منصة الإطلاق
-      link: https://proto.family
+      link: '%APP_URL%'
 
 features:
   - title: غير احتجازي بنسبة 100%

@@ -32,4 +32,4 @@ To interact with Proto, add either network to your Web3 wallet.
 
 ## One-Click Connection & Network Switching
 
-When visiting [proto.family](https://proto.family), the platform will automatically detect your wallet's active chain and allow you to switch seamlessly between **Robinhood Chain** and **Arc Network** with a single click from the network selector in the top navigation bar.
+When visiting [%APP_HOST%](%APP_URL%), the platform will automatically detect your wallet's active chain and allow you to switch seamlessly between **Robinhood Chain** and **Arc Network** with a single click from the network selector in the top navigation bar.

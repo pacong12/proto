@@ -14,7 +14,7 @@ hero:
       link: /ru/protocol/overview
     - theme: alt
       text: Перейти в Launchpad
-      link: https://proto.family
+      link: '%APP_URL%'
 
 features:
   - title: 100% Некастодиальный

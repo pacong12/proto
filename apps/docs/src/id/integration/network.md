@@ -32,4 +32,4 @@ Untuk berinteraksi dengan Proto, tambahkan jaringan yang diinginkan ke dompet We
 
 ## Koneksi Satu Klik & Pergantian Jaringan
 
-Saat membuka [proto.family](https://proto.family), sistem secara otomatis mendeteksi jaringan dompet Anda dan menyediakan opsi perpindahan instan antara **Robinhood Chain** dan **Arc Network** melalui menu pilihan jaringan di bilah navigasi atas.
+Saat membuka [%APP_HOST%](%APP_URL%), sistem secara otomatis mendeteksi jaringan dompet Anda dan menyediakan opsi perpindahan instan antara **Robinhood Chain** dan **Arc Network** melalui menu pilihan jaringan di bilah navigasi atas.

@@ -1,16 +1,87 @@
-interface Env {
+export interface Env {
   ASSETS: {
     fetch: (request: Request) => Promise<Response>;
   };
   // Set to 'true' in wrangler.toml [vars] to send CSP as Report-Only.
   // Use this in staging before enforcing in production.
-  // Backend API URL on VPS (e.g. http://31.97.189.81:3011 or https://api.proto.family)
+  // Backend API URL on VPS (e.g. https://api.robinmood.xyz)
   BACKEND_API_URL?: string;
   // Set to 'true' in wrangler.toml [vars] to send CSP as Report-Only.
   // Use this in staging before enforcing in production.
   CSP_REPORT_ONLY?: string;
   // Optional endpoint for CSP violation reports.
   CSP_REPORT_URI?: string;
+  // Maintenance switch, set in the Cloudflare dashboard (Settings > Variables) without a rebuild:
+  //   off (default) | banner (site works, app shows a notice) | full (503 page for every visitor)
+  MAINTENANCE_MODE?: string;
+  // Optional text for the banner / maintenance page (plain text, HTML is escaped).
+  MAINTENANCE_MESSAGE?: string;
+  // Optional secret: open any page with ?maintenance_bypass=<token> to use the site during `full`.
+  MAINTENANCE_BYPASS_TOKEN?: string;
+}
+
+type MaintenanceMode = 'off' | 'banner' | 'full';
+
+const BYPASS_COOKIE = 'maintenance_bypass';
+const DEFAULT_MAINTENANCE_MESSAGE =
+  'We are performing scheduled maintenance. Trading and launches will be back shortly.';
+
+export function maintenanceMode(env: Env): MaintenanceMode {
+  const mode = (env.MAINTENANCE_MODE ?? '').trim().toLowerCase();
+  return mode === 'banner' || mode === 'full' ? mode : 'off';
+}
+
+function escapeHtml(text: string): string {
+  return text.replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
+  );
+}
+
+function hasBypassCookie(request: Request, token: string): boolean {
+  const cookies = request.headers.get('cookie') ?? '';
+  return cookies.split(';').some((c) => c.trim() === `${BYPASS_COOKIE}=${token}`);
+}
+
+function maintenancePage(message: string): Response {
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>Under maintenance</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<style>
+  :root { color-scheme: light dark; --bg: #fafafa; --fg: #18181b; --muted: #71717a; --accent: #ec4899; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #09090b; --fg: #fafafa; --muted: #a1a1aa; } }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--bg); color: var(--fg);
+    font-family: Poppins, -apple-system, system-ui, sans-serif; padding: 24px; box-sizing: border-box; }
+  main { max-width: 32rem; text-align: center; }
+  .code { font-size: 4rem; font-weight: 900; letter-spacing: -0.05em; color: var(--accent); margin: 0; }
+  h1 { font-size: 1.5rem; margin: 0.5rem 0; }
+  p { color: var(--muted); line-height: 1.6; }
+</style>
+</head>
+<body>
+<main>
+  <p class="code">503</p>
+  <h1>Under maintenance</h1>
+  <p>${escapeHtml(message)}</p>
+  <p>Your funds are on-chain and unaffected. Please check back soon.</p>
+</main>
+</body>
+</html>`;
+  return new Response(html, {
+    status: 503,
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'Retry-After': '1800',
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+    },
+  });
 }
 
 /**
@@ -90,6 +161,42 @@ export default {
       url.pathname.startsWith('/server-info')
     ) {
       return new Response('Not Found', { status: 404 });
+    }
+
+    // Maintenance state for the app banner; never cached so a dashboard change applies at once.
+    const mode = maintenanceMode(env);
+    if (url.pathname === '/site-status.json') {
+      return new Response(
+        JSON.stringify({
+          maintenance: mode,
+          message: mode === 'off' ? '' : (env.MAINTENANCE_MESSAGE ?? '').trim(),
+        }),
+        { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } },
+      );
+    }
+
+    // Full maintenance: every page gets the 503 page, except for holders of the bypass token.
+    // The API proxy below stays reachable for integrations and the team.
+    const isApiPath =
+      url.pathname.startsWith('/api/') ||
+      url.pathname.startsWith('/dex/') ||
+      url.pathname === '/health';
+    if (mode === 'full' && !isApiPath && url.pathname !== '/favicon.svg') {
+      const token = env.MAINTENANCE_BYPASS_TOKEN?.trim();
+      if (token && url.searchParams.get(BYPASS_COOKIE) === token) {
+        url.searchParams.delete(BYPASS_COOKIE);
+        return new Response(null, {
+          status: 302,
+          headers: {
+            Location: url.pathname + url.search,
+            'Set-Cookie': `${BYPASS_COOKIE}=${token}; Path=/; Max-Age=43200; HttpOnly; Secure; SameSite=Lax`,
+            'Cache-Control': 'no-store',
+          },
+        });
+      }
+      if (!token || !hasBypassCookie(request, token)) {
+        return maintenancePage(env.MAINTENANCE_MESSAGE?.trim() || DEFAULT_MAINTENANCE_MESSAGE);
+      }
     }
 
     // Proxy API, DEX Screener, and health check endpoints directly to the VPS backend

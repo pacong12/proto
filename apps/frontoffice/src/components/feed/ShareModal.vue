@@ -269,6 +269,7 @@ import { Jazzicon } from '@/components/ui/avatar';
 import { shortenAddress, formatRelativeTime } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';
 import { toast } from '@/components/ui/sonner';
+import { SITE } from '@/lib/site';
 import type { FeedCalloutItem } from '@proto/shared-types';
 
 const { t } = useI18n();
@@ -292,7 +293,7 @@ function getPostUrl(): string {
 
 const currentHostDisplay = computed(() => {
   if (typeof window !== 'undefined') return window.location.host;
-  return 'proto.family';
+  return SITE.appHost;
 });
 
 async function copyPostLink(): Promise<void> {

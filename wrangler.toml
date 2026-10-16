@@ -1,6 +1,8 @@
 name = "proto"
 main = "worker.ts"
 compatibility_date = "2026-09-16"
+# Keep variables set in the dashboard (e.g. MAINTENANCE_MODE) across deploys.
+keep_vars = true
 
 [build]
 command = "VITE_REOWN_PROJECT_ID=4832fd788725bf7c34d6bc2ca2d54a85 bun run --filter @proto/frontoffice build"

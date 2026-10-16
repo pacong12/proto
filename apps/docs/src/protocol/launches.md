@@ -8,7 +8,7 @@ Creating your own token on Proto takes less than two minutes and requires zero c
 
 ### 1. Connect Your Wallet
 
-Navigate to [proto.family](https://proto.family) and click **Connect Wallet** in the top navigation bar. Make sure your wallet is connected to **Robinhood Chain** (Chain ID: 4663).
+Navigate to [%APP_HOST%](%APP_URL%) and click **Connect Wallet** in the top navigation bar. Make sure your wallet is connected to **Robinhood Chain** (Chain ID: 4663).
 
 ### 2. Go to the Create Page
 
