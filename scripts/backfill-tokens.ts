@@ -1,151 +1,82 @@
 /**
- * Backfill historical V2 TokenLaunched events from the Arc and Robinhood factories.
+ * Re-index a block range after data loss (DR-06).
  *
  * Usage:
- *   bun run --env-file=.env scripts/backfill-tokens.ts [--chain arc|robinhood] [--from <block>] [--to <block>]
+ *   bun run --env-file=.env scripts/backfill-tokens.ts --chain arc|robinhood --from <block> [--to <block>]
  *
- * Scans in batches of 500 blocks (safe for public RPC nodes).
- * Already-indexed tokens are skipped automatically (findByAddress check).
- * Progress is printed every 10 batches.
+ * Runs the API's own indexer (EventPollerService.indexRange) over the range, so launches, graduations,
+ * trades and the market data derived from them (prices, volume, candles) are rebuilt exactly as the
+ * live poller would have written them. Writes go to DB_PATH (default ./data/proto.sqlite). Saves are
+ * upserts, so overlapping an already-indexed range is safe. The live poller's cursor is not moved.
  */
 
-import { createPublicClient, http, parseAbiItem } from 'viem';
-import { Database } from 'bun:sqlite';
-import { ARC_CHAIN, ROBINHOOD_CHAIN } from '../packages/shared-types/src/constants/network';
-import { SqliteTokenRepository } from '../apps/api/src/modules/tokens/infrastructure/adapters/sqlite-token.repository';
-import { ViemChainIndexerAdapter } from '../apps/api/src/modules/tokens/infrastructure/adapters/viem-chain-indexer.adapter';
+import { createPublicClient } from 'viem';
+import { ARC_CHAIN, ROBINHOOD_CHAIN } from '../packages/shared-types/src/index';
+import {
+  SqliteTokenRepository,
+  ViemChainIndexerAdapter,
+  CalculatePricingUseCase,
+  EventPollerService,
+  CoinGeckoPriceFeedAdapter,
+} from '../apps/api/src/index';
+import { chainFor, rpcTransport } from '../apps/api/src/core/rpc';
 
-const BATCH_SIZE = 500n;
+const STEP = 50n; // same window as the live poller; keeps eth_getLogs within public RPC limits
 
-const TOKEN_LAUNCHED_EVENT = parseAbiItem(
-  'event TokenLaunched(address indexed token, address indexed curve, address indexed creator, address pairedToken, uint256 positionId, uint256 initialBuyAmount)',
-);
-
-async function backfill(opts: {
-  chainName: 'arc' | 'robinhood';
-  fromBlock: bigint;
-  toBlock: bigint;
-}) {
-  const network = opts.chainName === 'arc' ? ARC_CHAIN : ROBINHOOD_CHAIN;
-  const factoryV2 = network.contracts.factoryV2 ?? network.contracts.factory;
-
-  const client = createPublicClient({
-    chain: {
-      id: network.chainId,
-      name: network.name,
-      nativeCurrency: network.nativeCurrency,
-      rpcUrls: { default: { http: [network.rpcUrl] } },
-    } as Parameters<typeof createPublicClient>[0]['chain'],
-    transport: http(network.rpcUrl, { retryCount: 1, timeout: 15_000 }),
-  });
-
-  const db = new Database('apps/api/proto.sqlite');
-  const repository = new SqliteTokenRepository(db);
-  const chainIndexer = new ViemChainIndexerAdapter();
-
-  console.log(`[Backfill] Chain: ${network.name}`);
-  console.log(`[Backfill] Factory V2: ${factoryV2}`);
-  console.log(`[Backfill] Block range: ${opts.fromBlock} -> ${opts.toBlock}`);
-  console.log(`[Backfill] Batch size: ${BATCH_SIZE}`);
-
-  let totalNew = 0;
-  let totalSkipped = 0;
-  let totalFailed = 0;
-  let batch = 0;
-  let from = opts.fromBlock;
-
-  while (from <= opts.toBlock) {
-    const to = from + BATCH_SIZE - 1n < opts.toBlock ? from + BATCH_SIZE - 1n : opts.toBlock;
-    batch++;
-
-    try {
-      const logs = await client.getLogs({
-        address: factoryV2 as `0x${string}`,
-        event: TOKEN_LAUNCHED_EVENT,
-        fromBlock: from,
-        toBlock: to,
-      });
-
-      for (const log of logs) {
-        const tokenAddress = log.args.token as `0x${string}`;
-        const curveAddress = log.args.curve as `0x${string}`;
-        if (!tokenAddress || !curveAddress) continue;
-
-        const existing = await repository.findByAddress(tokenAddress);
-        if (existing) {
-          totalSkipped++;
-          continue;
-        }
-
-        try {
-          const entity = await chainIndexer.fetchV2LaunchedToken(
-            tokenAddress,
-            curveAddress,
-            network,
-          );
-          if (entity) {
-            await repository.save({ ...entity, version: 'v2', curveAddress });
-            totalNew++;
-          } else {
-            totalFailed++;
-          }
-        } catch {
-          totalFailed++;
-        }
-      }
-    } catch (e) {
-      console.warn(`[Backfill] Batch ${batch} (${from}-${to}) error: ${(e as Error).message}`);
-    }
-
-    if (batch % 10 === 0) {
-      const pct = (((from - opts.fromBlock) * 100n) / (opts.toBlock - opts.fromBlock + 1n))
-        .toString()
-        .padStart(3);
-      console.log(
-        `[Backfill] ${pct}% | block ${from} | new: ${totalNew} | skip: ${totalSkipped} | fail: ${totalFailed}`,
-      );
-    }
-
-    from = to + 1n;
-  }
-
-  console.log(`\n[Backfill] Done.`);
-  console.log(`  New tokens indexed : ${totalNew}`);
-  console.log(`  Already in DB      : ${totalSkipped}`);
-  console.log(`  Fetch failed       : ${totalFailed}`);
-  db.close();
+function arg(name: string): string | undefined {
+  const i = process.argv.indexOf(`--${name}`);
+  return i >= 0 ? process.argv[i + 1] : undefined;
 }
 
-// Parse CLI args
-const args = process.argv.slice(2);
-const chainArg = args[args.indexOf('--chain') + 1] ?? 'arc';
-const fromArg = args[args.indexOf('--from') + 1];
-const toArg = args[args.indexOf('--to') + 1];
-
-// Default: scan from the earliest known V2 deployment blocks
-const defaultFrom: Record<string, bigint> = {
-  arc: 62_000_000n,
-  robinhood: 68_000_000n,
-};
-
-const chainName = chainArg === 'robinhood' ? 'robinhood' : 'arc';
+const chainName = arg('chain');
+if (chainName !== 'arc' && chainName !== 'robinhood') {
+  console.error('Usage: backfill-tokens.ts --chain arc|robinhood --from <block> [--to <block>]');
+  process.exit(1);
+}
+const network = chainName === 'arc' ? ARC_CHAIN : ROBINHOOD_CHAIN;
 const client = createPublicClient({
-  chain: {
-    id: (chainName === 'arc' ? ARC_CHAIN : ROBINHOOD_CHAIN).chainId,
-    name: chainName,
-    nativeCurrency: (chainName === 'arc' ? ARC_CHAIN : ROBINHOOD_CHAIN).nativeCurrency,
-    rpcUrls: {
-      default: { http: [(chainName === 'arc' ? ARC_CHAIN : ROBINHOOD_CHAIN).rpcUrl] },
-    },
-  } as Parameters<typeof createPublicClient>[0]['chain'],
-  transport: http((chainName === 'arc' ? ARC_CHAIN : ROBINHOOD_CHAIN).rpcUrl, {
-    retryCount: 0,
-    timeout: 15_000,
-  }),
+  chain: chainFor(network),
+  transport: rpcTransport(network, 20_000),
 });
 
-const currentBlock = await client.getBlockNumber();
-const fromBlock = fromArg ? BigInt(fromArg) : defaultFrom[chainName];
-const toBlock = toArg ? BigInt(toArg) : currentBlock;
+const fromArg = arg('from');
+if (!fromArg) {
+  console.error('--from <block> is required (the factory deployment block is a good start).');
+  process.exit(1);
+}
+const fromBlock = BigInt(fromArg);
+const toBlock = arg('to') ? BigInt(arg('to')!) : await client.getBlockNumber();
 
-await backfill({ chainName, fromBlock, toBlock });
+const repository = new SqliteTokenRepository(process.env.DB_PATH || './data/proto.sqlite');
+const poller = new EventPollerService(
+  client,
+  repository,
+  new ViemChainIndexerAdapter(),
+  new CalculatePricingUseCase(),
+  new CoinGeckoPriceFeedAdapter(),
+  network,
+);
+
+console.log(`[Backfill] ${network.name}: blocks ${fromBlock} -> ${toBlock}`);
+let indexed = 0;
+let windows = 0;
+for (let from = fromBlock; from <= toBlock; from += STEP) {
+  const to = from + STEP - 1n < toBlock ? from + STEP - 1n : toBlock;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      indexed += await poller.indexRange(from, to);
+      break;
+    } catch (e) {
+      if (attempt >= 5) throw e;
+      console.warn(`[Backfill] ${from}-${to} failed (${(e as Error).message}); retry ${attempt}/4`);
+      await new Promise((r) => setTimeout(r, 1_000 * attempt));
+    }
+  }
+  if (++windows % 100 === 0) {
+    const pct = Number(((to - fromBlock) * 100n) / (toBlock - fromBlock + 1n));
+    console.log(`[Backfill] ${pct}% | block ${to} | events indexed: ${indexed}`);
+  }
+}
+
+console.log(`[Backfill] Done. Events indexed: ${indexed}`);
+repository.close();

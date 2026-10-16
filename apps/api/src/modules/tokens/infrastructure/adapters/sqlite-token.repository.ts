@@ -11,6 +11,7 @@ import {
   getUserIdentity,
 } from '@proto/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
+import { backupDatabase, openCheckedDatabase } from './sqlite-maintenance';
 import {
   aggregateCandlesticks,
   computeHoldersDistribution,
@@ -77,6 +78,7 @@ const defaultDbPath =
 
 export class SqliteTokenRepository implements TokenRepositoryPort {
   private db: Database;
+  private readonly dbPath: string;
 
   constructor(dbPath?: string) {
     const resolvedPath = dbPath ?? defaultDbPath;
@@ -92,7 +94,8 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
         );
       }
     }
-    this.db = new Database(resolvedPath);
+    this.dbPath = resolvedPath;
+    this.db = openCheckedDatabase(resolvedPath);
     try {
       this.db.run('PRAGMA journal_mode = WAL;');
       this.db.run('PRAGMA busy_timeout = 10000;');
@@ -1296,6 +1299,12 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
         return { liked: true, likesCount: countRow ? Number(countRow.likes_count) : 1 };
       }
     });
+  }
+
+  /** DR-04: hot snapshot into `<db dir>/backups`, keeping the newest `keep` files. */
+  backup(keep?: number): string | null {
+    if (this.dbPath === ':memory:') return null;
+    return backupDatabase(this.db, this.dbPath, keep);
   }
 
   close(): void {
