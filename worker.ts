@@ -20,6 +20,27 @@ export interface Env {
   MAINTENANCE_BYPASS_TOKEN?: string;
   // 'true' on non-production workers (development) to keep them out of search results.
   NOINDEX?: string;
+  // Docs origin for legal-page redirects (production https://docs.goton.fun).
+  DOCS_URL?: string;
+}
+
+/** Legal documents are served by the docs site; old app paths redirect there permanently. */
+const LEGAL_REDIRECTS: Record<string, string> = {
+  '/terms-of-service': '/terms-of-service',
+  '/terms': '/terms-of-service',
+  '/privacy-policy': '/privacy-policy',
+  '/privacy': '/privacy-policy',
+  '/cookie-policy': '/cookie-policy',
+  '/cookies': '/cookie-policy',
+  '/cookie': '/cookie-policy',
+};
+
+export function legalRedirect(pathname: string, env: Env): Response | null {
+  const target = LEGAL_REDIRECTS[pathname.replace(/\/$/, '') || '/'];
+  if (!target) return null;
+  let docs = env.DOCS_URL || 'https://docs.goton.fun';
+  while (docs.endsWith('/')) docs = docs.slice(0, -1);
+  return Response.redirect(`${docs}${target}`, 301);
 }
 
 type MaintenanceMode = 'off' | 'banner' | 'full';
@@ -165,6 +186,9 @@ export default {
     ) {
       return new Response('Not Found', { status: 404 });
     }
+
+    const legal = legalRedirect(url.pathname, env);
+    if (legal) return legal;
 
     // Maintenance state for the app banner; never cached so a dashboard change applies at once.
     const mode = maintenanceMode(env);

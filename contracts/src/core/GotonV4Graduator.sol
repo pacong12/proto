@@ -161,6 +161,7 @@ contract GotonV4Graduator is IUnlockCallback {
      *         party has bought, so buyers always see the split they trade under. The protocol cut
      *         is the graduator default at graduation time.
      */
+    // slither-disable-next-line unused-return (unused tuple fields; see docs/audit/AUDIT-VERIFICATION.md)
     function setRevenueSplit(address token, uint16 holdersBps, uint16 burnBps, uint16 creatorBps, uint16 liquidityBps)
         external
     {
@@ -199,6 +200,7 @@ contract GotonV4Graduator is IUnlockCallback {
      * @param curve Bonding curve, excluded from dividend circulating supply.
      * @param sqrtPriceX96 Curve's final spot price (token per ETH, Q64.96).
      */
+    // slither-disable-next-line reentrancy-no-eth,unused-return (guarded by nonReentrant / onlyPoolManager / trusted caller; unused tuple fields; see docs/audit/AUDIT-VERIFICATION.md)
     function graduate(address token, address creator, address curve, uint160 sqrtPriceX96)
         external
         nonReentrant
@@ -278,7 +280,7 @@ contract GotonV4Graduator is IUnlockCallback {
         return _collectCallback(abi.decode(payload, (address)));
     }
 
-    // slither-disable-next-line reentrancy-eth (external calls go to the PoolManager and the launchpad token only; graduate() is launcher-only)
+    // slither-disable-next-line divide-before-multiply,reentrancy-eth (external calls go to the PoolManager and the launchpad token only; graduate() is launcher-only) (intentional rounding; see docs/audit/AUDIT-VERIFICATION.md)
     function _graduateCallback(PoolKey memory key) private returns (bytes memory) {
         address token = key.currency1;
         (uint160 sqrtPrice, int24 tick) = V4Lib.getSlot0(poolManager, key.toId());
@@ -322,6 +324,7 @@ contract GotonV4Graduator is IUnlockCallback {
         return abi.encode(ethUsed, tokensUsed);
     }
 
+    // slither-disable-next-line unused-return (unused tuple fields; see docs/audit/AUDIT-VERIFICATION.md)
     function _addLiquidity(PoolKey memory key, int24 tickLower, int24 tickUpper, uint128 liquidity, bytes32 salt)
         private
         returns (uint256 ethPaid, uint256 tokensPaid)
@@ -366,6 +369,7 @@ contract GotonV4Graduator is IUnlockCallback {
     }
 
     /// @dev Zero-liquidity modification credits accrued fees to this contract.
+    // slither-disable-next-line unused-return (unused tuple fields; see docs/audit/AUDIT-VERIFICATION.md)
     function _poke(PoolKey memory key, int24 tickLower, int24 tickUpper, bytes32 salt)
         private
         returns (uint256 eth, uint256 tokens)

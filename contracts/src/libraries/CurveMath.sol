@@ -64,6 +64,7 @@ library CurveMath {
      * @return grossEth Total quote asset required including 1% trade fee.
      * @return feeEth Platform fee included in grossEth.
      */
+    // slither-disable-next-line divide-before-multiply (intentional rounding; see docs/audit/AUDIT-VERIFICATION.md)
     function getEthInForTokens(
         uint256 tokensOut,
         uint256 virtualEthReserve,

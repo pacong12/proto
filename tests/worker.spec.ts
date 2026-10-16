@@ -97,3 +97,28 @@ describe('edge worker dotfile guard', () => {
     expect((await get('/.git/config', makeEnv())).status).toBe(404);
   });
 });
+
+describe('edge worker legal redirects', () => {
+  it('sends legal pages to the docs site with a permanent redirect', async () => {
+    const res = await get('/terms', makeEnv());
+    expect(res.status).toBe(301);
+    expect(res.headers.get('location')).toBe('https://docs.goton.fun/terms-of-service');
+    expect((await get('/cookie-policy/', makeEnv())).headers.get('location')).toBe(
+      'https://docs.goton.fun/cookie-policy',
+    );
+  });
+
+  it('uses the docs URL of the environment', async () => {
+    const res = await get(
+      '/privacy',
+      makeEnv({ DOCS_URL: 'https://proto-docs-dev.example.workers.dev/' }),
+    );
+    expect(res.headers.get('location')).toBe(
+      'https://proto-docs-dev.example.workers.dev/privacy-policy',
+    );
+  });
+
+  it('leaves other paths alone', async () => {
+    expect((await get('/terms-and-more', makeEnv())).status).toBe(200);
+  });
+});

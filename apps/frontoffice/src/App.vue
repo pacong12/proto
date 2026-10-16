@@ -104,19 +104,34 @@
           </h2>
           <ul class="space-y-2 text-sm text-muted-foreground">
             <li>
-              <RouterLink to="/terms-of-service" class="hover:text-primary transition">
+              <a
+                :href="legalUrl('terms-of-service', locale)"
+                target="_blank"
+                rel="noopener"
+                class="hover:text-primary transition"
+              >
                 {{ t('termsOfService') }}
-              </RouterLink>
+              </a>
             </li>
             <li>
-              <RouterLink to="/privacy-policy" class="hover:text-primary transition">
+              <a
+                :href="legalUrl('privacy-policy', locale)"
+                target="_blank"
+                rel="noopener"
+                class="hover:text-primary transition"
+              >
                 {{ t('privacyPolicy') }}
-              </RouterLink>
+              </a>
             </li>
             <li>
-              <RouterLink to="/cookie-policy" class="hover:text-primary transition">
+              <a
+                :href="legalUrl('cookie-policy', locale)"
+                target="_blank"
+                rel="noopener"
+                class="hover:text-primary transition"
+              >
                 {{ t('cookiePolicy') }}
-              </RouterLink>
+              </a>
             </li>
           </ul>
           <p class="text-xs leading-relaxed text-muted-foreground pt-2">
@@ -180,7 +195,7 @@ import { defineAsyncComponent, onMounted, onUnmounted, ref, watch, computed } fr
 import { useRouter, useRoute, RouterLink, RouterView } from 'vue-router';
 import { ExternalLink, BookOpen } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
-import { resolveDocsUrl } from '@/lib/site';
+import { legalUrl, resolveDocsUrl } from '@/lib/site';
 import Navbar from './components/Navbar.vue';
 import MaintenanceBanner from './components/MaintenanceBanner.vue';
 import { Toaster } from '@/components/ui/sonner';
@@ -195,7 +210,7 @@ const CookieConsentBanner = defineAsyncComponent(
   () => import('./components/CookieConsentBanner.vue'),
 );
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { activeNetwork } = useWallet();
 const router = useRouter();
 const route = useRoute();

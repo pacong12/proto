@@ -251,6 +251,7 @@ contract LaunchpadV2Factory is EmergencyPause {
     /**
      * @notice Moves a graduated curve's liquidity into its locked Uniswap v4 pool. Permissionless.
      */
+    // slither-disable-next-line reentrancy-no-eth (guarded by nonReentrant / onlyPoolManager / trusted caller; see docs/audit/AUDIT-VERIFICATION.md)
     function graduate(address tokenAddress)
         external
         nonReentrant
