@@ -245,20 +245,20 @@ contract ComprehensiveLifecycleTest is Test {
         vestingVault.createVestingSchedule(address(token), traderAlice, grant, duration);
 
         // At day 0 -> 0 unlocked
-        assertEq(vestingVault.getClaimableAmount(address(token), traderAlice), 0);
+        assertEq(vestingVault.getClaimableAmount(address(token), address(this), traderAlice), 0);
 
         // Advance 25 days -> 25% unlocked (25,000 VEST)
         vm.warp(block.timestamp + 25 days);
         assertEq(
-            vestingVault.getClaimableAmount(address(token), traderAlice),
+            vestingVault.getClaimableAmount(address(token), address(this), traderAlice),
             25_000 * 1e18
         );
 
         // Alice claims 25,000 VEST
         vm.prank(traderAlice);
-        vestingVault.claimVested(address(token));
+        vestingVault.claimVested(address(token), address(this));
         assertEq(token.balanceOf(traderAlice), 25_000 * 1e18);
-        assertEq(vestingVault.getClaimableAmount(address(token), traderAlice), 0);
+        assertEq(vestingVault.getClaimableAmount(address(token), address(this), traderAlice), 0);
     }
 
     // ==========================================

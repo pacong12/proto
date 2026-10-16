@@ -119,7 +119,10 @@ contract HolderFeeDistributor {
     function earned(address token, address holder) public view returns (uint256) {
         uint256 liveBalance = ILaunchpadToken(token).balanceOf(holder);
         uint256 snap = snapshotBalance[token][holder];
-        uint256 balance = snap == 0 ? liveBalance : FeeMath.calculateEffectiveBalance(snap, liveBalance);
+        // A holder that never checkpointed has userRewardPerTokenPaid == 0; crediting their live
+        // balance would pay them every reward ever deposited (dividend theft). Accrual therefore
+        // starts at the first checkpoint, as originally designed.
+        uint256 balance = snap == 0 ? 0 : FeeMath.calculateEffectiveBalance(snap, liveBalance);
         uint256 cum = tokenFeeStates[token].rewardPerTokenCumulative;
         uint256 paid = userRewardPerTokenPaid[token][holder];
 

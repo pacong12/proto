@@ -10,7 +10,8 @@ import {FeeMath} from "../libraries/FeeMath.sol";
 
 /**
  * @title ProtoLiquidityLockerV4
- * @notice Sovereign Liquidity Locker for Uniswap V4 on Robinhood Chain.
+ * @notice LEGACY — superseded by ProtoV4Graduator (positions are never locked here).
+ *         Sovereign Liquidity Locker for Uniswap V4 on Robinhood Chain.
  *         Permanently locks Uniswap V4 LP NFT positions (UNI-V4-POSM)
  *         and manages protocol/creator fee distributions without third-party dependency.
  */
@@ -145,11 +146,13 @@ contract ProtoLiquidityLockerV4 is ILiquidityLocker {
         emit FeeRedirectUpdated(token, pr.pendingAddress);
     }
 
+    /// @dev S17: cancels a pending proposal only; an active redirect can only be replaced through
+    ///      the same 48h timelock (setFeeRedirect + acceptFeeRedirect).
     function cancelFeeRedirect(address token) external override {
         address deployer = tokenDeployers[token];
         if (msg.sender != deployer) revert Unauthorized();
+        if (pendingFeeRedirects[token].pendingAddress == address(0)) revert NoPendingRedirect();
         delete pendingFeeRedirects[token];
-        feeRedirects[token] = address(0);
         emit FeeRedirectCancelled(token);
     }
 
@@ -171,11 +174,10 @@ contract ProtoLiquidityLockerV4 is ILiquidityLocker {
         uint256 positionId = tokenPositions[token];
         if (positionId == 0) revert NotLocked();
 
-        // Segregated per-token balance with fallback to contract balance
+        // S2: only this token's segregated balances; never fall back to contract-wide balances,
+        // which belong to other tokens.
         uint256 tokenBal = tokenTokenFees[token];
         uint256 wethBal = tokenEthFees[token];
-        if (tokenBal == 0) tokenBal = ILaunchpadToken(token).balanceOf(address(this));
-        if (wethBal == 0 && address(this).balance > 0) wethBal = address(this).balance;
         tokenTokenFees[token] = 0;
         tokenEthFees[token] = 0;
 
