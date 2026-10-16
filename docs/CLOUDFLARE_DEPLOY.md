@@ -30,3 +30,18 @@
 - `_redirects` ensures Vue Router (history mode) works correctly on Cloudflare Pages.
 - Static assets in `dist/assets/` are served with `Cache-Control: immutable` (1 year).
 - `index.html` is served with `no-cache` to ensure users always get the latest version.
+
+## Maintenance Mode
+
+The edge worker (`worker.ts`) reads three variables. Set them in the Cloudflare dashboard under
+**Workers & Pages > proto > Settings > Variables and Secrets**; changes apply on save, with no
+rebuild. `keep_vars = true` in `wrangler.toml` keeps them across deploys.
+
+| Variable                   | Values                            | Effect                                                                                               |
+| -------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `MAINTENANCE_MODE`         | `off` (default), `banner`, `full` | `banner` shows a dismissible notice in the app; `full` returns a 503 maintenance page for every page |
+| `MAINTENANCE_MESSAGE`      | plain text                        | Optional text for the banner and the 503 page                                                        |
+| `MAINTENANCE_BYPASS_TOKEN` | secret                            | During `full`, open any page with `?maintenance_bypass=<token>` to use the site for 12 hours         |
+
+The API proxy (`/api/*`, `/dex/*`, `/health`) stays reachable in every mode. Store the bypass token
+as a secret, not a plain variable.
