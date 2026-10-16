@@ -30,7 +30,8 @@ export default defineConfig({
   ],
   webServer: {
     command:
-      'bun run --filter @goton/frontoffice build && cd apps/frontoffice && bunx vite preview --port 4173 --strictPort',
+      // No Reown project id: the built-in wallet dialog opens, same locally and in CI.
+      'VITE_REOWN_PROJECT_ID= bun run --filter @goton/frontoffice build && cd apps/frontoffice && bunx vite preview --port 4173 --strictPort',
     url: 'http://localhost:4173',
     reuseExistingServer: !process.env.CI,
     timeout: 300_000,
