@@ -175,9 +175,10 @@ export default {
     const url = new URL(request.url);
     const rayId = request.headers.get('cf-ray') || crypto.randomUUID();
 
-    // Block common scanner paths for dotfiles and admin panels.
+    // Block common scanner paths for dotfiles and admin panels (/.well-known/ stays public:
+    // security.txt and similar standard files live there).
     if (
-      url.pathname.startsWith('/.') ||
+      (url.pathname.startsWith('/.') && !url.pathname.startsWith('/.well-known/')) ||
       url.pathname.startsWith('/wp-admin') ||
       url.pathname.startsWith('/phpmyadmin') ||
       url.pathname.startsWith('/server-status') ||

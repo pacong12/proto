@@ -10,17 +10,22 @@ Only the latest active release branch is eligible for active security patches an
 
 | Version | Supported |
 | ------- | --------- |
-| 0.1.x   | Yes       |
-| < 0.1.0 | No        |
+| 0.2.x   | Yes       |
+| < 0.2.0 | No        |
 
 ## In-Scope Components
 
 1. **Smart Contracts (`contracts/src/`)**:
-   - `BondingCurve.sol`: Constant product bonding curve math, reserve invariants, and anti-snipe tax logic.
-   - `LaunchpadFactory.sol`, `LaunchpadV2Factory.sol`, and `LaunchpadV2FactoryArc.sol`: Factory deployment, atomic pool initialization, and fee routing.
-   - `LiquidityLocker.sol`: Permanent liquidity position lock mechanisms and fee claim distributions.
-   - `HolderFeeDistributor.sol`: Cumulative reward-per-token dividend calculations.
-   - `BuybackBurner.sol`: TWAP buyback execution, cooldown guards, and treasury protection.
+   - `core/BondingCurve.sol`, `core/LaunchpadToken.sol`: constant-product curve math, reserve
+     invariants, anti-snipe and creator tax logic.
+   - `chains/robinhood/LaunchpadV2Factory.sol`, `chains/arc/LaunchpadV2FactoryArc.sol`: token
+     launches, graduation and the emergency circuit breaker.
+   - `core/GotonV4Hook.sol`, `core/GotonV4Graduator.sol`, `core/GotonV4Router.sol`,
+     `core/GotonV4Buyback.sol`: Uniswap v4 hook (TWAP oracle, taxes), graduation, swaps and
+     TWAP-guarded buyback-and-burn.
+   - `core/GotonFeeSplitter.sol`, `core/VestingVault.sol`: fee splits, holder dividends and
+     vesting.
+   - Contracts under `contracts/src/legacy/` are superseded and out of scope unless still deployed.
 
 2. **Backend API & Indexer (`apps/api/`)**:
    - Security Gate & `SecurityPolicy` transaction intent evaluation.
@@ -43,6 +48,7 @@ Only the latest active release branch is eligible for active security patches an
 If you discover a security vulnerability in the Goton protocol, please report it privately:
 
 1. **GitHub Advisory**: Open a confidential report via [GitHub Private Vulnerability Reporting](https://github.com/pacong12/proto/security/advisories/new).
+   The same contact is published at `https://goton.fun/.well-known/security.txt` (RFC 9116).
 2. **Details Required**:
    - Descriptive title and affected component.
    - Detailed step-by-step reproduction steps or executable proof-of-concept (Foundry test preferred for contracts).

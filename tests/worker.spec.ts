@@ -87,6 +87,17 @@ describe('edge worker indexing', () => {
   });
 });
 
+describe('edge worker dotfile guard', () => {
+  it('serves /.well-known/security.txt', async () => {
+    expect((await get('/.well-known/security.txt', makeEnv())).status).toBe(200);
+  });
+
+  it('still blocks other dotfiles', async () => {
+    expect((await get('/.env', makeEnv())).status).toBe(404);
+    expect((await get('/.git/config', makeEnv())).status).toBe(404);
+  });
+});
+
 describe('edge worker legal redirects', () => {
   it('sends legal pages to the docs site with a permanent redirect', async () => {
     const res = await get('/terms', makeEnv());
