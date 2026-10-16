@@ -246,6 +246,7 @@ contract ProtoV4Graduator is IUnlockCallback {
 
         // Rounding dust: tokens are burned, ETH goes to the protocol.
         uint256 tokenDust = IERC20Graduation(token).balanceOf(address(this));
+        // slither-disable-next-line reentrancy-balance (burning our own token dust; nothing reads the balance afterwards)
         if (tokenDust > 0 && !IERC20Graduation(token).transfer(DEAD, tokenDust)) revert TransferFailed();
         uint256 ethDust = address(this).balance;
         if (ethDust > 0) {
@@ -277,6 +278,7 @@ contract ProtoV4Graduator is IUnlockCallback {
         return _collectCallback(abi.decode(payload, (address)));
     }
 
+    // slither-disable-next-line reentrancy-eth (external calls go to the PoolManager and the launchpad token only; graduate() is launcher-only)
     function _graduateCallback(PoolKey memory key) private returns (bytes memory) {
         address token = key.currency1;
         (uint160 sqrtPrice, int24 tick) = V4Lib.getSlot0(poolManager, key.toId());

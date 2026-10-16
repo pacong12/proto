@@ -127,6 +127,7 @@ contract ProtoV4Router is IUnlockCallback {
             poolManager.settle{value: owed}();
         } else {
             poolManager.sync(currencyIn);
+            // slither-disable-next-line arbitrary-send-erc20 (payer is always the msg.sender of swapExactIn; only PoolManager can call back)
             bool ok = s.paidWithValue
                 ? IERC20Router(currencyIn).transfer(address(poolManager), owed)
                 : IERC20Router(currencyIn).transferFrom(s.payer, address(poolManager), owed);

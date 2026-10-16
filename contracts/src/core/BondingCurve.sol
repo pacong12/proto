@@ -375,6 +375,7 @@ contract BondingCurve {
         _executeMigration(recipient);
     }
 
+    // slither-disable-next-line arbitrary-send-eth (recipient is the factory-configured graduator)
     function _executeMigration(address payable recipient) internal {
         if (!graduated) revert NotGraduated();
         if (migrationExecuted) revert MigrationAlreadyExecuted();

@@ -230,6 +230,7 @@ contract ProtoV4Hook {
         if (window == 0) revert OracleNotReady();
         int56 delta = cumulativeNow - o.olderCumulative;
         twapTick = int24(delta / int56(uint56(window)));
+        // slither-disable-next-line weak-prng (modulo rounds the TWAP toward -inf; no randomness involved)
         if (delta < 0 && delta % int56(uint56(window)) != 0) twapTick--; // round towards -infinity
     }
 
