@@ -318,6 +318,7 @@ contract ProtoFeeSplitter {
         return account == poolManager || account == DEAD || (excluded != address(0) && account == excluded);
     }
 
+    // slither-disable-next-line arbitrary-send-eth (recipients are the configured protocol/creator/holder addresses)
     function _send(address to, uint256 amount) private {
         if (amount == 0) return;
         if (quoteAsset == address(0)) {

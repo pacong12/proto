@@ -282,6 +282,7 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
 
         // Rounding dust left over from the liquidity calculation is burned.
         uint256 dust = token.balanceOf(address(this));
+        // slither-disable-next-line reentrancy-balance (burning our own token dust; nothing reads the balance afterwards)
         if (dust > 0 && !token.transfer(DEAD, dust)) revert TransferFailed();
 
         emit TokenLaunchedV4(
