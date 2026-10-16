@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {LaunchpadToken} from "../../core/LaunchpadToken.sol";
+import {EmergencyPause} from "../../core/EmergencyPause.sol";
 import {ILaunchpadToken} from "../../interfaces/ILaunchpadToken.sol";
 import {PoolKey, PoolIdLibrary} from "../../interfaces/IUniswapV4.sol";
 import {
@@ -37,7 +38,7 @@ interface IERC20Transfer {
  * Payment: the prebuy is sent as native USDC in msg.value (18 decimals); on Arc the same balance
  * is spendable through the USDC ERC-20 at 0x3600… (6 decimals).
  */
-contract LaunchpadV2FactoryArc is IUnlockCallback {
+contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
     using PoolIdLibrary for PoolKey;
 
     struct TokenMetadata {
@@ -186,6 +187,7 @@ contract LaunchpadV2FactoryArc is IUnlockCallback {
         external
         payable
         nonReentrant
+        whenNotPaused
         returns (address tokenAddress, bytes32 poolId)
     {
         if (msg.value < launchFee) revert InvalidFee();
@@ -429,6 +431,10 @@ contract LaunchpadV2FactoryArc is IUnlockCallback {
     // ---------------------------------------------------------------------------
     // Admin
     // ---------------------------------------------------------------------------
+
+    function _pauseOwner() internal view override returns (address) {
+        return owner;
+    }
 
     function setLaunchParams(
         int24 _initialTick,

@@ -28,6 +28,10 @@ import {AntiSnipeLogic} from "../libraries/AntiSnipeLogic.sol";
  *     so bytecode is argument-free and identical across all deployments, enabling
  *     CREATE2-based auto-verification on block explorers.
  */
+interface IFactoryPause {
+    function paused() external view returns (bool);
+}
+
 contract BondingCurve {
     using PoolIdLibrary for PoolKey;
 
@@ -69,6 +73,7 @@ contract BondingCurve {
 
     error AlreadyInitialized();
     error AlreadyGraduated();
+    error Paused();
     error NotGraduated();
     error MigrationAlreadyExecuted();
     error MigrationDeadlineNotReached();
@@ -197,6 +202,8 @@ contract BondingCurve {
      */
     function buyFor(address recipient, uint256 minTokensOut) public payable nonReentrant returns (uint256 tokensOut) {
         if (graduated) revert AlreadyGraduated();
+        // DR-01: the factory's circuit breaker stops new buys; sells are never paused.
+        if (msg.sender != factory && IFactoryPause(factory).paused()) revert Paused();
         if (msg.value == 0) revert InvalidAmount();
         if (recipient == address(0)) revert ZeroAddress();
 

@@ -74,6 +74,9 @@ contract DeployRobinhoodV2 is Script {
         ProtoV4Router router = new ProtoV4Router(poolManager, address(0), 0);
         ProtoV4Buyback buyback = new ProtoV4Buyback(poolManager, hook);
         graduator.setRecipients(feeRecipient, address(buyback), feeRecipient);
+        // DR-01: optional incident-response guardian that can pause launches, curve buys and graduations.
+        address guardian = vm.envOr("EMERGENCY_GUARDIAN", address(0));
+        if (guardian != address(0)) factory.setGuardian(guardian);
 
         vm.stopBroadcast();
 

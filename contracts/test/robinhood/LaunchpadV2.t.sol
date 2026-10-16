@@ -6,6 +6,7 @@ import {Test} from "forge-std/Test.sol";
 import {LaunchpadV2Factory} from "../../src/chains/robinhood/LaunchpadV2Factory.sol";
 import {BondingCurve} from "../../src/core/BondingCurve.sol";
 import {LaunchpadToken} from "../../src/core/LaunchpadToken.sol";
+import {EmergencyPause} from "../../src/core/EmergencyPause.sol";
 import {ILaunchpadToken} from "../../src/interfaces/ILaunchpadToken.sol";
 
 contract ReentrantAttackerRecipient {
@@ -436,5 +437,54 @@ contract LaunchpadV2Test is Test {
         vm.prank(creator);
         vm.expectRevert(LaunchpadToken.TimelockNotExpired.selector);
         LaunchpadToken(tokenAddress).setInitialTaxConfig(0, 1_000, creator);
+    }
+
+    // DR-01: circuit breaker stops new money entering, never exits.
+    function test_EmergencyPause_BlocksEntriesButNotExits() public {
+        (address tokenAddress, address curveAddress) = _launch();
+        BondingCurve curve = BondingCurve(payable(curveAddress));
+        vm.warp(block.timestamp + 10);
+        vm.roll(block.number + 3);
+        vm.prank(buyer1);
+        uint256 bought = curve.buy{value: 0.5 ether}(0);
+
+        address guardian = address(0x6A4D);
+        factory.setGuardian(guardian);
+        vm.prank(guardian);
+        factory.pause();
+
+        vm.prank(buyer1);
+        vm.expectRevert(BondingCurve.Paused.selector);
+        curve.buy{value: 0.1 ether}(0);
+
+        vm.prank(creator);
+        vm.expectRevert(EmergencyPause.EmergencyPaused.selector);
+        factory.launchTokenV2{value: 0.0005 ether}("X", "X", "", "", "", "", "", 0);
+
+        vm.expectRevert(EmergencyPause.EmergencyPaused.selector);
+        factory.graduate(tokenAddress);
+
+        // Holders can always exit.
+        vm.startPrank(buyer1);
+        LaunchpadToken(payable(tokenAddress)).approve(curveAddress, bought);
+        assertGt(curve.sell(bought, 0), 0);
+        vm.stopPrank();
+
+        // Only the owner can resume.
+        vm.prank(guardian);
+        vm.expectRevert(EmergencyPause.NotGuardian.selector);
+        factory.unpause();
+        factory.unpause();
+        vm.prank(buyer1);
+        curve.buy{value: 0.1 ether}(0);
+    }
+
+    function test_EmergencyPause_OnlyOwnerOrGuardian() public {
+        vm.prank(buyer1);
+        vm.expectRevert(EmergencyPause.NotGuardian.selector);
+        factory.pause();
+        vm.prank(buyer1);
+        vm.expectRevert(EmergencyPause.NotGuardian.selector);
+        factory.setGuardian(buyer1);
     }
 }

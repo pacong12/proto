@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {EmergencyPause} from "../../core/EmergencyPause.sol";
 import {LaunchpadToken} from "../../core/LaunchpadToken.sol";
 import {ILaunchpadToken} from "../../interfaces/ILaunchpadToken.sol";
 import {BondingCurve} from "../../core/BondingCurve.sol";
@@ -22,7 +23,7 @@ import {ProtoV4Graduator} from "../../core/ProtoV4Graduator.sol";
  *   - CREATE2 deploy: token and curve bytecode contains no constructor args, enabling
  *     block-explorer auto-verification via bytecode match without per-token submissions.
  */
-contract LaunchpadV2Factory {
+contract LaunchpadV2Factory is EmergencyPause {
     uint256 public launchFee = 0.0005 ether;
     uint256 public constant GRADUATION_TARGET = 4.2 ether;
     uint256 public constant VIRTUAL_ETH_RESERVE = 1.68 ether;
@@ -104,6 +105,10 @@ contract LaunchpadV2Factory {
         emit LaunchFeeUpdated(oldFee, _newFee);
     }
 
+    function _pauseOwner() internal view override returns (address) {
+        return owner;
+    }
+
     function LAUNCH_FEE() external view returns (uint256) {
         return launchFee;
     }
@@ -164,7 +169,7 @@ contract LaunchpadV2Factory {
         string memory telegram,
         string memory website,
         uint256 minInitialTokensOut
-    ) external payable nonReentrant returns (address tokenAddress, address curveAddress) {
+    ) external payable nonReentrant whenNotPaused returns (address tokenAddress, address curveAddress) {
         if (msg.value < launchFee) revert InvalidFee();
 
         uint256 initialBuyEth = msg.value - launchFee;
@@ -249,6 +254,7 @@ contract LaunchpadV2Factory {
     function graduate(address tokenAddress)
         external
         nonReentrant
+        whenNotPaused
         returns (bytes32 poolId, address splitter)
     {
         V2Launch storage launch = launches[tokenAddress];
