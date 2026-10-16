@@ -1,0 +1,66 @@
+name: API Load Test
+
+# Starts the API in production mode and runs scripts/load-test.ts against its heaviest read paths.
+# Fails on any connection error, any 5xx or 429 response, or a p99 latency above the SLA (500ms).
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/api/**'
+      - 'packages/shared-types/**'
+      - 'scripts/load-test.ts'
+      - '.github/workflows/load-test.yml'
+  schedule:
+    - cron: '0 3 * * 1' # Mondays 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: load-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  load-test:
+    name: Load test (p99 <= 500ms, no 5xx/429)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Start API (production mode)
+        env:
+          NODE_ENV: production
+          PORT: '3001'
+          # The load test sends a random x-real-ip per request so the per-IP rate limiter sees
+          # many clients; the API only trusts that header with TRUST_PROXY.
+          TRUST_PROXY: 'true'
+          DB_PATH: ${{ runner.temp }}/load.sqlite
+          SESSION_SECRET: load-test-only-secret-0123456789abcdef
+        run: |
+          nohup bun run apps/api/src/server.ts > "$RUNNER_TEMP/api.log" 2>&1 &
+          for i in $(seq 1 60); do
+            curl -sf http://127.0.0.1:3001/health && exit 0
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/api.log"
+          exit 1
+
+      - name: Run load test
+        env:
+          API_URL: http://127.0.0.1:3001
+        run: bun run test:load
+
+      - name: API log on failure
+        if: failure()
+        run: tail -n 200 "$RUNNER_TEMP/api.log"
