@@ -59,12 +59,22 @@ describe('TokenAggregationService', () => {
       expect(holders[0].percent).toBe(100);
     });
 
-    it('allocates initial buy to deployer when configured', () => {
-      const tokenWithInitial = {
-        ...mockToken,
-        initialBuyAmount: '100000000000000000000000000', // 100M (10%)
+    it('counts the creator launch buy from its trade, not from initialBuyAmount (quote paid)', () => {
+      const tokenWithInitial = { ...mockToken, initialBuyAmount: '4500000' }; // 4.50 USDC paid
+      const creatorBuy: TradeEventEntity = {
+        id: 'launch',
+        tokenAddress: mockToken.address,
+        poolAddress: mockToken.poolAddress,
+        trader: mockToken.deployer,
+        isBuy: true,
+        tokenAmount: '100000000.0000', // 100M tokens (10%), as stored by the indexer
+        wethAmount: '4.500000',
+        priceUsd: 0,
+        blockNumber: 1n,
+        transactionHash: '0xlaunch',
+        timestamp: Date.now(),
       };
-      const holders = computeHoldersDistribution(tokenWithInitial, []);
+      const holders = computeHoldersDistribution(tokenWithInitial, [creatorBuy]);
       expect(holders).toHaveLength(2);
       expect(holders[0].address).toBe(mockToken.poolAddress);
       expect(holders[0].percent).toBe(90);
@@ -80,7 +90,7 @@ describe('TokenAggregationService', () => {
           poolAddress: mockToken.poolAddress,
           trader: '0x5555555555555555555555555555555555555555',
           isBuy: true,
-          tokenAmount: '50000000000000000000000000', // 50M (5%)
+          tokenAmount: '50000000.0000', // 50M (5%), human units as stored by the indexer
           wethAmount: '0.1',
           priceUsd: 0.5,
           blockNumber: 100n,

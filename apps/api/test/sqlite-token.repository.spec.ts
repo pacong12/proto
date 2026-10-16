@@ -199,11 +199,24 @@ describe('SqliteTokenRepository', () => {
     expect(page2[1].id).toBe('page-trade-2');
   });
 
-  it('returns realistic initial holders distribution when no onchain trade index exists', async () => {
+  it('returns pool + creator once the creator launch buy is indexed', async () => {
     await repository.save(sampleToken);
+    // The creator's launch buy is indexed like any trade (human-readable token amount).
+    await repository.saveTrade({
+      id: 'trade-launch',
+      tokenAddress: sampleToken.address,
+      poolAddress: sampleToken.poolAddress,
+      trader: sampleToken.deployer,
+      isBuy: true,
+      tokenAmount: '50000.0000',
+      wethAmount: '0.5',
+      priceUsd: 0.1,
+      blockNumber: 1n,
+      transactionHash: '0xhashlaunch',
+      timestamp: 1700000000000,
+    });
     const holders = await repository.getHolders(sampleToken.address);
 
-    // Without trades: pool + deployer (if initialBuyAmount > 0)
     expect(holders.length).toBeGreaterThanOrEqual(2);
     // Liquidity locker (Pool) should hold the remainder after deployer initial buy
     const poolHolder = holders.find(
@@ -233,7 +246,7 @@ describe('SqliteTokenRepository', () => {
       poolAddress: sampleToken.poolAddress,
       trader: activeBuyer,
       isBuy: true,
-      tokenAmount: '50000000000000000000000', // 50,000 tokens
+      tokenAmount: '50000.0000', // 50,000 tokens, human units as stored by the indexer
       wethAmount: '0.5',
       priceUsd: 0.1,
       blockNumber: 500n,
@@ -249,8 +262,7 @@ describe('SqliteTokenRepository', () => {
 
   it('honors limit in getHolders', async () => {
     await repository.save(sampleToken);
-    // With no trades, getHolders returns pool + deployer = 2 entries.
-    // Requesting limit=1 should return exactly 1.
+    // Requesting limit=1 returns exactly the first entry (the pool).
     const holders = await repository.getHolders(sampleToken.address, 1);
     expect(holders).toHaveLength(1);
   });

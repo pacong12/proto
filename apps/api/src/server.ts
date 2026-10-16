@@ -35,8 +35,12 @@ import {
   ROBINHOOD_CHAIN,
   ARC_CHAIN,
   bondingCurveAbi,
-  holderFeeDistributorAbi,
+  protoFeeSplitterAbi,
+  protoV4GraduatorAbi,
+  protoV4HookAbi,
+  resolveFeeSplitter,
   launchpadTokenAbi,
+  type LaunchedTokenEntity,
   type NetworkConfig,
   TransactionIntent,
   type TokenCommentEntity,
@@ -723,17 +727,12 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         }
       }
       if (existing) {
+        // API-02: the request body is never trusted for tax data (this endpoint is public).
+        // Taxes and the revenue split are read from chain; the body only triggers re-indexing.
         let buyTaxBps = existing.taxConfig?.buyTaxBps ?? 0;
         let sellTaxBps = existing.taxConfig?.sellTaxBps ?? 0;
         let taxRecipient = existing.taxConfig?.taxRecipient ?? existing.deployer;
         let revenueSplit = existing.taxConfig?.revenueSplit;
-
-        if (body.taxConfig) {
-          if (typeof body.taxConfig.buyTaxBps === 'number') buyTaxBps = body.taxConfig.buyTaxBps;
-          if (typeof body.taxConfig.sellTaxBps === 'number') sellTaxBps = body.taxConfig.sellTaxBps;
-          if (body.taxConfig.taxRecipient) taxRecipient = body.taxConfig.taxRecipient;
-          if (body.taxConfig.revenueSplit) revenueSplit = body.taxConfig.revenueSplit;
-        }
 
         const chain = chainRegistry.resolveForToken(existing);
         try {
@@ -747,6 +746,75 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
             sellTaxBps = Number(onchainCfg[1]);
             if (onchainCfg[2] && onchainCfg[2] !== '0x0000000000000000000000000000000000000000') {
               taxRecipient = onchainCfg[2];
+            }
+          }
+        } catch {
+          // non-fatal
+        }
+
+        // In-pool v4 tokens: the fixed-forever tax lives in the hook, the split in the splitter.
+        const hook = chain.network.contracts.memeHook;
+        if (
+          existing.version === 'v4' &&
+          hook &&
+          hook !== '0x0000000000000000000000000000000000000000'
+        ) {
+          try {
+            const pool = await chain.client.readContract({
+              address: hook,
+              abi: protoV4HookAbi,
+              functionName: 'pools',
+              args: [existing.poolAddress],
+            });
+            buyTaxBps = Number(pool[3]);
+            sellTaxBps = Number(pool[4]);
+          } catch {
+            // non-fatal
+          }
+        }
+        try {
+          const splitter = await resolveFeeSplitter(chain.client, chain.network, address);
+          if (splitter) {
+            const [holders, burn, creatorShare, liquidity] = await Promise.all(
+              (['holdersBps', 'burnBps', 'creatorBps', 'liquidityBps'] as const).map(
+                (functionName) =>
+                  chain.client.readContract({
+                    address: splitter.address,
+                    abi: protoFeeSplitterAbi,
+                    functionName,
+                  }),
+              ),
+            );
+            revenueSplit = {
+              holders: Number(holders) / 100,
+              buyback: Number(burn) / 100,
+              creator: Number(creatorShare) / 100,
+              growth: Number(liquidity) / 100,
+            };
+          } else {
+            // Before graduation the creator's split is held by the graduator (if one was set).
+            const graduator = chain.network.contracts.graduator;
+            if (graduator && graduator !== '0x0000000000000000000000000000000000000000') {
+              const hasSplit = await chain.client.readContract({
+                address: graduator,
+                abi: protoV4GraduatorAbi,
+                functionName: 'hasTokenSplit',
+                args: [address],
+              });
+              if (hasSplit) {
+                const split = await chain.client.readContract({
+                  address: graduator,
+                  abi: protoV4GraduatorAbi,
+                  functionName: 'tokenSplits',
+                  args: [address],
+                });
+                revenueSplit = {
+                  holders: Number(split[1]) / 100,
+                  buyback: Number(split[2]) / 100,
+                  creator: Number(split[3]) / 100,
+                  growth: Number(split[4]) / 100,
+                };
+              }
             }
           }
         } catch {
@@ -839,9 +907,12 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       const chain = token
         ? chainRegistry.resolveForToken(token)
         : chainRegistry.getChainByParam(url.searchParams.get('chain'));
-      const distributorAddr = chain.network.contracts.holderFeeDistributor;
-
-      if (!distributorAddr || distributorAddr === '0x0000000000000000000000000000000000000000') {
+      // Dividends are paid by the token's ProtoFeeSplitter (created at launch on in-pool v4
+      // chains, at graduation on bonding-curve chains).
+      const splitter = await resolveFeeSplitter(chain.client, chain.network, tokenAddress).catch(
+        () => null,
+      );
+      if (!splitter) {
         return replyEnvelope(
           ok({
             tokenAddress,
@@ -856,47 +927,35 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         );
       }
 
-      const client = chain.client;
-      const [earnedWei, feeState, snapBal] = await Promise.all([
-        client
+      const [earnedWei, totalStreamed] = await Promise.all([
+        chain.client
           .readContract({
-            address: distributorAddr,
-            abi: holderFeeDistributorAbi,
-            functionName: 'earned',
-            args: [tokenAddress, accountParam],
+            address: splitter.address,
+            abi: protoFeeSplitterAbi,
+            functionName: 'claimable',
+            args: [accountParam],
           })
-          .catch(() => 0n) as Promise<bigint>,
-        client
+          .catch(() => 0n),
+        chain.client
           .readContract({
-            address: distributorAddr,
-            abi: holderFeeDistributorAbi,
-            functionName: 'tokenFeeStates',
-            args: [tokenAddress],
+            address: splitter.address,
+            abi: protoFeeSplitterAbi,
+            functionName: 'totalStreamed',
           })
-          .catch(() => [0n, 0n]) as Promise<[bigint, bigint]>,
-        client
-          .readContract({
-            address: distributorAddr,
-            abi: holderFeeDistributorAbi,
-            functionName: 'snapshotBalance',
-            args: [tokenAddress, accountParam],
-          })
-          .catch(() => 0n) as Promise<bigint>,
+          .catch(() => 0n),
       ]);
-
-      const decimals = chain.network.nativeCurrency.decimals;
-      const earnedFormatted = Number(earnedWei) / 10 ** decimals;
 
       return replyEnvelope(
         ok({
           tokenAddress,
           account: accountParam,
           distributorAvailable: true,
-          distributorAddress: distributorAddr,
+          distributorAddress: splitter.address,
           earnedWei: earnedWei.toString(),
-          earnedFormatted,
-          snapshotBalanceWei: snapBal.toString(),
-          totalDistributedWei: feeState[1].toString(),
+          earnedFormatted: Number(earnedWei) / 10 ** splitter.quoteDecimals,
+          // Splitters checkpoint on every transfer; there is no separate balance snapshot.
+          snapshotBalanceWei: '0',
+          totalDistributedWei: totalStreamed.toString(),
           rewardAssetSymbol: chain.network.nativeCurrency.symbol,
         }),
       );
