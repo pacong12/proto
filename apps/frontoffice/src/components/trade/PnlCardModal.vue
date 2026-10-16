@@ -11,7 +11,7 @@
       <div class="flex items-center justify-between px-5 py-4 border-b border-border">
         <div class="flex items-center gap-2">
           <Sparkles class="w-4 h-4 text-primary" />
-          <h2 class="text-sm font-bold text-foreground">Share Trading PnL Card</h2>
+          <h2 class="text-sm font-bold text-foreground">{{ t('pnlShareTitle') }}</h2>
         </div>
         <button
           type="button"
@@ -56,7 +56,7 @@
                   : 'border-rose-500/40 text-rose-400 bg-rose-500/10'
               "
             >
-              {{ isProfit ? 'Profit Signal' : 'Position' }}
+              {{ isProfit ? t('pnlProfitSignal') : t('pnlPosition') }}
             </div>
           </div>
 
@@ -81,9 +81,9 @@
 
             <!-- Return Metric -->
             <div class="text-right shrink-0">
-              <span class="text-[10px] font-mono text-zinc-400 uppercase block font-bold"
-                >Unrealized Return</span
-              >
+              <span class="text-[10px] font-mono text-zinc-400 uppercase block font-bold">{{
+                t('pnlUnrealizedReturn')
+              }}</span>
               <span
                 class="text-2xl sm:text-3xl font-black font-mono tracking-tight"
                 :class="isProfit ? 'text-emerald-400' : 'text-rose-400'"
@@ -98,19 +98,23 @@
             class="grid grid-cols-3 gap-2 p-3 rounded-xl bg-zinc-900/80 border border-zinc-800 relative z-10 font-mono text-xs"
           >
             <div>
-              <span class="text-[10px] text-zinc-500 uppercase block">Holding Value</span>
+              <span class="text-[10px] text-zinc-500 uppercase block">{{
+                t('pnlHoldingValue')
+              }}</span>
               <span class="font-bold text-foreground block truncate">
                 ${{ formatCompactUsd(userHoldingUsd) }}
               </span>
             </div>
             <div>
-              <span class="text-[10px] text-zinc-500 uppercase block">Market Cap</span>
+              <span class="text-[10px] text-zinc-500 uppercase block">{{ t('pnlMarketCap') }}</span>
               <span class="font-bold text-foreground block truncate">
                 ${{ formatCompactUsd(currentMarketData.marketCapUsd || 4200) }}
               </span>
             </div>
             <div class="text-right">
-              <span class="text-[10px] text-zinc-500 uppercase block">Token Price</span>
+              <span class="text-[10px] text-zinc-500 uppercase block">{{
+                t('pnlTokenPrice')
+              }}</span>
               <span class="font-bold text-foreground block truncate">
                 ${{
                   currentMarketData.priceUsd ? currentMarketData.priceUsd.toFixed(6) : '0.000000'
@@ -124,9 +128,9 @@
             class="flex items-center justify-between relative z-10 pt-1 text-[11px] font-mono text-zinc-400"
           >
             <div class="flex items-center gap-1.5 truncate">
-              <span class="text-zinc-500">Trader:</span>
+              <span class="text-zinc-500">{{ t('pnlTrader') }}</span>
               <span class="text-foreground font-bold truncate">
-                {{ account ? getUserIdentity(account).displayName : 'Anon Trader' }}
+                {{ account ? getUserIdentity(account).displayName : t('pnlAnonTrader') }}
               </span>
             </div>
             <span class="text-primary font-bold shrink-0">proto.family</span>
@@ -142,7 +146,7 @@
             @click="downloadCard"
           >
             <Download class="w-3.5 h-3.5" />
-            <span>{{ isGeneratingImage ? 'Generating...' : 'Download Image' }}</span>
+            <span>{{ isGeneratingImage ? t('pnlGenerating') : t('pnlDownloadImage') }}</span>
           </Button>
 
           <Button
@@ -154,7 +158,7 @@
                 d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
               />
             </svg>
-            <span>Share on X</span>
+            <span>{{ t('pnlShareOnX') }}</span>
           </Button>
         </div>
       </div>
@@ -170,6 +174,7 @@ import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { formatCompactUsd } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { toast } from '@/components/ui/sonner';
+import { useI18n } from '@/lib/i18n';
 import type { LaunchedTokenEntity, TokenMarketData, NetworkConfig } from '@proto/shared-types';
 
 interface Props {
@@ -183,6 +188,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const { t } = useI18n();
 const emit = defineEmits<{ (e: 'close'): void }>();
 
 const isGeneratingImage = ref(false);
@@ -241,7 +247,11 @@ async function generateCanvasImage(): Promise<string> {
   ctx.fillStyle = isProfit.value ? '#10b981' : '#f43f5e';
   ctx.font = 'bold 24px monospace';
   ctx.textAlign = 'right';
-  ctx.fillText(isProfit.value ? 'VERIFIED PROFIT' : 'OPEN POSITION', 1130, 95);
+  ctx.fillText(
+    (isProfit.value ? t('pnlVerifiedProfit') : t('pnlOpenPosition')).toUpperCase(),
+    1130,
+    95,
+  );
   ctx.textAlign = 'left';
 
   // Divider
@@ -269,7 +279,7 @@ async function generateCanvasImage(): Promise<string> {
 
   ctx.fillStyle = '#71717a';
   ctx.font = 'bold 22px monospace';
-  ctx.fillText('UNREALIZED RETURN', 1130, 300);
+  ctx.fillText(t('pnlUnrealizedReturn').toUpperCase(), 1130, 300);
   ctx.textAlign = 'left';
 
   // 7. Stats Box
@@ -281,7 +291,7 @@ async function generateCanvasImage(): Promise<string> {
   // Stat 1: Position Value
   ctx.fillStyle = '#71717a';
   ctx.font = 'bold 20px monospace';
-  ctx.fillText('HOLDING VALUE', 105, 410);
+  ctx.fillText(t('pnlHoldingValue').toUpperCase(), 105, 410);
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 36px monospace';
   ctx.fillText(`$${formatCompactUsd(props.userHoldingUsd)}`, 105, 460);
@@ -289,7 +299,7 @@ async function generateCanvasImage(): Promise<string> {
   // Stat 2: Market Cap
   ctx.fillStyle = '#71717a';
   ctx.font = 'bold 20px monospace';
-  ctx.fillText('MARKET CAP', 480, 410);
+  ctx.fillText(t('pnlMarketCap').toUpperCase(), 480, 410);
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 36px monospace';
   ctx.fillText(`$${formatCompactUsd(props.currentMarketData.marketCapUsd || 4200)}`, 480, 460);
@@ -297,7 +307,7 @@ async function generateCanvasImage(): Promise<string> {
   // Stat 3: Price
   ctx.fillStyle = '#71717a';
   ctx.font = 'bold 20px monospace';
-  ctx.fillText('TOKEN PRICE', 840, 410);
+  ctx.fillText(t('pnlTokenPrice').toUpperCase(), 840, 410);
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 36px monospace';
   ctx.fillText(
@@ -307,10 +317,12 @@ async function generateCanvasImage(): Promise<string> {
   );
 
   // 8. Footer Byline
-  const traderName = props.account ? getUserIdentity(props.account).displayName : 'Anon Trader';
+  const traderName = props.account
+    ? getUserIdentity(props.account).displayName
+    : t('pnlAnonTrader');
   ctx.fillStyle = '#71717a';
   ctx.font = '24px monospace';
-  ctx.fillText(`Trader: ${traderName}`, 70, 560);
+  ctx.fillText(`${t('pnlTrader')} ${traderName}`, 70, 560);
 
   ctx.fillStyle = '#ec4899';
   ctx.font = 'bold 24px monospace';
