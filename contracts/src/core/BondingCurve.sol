@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {ILaunchpadToken} from "../interfaces/ILaunchpadToken.sol";
-import {PoolKey, PoolIdLibrary, IPoolManager} from "../interfaces/IUniswapV4.sol";
+import {PoolKey, PoolIdLibrary} from "../interfaces/IUniswapV4.sol";
 import {CurveMath} from "../libraries/CurveMath.sol";
 import {AntiSnipeLogic} from "../libraries/AntiSnipeLogic.sol";
 
@@ -62,19 +62,8 @@ contract BondingCurve {
     bool private _initialized;
     uint256 private _locked;
 
-    event Trade(
-        address indexed trader,
-        bool indexed isBuy,
-        uint256 ethAmount,
-        uint256 tokenAmount,
-        uint256 feeEth
-    );
-    event Graduated(
-        address indexed token,
-        bytes32 indexed poolId,
-        uint256 ethGraduated,
-        uint256 tokensGraduated
-    );
+    event Trade(address indexed trader, bool indexed isBuy, uint256 ethAmount, uint256 tokenAmount, uint256 feeEth);
+    event Graduated(address indexed token, bytes32 indexed poolId, uint256 ethGraduated, uint256 tokensGraduated);
     event MigrationExecuted(address indexed recipient, uint256 ethAmount, uint256 tokenAmount);
     event EmergencyWithdraw(address indexed recipient, uint256 ethAmount, uint256 tokenAmount);
 
@@ -123,12 +112,9 @@ contract BondingCurve {
         address _memeHook
     ) external {
         if (_initialized) revert AlreadyInitialized();
-        if (
-            _token == address(0) ||
-            _factory == address(0) ||
-            _feeRecipient == address(0) ||
-            _creator == address(0)
-        ) revert ZeroAddress();
+        if (_token == address(0) || _factory == address(0) || _feeRecipient == address(0) || _creator == address(0)) {
+            revert ZeroAddress();
+        }
 
         _initialized = true;
         token = ILaunchpadToken(_token);
@@ -183,7 +169,7 @@ contract BondingCurve {
      * @notice ETH out and platform fee for a given token input.
      */
     function getAmountOutSell(uint256 tokenIn) public view returns (uint256 ethOut, uint256 feeEth) {
-        (, uint16 sellTaxBps, ) = token.taxConfig();
+        (, uint16 sellTaxBps,) = token.taxConfig();
         uint256 netTokenIn = sellTaxBps > 0 ? (tokenIn * (BPS - sellTaxBps)) / BPS : tokenIn;
         return CurveMath.getAmountOutSell(netTokenIn, virtualEthReserve, virtualTokenReserve);
     }
@@ -214,7 +200,7 @@ contract BondingCurve {
         if (msg.value == 0) revert InvalidAmount();
         if (recipient == address(0)) revert ZeroAddress();
 
-        (tokensOut, ) = getAmountOutBuy(msg.value);
+        (tokensOut,) = getAmountOutBuy(msg.value);
         if (tokensOut == 0) revert InvalidAmount();
 
         uint256 grossTokensOut = tokensOut;
@@ -239,11 +225,8 @@ contract BondingCurve {
         uint256 curveAvailable = available > reserveTarget ? available - reserveTarget : 0;
 
         if (curveAvailable > 0 && grossTokensOut == curveAvailable) {
-            (uint256 exactCost, uint256 exactFee) = CurveMath.getEthInForTokens(
-                grossTokensOut,
-                virtualEthReserve,
-                virtualTokenReserve
-            );
+            (uint256 exactCost, uint256 exactFee) =
+                CurveMath.getEthInForTokens(grossTokensOut, virtualEthReserve, virtualTokenReserve);
             if (exactCost < msg.value) {
                 effectiveCost = exactCost;
                 fee = exactFee;
@@ -258,13 +241,14 @@ contract BondingCurve {
         totalEthRaised += netEth;
         totalVolumeEth += effectiveCost;
 
-        bool shouldGraduate = totalEthRaised >= graduationTarget || (curveAvailable > 0 && grossTokensOut == curveAvailable);
+        bool shouldGraduate =
+            totalEthRaised >= graduationTarget || (curveAvailable > 0 && grossTokensOut == curveAvailable);
         if (shouldGraduate) {
             graduated = true;
             graduatedAt = block.timestamp;
         }
 
-        (bool feeOk, ) = feeRecipient.call{value: fee}("");
+        (bool feeOk,) = feeRecipient.call{value: fee}("");
         if (!feeOk) revert TransferFailed();
 
         bool sent = token.transfer(recipient, tokensOut);
@@ -276,7 +260,7 @@ contract BondingCurve {
         }
 
         if (refundEth > 0) {
-            (bool refundOk, ) = payable(msg.sender).call{value: refundEth}("");
+            (bool refundOk,) = payable(msg.sender).call{value: refundEth}("");
             if (!refundOk) revert TransferFailed();
         }
 
@@ -316,7 +300,7 @@ contract BondingCurve {
         // LaunchpadToken._transfer deducts sellTaxBps and sends it to taxRecipient.
         // The curve only receives netTokenIn, so virtualTokenReserve must be incremented
         // by netTokenIn to preserve the constant-product K invariant.
-        (, uint16 sellTaxBps, ) = token.taxConfig();
+        (, uint16 sellTaxBps,) = token.taxConfig();
         uint256 netTokenIn = sellTaxBps > 0 ? (tokenIn * (BPS - sellTaxBps)) / BPS : tokenIn;
 
         // EFFECTS — update all state before any external interaction.
@@ -330,10 +314,10 @@ contract BondingCurve {
         bool taken = token.transferFrom(msg.sender, address(this), tokenIn);
         if (!taken) revert TransferFailed();
 
-        (bool feeOk, ) = feeRecipient.call{value: fee}("");
+        (bool feeOk,) = feeRecipient.call{value: fee}("");
         if (!feeOk) revert TransferFailed();
 
-        (bool userOk, ) = payable(msg.sender).call{value: ethOut}("");
+        (bool userOk,) = payable(msg.sender).call{value: ethOut}("");
         if (!userOk) revert TransferFailed();
 
         emit Trade(msg.sender, false, ethOut, tokenIn, fee);
@@ -344,43 +328,24 @@ contract BondingCurve {
     // ---------------------------------------------------------------------------
 
     /**
-     * @notice Records the canonical Uniswap V4 pool key and emits the Graduated event.
-     *         Funds remain in this contract until migrateToV4() is called by the factory.
-     * @dev F-09 fix: sqrtPriceX96 is derived from the actual reserves at graduation time
-     *      rather than a hardcoded launch-price constant. Initialising the pool at the
-     *      wrong price causes immediate arbitrage against the LP.
+     * @notice Records the canonical Uniswap v4 pool id and emits the Graduated event.
+     *         Funds stay here until the factory's permissionless `graduate` moves them into the
+     *         pool through ProtoV4Graduator (which initializes the pool behind its hook guard).
+     * @dev The key must match ProtoV4Graduator._poolKey (native ETH, 1% fee, spacing 200).
      */
     function _prepareGraduationV4() internal {
-        uint256 ethHeld = address(this).balance;
-        uint256 tokensHeld = token.balanceOf(address(this));
-
-        PoolKey memory key = PoolKey({
-            currency0: address(0),
-            currency1: address(token),
-            fee: 0,
-            tickSpacing: 200,
-            hooks: memeHook
-        });
-
+        PoolKey memory key =
+            PoolKey({currency0: address(0), currency1: address(token), fee: 10_000, tickSpacing: 200, hooks: memeHook});
         graduatedPoolId = key.toId();
-
-        if (poolManagerV4 != address(0) && poolManagerV4.code.length > 0) {
-            uint160 sqrtPriceX96 = _computeSqrtPriceX96(virtualEthReserve, virtualTokenReserve);
-            // slither-disable-next-line unused-return
-            try IPoolManager(poolManagerV4).initialize(key, sqrtPriceX96) returns (int24) {} catch {}
-        }
-
-        emit Graduated(address(token), graduatedPoolId, ethHeld, tokensHeld);
+        emit Graduated(address(token), graduatedPoolId, address(this).balance, token.balanceOf(address(this)));
     }
 
     /**
-     * @notice Compute sqrtPriceX96 from actual reserves.
-     * @dev sqrtPriceX96 = sqrt(ethReserve / tokenReserve) * 2^96
-     *                   = sqrt(ethReserve * 2^192 / tokenReserve)
-     *      Uses Babylonian integer sqrt.
+     * @notice Final spot price for pool initialization: sqrt(token / ETH) * 2^96, i.e. currency1
+     *         (token) per currency0 (native ETH) as Uniswap v4 expects.
      */
-    function _computeSqrtPriceX96(uint256 ethReserve, uint256 tokenReserve) internal pure returns (uint160) {
-        return CurveMath.computeSqrtPriceX96(ethReserve, tokenReserve);
+    function graduationSqrtPriceX96() external view returns (uint160) {
+        return CurveMath.computeSqrtPriceX96(virtualEthReserve, virtualTokenReserve);
     }
 
     /// @notice Babylonian integer square root (floor).
@@ -389,7 +354,7 @@ contract BondingCurve {
     }
 
     /**
-     * @notice Execute liquidity migration into the DEX pool (Uniswap V3 / V4).
+     * @notice Release the graduated curve's ETH and tokens to the factory's v4 graduator.
      * @dev Callable only by the factory once graduation target is reached.
      */
     function migrateLiquidity(address payable recipient) external nonReentrant onlyFactory {
@@ -419,7 +384,7 @@ contract BondingCurve {
         }
 
         if (ethAmount > 0) {
-            (bool ok, ) = recipient.call{value: ethAmount}("");
+            (bool ok,) = recipient.call{value: ethAmount}("");
             if (!ok) revert TransferFailed();
         }
 
@@ -427,17 +392,15 @@ contract BondingCurve {
     }
 
     /**
-     * @notice Safety valve allowing the factory owner to recover funds if V4 migration
-     *         cannot be completed within MIGRATION_DEADLINE seconds after graduation.
-     * @dev C-02 fix: prevents permanent fund lockup if V4 is never deployed.
+     * @notice Safety valve allowing the factory owner to recover funds if a graduated curve
+     *         still has not been migrated MIGRATION_DEADLINE seconds after graduation.
+     * @dev C-02 fix: prevents permanent fund lockup if v4 migration keeps failing.
+     *      Active (non-graduated) curves are never withdrawable: their ETH backs holders' sells.
      */
     function emergencyWithdraw(address payable recipient) external nonReentrant onlyFactory {
         if (migrationExecuted) revert MigrationAlreadyExecuted();
-        if (graduated) {
-            if (block.timestamp < graduatedAt + MIGRATION_DEADLINE) revert MigrationDeadlineNotReached();
-        } else {
-            if (block.timestamp < launchTime + MIGRATION_DEADLINE) revert MigrationDeadlineNotReached();
-        }
+        if (!graduated) revert NotGraduated();
+        if (block.timestamp < graduatedAt + MIGRATION_DEADLINE) revert MigrationDeadlineNotReached();
         if (recipient == address(0)) revert ZeroAddress();
 
         migrationExecuted = true;
@@ -451,7 +414,7 @@ contract BondingCurve {
         }
 
         if (ethAmount > 0) {
-            (bool ok, ) = recipient.call{value: ethAmount}("");
+            (bool ok,) = recipient.call{value: ethAmount}("");
             if (!ok) revert TransferFailed();
         }
 
