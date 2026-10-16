@@ -17,7 +17,8 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? 'github' : 'list',
   use: {
-    baseURL: 'http://localhost:3000',
+    // The production build served by `vite preview`: what users get, not the dev server.
+    baseURL: 'http://localhost:4173',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -28,9 +29,10 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'bun run --filter @goton/frontoffice dev',
-    url: 'http://localhost:3000',
+    command:
+      'bun run --filter @goton/frontoffice build && cd apps/frontoffice && bunx vite preview --port 4173 --strictPort',
+    url: 'http://localhost:4173',
     reuseExistingServer: !process.env.CI,
-    timeout: 60_000,
+    timeout: 300_000,
   },
 });

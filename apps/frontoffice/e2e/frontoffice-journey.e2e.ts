@@ -4,7 +4,7 @@ test.describe('Goton Frontoffice User Journeys', () => {
   test('User can navigate between Explore, Create Token, and Analytics', async ({ page }) => {
     // 1. Visit Explore / Landing Page
     await page.goto('/');
-    await expect(page).toHaveTitle(/proto/i);
+    await expect(page).toHaveTitle(/goton/i);
 
     // Verify brand logo and navigation
     const brand = page.locator('header').getByText('goton', { exact: true });
@@ -48,12 +48,13 @@ test.describe('Goton Frontoffice User Journeys', () => {
     // Press Cmd+K or Ctrl+K
     await page.keyboard.press('Control+K');
 
-    // Verify search input appears
-    const searchInput = page.getByPlaceholder(/search/i);
-    if (await searchInput.isVisible()) {
-      await searchInput.fill('GOTON');
-      await page.keyboard.press('Escape');
-    }
+    // The dialog's input (the Explore page has its own filter field).
+    const searchInput = page.getByPlaceholder(/search tokens by name/i);
+    await expect(searchInput).toBeVisible();
+    await searchInput.fill('GOTON');
+    await expect(searchInput).toHaveValue('GOTON');
+    await page.keyboard.press('Escape');
+    await expect(searchInput).toBeHidden();
   });
 
   test('Mobile viewport: Header and navigation drawer function without horizontal overflow', async ({
