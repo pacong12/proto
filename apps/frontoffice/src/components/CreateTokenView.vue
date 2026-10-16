@@ -249,6 +249,10 @@
               </span>
             </div>
           </div>
+          <p v-if="isArcNetwork" class="text-xs text-sky-400 font-medium">
+            Arc Network standard: Launch is free (0 USDC fee). Initial pre-buy of at least 4.50 USDC
+            is recommended to seed initial liquidity.
+          </p>
 
           <!-- Quick percentage selectors for initial buy -->
           <div
@@ -311,7 +315,11 @@
                   height="16"
                   class="w-4 h-4 rounded-full object-contain shrink-0"
                 />
-                {{ launchFeeFormatted }} {{ currencySymbol }}
+                {{
+                  isArcNetwork && Number(launchFeeFormatted) === 0
+                    ? 'Free (0 USDC)'
+                    : `${launchFeeFormatted} ${currencySymbol}`
+                }}
               </span>
             </div>
 
@@ -427,7 +435,12 @@ import { Card } from '@/components/ui/card';
 import { useI18n } from '@/lib/i18n';
 import { compressAndConvertToWebp } from '@/lib/image-optimizer';
 import { toast } from '@/components/ui/sonner';
-import { type RevenueSplit, calculateTotalSplit, calculateLaunchTotalDue } from '@proto/math-sdk';
+import {
+  type RevenueSplit,
+  calculateTotalSplit,
+  calculateLaunchTotalDue,
+  getChainMathConfig,
+} from '@proto/math-sdk';
 import { CreateTokenAdvancedSection, LaunchProgressModal } from './create';
 
 const { t } = useI18n();
@@ -578,6 +591,13 @@ function goToTrade() {
   }
 }
 
+// In-pool v4 chains (Arc) fix the tax at launch and require a creator prebuy.
+const isArcNetwork = computed(
+  () => getChainMathConfig(activeNetwork.value.chainId)?.model === 'v4-in-pool',
+);
+const minPrebuy = computed(
+  () => Number(activeNetwork.value.launchConfigV2?.minPrebuyWei ?? 0n) / 1e18,
+);
 const currencySymbol = computed(() => activeNetwork.value.nativeCurrency.symbol);
 const launchFeeFormatted = computed(() => {
   const feeWei = activeNetwork.value.launchConfig.launchFeeWei;
@@ -689,6 +709,23 @@ async function handleLaunch() {
   }
   if (!isCorrectNetwork.value) {
     await switchOrAddNetwork(activeNetwork.value);
+    return;
+  }
+  if ((parseFloat(String(form.value.initialBuyEth)) || 0) < minPrebuy.value) {
+    toast.error(
+      `${activeNetwork.value.name} requires an initial pre-buy of at least ${minPrebuy.value} ${currencySymbol.value}.`,
+    );
+    return;
+  }
+  if (
+    isArcNetwork.value &&
+    !(parseFloat(form.value.buyTax || '0') > 0) &&
+    !(parseFloat(form.value.sellTax || '0') > 0)
+  ) {
+    advancedOpen.value = true;
+    toast.error(
+      `${activeNetwork.value.name} tokens need a buy or sell tax above 0% (fixed forever).`,
+    );
     return;
   }
   if (totalSplit.value !== 100) {

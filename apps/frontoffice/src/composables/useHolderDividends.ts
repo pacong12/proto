@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue';
-import { formatEther } from 'viem';
-import { holderFeeDistributorAbi } from '@proto/shared-types';
+import { formatUnits } from 'viem';
+import { protoFeeSplitterAbi, resolveFeeSplitter, type NetworkConfig } from '@proto/shared-types';
 import { getPublicClient, getWalletClient } from '../lib/viem-client';
 
 function isUserRejection(err: unknown): boolean {
@@ -23,9 +23,11 @@ export interface HolderDividendEntry {
   tokenAddress: `0x${string}`;
   tokenSymbol: string;
   tokenName: string;
+  /** Raw amount in the quote currency's smallest unit (wei for ETH, 6-dp units for USDC). */
   earnedWei: bigint;
   /** Human-readable earned amount, e.g. "0.0032" */
   earnedFormatted: string;
+  splitterAddress: `0x${string}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -33,12 +35,12 @@ export interface HolderDividendEntry {
 // ---------------------------------------------------------------------------
 
 /**
- * Reads per-token earned WETH from HolderFeeDistributor for a given holder
- * and allows claiming with claimReward().
+ * Reads per-token claimable dividends from each token's ProtoFeeSplitter (dividends stream in
+ * over a day as fees are collected) and claims them with claim().
  *
  * Usage:
- *   const { entries, totalEarnedWei, loadDividends, claimDividend, loading, actionLoading, error } = useHolderDividends();
- *   await loadDividends(holderAddress, tokenList, chainId);
+ *   const { entries, loadDividends, claimDividend } = useHolderDividends();
+ *   await loadDividends(holderAddress, tokenList, network);
  */
 export function useHolderDividends() {
   const entries = ref<HolderDividendEntry[]>([]);
@@ -48,25 +50,50 @@ export function useHolderDividends() {
 
   const totalEarnedWei = computed(() => entries.value.reduce((acc, e) => acc + e.earnedWei, 0n));
 
+  const quoteDecimals = ref(18);
+
   const totalEarnedFormatted = computed(() => {
-    const n = Number(formatEther(totalEarnedWei.value));
+    const n = Number(formatUnits(totalEarnedWei.value, quoteDecimals.value));
     return isNaN(n) ? '0.0000' : n.toFixed(4);
   });
+
+  async function readEntry(
+    holderAddress: `0x${string}`,
+    tok: { address: `0x${string}`; symbol: string; name: string },
+    network: NetworkConfig,
+  ): Promise<HolderDividendEntry | null> {
+    const client = getPublicClient(network.chainId);
+    const splitter = await resolveFeeSplitter(client, network, tok.address);
+    if (!splitter) return null;
+    quoteDecimals.value = splitter.quoteDecimals;
+    const earned = await client.readContract({
+      address: splitter.address,
+      abi: protoFeeSplitterAbi,
+      functionName: 'claimable',
+      args: [holderAddress],
+    });
+    return {
+      tokenAddress: tok.address,
+      tokenSymbol: tok.symbol,
+      tokenName: tok.name,
+      earnedWei: earned,
+      earnedFormatted: Number(formatUnits(earned, splitter.quoteDecimals)).toFixed(4),
+      splitterAddress: splitter.address,
+    };
+  }
 
   const hasAnyEarned = computed(() => totalEarnedWei.value > 0n);
 
   /**
-   * Query earned() for every token in `tokenAddresses` in parallel.
-   * Tokens whose distributor reverts (e.g. token without holder sharing) are silently skipped.
+   * Query claimable() for every token in `tokens` in parallel.
+   * Tokens without a splitter (not graduated yet / legacy) are skipped.
    */
   async function loadDividends(
     holderAddress: `0x${string}`,
     tokens: Array<{ address: `0x${string}`; symbol: string; name: string }>,
-    distributorAddress: `0x${string}`,
-    chainId?: number,
+    network: NetworkConfig,
   ): Promise<void> {
-    const zero = '0x0000000000000000000000000000000000000000';
-    if (!distributorAddress || distributorAddress === zero || tokens.length === 0) {
+    if (tokens.length === 0) {
       entries.value = [];
       return;
     }
@@ -75,33 +102,12 @@ export function useHolderDividends() {
     error.value = null;
 
     try {
-      const client = getPublicClient(chainId);
-
       const results = await Promise.allSettled(
-        tokens.map(async (tok) => {
-          const earned = (await client.readContract({
-            address: distributorAddress,
-            abi: holderFeeDistributorAbi,
-            functionName: 'earned',
-            args: [tok.address, holderAddress],
-          })) as bigint;
-
-          return {
-            tokenAddress: tok.address,
-            tokenSymbol: tok.symbol,
-            tokenName: tok.name,
-            earnedWei: earned,
-            earnedFormatted: Number(formatEther(earned)).toFixed(4),
-          };
-        }),
+        tokens.map((tok) => readEntry(holderAddress, tok, network)),
       );
-
       entries.value = results
-        .filter(
-          (r): r is PromiseFulfilledResult<HolderDividendEntry> =>
-            r.status === 'fulfilled' && r.value.earnedWei > 0n,
-        )
-        .map((r) => r.value);
+        .map((r) => (r.status === 'fulfilled' ? r.value : null))
+        .filter((e): e is HolderDividendEntry => e !== null && e.earnedWei > 0n);
     } catch (err) {
       error.value = (err as Error).message;
     } finally {
@@ -110,48 +116,33 @@ export function useHolderDividends() {
   }
 
   /**
-   * Query earned() for a single token directly.
+   * Query claimable() for a single token directly.
    */
   async function loadSingleTokenDividend(
     holderAddress: `0x${string}`,
     tokenAddress: `0x${string}`,
     tokenSymbol: string,
     tokenName: string,
-    distributorAddress: `0x${string}`,
-    chainId?: number,
+    network: NetworkConfig,
   ): Promise<HolderDividendEntry | null> {
-    const zero = '0x0000000000000000000000000000000000000000';
-    if (!distributorAddress || distributorAddress === zero || !holderAddress) {
-      return null;
-    }
+    if (!holderAddress) return null;
     try {
-      const client = getPublicClient(chainId);
-      const earned = (await client.readContract({
-        address: distributorAddress,
-        abi: holderFeeDistributorAbi,
-        functionName: 'earned',
-        args: [tokenAddress, holderAddress],
-      })) as bigint;
-
-      return {
-        tokenAddress,
-        tokenSymbol,
-        tokenName,
-        earnedWei: earned,
-        earnedFormatted: Number(formatEther(earned)).toFixed(4),
-      };
+      return await readEntry(
+        holderAddress,
+        { address: tokenAddress, symbol: tokenSymbol, name: tokenName },
+        network,
+      );
     } catch {
       return null;
     }
   }
 
   /**
-   * Call claimReward(token) on the distributor. Returns tx hash on success.
+   * Call claim() on the token's splitter. Returns tx hash on success.
    */
   async function claimDividend(
     tokenAddress: `0x${string}`,
-    distributorAddress: `0x${string}`,
-    chainId?: number,
+    network: NetworkConfig,
   ): Promise<`0x${string}` | null> {
     actionLoading.value = tokenAddress;
     error.value = null;
@@ -162,16 +153,23 @@ export function useHolderDividends() {
       const [account] = await walletClient.getAddresses();
       if (!account) throw new Error('Please connect your wallet');
 
+      const splitter = await resolveFeeSplitter(
+        getPublicClient(network.chainId),
+        network,
+        tokenAddress,
+      );
+      if (!splitter) throw new Error('This token has no dividend splitter yet');
+
       const hash = await walletClient.writeContract({
-        address: distributorAddress,
-        abi: holderFeeDistributorAbi,
-        functionName: 'claimReward',
-        args: [tokenAddress],
+        address: splitter.address,
+        abi: protoFeeSplitterAbi,
+        functionName: 'claim',
+        args: [account],
         account,
         chain: walletClient.chain,
       });
 
-      await getPublicClient(chainId).waitForTransactionReceipt({ hash });
+      await getPublicClient(network.chainId).waitForTransactionReceipt({ hash });
 
       // Remove claimed entry from list
       entries.value = entries.value.filter((e) => e.tokenAddress !== tokenAddress);
@@ -190,14 +188,11 @@ export function useHolderDividends() {
   /**
    * Claim all tokens with earned > 0 sequentially to avoid nonce collisions.
    */
-  async function claimAllDividends(
-    distributorAddress: `0x${string}`,
-    chainId?: number,
-  ): Promise<`0x${string}`[]> {
+  async function claimAllDividends(network: NetworkConfig): Promise<`0x${string}`[]> {
     const hashes: `0x${string}`[] = [];
     const pending = [...entries.value].filter((e) => e.earnedWei > 0n);
     for (const entry of pending) {
-      const hash = await claimDividend(entry.tokenAddress, distributorAddress, chainId);
+      const hash = await claimDividend(entry.tokenAddress, network);
       if (hash) hashes.push(hash);
     }
     return hashes;

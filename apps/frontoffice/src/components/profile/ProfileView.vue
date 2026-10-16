@@ -621,11 +621,6 @@ const {
   reset: resetDividends,
 } = useHolderDividends();
 
-function getDistributorAddress(): `0x${string}` {
-  const addr = activeNetwork.value.contracts.holderFeeDistributor;
-  return (addr ?? UNDEPLOYED) as `0x${string}`;
-}
-
 async function refreshDividends() {
   const holder = targetAccount.value;
   if (!holder) return;
@@ -635,20 +630,11 @@ async function refreshDividends() {
     symbol: p.symbol,
     name: p.name,
   }));
-  await loadDividends(
-    holder as `0x${string}`,
-    tokens,
-    getDistributorAddress(),
-    activeNetwork.value.chainId,
-  );
+  await loadDividends(holder as `0x${string}`, tokens, activeNetwork.value);
 }
 
 async function handleClaimSingle(tokenAddress: string) {
-  const hash = await claimDividend(
-    tokenAddress as `0x${string}`,
-    getDistributorAddress(),
-    activeNetwork.value.chainId,
-  );
+  const hash = await claimDividend(tokenAddress as `0x${string}`, activeNetwork.value);
   if (hash) {
     successTx.value = hash;
   } else if (dividendsError.value) {
@@ -657,7 +643,7 @@ async function handleClaimSingle(tokenAddress: string) {
 }
 
 async function handleClaimAll() {
-  const hashes = await claimAllDividends(getDistributorAddress(), activeNetwork.value.chainId);
+  const hashes = await claimAllDividends(activeNetwork.value);
   if (hashes.length > 0) {
     successTx.value = hashes[hashes.length - 1];
   } else if (dividendsError.value) {

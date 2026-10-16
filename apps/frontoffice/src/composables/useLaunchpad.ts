@@ -1,7 +1,7 @@
 import { ref } from 'vue';
-import { decodeEventLog, parseEventLogs, parseEther, type TransactionReceipt } from 'viem';
+import { decodeEventLog, parseEventLogs, type TransactionReceipt } from 'viem';
 import { apiFetch } from '@/lib/api-client';
-import { taxPercentToBps } from '@proto/math-sdk';
+import { getChainMathConfig, taxPercentToBps } from '@proto/math-sdk';
 
 /**
  * Return true when the error originates from the user explicitly rejecting
@@ -25,35 +25,19 @@ function isUserRejection(err: unknown): boolean {
   );
 }
 
-/**
- * Safely parse developer initial buy amount into 18-decimal wei.
- * Accepts string, number, null, or undefined and avoids calling parseEther on non-strings,
- * preventing 'value.split is not a function' TypeError.
- */
-function parseInitialBuyWei(val: string | number | undefined | null): bigint {
-  if (!val) return 0n;
-  const str = String(val).trim();
-  if (!str || str === '0' || isNaN(Number(str))) return 0n;
-  const num = parseFloat(str);
-  if (num <= 0) return 0n;
-  try {
-    return parseEther(str);
-  } catch {
-    const formatted = num.toFixed(18).replace(/\.?0+$/, '');
-    return parseEther(formatted || '0');
-  }
-}
 import {
   getNetworkConfig,
   launchpadV2FactoryAbi,
   launchpadTokenAbi,
   bondingCurveAbi,
-  liquidityLockerAbi,
+  protoFeeSplitterAbi,
+  resolveFeeSplitter,
   type LaunchedTokenEntity,
   type TokenMarketData,
   type TokenSocials,
 } from '@proto/shared-types';
 import { getPublicClient, getWalletClient } from '../lib/viem-client';
+import { getChainAdapter } from '../chains';
 import { walletChainId } from '../lib/wallet-store';
 import { getLiveEthPriceUsd } from '../lib/price-feed';
 
@@ -107,7 +91,7 @@ export function useLaunchpad() {
     };
   }): Promise<{
     tokenAddress: `0x${string}`;
-    curveAddress: `0x${string}`;
+    curveAddress?: `0x${string}`;
     poolAddress?: `0x${string}`;
   } | null> {
     loading.value = true;
@@ -135,230 +119,73 @@ export function useLaunchpad() {
       }
 
       const network = getNetworkConfig(activeChainId);
-      const targetFactory = network.contracts.factoryV2 ?? network.contracts.factory;
-      if (!targetFactory || targetFactory === '0x0000000000000000000000000000000000000000') {
-        throw new Error(`Factory contract not deployed on ${network.name}`);
-      }
-
-      // On all EVM chains (including Arc Network), native msg.value uses 18 decimals
-      // (1e18 native wei = 1.0 token / 1.0 USDC) per Circle Arc EVM differences specification.
-      const initialBuyWei = parseInitialBuyWei(params.initialBuyAmountEth);
-      const totalValue = network.launchConfig.launchFeeWei + initialBuyWei;
-
-      // Only old factory 0x4884... uses legacy 7-arg signature (selector 0x43a90f1e).
-      // Canonical V2 factory (LaunchpadV2FactoryArc) uses 8 args including minInitialTokensOut (selector 0x0a16b906).
-      const is7ArgFactory =
-        targetFactory.toLowerCase() === '0x48844223abdceeb1ce502f54d559681358e68200';
+      // Chain-specific launch logic (factory ABI, prebuy rules, tax handling) lives in the
+      // chain adapter, so adding a chain does not touch this composable.
+      const adapter = getChainAdapter(network.chainId);
+      const publicClient = getPublicClient(network.chainId);
 
       launchStep.value = 'awaiting_signature';
-
-      let hash: `0x${string}`;
-      if (is7ArgFactory) {
-        hash = await walletClient.writeContract({
-          address: targetFactory,
-          abi: launchpadV2FactoryAbi,
-          functionName: 'launchTokenV2',
-          args: [
-            params.name,
-            params.symbol,
-            params.logo,
-            params.description,
-            params.socials.twitter ?? '',
-            params.socials.telegram ?? '',
-            params.socials.website ?? '',
-          ],
-          value: totalValue,
-          account,
-          chain: walletClient.chain,
-        });
-      } else {
-        hash = await walletClient.writeContract({
-          address: targetFactory,
-          abi: launchpadV2FactoryAbi,
-          functionName: 'launchTokenV2',
-          args: [
-            params.name,
-            params.symbol,
-            params.logo,
-            params.description,
-            params.socials.twitter ?? '',
-            params.socials.telegram ?? '',
-            params.socials.website ?? '',
-            params.minInitialTokensOut ?? 0n,
-          ],
-          value: totalValue,
-          account,
-          chain: walletClient.chain,
-        });
-      }
-
-      launchTxHash.value = hash;
-      launchStep.value = 'confirming';
-
-      const publicClient = getPublicClient(network.chainId);
-      let receipt;
-      try {
-        receipt = await publicClient.waitForTransactionReceipt({
-          hash,
-          timeout: 60_000,
-          retryCount: 15,
-          retryDelay: 1500,
-        });
-      } catch {
-        try {
-          receipt = await publicClient.getTransactionReceipt({ hash });
-        } catch {
-          // Still waiting
-        }
-        if (!receipt) {
-          throw new Error(
-            `Transaction broadcasted with hash ${hash}. Waiting for block confirmation is taking longer than expected. Check block explorer.`,
-          );
-        }
-      }
-
-      if (receipt.status === 'reverted') {
+      const result = await adapter.launchToken(
+        {
+          name: params.name,
+          symbol: params.symbol,
+          logo: params.logo,
+          description: params.description,
+          socials: params.socials,
+          initialBuyAmountEth: params.initialBuyAmountEth,
+          minInitialTokensOut: params.minInitialTokensOut,
+          buyTaxPercent: params.buyTaxPercent,
+          sellTaxPercent: params.sellTaxPercent,
+          creatorTaxWallet: (params.creatorTaxWallet as `0x${string}` | undefined) || undefined,
+          revenueSplit: params.revenueSplit,
+        },
+        walletClient,
+        publicClient,
+        account,
+        (hash) => {
+          launchTxHash.value = hash;
+          launchStep.value = 'confirming';
+        },
+      );
+      if (!result) {
         throw new Error(
-          `Transaction reverted on-chain (status: reverted). Hash: ${hash}. Block: ${receipt.blockNumber}. Check launch fee and gas.`,
+          `Launch event not found in the transaction receipt. Hash: ${launchTxHash.value ?? 'unknown'}`,
         );
       }
 
       launchStep.value = 'indexing';
+      launchTokenAddress.value = result.tokenAddress;
 
-      // 1. Primary: decode via viem parseEventLogs (supports TokenLaunchedV2)
-      const v2Events = parseEventLogs({
-        abi: launchpadV2FactoryAbi,
-        logs: receipt.logs,
-      });
-
-      const launchEv = v2Events.find(
-        (e) => e.eventName === 'TokenLaunched' || e.eventName === 'TokenLaunchedV2',
-      );
-
-      if (launchEv && 'token' in launchEv.args && 'curve' in launchEv.args) {
-        const tokenAddr = launchEv.args.token as `0x${string}`;
-        const curveAddr = launchEv.args.curve as `0x${string}`;
-        launchStep.value = 'success';
-        launchTokenAddress.value = tokenAddr;
-
-        const buyBps = taxPercentToBps(params.buyTaxPercent || 0);
-        const sellBps = taxPercentToBps(params.sellTaxPercent || 0);
-        if (buyBps > 0 || sellBps > 0) {
-          try {
-            const taxRecipient = (params.creatorTaxWallet as `0x${string}`) || account;
-            const taxHash = await walletClient.writeContract({
-              address: tokenAddr,
-              abi: launchpadTokenAbi,
-              functionName: 'setInitialTaxConfig',
-              args: [buyBps, sellBps, taxRecipient],
-              account,
-              chain: walletClient.chain,
-            });
-            await publicClient.waitForTransactionReceipt({ hash: taxHash });
-          } catch (taxErr) {
-            console.warn('[useLaunchpad] Failed to configure onchain initial tax:', taxErr);
-          }
-        }
-
-        const syncPayload = {
-          txHash: hash,
-          chain: network.chainId,
-          taxConfig: {
-            buyTaxBps: taxPercentToBps(params.buyTaxPercent || 0),
-            sellTaxBps: taxPercentToBps(params.sellTaxPercent || 0),
-            taxRecipient: (params.creatorTaxWallet as `0x${string}`) || account,
-            revenueSplit: params.revenueSplit,
-          },
-        };
-
-        try {
-          await apiFetch<unknown>(`/api/tokens/${tokenAddr}/sync`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(syncPayload),
-          });
-        } catch {
-          /* backend sync is best-effort */
-        }
-
-        return {
-          tokenAddress: tokenAddr,
-          curveAddress: curveAddr,
-          poolAddress: curveAddr,
-        };
-      }
-
-      // 2. Secondary fallback: check each log individually with decodeEventLog
-      for (const log of receipt.logs) {
-        try {
-          const decoded = decodeEventLog({
-            abi: launchpadV2FactoryAbi,
-            topics: log.topics,
-            data: log.data,
-          });
-          if (
-            decoded &&
-            (decoded.eventName === 'TokenLaunched' || decoded.eventName === 'TokenLaunchedV2') &&
-            decoded.args &&
-            'token' in decoded.args &&
-            'curve' in decoded.args
-          ) {
-            const tokenAddr = decoded.args.token as `0x${string}`;
-            const curveAddr = decoded.args.curve as `0x${string}`;
-            launchStep.value = 'success';
-            launchTokenAddress.value = tokenAddr;
-
-            const buyBps = taxPercentToBps(params.buyTaxPercent || 0);
-            const sellBps = taxPercentToBps(params.sellTaxPercent || 0);
-            if (buyBps > 0 || sellBps > 0) {
-              try {
-                const taxRecipient = (params.creatorTaxWallet as `0x${string}`) || account;
-                const taxHash = await walletClient.writeContract({
-                  address: tokenAddr,
-                  abi: launchpadTokenAbi,
-                  functionName: 'setInitialTaxConfig',
-                  args: [buyBps, sellBps, taxRecipient],
-                  account,
-                  chain: walletClient.chain,
-                });
-                await publicClient.waitForTransactionReceipt({ hash: taxHash });
-              } catch (taxErr) {
-                console.warn('[useLaunchpad] Failed to configure onchain initial tax:', taxErr);
-              }
-            }
-
-            try {
-              await apiFetch<unknown>(`/api/tokens/${tokenAddr}/sync`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  txHash: hash,
-                  chain: network.chainId,
+      // FO-05: only report a tax configuration to the API when it is live on-chain.
+      try {
+        await apiFetch<unknown>(`/api/tokens/${result.tokenAddress}/sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            txHash: launchTxHash.value,
+            chain: network.chainId,
+            ...(result.taxApplied
+              ? {
                   taxConfig: {
                     buyTaxBps: taxPercentToBps(params.buyTaxPercent || 0),
                     sellTaxBps: taxPercentToBps(params.sellTaxPercent || 0),
                     taxRecipient: (params.creatorTaxWallet as `0x${string}`) || account,
                     revenueSplit: params.revenueSplit,
                   },
-                }),
-              });
-            } catch {
-              /* backend sync is best-effort */
-            }
-
-            return {
-              tokenAddress: tokenAddr,
-              curveAddress: curveAddr,
-              poolAddress: curveAddr,
-            };
-          }
-        } catch {
-          // Continue searching logs
-        }
+                }
+              : {}),
+          }),
+        });
+      } catch {
+        /* backend sync is best-effort */
       }
 
-      console.error('[Launchpad] TokenLaunched not found in receipt. Logs:', receipt.logs);
-      throw new Error(`TokenLaunched event not found in transaction receipt. Hash: ${hash}`);
+      launchStep.value = 'success';
+      return {
+        tokenAddress: result.tokenAddress,
+        curveAddress: result.curveAddress,
+        poolAddress: result.poolAddress,
+      };
     } catch (err) {
       if (isUserRejection(err)) {
         launchStep.value = 'idle';
@@ -379,8 +206,8 @@ export function useLaunchpad() {
 
   async function fetchTokenDetails(tokenAddress: `0x${string}`) {
     try {
-      const client = getPublicClient();
       const network = getNetworkConfig(walletChainId.value ?? undefined);
+      const client = getPublicClient(network.chainId);
       const factoryAddress = network.contracts.factoryV2 ?? network.contracts.factory;
 
       const [name, symbol, logo, description, launchRecord, restrictionsEndBlock, launchBlock] =
@@ -525,36 +352,36 @@ export function useLaunchpad() {
   }
 
   // ---------------------------------------------------------------------------
-  // Write: claim liquidity position fees
+  // Write: claim creator fees from the token's ProtoFeeSplitter
   // ---------------------------------------------------------------------------
+
+  async function resolveCreatorSplitter(tokenAddress: `0x${string}`) {
+    const walletClient = await getWalletClient();
+    if (!walletClient) throw new Error('No Web3 wallet detected');
+    const [account] = await walletClient.getAddresses();
+    if (!account) throw new Error('Please connect your wallet');
+    const network = getNetworkConfig(walletChainId.value ?? undefined);
+    const publicClient = getPublicClient(network.chainId);
+    const splitter = await resolveFeeSplitter(publicClient, network, tokenAddress);
+    if (!splitter) throw new Error(`No fee splitter for this token on ${network.name} yet`);
+    return { walletClient, account, publicClient, splitter: splitter.address };
+  }
 
   async function claimFees(tokenAddress: `0x${string}`): Promise<string | null> {
     loading.value = true;
     error.value = null;
 
     try {
-      const walletClient = await getWalletClient();
-      if (!walletClient) throw new Error('No Web3 wallet detected');
-
-      const [account] = await walletClient.getAddresses();
-      if (!account) throw new Error('Please connect your wallet');
-
-      const network = getNetworkConfig(walletChainId.value ?? undefined);
-      if (
-        !network.contracts.locker ||
-        network.contracts.locker === '0x0000000000000000000000000000000000000000'
-      ) {
-        throw new Error(`Liquidity locker not configured for ${network.name}`);
-      }
+      const { walletClient, account, publicClient, splitter } =
+        await resolveCreatorSplitter(tokenAddress);
       const hash = await walletClient.writeContract({
-        address: network.contracts.locker,
-        abi: liquidityLockerAbi,
-        functionName: 'claimFees',
-        args: [tokenAddress],
+        address: splitter,
+        abi: protoFeeSplitterAbi,
+        functionName: 'claimCreatorFees',
         account,
         chain: walletClient.chain,
       });
-      await getPublicClient(network.chainId).waitForTransactionReceipt({ hash });
+      await publicClient.waitForTransactionReceipt({ hash });
       return hash;
     } catch (err) {
       if (!isUserRejection(err)) {
@@ -567,9 +394,13 @@ export function useLaunchpad() {
   }
 
   // ---------------------------------------------------------------------------
-  // Write: redirect fee recipient for a deployed token
+  // Write: redirect creator fees (community takeover) — 48h propose / accept
   // ---------------------------------------------------------------------------
 
+  /**
+   * First call proposes `redirectAddress`; calling again with the same address once the 48h
+   * timelock has passed accepts it (FO-04: the redirect previously never became active).
+   */
   async function setFeeRedirect(
     tokenAddress: `0x${string}`,
     redirectAddress: `0x${string}`,
@@ -578,28 +409,44 @@ export function useLaunchpad() {
     error.value = null;
 
     try {
-      const walletClient = await getWalletClient();
-      if (!walletClient) throw new Error('No Web3 wallet detected');
-
-      const [account] = await walletClient.getAddresses();
-      if (!account) throw new Error('Please connect your wallet');
-
-      const network = getNetworkConfig(walletChainId.value ?? undefined);
-      if (
-        !network.contracts.locker ||
-        network.contracts.locker === '0x0000000000000000000000000000000000000000'
-      ) {
-        throw new Error(`Liquidity locker not configured for ${network.name}`);
+      const { walletClient, account, publicClient, splitter } =
+        await resolveCreatorSplitter(tokenAddress);
+      const [pending, validAfter] = await Promise.all([
+        publicClient.readContract({
+          address: splitter,
+          abi: protoFeeSplitterAbi,
+          functionName: 'pendingCreatorRecipient',
+        }),
+        publicClient.readContract({
+          address: splitter,
+          abi: protoFeeSplitterAbi,
+          functionName: 'pendingCreatorRecipientValidAfter',
+        }),
+      ]);
+      const now = BigInt(Math.floor(Date.now() / 1000));
+      const accept = pending.toLowerCase() === redirectAddress.toLowerCase();
+      if (accept && now < validAfter) {
+        const hours = Math.ceil(Number(validAfter - now) / 3600);
+        throw new Error(`Redirect already proposed; it can be accepted in about ${hours}h.`);
       }
-      const hash = await walletClient.writeContract({
-        address: network.contracts.locker,
-        abi: liquidityLockerAbi,
-        functionName: 'setFeeRedirect',
-        args: [tokenAddress, redirectAddress],
-        account,
-        chain: walletClient.chain,
-      });
-      await getPublicClient(network.chainId).waitForTransactionReceipt({ hash });
+
+      const hash = accept
+        ? await walletClient.writeContract({
+            address: splitter,
+            abi: protoFeeSplitterAbi,
+            functionName: 'acceptCreatorRecipient',
+            account,
+            chain: walletClient.chain,
+          })
+        : await walletClient.writeContract({
+            address: splitter,
+            abi: protoFeeSplitterAbi,
+            functionName: 'proposeCreatorRecipient',
+            args: [redirectAddress],
+            account,
+            chain: walletClient.chain,
+          });
+      await publicClient.waitForTransactionReceipt({ hash });
       return hash;
     } catch (err) {
       if (!isUserRejection(err)) {
@@ -716,6 +563,7 @@ export function useLaunchpad() {
     buyTaxPercent: number,
     sellTaxPercent: number,
     taxRecipient?: `0x${string}`,
+    chainId?: number,
   ): Promise<`0x${string}` | null> {
     loading.value = true;
     error.value = null;
@@ -724,6 +572,17 @@ export function useLaunchpad() {
       if (!walletClient) throw new Error('No Web3 wallet detected');
       const [account] = await walletClient.getAddresses();
       if (!account) throw new Error('Please connect your wallet');
+
+      const network = getNetworkConfig(chainId ?? walletChainId.value ?? undefined);
+      if (getChainMathConfig(network.chainId)?.model === 'v4-in-pool') {
+        throw new Error(
+          `Taxes on ${network.name} are fixed forever at launch and cannot be changed.`,
+        );
+      }
+      // FO-07: send and confirm on the token's chain, never on whatever chain the wallet is on.
+      if ((await walletClient.getChainId()) !== network.chainId) {
+        throw new Error(`Switch your wallet to ${network.name} and retry.`);
+      }
 
       const buyTaxBps = Math.min(1000, Math.max(0, Math.round(buyTaxPercent * 100)));
       const sellTaxBps = Math.min(1000, Math.max(0, Math.round(sellTaxPercent * 100)));
@@ -738,7 +597,7 @@ export function useLaunchpad() {
         chain: walletClient.chain,
       });
 
-      const client = getPublicClient();
+      const client = getPublicClient(network.chainId);
       await client.waitForTransactionReceipt({ hash });
       return hash;
     } catch (err) {
