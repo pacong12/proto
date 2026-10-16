@@ -15,13 +15,59 @@ export interface TokenDetailResult {
   marketData: TokenMarketData;
 }
 
+/** How long an address that no chain knows is remembered as unknown. */
+export const UNKNOWN_TOKEN_TTL_MS = 60_000;
+
 export class GetTokenByAddressUseCase {
+  /**
+   * Addresses that no chain recognised, until when. Without this every request for an unknown
+   * address cost up to four RPC calls, which made the endpoint slow (p99 ~1.8s under load) and let
+   * anyone amplify random-address requests into RPC traffic.
+   */
+  private readonly unknownUntil = new Map<string, number>();
+  /** Lookups in progress, so concurrent requests for one address share a single RPC round. */
+  private readonly inflight = new Map<string, Promise<LaunchedTokenEntity | null>>();
+
   constructor(
     private readonly tokenRepository: TokenRepositoryPort,
     private readonly chainIndexer: ChainIndexerPort,
     private readonly calculatePricing: CalculatePricingUseCase,
     private readonly priceFeed: PriceFeedPort,
+    private readonly now: () => number = Date.now,
   ) {}
+
+  /** Looks the address up on every chain at once; earlier entries win, as in the sequential order. */
+  private async hydrateFromChain(address: `0x${string}`): Promise<LaunchedTokenEntity | null> {
+    const key = address.toLowerCase();
+    const until = this.unknownUntil.get(key);
+    if (until !== undefined) {
+      if (until > this.now()) return null;
+      this.unknownUntil.delete(key);
+    }
+    const pending = this.inflight.get(key);
+    if (pending) return pending;
+
+    const idx = this.chainIndexer;
+    const attempts: Array<Promise<LaunchedTokenEntity | null>> = [];
+    if (typeof idx.fetchV2LaunchedTokenFromFactory === 'function') {
+      attempts.push(idx.fetchV2LaunchedTokenFromFactory(address, ARC_CHAIN));
+      attempts.push(idx.fetchV2LaunchedTokenFromFactory(address, ROBINHOOD_CHAIN));
+    }
+    if (typeof idx.fetchLaunchedTokenFromChain === 'function') {
+      attempts.push(idx.fetchLaunchedTokenFromChain(address, ROBINHOOD_CHAIN));
+      attempts.push(idx.fetchLaunchedTokenFromChain(address, ARC_CHAIN));
+    }
+    const lookup = Promise.all(attempts.map((a) => a.catch(() => null)))
+      .then(async (results) => {
+        const token = results.find((t): t is LaunchedTokenEntity => Boolean(t)) ?? null;
+        if (token) await this.tokenRepository.save(token);
+        else this.unknownUntil.set(key, this.now() + UNKNOWN_TOKEN_TTL_MS);
+        return token;
+      })
+      .finally(() => this.inflight.delete(key));
+    this.inflight.set(key, lookup);
+    return lookup;
+  }
 
   /**
    * Derive 24h price change percentage from trade history.
@@ -61,32 +107,9 @@ export class GetTokenByAddressUseCase {
   }
 
   async execute(address: `0x${string}`): Promise<TokenDetailResult | null> {
-    let token = await this.tokenRepository.findByAddress(address);
-
-    // Try to hydrate from chain if not in DB yet
-    if (!token) {
-      if (typeof this.chainIndexer.fetchV2LaunchedTokenFromFactory === 'function') {
-        token = await this.chainIndexer
-          .fetchV2LaunchedTokenFromFactory(address, ARC_CHAIN)
-          .catch(() => null);
-        if (!token) {
-          token = await this.chainIndexer
-            .fetchV2LaunchedTokenFromFactory(address, ROBINHOOD_CHAIN)
-            .catch(() => null);
-        }
-      }
-      if (!token && typeof this.chainIndexer.fetchLaunchedTokenFromChain === 'function') {
-        token = await this.chainIndexer
-          .fetchLaunchedTokenFromChain(address, ROBINHOOD_CHAIN)
-          .catch(() => null);
-        if (!token) {
-          token = await this.chainIndexer
-            .fetchLaunchedTokenFromChain(address, ARC_CHAIN)
-            .catch(() => null);
-        }
-      }
-      if (token) await this.tokenRepository.save(token);
-    }
+    // The database is checked first, so a token indexed after a negative lookup shows up at once.
+    const token =
+      (await this.tokenRepository.findByAddress(address)) ?? (await this.hydrateFromChain(address));
 
     if (!token) return null;
 
