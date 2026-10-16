@@ -39,7 +39,7 @@ Kegagalan transaksi umumnya disebabkan oleh dua faktor:
 ### Apa perbedaan antara On Curve dan Graduated?
 
 - **On Curve (v2)**: Token sedang diperdagangkan pada kurva harga dinamis. Harga bertambah seiring banyaknya token yang dibeli.
-- **Graduated**: Token telah berhasil mengumpulkan target likuiditas (4.2 ETH di Robinhood atau 8.400 USDC di Arc) dan bermigrasi secara permanen ke pool likuiditas DEX Uniswap.
+- **Graduated**: Di Robinhood Chain, kurva telah mengumpulkan target 4,2 ETH dan pasar pindah permanen ke pool Uniswap v4 yang terkunci. Di Arc Network, token diperdagangkan di pool Uniswap v4 sejak peluncuran dan lulus di dalam pool saat kapitalisasi pasar melewati sekitar $45.000.
 
 ### Apakah ada batasan saat menjual token?
 
@@ -51,7 +51,7 @@ Kegagalan transaksi umumnya disebabkan oleh dua faktor:
 
 ### Berapa biaya untuk meluncurkan token?
 
-Biaya protokol tetap sebesar **0.0005 ETH** di Robinhood Chain atau **1 USDC** di Arc Network. Biaya ini mencakup penyebaran smart contract, pencetakan pasokan token, dan penguncian likuiditas awal.
+Biaya protokol sebesar **0.0005 ETH** di Robinhood Chain atau **Gratis (0 USDC)** di Arc Network (dengan pre-buy minimal 4.50 USDC). Biaya ini mencakup penyebaran smart contract, pencetakan pasokan token, dan penguncian likuiditas awal.
 
 ### Bisakah pasokan token ditambah di masa depan?
 

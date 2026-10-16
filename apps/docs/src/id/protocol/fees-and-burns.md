@@ -6,12 +6,21 @@ Proto menyelaraskan keberlanjutan proyek antara kreator token dan komunitasnya d
 
 ## Pembagian Fee 70/30
 
-Setiap transaksi yang terjadi di pasar Proto menghasilkan **fee pool standar sebesar 1%**. Fee ini terakumulasi secara transparan dalam bentuk aset gas asli (ETH atau USDC) dan token yang bersangkutan.
+Sumber fee berbeda per jaringan:
 
-Berikut pembagian fee:
+- **Robinhood Chain**: selama token masih di kurva bonding, setiap transaksi di kurva membayar fee 1% ke protokol. Setelah lulus, pool Uniswap v4 yang terkunci mengenakan fee LP 1%.
+- **Arc Network**: pool Uniswap v4 mengenakan fee LP 1% sejak peluncuran, ditambah pajak beli/jual opsional 0–10% yang ditetapkan kreator saat peluncuran.
 
-- **70% untuk Kreator Token**: Pihak deployer token memperoleh 70% dari seluruh akumulasi fee transaksi secara berkelanjutan.
-- **30% untuk Keberlanjutan Protokol**: 30% dialokasikan untuk protokol, di mana **80% darinya otomatis digunakan untuk membeli dan membakar token melalui TWAP Uniswap** secara permanen.
+Fee pool dan pajak dibagi oleh fee splitter on-chain milik setiap token:
+
+- **30% untuk perbendaharaan protokol**.
+- **70% untuk bagian kreator**, yang dapat dibagi kreator satu kali, sebelum perdagangan publik dimulai, ke:
+  - **Kreator**: dapat diklaim kreator (atau penerima yang dialihkan).
+  - **Holder**: dialirkan ke pemegang token secara proporsional selama 24 jam.
+  - **Buyback & Burn**: dibelikan token di pool-nya sendiri oleh kontrak `ProtoV4Buyback` lalu dikirim ke alamat mati. Setiap buyback dibatasi TWAP 30 menit pool ± 2%, sehingga harga yang dimanipulasi hanya menunda buyback sampai harga normal.
+  - **Likuiditas**: dikirim ke vault likuiditas protokol.
+
+Secara default seluruh 70% menjadi milik kreator. Bagian protokol tidak dipakai untuk buyback.
 
 ---
 
@@ -28,5 +37,5 @@ Berikut pembagian fee:
 
 Jika kreator ingin memberikan reward kepada komunitas atau menyerahkan kepemimpinan proyek:
 
-- Kreator dapat mengalihkan aliran fee 70% tersebut ke perbendaharaan DAO, multisig komunitas, atau kontrak reward.
+- Kreator dapat mengalihkan aliran fee kreator ke perbendaharaan DAO, multisig komunitas, atau kontrak reward. Pengalihan berlaku 48 jam setelah diajukan dan dapat dibatalkan selama jeda tersebut.
 - Fitur ini mendukung pengambilalihan komunitas (CTO) dengan mengubah pendapatan proyek menjadi modal yang dikelola langsung oleh komunitas.

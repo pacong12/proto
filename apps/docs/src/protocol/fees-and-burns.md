@@ -6,12 +6,21 @@ Proto aligns the long-term success of token creators with their communities by o
 
 ## 70/30 Fee Distribution
 
-Every trade executed on a Proto market generates a standard **1% pool fee**. This fee accumulates transparently in both ETH and the launched token.
+Where fees come from depends on the chain:
 
-Here is how fees are divided:
+- **Robinhood Chain**: while a token is on its bonding curve, each curve trade pays a 1% fee to the protocol. After graduation, the locked Uniswap v4 pool charges a 1% LP fee.
+- **Arc Network**: the Uniswap v4 pool charges a 1% LP fee from launch, plus an optional buy/sell tax of 0–10% that the creator sets at launch.
 
-- **70% to Token Creator**: The deployer of the token earns 70% of all accumulated trading fees on an ongoing basis.
-- **30% to Protocol & Community Burns**: 30% goes to platform sustainability, of which **80% is automatically used to purchase and permanently burn tokens via Uniswap TWAP**.
+Pool fees and taxes are split by each token's on-chain fee splitter:
+
+- **30% to the protocol** treasury.
+- **70% to the creator's share**, which the creator can divide once, before public trading starts, between:
+  - **Creator**: claimable by the creator (or their redirected recipient).
+  - **Holders**: streamed to token holders pro-rata over 24 hours.
+  - **Buyback & Burn**: bought back in the token's own pool by the `ProtoV4Buyback` contract and sent to the dead address. Each buyback is capped at the pool's 30-minute TWAP ± 2%, so a manipulated price only pauses the buyback until it normalises.
+  - **Liquidity**: sent to the protocol liquidity vault.
+
+By default the whole 70% goes to the creator. The protocol share is not used for buybacks.
 
 ---
 
@@ -28,5 +37,5 @@ Here is how fees are divided:
 
 If a creator wishes to reward their community or hand over project leadership:
 
-- Creators can redirect their 70% fee stream to a DAO treasury, community multisig, or reward contract.
+- Creators can redirect their creator fee stream to a DAO treasury, community multisig, or reward contract. A redirect takes effect 48 hours after it is proposed and can be cancelled in that window.
 - This feature empowers community takeovers (CTO) by turning project revenue into community-owned funding.

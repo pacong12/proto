@@ -25,8 +25,8 @@ features:
     details: Des limites automatisées empêchent les bots d’accaparer l’offre au lancement, assurant une équité totale.
   - title: 70% de Récompenses Créateurs
     details: Les créateurs perçoivent 70% des frais de trading accumulés en continu.
-  - title: Rachat & Combustion Automatiques
-    details: 80% des revenus du protocole servent automatiquement à racheter et brûler des tokens via Uniswap TWAP.
+  - title: Rachat & Burn
+    details: "Les créateurs peuvent affecter une partie de leurs frais au rachat et à la destruction : un contrat achète le token dans son propre pool, protégé par un TWAP de 30 minutes, puis l'envoie à l'adresse morte."
   - title: Rapide et Économique
     details: Déployé sur Robinhood Chain L2 et Arc Network pour des transactions ultra-rapides à coût minime.
 ---

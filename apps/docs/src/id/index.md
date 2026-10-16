@@ -25,8 +25,8 @@ features:
     details: Batasan anti-snipe otomatis mencegah bot memborong pasokan token di awal, menjamin peluang yang adil bagi seluruh komunitas.
   - title: 70% Reward untuk Kreator
     details: Kreator memperoleh 70% dari akumulasi fee transaksi, dengan opsi mudah untuk mengalihkan reward ke kas komunitas.
-  - title: Buyback & Burn Otomatis
-    details: 80% dari pendapatan protokol digunakan secara otomatis untuk membeli dan membakar token melalui TWAP Uniswap, mengurangi pasokan beredar.
+  - title: Buyback & Burn
+    details: 'Kreator dapat mengalokasikan sebagian bagian fee mereka untuk buyback & burn: kontrak membeli token di pool-nya sendiri, dijaga TWAP 30 menit, lalu mengirimnya ke alamat mati.'
   - title: Cepat & Hemat Biaya
     details: Beroperasi di Robinhood Chain Layer 2 dan Arc Network untuk konfirmasi instan dan biaya gas yang sangat terjangkau.
 ---
