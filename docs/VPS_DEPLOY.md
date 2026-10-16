@@ -4,23 +4,19 @@ Workflow deployment otomatis untuk Backend API dan Redis ke server VPS (`.github
 
 ## Cara Kerja
 
-Setiap kali ada `git push` ke branch `main` yang mengubah folder:
-
-- `apps/api/**`
-- `packages/shared-types/**`
-- `Dockerfile.api`
-- `docker-compose.yml`
-- `.github/workflows/deploy-vps.yml`
-
-Atau dapat dijalankan manual melalui **Actions** -> **Auto Deploy Backend to VPS** -> **Run workflow**.
+Deploy hanya berjalan untuk **rilis**. Saat rilis dibuat, `release.yml` memindahkan branch
+`production` ke commit rilis lalu menjalankan workflow ini pada branch tersebut. Untuk deploy ulang
+atau rollback, jalankan **Promote Release to Production** dengan tag rilis.
 
 GitHub Actions akan:
 
-1. Terhubung ke VPS melalui SSH (`appleboy/ssh-action@v1.0.3`).
+1. Terhubung ke VPS melalui SSH (`appleboy/ssh-action`).
 2. Masuk ke direktori aplikasi (`/var/www/proto`).
-3. Menjalankan `git fetch origin main && git reset --hard origin/main`.
+3. Menjalankan `git fetch origin production && git reset --hard origin/production`.
 4. Membangun ulang container `redis` dan `api` dengan `docker compose up -d --build --no-deps redis api`.
-5. Melakukan health check otomatis (`http://127.0.0.1:3001/health`).
+5. Melakukan health check (`http://127.0.0.1:3011/health`).
+
+Hardening server (SSH, firewall, fail2ban, update otomatis): lihat `docs/VPS_SECURITY.md`.
 
 ---
 
@@ -62,18 +58,12 @@ docker compose up -d --build redis api
 
 Pastikan secrets berikut telah diisi di **GitHub Repository** -> **Settings** -> **Secrets and variables** -> **Actions**:
 
-| Secret Name                 | Default Value / Deskripsi              | Wajib?                                  |
-| --------------------------- | -------------------------------------- | --------------------------------------- |
-| `VPS_HOST`                  | `31.97.189.81` (IP VPS Anda)           | Opsional (default sudah `31.97.189.81`) |
-| `VPS_USER`                  | `root` (atau user dengan akses docker) | Opsional (default `root`)               |
-| `VPS_SSH_KEY` atau `DEPLOY` | Private SSH Key untuk login ke VPS     | **WAJIB**                               |
-| `VPS_PORT`                  | `22`                                   | Opsional (default `22`)                 |
-| `VPS_APP_DIR`               | `/var/www/proto`                       | Opsional (default `/var/www/proto`)     |
+| Secret Name                 | Default Value / Deskripsi           | Wajib?                                 |
+| --------------------------- | ----------------------------------- | -------------------------------------- |
+| `VPS_HOST`                  | IP atau hostname VPS                | **WAJIB** (deploy di-skip jika kosong) |
+| `VPS_USER`                  | `deploy` (user dengan akses docker) | Opsional (default `deploy`)            |
+| `VPS_SSH_KEY` atau `DEPLOY` | Private SSH Key untuk login ke VPS  | **WAJIB**                              |
+| `VPS_PORT`                  | `22`                                | Opsional (default `22`)                |
+| `VPS_APP_DIR`               | `/var/www/proto`                    | Opsional (default `/var/www/proto`)    |
 
 _Catatan: Jika secret `VPS_SSH_KEY` dan `DEPLOY` belum diisi, workflow akan otomatis di-skip secara aman tanpa menyebabkan build merah._
-
-## Release-only deploys
-
-`deploy-vps.yml` no longer runs on pushes to `main`. It runs only on the `production` branch, which
-`release.yml` moves to each published release (or `promote-production.yml` moves for a redeploy or
-rollback). The VPS checks out `origin/production`, so the server always runs a released version.
