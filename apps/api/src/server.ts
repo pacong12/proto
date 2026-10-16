@@ -23,6 +23,10 @@ import {
   TOKEN_LAUNCHED_V2_EVENT,
 } from './index';
 import {
+  ArcLaunchRelayerService,
+  type RelayedLaunchParams,
+} from './modules/chains/arc/arc.relayer.service';
+import {
   createPublicClient,
   createWalletClient,
   decodeEventLog,
@@ -135,6 +139,7 @@ const ipfsService = new IpfsService();
 const ipfsController = new IpfsController(ipfsService);
 
 export const chainRegistry = new ChainRegistry(robinhoodClient, arcClient, priceFeed);
+export const arcLaunchRelayer = new ArcLaunchRelayerService(arcClient, null);
 
 // Dedicated pollers for each supported chain (Robinhood Chain & Arc Network)
 const robinhoodPoller = new EventPollerService(
@@ -727,6 +732,23 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     return replyEnvelope(res, {
       'Cache-Control': 'public, max-age=1, stale-while-revalidate=2',
     });
+  }
+
+  // POST /api/chains/arc/relayed-launch — gas-sponsored token launch on Arc Network
+  if (url.pathname === '/api/chains/arc/relayed-launch' && req.method === 'POST') {
+    try {
+      const body = await parseJsonBody<RelayedLaunchParams>(req, 16_384);
+      if (!body.name || !body.symbol || !body.creator) {
+        return replyError('INVALID_PARAM', 'name, symbol, and creator address are required', 400);
+      }
+      const res = await arcLaunchRelayer.relayLaunch(body);
+      if (res.success) {
+        return replyEnvelope(ok(res));
+      }
+      return replyError('RELAY_FAILED', res.error || 'Failed to broadcast relayed launch', 500);
+    } catch (e) {
+      return replyError('RELAY_ERROR', (e as Error).message, 500);
+    }
   }
 
   // POST /api/tokens/:address/sync — trigger immediate on-demand blockchain event polling & receipt indexing
