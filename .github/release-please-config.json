@@ -3,7 +3,8 @@
     ".": {
       "release-type": "node",
       "package-name": "@proto/source",
-      "changelog-path": "CHANGELOG.md"
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true
     }
   }
 }
