@@ -24,7 +24,7 @@ describe('IPFS Service & Controller', () => {
       const cid2 = await generateDeterministicCid(data2);
 
       expect(cid1).toBe(cid2);
-      expect(cid1.startsWith('bafybei')).toBe(true);
+      expect(cid1.startsWith('bafkrei')).toBe(true);
       expect(cid1.length).toBeGreaterThan(20);
     });
 
@@ -50,7 +50,7 @@ describe('IPFS Service & Controller', () => {
 
       const result = await uploadFile(buffer, 'test.png', 'image/png');
 
-      expect(result.cid.startsWith('bafybei')).toBe(true);
+      expect(result.cid.startsWith('bafkrei')).toBe(true);
       expect(result.url).toContain(result.cid);
 
       global.fetch = originalFetch;
@@ -60,7 +60,7 @@ describe('IPFS Service & Controller', () => {
       const buffer = new TextEncoder().encode('no-pinata-token').buffer;
       const result = await uploadFile(buffer, 'logo.png', 'image/png');
 
-      expect(result.cid.startsWith('bafybei')).toBe(true);
+      expect(result.cid.startsWith('bafkrei')).toBe(true);
       expect(result.url).toBe(`/api/ipfs/${result.cid}`);
       expect(result.uri).toBe(`ipfs://${result.cid}`);
     });
@@ -81,7 +81,7 @@ describe('IPFS Service & Controller', () => {
       expect(res.success).toBe(true);
       if (res.success && res.data) {
         expect(res.data.cid).toBeDefined();
-        expect(res.data.cid.startsWith('bafybei')).toBe(true);
+        expect(res.data.cid.startsWith('bafkrei')).toBe(true);
         expect(res.data.url).toContain(res.data.cid);
         expect(res.data.uri).toBe(`ipfs://${res.data.cid}`);
       }
@@ -109,7 +109,7 @@ describe('IPFS Service & Controller', () => {
       expect(res.success).toBe(true);
       if (res.success && res.data) {
         expect(res.data.cid).toBeDefined();
-        expect(res.data.cid.startsWith('bafybei')).toBe(true);
+        expect(res.data.cid.startsWith('bafkrei')).toBe(true);
       }
     });
   });
@@ -131,7 +131,7 @@ describe('IPFS Service & Controller', () => {
       expect(response.success).toBe(true);
       if (response.success && response.data) {
         expect(response.data.cid).toBeDefined();
-        expect(response.data.cid.startsWith('bafybei')).toBe(true);
+        expect(response.data.cid.startsWith('bafkrei')).toBe(true);
         expect(response.data.url).toContain(response.data.cid);
       }
     });

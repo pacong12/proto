@@ -1,6 +1,8 @@
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import { readBounded } from '../../core/http/parse-body';
+import { verifyCidContent } from './cid-verify';
 
 function getUploadDir(): string {
   const dir = process.env.UPLOADS_DIR || path.resolve(process.cwd(), 'uploads');
@@ -47,14 +49,15 @@ function encodeBase32(buf: Uint8Array): string {
 }
 
 /**
- * Generate a deterministic fallback IPFS CIDv1 formatted string (e.g. bafybeie...)
+ * Generate a deterministic fallback IPFS CIDv1 (raw codec, e.g. bafkrei...)
  * using SHA-256 multihash and dag-pb multicodec (0x70).
  */
 export function generateDeterministicCid(fileBuffer: Buffer | ArrayBuffer): string {
   const buf = Buffer.isBuffer(fileBuffer) ? fileBuffer : Buffer.from(fileBuffer);
   const hash = crypto.createHash('sha256').update(buf).digest();
-  // CIDv1 DAG-PB (0x70) with sha2-256 (0x12) length 32 (0x20)
-  const multihash = Buffer.concat([Buffer.from([0x01, 0x70, 0x12, 0x20]), hash]);
+  // CIDv1 raw (0x55) with sha2-256 (0x12) length 32 (0x20): the digest is of the raw bytes,
+  // so the codec must be raw (labelling it dag-pb produced a CID no IPFS node would serve).
+  const multihash = Buffer.concat([Buffer.from([0x01, 0x55, 0x12, 0x20]), hash]);
   return 'b' + encodeBase32(multihash);
 }
 
@@ -158,7 +161,9 @@ export class IpfsService {
       }
     }
 
-    // Remote fallback: fetch from working public gateways and cache locally (max 5 MiB to prevent OOM)
+    // Remote fallback: fetch from public gateways, max 5 MiB read as a bounded stream (gateways may
+    // omit Content-Length). Remote content is not written to disk: any visitor can request any CID,
+    // so persisting it would let them fill the disk (API-06). Uploads are still stored locally.
     const MAX_DOWNLOAD_BYTES = 5 * 1024 * 1024;
     const gateways = [
       `https://ipfs.filebase.io/ipfs/${cleanCid}`,
@@ -173,16 +178,15 @@ export class IpfsService {
         if (res.ok) {
           const contentLength = res.headers.get('content-length');
           if (contentLength && parseInt(contentLength, 10) > MAX_DOWNLOAD_BYTES) {
+            await res.body?.cancel();
             continue;
           }
-          const ab = await res.arrayBuffer();
-          if (ab.byteLength > MAX_DOWNLOAD_BYTES) {
-            continue;
-          }
-          const buf = Buffer.from(ab);
+          const bytes = await readBounded(res.body, MAX_DOWNLOAD_BYTES);
+          if (!bytes) continue;
+          // TKT-10: gateways can return notice pages or wrong content with HTTP 200.
+          if (verifyCidContent(cleanCid, bytes) === 'mismatch') continue;
           const mime = res.headers.get('content-type') || 'image/webp';
-          saveLocalFile(cleanCid, buf, mime, `${cleanCid}.bin`);
-          return { data: buf, mimeType: mime };
+          return { data: Buffer.from(bytes), mimeType: mime };
         }
       } catch {
         // Fallback to next gateway

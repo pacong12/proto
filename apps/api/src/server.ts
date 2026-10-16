@@ -54,12 +54,15 @@ import {
   resolveTokenNetwork,
   resolveNetworkByParam,
   buildCommentSignMessage,
+  buildSessionSignMessage,
   ok,
   err,
 } from '@proto/shared-types';
 import {
   safeStringify,
   parseJsonBody,
+  createSessionToken,
+  sessionAddressFromRequest,
   resolveCorsOrigin,
   buildSecurityHeaders,
   resolveRateLimitTier,
@@ -1353,6 +1356,39 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     }
   }
 
+  // POST /api/auth/session — exchange one wallet signature for a 24h social session token (API-09)
+  if (url.pathname === '/api/auth/session' && req.method === 'POST') {
+    try {
+      const body = await parseJsonBody<{ address?: string; issuedAt?: number; signature?: Hex }>(
+        req,
+        2048,
+      );
+      const address = String(body.address || '').trim();
+      const issuedAt = Number(body.issuedAt);
+      if (!/^0x[a-fA-F0-9]{40}$/.test(address) || !body.signature || !Number.isFinite(issuedAt)) {
+        return replyError(
+          'INVALID_SESSION_REQUEST',
+          'address, issuedAt and signature are required',
+          400,
+        );
+      }
+      if (Math.abs(Date.now() - issuedAt) > 10 * 60 * 1000) {
+        return replyError('EXPIRED_SIGNATURE', 'Sign-in message is older than 10 minutes', 401);
+      }
+      const valid = await verifyMessage({
+        address: address as Address,
+        message: buildSessionSignMessage({ address, issuedAt }),
+        signature: body.signature,
+      }).catch(() => false);
+      if (!valid) {
+        return replyError('INVALID_SIGNATURE', 'Signature does not match the wallet address', 401);
+      }
+      return replyEnvelope(ok(createSessionToken(address)));
+    } catch {
+      return replyError('SESSION_ERROR', 'Failed to create session', 400);
+    }
+  }
+
   // POST /api/comments/:commentId/like OR /api/tokens/:address/comments/:commentId/like
   const directLikeMatch = url.pathname.match(/^\/api\/comments\/([a-zA-Z0-9_-]+)\/like$/);
   const tokenLikeMatch = url.pathname.match(
@@ -1366,6 +1402,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       if (!userAddress || !/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
         return replyError('INVALID_ADDRESS', 'Valid Ethereum address required to like', 400);
       }
+      const sessionError = requireSocialSession(req, userAddress, 'like');
+      if (sessionError)
+        return replyError(sessionError.code, sessionError.message, sessionError.status);
       const result = (await repository.toggleCommentLike?.(commentId, userAddress)) ?? {
         liked: false,
         likesCount: 0,
@@ -1391,6 +1430,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       if (!userAddress || !/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
         return replyError('INVALID_ADDRESS', 'Valid Ethereum address required to repost', 400);
       }
+      const sessionError = requireSocialSession(req, userAddress, 'repost');
+      if (sessionError)
+        return replyError(sessionError.code, sessionError.message, sessionError.status);
       const result = (await repository.toggleCommentRepost?.(commentId, userAddress)) ?? {
         reposted: false,
         repostsCount: 0,
@@ -1464,6 +1506,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       if (sentiment !== 'bull' && sentiment !== 'bear') {
         return replyError('INVALID_SENTIMENT', "Sentiment must be either 'bull' or 'bear'", 400);
       }
+      const sessionError = requireSocialSession(req, userAddress, 'vote');
+      if (sessionError)
+        return replyError(sessionError.code, sessionError.message, sessionError.status);
 
       const updated = await repository.voteTokenSentiment?.(address, userAddress, sentiment);
       return new Response(safeStringify({ success: true, data: updated, timestamp: Date.now() }), {
@@ -1847,10 +1892,13 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       if (!file) {
         return replyError('FILE_NOT_FOUND', 'IPFS file not found', 404);
       }
+      // API-05 hardening: only images are rendered inline; anything else is a download.
+      const isImage = /^image\/(png|jpe?g|gif|webp|avif)$/i.test(file.mimeType);
       return new Response(req.method === 'HEAD' ? null : new Uint8Array(file.data), {
         status: 200,
         headers: {
-          'Content-Type': file.mimeType,
+          'Content-Type': isImage ? file.mimeType : 'application/octet-stream',
+          ...(isImage ? {} : { 'Content-Disposition': 'attachment' }),
           'Content-Length': file.data.byteLength.toString(),
           'Cache-Control': 'public, max-age=31536000, immutable',
           'Access-Control-Allow-Origin': '*',
@@ -2000,52 +2048,59 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const cached = await cache.get<unknown>(cacheKey);
     if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
 
-    // Use findByPoolAddress when a specific pool id is requested to avoid the 200-token cap.
+    // API-07: one indexed block-range query instead of a per-token query loop.
     const eventsToken = poolAddress
       ? ((repository.findByPoolAddress ? await repository.findByPoolAddress(poolAddress) : null) ??
         (await repository.findByAddress(poolAddress)))
       : null;
-    const allTokens = poolAddress ? (eventsToken ? [eventsToken] : []) : await repository.findAll();
+    if (poolAddress && !eventsToken) {
+      const empty = { events: [] };
+      await cache.set(cacheKey, empty, 5);
+      return replyJson(empty, 200, { 'x-cache': 'MISS' });
+    }
+    const trades = eventsToken
+      ? (await repository.getTrades(eventsToken.address, 1000, 0)).filter((t) => {
+          const bn = BigInt(t.blockNumber ?? 0);
+          return bn >= fromBlock && (toBlock === 0n || bn <= toBlock);
+        })
+      : ((await repository.getTradesInBlockRange?.(fromBlock, toBlock, 1000)) ?? []);
+
+    const tokens = new Map<string, LaunchedTokenEntity | null>();
     const swaps: unknown[] = [];
-
-    for (const token of allTokens) {
-      if (poolAddress && token.poolAddress.toLowerCase() !== poolAddress) continue;
-
-      const chain = chainRegistry.resolveForToken(token);
-      const network = chain.network;
-      const quotePriceUsd = await chain.getQuotePriceUsd();
-
-      const trades = await repository.getTrades(token.address, 100, 0);
-      for (const trade of trades) {
-        const bn =
-          typeof trade.blockNumber === 'bigint'
-            ? trade.blockNumber
-            : BigInt(trade.blockNumber ?? 0);
-        if (fromBlock > 0n && bn < fromBlock) continue;
-        if (toBlock > 0n && bn > toBlock) continue;
-
-        swaps.push({
-          block: {
-            blockNumber: Number(bn),
-            blockTimestamp: trade.timestamp,
-          },
-          eventType: trade.isBuy ? 'buy' : 'sell',
-          txnId: trade.transactionHash,
-          txnIndex: 0,
-          eventIndex: 0,
-          maker: trade.trader,
-          pairId: `${network.chainId}_${token.poolAddress}`,
-          asset0In: trade.isBuy ? (parseFloat(trade.wethAmount) / quotePriceUsd).toFixed(8) : '0',
-          asset1In: trade.isBuy ? '0' : trade.tokenAmount,
-          asset0Out: trade.isBuy ? '0' : (parseFloat(trade.wethAmount) / quotePriceUsd).toFixed(8),
-          asset1Out: trade.isBuy ? trade.tokenAmount : '0',
-          priceNative: (parseFloat(trade.tokenAmount) > 0
-            ? parseFloat(trade.wethAmount) / parseFloat(trade.tokenAmount)
-            : 0
-          ).toFixed(18),
-          priceUsd: trade.priceUsd.toFixed(8),
-        });
+    for (const trade of trades) {
+      const key = trade.tokenAddress.toLowerCase();
+      if (!tokens.has(key)) {
+        tokens.set(key, eventsToken ?? (await repository.findByAddress(trade.tokenAddress)));
       }
+      const token = tokens.get(key);
+      if (!token) continue;
+      const network = chainRegistry.resolveForToken(token).network;
+      const bn =
+        typeof trade.blockNumber === 'bigint' ? trade.blockNumber : BigInt(trade.blockNumber ?? 0);
+      // wethAmount is already denominated in the quote asset (ETH / USDC), not USD.
+      const quoteAmount = parseFloat(trade.wethAmount).toFixed(8);
+
+      swaps.push({
+        block: {
+          blockNumber: Number(bn),
+          blockTimestamp: trade.timestamp,
+        },
+        eventType: trade.isBuy ? 'buy' : 'sell',
+        txnId: trade.transactionHash,
+        txnIndex: 0,
+        eventIndex: 0,
+        maker: trade.trader,
+        pairId: `${network.chainId}_${token.poolAddress}`,
+        asset0In: trade.isBuy ? quoteAmount : '0',
+        asset1In: trade.isBuy ? '0' : trade.tokenAmount,
+        asset0Out: trade.isBuy ? '0' : quoteAmount,
+        asset1Out: trade.isBuy ? trade.tokenAmount : '0',
+        priceNative: (parseFloat(trade.tokenAmount) > 0
+          ? parseFloat(trade.wethAmount) / parseFloat(trade.tokenAmount)
+          : 0
+        ).toFixed(18),
+        priceUsd: trade.priceUsd.toFixed(8),
+      });
     }
 
     const payload = { events: swaps };
@@ -2282,26 +2337,61 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   return replyError('NOT_FOUND', `Route ${url.pathname} not found`, 404);
 }
 
-function extractClientIp(req: Request): string {
-  // C-02 fix: strictly resolve client IP. Only trust proxy headers when
-  // explicitly configured via TRUST_PROXY=true or behind Cloudflare in production.
-  const trustProxy = process.env.TRUST_PROXY === 'true';
-  const cfConnectingIp = req.headers.get('cf-connecting-ip')?.trim();
-  if (cfConnectingIp && (trustProxy || process.env.NODE_ENV === 'production')) {
-    return cfConnectingIp;
+/**
+ * API-09: social actions must come from the wallet they are attributed to. Requires a session
+ * token (POST /api/auth/session) for `userAddress`; tests may omit it, like signed comments.
+ */
+function requireSocialSession(
+  req: Request,
+  userAddress: string,
+  action: string,
+  strict = false,
+): { code: string; message: string; status: number } | null {
+  const sessionAddress = sessionAddressFromRequest(req);
+  // Tests may skip sessions on social routes; destructive routes (strict) never do.
+  if (!sessionAddress && !strict && process.env.NODE_ENV === 'test') return null;
+  if (!sessionAddress) {
+    return {
+      code: 'SESSION_REQUIRED',
+      message: `Sign in with your wallet to ${action}`,
+      status: 401,
+    };
   }
-  if (trustProxy) {
-    const xRealIp = req.headers.get('x-real-ip')?.trim();
-    if (xRealIp) return xRealIp;
-    const xff = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
-    if (xff) return xff;
+  if (sessionAddress !== userAddress.toLowerCase()) {
+    return {
+      code: 'SESSION_MISMATCH',
+      message: `Session wallet does not match the address used to ${action}`,
+      status: 403,
+    };
   }
-  return '127.0.0.1';
+  return null;
 }
 
-async function handleRequest(req: Request): Promise<Response> {
+/** Minimal view of Bun's server used to read the TCP peer address. */
+interface PeerAddressSource {
+  requestIP?(req: Request): { address: string } | null;
+}
+
+/**
+ * Resolves the client IP for rate limiting (API-03 / AUD-MED-03).
+ * The TCP peer address is used by default, so every client gets its own quota and forged
+ * headers are ignored. Proxy headers are honoured only with TRUST_PROXY=true, i.e. when the
+ * origin is reachable exclusively through Cloudflare / a trusted reverse proxy.
+ */
+function extractClientIp(req: Request, server?: PeerAddressSource): string {
+  if (process.env.TRUST_PROXY === 'true') {
+    const forwarded =
+      req.headers.get('cf-connecting-ip')?.trim() ||
+      req.headers.get('x-real-ip')?.trim() ||
+      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
+    if (forwarded) return forwarded;
+  }
+  return server?.requestIP?.(req)?.address ?? '127.0.0.1';
+}
+
+async function handleRequest(req: Request, server?: PeerAddressSource): Promise<Response> {
   const startTime = performance.now();
-  const clientIp = extractClientIp(req);
+  const clientIp = extractClientIp(req, server);
   const requestId = requestTracker.extractRequestId(req);
   try {
     const response = await routeRequest(req, clientIp);

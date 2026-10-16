@@ -624,6 +624,22 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     return rows.map((row) => this.mapRowToTrade(row));
   }
 
+  async getTradesInBlockRange(
+    fromBlock: bigint,
+    toBlock: bigint,
+    limit: number,
+  ): Promise<TradeEventEntity[]> {
+    const stmt = this.db.prepare(`
+      SELECT * FROM trades
+      WHERE CAST(blockNumber AS INTEGER) >= ?
+        AND (? = 0 OR CAST(blockNumber AS INTEGER) <= ?)
+      ORDER BY CAST(blockNumber AS INTEGER) ASC, rowid ASC
+      LIMIT ?
+    `);
+    const rows = stmt.all(Number(fromBlock), Number(toBlock), Number(toBlock), limit) as TradeRow[];
+    return rows.map((row) => this.mapRowToTrade(row));
+  }
+
   async getTradesSince(sinceMs: number): Promise<TradeEventEntity[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM trades

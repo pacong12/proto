@@ -384,4 +384,27 @@ describe('SqliteTokenRepository', () => {
     expect(thread?.replies?.[0].content).toBe('What is your target timeframe?');
     expect(thread?.viewsCount).toBeGreaterThanOrEqual(1);
   });
+
+  it('returns trades in a numeric block range (blocks are stored as text)', async () => {
+    await repository.save(sampleToken);
+    for (const block of [9n, 10n, 100n, 1000n]) {
+      await repository.saveTrade({
+        id: `range-${block}`,
+        tokenAddress: sampleToken.address,
+        poolAddress: sampleToken.poolAddress,
+        trader: '0x9999999999999999999999999999999999999999',
+        isBuy: true,
+        tokenAmount: '1.0000',
+        wethAmount: '0.1',
+        priceUsd: 0.1,
+        blockNumber: block,
+        transactionHash: `0xrange${block}`,
+        timestamp: 1700000000000 + Number(block),
+      });
+    }
+    const inRange = await repository.getTradesInBlockRange(10n, 100n, 50);
+    expect(inRange.map((t) => t.id)).toEqual(['range-10', 'range-100']);
+    const open = await repository.getTradesInBlockRange(100n, 0n, 50);
+    expect(open.map((t) => t.id)).toEqual(['range-100', 'range-1000']);
+  });
 });

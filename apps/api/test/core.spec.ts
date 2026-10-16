@@ -93,6 +93,25 @@ describe('API Core Infrastructure', () => {
 
       await expect(parseJsonBody(req, 100)).rejects.toThrow(PayloadTooLargeError);
     });
+
+    it('stops reading a chunked body without Content-Length once it exceeds the limit', async () => {
+      let pulled = 0;
+      const endless = new ReadableStream<Uint8Array>({
+        pull(controller) {
+          pulled++;
+          controller.enqueue(new Uint8Array(64).fill(0x61));
+        },
+      });
+      const req = new Request('http://localhost', {
+        method: 'POST',
+        body: endless,
+        // @ts-expect-error duplex is required for streaming request bodies
+        duplex: 'half',
+      });
+      expect(req.headers.get('content-length')).toBeNull();
+      await expect(parseJsonBody(req, 256)).rejects.toThrow(PayloadTooLargeError);
+      expect(pulled).toBeLessThan(10);
+    });
   });
 
   describe('CORS Resolution & Security Headers', () => {
