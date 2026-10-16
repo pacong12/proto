@@ -1,12 +1,10 @@
-import { SUPPORTED_CHAINS, DEFAULT_NETWORK } from '../constants/network';
-import { ARC_NETWORK, ARC_PROTO_CURVE_ADDRESS } from './arc';
-import { ROBINHOOD_NETWORK } from './robinhood';
-import type { TokenAddressPair } from './types';
-import type { NetworkConfig } from '../constants/network';
+import { SUPPORTED_CHAINS, DEFAULT_NETWORK, CHAINS } from './registry';
+import { ARC_CHAIN_ID } from './arc';
+import type { NetworkConfig, TokenAddressPair } from './types';
 
 /**
  * Checks whether a token belongs to a given network by matching
- * explicit chainId, pairedToken, poolAddress, or curveAddress.
+ * explicit chainId, pairedToken, poolAddress, curveAddress, or the network's knownAddresses.
  */
 export function matchesNetwork(token: TokenAddressPair, network: NetworkConfig): boolean {
   if (token.chainId && token.chainId === network.chainId) {
@@ -17,24 +15,22 @@ export function matchesNetwork(token: TokenAddressPair, network: NetworkConfig):
   const curve = token.curveAddress?.toLowerCase();
 
   const weth = network.contracts.weth?.toLowerCase();
-  const factory = network.contracts.factory?.toLowerCase();
-  const factoryV2 = (network.contracts.factoryV2 ?? network.contracts.factory)?.toLowerCase();
+  if (weth && paired === weth) return true;
 
-  return (
-    (!!weth && paired === weth) ||
-    (!!factory && pool === factory) ||
-    (!!factoryV2 && pool === factoryV2) ||
-    (!!factory && curve === factory) ||
-    (!!factoryV2 && curve === factoryV2) ||
-    (network.chainId === ARC_NETWORK.chainId &&
-      (curve === ARC_PROTO_CURVE_ADDRESS.toLowerCase() ||
-        pool === '0x00689b589add3ee1995e26e7f4e5cbf262486eb4'))
-  );
+  const addresses = [
+    network.contracts.factory,
+    network.contracts.factoryV2 ?? network.contracts.factory,
+    ...(network.knownAddresses ?? []),
+  ]
+    .filter(Boolean)
+    .map((a) => a.toLowerCase());
+
+  return addresses.some((a) => a === pool || a === curve);
 }
 
 /**
  * Resolves the appropriate NetworkConfig for a given token entity and/or active chain ID.
- * Scalable: iterates across all registered networks in SUPPORTED_CHAINS.
+ * Iterates across all registered networks in the chain registry.
  */
 export function resolveTokenNetwork(
   token?: TokenAddressPair | null,
@@ -49,11 +45,8 @@ export function resolveTokenNetwork(
   }
 
   if (token) {
-    for (const net of Object.values(SUPPORTED_CHAINS)) {
-      if (matchesNetwork(token, net)) {
-        return net;
-      }
-    }
+    const match = CHAINS.find((net) => matchesNetwork(token, net));
+    if (match) return match;
   }
 
   if (activeChainId && SUPPORTED_CHAINS[activeChainId]) {
@@ -64,30 +57,30 @@ export function resolveTokenNetwork(
 }
 
 /**
- * Returns true if the token belongs to Arc Network (retained for backward compatibility).
+ * Returns true if the token belongs to Arc Network.
+ * @deprecated Compare `resolveTokenNetwork(...).slug` instead; kept for backward compatibility.
  */
 export function isArcToken(token?: TokenAddressPair | null, activeChainId?: number): boolean {
-  return resolveTokenNetwork(token, activeChainId).chainId === ARC_NETWORK.chainId;
+  return resolveTokenNetwork(token, activeChainId).chainId === ARC_CHAIN_ID;
 }
 
 /**
- * Resolves a network config from a route parameter string (e.g., 'arc', 'robinhood', '5042', '4663').
+ * Resolves a network config from a route parameter: chain ID ('5042'), slug ('arc'),
+ * display name ('arc network'), native symbol ('usdc'), or any declared alias.
  */
 export function resolveNetworkByParam(param?: string | null): NetworkConfig {
   const p = (param || '').toLowerCase().trim();
   if (!p) return DEFAULT_NETWORK;
 
-  for (const net of Object.values(SUPPORTED_CHAINS)) {
-    if (
-      p === String(net.chainId) ||
-      p === net.name.toLowerCase() ||
-      p === net.nativeCurrency.symbol.toLowerCase() ||
-      (net.chainId === ARC_NETWORK.chainId && p === 'arc') ||
-      (net.chainId === ROBINHOOD_NETWORK.chainId && p === 'robinhood')
-    ) {
-      return net;
-    }
-  }
+  const match = CHAINS.find((net) =>
+    [
+      String(net.chainId),
+      net.slug,
+      net.name,
+      net.nativeCurrency.symbol,
+      ...(net.aliases ?? []),
+    ].some((key) => key.toLowerCase() === p),
+  );
 
-  return DEFAULT_NETWORK;
+  return match ?? DEFAULT_NETWORK;
 }
