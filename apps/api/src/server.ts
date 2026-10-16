@@ -63,6 +63,7 @@ import {
 import {
   safeStringify,
   parseJsonBody,
+  PayloadTooLargeError,
   createSessionToken,
   sessionAddressFromRequest,
   resolveCorsOrigin,
@@ -755,6 +756,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       }
       return replyError('RELAY_FAILED', res.error || 'Failed to broadcast relayed launch', 500);
     } catch (e) {
+      if (e instanceof PayloadTooLargeError) {
+        return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
+      }
       return replyError('RELAY_ERROR', (e as Error).message, 500);
     }
   }
@@ -781,7 +785,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       } = {};
       try {
         body = await parseJsonBody<typeof body>(req, 8192);
-      } catch {
+      } catch (e) {
+        if (e instanceof PayloadTooLargeError) {
+          return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
+        }
         // optional body
       }
 
@@ -1193,7 +1200,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
             message: signMessage,
             signature,
           });
-        } catch {
+        } catch (e) {
+          if (e instanceof PayloadTooLargeError) {
+            return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
+          }
           isValid = false;
         }
 
@@ -1354,7 +1364,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         headers,
       });
     } catch (e) {
-      if ((e as Error)?.message === 'PAYLOAD_TOO_LARGE') {
+      if (e instanceof PayloadTooLargeError) {
         return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
       }
       return replyError('COMMENT_ERROR', 'Failed to save comment', 400);
@@ -1378,7 +1388,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       if (typeof profile === 'string') return replyError('INVALID_PROFILE', profile, 400);
       await repository.saveProfile?.(address, profile);
       return replyEnvelope(ok({ address: address.toLowerCase(), profile }));
-    } catch {
+    } catch (e) {
+      if (e instanceof PayloadTooLargeError) {
+        return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
+      }
       return replyError('PROFILE_ERROR', 'Failed to save profile', 400);
     }
   }
@@ -1424,7 +1437,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         return replyError('INVALID_SIGNATURE', 'Signature does not match the wallet address', 401);
       }
       return replyEnvelope(ok(createSessionToken(address)));
-    } catch {
+    } catch (e) {
+      if (e instanceof PayloadTooLargeError) {
+        return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
+      }
       return replyError('SESSION_ERROR', 'Failed to create session', 400);
     }
   }
@@ -1453,7 +1469,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         headers,
       });
     } catch (e) {
-      if ((e as Error)?.message === 'PAYLOAD_TOO_LARGE') {
+      if (e instanceof PayloadTooLargeError) {
         return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
       }
       return replyError('LIKE_ERROR', 'Failed to process like', 400);
@@ -1480,7 +1496,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       return new Response(safeStringify({ success: true, data: result, timestamp: Date.now() }), {
         headers,
       });
-    } catch {
+    } catch (e) {
+      if (e instanceof PayloadTooLargeError) {
+        return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
+      }
       return replyError('REPOST_ERROR', 'Failed to process repost', 400);
     }
   }
@@ -1556,6 +1575,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         headers,
       });
     } catch (e) {
+      if (e instanceof PayloadTooLargeError) {
+        return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
+      }
       console.error('[Sentiment POST Error]', e);
       return replyError('SENTIMENT_ERROR', (e as Error).message, 500);
     }
@@ -1812,7 +1834,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       const res = securityController.evaluateIntent(body);
       return replyEnvelope(res);
     } catch (e) {
-      if ((e as Error)?.message === 'PAYLOAD_TOO_LARGE') {
+      if (e instanceof PayloadTooLargeError) {
         return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
       }
       return replyError('BAD_REQUEST', 'Malformed JSON payload', 400);
@@ -1907,7 +1929,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         data: { message: `Backfill started for ${network.name} blocks ${fromBlock}-${toBlock}` },
         timestamp: Date.now(),
       });
-    } catch {
+    } catch (e) {
+      if (e instanceof PayloadTooLargeError) {
+        return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
+      }
       return replyError('BACKFILL_ERROR', 'Failed to start backfill', 500);
     }
   }
