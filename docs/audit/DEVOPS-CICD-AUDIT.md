@@ -140,6 +140,8 @@ Audit mengidentifikasi **8 temuan keamanan dan kelemahan konfigurasi**:
 ### DEVOPS-04: Alur Deploy Cloudflare Workers ke Produksi Terpicu pada Event `pull_request` [Medium] — ✅ RESOLVED
 
 > **Status: ✅ RESOLVED (2026-10-16)** — Event `pull_request` hanya mem-build docs; langkah deploy Cloudflare dilewati untuk PR.
+>
+> **Pembaruan (2026-10-16):** workflow ini dan `deploy-frontoffice.yml` dihapus. Keduanya tidak pernah men-deploy karena secret `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` tidak ada di GitHub (langkah deploy selalu _skipped_). Docs (`proto-docs`) dan frontoffice (`proto`) di-deploy oleh integrasi Git Cloudflare Workers dari `main`; atur _Root directory_ `apps/docs` untuk proto-docs dan matikan _Builds for non-production branches_ di dashboard agar PR tidak di-build.
 
 - **Lokasi Kode**:
   - `.github/workflows/deploy-docs-worker.yml:9-13, 42-53`
@@ -278,7 +280,7 @@ Audit mengidentifikasi **8 temuan keamanan dan kelemahan konfigurasi**:
 - **DEVOPS-01** ✅ RESOLVED — Fallback IP dihapus dari `deploy-vps.yml`; deploy hanya berjalan bila secret `VPS_HOST` (dan kunci SSH) diset. IP lama tetap ada di riwayat git, jadi lindungi server dengan firewall/allowlist SSH.
 - **DEVOPS-02** ✅ RESOLVED — Gitleaks dan CodeQL kini memblokir (tanpa `continue-on-error`); Slither memakai `--fail-high` (delapan temuan high diperiksa: semuanya positif palsu, diberi anotasi `slither-disable` beserta alasannya; `src/legacy/` dikecualikan karena sudah di-deploy dan dibekukan); Trivy memakai `exit-code: 1`. Slither lokal: lolos.
 - **DEVOPS-03** ✅ RESOLVED — `trivy-action` dipin ke SHA `57a97c7…` (v0.35.0, satu-satunya tag yang tidak ditimpa pada insiden CVE-2026-33634, 19 Maret 2026). Karena workflow sebelumnya memakai `@master`, periksa run `security-audit.yml` pada 19–20 Maret 2026 dan rotasi secret repo bila workflow berjalan saat itu.
-- **DEVOPS-04** ✅ RESOLVED — Event `pull_request` hanya mem-build docs; langkah deploy Cloudflare dilewati untuk PR.
+- **DEVOPS-04** ✅ RESOLVED — Workflow deploy Cloudflare di GitHub dihapus (tidak pernah aktif); deploy hanya lewat integrasi Git Cloudflare dari `main`.
 - **DEVOPS-05** ✅ RESOLVED — API, frontoffice, dan docs berjalan sebagai user `bun`. Entrypoint API memperbaiki kepemilikan volume lama lalu menurunkan hak akses via `su-exec`; `chmod 777` dihapus (kini 750). Diuji dengan Docker: container sehat, proses berjalan sebagai `bun`, volume milik root diambil alih. Sekalian diperbaiki: healthcheck memakai `127.0.0.1` (sebelumnya `localhost` → IPv6 sehingga selalu gagal) dan default `DB_PATH`/`UPLOADS_DIR` di volume data.
 - **DEVOPS-06** ✅ RESOLVED — Tidak ada lagi password default: `docker-compose.yml` memakai `${REDIS_PASSWORD:?…}` dan `.env.example` kosong. **Wajib set `REDIS_PASSWORD` di `.env` VPS sebelum deploy berikutnya.** Variabel env alamat kontrak di compose juga diperbarui ke nama v4.
 - **DEVOPS-07** ✅ RESOLVED — `verify-robinhood.sh` ditulis ulang untuk stack v4 (hook, splitter deployer, graduator, factory, router, buyback); argumen konstruktor dibaca dari kontrak yang sudah di-deploy; token/kurva tanpa argumen konstruktor. Belum dijalankan terhadap deployment asli karena stack baru belum di-deploy.

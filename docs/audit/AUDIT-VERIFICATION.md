@@ -108,7 +108,7 @@ alamat kontrak. Parameter Argus portal saat ini (tick 405400 / bond 376400) kini
 | DEVOPS-01 IP VPS di workflow     | Diperbaiki | Tanpa fallback IP; deploy butuh secret `VPS_HOST`. IP tetap ada di riwayat git.                                           |
 | DEVOPS-02 scan non-blocking      | Diperbaiki | Gitleaks/CodeQL/Trivy memblokir; Slither `--fail-high` lolos setelah 8 positif palsu dianotasi.                           |
 | DEVOPS-03 `trivy-action@master`  | Diperbaiki | Pin SHA v0.35.0. Periksa run 19–20 Maret 2026 (CVE-2026-33634) dan rotasi secret bila perlu.                              |
-| DEVOPS-04 deploy dari PR         | Diperbaiki | PR hanya build.                                                                                                           |
+| DEVOPS-04 deploy dari PR         | Diperbaiki | Workflow deploy Cloudflare di GitHub dihapus; deploy hanya via integrasi Git Cloudflare dari `main`.                      |
 | DEVOPS-05 container root / 777   | Diperbaiki | User `bun` + `su-exec`; diuji Docker. Healthcheck `localhost` (IPv6, selalu gagal) dan `DB_PATH` default ikut diperbaiki. |
 | DEVOPS-06 password Redis default | Diperbaiki | `REDIS_PASSWORD` wajib. Nama env kontrak di compose diperbarui ke v4.                                                     |
 | DEVOPS-07 skrip verifikasi usang | Diperbaiki | Ditulis ulang untuk stack v4.                                                                                             |
