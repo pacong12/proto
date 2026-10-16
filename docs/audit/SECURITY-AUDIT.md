@@ -1,5 +1,7 @@
 # Security Review — Proto Smart Contracts
 
+> Status remediasi per 2026-10-16: ✅ = sudah diperbaiki, 🟡 = diperbaiki sebagian, ❌ = tidak valid, ⚪ = risiko diterima; verifikasi lengkap di [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
+
 ---
 
 ## Scope
@@ -40,7 +42,9 @@
 
 ---
 
-[100] **2. Cross-Token Global Native ETH Drainage and Discarded Protocol Fee Share in claimFees**
+[100] **2. Cross-Token Global Native ETH Drainage and Discarded Protocol Fee Share in claimFees** — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Fallback ke saldo kontrak global dihapus; locker dipindah ke `contracts/src/legacy/` (digantikan `ProtoV4Graduator` + `ProtoFeeSplitter`). Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 `ProtoLiquidityLockerV4.claimFees` · Confidence: 100
 
@@ -96,7 +100,9 @@
 
 ---
 
-[100] **3. Uninitialized Snapshot Balance Wipes Accrued Holder Dividends and Permanently Traps WETH**
+[100] **3. Uninitialized Snapshot Balance Wipes Accrued Holder Dividends and Permanently Traps WETH** — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Regresi `snap == 0 ? liveBalance` (holder baru bisa klaim dividen historis) ditutup; stack aktif memakai `ProtoFeeSplitter` (checkpoint di setiap transfer + streaming 1 hari). Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 `HolderFeeDistributor.earned` · Confidence: 100
 
@@ -119,7 +125,9 @@
 
 ---
 
-[95] **4. Missing receive() Function in Launchpad V2 Factories Reverts Cap-Reaching Token Launches**
+[95] **4. Missing receive() Function in Launchpad V2 Factories Reverts Cap-Reaching Token Launches** — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Factory Robinhood menerima refund kurva dan meneruskannya ke kreator (`test_InitialBuyReachingCapRefundsCreator`). Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 `LaunchpadV2Factory.launchTokenV2` · Confidence: 95
 
@@ -153,7 +161,9 @@
 
 ---
 
-[95] **5. Token Sell Taxes Deplete Reserves Below Curve Cap, Freezing Curve and Permanently Trapping Raised Funds**
+[95] **5. Token Sell Taxes Deplete Reserves Below Curve Cap, Freezing Curve and Permanently Trapping Raised Funds** — ❌ INVALID
+
+> **Status: ❌ INVALID (2026-10-16)** — Fix H-01 sudah membuat saldo token kurva selalu sama dengan `virtualTokenReserve` (penjualan menambah cadangan sebesar token neto setelah pajak), sehingga pembelian tidak macet. Remediasi yang sempat diterapkan (owner boleh `emergencyWithdraw` kurva aktif setelah 180 hari) justru membuka jalur penarikan dana holder dan sudah dicabut. Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 `BondingCurve.sell` · Confidence: 95
 
@@ -221,7 +231,9 @@ When a buyer purchases all remaining curve tokens, floor division in platform fe
 
 ---
 
-[85] **8. Unrestricted Vesting Schedule Creation Enables Permanent Grant Denial for 1 Wei**
+[85] **8. Unrestricted Vesting Schedule Creation Enables Permanent Grant Denial for 1 Wei** — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Jadwal dikunci per `(token, creator, beneficiary)` (`test_VestingSquatterCannotBlockRealGrant`). Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 `VestingVault.createVestingSchedule` · Confidence: 85
 
@@ -263,7 +275,9 @@ When a buyer purchases all remaining curve tokens, floor division in platform fe
 
 ---
 
-[85] **10. ProtoMemeHook Discards buybackShareBps and Leaves pendingEthFees Unpopulated**
+[85] **10. ProtoMemeHook Discards buybackShareBps and Leaves pendingEthFees Unpopulated** — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — `ProtoMemeHook` diganti `core/ProtoV4Hook` (signature v4-core benar, alamat di-mine, fee pull); hook lama dipindah ke legacy. Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 `ProtoMemeHook.sweepPoolFees` · Confidence: 85
 
@@ -288,7 +302,9 @@ When a buyer purchases all remaining curve tokens, floor division in platform fe
 
 ---
 
-[82] **11. Missing protocolFeeRecipient Anti-Snipe Exemption in BaseLaunchpadFactory Causes Trade Reverts**
+[82] **11. Missing protocolFeeRecipient Anti-Snipe Exemption in BaseLaunchpadFactory Causes Trade Reverts** — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — `BaseLaunchpadFactory` adalah kode mati (tidak diwarisi kontrak mana pun) dan sudah dihapus. Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 `BaseLaunchpadFactory._executeLaunchTokenV2` · Confidence: 82
 
@@ -334,7 +350,9 @@ When a buyer purchases all remaining curve tokens, floor division in platform fe
 
 ---
 
-[80] **13. Uncollected Uniswap V4 Position Fees Leaves Trading Yield Stranded**
+[80] **13. Uncollected Uniswap V4 Position Fees Leaves Trading Yield Stranded** — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Fee posisi dikoleksi lewat `collectFees` di `ProtoV4Graduator` / `LaunchpadV2FactoryArc` (fork test Arc & Robinhood). Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 `ProtoLiquidityLockerV4.claimFees` · Confidence: 80
 
@@ -412,7 +430,9 @@ When fee redirection points to `HolderFeeDistributor`, `LiquidityLocker._routeFe
 
 ---
 
-[75] **17. Instant Timelock Bypass for Deployer Fee Redirection in ProtoLiquidityLockerV4**
+[75] **17. Instant Timelock Bypass for Deployer Fee Redirection in ProtoLiquidityLockerV4** — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Locker legacy: cancel hanya membatalkan proposal pending; `ProtoFeeSplitter` memakai propose/accept 48 jam. Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 `ProtoLiquidityLockerV4.cancelFeeRedirect` · Confidence: 75
 
@@ -421,7 +441,9 @@ When fee redirection points to `HolderFeeDistributor`, `LiquidityLocker._routeFe
 
 ---
 
-[75] **18. Instant 10% Tax Spike Allowed During Active Trading Blocks in LaunchpadToken**
+[75] **18. Instant 10% Tax Spike Allowed During Active Trading Blocks in LaunchpadToken** — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — `setInitialTaxConfig` ditolak setelah pembeli pihak ketiga pertama (`test_InitialTaxLockedAfterFirstPublicBuy`). Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 `LaunchpadToken.setInitialTaxConfig` · Confidence: 75
 
@@ -459,8 +481,10 @@ Findings List
 
 _Vulnerability trails with concrete code smells where the full exploit path could not be completed in one analysis pass. These are not false positives — they are high-signal leads for manual review. Not scored._
 
-- **Uniswap V4 Hook Address Flag Mining Absence** — `ProtoMemeHook` — Code smells: missing hook flag validation in address — Uniswap V4 requires specific permission flags encoded in the leading bits of the hook address; if `ProtoMemeHook` is deployed without vanity mining, pool initialization reverts inside `IPoolManager.initialize`.
-- **Untrusted Creator Reversion Blocks ProtoMemeHook Fee Sweeping** — `ProtoMemeHook.sweepPoolFees` — Code smells: push over pull external calls without gas caps — `sweepPoolFees` executes `config.creator.call{value: creatorShare}("")` and reverts on failure, allowing a malicious creator contract to permanently block protocol fee collection.
+- **Uniswap V4 Hook Address Flag Mining Absence** ✅ RESOLVED — `ProtoMemeHook` — Code smells: missing hook flag validation in address — Uniswap V4 requires specific permission flags encoded in the leading bits of the hook address; if `ProtoMemeHook` is deployed without vanity mining, pool initialization reverts inside `IPoolManager.initialize`.
+  > Terkonfirmasi on-chain (bit `0x19A7`); hook kini di-mine via `script/lib/HookMiner.sol` dan konstruktor memvalidasi bit alamat.
+- **Untrusted Creator Reversion Blocks ProtoMemeHook Fee Sweeping** ✅ RESOLVED — `ProtoMemeHook.sweepPoolFees` — Code smells: push over pull external calls without gas caps — `sweepPoolFees` executes `config.creator.call{value: creatorShare}("")` and reverts on failure, allowing a malicious creator contract to permanently block protocol fee collection.
+  > Bagian kreator di `ProtoFeeSplitter` kini pull (`claimCreatorFees`), jadi kreator tidak bisa memblokir swap.
 
 ---
 
