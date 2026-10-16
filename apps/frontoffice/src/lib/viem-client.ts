@@ -9,8 +9,7 @@ import {
   type WalletClient,
   type TransactionReceipt,
 } from 'viem';
-import { getWalletClient as getWagmiWalletClient } from '@wagmi/core';
-import { wagmiAdapter } from './appkit';
+import { appKitConfigured, loadAppKit } from './appkit-loader';
 import {
   ROBINHOOD_CHAIN,
   ARC_CHAIN,
@@ -102,8 +101,13 @@ export function createWalletClientFromProvider(provider: unknown, chainId?: numb
 
 export async function getWalletClient(): Promise<WalletClient | null> {
   // 1. Primary: 100% Reown AppKit active connector client
-  if (wagmiAdapter) {
+  if (appKitConfigured) {
     try {
+      const [{ wagmiAdapter }, { getWalletClient: getWagmiWalletClient }] = await Promise.all([
+        loadAppKit(),
+        import('@wagmi/core'),
+      ]);
+      if (!wagmiAdapter) throw new Error('AppKit unavailable');
       const client = await getWagmiWalletClient(wagmiAdapter.wagmiConfig);
       if (client) {
         return client as unknown as WalletClient;

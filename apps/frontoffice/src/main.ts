@@ -3,7 +3,9 @@ import App from './App.vue';
 import { router } from './router';
 import './style.css';
 import 'vue-sonner/style.css';
-import './lib/appkit';
+import { initAnalytics } from './lib/analytics';
+import { applyRouteSeo } from './lib/seo';
+import { preloadAppKitForReturningUser } from './lib/appkit-loader';
 
 const app = createApp(App);
 
@@ -15,23 +17,10 @@ router.onError((err) => {
   console.error('[Router Error]', err?.message, err?.stack);
 });
 
-// Dynamically sync canonical link and OpenGraph URL to current host and route
-router.afterEach((to) => {
-  if (typeof window === 'undefined') return;
-  const canonical = document.querySelector('link[rel="canonical"]');
-  const currentUrl = `${window.location.origin}${to.path}`;
-  if (canonical) {
-    canonical.setAttribute('href', currentUrl);
-  }
-  const ogUrl = document.querySelector('meta[property="og:url"]');
-  if (ogUrl) {
-    ogUrl.setAttribute('content', currentUrl);
-  }
-  const twitterUrl = document.querySelector('meta[name="twitter:url"]');
-  if (twitterUrl) {
-    twitterUrl.setAttribute('content', currentUrl);
-  }
-});
+// Per-route title, description, canonical URL (production domain) and social tags.
+router.afterEach((to) => applyRouteSeo(to));
 
 app.use(router);
 app.mount('#app');
+initAnalytics();
+preloadAppKitForReturningUser();

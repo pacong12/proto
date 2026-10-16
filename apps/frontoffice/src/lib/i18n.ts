@@ -104,7 +104,7 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     explorer: 'Explorer',
     cookieBannerTitle: 'Cookie & Storage Preferences',
     cookieBannerDesc:
-      'Goton uses local storage strictly for essential interface settings (theme, wallet state, and privacy agreement). We do not track you or use commercial ad cookies.',
+      'Goton stores essential settings (theme, wallet state, privacy agreement) in your browser. If you accept, we also load Google Analytics to understand how the app is used. We never use advertising cookies.',
     decline: 'Decline',
     accept: 'Accept',
     privacyAgreementTitle: 'Terms & Privacy Agreement',
@@ -447,7 +447,7 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     explorer: 'Penjelajah Blok',
     cookieBannerTitle: 'Preferensi Cookie & Penyimpanan',
     cookieBannerDesc:
-      'Goton menggunakan penyimpanan lokal hanya untuk pengaturan antarmuka penting (tema, status dompet, dan persetujuan privasi).',
+      'Goton menyimpan pengaturan penting (tema, status dompet, persetujuan privasi) di browser Anda. Jika Anda setuju, kami juga memuat Google Analytics untuk memahami penggunaan aplikasi. Kami tidak pernah memakai cookie iklan.',
     decline: 'Tolak',
     accept: 'Terima',
     privacyAgreementTitle: 'Persetujuan Ketentuan & Privasi',
@@ -843,7 +843,8 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     highestVolume: '最高交易量',
     loadingTape: '正在加载行情...',
     cookieBannerTitle: 'Cookie 与存储偏好',
-    cookieBannerDesc: 'Goton 仅使用本地存储保存必要的界面设置（主题、钱包状态和隐私协议）。',
+    cookieBannerDesc:
+      'Goton 在浏览器中保存必要设置（主题、钱包状态和隐私协议）。若您同意，我们还会加载 Google Analytics 以了解应用的使用情况。我们从不使用广告 Cookie。',
     cookiePolicy: 'Cookie 政策',
     decline: '拒绝',
     accept: '接受',
@@ -1167,7 +1168,7 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     scanningForWallets: 'ウォレットをスキャン中...',
     cookieBannerTitle: 'Cookieとストレージ設定',
     cookieBannerDesc:
-      'Gotonはテーマ、ウォレット状態、プライバシー同意などの必須設定のみにローカルストレージを使用します。',
+      'Gotonはテーマ、ウォレット状態、プライバシー同意などの必須設定をブラウザに保存します。同意いただいた場合は、利用状況の把握のためGoogle Analyticsも読み込みます。広告Cookieは使用しません。',
     cookiePolicy: 'Cookieポリシー',
     decline: '拒否',
     accept: '承認',
@@ -1506,7 +1507,7 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     scanningForWallets: '지갑 스캔 중...',
     cookieBannerTitle: 'Cookie & 저장소 설정',
     cookieBannerDesc:
-      'Goton은 테마, 지갑 상태, 개인정보 동의 등 필수 인터페이스 설정에만 로컬 스토리지를 사용합니다.',
+      'Goton은 테마, 지갑 상태, 개인정보 동의 등 필수 설정을 브라우저에 저장합니다. 동의하시면 앱 사용 현황을 파악하기 위해 Google Analytics도 불러옵니다. 광고 쿠키는 사용하지 않습니다.',
     cookiePolicy: '쿠키 정책',
     decline: '거부',
     accept: '수락',
@@ -1847,7 +1848,7 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     scanningForWallets: 'Escaneando billeteras...',
     cookieBannerTitle: 'Preferencias de Cookies y Almacenamiento',
     cookieBannerDesc:
-      'Goton usa almacenamiento local estrictamente para configuraciones esenciales de interfaz.',
+      'Goton guarda ajustes esenciales (tema, estado de la billetera, aceptación de privacidad) en tu navegador. Si aceptas, también cargamos Google Analytics para entender cómo se usa la app. Nunca usamos cookies publicitarias.',
     cookiePolicy: 'Política de Cookies',
     decline: 'Rechazar',
     accept: 'Aceptar',
@@ -2191,7 +2192,7 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     scanningForWallets: 'Сканирование кошельков...',
     cookieBannerTitle: 'Настройки Cookie и хранилища',
     cookieBannerDesc:
-      'Goton использует локальное хранилище строго для основных настроек интерфейса.',
+      'Goton хранит основные настройки (тема, состояние кошелька, согласие с политикой) в вашем браузере. С вашего согласия мы также загружаем Google Analytics, чтобы понимать, как используется приложение. Рекламные cookie не используются.',
     cookiePolicy: 'Политика Cookie',
     decline: 'Отклонить',
     accept: 'Принять',
@@ -2531,7 +2532,8 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     searchingTokens: 'جاري البحث...',
     scanningForWallets: 'جاري البحث عن المحافظ...',
     cookieBannerTitle: 'تفضيلات ملفات Cookie والتخزين',
-    cookieBannerDesc: 'يستخدم Goton التخزين المحلي فقط لإعدادات الواجهة الأساسية.',
+    cookieBannerDesc:
+      'يحفظ Goton الإعدادات الأساسية (المظهر وحالة المحفظة والموافقة على الخصوصية) في متصفحك. إذا وافقت، نحمّل أيضًا Google Analytics لفهم طريقة استخدام التطبيق. لا نستخدم ملفات تعريف الارتباط الإعلانية أبدًا.',
     cookiePolicy: 'سياسة ملفات Cookie',
     decline: 'رفض',
     accept: 'قبول',
@@ -2868,7 +2870,8 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     searchingTokens: 'Recherche de tokens...',
     scanningForWallets: 'Scan des portefeuilles...',
     cookieBannerTitle: 'Préférences Cookies & Stockage',
-    cookieBannerDesc: 'Goton utilise uniquement le stockage local pour les paramètres essentiels.',
+    cookieBannerDesc:
+      "Goton enregistre les paramètres essentiels (thème, état du portefeuille, accord de confidentialité) dans votre navigateur. Si vous acceptez, nous chargeons aussi Google Analytics pour comprendre l'utilisation de l'application. Nous n'utilisons jamais de cookies publicitaires.",
     cookiePolicy: 'Politique de Cookies',
     decline: 'Refuser',
     accept: 'Accepter',
@@ -3214,7 +3217,7 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     scanningForWallets: 'Wallets scannen...',
     cookieBannerTitle: 'Cookie- & Speicher-Einstellungen',
     cookieBannerDesc:
-      'Goton verwendet lokalen Speicher ausschließlich für wichtige Interface-Einstellungen.',
+      'Goton speichert wichtige Einstellungen (Design, Wallet-Status, Datenschutzzustimmung) in deinem Browser. Wenn du zustimmst, laden wir außerdem Google Analytics, um die Nutzung der App zu verstehen. Werbe-Cookies verwenden wir nie.',
     cookiePolicy: 'Cookie-Richtlinie',
     decline: 'Ablehnen',
     accept: 'Akzeptieren',
@@ -3561,7 +3564,7 @@ export const messages: Record<SupportedLocale, Record<string, string>> = {
     scanningForWallets: 'Verificando carteiras...',
     cookieBannerTitle: 'Preferências de Cookies e Armazenamento',
     cookieBannerDesc:
-      'Goton usa armazenamento local estritamente para configurações essenciais de interface.',
+      'O Goton guarda configurações essenciais (tema, estado da carteira, aceite de privacidade) no seu navegador. Se você aceitar, também carregamos o Google Analytics para entender como o app é usado. Nunca usamos cookies de publicidade.',
     cookiePolicy: 'Política de Cookies',
     decline: 'Recusar',
     accept: 'Aceitar',

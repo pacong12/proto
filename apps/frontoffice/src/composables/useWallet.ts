@@ -1,19 +1,19 @@
 import { computed, getCurrentInstance, onMounted, onUnmounted, ref, watch } from 'vue';
 import {
-  useAppKitAccount,
-  useAppKitNetwork,
-  useAppKitProvider,
-  useDisconnect,
-} from '@reown/appkit/vue';
-import type { EIP1193Provider } from 'viem';
-import {
   ROBINHOOD_CHAIN,
   SUPPORTED_CHAINS,
   getNetworkConfig,
   type NetworkConfig,
 } from '@goton/shared-types';
 import { getPublicClient } from '../lib/viem-client';
-import { appKitConfigured, appKit, getAppKitChain } from '../lib/appkit';
+import {
+  appKitAccount,
+  appKitChainId,
+  appKitConfigured,
+  appKitWalletProvider,
+  getAppKit,
+  loadAppKit,
+} from '../lib/appkit-loader';
 import {
   bindProviderListeners,
   clearWalletState,
@@ -49,20 +49,15 @@ function parseChainId(raw: unknown): number | null {
 }
 
 export function useWallet() {
-  const disconnectAction = appKitConfigured ? useDisconnect() : null;
-  const account = useAppKitAccount();
-  const providerState = useAppKitProvider<EIP1193Provider>('eip155');
-  const network = useAppKitNetwork();
-
   const resolvedAddress = computed<`0x${string}` | null>(() => {
     if (walletAddress.value) return walletAddress.value;
-    if (appKitConfigured && account.value?.address && isStoredConnectionActive()) {
-      return account.value.address as `0x${string}`;
+    if (appKitConfigured && appKitAccount.value?.address && isStoredConnectionActive()) {
+      return appKitAccount.value.address as `0x${string}`;
     }
     if (isStoredConnectionActive() && typeof window !== 'undefined' && 'localStorage' in window) {
       // FO-08: the stored address is only a placeholder while AppKit restores the session. Once
       // AppKit reports the wallet as disconnected, it is not connected, whatever storage says.
-      if (appKitConfigured && account.value?.status === 'disconnected') return null;
+      if (appKitConfigured && appKitAccount.value?.status === 'disconnected') return null;
       const stored = localStorage.getItem(STORAGE_ADDRESS_KEY);
       if (stored && stored.startsWith('0x') && stored.length === 42) {
         return stored as `0x${string}`;
@@ -232,10 +227,13 @@ export function useWallet() {
 
   async function openWallet() {
     error.value = null;
-    if (appKitConfigured && appKit) {
+    if (appKitConfigured) {
       try {
-        await appKit.open();
-        return;
+        const appKit = await getAppKit();
+        if (appKit) {
+          await appKit.open();
+          return;
+        }
       } catch (err) {
         console.warn('[useWallet] AppKit open failed, falling back to local modal:', err);
       }
@@ -258,9 +256,11 @@ export function useWallet() {
     error.value = null;
     isConnecting.value = false;
 
-    if (appKitConfigured && disconnectAction) {
+    // Only sessions opened through AppKit need it loaded to disconnect.
+    if (appKitConfigured && (walletProviderId.value === 'reown' || appKitAccount.value?.address)) {
       try {
-        await disconnectAction.disconnect();
+        const appKit = await getAppKit();
+        await appKit?.disconnect();
       } catch (err) {
         console.warn('[useWallet] Disconnect action failed, forcing local cleanup:', err);
       }
@@ -288,10 +288,11 @@ export function useWallet() {
       await syncBalance(walletAddress.value);
     }
 
-    if (appKitConfigured && appKit) {
+    if (appKitConfigured) {
       try {
-        const caip = getAppKitChain(targetConfig.chainId);
-        await appKit.switchNetwork(caip);
+        const { appKit, getAppKitChain } = await loadAppKit();
+        if (!appKit) throw new Error('AppKit unavailable');
+        await appKit.switchNetwork(getAppKitChain(targetConfig.chainId));
         return true;
       } catch (err) {
         console.warn('[useWallet] AppKit switchNetwork failed:', err);
@@ -447,20 +448,19 @@ export function useWallet() {
 
   if (appKitConfigured) {
     watch(
-      () => account.value?.address,
+      () => appKitAccount.value?.address,
       (next, prev) => {
         if (next && next !== prev) {
           const address = next as `0x${string}`;
           const currentProvider =
-            (providerState.walletProvider as unknown as WalletProviderLike) ??
-            getInjectedProvider();
+            (appKitWalletProvider.value as WalletProviderLike | null) ?? getInjectedProvider();
 
           const storedChain =
             typeof localStorage !== 'undefined'
               ? parseChainId(localStorage.getItem(STORAGE_CHAIN_ID_KEY))
               : null;
           const currentChain =
-            storedChain ?? parseChainId(network.value.chainId) ?? ROBINHOOD_CHAIN.chainId;
+            storedChain ?? parseChainId(appKitChainId.value) ?? ROBINHOOD_CHAIN.chainId;
 
           if (currentProvider) {
             setConnectedWallet(currentProvider, address, currentChain, 'reown');
@@ -477,7 +477,7 @@ export function useWallet() {
     );
 
     watch(
-      () => providerState.walletProvider,
+      () => appKitWalletProvider.value,
       (next) => {
         if (next && walletAddress.value) {
           const p = next as unknown as WalletProviderLike;
@@ -488,7 +488,7 @@ export function useWallet() {
     );
 
     watch(
-      () => network.value.chainId,
+      () => appKitChainId.value,
       (next, prev) => {
         if (next && next !== prev) {
           const parsed = parseChainId(next);

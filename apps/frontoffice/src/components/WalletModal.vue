@@ -257,8 +257,7 @@ import { onMounted, onUnmounted, ref } from 'vue';
 import { Loader2, X, Copy, Check, LogOut, ChevronDown, Mail } from 'lucide-vue-next';
 import { ROBINHOOD_CHAIN, SUPPORTED_CHAINS } from '@goton/shared-types';
 import { getChainIcon } from '@/lib/utils';
-import { useAppKit } from '@reown/appkit/vue';
-import { appKitConfigured } from '../lib/appkit';
+import { appKitConfigured, getAppKit } from '../lib/appkit-loader';
 import { useI18n } from '@/lib/i18n';
 import { useWallet } from '../composables/useWallet';
 import { Card } from '@/components/ui/card';
@@ -311,13 +310,12 @@ interface Eip6963ProviderDetail {
 }
 
 const listeners: Array<() => void> = [];
-const appKit = appKitConfigured ? useAppKit() : null;
 
 async function openAppKitSocial() {
   close();
-  if (appKit) {
+  if (appKitConfigured) {
     try {
-      await appKit.open();
+      await (await getAppKit())?.open();
     } catch (e) {
       console.warn('[WalletModal] Failed to open AppKit:', e);
     }
