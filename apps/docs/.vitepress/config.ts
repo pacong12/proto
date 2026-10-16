@@ -544,6 +544,9 @@ export default defineConfig({
       linkText: 'Back to the guide',
     },
     siteTitle: 'Goton Guide',
+    darkModeSwitchLabel: 'Appearance',
+    lightModeSwitchTitle: 'Switch to light theme',
+    darkModeSwitchTitle: 'Switch to dark theme',
     logo: {
       light: '/logo-black.svg',
       dark: '/logo-white.svg',

@@ -24,3 +24,22 @@
 body {
   font-weight: 500;
 }
+
+/* WCAG AA: white button text needs a background with at least 4.5:1 contrast in both themes. */
+:root,
+.dark {
+  --vp-button-brand-text: #ffffff;
+  --vp-button-brand-bg: #b8147a;
+  --vp-button-brand-hover-text: #ffffff;
+  --vp-button-brand-hover-bg: #a3126c;
+  --vp-button-brand-active-text: #ffffff;
+  --vp-button-brand-active-bg: #a3126c;
+}
+
+/* WCAG 2.5.8: language and menu links need a 24px minimum touch target. */
+.VPMenuLink .link,
+.VPNavScreenTranslations .item .link {
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+}
