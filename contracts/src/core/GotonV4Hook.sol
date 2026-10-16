@@ -183,6 +183,7 @@ contract GotonV4Hook {
     }
 
     /// @dev Taxes the quote leg when it is the unspecified side (exact-in sell, exact-out buy), then checks graduation.
+    // slither-disable-next-line reentrancy-no-eth,unused-return (guarded by nonReentrant / onlyPoolManager / trusted caller; unused tuple fields; see docs/audit/AUDIT-VERIFICATION.md)
     function afterSwap(address sender, PoolKey calldata key, SwapParams calldata params, int256 delta, bytes calldata)
         external
         onlyPoolManager
@@ -221,6 +222,7 @@ contract GotonV4Hook {
      *         older checkpoint (between ORACLE_PERIOD and 2 × ORACLE_PERIOD ago while trading is active).
      * @dev Reverts until the pool has traded across at least one full ORACLE_PERIOD.
      */
+    // slither-disable-next-line incorrect-equality,unused-return (exact zero / same-block / sold-out checks; unused tuple fields; see docs/audit/AUDIT-VERIFICATION.md)
     function consultTick(bytes32 poolId) external view returns (int24 twapTick, uint32 window) {
         Oracle memory o = oracles[poolId];
         if (o.olderTimestamp == 0) revert OracleNotReady();
@@ -235,6 +237,7 @@ contract GotonV4Hook {
     }
 
     /// @dev Accumulates the tick that prevailed since the last swap (read before this swap moves it).
+    // slither-disable-next-line incorrect-equality,unused-return (exact zero / same-block / sold-out checks; unused tuple fields; see docs/audit/AUDIT-VERIFICATION.md)
     function _writeOracle(bytes32 id) private {
         Oracle storage o = oracles[id];
         uint32 nowTs = uint32(block.timestamp);

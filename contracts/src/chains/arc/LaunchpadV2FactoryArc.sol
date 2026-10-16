@@ -183,6 +183,7 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
      *      whole number of 6-decimal USDC units.
      * @param minTokensOut Slippage floor for the creator prebuy.
      */
+    // slither-disable-next-line unused-return (unused tuple fields; see docs/audit/AUDIT-VERIFICATION.md)
     function launchToken(TokenMetadata calldata meta, TaxConfig calldata tax, uint256 minTokensOut)
         external
         payable
@@ -316,6 +317,7 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
         return _collectCallback(payload);
     }
 
+    // slither-disable-next-line unused-return (unused tuple fields; see docs/audit/AUDIT-VERIFICATION.md)
     function _launchCallback(bytes memory payload) private returns (bytes memory) {
         (PoolKey memory key, bool quoteIsCurrency0, uint256 prebuyUsdc6, address creator) =
             abi.decode(payload, (PoolKey, bool, uint256, address));
@@ -354,6 +356,7 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
         return abi.encode(tokensOut);
     }
 
+    // slither-disable-next-line unused-return (unused tuple fields; see docs/audit/AUDIT-VERIFICATION.md)
     function _collectCallback(bytes memory payload) private returns (bytes memory) {
         (PoolKey memory key, bool quoteIsCurrency0, address splitter) = abi.decode(payload, (PoolKey, bool, address));
         (int24 tickLower, int24 tickUpper) = _range(quoteIsCurrency0);
@@ -370,6 +373,7 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
         return abi.encode(quoteFees, tokenFees);
     }
 
+    // slither-disable-next-line unused-return (unused tuple fields; see docs/audit/AUDIT-VERIFICATION.md)
     function _settle(address currency, uint256 amount) private {
         if (amount == 0) return;
         poolManager.sync(currency);

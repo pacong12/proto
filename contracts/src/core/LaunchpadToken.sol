@@ -343,6 +343,7 @@ contract LaunchpadToken is ILaunchpadToken {
         emit Approval(owner, spender, value);
     }
 
+    // slither-disable-next-line reentrancy-no-eth (guarded by nonReentrant / onlyPoolManager / trusted caller; see docs/audit/AUDIT-VERIFICATION.md)
     function _transfer(address from, address to, uint256 value) internal {
         if (from == address(0) || to == address(0)) revert ZeroAddress();
 

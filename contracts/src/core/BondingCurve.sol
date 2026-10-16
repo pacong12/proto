@@ -173,6 +173,7 @@ contract BondingCurve {
     /**
      * @notice ETH out and platform fee for a given token input.
      */
+    // slither-disable-next-line unused-return (unused tuple fields; see docs/audit/AUDIT-VERIFICATION.md)
     function getAmountOutSell(uint256 tokenIn) public view returns (uint256 ethOut, uint256 feeEth) {
         (, uint16 sellTaxBps,) = token.taxConfig();
         uint256 netTokenIn = sellTaxBps > 0 ? (tokenIn * (BPS - sellTaxBps)) / BPS : tokenIn;
@@ -200,6 +201,7 @@ contract BondingCurve {
     /**
      * @notice Buy tokens from the bonding curve for a specified recipient.
      */
+    // slither-disable-next-line incorrect-equality (exact zero / same-block / sold-out checks; see docs/audit/AUDIT-VERIFICATION.md)
     function buyFor(address recipient, uint256 minTokensOut) public payable nonReentrant returns (uint256 tokensOut) {
         if (graduated) revert AlreadyGraduated();
         // DR-01: the factory's circuit breaker stops new buys; sells are never paused.
@@ -285,6 +287,7 @@ contract BondingCurve {
      *      transferFrom, violating CEI. The nonReentrant guard provides a defence-
      *      in-depth layer but CEI is the primary protection.
      */
+    // slither-disable-next-line unused-return (unused tuple fields; see docs/audit/AUDIT-VERIFICATION.md)
     function sell(uint256 tokenIn, uint256 minEthOut) external nonReentrant returns (uint256 ethOut) {
         if (graduated) revert AlreadyGraduated();
         if (tokenIn == 0) revert InvalidAmount();
