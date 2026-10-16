@@ -103,5 +103,8 @@ contract DeployArc is Script {
         router = address(new ProtoV4Router(poolManager, usdc, 1e12));
         ProtoV4Buyback buyback = new ProtoV4Buyback(poolManager, protoHook);
         LaunchpadV2FactoryArc(factory).setRecipients(feeRecipient, address(buyback), feeRecipient);
+        // DR-01: optional incident-response guardian that can pause launches (unpause stays owner-only).
+        address guardian = vm.envOr("EMERGENCY_GUARDIAN", address(0));
+        if (guardian != address(0)) LaunchpadV2FactoryArc(factory).setGuardian(guardian);
     }
 }

@@ -54,5 +54,8 @@
   6. The creator may fix the LP-fee split once, before any third-party buy
      (`ProtoV4Graduator.setRevenueSplit`). The burn share is spent by `ProtoV4Buyback`, which buys
      the token at the hook's TWAP ± 2% and sends it to 0xdEaD.
+  7. Circuit breaker (`EmergencyPause`): the owner or `guardian` (`EMERGENCY_GUARDIAN` at deploy) can
+     pause launches, curve buys and graduations; curve sells, pool swaps and fee claims are never
+     pausable. Only the owner can unpause.
 - Deployment: `contracts/script/robinhood/DeployRobinhoodV2.s.sol`; fork tests:
   `ROBINHOOD_RPC_URL=… forge test --match-path test/robinhood/RobinhoodV4Graduation.fork.t.sol`.
