@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {ILaunchpadToken} from "./interfaces/ILaunchpadToken.sol";
-import {IWETH} from "./interfaces/IUniswapV3.sol";
-import {FeeMath} from "./libraries/FeeMath.sol";
+import {ILaunchpadToken} from "../interfaces/ILaunchpadToken.sol";
+import {IWETH} from "../interfaces/IUniswapV3.sol";
+import {FeeMath} from "../libraries/FeeMath.sol";
 
 /**
  * @title HolderFeeDistributor

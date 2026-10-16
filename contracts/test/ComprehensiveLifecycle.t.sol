@@ -2,14 +2,14 @@
 pragma solidity ^0.8.24;
 
 import {Test, console} from "forge-std/Test.sol";
-import {LaunchpadFactory} from "../src/LaunchpadFactory.sol";
-import {LaunchpadV2Factory} from "../src/LaunchpadV2Factory.sol";
-import {LiquidityLocker} from "../src/LiquidityLocker.sol";
-import {LaunchpadToken} from "../src/LaunchpadToken.sol";
-import {BondingCurve} from "../src/BondingCurve.sol";
-import {BuybackBurner} from "../src/BuybackBurner.sol";
-import {HolderFeeDistributor} from "../src/HolderFeeDistributor.sol";
-import {VestingVault} from "../src/VestingVault.sol";
+import {LaunchpadFactory} from "../src/legacy/LaunchpadFactory.sol";
+import {LaunchpadV2Factory} from "../src/chains/robinhood/LaunchpadV2Factory.sol";
+import {LiquidityLocker} from "../src/legacy/LiquidityLocker.sol";
+import {LaunchpadToken} from "../src/core/LaunchpadToken.sol";
+import {BondingCurve} from "../src/core/BondingCurve.sol";
+import {BuybackBurner} from "../src/core/BuybackBurner.sol";
+import {HolderFeeDistributor} from "../src/legacy/HolderFeeDistributor.sol";
+import {VestingVault} from "../src/core/VestingVault.sol";
 import {ILaunchpadToken} from "../src/interfaces/ILaunchpadToken.sol";
 import {
     MockWETH,

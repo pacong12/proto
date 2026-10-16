@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {ILaunchpadFactory} from "./interfaces/ILaunchpadFactory.sol";
-import {ILaunchpadToken} from "./interfaces/ILaunchpadToken.sol";
-import {ILiquidityLocker} from "./interfaces/ILiquidityLocker.sol";
+import {ILaunchpadFactory} from "../interfaces/ILaunchpadFactory.sol";
+import {ILaunchpadToken} from "../interfaces/ILaunchpadToken.sol";
+import {ILiquidityLocker} from "../interfaces/ILiquidityLocker.sol";
 import {
     IUniswapV3Factory,
     IUniswapV3Pool,
     INonfungiblePositionManager,
     ISwapRouter,
     IWETH
-} from "./interfaces/IUniswapV3.sol";
-import {LaunchpadToken} from "./LaunchpadToken.sol";
+} from "../interfaces/IUniswapV3.sol";
+import {LaunchpadToken} from "../core/LaunchpadToken.sol";
 import {LiquidityLocker} from "./LiquidityLocker.sol";
 
 /**

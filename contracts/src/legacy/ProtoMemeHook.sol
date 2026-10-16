@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {IHooks, PoolKey, PoolIdLibrary, IPoolManager} from "./interfaces/IUniswapV4.sol";
-import {FeeMath} from "./libraries/FeeMath.sol";
+import {IHooks, PoolKey, PoolIdLibrary, IPoolManager} from "../interfaces/IUniswapV4.sol";
+import {FeeMath} from "../libraries/FeeMath.sol";
 
 /**
  * @title ProtoMemeHook

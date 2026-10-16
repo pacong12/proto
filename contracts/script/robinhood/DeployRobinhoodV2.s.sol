@@ -2,9 +2,9 @@
 pragma solidity ^0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
-import {LaunchpadV2Factory} from "../src/LaunchpadV2Factory.sol";
-import {ProtoLiquidityLockerV4} from "../src/ProtoLiquidityLockerV4.sol";
-import {ProtoMemeHook} from "../src/ProtoMemeHook.sol";
+import {LaunchpadV2Factory} from "../../src/chains/robinhood/LaunchpadV2Factory.sol";
+import {ProtoLiquidityLockerV4} from "../../src/legacy/ProtoLiquidityLockerV4.sol";
+import {ProtoMemeHook} from "../../src/legacy/ProtoMemeHook.sol";
 
 contract DeployRobinhoodV2 is Script {
     function run() external returns (address factoryAddress, address lockerV4Address, address hookAddress) {
