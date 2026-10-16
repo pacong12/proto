@@ -1,5 +1,6 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue';
 import { type FeedCalloutItem, buildCommentSignMessage } from '@proto/shared-types';
+import { getSessionHeaders } from '../lib/session';
 import { apiFetch } from '@/lib/api-client';
 import { getWalletClient } from '@/lib/viem-client';
 
@@ -191,7 +192,7 @@ export function useFeed(): {
         data: { liked: boolean; likesCount: number };
       }>(`/api/comments/${commentId}/like`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getSessionHeaders(userAddress)) },
         body: JSON.stringify({ userAddress }),
       });
 
@@ -220,7 +221,7 @@ export function useFeed(): {
         data: { reposted: boolean; repostsCount: number };
       }>(`/api/comments/${commentId}/repost`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getSessionHeaders(userAddress)) },
         body: JSON.stringify({ userAddress }),
       });
 

@@ -287,6 +287,7 @@
 </template>
 
 <script setup lang="ts">
+import { resolveSafeUrl } from '@/lib/safe-url';
 import { useRouter } from 'vue-router';
 import {
   Heart,
@@ -352,15 +353,6 @@ function formatViews(views: number): string {
   if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M`;
   if (views >= 1_000) return `${(views / 1_000).toFixed(1)}K`;
   return String(views);
-}
-
-function resolveSafeUrl(url?: string): string {
-  if (!url) return '';
-  if (url.startsWith('ipfs://')) {
-    const cid = url.replace('ipfs://', '');
-    return `https://gateway.pinata.cloud/ipfs/${cid}`;
-  }
-  return url;
 }
 
 function callPnlPct(call: FeedCalloutItem): number {

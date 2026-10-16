@@ -26,6 +26,21 @@ export interface PendingTaxConfig {
  * This composable is intentionally stateless between mounts; the caller
  * refreshes by re-calling loadPendingTax().
  */
+/**
+ * FO-07: tax transactions must be sent on the token's chain; the wallet's current chain is not
+ * necessarily the token's (Arc vs Robinhood), so refuse instead of broadcasting to the wrong one.
+ */
+async function assertWalletOnChain(
+  walletClient: { getChainId(): Promise<number> },
+  chainId?: number,
+): Promise<void> {
+  if (!chainId) return;
+  const walletChainId = await walletClient.getChainId();
+  if (walletChainId !== chainId) {
+    throw new Error(`Switch your wallet to chain ${chainId} (the token's network) and retry.`);
+  }
+}
+
 export function useTaxConfig() {
   const pending = ref<PendingTaxConfig | null>(null);
   const loading = ref(false);
@@ -81,6 +96,7 @@ export function useTaxConfig() {
     buyTaxBps: number,
     sellTaxBps: number,
     taxRecipient?: `0x${string}`,
+    chainId?: number,
   ): Promise<`0x${string}` | null> {
     actionLoading.value = true;
     error.value = null;
@@ -89,6 +105,7 @@ export function useTaxConfig() {
       if (!walletClient) throw new Error('No wallet connected');
       const [account] = await walletClient.getAddresses();
       if (!account) throw new Error('Please connect your wallet');
+      await assertWalletOnChain(walletClient, chainId);
 
       const recipient = taxRecipient || account;
       const hash = await walletClient.writeContract({
@@ -100,9 +117,9 @@ export function useTaxConfig() {
         chain: walletClient.chain,
       });
 
-      const client = getPublicClient();
+      const client = getPublicClient(chainId);
       await client.waitForTransactionReceipt({ hash });
-      await loadPendingTax(tokenAddress);
+      await loadPendingTax(tokenAddress, chainId);
       return hash;
     } catch (err) {
       error.value = (err as Error).message;
@@ -112,7 +129,10 @@ export function useTaxConfig() {
     }
   }
 
-  async function acceptTaxConfig(tokenAddress: `0x${string}`): Promise<`0x${string}` | null> {
+  async function acceptTaxConfig(
+    tokenAddress: `0x${string}`,
+    chainId?: number,
+  ): Promise<`0x${string}` | null> {
     actionLoading.value = true;
     error.value = null;
     try {
@@ -120,6 +140,7 @@ export function useTaxConfig() {
       if (!walletClient) throw new Error('No wallet connected');
       const [account] = await walletClient.getAddresses();
       if (!account) throw new Error('Please connect your wallet');
+      await assertWalletOnChain(walletClient, chainId);
 
       const hash = await walletClient.writeContract({
         address: tokenAddress,
@@ -130,7 +151,7 @@ export function useTaxConfig() {
         chain: walletClient.chain,
       });
 
-      const client = getPublicClient();
+      const client = getPublicClient(chainId);
       await client.waitForTransactionReceipt({ hash });
       pending.value = null;
       return hash;
@@ -142,7 +163,10 @@ export function useTaxConfig() {
     }
   }
 
-  async function cancelTaxConfig(tokenAddress: `0x${string}`): Promise<`0x${string}` | null> {
+  async function cancelTaxConfig(
+    tokenAddress: `0x${string}`,
+    chainId?: number,
+  ): Promise<`0x${string}` | null> {
     actionLoading.value = true;
     error.value = null;
     try {
@@ -150,6 +174,7 @@ export function useTaxConfig() {
       if (!walletClient) throw new Error('No wallet connected');
       const [account] = await walletClient.getAddresses();
       if (!account) throw new Error('Please connect your wallet');
+      await assertWalletOnChain(walletClient, chainId);
 
       const hash = await walletClient.writeContract({
         address: tokenAddress,
@@ -160,7 +185,7 @@ export function useTaxConfig() {
         chain: walletClient.chain,
       });
 
-      const client = getPublicClient();
+      const client = getPublicClient(chainId);
       await client.waitForTransactionReceipt({ hash });
       pending.value = null;
       return hash;

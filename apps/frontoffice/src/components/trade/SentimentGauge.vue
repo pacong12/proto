@@ -76,6 +76,7 @@
 </template>
 
 <script setup lang="ts">
+import { getSessionHeaders } from '@/lib/session';
 import { ref, watch, onMounted } from 'vue';
 import { Flame, TrendingUp, TrendingDown, Loader2 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
@@ -157,16 +158,13 @@ async function fetchSentiment(): Promise<void> {
 
 async function castVote(vote: 'bull' | 'bear'): Promise<void> {
   if (isVoting.value || !props.tokenAddress) return;
-  const voterAddr =
-    props.account ||
-    (typeof window !== 'undefined'
-      ? localStorage.getItem('proto_anon_voter') ||
-        (() => {
-          const gen = `0x${Array.from({ length: 40 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
-          localStorage.setItem('proto_anon_voter', gen);
-          return gen;
-        })()
-      : '0x0000000000000000000000000000000000000001');
+  // API-09: votes are attributed to a signed-in wallet; anonymous random addresses allowed
+  // unlimited ballot stuffing.
+  const voterAddr = props.account;
+  if (!voterAddr) {
+    toast.error('Connect your wallet to vote');
+    return;
+  }
 
   isVoting.value = true;
   votingTarget.value = vote;
@@ -184,7 +182,7 @@ async function castVote(vote: 'bull' | 'bear'): Promise<void> {
       };
     }>(`/api/tokens/${props.tokenAddress}/sentiment`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(await getSessionHeaders(voterAddr)) },
       body: JSON.stringify({ userAddress: voterAddr, sentiment: vote }),
     });
 
