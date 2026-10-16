@@ -1,5 +1,7 @@
 import crypto from 'crypto';
 import { ChainRegistry } from './modules/chains';
+import { privateKeyToAccount } from 'viem/accounts';
+import { V4BuybackKeeperService } from './modules/tokens/infrastructure/keeper/v4-buyback-keeper.service';
 import {
   SqliteTokenRepository,
   ViemChainIndexerAdapter,
@@ -22,8 +24,7 @@ import {
 } from './index';
 import {
   createPublicClient,
-  http,
-  defineChain,
+  createWalletClient,
   decodeEventLog,
   parseAbiItem,
   verifyMessage,
@@ -248,6 +249,46 @@ function scheduleArcPoll(): void {
 scheduleRobinhoodPoll();
 // Stagger Arc chain by 30s to avoid simultaneous RPC bursts
 setTimeout(scheduleArcPoll, 30_000);
+
+// ---------------------------------------------------------------------------
+// TWAP-guarded buyback keeper (AUD-HIGH-05 / TKT-06). Enabled with KEEPER_PRIVATE_KEY; the
+// contract enforces the price guard, so the key only pays gas and can never pick a bad price.
+// ---------------------------------------------------------------------------
+const BUYBACK_KEEPER_INTERVAL_MS = Number(process.env.BUYBACK_KEEPER_INTERVAL_MS ?? 10 * 60_000);
+
+function startBuybackKeepers(): void {
+  const key = process.env.KEEPER_PRIVATE_KEY?.trim();
+  if (!key || process.env.NODE_ENV === 'test') return;
+  const account = privateKeyToAccount((key.startsWith('0x') ? key : `0x${key}`) as Hex);
+  for (const [network, client] of [
+    [ROBINHOOD_CHAIN, robinhoodClient],
+    [ARC_CHAIN, arcClient],
+  ] as const) {
+    const walletClient = createWalletClient({
+      account,
+      chain: client.chain,
+      transport: rpcTransport(network, 30_000),
+    });
+    const keeper = new V4BuybackKeeperService(client, walletClient, repository, network);
+    const tick = (): void => {
+      setTimeout(async () => {
+        try {
+          const executed = (await keeper.runOnce()).filter((r) => r.executed);
+          if (executed.length > 0) {
+            logger.info(`[BuybackKeeper:${network.name}] executed ${executed.length} buyback(s)`);
+          }
+        } catch (e) {
+          logger.warn(`[BuybackKeeper:${network.name}] cycle failed`, {
+            error: { name: (e as Error).name, message: (e as Error).message },
+          });
+        }
+        tick();
+      }, BUYBACK_KEEPER_INTERVAL_MS);
+    };
+    tick();
+  }
+}
+startBuybackKeepers();
 
 // DR-04: daily hot backups of the SQLite database (DB_BACKUP_INTERVAL_MS=0 disables).
 const DB_BACKUP_INTERVAL_MS = Number(process.env.DB_BACKUP_INTERVAL_MS ?? 24 * 60 * 60_000);

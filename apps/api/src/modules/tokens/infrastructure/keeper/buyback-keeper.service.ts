@@ -92,13 +92,19 @@ export class BuybackKeeperService {
         // fallback
       }
 
-      let minAmountOut = 1n;
-      if (lastKnownRate > 0n) {
-        const expected = (balance * lastKnownRate) / 10n ** 18n;
-        const slippageBps = BigInt(Math.floor((this.config.slippageTolerancePercent ?? 3) * 100));
-        minAmountOut = (expected * (10_000n - slippageBps)) / 10_000n;
-        if (minAmountOut < 1n) minAmountOut = 1n;
+      // Red-team "Echo": never swap with a 1-wei floor. Without a reference rate (first buyback
+      // or after resetReferenceRate) the owner must run it manually with a quoted minimum.
+      if (lastKnownRate === 0n) {
+        return {
+          executed: false,
+          wethBalance: formatEther(balance),
+          reason: 'No reference rate: run the first buyback manually with a quoted minAmountOut',
+        };
       }
+      const expected = (balance * lastKnownRate) / 10n ** 18n;
+      const slippageBps = BigInt(Math.floor((this.config.slippageTolerancePercent ?? 3) * 100));
+      let minAmountOut = (expected * (10_000n - slippageBps)) / 10_000n;
+      if (minAmountOut < 1n) minAmountOut = 1n;
 
       const [account] = await this.walletClient.getAddresses();
       const hash = await this.walletClient.writeContract({
