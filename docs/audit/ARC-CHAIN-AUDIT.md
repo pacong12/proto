@@ -1,5 +1,7 @@
 # Audit Keamanan & Arsitektur Arc Network (Chain ID: 5042)
 
+> Status remediasi per 2026-10-16: ✅ = sudah diperbaiki, 🟡 = diperbaiki sebagian, ❌ = tidak valid, ⚪ = risiko diterima; verifikasi lengkap di [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
+
 **Klasifikasi**: PROTOCOL CONFIDENTIAL / AUDIT TEKNIS  
 **Ruang Lingkup**:
 
@@ -27,15 +29,15 @@ Audit ini mengidentifikasi **7 temuan teknis** (3 Tingkat Tinggi / High, 2 Tingk
 
 ## 2. Matriks Temuan Audit Arc Chain
 
-| ID         | Severity | Komponen                                         | Judul Temuan                                                                          |
-| :--------- | :------- | :----------------------------------------------- | :------------------------------------------------------------------------------------ |
-| **ARC-01** | High     | `LaunchpadV2FactoryArc.sol`                      | Ketiadaan `receive()` Menggagalkan Peluncuran Token dengan Initial Buyout Penuh       |
-| **ARC-02** | High     | `LaunchpadV2FactoryArc.sol` / `BondingCurve.sol` | Resiko Sentralisasi & Kustodial Penuh pada Migrasi Likuiditas 69,000 USDC             |
-| **ARC-03** | High     | `LiquidityLocker.sol` / `DeployArc.s.sol`        | `factory` Imutabel Mengunci Hak Panggilan `lockPosition` untuk Factory Arc            |
-| **ARC-04** | High     | `arc.adapter.ts`                                 | Swap Beli Uniswap V3 Pasca-Graduasi Mengirim Native ETH Mentah ke Router Non-Payable  |
-| **ARC-05** | Medium   | `LaunchpadV2FactoryArc.sol` / `ARC_DEPLOY.md`    | Inkonsistensi Nilai Cadangan Virtual USDC ($4,200 vs $24,420) pada Komentar & Panduan |
-| **ARC-06** | Low      | `LaunchpadV2FactoryArc.sol`                      | Variabel `defaultLocker` Tersimpan sebagai Dead Storage Tanpa Penggunaan              |
-| **ARC-07** | Low      | `docs/ARC_DEPLOY.md`                             | Signature Konstruktor Keliru pada Panduan Verifikasi Explorer `forge verify-contract` |
+| ID            | Severity | Komponen                                         | Judul Temuan                                                                          |
+| :------------ | :------- | :----------------------------------------------- | :------------------------------------------------------------------------------------ |
+| **ARC-01**    | High     | `LaunchpadV2FactoryArc.sol`                      | Ketiadaan `receive()` Menggagalkan Peluncuran Token dengan Initial Buyout Penuh       |
+| **ARC-02** ✅ | High     | `LaunchpadV2FactoryArc.sol` / `BondingCurve.sol` | Resiko Sentralisasi & Kustodial Penuh pada Migrasi Likuiditas 69,000 USDC             |
+| **ARC-03** ✅ | High     | `LiquidityLocker.sol` / `DeployArc.s.sol`        | `factory` Imutabel Mengunci Hak Panggilan `lockPosition` untuk Factory Arc            |
+| **ARC-04** ✅ | High     | `arc.adapter.ts`                                 | Swap Beli Uniswap V3 Pasca-Graduasi Mengirim Native ETH Mentah ke Router Non-Payable  |
+| **ARC-05** ✅ | Medium   | `LaunchpadV2FactoryArc.sol` / `ARC_DEPLOY.md`    | Inkonsistensi Nilai Cadangan Virtual USDC ($4,200 vs $24,420) pada Komentar & Panduan |
+| **ARC-06** ✅ | Low      | `LaunchpadV2FactoryArc.sol`                      | Variabel `defaultLocker` Tersimpan sebagai Dead Storage Tanpa Penggunaan              |
+| **ARC-07** ✅ | Low      | `docs/ARC_DEPLOY.md`                             | Signature Konstruktor Keliru pada Panduan Verifikasi Explorer `forge verify-contract` |
 
 ---
 
@@ -66,7 +68,9 @@ Audit ini mengidentifikasi **7 temuan teknis** (3 Tingkat Tinggi / High, 2 Tingk
 
 ---
 
-### ARC-02: Resiko Sentralisasi & Kustodial Penuh pada Migrasi Likuiditas 69,000 USDC [High]
+### ARC-02: Resiko Sentralisasi & Kustodial Penuh pada Migrasi Likuiditas 69,000 USDC [High] — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Arc kini launch langsung ke pool Uniswap v4; likuiditas dimiliki factory dan terkunci, tanpa migrasi. Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - **Lokasi Kode**:
   - `contracts/src/LaunchpadV2FactoryArc.sol:260-266` (`migrateCurve`)
@@ -93,7 +97,9 @@ Audit ini mengidentifikasi **7 temuan teknis** (3 Tingkat Tinggi / High, 2 Tingk
 
 ---
 
-### ARC-03: `factory` Imutabel Mengunci Hak Panggilan `lockPosition` untuk Factory Arc [High]
+### ARC-03: `factory` Imutabel Mengunci Hak Panggilan `lockPosition` untuk Factory Arc [High] — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Arc tidak lagi memakai `LiquidityLocker`; posisi dipegang factory. Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - **Lokasi Kode**:
   - `contracts/src/LiquidityLocker.sol:34, 68, 90`
@@ -130,7 +136,9 @@ Audit ini mengidentifikasi **7 temuan teknis** (3 Tingkat Tinggi / High, 2 Tingk
 
 ---
 
-### ARC-04: Swap Beli Uniswap V3 Pasca-Graduasi Mengirim Native ETH Mentah ke Router Non-Payable [High]
+### ARC-04: Swap Beli Uniswap V3 Pasca-Graduasi Mengirim Native ETH Mentah ke Router Non-Payable [High] — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Jalur V3 dihapus; swap lewat `ProtoV4Router` (native USDC untuk beli). Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - **Lokasi Kode**:
   - `apps/frontoffice/src/chains/arc/arc.adapter.ts:302-358` (`executeSwap`)
@@ -161,7 +169,9 @@ Audit ini mengidentifikasi **7 temuan teknis** (3 Tingkat Tinggi / High, 2 Tingk
 
 ---
 
-### ARC-05: Inkonsistensi Nilai Cadangan Virtual USDC ($4,200 vs $24,420) pada Komentar & Panduan [Medium]
+### ARC-05: Inkonsistensi Nilai Cadangan Virtual USDC ($4,200 vs $24,420) pada Komentar & Panduan [Medium] — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Factory dan `docs/ARC_DEPLOY.md` ditulis ulang dengan parameter Argus (tick 405400 / 376400). Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - **Lokasi Kode**:
   - `contracts/src/LaunchpadV2FactoryArc.sol:42-46`
@@ -183,7 +193,9 @@ Audit ini mengidentifikasi **7 temuan teknis** (3 Tingkat Tinggi / High, 2 Tingk
 
 ---
 
-### ARC-06: Variabel `defaultLocker` Tersimpan sebagai Dead Storage Tanpa Penggunaan [Low]
+### ARC-06: Variabel `defaultLocker` Tersimpan sebagai Dead Storage Tanpa Penggunaan [Low] — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — `defaultLocker` dihapus bersama desain lama. Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - **Lokasi Kode**:
   - `contracts/src/LaunchpadV2FactoryArc.sol:52, 109`
@@ -196,7 +208,9 @@ Audit ini mengidentifikasi **7 temuan teknis** (3 Tingkat Tinggi / High, 2 Tingk
 
 ---
 
-### ARC-07: Signature Konstruktor Keliru pada Panduan Verifikasi Explorer `ARC_DEPLOY.md` [Low]
+### ARC-07: Signature Konstruktor Keliru pada Panduan Verifikasi Explorer `ARC_DEPLOY.md` [Low] — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Panduan verifikasi diperbarui ke konstruktor baru. Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - **Lokasi Kode**:
   - `docs/ARC_DEPLOY.md:113-118`

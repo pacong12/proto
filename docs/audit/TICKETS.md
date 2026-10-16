@@ -1,5 +1,7 @@
 # Daftar Tiket Remediasi Audit Keamanan Proto
 
+> Status remediasi per 2026-10-16: ✅ = sudah diperbaiki, 🟡 = diperbaiki sebagian, ❌ = tidak valid, ⚪ = risiko diterima; verifikasi lengkap di [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
+
 Dokumen ini merangkum seluruh tiket perbaikan teknis yang dihasilkan dari audit mendalam terhadap sistem Proto berdasarkan analisis komparatif model Pons (ponsfamily.com) dan Argus (argus.world).
 
 Sumber Audit: `docs/audit/AUDIT-REPORT.md`  
@@ -14,22 +16,22 @@ Konvensi Prioritas:
 
 ## Ringkasan Tiket
 
-| ID Tiket | Prioritas | Severity | Judul Tiket                                                         | Komponen                         |
-| -------- | --------- | -------- | ------------------------------------------------------------------- | -------------------------------- |
-| TKT-01   | P0        | Kritis   | Rekalibrasi Formula Kurva Arc & Proteksi Over-Sell Suplai Pool      | Contracts (Arc / Curve)          |
-| TKT-02   | P0        | Tinggi   | Perbaikan Initial Buy Kreator & Integrasi Whitelist Pons Robinhood  | Frontend (useLaunchpad)          |
-| TKT-03   | P0        | Tinggi   | Integrasi Aliran Dana LiquidityLocker ke HolderFeeDistributor       | Contracts (Locker / Dividends)   |
-| TKT-04   | P0        | Tinggi   | Penegakan On-Chain Revenue Split & Pemanggilan setInitialTaxConfig  | Fullstack (Contracts / API / UI) |
-| TKT-05   | P0        | Tinggi   | Pengecualian Fee Recipient dari Aturan Anti-Snipe LaunchpadToken    | Contracts (Token / Curve)        |
-| TKT-06   | P0        | Tinggi   | Refaktor Mekanisme Slippage Buyback Menggunakan Oracle TWAP Uniswap | Contracts (BuybackBurner)        |
-| TKT-07   | P0        | Tinggi   | Eliminasi Resiko Kustodial pada Migrasi Likuiditas Uniswap V4       | Contracts (Factory / Curve)      |
-| TKT-08   | P0        | Tinggi   | Penghapusan / Pengamanan Utilitas server.py & Rotasi Kredensial     | Infra / Scripts                  |
-| TKT-09   | P1        | Sedang   | Penerapan Otentikasi Tanda Tangan Kriptografis pada Komentar & Sync | Backend API (server.ts)          |
-| TKT-10   | P1        | Sedang   | Pembatasan Ukuran & Validasi Integritas Hash pada Unduhan IPFS      | Backend API (ipfs.service)       |
-| TKT-11   | P2        | Sedang   | Resolusi Socket IP Asli Bun untuk Rate Limiting Akurat              | Backend API (server.ts)          |
-| TKT-12   | P2        | Sedang   | Implementasi proposeTaxConfig pada useTaxConfig Composable          | Frontend (Tax Config)            |
-| TKT-13   | P3        | Rendah   | Penutupan Jalur ETH Mentah pada receive() BondingCurve              | Contracts (BondingCurve)         |
-| TKT-14   | P3        | Rendah   | Pembersihan Dead Code pada BaseLaunchpadFactory dan BondingCurve    | Contracts (Factory / Math)       |
+| ID Tiket          | Prioritas | Severity | Judul Tiket                                                         | Komponen                         |
+| ----------------- | --------- | -------- | ------------------------------------------------------------------- | -------------------------------- |
+| TKT-01            | P0        | Kritis   | Rekalibrasi Formula Kurva Arc & Proteksi Over-Sell Suplai Pool      | Contracts (Arc / Curve)          |
+| TKT-02 ❌ INVALID | P0        | Tinggi   | Perbaikan Initial Buy Kreator & Integrasi Whitelist Pons Robinhood  | Frontend (useLaunchpad)          |
+| TKT-03 ✅         | P0        | Tinggi   | Integrasi Aliran Dana LiquidityLocker ke HolderFeeDistributor       | Contracts (Locker / Dividends)   |
+| TKT-04 ✅         | P0        | Tinggi   | Penegakan On-Chain Revenue Split & Pemanggilan setInitialTaxConfig  | Fullstack (Contracts / API / UI) |
+| TKT-05            | P0        | Tinggi   | Pengecualian Fee Recipient dari Aturan Anti-Snipe LaunchpadToken    | Contracts (Token / Curve)        |
+| TKT-06 ✅         | P0        | Tinggi   | Refaktor Mekanisme Slippage Buyback Menggunakan Oracle TWAP Uniswap | Contracts (BuybackBurner)        |
+| TKT-07 ✅         | P0        | Tinggi   | Eliminasi Resiko Kustodial pada Migrasi Likuiditas Uniswap V4       | Contracts (Factory / Curve)      |
+| TKT-08            | P0        | Tinggi   | Penghapusan / Pengamanan Utilitas server.py & Rotasi Kredensial     | Infra / Scripts                  |
+| TKT-09 ✅         | P1        | Sedang   | Penerapan Otentikasi Tanda Tangan Kriptografis pada Komentar & Sync | Backend API (server.ts)          |
+| TKT-10 ✅         | P1        | Sedang   | Pembatasan Ukuran & Validasi Integritas Hash pada Unduhan IPFS      | Backend API (ipfs.service)       |
+| TKT-11 ✅         | P2        | Sedang   | Resolusi Socket IP Asli Bun untuk Rate Limiting Akurat              | Backend API (server.ts)          |
+| TKT-12            | P2        | Sedang   | Implementasi proposeTaxConfig pada useTaxConfig Composable          | Frontend (Tax Config)            |
+| TKT-13            | P3        | Rendah   | Penutupan Jalur ETH Mentah pada receive() BondingCurve              | Contracts (BondingCurve)         |
+| TKT-14 ✅         | P3        | Rendah   | Pembersihan Dead Code pada BaseLaunchpadFactory dan BondingCurve    | Contracts (Factory / Math)       |
 
 ---
 
@@ -53,7 +55,9 @@ Konvensi Prioritas:
 
 ---
 
-### TKT-02: Perbaikan Initial Buy Kreator & Integrasi Whitelist Pons Robinhood [P0]
+### TKT-02: Perbaikan Initial Buy Kreator & Integrasi Whitelist Pons Robinhood [P0] — ❌ INVALID
+
+> **Status: ❌ INVALID (2026-10-16)** — Sama dengan AUD-HIGH-01: tidak ada integrasi factory/whitelist Pons di kode. Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - Severity: Tinggi
 - Komponen: `apps/frontoffice/src/composables/useLaunchpad.ts:153-186`, `packages/contracts-abi/src/v2/robinhood-launchpad-v2.abi.ts`
@@ -69,7 +73,9 @@ Konvensi Prioritas:
 
 ---
 
-### TKT-03: Integrasi Aliran Dana LiquidityLocker ke HolderFeeDistributor [P0]
+### TKT-03: Integrasi Aliran Dana LiquidityLocker ke HolderFeeDistributor [P0] — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Distributor digantikan `ProtoFeeSplitter`; fee LP mengalir ke splitter per token. Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - Severity: Tinggi
 - Komponen: `contracts/src/LiquidityLocker.sol`, `contracts/src/HolderFeeDistributor.sol`
@@ -86,7 +92,9 @@ Konvensi Prioritas:
 
 ---
 
-### TKT-04: Penegakan On-Chain Revenue Split & Pemanggilan setInitialTaxConfig [P0]
+### TKT-04: Penegakan On-Chain Revenue Split & Pemanggilan setInitialTaxConfig [P0] — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Split ditegakkan on-chain oleh `ProtoFeeSplitter`: Arc saat launch; Robinhood lewat `ProtoV4Graduator.setRevenueSplit` (sekali, oleh kreator, sebelum pembeli pihak ketiga) yang dipakai saat graduasi. `setInitialTaxConfig` hanya disinkronkan bila sukses on-chain. Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - Severity: Tinggi
 - Komponen: `contracts/src/LaunchpadToken.sol`, `apps/frontoffice/src/composables/useLaunchpad.ts`, `apps/api/src/server.ts`
@@ -117,7 +125,9 @@ Konvensi Prioritas:
 
 ---
 
-### TKT-06: Refaktor Mekanisme Slippage Buyback Menggunakan Oracle TWAP Uniswap [P1]
+### TKT-06: Refaktor Mekanisme Slippage Buyback Menggunakan Oracle TWAP Uniswap [P1] — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — `ProtoV4Buyback` membeli dan membakar token dari bagian burn tiap splitter dengan `sqrtPriceLimit` di TWAP hook (≥ 30 menit) ± 2%; harga yang dimanipulasi hanya membuat swap berhenti, dana disimpan. Keeper API (`KEEPER_PRIVATE_KEY`) hanya memicu, tidak memilih harga (fork test Arc USDC & Robinhood ETH). Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - Severity: Tinggi
 - Komponen: `contracts/src/BuybackBurner.sol:194-201, 230`
@@ -132,7 +142,9 @@ Konvensi Prioritas:
 
 ---
 
-### TKT-07: Eliminasi Resiko Kustodial pada Migrasi Likuiditas Uniswap V4 [P1]
+### TKT-07: Eliminasi Resiko Kustodial pada Migrasi Likuiditas Uniswap V4 [P1] — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Graduasi trustless via `ProtoV4Graduator`. Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - Severity: Tinggi
 - Komponen: `contracts/src/BondingCurve.sol:349-370`, `contracts/src/LaunchpadV2Factory.sol:240-248`
@@ -163,7 +175,9 @@ Konvensi Prioritas:
 
 ---
 
-### TKT-09: Penerapan Otentikasi Tanda Tangan Kriptografis pada Komentar & Sync [P1]
+### TKT-09: Penerapan Otentikasi Tanda Tangan Kriptografis pada Komentar & Sync [P1] — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Endpoint `sync` membaca pajak/split dari chain; like, repost dan vote sentimen mewajibkan sesi wallet bertanda tangan (`POST /api/auth/session`). Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - Severity: Sedang
 - Komponen: `apps/api/src/server.ts:702-770, 1002-1180`
@@ -177,7 +191,9 @@ Konvensi Prioritas:
 
 ---
 
-### TKT-10: Pembatasan Ukuran & Validasi Integritas Hash pada Unduhan IPFS [P1]
+### TKT-10: Pembatasan Ukuran & Validasi Integritas Hash pada Unduhan IPFS [P1] — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Unduhan gateway dibatasi stream 5 MiB dan diverifikasi terhadap CID (raw leaf & UnixFS satu blok ≤ 256 KiB; isi yang tidak cocok ditolak). File berblok banyak hanya dibatasi ukurannya. CID fallback API kini memakai codec raw yang benar. Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - Severity: Sedang
 - Komponen: `apps/api/src/modules/ipfs/ipfs.service.ts:150-180`
@@ -192,7 +208,9 @@ Konvensi Prioritas:
 
 ---
 
-### TKT-11: Resolusi Socket IP Asli Bun untuk Rate Limiting Akurat [P2]
+### TKT-11: Resolusi Socket IP Asli Bun untuk Rate Limiting Akurat [P2] — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — IP socket Bun (`server.requestIP`) dipakai secara default. Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - Severity: Sedang
 - Komponen: `apps/api/src/server.ts:2050-2070`
@@ -233,7 +251,9 @@ Konvensi Prioritas:
 
 ---
 
-### TKT-14: Pembersihan Dead Code pada BaseLaunchpadFactory dan BondingCurve [P3]
+### TKT-14: Pembersihan Dead Code pada BaseLaunchpadFactory dan BondingCurve [P3] — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — `BaseLaunchpadFactory` dihapus; inisialisasi pool di `BondingCurve` dihapus (dilakukan graduator). Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - Severity: Rendah
 - Komponen: `contracts/src/factories/base/BaseLaunchpadFactory.sol`, `contracts/src/BondingCurve.sol:341-343`

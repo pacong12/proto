@@ -1,5 +1,7 @@
 # Proto Protocol — Red Team Operations & Adversary Simulation Report
 
+> Status remediasi per 2026-10-16: ✅ = sudah diperbaiki, 🟡 = diperbaiki sebagian, ❌ = tidak valid, ⚪ = risiko diterima; verifikasi lengkap di [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
+
 **Classification**: PROTOCOL CONFIDENTIAL / AUTHORIZED SECURITY TESTING  
 **Engagement Type**: Full-Scope Protocol Penetration Test & Adversary Simulation  
 **Target Scope**: Smart Contracts (`contracts/src/`), Backend Indexer & API (`apps/api/`), Autonomous Keepers, and Frontend Client (`apps/frontoffice/`)  
@@ -78,7 +80,9 @@ The red team modeled five distinct adversary profiles operating against the Prot
 
 ---
 
-### Chain Bravo: Multi-Tenant Fee Drain via Singleton V4 Locker Commingling
+### Chain Bravo: Multi-Tenant Fee Drain via Singleton V4 Locker Commingling — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Fallback saldo global dihapus; locker V4 diganti graduator + splitter per token. Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - **Target Components**: `contracts/src/ProtoLiquidityLockerV4.sol`
 - **Adversary Profile**: APT-DeFi-2 (Sybil Token Deployer)
@@ -123,7 +127,9 @@ The red team modeled five distinct adversary profiles operating against the Prot
 
 ---
 
-### Chain Charlie: Curve Depletion Deadlock & Permanent Fund Lockup via Sell Tax
+### Chain Charlie: Curve Depletion Deadlock & Permanent Fund Lockup via Sell Tax — ❌ INVALID
+
+> **Status: ❌ INVALID (2026-10-16)** — Fix H-01 sudah membuat saldo token kurva selalu sama dengan `virtualTokenReserve` (penjualan menambah cadangan sebesar token neto setelah pajak), sehingga pembelian tidak macet. Remediasi yang sempat diterapkan (owner boleh `emergencyWithdraw` kurva aktif setelah 180 hari) justru membuka jalur penarikan dana holder dan sudah dicabut. Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - **Target Components**: `contracts/src/BondingCurve.sol`, `contracts/src/LaunchpadToken.sol`
 - **Adversary Profile**: APT-DeFi-5 (Economic Griefing Actor) / Emergent Market Dynamics
@@ -181,7 +187,9 @@ The red team modeled five distinct adversary profiles operating against the Prot
 
 ---
 
-### Chain Delta: Unauthenticated Metadata & Tax Poisoning via REST API
+### Chain Delta: Unauthenticated Metadata & Tax Poisoning via REST API — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Endpoint `sync` membaca pajak dan split dari chain, body tidak dipercaya. Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - **Target Components**: `apps/api/src/server.ts`, `apps/api/src/modules/tokens/infrastructure/adapters/sqlite-token.repository.ts`
 - **Adversary Profile**: APT-DeFi-3 (Off-Chain Data Poisoner)
@@ -230,7 +238,9 @@ The red team modeled five distinct adversary profiles operating against the Prot
 
 ---
 
-### Chain Echo: Autonomous Keeper Front-Running via Unbounded Slippage Floor
+### Chain Echo: Autonomous Keeper Front-Running via Unbounded Slippage Floor — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Keeper melewati buyback bila belum ada rate acuan (tidak ada lagi floor 1 wei). Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - **Target Components**: `apps/api/src/modules/tokens/infrastructure/keeper/buyback-keeper.service.ts`, `contracts/src/BuybackBurner.sol`
 - **Adversary Profile**: APT-DeFi-1 (Flash Arbitrageur / MEV Searcher)
@@ -275,7 +285,9 @@ The red team modeled five distinct adversary profiles operating against the Prot
 
 ---
 
-### Chain Foxtrot: Vesting Slot Squatting Griefing for 1 Wei
+### Chain Foxtrot: Vesting Slot Squatting Griefing for 1 Wei — ✅ RESOLVED
+
+> **Status: ✅ RESOLVED (2026-10-16)** — Jadwal vesting dikunci per kreator. Lihat [AUDIT-VERIFICATION.md](./AUDIT-VERIFICATION.md).
 
 - **Target Components**: `contracts/src/VestingVault.sol`
 - **Adversary Profile**: APT-DeFi-5 (Economic Griefing Actor)
@@ -322,17 +334,17 @@ The red team modeled five distinct adversary profiles operating against the Prot
 
 ## 4. MITRE ATT&CK Mapping Matrix
 
-| ATT&CK ID     | Tactic                         | Technique Name                        | Proto Exploit Vector                                                                    | Severity |
-| :------------ | :----------------------------- | :------------------------------------ | :-------------------------------------------------------------------------------------- | :------- |
-| **T1190**     | Initial Access / Impact        | Exploit Public-Facing Application     | Inverted `sqrtPriceX96` in `CurveMath.computeSqrtPriceX96` draining Uniswap V4 pool.    | Critical |
-| **T1078**     | Defense Evasion / Privilege    | Valid Accounts                        | Multi-tenant balance drain via `ProtoLiquidityLockerV4.claimFees` across foreign pools. | Critical |
-| **T1499**     | Impact                         | Endpoint Denial of Service            | Token sell tax reserve leakage causing permanent bonding curve purchase freeze.         | High     |
-| **T1499.004** | Impact                         | Application Protocol DoS              | Missing `receive()` in `LaunchpadV2Factory` blocking curve cap initial buyouts.         | High     |
-| **T1565.001** | Impact                         | Stored Data Manipulation              | Unauthenticated `POST /api/tokens/:address/sync` overwriting database tax configs.      | High     |
-| **T1557**     | Credential Access / Collection | Adversary-in-the-Middle               | Frontrunning `BuybackKeeperService` execution with `minAmountOut = 1`.                  | High     |
-| **T1499.003** | Impact                         | Resource Squatting                    | 1-wei front-running of `VestingVault.createVestingSchedule` slots.                      | Medium   |
-| **T1068**     | Privilege Escalation           | Exploitation for Privilege Escalation | `ProtoLiquidityLockerV4.cancelFeeRedirect` instant timelock bypass.                     | Medium   |
-| **T1562**     | Defense Evasion                | Impair Defenses                       | `LaunchpadToken.setLiquidityPool` one-time lock disabling post-graduation taxes.        | Medium   |
+| ATT&CK ID            | Tactic                         | Technique Name                        | Proto Exploit Vector                                                                    | Severity |
+| :------------------- | :----------------------------- | :------------------------------------ | :-------------------------------------------------------------------------------------- | :------- |
+| **T1190**            | Initial Access / Impact        | Exploit Public-Facing Application     | Inverted `sqrtPriceX96` in `CurveMath.computeSqrtPriceX96` draining Uniswap V4 pool.    | Critical |
+| **T1078** ✅         | Defense Evasion / Privilege    | Valid Accounts                        | Multi-tenant balance drain via `ProtoLiquidityLockerV4.claimFees` across foreign pools. | Critical |
+| **T1499** ❌ INVALID | Impact                         | Endpoint Denial of Service            | Token sell tax reserve leakage causing permanent bonding curve purchase freeze.         | High     |
+| **T1499.004** ✅     | Impact                         | Application Protocol DoS              | Missing `receive()` in `LaunchpadV2Factory` blocking curve cap initial buyouts.         | High     |
+| **T1565.001** ✅     | Impact                         | Stored Data Manipulation              | Unauthenticated `POST /api/tokens/:address/sync` overwriting database tax configs.      | High     |
+| **T1557** ✅         | Credential Access / Collection | Adversary-in-the-Middle               | Frontrunning `BuybackKeeperService` execution with `minAmountOut = 1`.                  | High     |
+| **T1499.003** ✅     | Impact                         | Resource Squatting                    | 1-wei front-running of `VestingVault.createVestingSchedule` slots.                      | Medium   |
+| **T1068** ✅         | Privilege Escalation           | Exploitation for Privilege Escalation | `ProtoLiquidityLockerV4.cancelFeeRedirect` instant timelock bypass.                     | Medium   |
+| **T1562**            | Defense Evasion                | Impair Defenses                       | `LaunchpadToken.setLiquidityPool` one-time lock disabling post-graduation taxes.        | Medium   |
 
 ---
 
@@ -378,14 +390,14 @@ To defend against the simulated adversary vectors, the defensive engineering tea
 
 ## 6. Remediation Tracking Cross-Reference
 
-| Exploit Chain     | Primary Root Cause                        | Remediation Ticket | Target Component                    |
-| :---------------- | :---------------------------------------- | :----------------- | :---------------------------------- |
-| **Chain Alpha**   | Inverted sqrtPrice formula                | **S1**             | `CurveMath.sol`, `BondingCurve.sol` |
-| **Chain Bravo**   | Global ETH reading & fee dropping         | **S2, S13**        | `ProtoLiquidityLockerV4.sol`        |
-| **Chain Charlie** | Sell tax leakage & locked emergency valve | **S5, S7**         | `BondingCurve.sol`                  |
-| **Chain Delta**   | Unauthenticated sync endpoint             | **TKT-09**         | `apps/api/src/server.ts`            |
-| **Chain Echo**    | Keeper unbounded slippage floor           | **TKT-06**         | `buyback-keeper.service.ts`         |
-| **Chain Foxtrot** | Vesting slot mapping collision            | **S8**             | `VestingVault.sol`                  |
+| Exploit Chain                | Primary Root Cause                        | Remediation Ticket | Target Component                    |
+| :--------------------------- | :---------------------------------------- | :----------------- | :---------------------------------- |
+| **Chain Alpha**              | Inverted sqrtPrice formula                | **S1**             | `CurveMath.sol`, `BondingCurve.sol` |
+| **Chain Bravo** ✅           | Global ETH reading & fee dropping         | **S2, S13**        | `ProtoLiquidityLockerV4.sol`        |
+| **Chain Charlie** ❌ INVALID | Sell tax leakage & locked emergency valve | **S5, S7**         | `BondingCurve.sol`                  |
+| **Chain Delta** ✅           | Unauthenticated sync endpoint             | **TKT-09**         | `apps/api/src/server.ts`            |
+| **Chain Echo** ✅            | Keeper unbounded slippage floor           | **TKT-06**         | `buyback-keeper.service.ts`         |
+| **Chain Foxtrot** ✅         | Vesting slot mapping collision            | **S8**             | `VestingVault.sol`                  |
 
 ---
 
