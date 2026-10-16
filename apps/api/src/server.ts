@@ -55,6 +55,8 @@ import {
   resolveNetworkByParam,
   buildCommentSignMessage,
   buildSessionSignMessage,
+  sanitizeCreatorProfile,
+  type CreatorProfile,
   ok,
   err,
 } from '@proto/shared-types';
@@ -1356,6 +1358,28 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     }
   }
 
+  // GET / PUT /api/profiles/:address — public creator profiles (FO-10); writes need the owner's session
+  const profileMatch = url.pathname.match(/^\/api\/profiles\/(0x[a-fA-F0-9]{40})$/);
+  if (profileMatch && req.method === 'GET') {
+    const profile = (await repository.getProfile?.(profileMatch[1])) ?? null;
+    return replyEnvelope(ok({ address: profileMatch[1].toLowerCase(), profile }));
+  }
+  if (profileMatch && req.method === 'PUT') {
+    const address = profileMatch[1];
+    const sessionError = requireSocialSession(req, address, 'edit this profile');
+    if (sessionError)
+      return replyError(sessionError.code, sessionError.message, sessionError.status);
+    try {
+      const body = await parseJsonBody<Partial<CreatorProfile>>(req, 8192);
+      const profile = sanitizeCreatorProfile(body);
+      if (typeof profile === 'string') return replyError('INVALID_PROFILE', profile, 400);
+      await repository.saveProfile?.(address, profile);
+      return replyEnvelope(ok({ address: address.toLowerCase(), profile }));
+    } catch {
+      return replyError('PROFILE_ERROR', 'Failed to save profile', 400);
+    }
+  }
+
   // POST /api/auth/session — exchange one wallet signature for a 24h social session token (API-09)
   if (url.pathname === '/api/auth/session' && req.method === 'POST') {
     try {
@@ -2413,7 +2437,7 @@ async function handleRequest(req: Request, server?: PeerAddressSource): Promise<
     const corsHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     };
     const errorResponse = new Response(

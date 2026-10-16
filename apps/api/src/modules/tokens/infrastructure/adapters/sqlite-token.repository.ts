@@ -9,6 +9,7 @@ import {
   CandlestickEntity,
   TokenCommentEntity,
   getUserIdentity,
+  type CreatorProfile,
 } from '@proto/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import { backupDatabase, openCheckedDatabase } from './sqlite-maintenance';
@@ -389,6 +390,28 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     this.db.run(
       `CREATE INDEX IF NOT EXISTS idx_buyback_token ON buyback_burns(token_address COLLATE NOCASE);`,
     );
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS profiles (
+        address TEXT PRIMARY KEY COLLATE NOCASE,
+        profile_json TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+    `);
+  }
+
+  async getProfile(address: string): Promise<CreatorProfile | null> {
+    const row = this.db
+      .prepare('SELECT profile_json FROM profiles WHERE address = ? LIMIT 1')
+      .get(address.toLowerCase()) as { profile_json: string } | undefined;
+    return row ? (JSON.parse(row.profile_json) as CreatorProfile) : null;
+  }
+
+  async saveProfile(address: string, profile: CreatorProfile): Promise<void> {
+    this.db
+      .prepare(
+        'INSERT OR REPLACE INTO profiles (address, profile_json, updated_at) VALUES (?, ?, ?)',
+      )
+      .run(address.toLowerCase(), JSON.stringify(profile), Date.now());
   }
 
   async save(token: LaunchedTokenEntity): Promise<void> {
