@@ -32,4 +32,4 @@ Proto 作为原生多链发射协议，同时支持 **Robinhood Chain Layer 2** 
 
 ## 一键切换与网络自适应
 
-在访问 [proto.family](https://proto.family) 时，系统将自动识别您钱包当前所在网络。您可以通过顶部导航栏的网络切换器，一键在 **Robinhood Chain** 与 **Arc Network** 之间流畅切换。
+在访问 [%APP_HOST%](%APP_URL%) 时，系统将自动识别您钱包当前所在网络。您可以通过顶部导航栏的网络切换器，一键在 **Robinhood Chain** 与 **Arc Network** 之间流畅切换。

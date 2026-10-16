@@ -8,7 +8,7 @@ Membuat token sendiri di Proto dapat diselesaikan dalam waktu kurang dari dua me
 
 ### 1. Hubungkan Dompet Anda
 
-Kunjungi [proto.family](https://proto.family) dan klik **Connect Wallet** di bilah navigasi atas. Pastikan dompet terhubung ke **Robinhood Chain** atau **Arc Network**.
+Kunjungi [%APP_HOST%](%APP_URL%) dan klik **Connect Wallet** di bilah navigasi atas. Pastikan dompet terhubung ke **Robinhood Chain** atau **Arc Network**.
 
 ### 2. Buka Halaman Create
 

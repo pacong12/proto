@@ -14,7 +14,7 @@ hero:
       link: /fr/protocol/overview
     - theme: alt
       text: Ouvrir l’Application
-      link: https://proto.family
+      link: '%APP_URL%'
 
 features:
   - title: 100% Non-Dépositaire

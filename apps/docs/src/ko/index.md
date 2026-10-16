@@ -14,7 +14,7 @@ hero:
       link: /ko/protocol/overview
     - theme: alt
       text: 런치패드 앱으로 이동
-      link: https://proto.family
+      link: '%APP_URL%'
 
 features:
   - title: 100% 비수탁형 (Non-Custodial)

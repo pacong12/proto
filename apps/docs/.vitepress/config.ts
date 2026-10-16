@@ -1,6 +1,16 @@
 import { defineConfig } from 'vitepress';
+import { loadEnv } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
+import fs from 'node:fs';
 import path from 'node:path';
+import { renderSiteUrls, resolveSiteUrls } from '../../../packages/shared-types/src/constants/site';
+
+// Same source as the frontoffice: VITE_APP_URL / VITE_DOCS_URL (repo .env or build env),
+// defaulting to goton.fun / docs.goton.fun. Markdown, frontmatter and the static files listed in
+// SITE_URL_FILES use %APP_URL% / %APP_HOST% / %DOCS_URL% placeholders rendered from these.
+const env = loadEnv('production', path.resolve(__dirname, '../../..'), 'VITE_');
+const SITE = resolveSiteUrls({ appUrl: env.VITE_APP_URL, docsUrl: env.VITE_DOCS_URL });
+const SITE_URL_FILES = ['robots.txt', 'llms.txt', 'opengraph-docs.svg'];
 
 export default defineConfig({
   title: 'Proto User Guide',
@@ -10,7 +20,25 @@ export default defineConfig({
   outDir: './dist',
   cleanUrls: true,
   sitemap: {
-    hostname: 'https://docs.proto.family',
+    hostname: SITE.docsUrl,
+  },
+  markdown: {
+    config(md) {
+      md.core.ruler.before('normalize', 'proto-site-urls', (state) => {
+        state.src = renderSiteUrls(state.src, SITE);
+      });
+    },
+  },
+  transformPageData(pageData) {
+    pageData.frontmatter = JSON.parse(renderSiteUrls(JSON.stringify(pageData.frontmatter), SITE));
+  },
+  buildEnd(siteConfig) {
+    for (const file of SITE_URL_FILES) {
+      const target = path.join(siteConfig.outDir, file);
+      if (fs.existsSync(target)) {
+        fs.writeFileSync(target, renderSiteUrls(fs.readFileSync(target, 'utf8'), SITE));
+      }
+    }
   },
   head: [
     [
@@ -82,7 +110,7 @@ export default defineConfig({
       'meta',
       {
         property: 'og:image',
-        content: 'https://docs.proto.family/opengraph-docs.svg',
+        content: `${SITE.docsUrl}/opengraph-docs.svg`,
       },
     ],
     ['meta', { property: 'og:image:type', content: 'image/svg+xml' }],
@@ -116,7 +144,7 @@ export default defineConfig({
       'meta',
       {
         name: 'twitter:image',
-        content: 'https://docs.proto.family/opengraph-docs.svg',
+        content: `${SITE.docsUrl}/opengraph-docs.svg`,
       },
     ],
     [
@@ -134,22 +162,22 @@ export default defineConfig({
         '@graph': [
           {
             '@type': 'WebSite',
-            '@id': 'https://docs.proto.family/#website',
-            url: 'https://docs.proto.family',
+            '@id': `${SITE.docsUrl}/#website`,
+            url: `${SITE.docsUrl}`,
             name: 'Proto Documentation & User Guide',
             description:
               'Clean, step-by-step user guide and knowledge base for trading, launching, and exploring tokens on Robinhood Chain.',
             publisher: {
               '@type': 'Organization',
               name: 'Proto Labs',
-              url: 'https://proto.family',
-              logo: 'https://proto.family/favicon.svg',
+              url: `${SITE.appUrl}`,
+              logo: `${SITE.appUrl}/favicon.svg`,
             },
           },
           {
             '@type': 'TechArticle',
-            '@id': 'https://docs.proto.family/#article',
-            url: 'https://docs.proto.family',
+            '@id': `${SITE.docsUrl}/#article`,
+            url: `${SITE.docsUrl}`,
             name: 'Proto Protocol User Documentation',
             headline: 'Fair Token Launchpad Protocol Guides & Reference',
           },
@@ -177,7 +205,7 @@ export default defineConfig({
           { text: 'Trading Guide', link: '/protocol/trading-guide' },
           { text: 'FAQ', link: '/protocol/faq' },
           { text: 'Safety', link: '/protocol/anti-snipe' },
-          { text: 'Launchpad App', link: 'https://proto.family' },
+          { text: 'Launchpad App', link: `${SITE.appUrl}` },
         ],
         sidebar: [
           {
@@ -237,7 +265,7 @@ export default defineConfig({
           { text: 'Panduan Trading', link: '/id/protocol/trading-guide' },
           { text: 'FAQ', link: '/id/protocol/faq' },
           { text: 'Keamanan', link: '/id/protocol/anti-snipe' },
-          { text: 'Aplikasi Launchpad', link: 'https://proto.family' },
+          { text: 'Aplikasi Launchpad', link: `${SITE.appUrl}` },
         ],
         sidebar: [
           {
@@ -297,7 +325,7 @@ export default defineConfig({
           { text: '交易指南', link: '/zh/protocol/trading-guide' },
           { text: '常见问题', link: '/zh/protocol/faq' },
           { text: '安全机制', link: '/zh/protocol/anti-snipe' },
-          { text: '进入 Launchpad', link: 'https://proto.family' },
+          { text: '进入 Launchpad', link: `${SITE.appUrl}` },
         ],
         sidebar: [
           {
@@ -354,7 +382,7 @@ export default defineConfig({
         nav: [
           { text: 'Primeros Pasos', link: '/es/protocol/overview' },
           { text: 'Cómo Lanzar', link: '/es/protocol/overview' },
-          { text: 'Ir a Launchpad', link: 'https://proto.family' },
+          { text: 'Ir a Launchpad', link: `${SITE.appUrl}` },
         ],
         sidebar: [
           {
@@ -374,7 +402,7 @@ export default defineConfig({
         nav: [
           { text: '概要', link: '/ja/protocol/overview' },
           { text: 'トークン作成', link: '/ja/protocol/overview' },
-          { text: 'Launchpadアプリ', link: 'https://proto.family' },
+          { text: 'Launchpadアプリ', link: `${SITE.appUrl}` },
         ],
         sidebar: [
           {
@@ -394,7 +422,7 @@ export default defineConfig({
         nav: [
           { text: '시작하기', link: '/ko/protocol/overview' },
           { text: '토큰 런칭', link: '/ko/protocol/overview' },
-          { text: '런치패드 앱', link: 'https://proto.family' },
+          { text: '런치패드 앱', link: `${SITE.appUrl}` },
         ],
         sidebar: [
           {
@@ -414,7 +442,7 @@ export default defineConfig({
         nav: [
           { text: 'Введение', link: '/ru/protocol/overview' },
           { text: 'Создание токена', link: '/ru/protocol/overview' },
-          { text: 'Приложение Launchpad', link: 'https://proto.family' },
+          { text: 'Приложение Launchpad', link: `${SITE.appUrl}` },
         ],
         sidebar: [
           {
@@ -434,7 +462,7 @@ export default defineConfig({
         nav: [
           { text: 'البداية', link: '/ar/protocol/overview' },
           { text: 'إنشاء عملة', link: '/ar/protocol/overview' },
-          { text: 'تطبيق المنصة', link: 'https://proto.family' },
+          { text: 'تطبيق المنصة', link: `${SITE.appUrl}` },
         ],
         sidebar: [
           {
@@ -454,7 +482,7 @@ export default defineConfig({
         nav: [
           { text: 'Premiers Pas', link: '/fr/protocol/overview' },
           { text: 'Lancer un Token', link: '/fr/protocol/overview' },
-          { text: 'Application Launchpad', link: 'https://proto.family' },
+          { text: 'Application Launchpad', link: `${SITE.appUrl}` },
         ],
         sidebar: [
           {
@@ -474,7 +502,7 @@ export default defineConfig({
         nav: [
           { text: 'Erste Schritte', link: '/de/protocol/overview' },
           { text: 'Token erstellen', link: '/de/protocol/overview' },
-          { text: 'Launchpad App', link: 'https://proto.family' },
+          { text: 'Launchpad App', link: `${SITE.appUrl}` },
         ],
         sidebar: [
           {
@@ -494,7 +522,7 @@ export default defineConfig({
         nav: [
           { text: 'Primeiros Passos', link: '/pt/protocol/overview' },
           { text: 'Criar Token', link: '/pt/protocol/overview' },
-          { text: 'App Launchpad', link: 'https://proto.family' },
+          { text: 'App Launchpad', link: `${SITE.appUrl}` },
         ],
         sidebar: [
           {
