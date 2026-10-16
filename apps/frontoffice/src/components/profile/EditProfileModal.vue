@@ -279,6 +279,7 @@
 </template>
 
 <script setup lang="ts">
+import { resolveSafeUrl } from '@/lib/safe-url';
 import { ref, computed, watch } from 'vue';
 import { Edit3, Loader2, Trash2, AlertCircle, Image as ImageIcon } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
@@ -335,30 +336,6 @@ watch(
   },
   { deep: true, immediate: true },
 );
-
-function isSafeImageUrl(url: string): boolean {
-  if (!url) return false;
-  const trimmed = url.trim().toLowerCase();
-  return (
-    trimmed.startsWith('https://') ||
-    trimmed.startsWith('http://') ||
-    trimmed.startsWith('ipfs://') ||
-    trimmed.startsWith('data:image/') ||
-    trimmed.startsWith('blob:') ||
-    trimmed.startsWith('/api/ipfs/')
-  );
-}
-
-function resolveSafeUrl(url?: string): string {
-  if (!url) return '';
-  const trimmed = url.trim();
-  if (!isSafeImageUrl(trimmed)) return '';
-  if (trimmed.startsWith('ipfs://')) {
-    const hash = trimmed.replace('ipfs://', '');
-    return `/api/ipfs/${hash}`;
-  }
-  return trimmed;
-}
 
 const editResolvedAvatar = computed(() => resolveSafeUrl(form.value.avatarUrl));
 const editResolvedBanner = computed(() => resolveSafeUrl(form.value.bannerUrl));

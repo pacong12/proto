@@ -60,6 +60,9 @@ export function useWallet() {
       return account.value.address as `0x${string}`;
     }
     if (isStoredConnectionActive() && typeof window !== 'undefined' && 'localStorage' in window) {
+      // FO-08: the stored address is only a placeholder while AppKit restores the session. Once
+      // AppKit reports the wallet as disconnected, it is not connected, whatever storage says.
+      if (appKitConfigured && account.value?.status === 'disconnected') return null;
       const stored = localStorage.getItem(STORAGE_ADDRESS_KEY);
       if (stored && stored.startsWith('0x') && stored.length === 42) {
         return stored as `0x${string}`;

@@ -398,6 +398,7 @@
 </template>
 
 <script setup lang="ts">
+import { resolveSafeUrl } from '@/lib/safe-url';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useWallet } from '@/composables/useWallet';
@@ -903,16 +904,6 @@ function navigateToCaller(address: string): void {
   if (address) {
     router.push(`/${getUserIdentity(address).name}`);
   }
-}
-
-function resolveSafeUrl(url?: string): string {
-  if (!url) return '';
-  const trimmed = url.trim();
-  if (trimmed.startsWith('ipfs://')) {
-    const hash = trimmed.replace('ipfs://', '');
-    return `/api/ipfs/${hash}`;
-  }
-  return trimmed;
 }
 
 function openImage(url?: string): void {

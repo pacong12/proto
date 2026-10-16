@@ -157,6 +157,9 @@ export async function getWalletClient(): Promise<WalletClient | null> {
 // Transaction receipt helpers
 // ---------------------------------------------------------------------------
 
+/** Upper bound for waiting on a receipt before treating a transaction as still pending. */
+const RECEIPT_TIMEOUT_MS = 120_000;
+
 export async function waitForReceiptWithFallback(
   client: PublicClient,
   hash: `0x${string}`,
@@ -201,5 +204,12 @@ export async function waitForReceiptWithFallback(
     }
   }
 
+  // 4. FO-11: slow blocks are normal; keep waiting (viem polls with backoff) instead of reporting
+  //    a mined transaction as missing after 2.5s.
+  try {
+    return await client.waitForTransactionReceipt({ hash, timeout: RECEIPT_TIMEOUT_MS });
+  } catch {
+    // Timed out: the caller treats the transaction as still pending.
+  }
   return null;
 }

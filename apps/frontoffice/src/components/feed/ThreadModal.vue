@@ -272,6 +272,7 @@
 </template>
 
 <script setup lang="ts">
+import { getSessionHeaders } from '@/lib/session';
 import { ref, watch } from 'vue';
 import { MessageCircle, X, Heart, Repeat, Share2, BarChart2, Send, Loader2 } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
@@ -384,7 +385,10 @@ async function handleLikeReply(replyId: string): Promise<void> {
       `/api/comments/${replyId}/like`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(await getSessionHeaders(props.account)),
+        },
         body: JSON.stringify({ userAddress: props.account }),
       },
     );

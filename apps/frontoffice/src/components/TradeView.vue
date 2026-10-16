@@ -386,6 +386,8 @@
 </template>
 
 <script setup lang="ts">
+import { getSessionHeaders } from '../lib/session';
+import { resolveSafeUrl } from '../lib/safe-url';
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { parseAbi, parseEther, erc20Abi } from 'viem';
 import { useI18n } from '@/lib/i18n';
@@ -418,7 +420,7 @@ import { useLaunchpad } from '../composables/useLaunchpad';
 import { useTaxConfig } from '../composables/useTaxConfig';
 import { usePinnedTokens } from '../composables/usePinnedTokens';
 import { useFeed } from '../composables/useFeed';
-import { getPublicClient } from '../lib/viem-client';
+import { getPublicClient, waitForReceiptWithFallback } from '../lib/viem-client';
 import { toast } from '@/components/ui/sonner';
 import { Badge, TraderTagBadge, type TraderTagType } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -555,7 +557,7 @@ const {
 } = useTaxConfig();
 
 async function handleAcceptTax() {
-  const hash = await acceptTaxConfig(currentToken.value.address);
+  const hash = await acceptTaxConfig(currentToken.value.address, tokenNetwork.value.chainId);
   if (hash) {
     toast.success('Tax configuration applied onchain');
     await loadOnchainTax(currentToken.value.address);
@@ -565,7 +567,7 @@ async function handleAcceptTax() {
 }
 
 async function handleCancelTax() {
-  const hash = await cancelTaxConfig(currentToken.value.address);
+  const hash = await cancelTaxConfig(currentToken.value.address, tokenNetwork.value.chainId);
   if (hash) {
     toast.success('Tax proposal cancelled');
   } else if (taxError.value) {
@@ -801,16 +803,6 @@ function shareCalloutToX(cmt: TokenCommentEntity) {
 // Watchlist Pin Feature (shared singleton composable)
 const { isPinned, togglePin } = usePinnedTokens();
 
-function resolveSafeUrl(url?: string): string {
-  if (!url) return '';
-  const trimmed = url.trim();
-  if (trimmed.startsWith('ipfs://')) {
-    const hash = trimmed.replace('ipfs://', '');
-    return `/api/ipfs/${hash}`;
-  }
-  return trimmed;
-}
-
 function isHolderAddress(addr: string): boolean {
   if (!addr || holders.value.length === 0) return false;
   return holders.value.some((h) => h.address.toLowerCase() === addr.toLowerCase());
@@ -873,7 +865,13 @@ async function handleUpdateTax() {
     const buyVal = parseFloat(editBuyTax.value || '0');
     const sellVal = parseFloat(editSellTax.value || '0');
     const recipient = (editTaxRecipient.value.trim() as `0x${string}`) || account.value;
-    const hash = await setTokenTax(currentToken.value.address, buyVal, sellVal, recipient);
+    const hash = await setTokenTax(
+      currentToken.value.address,
+      buyVal,
+      sellVal,
+      recipient,
+      tokenNetwork.value.chainId,
+    );
     if (hash) {
       toast.success('Tax change proposed — activates in 24 hours', {
         description: `Buy Tax: ${buyVal}%, Sell Tax: ${sellVal}%`,
@@ -1722,7 +1720,10 @@ async function toggleLike(commentId: string) {
       data: { liked: boolean; likesCount: number };
     }>(`/api/tokens/${currentToken.value.address}/comments/${commentId}/like`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(await getSessionHeaders(account.value)),
+      },
       body: JSON.stringify({ userAddress: account.value }),
     });
     if (envelope.success && envelope.data) {
@@ -1989,10 +1990,35 @@ async function handleSwap() {
   });
 
   if (hash) {
+    const txExplorerLink = `${explorerUrl.value}/tx/${hash}`;
+    // FO-01: only announce success once the swap is mined and did not revert.
+    const receipt = await waitForReceiptWithFallback(
+      getPublicClient(tokenNetwork.value.chainId),
+      hash as `0x${string}`,
+    );
+    if (!receipt || receipt.status !== 'success') {
+      const reverted = receipt?.status === 'reverted';
+      toast.error(reverted ? 'Swap Reverted' : 'Swap Still Pending', {
+        id: loadingToastId,
+        description: reverted
+          ? 'The transaction was mined but reverted. No tokens were exchanged.'
+          : 'No confirmation yet. Check the explorer before retrying.',
+        action: {
+          label: 'View on Explorer',
+          onClick: () => {
+            if (typeof window !== 'undefined') {
+              window.open(txExplorerLink, '_blank', 'noopener,noreferrer');
+            }
+          },
+        },
+        duration: 10000,
+      });
+      return;
+    }
+
     swapSuccessTx.value = hash;
     isMaxSell.value = false;
 
-    const txExplorerLink = `${explorerUrl.value}/tx/${hash}`;
     toast.success('Swap Confirmed', {
       id: loadingToastId,
       description: isBuy.value
