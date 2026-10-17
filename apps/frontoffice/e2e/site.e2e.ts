@@ -102,4 +102,25 @@ test.describe('Performance guards', () => {
     await page.waitForLoadState('networkidle');
     expect(appKitChunks).toHaveLength(0);
   });
+
+  test('the first page stays within its JavaScript budget', async ({ page }) => {
+    // Regression guard: all 11 locales and the RPC client (viem) used to ship in the entry chunk.
+    const jsBytes: number[] = [];
+    page.on('response', async (res) => {
+      if (res.url().endsWith('.js'))
+        jsBytes.push((await res.body().catch(() => Buffer.alloc(0))).length);
+    });
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    const total = jsBytes.reduce((a, b) => a + b, 0);
+    expect(total).toBeLessThan(800_000);
+  });
+});
+
+test.describe('Languages', () => {
+  test('a saved non-English locale is loaded on demand and rendered', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('proto_selected_locale_v1', 'id'));
+    await page.goto('/launchpad');
+    await expect(page.getByRole('link', { name: 'Jelajahi' }).first()).toBeVisible();
+  });
 });
