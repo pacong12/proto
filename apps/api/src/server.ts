@@ -305,6 +305,34 @@ function startBuybackKeepers(): void {
 }
 startBuybackKeepers();
 
+// Market data refresh: list endpoints read stored rows, which otherwise change only on a trade or
+// a token page visit. USD values follow the quote price and 24h volume ages out, so rows older than
+// MARKET_DATA_MAX_AGE_MS are recomputed from chain, oldest first, a batch per interval.
+const MARKET_DATA_MAX_AGE_MS = Number(process.env.MARKET_DATA_MAX_AGE_MS || 5 * 60_000);
+const MARKET_DATA_BATCH = Number(process.env.MARKET_DATA_BATCH || 25);
+if (process.env.NODE_ENV !== 'test' && repository.findStaleMarketData) {
+  let refreshing = false;
+  setInterval(async () => {
+    if (refreshing) return;
+    refreshing = true;
+    try {
+      const stale = await repository.findStaleMarketData!(
+        Date.now() - MARKET_DATA_MAX_AGE_MS,
+        MARKET_DATA_BATCH,
+      );
+      for (const address of stale) {
+        try {
+          await getTokenByAddressUseCase.execute(address);
+        } catch {
+          // RPC hiccup: the row stays stale and is retried next interval.
+        }
+      }
+    } finally {
+      refreshing = false;
+    }
+  }, 60_000).unref();
+}
+
 // DR-04: daily hot backups of the SQLite database (DB_BACKUP_INTERVAL_MS=0 disables).
 const DB_BACKUP_INTERVAL_MS = Number(process.env.DB_BACKUP_INTERVAL_MS ?? 24 * 60 * 60_000);
 const DB_BACKUP_KEEP = Number(process.env.DB_BACKUP_KEEP ?? 7);

@@ -269,13 +269,20 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
         graduationProgress REAL NOT NULL,
         isGraduated INTEGER NOT NULL,
         volume24hUsd REAL NOT NULL,
-        priceChange24h REAL NOT NULL DEFAULT 0
+        priceChange24h REAL NOT NULL DEFAULT 0,
+        updatedAt INTEGER NOT NULL DEFAULT 0
       );
     `);
 
     // Safe migration: add priceChange24h column to existing databases
     try {
       this.db.run(`ALTER TABLE market_data ADD COLUMN priceChange24h REAL NOT NULL DEFAULT 0`);
+    } catch {
+      /* column already exists */
+    }
+    // Existing rows get 0, so they count as stale and are recomputed first.
+    try {
+      this.db.run(`ALTER TABLE market_data ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0`);
     } catch {
       /* column already exists */
     }
@@ -514,8 +521,8 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       INSERT OR REPLACE INTO market_data (
         address, priceInWeth, priceUsd, marketCapUsd, fdvUsd,
         pairedPrincipalWeth, graduationThresholdWeth, graduationProgress, isGraduated,
-        volume24hUsd, priceChange24h
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        volume24hUsd, priceChange24h, updatedAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
@@ -530,7 +537,21 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       marketData.isGraduated ? 1 : 0,
       marketData.volume24hUsd,
       marketData.priceChange24h ?? 0,
+      Date.now(),
     );
+  }
+
+  async findStaleMarketData(olderThanMs: number, limit: number): Promise<`0x${string}`[]> {
+    const rows = this.db
+      .prepare(
+        `SELECT t.address AS address FROM tokens t
+         LEFT JOIN market_data m ON LOWER(m.address) = LOWER(t.address)
+         WHERE m.address IS NULL OR m.updatedAt < ?
+         ORDER BY COALESCE(m.updatedAt, 0) ASC
+         LIMIT ?`,
+      )
+      .all(olderThanMs, limit) as Array<{ address: string }>;
+    return rows.map((r) => r.address as `0x${string}`);
   }
 
   async getMarketData(address: `0x${string}`): Promise<TokenMarketData | null> {
