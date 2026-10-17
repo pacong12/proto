@@ -12,6 +12,45 @@ const env = loadEnv('production', path.resolve(__dirname, '../../..'), 'VITE_');
 const SITE = resolveSiteUrls({ appUrl: env.VITE_APP_URL, docsUrl: env.VITE_DOCS_URL });
 const SITE_URL_FILES = ['robots.txt', 'llms.txt', 'opengraph-docs.svg', '.well-known/security.txt'];
 
+const TRANSLATED_LOCALES = ['id', 'zh', 'ja', 'ko', 'es', 'ru', 'ar', 'fr', 'de', 'pt'];
+
+/**
+ * The language switcher links to the same path in every locale, but most locales translate only a
+ * few pages. Wherever a locale lacks a page, write a redirect to the English page instead of
+ * leaving a 404 (noindex, canonical to the English URL).
+ */
+function writeUntranslatedRedirects(outDir: string): void {
+  const englishPages: string[] = [];
+  const walk = (dir: string, rel = ''): void => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const relPath = path.posix.join(rel, entry.name);
+      if (entry.isDirectory()) {
+        if (rel === '' && (TRANSLATED_LOCALES.includes(entry.name) || entry.name === 'assets'))
+          continue;
+        walk(path.join(dir, entry.name), relPath);
+      } else if (entry.name.endsWith('.html') && relPath !== '404.html') {
+        englishPages.push(relPath);
+      }
+    }
+  };
+  walk(outDir);
+  for (const locale of TRANSLATED_LOCALES) {
+    for (const page of englishPages) {
+      const target = path.join(outDir, locale, page);
+      if (fs.existsSync(target)) continue;
+      const url = '/' + page.replace(/(^|\/)index\.html$/, '$1').replace(/\.html$/, '');
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.writeFileSync(
+        target,
+        `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="robots" content="noindex">` +
+          `<link rel="canonical" href="${SITE.docsUrl}${url}"><meta http-equiv="refresh" content="0; url=${url}">` +
+          `<title>Redirecting</title></head><body><a href="${url}">Continue to the English page</a>` +
+          `<script>location.replace(${JSON.stringify(url)})</script></body></html>`,
+      );
+    }
+  }
+}
+
 export default defineConfig({
   title: 'Goton User Guide',
   description:
@@ -39,6 +78,7 @@ export default defineConfig({
         fs.writeFileSync(target, renderSiteUrls(fs.readFileSync(target, 'utf8'), SITE));
       }
     }
+    writeUntranslatedRedirects(siteConfig.outDir);
   },
   head: [
     // Development deploys (workers.dev) must not be indexed.
@@ -79,7 +119,6 @@ export default defineConfig({
     ],
     ['meta', { name: 'theme-color', content: '#E7239F' }],
     ['meta', { 'http-equiv': 'X-Content-Type-Options', content: 'nosniff' }],
-    ['meta', { 'http-equiv': 'X-Frame-Options', content: 'DENY' }],
     ['meta', { name: 'referrer', content: 'strict-origin-when-cross-origin' }],
     [
       'meta',

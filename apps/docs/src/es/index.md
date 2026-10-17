@@ -11,10 +11,10 @@ hero:
       link: /es/protocol/overview
     - theme: alt
       text: Cómo Lanzar un Token
-      link: /es/protocol/launches
+      link: /protocol/launches
     - theme: alt
       text: Guía de Trading y Swaps
-      link: /es/protocol/trading-guide
+      link: /protocol/trading-guide
 
 features:
   - title: 100% No Custodial
