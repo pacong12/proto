@@ -49,7 +49,6 @@ describe('request body limits and parsing', () => {
     for (const path of [
       '/api/comments/c1/like',
       '/api/comments/c1/repost',
-      `/api/tokens/${ADDRESS}/sentiment`,
       '/api/security/evaluate',
     ]) {
       const res = await postJson(path, big);

@@ -343,10 +343,15 @@ const messages: Record<string, string> = {
   maintenanceBanner:
     '定期メンテナンスを実施中です。一部の機能が一時的にご利用いただけない場合があります。',
   maintenanceDismiss: 'お知らせを閉じる',
-  communitySentiment: 'コミュニティのセンチメント',
-  noSentimentVotes: 'まだ投票がありません。最初に投票しましょう。',
   v2SubtitleArc:
     'ロックされた Uniswap v4 プールに直接トークンを発行します。取引ごとの税は USDC で支払われます。',
+  buySellPressure: '買い / 売り圧力',
+  timeWindow: '期間',
+  noTradesInWindow: 'この期間の取引はまだありません。',
+  buys: '買い',
+  sells: '売り',
+  buyers: '買い手',
+  sellers: '売り手',
 };
 
 export default messages;

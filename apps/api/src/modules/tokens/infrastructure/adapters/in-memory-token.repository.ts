@@ -7,7 +7,7 @@ import {
   getUserIdentity,
   type CreatorProfile,
 } from '@goton/shared-types';
-import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
+import type { TokenRepositoryPort, TradeFlow } from '../../domain/ports/token.repository.port';
 import {
   aggregateCandlesticks,
   computeHoldersDistribution,
@@ -57,6 +57,24 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
       priceChange24h: data.priceChange24h ?? 0,
     });
     this.marketDataUpdatedAt.set(data.address.toLowerCase(), Date.now());
+  }
+
+  async getTradeFlow(tokenAddress: `0x${string}`, sinceMs: number): Promise<TradeFlow> {
+    const trades = (this.trades.get(tokenAddress.toLowerCase()) ?? []).filter(
+      (t) => t.timestamp >= sinceMs,
+    );
+    const side = (isBuy: boolean) => trades.filter((t) => t.isBuy === isBuy);
+    const sum = (list: typeof trades) =>
+      list.reduce((a, t) => a + parseFloat(t.wethAmount || '0'), 0);
+    const distinct = (list: typeof trades) => new Set(list.map((t) => t.trader.toLowerCase())).size;
+    return {
+      buyQuote: sum(side(true)),
+      sellQuote: sum(side(false)),
+      buys: side(true).length,
+      sells: side(false).length,
+      buyers: distinct(side(true)),
+      sellers: distinct(side(false)),
+    };
   }
 
   async findStaleMarketData(olderThanMs: number, limit: number): Promise<`0x${string}`[]> {

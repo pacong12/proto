@@ -334,9 +334,14 @@ const messages: Record<string, string> = {
   notFoundDocs: '查看文档',
   maintenanceBanner: '计划维护正在进行中，部分功能可能暂时无法使用。',
   maintenanceDismiss: '关闭通知',
-  communitySentiment: '社区情绪',
-  noSentimentVotes: '暂无投票，来做第一个表态的人。',
   v2SubtitleArc: '直接在锁定的 Uniswap v4 资金池中发射代币，每笔交易的税费以 USDC 支付。',
+  buySellPressure: '买卖压力',
+  timeWindow: '时间范围',
+  noTradesInWindow: '该时间段内暂无交易。',
+  buys: '买入',
+  sells: '卖出',
+  buyers: '买家',
+  sellers: '卖家',
 };
 
 export default messages;

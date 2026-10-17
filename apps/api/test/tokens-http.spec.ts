@@ -310,33 +310,25 @@ describe('Tokens HTTP Endpoints Integration', () => {
     expect(json.data).toHaveProperty('rewardAssetSymbol');
   });
 
-  it('GET & POST /api/tokens/:address/sentiment records community votes', async () => {
-    const voter = '0x3333333333333333333333333333333333333333';
-
-    // 1. Initial sentiment query
-    const getReq = new Request(
-      `http://localhost:3001/api/tokens/${testAddress}/sentiment?user=${voter}`,
+  it('GET /api/tokens/:address/flow rejects unknown windows and reports no trades as null', async () => {
+    const bad = await server.fetch(
+      new Request(`http://localhost:3001/api/tokens/${testAddress}/flow?window=7d`),
     );
-    const getRes = await server.fetch(getReq);
-    expect(getRes.status).toBe(200);
-    const getJson = await getRes.json();
-    expect(getJson.success).toBe(true);
-    expect(getJson.data).toHaveProperty('bullPercent');
-    expect(getJson.data).toHaveProperty('bearPercent');
+    expect(bad.status).toBe(400);
 
-    // 2. Cast Bullish vote
-    const postReq = new Request(`http://localhost:3001/api/tokens/${testAddress}/sentiment`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userAddress: voter, sentiment: 'bull' }),
+    const quiet = '0x000000000000000000000000000000000000f10e';
+    const res = await server.fetch(
+      new Request(`http://localhost:3001/api/tokens/${quiet}/flow?window=5m`),
+    );
+    expect(res.status).toBe(200);
+    const { data } = await res.json();
+    expect(data).toMatchObject({
+      window: '5m',
+      buys: 0,
+      sells: 0,
+      buyPercent: null,
+      sellPercent: null,
     });
-    const postRes = await server.fetch(postReq);
-    expect(postRes.status).toBe(200);
-    const postJson = await postRes.json();
-    expect(postJson.success).toBe(true);
-    expect(postJson.data.bullVotes).toBeGreaterThanOrEqual(1);
-    expect(postJson.data.bullPercent).toBeGreaterThanOrEqual(50);
-    expect(postJson.data.userVote).toBe('bull');
   });
 
   it('GET /api/buyback/stats returns buyback tracking statistics', async () => {

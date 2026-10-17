@@ -84,11 +84,15 @@ export class GetTokenByAddressUseCase {
     currentPriceUsd: number,
   ): Promise<number> {
     if (currentPriceUsd <= 0) return 0;
-    const cutoff = Math.floor((Date.now() - 86_400_000) / 1000); // unix seconds, 24h ago
+    // Trade timestamps are in milliseconds (the previous seconds cutoff never matched, so the
+    // change was always 0).
+    const cutoff = this.now() - 86_400_000;
     // Fetch enough trades to reach 24h back; 500 is sufficient for active tokens
     const trades = await this.tokenRepository.getTrades(address, 500, 0);
-    // Trades are ordered DESC by timestamp; find the first one older than 24h
-    const anchor = trades.find((t) => t.timestamp <= cutoff);
+    // The newest trade at or before the cutoff or, for a token younger than 24h, its first trade
+    // (change since launch). Order-independent: repositories differ in sort order.
+    const byTime = [...trades].sort((a, b) => a.timestamp - b.timestamp);
+    const anchor = byTime.filter((t) => t.timestamp <= cutoff).pop() ?? byTime[0];
     if (!anchor || anchor.priceUsd <= 0) return 0;
     return ((currentPriceUsd - anchor.priceUsd) / anchor.priceUsd) * 100;
   }

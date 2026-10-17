@@ -1607,56 +1607,45 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     });
   }
 
-  // GET & POST /api/tokens/:address/sentiment — Community Bull vs Bear sentiment gauge
-  const sentimentMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/sentiment$/);
-  if (sentimentMatch && req.method === 'GET') {
-    const address = sentimentMatch[1];
-    const user = url.searchParams.get('user') || undefined;
-    const sentiment = (await repository.getTokenSentiment?.(address, user)) || {
-      bullVotes: 0,
-      bearVotes: 0,
-      totalVotes: 0,
-      bullPercent: 50,
-      bearPercent: 50,
+  // GET /api/tokens/:address/flow?window=5m|1h|6h|24h — buy vs sell pressure (Binance-style B%/S%)
+  // from indexed trades: quote volume, trade counts and distinct traders per side.
+  const flowMatch = url.pathname.match(/^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/flow$/);
+  if (flowMatch && req.method === 'GET') {
+    const address = flowMatch[1] as `0x${string}`;
+    const windows: Record<string, number> = {
+      '5m': 300_000,
+      '1h': 3_600_000,
+      '6h': 21_600_000,
+      '24h': 86_400_000,
     };
-    return new Response(safeStringify({ success: true, data: sentiment, timestamp: Date.now() }), {
-      headers,
-    });
-  }
-
-  if (sentimentMatch && req.method === 'POST') {
-    try {
-      const address = sentimentMatch[1];
-      const body = await parseJsonBody<{ userAddress?: string; sentiment?: string }>(req, 4096);
-      const userAddress = String(body.userAddress || '')
-        .trim()
-        .toLowerCase();
-      const sentiment = String(body.sentiment || '')
-        .trim()
-        .toLowerCase();
-
-      if (!userAddress || !/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
-        return replyError('INVALID_USER_ADDRESS', 'Valid Ethereum wallet address is required', 400);
-      }
-      if (sentiment !== 'bull' && sentiment !== 'bear') {
-        return replyError('INVALID_SENTIMENT', "Sentiment must be either 'bull' or 'bear'", 400);
-      }
-      const sessionError = requireSocialSession(req, userAddress, 'vote');
-      if (sessionError)
-        return replyError(sessionError.code, sessionError.message, sessionError.status);
-
-      const updated = await repository.voteTokenSentiment?.(address, userAddress, sentiment);
-      return new Response(safeStringify({ success: true, data: updated, timestamp: Date.now() }), {
-        status: 200,
-        headers,
-      });
-    } catch (e) {
-      if (e instanceof PayloadTooLargeError) {
-        return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
-      }
-      console.error('[Sentiment POST Error]', e);
-      return replyError('SENTIMENT_ERROR', (e as Error).message, 500);
-    }
+    const windowKey = url.searchParams.get('window') ?? '1h';
+    const windowMs = windows[windowKey];
+    if (!windowMs) return replyError('INVALID_PARAM', 'window must be one of 5m, 1h, 6h, 24h', 400);
+    const cacheKey = `token:flow:${address.toLowerCase()}:${windowKey}`;
+    const cached = await cache.get<unknown>(cacheKey);
+    if (cached) return replyEnvelope(ok(cached));
+    const flow = (await repository.getTradeFlow?.(address, Date.now() - windowMs)) ?? {
+      buyQuote: 0,
+      sellQuote: 0,
+      buys: 0,
+      sells: 0,
+      buyers: 0,
+      sellers: 0,
+    };
+    const token = await repository.findByAddress(address);
+    const quoteUsd = token ? await chainRegistry.resolveForToken(token).getQuotePriceUsd() : 0;
+    const total = flow.buyQuote + flow.sellQuote;
+    const data = {
+      window: windowKey,
+      ...flow,
+      buyVolumeUsd: flow.buyQuote * quoteUsd,
+      sellVolumeUsd: flow.sellQuote * quoteUsd,
+      // null when there were no trades: no 50/50 placeholder.
+      buyPercent: total > 0 ? (flow.buyQuote / total) * 100 : null,
+      sellPercent: total > 0 ? (flow.sellQuote / total) * 100 : null,
+    };
+    await cache.set(cacheKey, data, 10);
+    return replyEnvelope(ok(data));
   }
 
   // GET /api/tokens/:address/buyback OR /api/buyback/stats — automated buyback & burn tracker
