@@ -56,6 +56,7 @@ import {
   buildCommentSignMessage,
   buildSessionSignMessage,
   sanitizeCreatorProfile,
+  resolveSiteUrls,
   type CreatorProfile,
   ok,
   err,
@@ -613,7 +614,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     return new Response(
       safeStringify({
         status: 'ok',
-        service: 'proto-api',
+        service: 'goton-api',
         timestamp: Date.now(),
       }),
       { headers },
@@ -2069,10 +2070,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const isToken0 = token.isToken0;
     const payload = {
       id: `${network.chainId}_${token.poolAddress}`,
-      dexId: 'proto',
-      url: `https://proto.fun/trade/${token.address}`,
+      dexId: 'goton',
+      url: `${resolveSiteUrls({ appUrl: process.env.APP_URL }).appUrl}/trade/${token.address}`,
       pairAddress: token.poolAddress,
-      labels: ['proto-v2'],
+      labels: ['goton-v2'],
       baseToken: {
         address: token.address,
         name: token.name,

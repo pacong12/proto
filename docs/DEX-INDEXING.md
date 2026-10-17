@@ -62,10 +62,10 @@ Contoh response `/dex/pair?id=0xPOOL...`:
 ```json
 {
   "id": "4663_0xPOOL...",
-  "dexId": "proto",
-  "url": "https://proto.fun/trade/0xTOKEN...",
+  "dexId": "goton",
+  "url": "https://goton.fun/trade/0xTOKEN...",
   "pairAddress": "0xPOOL...",
-  "labels": ["proto-v2"],
+  "labels": ["goton-v2"],
   "baseToken": { "address": "0xTOKEN...", "name": "MyToken", "symbol": "MTK" },
   "quoteToken": { "address": "0xWETH...", "name": "Wrapped Ether", "symbol": "WETH" },
   "quoteTokenOrder": "token1",
@@ -120,7 +120,7 @@ GMGN membaca data dari GeckoTerminal, jadi cukup daftar ke GeckoTerminal.
 ## Langkah Pendaftaran Manual
 
 Semua langkah ini harus dikerjakan oleh owner setelah API di-deploy ke domain publik
-(`https://api.proto.fun` atau sejenisnya).
+(`https://api.robinmood.xyz` atau sejenisnya).
 
 ### DEX Screener
 
@@ -135,7 +135,7 @@ Semua langkah ini harus dikerjakan oleh owner setelah API di-deploy ke domain pu
    RPC URL          : https://rpc.mainnet.chain.robinhood.com
    Block Explorer   : https://robinhoodchain.blockscout.com
    DEX Name         : Goton
-   Partner API URL  : https://api.proto.fun
+   Partner API URL  : https://api.robinmood.xyz
    Protocol Type    : Bonding Curve + Uniswap V3
    Contact          : [email owner]
    ```
@@ -148,7 +148,7 @@ Semua langkah ini harus dikerjakan oleh owner setelah API di-deploy ke domain pu
    RPC URL          : https://rpc.mainnet.arc.io
    Block Explorer   : https://explorer.arc.io
    DEX Name         : Goton
-   Partner API URL  : https://api.proto.fun
+   Partner API URL  : https://api.robinmood.xyz
    ```
 
 3. DEX Screener akan memverifikasi endpoint `/dex/latest-block`, `/dex/asset`,
@@ -162,7 +162,7 @@ Estimasi waktu: 1-2 minggu setelah submission.
 2. Isi form:
    - Network Name: `Robinhood Chain`
    - Chain ID: `4663`
-   - API Base URL: `https://api.proto.fun/api/v1/networks/robinhood`
+   - API Base URL: `https://api.robinmood.xyz/api/v1/networks/robinhood`
    - Explorer: `https://robinhoodchain.blockscout.com`
 3. Ulangi untuk Arc Network (Chain ID 5042).
 
@@ -190,7 +190,7 @@ secara otomatis setelah chain terdaftar di sana. Tidak perlu submit terpisah.
 ## Pra-syarat Teknis Sebelum Submit
 
 - [ ] **Deploy API ke Publik**: API harus bisa diakses dari internet publik (bukan localhost).
-      Deploy ke VPS dengan domain publik (contoh: `https://api.proto.fun`) menggunakan workflow
+      Deploy ke VPS dengan domain publik (contoh: `https://api.robinmood.xyz`) menggunakan workflow
       `.github/workflows/deploy-vps.yml`.
 - [x] **CORS Wildcard**: Header `Access-Control-Allow-Origin: *` aktif pada semua endpoint
       `/dex/*` dan `/api/v1/*` sehingga crawler agregator tidak terblokir. (SUDAH IMPLEMENTED)

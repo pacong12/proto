@@ -143,7 +143,7 @@ export class HttpRequestTracker {
         : 0;
 
     return {
-      service: 'proto-api',
+      service: 'goton-api',
       uptimeSeconds: Math.floor(process.uptime()),
       timestamp: now,
       cache: {
