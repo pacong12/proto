@@ -56,12 +56,40 @@ contract GotonFeeSplitterTest is Test {
 
     function test_SplitsProtocolFirstThenRemainder() public {
         _distribute(10 ether);
-        assertEq(treasury.balance, 3 ether, "30% protocol");
+        assertEq(splitter.protocolAccrued(), 3 ether, "30% protocol, released later");
+        assertEq(treasury.balance, 0, "nothing is pushed during a swap");
         assertEq(splitter.buybackAccrued(), 0.7 ether, "10% of 7 ETH, held for the TWAP buyback");
         assertEq(buyback.balance, 0);
-        assertEq(liquidity.balance, 0.7 ether, "10% of 7 ETH");
+        assertEq(splitter.liquidityAccrued(), 0.7 ether, "10% of 7 ETH");
+        assertEq(liquidity.balance, 0);
         assertEq(splitter.creatorAccrued(), 2.1 ether, "30% of 7 ETH, pulled later");
         assertEq(splitter.totalStreamed(), 3.5 ether, "50% of 7 ETH streams to holders");
+    }
+
+    function test_ProtocolAndLiquidityShares_ReleasedByAnyone() public {
+        _distribute(10 ether);
+        vm.prank(address(0xBEEF));
+        assertEq(splitter.releaseProtocolFees(), 3 ether);
+        assertEq(treasury.balance, 3 ether);
+        assertEq(splitter.protocolAccrued(), 0);
+
+        vm.prank(address(0xBEEF));
+        assertEq(splitter.releaseLiquidityFees(), 0.7 ether);
+        assertEq(liquidity.balance, 0.7 ether);
+        assertEq(splitter.releaseLiquidityFees(), 0, "nothing left to release");
+    }
+
+    /// A recipient that rejects payments (e.g. USDC-blocklisted on Arc) must not block swaps:
+    /// fee distribution only books shares, and the failure stays in the release call.
+    function test_RejectingTreasury_DoesNotBlockFeeDistribution() public {
+        vm.etch(treasury, hex"5f5ffd"); // PUSH0 PUSH0 REVERT: rejects every call
+        _distribute(10 ether);
+        _distribute(5 ether);
+        assertEq(splitter.protocolAccrued(), 4.5 ether);
+
+        vm.expectRevert(GotonFeeSplitter.TransferFailed.selector);
+        splitter.releaseProtocolFees();
+        assertEq(splitter.protocolAccrued(), 4.5 ether, "share stays booked until it can be paid");
     }
 
     function test_DividendsStreamProRataToCirculatingHolders() public {
