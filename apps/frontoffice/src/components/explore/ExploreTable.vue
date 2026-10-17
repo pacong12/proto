@@ -55,7 +55,7 @@
               <!-- Pons-style Pin / Star Button -->
               <button
                 type="button"
-                class="p-1 rounded-lg transition-transform hover:scale-110 cursor-pointer select-none shrink-0"
+                class="min-w-6 min-h-6 inline-flex items-center justify-center p-1 rounded-lg transition-transform hover:scale-110 cursor-pointer select-none shrink-0"
                 :class="
                   isPinned(item.token.address)
                     ? 'text-amber-400'

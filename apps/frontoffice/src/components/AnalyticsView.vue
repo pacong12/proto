@@ -93,10 +93,10 @@
           </div>
 
           <!-- Chart Style Mode (Area vs Bar) -->
-          <div class="inline-flex p-1 rounded-xl bg-black border border-border gap-0.5">
+          <div class="inline-flex p-1 rounded-xl bg-muted border border-border gap-0.5">
             <button
               type="button"
-              class="p-1 rounded-lg transition cursor-pointer text-xs"
+              class="min-w-6 min-h-6 inline-flex items-center justify-center p-1 rounded-lg transition cursor-pointer text-xs"
               :class="
                 chartMode === 'area'
                   ? 'bg-card text-foreground shadow-2xs'
@@ -109,7 +109,7 @@
             </button>
             <button
               type="button"
-              class="p-1 rounded-lg transition cursor-pointer text-xs"
+              class="min-w-6 min-h-6 inline-flex items-center justify-center p-1 rounded-lg transition cursor-pointer text-xs"
               :class="
                 chartMode === 'bar'
                   ? 'bg-card text-foreground shadow-2xs'
@@ -353,7 +353,7 @@
               as-child
               variant="ghost"
               size="sm"
-              class="h-7 w-7 p-0 text-muted-foreground hover:text-foreground cursor-pointer rounded-lg"
+              class="h-7 w-7 min-w-7 p-0 text-muted-foreground hover:text-foreground cursor-pointer rounded-lg"
               title="View on block explorer"
             >
               <a

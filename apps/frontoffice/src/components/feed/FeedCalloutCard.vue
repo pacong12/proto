@@ -109,7 +109,7 @@
             </span>
             <button
               type="button"
-              class="p-0.5 rounded transition-transform hover:scale-110 cursor-pointer select-none"
+              class="min-w-6 min-h-6 inline-flex items-center justify-center p-0.5 rounded transition-transform hover:scale-110 cursor-pointer select-none"
               :class="
                 isPinned(call.tokenAddress)
                   ? 'text-amber-400'
@@ -275,7 +275,7 @@
       <!-- 5. Share Sheet -->
       <button
         type="button"
-        class="flex items-center gap-1 hover:text-foreground transition cursor-pointer select-none"
+        class="min-w-6 min-h-6 justify-center flex items-center gap-1 hover:text-foreground transition cursor-pointer select-none"
         title="Share Sheet"
         @click="$emit('openShare', call)"
       >
