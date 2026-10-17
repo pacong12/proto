@@ -53,6 +53,19 @@ export const launchpadV2FactoryAbi = [
   },
   {
     type: 'function',
+    name: 'MAX_LAUNCH_FEE',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'VIRTUAL_ETH_RESERVE',
     inputs: [],
     outputs: [

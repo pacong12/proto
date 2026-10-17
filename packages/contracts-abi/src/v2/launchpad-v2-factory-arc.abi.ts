@@ -51,6 +51,32 @@ export const launchpadV2FactoryArcAbi = [
   },
   {
     type: 'function',
+    name: 'MAX_LAUNCH_FEE',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'MAX_PROTOCOL_FEE_BPS',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'uint16',
+        internalType: 'uint16',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'MAX_TAX_BPS',
     inputs: [],
     outputs: [
