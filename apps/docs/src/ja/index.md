@@ -11,10 +11,10 @@ hero:
       link: /ja/protocol/overview
     - theme: alt
       text: トークンの作成手順
-      link: /ja/protocol/launches
+      link: /protocol/launches
     - theme: alt
       text: 取引・スワップガイド
-      link: /ja/protocol/trading-guide
+      link: /protocol/trading-guide
 
 features:
   - title: 100% ノンカストディアル
