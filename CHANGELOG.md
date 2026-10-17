@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.3.0](https://github.com/pacong12/proto/compare/v0.2.0...v0.3.0) (2026-10-17)
+
+
+### Features
+
+* **frontoffice:** move to goton.fun with 404 and maintenance pages ([#141](https://github.com/pacong12/proto/issues/141)) ([4bf44ed](https://github.com/pacong12/proto/commit/4bf44ed7568d7791a69f13bee97ddc327c18b60b))
+* **frontoffice:** serve legal documents from the docs site only ([#148](https://github.com/pacong12/proto/issues/148)) ([b4e9765](https://github.com/pacong12/proto/commit/b4e976501ead6afa2e658d1706284cc9f86ba02a))
+* **infra:** add VPS security audit and hardening scripts ([#145](https://github.com/pacong12/proto/issues/145)) ([8496551](https://github.com/pacong12/proto/commit/84965515546e689eb69e72227ccb72ae310ba27c))
+* rebrand Proto to Goton ([#142](https://github.com/pacong12/proto/issues/142)) ([5eb8630](https://github.com/pacong12/proto/commit/5eb8630e6a33f34bfe9aca01bf3b2c7c36fc3fd6))
+* **security:** publish security.txt for the app and the docs ([#149](https://github.com/pacong12/proto/issues/149)) ([f31643e](https://github.com/pacong12/proto/commit/f31643eb27d6a7a23acb9c34de0a9aaaf0ab31bc))
+
+
+### Bug Fixes
+
+* **contracts:** triage the 42 Slither medium code scanning alerts ([#147](https://github.com/pacong12/proto/issues/147)) ([da96d75](https://github.com/pacong12/proto/commit/da96d759bf1a38397008fa00ee0341f7560b2704))
+* **scripts:** read the ufw default policy from verbose status ([#156](https://github.com/pacong12/proto/issues/156)) ([1046b24](https://github.com/pacong12/proto/commit/1046b24ce571aa7056fd9b7728fc8433f5ccc050))
+* **worker:** run the edge worker for every request ([#154](https://github.com/pacong12/proto/issues/154)) ([335b3cf](https://github.com/pacong12/proto/commit/335b3cffd651cf0dd53f65c90dbfee7499688ea2))
+
+
+### Performance Improvements
+
+* **api:** fix unknown-token lookups and run the load test in CI ([#153](https://github.com/pacong12/proto/issues/153)) ([45eceb3](https://github.com/pacong12/proto/commit/45eceb360bfb7787cd4c28d457239152645f16b9))
+* **frontoffice:** lazy-load AppKit, gate analytics on consent and add per-page SEO ([#143](https://github.com/pacong12/proto/issues/143)) ([e01d884](https://github.com/pacong12/proto/commit/e01d884b647aa1da8bbde6a3049c31b6144f52bf))
+
 ## [0.2.0](https://github.com/pacong12/proto/compare/v0.1.0...v0.2.0) (2026-10-16)
 
 
