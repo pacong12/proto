@@ -35,11 +35,11 @@
               v-for="chainOpt in chainFilterOptions"
               :key="chainOpt.key"
               type="button"
-              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition cursor-pointer select-none"
+              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition cursor-pointer select-none whitespace-nowrap"
               :class="
                 selectedChainFilter === chainOpt.key
                   ? 'bg-foreground text-background border-foreground font-bold shadow-2xs'
-                  : 'bg-black border border-border text-muted-foreground hover:text-foreground hover:bg-zinc-950'
+                  : 'bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-muted'
               "
               @click="setChainFilter(chainOpt.key)"
             >
@@ -148,7 +148,7 @@
 
                     <div class="text-right shrink-0">
                       <span class="text-xs font-bold block text-foreground">
-                        ${{ formatCompactUsd(tItem.marketData?.marketCapUsd || 4200) }}
+                        {{ formatMarketCap(tItem.marketData?.marketCapUsd) }}
                       </span>
                       <span
                         class="text-xs font-bold"
@@ -435,7 +435,7 @@ import QuoteModal from './QuoteModal.vue';
 import FeedAlphaTicker from './FeedAlphaTicker.vue';
 import FeedSidebar from './FeedSidebar.vue';
 import FeedCalloutCard from './FeedCalloutCard.vue';
-import { shortenAddress, formatCompactUsd, getChainIcon, getChainShortName } from '@/lib/utils';
+import { shortenAddress, getChainIcon, getChainShortName, formatMarketCap } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';
 import { SUPPORTED_CHAINS } from '@goton/shared-types';
 import { getUserIdentity } from '@/lib/username';

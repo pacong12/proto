@@ -92,7 +92,7 @@
             <!-- Pin / Star Watchlist Button (Pons style) -->
             <button
               type="button"
-              class="p-1 rounded-lg transition-transform hover:scale-110 cursor-pointer select-none"
+              class="min-w-6 min-h-6 inline-flex items-center justify-center p-1 rounded-lg transition-transform hover:scale-110 cursor-pointer select-none"
               :class="
                 isPinned(currentToken.address)
                   ? 'text-amber-400'
@@ -159,7 +159,7 @@
               :href="`${explorerUrl}/token/${currentToken.address}`"
               target="_blank"
               rel="noopener noreferrer"
-              class="hover:text-foreground transition p-0.5"
+              class="min-w-6 min-h-6 inline-flex items-center justify-center hover:text-foreground transition p-0.5"
               title="View on Explorer"
             >
               <ExternalLink class="w-3.5 h-3.5" />
@@ -171,7 +171,7 @@
               :href="`https://ipfs.filebase.io/ipfs/${currentToken.logo.replace('ipfs://', '')}`"
               target="_blank"
               rel="noopener noreferrer"
-              class="text-muted-foreground hover:text-foreground p-0.5 transition inline-flex items-center"
+              class="min-w-6 min-h-6 inline-flex items-center justify-center text-muted-foreground hover:text-foreground p-0.5 transition"
               title="View Image on IPFS"
             >
               <svg

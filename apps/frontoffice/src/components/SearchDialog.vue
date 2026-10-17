@@ -86,7 +86,7 @@
                 :href="`${activeNetwork.blockExplorer}/tx/${matchedTrade.transactionHash}`"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="p-1.5 rounded-lg border border-border hover:text-foreground text-muted-foreground transition"
+                class="min-w-6 min-h-6 inline-flex items-center justify-center p-1.5 rounded-lg border border-border hover:text-foreground text-muted-foreground transition"
                 title="View on Explorer"
                 @click.stop
               >

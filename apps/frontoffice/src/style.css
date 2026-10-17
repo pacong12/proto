@@ -1,5 +1,6 @@
 @import 'tailwindcss';
-@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+/* Poppins is loaded from index.html (preconnect + stylesheet), not from here: an @import here
+   would only start after this file downloads and block rendering. */
 
 :root {
   --vp-font-family-base:
@@ -104,32 +105,35 @@ optgroup {
 body {
   font-weight: 500;
 }
-/* Headings: Space & weight hierarchy matched to apps/docs */
-h1 {
-  font-family: var(--vp-font-family-base) !important;
-  font-optical-sizing: auto;
-  font-size: 2rem; /* 32px */
-  line-height: 2.5rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
+/* Headings: Space & weight hierarchy matched to apps/docs. In the base layer, so Tailwind
+   utilities on a heading (text-base, text-2xl, ...) still apply. */
+@layer base {
+  h1 {
+    font-family: var(--vp-font-family-base) !important;
+    font-optical-sizing: auto;
+    font-size: 2rem; /* 32px */
+    line-height: 2.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
 
-h2 {
-  font-family: var(--vp-font-family-base) !important;
-  font-optical-sizing: auto;
-  font-size: 1.5rem; /* 24px */
-  line-height: 2rem;
-  font-weight: 600;
-  letter-spacing: -0.015em;
-}
+  h2 {
+    font-family: var(--vp-font-family-base) !important;
+    font-optical-sizing: auto;
+    font-size: 1.5rem; /* 24px */
+    line-height: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
 
-h3 {
-  font-family: var(--vp-font-family-base) !important;
-  font-optical-sizing: auto;
-  font-size: 1.25rem; /* 20px */
-  line-height: 1.75rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  h3 {
+    font-family: var(--vp-font-family-base) !important;
+    font-optical-sizing: auto;
+    font-size: 1.25rem; /* 20px */
+    line-height: 1.75rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
 }
 
 h4 {

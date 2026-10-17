@@ -108,7 +108,7 @@
             <div>
               <span class="text-[10px] text-zinc-500 uppercase block">{{ t('pnlMarketCap') }}</span>
               <span class="font-bold text-foreground block truncate">
-                ${{ formatCompactUsd(currentMarketData.marketCapUsd || 4200) }}
+                {{ formatMarketCap(currentMarketData.marketCapUsd) }}
               </span>
             </div>
             <div class="text-right">
@@ -171,7 +171,7 @@ import { ref, computed } from 'vue';
 import { Sparkles, X, Download } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
-import { formatCompactUsd } from '@/lib/utils';
+import { formatCompactUsd, formatMarketCap } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { toast } from '@/components/ui/sonner';
 import { useI18n } from '@/lib/i18n';
@@ -303,7 +303,7 @@ async function generateCanvasImage(): Promise<string> {
   ctx.fillText(t('pnlMarketCap').toUpperCase(), 480, 410);
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 36px monospace';
-  ctx.fillText(`$${formatCompactUsd(props.currentMarketData.marketCapUsd || 4200)}`, 480, 460);
+  ctx.fillText(`${formatMarketCap(props.currentMarketData.marketCapUsd)}`, 480, 460);
 
   // Stat 3: Price
   ctx.fillStyle = '#71717a';
@@ -352,7 +352,7 @@ async function downloadCard(): Promise<void> {
 function shareOnX(): void {
   const tweetText = encodeURIComponent(
     `Holding $${props.currentToken.symbol} on @gotondotfun!\n\n` +
-      `Current Return: ${formattedMultiplier.value} | MC: $${formatCompactUsd(props.currentMarketData.marketCapUsd || 4200)}\n\n` +
+      `Current Return: ${formattedMultiplier.value} | MC: ${formatMarketCap(props.currentMarketData.marketCapUsd)}\n\n` +
       `${window.location.href}`,
   );
   window.open(

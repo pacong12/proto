@@ -55,7 +55,7 @@
             <div class="flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
-                class="p-1 rounded-lg transition-transform hover:scale-110 cursor-pointer select-none"
+                class="min-w-6 min-h-6 inline-flex items-center justify-center p-1 rounded-lg transition-transform hover:scale-110 cursor-pointer select-none"
                 :class="
                   isPinned(item.token.address)
                     ? 'text-amber-400'
@@ -88,7 +88,7 @@
                 t('marketCapCol').toUpperCase()
               }}</span>
               <span class="font-bold text-sm text-foreground">
-                ${{ formatNumberCap(item.marketData?.marketCapUsd ?? 4200) }}
+                {{ formatMarketCap(item.marketData?.marketCapUsd) }}
               </span>
             </div>
             <div class="text-right">
@@ -173,7 +173,7 @@ import { Progress } from '@/components/ui/progress';
 import { Pagination } from '@/components/ui/pagination';
 import TaxTooltip from '@/components/ui/TaxTooltip.vue';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
-import { formatRelativeTime, formatCompactUsd, getChainIcon } from '@/lib/utils';
+import { formatRelativeTime, formatCompactUsd, getChainIcon, formatMarketCap } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { useTokenStore } from '@/composables/useTokenStore';
 import type { LaunchedTokenEntity, TokenMarketData } from '@goton/shared-types';
@@ -207,11 +207,5 @@ const tokenStore = useTokenStore();
 function navigateToDeployer(deployerAddress: string) {
   if (!deployerAddress) return;
   router.push(`/${getUserIdentity(deployerAddress).name}`);
-}
-
-function formatNumberCap(val: number): string {
-  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
-  if (val >= 1_000) return `${(val / 1_000).toFixed(1)}K`;
-  return val.toFixed(0);
 }
 </script>

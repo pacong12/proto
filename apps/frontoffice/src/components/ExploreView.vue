@@ -3,7 +3,8 @@
     <!-- ============================================================
          1. UBI.FUN-STYLE LATEST LAUNCHES / NEW ON NETWORK
          ============================================================ -->
-    <div v-if="latestLaunches.length > 0" class="space-y-3">
+    <!-- Shown while loading too (skeleton), so the hero below does not jump when tokens arrive. -->
+    <div v-if="latestLaunches.length > 0 || loading" class="space-y-3">
       <div class="flex items-center justify-between">
         <div>
           <h2 class="text-base sm:text-lg font-bold text-foreground tracking-tight">
@@ -23,7 +24,19 @@
         </div>
       </div>
       <!-- Horizontal Cards Grid (ubi.fun style) -->
+      <div
+        v-if="latestLaunches.length === 0"
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
+        aria-hidden="true"
+      >
+        <div
+          v-for="n in 4"
+          :key="n"
+          class="h-[70px] rounded-2xl bg-card border border-border animate-pulse"
+        />
+      </div>
       <ExploreFeaturedMovers
+        v-else
         :latest-launches="latestLaunches"
         :is-pinned="isPinned"
         @select-token="$emit('selectToken', $event)"

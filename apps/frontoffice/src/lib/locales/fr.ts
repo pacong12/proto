@@ -52,13 +52,14 @@ const messages: Record<string, string> = {
   permanentlyLocked: '100% verrouillé définitivement',
   protocolFeesBurned: '80% des frais du protocole brûlés',
   volumeAndLiquidity: 'Volume 24h & Flux de Liquidité',
-  hourlyAggregatedVolume: 'Volume agrégé par heure sur Robinhood Chain',
+  hourlyAggregatedVolume: 'Volume agrégé par heure sur Robinhood Chain & Arc',
   deployedContracts: 'Contrats Système Déployés',
   hasSocials: 'Avec Réseaux',
   sortTokens: 'Trier les tokens',
   loadingTokens: 'Chargement des tokens...',
   noTokensFound: 'Aucun token trouvé',
-  noTokensDesc: 'Soyez le premier créateur à déployer un token à offre fixe sur Robinhood Chain.',
+  noTokensDesc:
+    'Soyez le premier créateur à déployer un token à offre fixe sur Robinhood Chain & Arc.',
   priceUsd: 'Prix (USD)',
   marketCap: 'Cap. Boursière',
   progress: 'Progression',
@@ -79,7 +80,7 @@ const messages: Record<string, string> = {
   selectHint: 'Sélectionner',
   noMemesTitle: 'Aucun mème communautaire pour le moment',
   noMemesDesc:
-    'Soyez le premier à lancer un token à offre fixe avec un narratif communautaire sur Robinhood Chain.',
+    'Soyez le premier à lancer un token à offre fixe avec un narratif communautaire sur Robinhood Chain & Arc.',
   launchNow: 'Lancer Maintenant',
   tokenImage: 'Image du Jeton',
   noFileChosen: 'Aucun fichier choisi',
@@ -105,7 +106,7 @@ const messages: Record<string, string> = {
   connecting: 'Connexion...',
   protocolAnalytics: 'Analytiques du Protocole',
   analyticsSubtitle:
-    'Métriques on-chain en temps réel, suivi du volume 24h et déploiements de contrats sur Robinhood Chain.',
+    'Métriques on-chain en temps réel, suivi du volume 24h et déploiements de contrats sur Robinhood Chain & Arc.',
   totalTradingVolume: 'Volume Total des Échanges',
   totalTokensLaunched: 'Total des Tokens Lancés',
   protocolBuybackAndBurn: 'Rachat et Brûlage du Protocole',
@@ -124,7 +125,7 @@ const messages: Record<string, string> = {
   createToken: 'Créer un Token',
   privacyAgreementTitle: 'Accord de Conditions & Confidentialité',
   privacyAgreementDesc:
-    "Avant d'interagir avec le protocole de lancement Robinhood Chain, veuillez consulter nos conditions.",
+    "Avant d'interagir avec le protocole de lancement Robinhood Chain & Arc, veuillez consulter nos conditions.",
   termsOfService: "Conditions d'utilisation",
   privacyPolicy: 'Politique de Confidentialité',
   acceptAndContinue: 'Accepter et Continuer',
@@ -140,14 +141,14 @@ const messages: Record<string, string> = {
   light: 'Clair',
   dark: 'Sombre',
   footerSubtitle:
-    'Lancez et explorez des tokens à offre fixe sur Robinhood Chain. Votre portefeuille soumet chaque transaction. goton ne conserve pas vos actifs.',
+    'Lancez et explorez des tokens à offre fixe sur Robinhood Chain & Arc. Votre portefeuille soumet chaque transaction. goton ne conserve pas vos actifs.',
   product: 'Produit',
   network: 'Réseau',
   legal: 'Mentions Légales',
   footerDisclaimer:
     'Les transactions sont soumises via votre portefeuille et peuvent être irréversibles. Les tokens peuvent être volatils.',
   copyright:
-    '© 2026 Goton Labs, LLC. Protocole de lancement de tokens à offre fixe sur Robinhood Chain.',
+    '© 2026 Goton Labs, LLC. Protocole de lancement de tokens à offre fixe sur Robinhood Chain & Arc.',
   explorer: 'Explorateur de Blocs',
   v2Subtitle:
     'Lancez un token sur une courbe de liaison qui se transforme en liquidité verrouillée.',
@@ -176,7 +177,7 @@ const messages: Record<string, string> = {
   tradeToken: 'Accéder au Trading',
   closeModal: 'Fermer',
   exploreLaunches: 'Explorer les Lancements',
-  exploreSubtitle: 'Jetons à offre fixe progressant vers la graduation sur Robinhood Chain.',
+  exploreSubtitle: 'Jetons à offre fixe progressant vers la graduation sur Robinhood Chain & Arc.',
   livePreview: 'Aperçu en Direct',
   system: 'Système',
   privacyAgreementCheck:
@@ -200,7 +201,7 @@ const messages: Record<string, string> = {
   txHash: 'Hash Tx',
   activePositions: 'Positions Actives',
   totalTrades: 'Transactions Totales',
-  lockerFees: 'Frais de Casier',
+  lockerFees: 'Frais du créateur',
   tokensHeld: 'Jetons actuellement détenus',
   buysAndSellsRecorded: 'Achats et ventes enregistrés',
   deployedByYou: 'Déployé par votre portefeuille',
@@ -346,6 +347,10 @@ const messages: Record<string, string> = {
   maintenanceBanner:
     'Maintenance planifiée en cours. Certaines fonctionnalités peuvent être indisponibles pendant un moment.',
   maintenanceDismiss: "Fermer l'avis",
+  communitySentiment: 'Sentiment de la communauté',
+  noSentimentVotes: "Aucun vote pour l'instant. Soyez le premier.",
+  v2SubtitleArc:
+    'Lancez un token directement dans un pool Uniswap v4 verrouillé. Votre taxe est payée en USDC à chaque échange.',
 };
 
 export default messages;

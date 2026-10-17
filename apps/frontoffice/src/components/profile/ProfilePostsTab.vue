@@ -104,9 +104,9 @@
               <div class="flex items-center gap-2 text-xs text-muted-foreground">
                 <span
                   >MC:
-                  <strong class="text-foreground"
-                    >${{ formatCompactUsd(call.tokenMarketCapUsd ?? 4200) }}</strong
-                  ></span
+                  <strong class="text-foreground">{{
+                    formatMarketCap(call.tokenMarketCapUsd)
+                  }}</strong></span
                 >
                 <span v-if="call.targetMcap" class="text-emerald-500 font-bold truncate">
                   Target: {{ call.targetMcap }}
@@ -234,7 +234,7 @@ import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { CashtagText } from '@/components/feed';
 import { isWhaleCaller } from '@/composables/useFeed';
 import { useTokenStore, type TokenListItem } from '@/composables/useTokenStore';
-import { shortenAddress, formatRelativeTime, formatCompactUsd, getChainIcon } from '@/lib/utils';
+import { shortenAddress, formatRelativeTime, getChainIcon, formatMarketCap } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';
 import type { FeedCalloutItem } from '@goton/shared-types';
 

@@ -30,16 +30,16 @@ const messages: Record<string, string> = {
   shareProfile: 'Share Profile',
   searchPlaceholder: 'Search tokens by name, ticker, or address...',
   exploreLaunches: 'Explore Launches',
-  exploreSubtitle: 'Fixed-supply tokens climbing toward graduation on Robinhood Chain.',
+  exploreSubtitle: 'Fixed-supply tokens climbing toward graduation on Robinhood Chain & Arc.',
   all: 'All',
   createToken: 'Create Token',
   trendingFeed: 'Trending Feed',
   memestockSubtitle:
-    'Every launch with a community thesis and verified positions, ranked by momentum on Robinhood Chain.',
+    'Every launch with a community thesis and verified positions, ranked by momentum.',
   protocolAnalytics: 'Protocol Analytics',
   livePreview: 'Live Preview',
   analyticsSubtitle:
-    'Real-time onchain metrics, 24h volume tracking, and contract deployments on Robinhood Chain.',
+    'Real-time onchain metrics, 24h volume tracking, and contract deployments on Robinhood Chain & Arc.',
   totalTradingVolume: 'Total Trading Volume',
   totalTokensLaunched: 'Total Tokens Launched',
   protocolBuybackAndBurn: 'Protocol Buyback & Burn',
@@ -61,10 +61,10 @@ const messages: Record<string, string> = {
   dark: 'Dark',
   system: 'System',
   footerSubtitle:
-    'Launch and explore fixed-supply tokens on Robinhood Chain. Your wallet submits every transaction. goton does not custody assets.',
+    'Launch and explore fixed-supply tokens on Robinhood Chain & Arc. Your wallet submits every transaction. goton does not custody assets.',
   footerDisclaimer:
     'Transactions are submitted through your wallet and may be irreversible. Tokens can be volatile.',
-  copyright: '© 2026 Goton Labs, LLC. Fixed-supply token launch protocol on Robinhood Chain.',
+  copyright: '© 2026 Goton Labs, LLC. Fixed-supply token launch protocol on Robinhood Chain & Arc.',
   explorer: 'Explorer',
   cookieBannerTitle: 'Cookie & Storage Preferences',
   cookieBannerDesc:
@@ -73,7 +73,7 @@ const messages: Record<string, string> = {
   accept: 'Accept',
   privacyAgreementTitle: 'Terms & Privacy Agreement',
   privacyAgreementDesc:
-    'Before interacting with the Robinhood Chain launchpad protocol, please review our terms.',
+    'Before interacting with the Robinhood Chain & Arc launchpad protocol, please review our terms.',
   privacyAgreementCheck: 'I have read and accept the Terms of Service & Privacy Policy',
   acceptAndContinue: 'Accept & Continue',
   cookieSettings: 'Cookie settings',
@@ -103,13 +103,13 @@ const messages: Record<string, string> = {
   permanentlyLocked: '100% permanently locked',
   protocolFeesBurned: '80% of protocol fees burned',
   volumeAndLiquidity: '24h Volume & Liquidity Flow',
-  hourlyAggregatedVolume: 'Hourly aggregated volume on Robinhood Chain',
+  hourlyAggregatedVolume: 'Hourly aggregated volume on Robinhood Chain & Arc',
   deployedContracts: 'Deployed System Contracts',
   hasSocials: 'Has Socials',
   sortTokens: 'Sort tokens',
   loadingTokens: 'Loading tokens...',
   noTokensFound: 'No tokens found',
-  noTokensDesc: 'Be the first creator to deploy a fixed-supply token on Robinhood Chain.',
+  noTokensDesc: 'Be the first creator to deploy a fixed-supply token on Robinhood Chain & Arc.',
   priceUsd: 'Price (USD)',
   marketCap: 'Market Cap',
   progress: 'Progress',
@@ -130,7 +130,7 @@ const messages: Record<string, string> = {
   selectHint: 'Select',
   noMemesTitle: 'No community memes moving yet',
   noMemesDesc:
-    'Be the first to launch a fixed-supply token with a dedicated community narrative on Robinhood Chain.',
+    'Be the first to launch a fixed-supply token with a dedicated community narrative on Robinhood Chain & Arc.',
   launchNow: 'Launch Now',
   tokenImage: 'Token Image',
   noFileChosen: 'No file chosen',
@@ -198,7 +198,7 @@ const messages: Record<string, string> = {
   txHash: 'Tx Hash',
   activePositions: 'Active Positions',
   totalTrades: 'Total Trades',
-  lockerFees: 'Locker fees',
+  lockerFees: 'Creator fees',
   tokensHeld: 'Tokens currently held',
   buysAndSellsRecorded: 'Buys & Sells recorded',
   deployedByYou: 'Deployed by your wallet',
@@ -344,6 +344,10 @@ const messages: Record<string, string> = {
   maintenanceBanner:
     'Scheduled maintenance is in progress. Some features may be unavailable for a short time.',
   maintenanceDismiss: 'Dismiss notice',
+  communitySentiment: 'Community Sentiment',
+  noSentimentVotes: 'No votes yet. Be the first to call it.',
+  v2SubtitleArc:
+    'Launch a token straight into a locked Uniswap v4 pool. Your tax is paid in USDC on every trade.',
 };
 
 export default messages;

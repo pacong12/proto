@@ -49,6 +49,14 @@ export function formatCompactUsd(value: number | string | undefined | null): str
 }
 
 /**
+ * Market cap for display. Unknown or zero shows a dash instead of an invented figure.
+ */
+export function formatMarketCap(value: number | string | undefined | null): string {
+  const num = typeof value === 'string' ? parseFloat(value) : (value ?? 0);
+  return Number.isFinite(num) && num > 0 ? formatCompactUsd(num) : '—';
+}
+
+/**
  * Format token spot price in USD cleanly without visual overflow.
  */
 export function formatPriceUsd(price: number | string | undefined | null): string {
@@ -97,7 +105,10 @@ export function formatTokenNumber(raw: string | number): string {
  * Format a past timestamp into a relative time description (e.g. 10s ago, 5m ago).
  */
 export function formatRelativeTime(timestamp: number): string {
-  const diffSec = Math.floor((Date.now() - timestamp) / 1000);
+  // Unknown (0) shows a dash; values in seconds are accepted as well as milliseconds.
+  if (!Number.isFinite(timestamp) || timestamp <= 0) return '—';
+  const ms = timestamp < 1e12 ? timestamp * 1000 : timestamp;
+  const diffSec = Math.floor((Date.now() - ms) / 1000);
   if (diffSec < 60) return `${Math.max(1, diffSec)}s ago`;
   const diffMin = Math.floor(diffSec / 60);
   if (diffMin < 60) return `${diffMin}m ago`;

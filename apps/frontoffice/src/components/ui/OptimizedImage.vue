@@ -76,7 +76,7 @@ function handleError() {
 <template>
   <div class="relative inline-block shrink-0" :class="props.class">
     <div
-      class="relative flex items-center justify-center overflow-hidden rounded-lg bg-muted text-muted-foreground select-none"
+      class="@container relative flex items-center justify-center overflow-hidden rounded-lg bg-muted text-muted-foreground select-none"
       :style="{
         width: typeof width === 'number' ? `${width}px` : width,
         height: typeof height === 'number' ? `${height}px` : height,
@@ -107,7 +107,7 @@ function handleError() {
       <!-- Fallback avatar when image fails or is empty -->
       <span
         v-if="!resolvedSrc || hasError"
-        class="font-bold text-xs uppercase tracking-wider text-foreground"
+        class="font-bold uppercase leading-none text-foreground text-[min(0.75rem,28cqw)]"
       >
         {{ fallbackText ? fallbackText.slice(0, 3) : 'TOK' }}
       </span>

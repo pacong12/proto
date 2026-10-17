@@ -39,7 +39,7 @@
           ${{ tItem.token.symbol }}
         </span>
         <span class="text-muted-foreground text-xs">
-          {{ formatCompactUsd(tItem.marketData?.marketCapUsd || 4200) }}
+          {{ formatMarketCap(tItem.marketData?.marketCapUsd) }}
         </span>
         <span
           class="text-xs font-bold"
@@ -59,9 +59,9 @@
 import { Flame } from 'lucide-vue-next';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import {
-  formatCompactUsd,
   getTokenChainIcon as getChainIcon,
   getTokenChainName as getChainName,
+  formatMarketCap,
 } from '@/lib/utils';
 import { useTokenStore } from '@/composables/useTokenStore';
 import type { LaunchedTokenEntity, TokenMarketData } from '@goton/shared-types';

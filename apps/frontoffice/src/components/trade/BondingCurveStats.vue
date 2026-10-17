@@ -110,7 +110,7 @@
           t('marketCap')
         }}</span>
         <span class="font-black text-foreground text-sm block mt-0.5">
-          ${{ formatNumberCap(currentMarketData.marketCapUsd ?? 4200) }}
+          {{ formatMarketCap(currentMarketData.marketCapUsd) }}
         </span>
       </div>
       <div>
@@ -205,7 +205,7 @@ import { Sparkles, Check, Copy, ExternalLink } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { shortenAddress, formatCompactUsd, formatPriceUsd } from '@/lib/utils';
+import { shortenAddress, formatCompactUsd, formatPriceUsd, formatMarketCap } from '@/lib/utils';
 import type { LaunchedTokenEntity, TokenMarketData } from '@goton/shared-types';
 
 const { t } = useI18n();
@@ -244,11 +244,5 @@ const remainingToGraduate = computed(() => {
 
 function copyPairAddress(addr: string) {
   emit('copyPair', addr);
-}
-
-function formatNumberCap(val: number): string {
-  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
-  if (val >= 1_000) return `${(val / 1_000).toFixed(1)}K`;
-  return val.toFixed(0);
 }
 </script>

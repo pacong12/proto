@@ -10,7 +10,7 @@
             {{ t('protocolAnalytics') }}
           </h1>
           <span
-            class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20"
+            class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20"
           >
             <img
               :src="getChainIcon(activeNetwork)"
@@ -65,12 +65,7 @@
             <span class="text-2xl sm:text-4xl font-black tracking-tight text-foreground">
               {{ currentFigureDisplay }}
             </span>
-            <span
-              class="text-xs font-bold"
-              :class="activeMetric === 'volume' ? 'text-emerald-500' : 'text-sky-500'"
-            >
-              {{ activeMetric === 'volume' ? '+12.4% 24h' : 'Active 24h' }}
-            </span>
+            <span class="text-xs font-semibold text-muted-foreground">Last 24h</span>
           </div>
           <p class="text-xs text-muted-foreground">
             {{ currentFigureSubtitle }}
@@ -98,10 +93,10 @@
           </div>
 
           <!-- Chart Style Mode (Area vs Bar) -->
-          <div class="inline-flex p-1 rounded-xl bg-black border border-border gap-0.5">
+          <div class="inline-flex p-1 rounded-xl bg-muted border border-border gap-0.5">
             <button
               type="button"
-              class="p-1 rounded-lg transition cursor-pointer text-xs"
+              class="min-w-6 min-h-6 inline-flex items-center justify-center p-1 rounded-lg transition cursor-pointer text-xs"
               :class="
                 chartMode === 'area'
                   ? 'bg-card text-foreground shadow-2xs'
@@ -114,7 +109,7 @@
             </button>
             <button
               type="button"
-              class="p-1 rounded-lg transition cursor-pointer text-xs"
+              class="min-w-6 min-h-6 inline-flex items-center justify-center p-1 rounded-lg transition cursor-pointer text-xs"
               :class="
                 chartMode === 'bar'
                   ? 'bg-card text-foreground shadow-2xs'
@@ -276,7 +271,7 @@
                 </div>
               </TableCell>
               <TableCell class="py-3.5 px-4 text-right font-bold text-foreground">
-                ${{ formatCompactUsd(tItem.marketData?.marketCapUsd || 4200) }}
+                {{ formatMarketCap(tItem.marketData?.marketCapUsd) }}
               </TableCell>
               <TableCell class="py-3.5 px-4 text-right font-medium text-foreground">
                 {{
@@ -358,7 +353,7 @@
               as-child
               variant="ghost"
               size="sm"
-              class="h-7 w-7 p-0 text-muted-foreground hover:text-foreground cursor-pointer rounded-lg"
+              class="h-7 w-7 min-w-7 p-0 text-muted-foreground hover:text-foreground cursor-pointer rounded-lg"
               title="View on block explorer"
             >
               <a
@@ -423,7 +418,7 @@ import {
 } from '@/components/ui/table';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { ShadcnAreaChart, type ChartDataPoint } from '@/components/ui/chart';
-import { formatCompactUsd, getChainIcon } from '@/lib/utils';
+import { formatCompactUsd, getChainIcon, formatMarketCap } from '@/lib/utils';
 
 const { t } = useI18n();
 const router = useRouter();

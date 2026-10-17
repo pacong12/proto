@@ -52,13 +52,14 @@ const messages: Record<string, string> = {
   permanentlyLocked: '100% заблокировано навсегда',
   protocolFeesBurned: '80% комиссий протокола сожжено',
   volumeAndLiquidity: 'Объем и ликвидность за 24ч',
-  hourlyAggregatedVolume: 'Почасовой агрегированный объем на Robinhood Chain',
+  hourlyAggregatedVolume: 'Почасовой агрегированный объем на Robinhood Chain & Arc',
   deployedContracts: 'Задеплоенные системные контракты',
   hasSocials: 'С соцсетями',
   sortTokens: 'Сортировка',
   loadingTokens: 'Загрузка токенов...',
   noTokensFound: 'Токены не найдены',
-  noTokensDesc: 'Станьте первым создателем токена с фиксированным запасом на Robinhood Chain.',
+  noTokensDesc:
+    'Станьте первым создателем токена с фиксированным запасом на Robinhood Chain & Arc.',
   priceUsd: 'Цена (USD)',
   marketCap: 'Рын. капитализация',
   progress: 'Прогресс',
@@ -79,7 +80,7 @@ const messages: Record<string, string> = {
   selectHint: 'Выбрать',
   noMemesTitle: 'Пока нет движущихся мем-токенов',
   noMemesDesc:
-    'Будьте первым, кто запустит токен с фиксированным запасом и нарративом сообщества на Robinhood Chain.',
+    'Будьте первым, кто запустит токен с фиксированным запасом и нарративом сообщества на Robinhood Chain & Arc.',
   launchNow: 'Запустить сейчас',
   tokenImage: 'Изображение токена',
   noFileChosen: 'Файл не выбран',
@@ -105,7 +106,7 @@ const messages: Record<string, string> = {
   connecting: 'Подключение...',
   protocolAnalytics: 'Аналитика протокола',
   analyticsSubtitle:
-    'Метрики в реальном времени, отслеживание объема 24ч и деплой контрактов на Robinhood Chain.',
+    'Метрики в реальном времени, отслеживание объема 24ч и деплой контрактов на Robinhood Chain & Arc.',
   totalTradingVolume: 'Общий объем торгов',
   totalTokensLaunched: 'Всего запущено токенов',
   protocolBuybackAndBurn: 'Выкуп и сжигание протокола',
@@ -124,7 +125,7 @@ const messages: Record<string, string> = {
   createToken: 'Создать токен',
   privacyAgreementTitle: 'Соглашение об условиях и конфиденциальности',
   privacyAgreementDesc:
-    'Перед взаимодействием с протоколом лаунчпада Robinhood Chain, пожалуйста, ознакомьтесь с нашими условиями.',
+    'Перед взаимодействием с протоколом лаунчпада Robinhood Chain & Arc, пожалуйста, ознакомьтесь с нашими условиями.',
   termsOfService: 'Условия использования',
   privacyPolicy: 'Политика конфиденциальности',
   acceptAndContinue: 'Принять и продолжить',
@@ -140,14 +141,14 @@ const messages: Record<string, string> = {
   light: 'Светлая',
   dark: 'Тёмная',
   footerSubtitle:
-    'Запускайте и исследуйте токены с фиксированным запасом на Robinhood Chain. Ваш кошелек отправляет каждую транзакцию. goton не хранит активы.',
+    'Запускайте и исследуйте токены с фиксированным запасом на Robinhood Chain & Arc. Ваш кошелек отправляет каждую транзакцию. goton не хранит активы.',
   product: 'Продукт',
   network: 'Сеть',
   legal: 'Юридическая информация',
   footerDisclaimer:
     'Транзакции отправляются через ваш кошелек и могут быть необратимыми. Токены могут быть крайне волатильными.',
   copyright:
-    '© 2026 Goton Labs, LLC. Протокол запуска токенов с фиксированным запасом на Robinhood Chain.',
+    '© 2026 Goton Labs, LLC. Протокол запуска токенов с фиксированным запасом на Robinhood Chain & Arc.',
   explorer: 'Обозреватель блоков',
   v2Subtitle:
     'Запустите токен на кривой связывания, который переходит в заблокированную ликвидность.',
@@ -176,7 +177,8 @@ const messages: Record<string, string> = {
   tradeToken: 'В торговый зал',
   closeModal: 'Закрыть',
   exploreLaunches: 'Обзор запусков',
-  exploreSubtitle: 'Токены с фиксированным предложением на пути к выпуску на Robinhood Chain.',
+  exploreSubtitle:
+    'Токены с фиксированным предложением на пути к выпуску на Robinhood Chain & Arc.',
   livePreview: 'Предпросмотр в реальном времени',
   system: 'Система',
   privacyAgreementCheck:
@@ -200,7 +202,7 @@ const messages: Record<string, string> = {
   txHash: 'Хеш транзакции',
   activePositions: 'Активные позиции',
   totalTrades: 'Всего сделок',
-  lockerFees: 'Комиссии локера',
+  lockerFees: 'Комиссии создателя',
   tokensHeld: 'Токенов на балансе',
   buysAndSellsRecorded: 'Зафиксировано покупок и продаж',
   deployedByYou: 'Создано вашим кошельком',
@@ -346,6 +348,10 @@ const messages: Record<string, string> = {
   maintenanceBanner:
     'Идут плановые технические работы. Некоторые функции могут быть временно недоступны.',
   maintenanceDismiss: 'Закрыть уведомление',
+  communitySentiment: 'Настроение сообщества',
+  noSentimentVotes: 'Голосов пока нет. Будьте первым.',
+  v2SubtitleArc:
+    'Запустите токен сразу в заблокированный пул Uniswap v4. Ваш налог выплачивается в USDC с каждой сделки.',
 };
 
 export default messages;

@@ -161,7 +161,7 @@
                 </span>
               </div>
               <div class="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                <span>MC: ${{ formatCompactUsd(post.tokenMarketCapUsd || 4200) }}</span>
+                <span>MC: {{ formatMarketCap(post.tokenMarketCapUsd) }}</span>
                 <span v-if="post.targetMcap" class="text-emerald-500 font-bold truncate">
                   Target: {{ post.targetMcap }}
                 </span>
@@ -439,9 +439,9 @@ import { useFeed, isWhaleCaller } from '@/composables/useFeed';
 import {
   shortenAddress,
   formatRelativeTime,
-  formatCompactUsd,
   getTokenChainIcon as getChainIcon,
   getTokenChainName as getChainName,
+  formatMarketCap,
 } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { toast } from '@/components/ui/sonner';
