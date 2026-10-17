@@ -166,7 +166,7 @@ export class DevopsController {
   <header>
     <div>
       <h1>Goton Protocol · DevOps Observability</h1>
-      <p class="mono" style="font-size: 12px; color: var(--muted); margin-top: 4px;">Service: proto-api | Engine: Bun | Port: 3001</p>
+      <p class="mono" style="font-size: 12px; color: var(--muted); margin-top: 4px;">Service: goton-api | Engine: Bun | Port: 3001</p>
     </div>
     <div style="display: flex; gap: 8px; align-items: center;">
       <span class="status-badge mono" id="live-indicator">LIVE POLLING (3s)</span>

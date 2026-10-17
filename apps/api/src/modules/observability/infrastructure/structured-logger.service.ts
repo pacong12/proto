@@ -4,7 +4,7 @@ export class StructuredLoggerService implements LoggerPort {
   private readonly serviceName: string;
   private readonly isTest: boolean;
 
-  constructor(serviceName = 'proto-api', isTest?: boolean) {
+  constructor(serviceName = 'goton-api', isTest?: boolean) {
     this.serviceName = serviceName;
     this.isTest = isTest ?? process.env.NODE_ENV === 'test';
   }
