@@ -133,7 +133,7 @@ export default defineConfig({
       },
     ],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
-    ['meta', { name: 'twitter:site', content: '@protodotfun' }],
+    ['meta', { name: 'twitter:site', content: '@gotondotfun' }],
     [
       'meta',
       {
@@ -569,7 +569,7 @@ export default defineConfig({
       label: 'On this page',
     },
     socialLinks: [
-      { icon: 'x', link: 'https://x.com/protodotfun' },
+      { icon: 'x', link: 'https://x.com/gotondotfun' },
       { icon: 'github', link: 'https://github.com/pacong12/proto' },
     ],
     footer: {
