@@ -169,10 +169,15 @@ contract ArcV4LaunchForkTest is Test {
         assertEq(t.balanceOf(address(factory)), 0, "factory keeps nothing");
         assertEq(t.balanceOf(address(PM)) + creatorTokens + t.balanceOf(DEAD), t.totalSupply());
 
-        // 1% buy tax = 45,000 units; 30% protocol cut goes to treasury immediately.
         // 1% buy tax = 45,000 units: 30% protocol, then 10% burn / 10% liquidity of the remaining 31,500.
+        // Shares are booked during the swap and released to their vaults afterwards.
+        GotonFeeSplitter launchSplitter = GotonFeeSplitter(_splitter(token));
+        assertEq(launchSplitter.protocolAccrued(), 13_500, "protocol cut booked");
+        assertEq(_usdc(treasury), treasuryBefore, "nothing pushed during the swap");
+        launchSplitter.releaseProtocolFees();
+        launchSplitter.releaseLiquidityFees();
         assertEq(_usdc(treasury) - treasuryBefore, 13_500, "protocol cut");
-        assertEq(GotonFeeSplitter(_splitter(token)).buybackAccrued(), 3_150, "burn share held for buyback");
+        assertEq(launchSplitter.buybackAccrued(), 3_150, "burn share held for buyback");
         assertEq(_usdc(liquidityVault), 3_150, "liquidity share");
         assertEq(GotonFeeSplitter(_splitter(token)).totalStreamed(), 45_000 - 13_500 - 3_150 - 3_150, "holders");
         assertTrue(hook.bonded(poolId));
@@ -244,11 +249,13 @@ contract ArcV4LaunchForkTest is Test {
         (address token,) = _launch(creator, 4.5 ether);
         GotonFeeSplitter splitter = GotonFeeSplitter(_splitter(token));
         vm.warp(block.timestamp + 10);
+        splitter.releaseProtocolFees(); // the prebuy's share, so only this trade is measured
 
         uint256 treasuryBefore = _usdc(treasury);
         uint256 bought = _buy(token, 100e6); // 1 USDC tax
         assertGt(bought, 0);
         // 1 USDC tax: 30% protocol, then 10% burn / 10% liquidity / 80% holders of the remaining 0.7.
+        splitter.releaseProtocolFees();
         assertEq(_usdc(treasury) - treasuryBefore, 300_000);
         uint256 claimableNow = splitter.claimable(creator);
         vm.warp(block.timestamp + 1 days);

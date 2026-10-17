@@ -20,8 +20,10 @@ interface IERC20Minimal {
  *         circulating supply. LaunchpadToken checkpoints both sides of every transfer via
  *         `setShare`, so a holder only earns while holding; streaming stops flash buyers from
  *         capturing a fee deposit they trigger themselves (fee collection is permissionless).
- *         The creator share is pulled by the creator, so a creator that cannot receive funds
- *         can never block swaps. The creator may redirect its payout (e.g. a community takeover)
+ *         Every share is pulled, never pushed during a swap: the creator claims its share, and
+ *         anyone can release the protocol and liquidity shares to their vaults. A recipient that
+ *         cannot receive funds (e.g. a USDC-blocklisted address on Arc) can therefore never block
+ *         swaps. The creator may redirect its payout (e.g. a community takeover)
  *         through a 48h propose/accept timelock. Splits are fixed at construction.
  */
 contract GotonFeeSplitter {
@@ -81,6 +83,10 @@ contract GotonFeeSplitter {
     uint256 public totalStreamed;
 
     uint256 public creatorAccrued;
+    /// @notice Protocol share awaiting `releaseProtocolFees` (paid to `treasury`).
+    uint256 public protocolAccrued;
+    /// @notice Liquidity share awaiting `releaseLiquidityFees` (paid to `liquidityVault`).
+    uint256 public liquidityAccrued;
     /// @notice Burn share awaiting a TWAP-guarded buyback-and-burn (pulled by `buybackVault`).
     uint256 public buybackAccrued;
     /// @notice Where creator fees are paid; starts as `creator`.
@@ -102,6 +108,8 @@ contract GotonFeeSplitter {
     event DividendClaimed(address indexed holder, address indexed recipient, uint256 amount);
     event CreatorFeesClaimed(address indexed recipient, uint256 amount);
     event BuybackReleased(address indexed vault, uint256 amount);
+    event ProtocolFeesReleased(address indexed treasury, uint256 amount);
+    event LiquidityFeesReleased(address indexed vault, uint256 amount);
     event CreatorRecipientProposed(address indexed recipient, uint256 validAfter);
     event CreatorRecipientUpdated(address indexed recipient);
     event CreatorRecipientProposalCancelled(address indexed recipient);
@@ -177,9 +185,8 @@ contract GotonFeeSplitter {
         if (holdersShare > 0) _notifyHolders(holdersShare);
         creatorAccrued += creatorShare;
         buybackAccrued += burnShare;
-
-        _send(treasury, protocolShare);
-        _send(liquidityVault, liquidityShare);
+        protocolAccrued += protocolShare;
+        liquidityAccrued += liquidityShare;
 
         emit FeesReceived(amount, protocolShare, holdersShare, burnShare, creatorShare, liquidityShare);
     }
@@ -245,6 +252,26 @@ contract GotonFeeSplitter {
             buybackAccrued = 0;
             _send(buybackVault, amount);
             emit BuybackReleased(buybackVault, amount);
+        }
+    }
+
+    /// @notice Pays the accrued protocol share to `treasury`. Callable by anyone.
+    function releaseProtocolFees() external nonReentrant returns (uint256 amount) {
+        amount = protocolAccrued;
+        if (amount > 0) {
+            protocolAccrued = 0;
+            _send(treasury, amount);
+            emit ProtocolFeesReleased(treasury, amount);
+        }
+    }
+
+    /// @notice Pays the accrued liquidity share to `liquidityVault`. Callable by anyone.
+    function releaseLiquidityFees() external nonReentrant returns (uint256 amount) {
+        amount = liquidityAccrued;
+        if (amount > 0) {
+            liquidityAccrued = 0;
+            _send(liquidityVault, amount);
+            emit LiquidityFeesReleased(liquidityVault, amount);
         }
     }
 

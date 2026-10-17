@@ -77,6 +77,10 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
     int24 public constant TICK_SPACING = 200;
     int24 public constant FULL_RANGE_TICK = 887_200;
     uint16 public constant MAX_TAX_BPS = 1_000;
+    /// @notice Hard caps on owner-set fees, so creators can rely on them: 10 USDC (native, 18
+    ///         decimals) per launch and 30% of each token's tax.
+    uint256 public constant MAX_LAUNCH_FEE = 10 ether;
+    uint16 public constant MAX_PROTOCOL_FEE_BPS = 3_000;
 
     IPoolManagerV4 public immutable poolManager;
     address public immutable quoteAsset;
@@ -450,7 +454,7 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
     ) external onlyOwner {
         if (
             _initialTick <= 0 || _initialTick % TICK_SPACING != 0 || _initialTick >= FULL_RANGE_TICK
-                || _bondTick >= _initialTick || _maxDevBuyBps > BPS || _protocolFeeBps > BPS
+                || _bondTick >= _initialTick || _maxDevBuyBps > BPS || _protocolFeeBps > MAX_PROTOCOL_FEE_BPS
         ) revert InvalidParams();
         initialTick = _initialTick;
         bondTick = _bondTick;
@@ -461,6 +465,7 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
     }
 
     function setLaunchFee(uint256 newFee) external onlyOwner {
+        if (newFee > MAX_LAUNCH_FEE) revert InvalidFee();
         emit LaunchFeeUpdated(launchFee, newFee);
         launchFee = newFee;
     }

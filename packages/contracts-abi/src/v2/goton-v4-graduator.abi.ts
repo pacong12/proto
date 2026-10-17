@@ -69,6 +69,19 @@ export const gotonV4GraduatorAbi = [
   },
   {
     type: 'function',
+    name: 'MAX_PROTOCOL_BPS',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'uint16',
+        internalType: 'uint16',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'MAX_USABLE_TICK',
     inputs: [],
     outputs: [

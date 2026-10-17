@@ -107,7 +107,8 @@ contract GotonFeeSplitterInvariantTest is Test {
     }
 
     function invariant_SolventForCreatorBuybackAndHolders() public view {
-        uint256 owed = splitter.creatorAccrued() + splitter.buybackAccrued();
+        uint256 owed = splitter.creatorAccrued() + splitter.buybackAccrued() + splitter.protocolAccrued()
+            + splitter.liquidityAccrued();
         for (uint256 i; i < handler.holderCount(); i++) {
             owed += splitter.claimable(handler.holders(i));
         }

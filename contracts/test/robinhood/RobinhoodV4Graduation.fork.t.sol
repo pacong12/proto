@@ -185,6 +185,7 @@ contract RobinhoodV4GraduationForkTest is Test {
         (uint256 ethFees, uint256 tokenFees) = graduator.collectFees(token);
         assertApproxEqRel(ethFees, 0.01 ether, 0.05e18, "~1% LP fee on the 1 ETH buy");
         assertGt(tokenFees, 0, "LP fee on the sell, burned");
+        splitter.releaseProtocolFees();
         assertEq(treasury.balance - treasuryBefore, ethFees * 3_000 / 10_000, "protocol 30%");
 
         uint256 rest = ethFees - ethFees * 3_000 / 10_000;

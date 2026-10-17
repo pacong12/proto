@@ -392,6 +392,19 @@ export const gotonFeeSplitterAbi = [
   },
   {
     type: 'function',
+    name: 'liquidityAccrued',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'liquidityBps',
     inputs: [],
     outputs: [
@@ -483,6 +496,19 @@ export const gotonFeeSplitterAbi = [
   },
   {
     type: 'function',
+    name: 'protocolAccrued',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'protocolBps',
     inputs: [],
     outputs: [
@@ -510,6 +536,32 @@ export const gotonFeeSplitterAbi = [
   {
     type: 'function',
     name: 'releaseBuyback',
+    inputs: [],
+    outputs: [
+      {
+        name: 'amount',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'releaseLiquidityFees',
+    inputs: [],
+    outputs: [
+      {
+        name: 'amount',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'releaseProtocolFees',
     inputs: [],
     outputs: [
       {
@@ -803,6 +855,44 @@ export const gotonFeeSplitterAbi = [
       },
       {
         name: 'liquidityAmount',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'LiquidityFeesReleased',
+    inputs: [
+      {
+        name: 'vault',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+      {
+        name: 'amount',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'ProtocolFeesReleased',
+    inputs: [
+      {
+        name: 'treasury',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+      {
+        name: 'amount',
         type: 'uint256',
         indexed: false,
         internalType: 'uint256',

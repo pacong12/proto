@@ -45,6 +45,8 @@ contract GotonV4Graduator is IUnlockCallback {
     uint24 public constant POOL_FEE = 10_000;
     int24 public constant TICK_SPACING = 200;
     int24 public constant MAX_USABLE_TICK = 887_200;
+    /// @notice Hard cap on the protocol's cut of each graduated token's fees (30%).
+    uint16 public constant MAX_PROTOCOL_BPS = 3_000;
     address private constant DEAD = 0x000000000000000000000000000000000000dEaD;
 
     bytes32 private constant MAIN_SALT = bytes32(0);
@@ -422,7 +424,7 @@ contract GotonV4Graduator is IUnlockCallback {
 
     function _setDefaultSplit(GotonFeeSplitter.Split memory split) private {
         if (
-            split.protocolBps > 10_000
+            split.protocolBps > MAX_PROTOCOL_BPS
                 || uint256(split.holdersBps) + split.burnBps + split.creatorBps + split.liquidityBps != 10_000
         ) revert InvalidSplit();
         defaultSplit = split;
