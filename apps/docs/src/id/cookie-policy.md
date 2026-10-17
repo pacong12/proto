@@ -1,34 +1,39 @@
 # Kebijakan Cookie & Penyimpanan Lokal
 
-<Badge variant="graduated">Terakhir Diperbarui: September 2026</Badge>
+<Badge variant="graduated">Terakhir Diperbarui: Oktober 2026</Badge>
 
 <Card>
-Goton dibangun di atas prinsip privasi terdesentralisasi. Kami tidak menggunakan cookie pelacak, pelacak iklan komersial, atau skrip profiling pihak ketiga.
+Goton menggunakan penyimpanan peramban untuk pengaturan aplikasi yang diperlukan. Google Analytics adalah satu-satunya teknologi opsional: hanya dimuat setelah Anda menerimanya di banner cookie, dan persetujuan itu dapat Anda tarik kapan saja. Kami tidak pernah menggunakan cookie iklan.
 </Card>
 
 ## 1. Teknologi yang Kami Gunakan
 
-Tidak seperti layanan web tradisional, Goton tidak menggunakan cookie HTTP persisten untuk melacak kebiasaan browsing Anda di berbagai situs web. Kami hanya menggunakan penyimpanan sisi klien asli peramban Anda (`localStorage` dan `sessionStorage`) khusus untuk fungsi antarmuka yang diperlukan.
+- **Penyimpanan peramban (`localStorage`)**: pengaturan yang benar-benar diperlukan seperti tema, bahasa, sesi dompet, serta jawaban Anda atas banner cookie dan ketentuan. Data ini tidak dikirim ke kami atau ke pihak lain.
+- **Cookie Google Analytics**: opsional. Hanya dipasang setelah Anda mengklik **Accept** di banner cookie.
 
 ## 2. Informasi yang Tersimpan Secara Lokal
 
-Data berikut dapat disimpan dalam memori lokal peramban Anda:
+| Kunci Penyimpanan                     | Tujuan                                                                      | Durasi                     |
+| :------------------------------------ | :-------------------------------------------------------------------------- | :------------------------- |
+| `proto_privacy_policy_accepted_v1`    | Mengingat bahwa Anda telah menyetujui Ketentuan Layanan & Kebijakan Privasi | Persisten (hingga dihapus) |
+| `proto_cookie_consent_accepted_v1`    | Mengingat apakah Anda menerima atau menolak cookie analitik                 | Persisten (hingga dihapus) |
+| `proto_selected_locale_v1`            | Bahasa antarmuka Anda                                                       | Persisten (hingga dihapus) |
+| `theme`                               | Preferensi Mode Gelap atau Mode Terang                                      | Persisten (hingga dihapus) |
+| `proto_wallet_*`, `wagmi.*`, `wc@2:*` | Sesi dompet terhubung agar tidak terputus saat memuat ulang halaman         | Sesi / Persisten           |
 
-| Kunci Penyimpanan                  | Tujuan                                                                        | Durasi                     |
-| :--------------------------------- | :---------------------------------------------------------------------------- | :------------------------- |
-| `proto_privacy_policy_accepted_v1` | Mengingat bahwa Anda telah menyetujui Ketentuan Layanan & Kebijakan Privasi   | Persisten (hingga dihapus) |
-| `theme`                            | Menyimpan preferensi Mode Gelap atau Mode Terang                              | Persisten (hingga dihapus) |
-| `wagmi.wallet` / `wc@2:client`     | Menyimpan sesi dompet terhubung agar tidak terputus saat memuat ulang halaman | Sesi / Persisten           |
+## 3. Cookie Analitik Opsional
 
-## 3. Tanpa Pelacakan Pihak Ketiga
+Jika Anda menerima analitik, Google Analytics (`gtag.js`) memasang cookie `_ga` dan `_ga_<id>` (hingga 2 tahun) dan mengirim data kunjungan halaman serta perangkat ke Google, agar kami memahami cara aplikasi digunakan. Jika Anda menolak, atau menutup banner tanpa memilih, Google Analytics tidak dimuat dan tidak ada cookie analitik yang dipasang.
 
-- **Nol Pelacak Iklan**: Kami tidak memuat Google Analytics, Facebook Pixel, atau pelacak perilaku komersial lainnya.
-- **Nol Sidik Jari**: Kami tidak melakukan fingerprinting perangkat keras pengguna, canvas peramban, atau lokasi IP.
-- **Nol Monetisasi Data**: Tidak ada pengenal atau data pengguna yang dikumpulkan, dijual, atau dibagikan dengan broker data.
+- **Tanpa pelacak iklan**: kami tidak memuat Facebook Pixel atau pelacak iklan dan perilaku lainnya.
+- **Tanpa sidik jari**: kami tidak melakukan fingerprinting perangkat keras, canvas peramban, atau lokasi Anda.
+- **Tanpa penjualan data**: tidak ada data yang dijual atau dibagikan dengan broker data.
 
-## 4. Cara Mengelola Penyimpanan Lokal
+## 4. Mengubah atau Menarik Pilihan Anda
 
-Anda dapat menghapus atau menonaktifkan penyimpanan lokal kapan saja melalui pengaturan peramban Anda:
+Klik **Pengaturan cookie** di footer aplikasi kapan saja untuk melihat dan mengubah pilihan Anda. Menarik persetujuan langsung menghentikan Google Analytics dan menghapus cookie `_ga` dari peramban Anda.
+
+Anda juga dapat menghapus semua penyimpanan situs melalui pengaturan peramban:
 
 - **Chrome / Brave**: Pengaturan -> Privasi dan keamanan -> Setelan situs -> Cookie dan data situs.
 - **Firefox**: Pengaturan -> Privasi & Keamanan -> Cookie dan Data Situs -> Hapus Data.

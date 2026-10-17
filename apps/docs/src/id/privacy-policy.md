@@ -36,5 +36,5 @@ Anda dapat menghapus penyimpanan peramban kapan saja untuk menghapus pengaturan 
 
 - **Fitur sosial**: komentar, like, repost, vote sentimen, dan profil kreator yang Anda kirim disimpan oleh API Goton bersama alamat dompet Anda dan ditampilkan secara publik.
 - **Log server**: API menyimpan log permintaan untuk keamanan dan pembatasan laju. Alamat IP klien hanya dicatat dalam bentuk hash satu arah.
-- **Analitik**: aplikasi web memuat Google Analytics (`gtag.js`), yang memasang cookie dan mengirim data kunjungan halaman serta perangkat ke Google.
+- **Analitik**: hanya jika Anda menerima cookie analitik, aplikasi web memuat Google Analytics (`gtag.js`), yang memasang cookie dan mengirim data kunjungan halaman serta perangkat ke Google. Persetujuan dapat ditarik kapan saja melalui **Pengaturan cookie** di footer aplikasi (lihat [Kebijakan Cookie](/id/cookie-policy)).
 - **Penghapusan**: Anda dapat menghapus komentar, like, repost, vote sentimen, dan profil kapan saja melalui **Profile → Edit Profile → Hapus data sosial saya** (API: `DELETE /api/users/{address}/data`, masuk dengan dompet tersebut). Catatan on-chain tidak dapat dihapus oleh siapa pun.
