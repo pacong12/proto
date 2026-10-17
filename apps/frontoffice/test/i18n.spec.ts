@@ -1,7 +1,24 @@
 import { describe, it, expect } from 'vitest';
-import { currentLocale, setLocale, t, SUPPORTED_LOCALES, useI18n, messages } from '../src/lib/i18n';
+import {
+  currentLocale,
+  setLocale,
+  t,
+  SUPPORTED_LOCALES,
+  useI18n,
+  messages,
+  loadLocale,
+} from '../src/lib/i18n';
 
 describe('Internationalization (i18n) Engine', () => {
+  // Runs first, before other tests load more locales.
+  it('ships only English up front and loads other locales on demand', async () => {
+    expect(Object.keys(messages)).not.toContain('ko');
+    await setLocale('ko');
+    expect(messages.ko).toBeDefined();
+    expect(t('explore')).toBe('탐색');
+    await setLocale('en');
+  });
+
   it('supports all 11 major international languages', () => {
     expect(SUPPORTED_LOCALES).toHaveLength(11);
     const codes = SUPPORTED_LOCALES.map((l) => l.code);
@@ -19,66 +36,73 @@ describe('Internationalization (i18n) Engine', () => {
     expect(codes).toContain('pt');
   });
 
-  it('translates core keywords across languages correctly', () => {
-    setLocale('en');
+  it('translates core keywords across languages correctly', async () => {
+    await setLocale('en');
     expect(t('explore')).toBe('Explore');
     expect(t('launchToken')).toBe('Launch Token');
 
-    setLocale('id');
+    await setLocale('id');
     expect(t('explore')).toBe('Jelajahi');
     expect(t('launchToken')).toBe('Luncurkan Token');
 
-    setLocale('zh');
+    await setLocale('zh');
     expect(t('explore')).toBe('探索');
     expect(t('launchToken')).toBe('发射代币');
 
-    setLocale('ja');
+    await setLocale('ja');
     expect(t('explore')).toBe('見つける');
     expect(t('launchToken')).toBe('ローンチ');
 
-    setLocale('ko');
+    await setLocale('ko');
     expect(t('explore')).toBe('탐색');
     expect(t('launchToken')).toBe('토큰 런칭');
 
-    setLocale('es');
+    await setLocale('es');
     expect(t('explore')).toBe('Explorar');
     expect(t('launchToken')).toBe('Lanzar Token');
 
-    setLocale('ru');
+    await setLocale('ru');
     expect(t('explore')).toBe('Обзор');
 
-    setLocale('ar');
+    await setLocale('ar');
     expect(t('explore')).toBe('استكشاف');
 
     // Reset back to English
-    setLocale('en');
+    await setLocale('en');
     expect(currentLocale.value).toBe('en');
   });
 
-  it('falls back to English when a translation key is missing in another language', () => {
-    setLocale('ru');
+  it('falls back to English when a translation key is missing in another language', async () => {
+    await setLocale('ru');
     expect(t('non_existent_key_123')).toBe('non_existent_key_123');
-    setLocale('en');
+    await setLocale('en');
   });
 
-  it('guarantees zero missing keys across all 11 supported locales', () => {
-    const enKeys = Object.keys(messages.en);
+  it('guarantees zero missing keys across all 11 supported locales', async () => {
+    await Promise.all(SUPPORTED_LOCALES.map((l) => loadLocale(l.code)));
+    const enKeys = Object.keys(messages.en ?? {});
     expect(enKeys.length).toBeGreaterThan(250);
 
     for (const locale of SUPPORTED_LOCALES) {
       if (locale.code === 'en') continue;
-      const currentKeys = Object.keys(messages[locale.code]);
+      const currentKeys = Object.keys(messages[locale.code] ?? {});
       const missing = enKeys.filter((k) => !currentKeys.includes(k));
       expect(missing).toEqual([]);
       expect(currentKeys.length).toBe(enKeys.length);
     }
   });
 
-  it('provides reactive useI18n composable', () => {
+  it('keeps the last requested locale when switches overlap', async () => {
+    await Promise.all([setLocale('fr'), setLocale('de')]);
+    expect(currentLocale.value).toBe('de');
+    await setLocale('en');
+  });
+
+  it('provides reactive useI18n composable', async () => {
     const { locale, setLocale: setLoc, currentLocaleOption } = useI18n();
-    setLoc('ja');
+    await setLoc('ja');
     expect(locale.value).toBe('ja');
     expect(currentLocaleOption.value.name).toBe('Japanese');
-    setLoc('en');
+    await setLoc('en');
   });
 });
