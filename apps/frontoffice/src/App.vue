@@ -133,6 +133,15 @@
                 {{ t('cookiePolicy') }}
               </a>
             </li>
+            <li>
+              <button
+                type="button"
+                class="hover:text-primary transition cursor-pointer"
+                @click="cookieSettingsOpen = true"
+              >
+                {{ t('cookieSettings') }}
+              </button>
+            </li>
           </ul>
           <p class="text-xs leading-relaxed text-muted-foreground pt-2">
             {{ t('footerDisclaimer') }}
@@ -184,7 +193,11 @@
     <!-- Global Overlays -->
     <WalletModal v-if="walletModalOpen" />
     <SearchDialog v-if="searchOpen" @close="searchOpen = false" @select-token="handleSelectToken" />
-    <PrivacyDialog v-model:open="privacyOpen" @accept="handlePrivacyAccepted" />
+    <PrivacyDialog
+      v-model:open="termsPromptOpen"
+      @accept="acceptTerms"
+      @decline="handleTermsDeclined"
+    />
     <CookieConsentBanner />
     <Toaster />
   </div>
@@ -202,6 +215,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { walletAddress, walletModalOpen } from './lib/wallet-store';
 import { useWallet } from './composables/useWallet';
 import { getUserIdentity } from './lib/username';
+import { acceptTerms, cookieSettingsOpen, termsAccepted, termsPromptOpen } from './lib/consent';
 
 const WalletModal = defineAsyncComponent(() => import('./components/WalletModal.vue'));
 const SearchDialog = defineAsyncComponent(() => import('./components/SearchDialog.vue'));
@@ -211,7 +225,7 @@ const CookieConsentBanner = defineAsyncComponent(
 );
 
 const { t, locale } = useI18n();
-const { activeNetwork } = useWallet();
+const { activeNetwork, disconnectWallet } = useWallet();
 const router = useRouter();
 const route = useRoute();
 const docsUrl = computed(() => resolveDocsUrl());
@@ -228,41 +242,23 @@ const isTradeRoute = computed(
   () => route.name === 'trade' || route.path.startsWith('/launchpad/0x'),
 );
 
-const PRIVACY_STORAGE_KEY = 'proto_privacy_policy_accepted_v1';
-
 const searchOpen = ref(false);
-const privacyOpen = ref(false);
 
 function handleSelectToken(address: string) {
   router.push(`/launchpad/${address}`);
 }
 
-function handlePrivacyAccepted() {
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem(PRIVACY_STORAGE_KEY, 'true');
-    } catch {
-      // Non-blocking
-    }
-  }
+// Ask for the terms as soon as a wallet connects; signing and sending also require them.
+function promptTermsIfConnected() {
+  if (!termsAccepted.value && walletAddress.value) termsPromptOpen.value = true;
 }
 
-function checkPrivacyOnConnect() {
-  if (typeof window === 'undefined') return;
-  try {
-    const accepted = localStorage.getItem(PRIVACY_STORAGE_KEY) === 'true';
-    if (!accepted && walletAddress.value) {
-      privacyOpen.value = true;
-    }
-  } catch {
-    // Non-blocking
-  }
+function handleTermsDeclined() {
+  void disconnectWallet();
 }
 
 watch(walletAddress, (addr) => {
-  if (addr) {
-    checkPrivacyOnConnect();
-  }
+  if (addr) promptTermsIfConnected();
 });
 
 function handleKeydown(e: KeyboardEvent) {
@@ -274,7 +270,7 @@ function handleKeydown(e: KeyboardEvent) {
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown);
-  checkPrivacyOnConnect();
+  promptTermsIfConnected();
 });
 
 onUnmounted(() => {

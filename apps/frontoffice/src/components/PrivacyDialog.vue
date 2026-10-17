@@ -19,6 +19,7 @@ const { t, locale } = useI18n();
 
 const emit = defineEmits<{
   (e: 'accept'): void;
+  (e: 'decline'): void;
 }>();
 
 const open = defineModel<boolean>('open', { default: false });
@@ -29,11 +30,23 @@ function handleAccept() {
   open.value = false;
   emit('accept');
 }
+
+// The dialog only closes through a choice: accept, or disconnect the wallet.
+function handleDecline() {
+  open.value = false;
+  emit('decline');
+}
 </script>
 
 <template>
   <Dialog v-model:open="open">
-    <DialogContent class="max-w-md w-[calc(100vw-2rem)]">
+    <DialogContent
+      class="max-w-md w-[calc(100vw-2rem)]"
+      hide-close
+      @escape-key-down.prevent
+      @pointer-down-outside.prevent
+      @interact-outside.prevent
+    >
       <DialogHeader>
         <div class="flex items-center gap-2 text-primary mb-1">
           <ShieldCheck class="w-5 h-5" />
@@ -93,9 +106,12 @@ function handleAccept() {
         </Label>
       </div>
 
-      <DialogFooter class="pt-2">
+      <DialogFooter class="pt-2 flex-col gap-2 sm:flex-col sm:space-x-0">
         <Button :disabled="!agreed" @click="handleAccept" class="w-full">
           {{ t('acceptAndContinue') }}
+        </Button>
+        <Button variant="ghost" class="w-full text-muted-foreground" @click="handleDecline">
+          {{ t('declineAndDisconnect') }}
         </Button>
       </DialogFooter>
     </DialogContent>

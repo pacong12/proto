@@ -1,34 +1,39 @@
 # Cookie & Local Storage Policy
 
-<Badge variant="graduated">Last Updated: September 2026</Badge>
+<Badge variant="graduated">Last Updated: October 2026</Badge>
 
 <Card>
-Goton is built on the core principle of decentralized privacy. We do not use tracking cookies, commercial ad trackers, or third-party profiling scripts.
+Goton uses browser storage for essential app settings. Google Analytics is the only optional technology: it loads only after you accept it in the cookie banner, and you can withdraw that consent at any time. We never use advertising cookies.
 </Card>
 
 ## 1. What Technologies We Use
 
-Unlike traditional web services, Goton does not use persistent HTTP cookies to track your browsing habits across different websites. Instead, we use your browser's native client-side storage (`localStorage` and `sessionStorage`) strictly for necessary interface state.
+- **Browser storage (`localStorage`)**: strictly necessary settings such as your theme, language, wallet session and your answers to the cookie banner and the terms. It is not sent to us or to anyone else.
+- **Google Analytics cookies**: optional. Set only after you click **Accept** in the cookie banner.
 
 ## 2. Information Stored Locally
 
-The following data keys may be stored in your browser's local memory:
+| Storage Key                           | Purpose                                                                  | Duration                   |
+| :------------------------------------ | :----------------------------------------------------------------------- | :------------------------- |
+| `proto_privacy_policy_accepted_v1`    | Remembers that you accepted the Terms of Service & Privacy Policy        | Persistent (until cleared) |
+| `proto_cookie_consent_accepted_v1`    | Remembers whether you accepted or declined analytics cookies             | Persistent (until cleared) |
+| `proto_selected_locale_v1`            | Your interface language                                                  | Persistent (until cleared) |
+| `theme`                               | Your preference for Dark Mode or Light Mode                              | Persistent (until cleared) |
+| `proto_wallet_*`, `wagmi.*`, `wc@2:*` | Your connected wallet session, so a page refresh does not disconnect you | Session / Persistent       |
 
-| Storage Key                        | Purpose                                                                            | Duration                   |
-| :--------------------------------- | :--------------------------------------------------------------------------------- | :------------------------- |
-| `proto_privacy_policy_accepted_v1` | Remembers that you reviewed and accepted the Terms of Service & Privacy Policy     | Persistent (until cleared) |
-| `theme`                            | Stores your preference for Dark Mode or Light Mode                                 | Persistent (until cleared) |
-| `wagmi.wallet` / `wc@2:client`     | Stores your connected wallet session handle to avoid disconnecting on page refresh | Session / Persistent       |
+## 3. Optional Analytics Cookies
 
-## 3. No Third-Party Tracking
+If you accept analytics, Google Analytics (`gtag.js`) sets the cookies `_ga` and `_ga_<id>` (up to 2 years) and sends page-view and device data to Google, so we can understand how the app is used. If you decline, or close the banner without choosing, Google Analytics is not loaded and no analytics cookies are set.
 
-- **Zero Advertising Trackers**: We do not load Google Analytics, Facebook Pixels, or commercial behavioral trackers.
-- **Zero Fingerprinting**: We do not fingerprint user hardware, browser canvas, or IP locations.
-- **Zero Data Monetization**: No telemetry or user identifiers are collected, sold, or shared with data brokers.
+- **No advertising trackers**: we do not load Facebook Pixel or other advertising or behavioral trackers.
+- **No fingerprinting**: we do not fingerprint your hardware, browser canvas, or location.
+- **No data sales**: no data is sold or shared with data brokers.
 
-## 4. How to Manage Local Storage
+## 4. Changing or Withdrawing Your Choice
 
-You can clear or disable local storage at any time through your browser settings:
+Click **Cookie settings** in the footer of the app at any time to see your current choice and change it. Withdrawing consent stops Google Analytics immediately and deletes its `_ga` cookies from your browser.
+
+You can also clear all browser storage for the site in your browser settings:
 
 - **Chrome / Brave**: Settings -> Privacy and security -> Site settings -> Cookies and site data.
 - **Firefox**: Settings -> Privacy & Security -> Cookies and Site Data -> Clear Data.

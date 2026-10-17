@@ -131,6 +131,10 @@ const messages: Record<string, string> = {
   termsOfService: '服务条款',
   privacyPolicy: '隐私政策',
   acceptAndContinue: '接受并继续',
+  cookieSettings: 'Cookie 设置',
+  cookieChoiceAccepted: '您已接受分析 Cookie。',
+  cookieChoiceDeclined: '您已拒绝分析 Cookie。',
+  declineAndDisconnect: '拒绝并断开钱包',
   light: '亮色',
   dark: '深色',
   footerSubtitle:

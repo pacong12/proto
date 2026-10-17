@@ -34,5 +34,5 @@ Goton Labs 与 Goton 协议在所支持的网络上运营非托管代币发行�
 
 - **社交功能**：您提交的评论、点赞、转发、情绪投票和创作者资料由 Goton API 与您的钱包地址一同存储并公开展示。
 - **服务器日志**：API 出于安全和限流目的保存请求日志，客户端 IP 地址仅以单向哈希形式记录。
-- **统计分析**：网页应用加载 Google Analytics（`gtag.js`），它会设置 Cookie 并向 Google 发送页面访问和设备数据。
+- **统计分析**：仅在您接受统计分析 Cookie 后，网页应用才会加载 Google Analytics（`gtag.js`），它会设置 Cookie 并向 Google 发送页面访问和设备数据。您可随时通过应用页脚的 **Cookie 设置** 撤回同意（参见 [Cookie 政策](/zh/cookie-policy)）。
 - **删除权**：您可随时在 **Profile → Edit Profile → 删除我的社交数据** 中删除评论、点赞、转发、情绪投票和个人资料（API：`DELETE /api/users/{address}/data`，需使用该钱包登录）。链上记录任何人都无法删除。
