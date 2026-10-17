@@ -10,7 +10,7 @@
             {{ t('protocolAnalytics') }}
           </h1>
           <span
-            class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20"
+            class="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20"
           >
             <img
               :src="getChainIcon(activeNetwork)"
@@ -65,12 +65,7 @@
             <span class="text-2xl sm:text-4xl font-black tracking-tight text-foreground">
               {{ currentFigureDisplay }}
             </span>
-            <span
-              class="text-xs font-bold"
-              :class="activeMetric === 'volume' ? 'text-emerald-500' : 'text-sky-500'"
-            >
-              {{ activeMetric === 'volume' ? '+12.4% 24h' : 'Active 24h' }}
-            </span>
+            <span class="text-xs font-semibold text-muted-foreground">Last 24h</span>
           </div>
           <p class="text-xs text-muted-foreground">
             {{ currentFigureSubtitle }}

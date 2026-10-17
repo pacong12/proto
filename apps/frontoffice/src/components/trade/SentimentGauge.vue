@@ -4,7 +4,7 @@
     <div class="flex items-center justify-between text-xs">
       <div class="flex items-center gap-1.5 font-bold text-foreground">
         <Flame class="w-3.5 h-3.5 text-primary" />
-        <span>{{ t('communitySentiment') || 'Community Sentiment' }}</span>
+        <span>{{ t('communitySentiment') }}</span>
       </div>
       <span class="text-[11px] font-mono text-muted-foreground">
         {{ totalVotes.toLocaleString() }} {{ totalVotes === 1 ? 'vote' : 'votes' }}
@@ -14,17 +14,22 @@
     <!-- Gauge Bar (Semantic emerald for Bull, rose for Bear) -->
     <div class="space-y-1">
       <div class="w-full h-2 rounded-full bg-muted/60 overflow-hidden flex">
-        <div
-          class="h-full bg-emerald-500 transition-all duration-500 rounded-l-full"
-          :style="{ width: `${bullPercent}%` }"
-        />
-        <div
-          class="h-full bg-rose-500 transition-all duration-500 rounded-r-full"
-          :style="{ width: `${bearPercent}%` }"
-        />
+        <template v-if="totalVotes > 0">
+          <div
+            class="h-full bg-emerald-500 transition-all duration-500 rounded-l-full"
+            :style="{ width: `${bullPercent}%` }"
+          />
+          <div
+            class="h-full bg-rose-500 transition-all duration-500 rounded-r-full"
+            :style="{ width: `${bearPercent}%` }"
+          />
+        </template>
       </div>
 
-      <div class="flex items-center justify-between text-[11px] font-mono font-bold">
+      <p v-if="totalVotes === 0" class="text-[11px] text-muted-foreground">
+        {{ t('noSentimentVotes') }}
+      </p>
+      <div v-else class="flex items-center justify-between text-[11px] font-mono font-bold">
         <span class="text-emerald-500 flex items-center gap-1">
           <TrendingUp class="w-3 h-3" />
           {{ bullPercent }}% Bullish

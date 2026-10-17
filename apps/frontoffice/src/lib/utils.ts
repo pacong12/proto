@@ -105,7 +105,10 @@ export function formatTokenNumber(raw: string | number): string {
  * Format a past timestamp into a relative time description (e.g. 10s ago, 5m ago).
  */
 export function formatRelativeTime(timestamp: number): string {
-  const diffSec = Math.floor((Date.now() - timestamp) / 1000);
+  // Unknown (0) shows a dash; values in seconds are accepted as well as milliseconds.
+  if (!Number.isFinite(timestamp) || timestamp <= 0) return '—';
+  const ms = timestamp < 1e12 ? timestamp * 1000 : timestamp;
+  const diffSec = Math.floor((Date.now() - ms) / 1000);
   if (diffSec < 60) return `${Math.max(1, diffSec)}s ago`;
   const diffMin = Math.floor(diffSec / 60);
   if (diffMin < 60) return `${diffMin}m ago`;
