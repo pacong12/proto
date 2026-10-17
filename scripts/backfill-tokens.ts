@@ -3,6 +3,10 @@
  *
  * Usage:
  *   bun run --env-file=.env scripts/backfill-tokens.ts --chain arc|robinhood --from <block> [--to <block>]
+ *   bun run --env-file=.env scripts/backfill-tokens.ts --chain robinhood --from <block> --trades-only
+ *
+ * --trades-only re-indexes bonding-curve trades of the tokens already in the database, one curve at
+ * a time in large block spans. Use it to recover trades the poller passed before a token was known.
  *
  * Runs the API's own indexer (EventPollerService.indexRange) over the range, so launches, graduations,
  * trades and the market data derived from them (prices, volume, candles) are rebuilt exactly as the
@@ -11,7 +15,11 @@
  */
 
 import { createPublicClient } from 'viem';
-import { ARC_CHAIN, ROBINHOOD_CHAIN } from '../packages/shared-types/src/index';
+import {
+  ARC_CHAIN,
+  ROBINHOOD_CHAIN,
+  resolveTokenNetwork,
+} from '../packages/shared-types/src/index';
 import {
   SqliteTokenRepository,
   ViemChainIndexerAdapter,
@@ -56,6 +64,25 @@ const poller = new EventPollerService(
   new CoinGeckoPriceFeedAdapter(),
   network,
 );
+
+if (process.argv.includes('--trades-only')) {
+  const tokens = (await repository.findAll(10_000, 0)).filter(
+    (t) => t.version === 'v2' && resolveTokenNetwork(t).chainId === network.chainId,
+  );
+  console.log(
+    `[Backfill] ${network.name}: trades of ${tokens.length} curves, ${fromBlock} -> ${toBlock}`,
+  );
+  let trades = 0;
+  for (const token of tokens) {
+    try {
+      trades += await poller.backfillCurveTrades(token, fromBlock, toBlock);
+    } catch (e) {
+      console.warn(`[Backfill] ${token.symbol} ${token.address}: ${(e as Error).message}`);
+    }
+  }
+  console.log(`[Backfill] done: ${trades} trades saved (existing ones are upserted)`);
+  process.exit(0);
+}
 
 console.log(`[Backfill] ${network.name}: blocks ${fromBlock} -> ${toBlock}`);
 let indexed = 0;
