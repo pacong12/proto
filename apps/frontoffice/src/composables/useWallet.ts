@@ -5,7 +5,6 @@ import {
   getNetworkConfig,
   type NetworkConfig,
 } from '@goton/shared-types';
-import { getPublicClient } from '../lib/viem-client';
 import {
   appKitAccount,
   appKitChainId,
@@ -104,6 +103,8 @@ export function useWallet() {
 
     syncBalancePromise = (async () => {
       try {
+        // Loaded on demand: the RPC client (viem) stays out of the initial bundle.
+        const { getPublicClient } = await import('../lib/viem-client');
         const client = getPublicClient(explicitChainId ?? walletChainId.value ?? undefined);
         balanceWei.value = await client.getBalance({ address: target });
       } catch {
