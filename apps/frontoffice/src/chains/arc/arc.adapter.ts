@@ -90,6 +90,7 @@ export class ArcChainAdapter implements ChainAdapter {
       poolAddress: launch.args.poolId,
       // Taxes and split are applied atomically by the launch transaction.
       taxApplied: true,
+      splitApplied: true,
     };
   }
 
