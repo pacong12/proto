@@ -52,13 +52,13 @@ const messages: Record<string, string> = {
   permanentlyLocked: '100% 永久ロック済み',
   protocolFeesBurned: 'プロトコル手数料の80%が焼却済み',
   volumeAndLiquidity: '24時間出来高 & 流動性フロー',
-  hourlyAggregatedVolume: 'Robinhood Chain の毎時集計出来高',
+  hourlyAggregatedVolume: 'Robinhood Chain & Arc の毎時集計出来高',
   deployedContracts: 'デプロイ済みシステムコントラクト',
   hasSocials: 'SNSあり',
   sortTokens: '並び替え',
   loadingTokens: 'トークン読み込み中...',
   noTokensFound: 'トークンが見つかりません',
-  noTokensDesc: 'Robinhood Chain で最初の固定供給トークンを作成しましょう。',
+  noTokensDesc: 'Robinhood Chain & Arc で最初の固定供給トークンを作成しましょう。',
   priceUsd: '価格 (USD)',
   marketCap: '時価総額',
   progress: '進捗',
@@ -78,7 +78,8 @@ const messages: Record<string, string> = {
   navigateHint: '移動',
   selectHint: '選択',
   noMemesTitle: 'コミュニティミームはまだありません',
-  noMemesDesc: 'Robinhood Chain でコミュニティ主導の固定供給トークンを最初にローンチしましょう。',
+  noMemesDesc:
+    'Robinhood Chain & Arc でコミュニティ主導の固定供給トークンを最初にローンチしましょう。',
   launchNow: '今すぐ作成',
   tokenImage: 'トークン画像',
   noFileChosen: 'ファイル未選択',
@@ -104,7 +105,7 @@ const messages: Record<string, string> = {
   connecting: '接続中...',
   protocolAnalytics: 'プロトコル分析',
   analyticsSubtitle:
-    'Robinhood Chain のリアルタイムオンチェーン指標、24時間出来高追跡、コントラクトデプロイ。',
+    'Robinhood Chain & Arc のリアルタイムオンチェーン指標、24時間出来高追跡、コントラクトデプロイ。',
   totalTradingVolume: '総取引量',
   totalTokensLaunched: '総ローンチトークン数',
   protocolBuybackAndBurn: 'プロトコル買い戻しと焼却',
@@ -122,7 +123,7 @@ const messages: Record<string, string> = {
   createToken: 'トークン作成',
   privacyAgreementTitle: '利用規約とプライバシーの同意',
   privacyAgreementDesc:
-    'Robinhood Chain ローンチパッドプロトコルを使用する前に、利用規約をご確認ください。',
+    'Robinhood Chain & Arc ローンチパッドプロトコルを使用する前に、利用規約をご確認ください。',
   termsOfService: '利用規約',
   privacyPolicy: 'プライバシーポリシー',
   acceptAndContinue: '同意して続ける',
@@ -138,13 +139,13 @@ const messages: Record<string, string> = {
   light: 'ライト',
   dark: 'ダーク',
   footerSubtitle:
-    'Robinhood Chain で固定供給トークンをローンチ・探索。すべての取引はあなたのウォレットが送信。goton は資産を管理しません。',
+    'Robinhood Chain & Arc で固定供給トークンをローンチ・探索。すべての取引はあなたのウォレットが送信。goton は資産を管理しません。',
   product: 'プロダクト',
   network: 'ネットワーク',
   legal: '法的情報',
   footerDisclaimer:
     '取引はウォレットを通じて送信され、取り消し不可能な場合があります。トークンは極端に変動する可能性があります。',
-  copyright: '© 2026 Goton Labs, LLC. Robinhood Chain の固定供給トークンローンチプロトコル。',
+  copyright: '© 2026 Goton Labs, LLC. Robinhood Chain & Arc の固定供給トークンローンチプロトコル。',
   explorer: 'ブロックエクスプローラー',
   v2Subtitle: 'ボンディングカーブ上でトークンを発行し、卒業時に流動性を永久ロックします。',
   v2GraduatesHint: 'カーブで 4.2 ETH 集まった時点で卒業します。',
@@ -173,7 +174,7 @@ const messages: Record<string, string> = {
   tradeToken: '取引ルームへ進む',
   closeModal: '閉じる',
   exploreLaunches: 'ローンチを探索',
-  exploreSubtitle: 'Robinhood Chainで卒業を目指す固定供給トークン。',
+  exploreSubtitle: 'Robinhood Chain & Arcで卒業を目指す固定供給トークン。',
   livePreview: 'ライブプレビュー',
   system: 'システム',
   privacyAgreementCheck: '利用規約およびプライバシーポリシーに同意します',
@@ -196,7 +197,7 @@ const messages: Record<string, string> = {
   txHash: 'Txハッシュ',
   activePositions: '保有ポジション',
   totalTrades: '総取引数',
-  lockerFees: 'ロッカー手数料',
+  lockerFees: 'クリエイター手数料',
   tokensHeld: '現在保有中のトークン',
   buysAndSellsRecorded: '記録された売買取引',
   deployedByYou: 'あなたのウォレットから作成',
@@ -342,6 +343,10 @@ const messages: Record<string, string> = {
   maintenanceBanner:
     '定期メンテナンスを実施中です。一部の機能が一時的にご利用いただけない場合があります。',
   maintenanceDismiss: 'お知らせを閉じる',
+  communitySentiment: 'コミュニティのセンチメント',
+  noSentimentVotes: 'まだ投票がありません。最初に投票しましょう。',
+  v2SubtitleArc:
+    'ロックされた Uniswap v4 プールに直接トークンを発行します。取引ごとの税は USDC で支払われます。',
 };
 
 export default messages;

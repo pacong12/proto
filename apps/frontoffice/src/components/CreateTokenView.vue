@@ -5,7 +5,7 @@
         {{ t('launchToken') }}
       </h1>
       <p class="text-sm text-muted-foreground mt-1 leading-relaxed">
-        {{ t('v2Subtitle') }}
+        {{ t(isArcNetwork ? 'v2SubtitleArc' : 'v2Subtitle') }}
       </p>
     </div>
 

@@ -30,16 +30,16 @@ const messages: Record<string, string> = {
   shareProfile: 'Bagikan Profil',
   searchPlaceholder: 'Cari token berdasarkan nama, simbol, atau alamat...',
   exploreLaunches: 'Jelajahi Peluncuran',
-  exploreSubtitle: 'Token pasokan tetap menuju kelulusan di Robinhood Chain.',
+  exploreSubtitle: 'Token pasokan tetap menuju kelulusan.',
   all: 'Semua',
   createToken: 'Buat Token',
   trendingFeed: 'Feed Tren',
   memestockSubtitle:
-    'Setiap peluncuran dengan tesis komunitas dan posisi terverifikasi di Robinhood Chain.',
+    'Setiap peluncuran dengan tesis komunitas dan posisi terverifikasi, diurutkan berdasarkan momentum.',
   protocolAnalytics: 'Analitik Protokol',
   livePreview: 'Pratinjau Langsung',
   analyticsSubtitle:
-    'Metrik onchain real-time, pelacakan volume 24 jam, dan penerapan kontrak di Robinhood Chain.',
+    'Metrik onchain real-time, pelacakan volume 24 jam, dan penerapan kontrak di Robinhood Chain & Arc.',
   totalTradingVolume: 'Total Volume Perdagangan',
   totalTokensLaunched: 'Total Token Diluncurkan',
   protocolBuybackAndBurn: 'Buyback & Burn Protokol',
@@ -61,10 +61,11 @@ const messages: Record<string, string> = {
   dark: 'Gelap',
   system: 'Sistem',
   footerSubtitle:
-    'Luncurkan dan jelajahi token pasokan tetap di Robinhood Chain. Dompet Anda mengirimkan setiap transaksi. goton tidak menyimpan aset.',
+    'Luncurkan dan jelajahi token pasokan tetap di Robinhood Chain & Arc. Dompet Anda mengirimkan setiap transaksi. goton tidak menyimpan aset.',
   footerDisclaimer:
     'Transaksi dikirimkan melalui dompet Anda dan tidak dapat dibatalkan. Token bisa sangat volatil.',
-  copyright: '© 2026 Goton Labs, LLC. Protokol peluncuran token pasokan tetap di Robinhood Chain.',
+  copyright:
+    '© 2026 Goton Labs, LLC. Protokol peluncuran token pasokan tetap di Robinhood Chain & Arc.',
   explorer: 'Penjelajah Blok',
   cookieBannerTitle: 'Preferensi Cookie & Penyimpanan',
   cookieBannerDesc:
@@ -73,7 +74,7 @@ const messages: Record<string, string> = {
   accept: 'Terima',
   privacyAgreementTitle: 'Persetujuan Ketentuan & Privasi',
   privacyAgreementDesc:
-    'Sebelum berinteraksi dengan protokol launchpad Robinhood Chain, harap tinjau ketentuan kami.',
+    'Sebelum berinteraksi dengan protokol launchpad Robinhood Chain & Arc, harap tinjau ketentuan kami.',
   privacyAgreementCheck: 'Saya telah membaca dan menyetujui Ketentuan Layanan & Kebijakan Privasi',
   acceptAndContinue: 'Terima & Lanjutkan',
   cookieSettings: 'Pengaturan cookie',
@@ -103,13 +104,14 @@ const messages: Record<string, string> = {
   permanentlyLocked: '100% terkunci permanen',
   protocolFeesBurned: '80% biaya protokol dibakar',
   volumeAndLiquidity: 'Volume 24 Jam & Aliran Likuiditas',
-  hourlyAggregatedVolume: 'Volume gabungan per jam di Robinhood Chain',
+  hourlyAggregatedVolume: 'Volume gabungan per jam di Robinhood Chain & Arc',
   deployedContracts: 'Kontrak Sistem yang Diterapkan',
   hasSocials: 'Ada Medsos',
   sortTokens: 'Urutkan token',
   loadingTokens: 'Memuat token...',
   noTokensFound: 'Tidak ada token ditemukan',
-  noTokensDesc: 'Jadilah pembuat pertama yang menerapkan token pasokan tetap di Robinhood Chain.',
+  noTokensDesc:
+    'Jadilah pembuat pertama yang menerapkan token pasokan tetap di Robinhood Chain & Arc.',
   priceUsd: 'Harga (USD)',
   marketCap: 'Kap. Pasar',
   progress: 'Progres',
@@ -130,7 +132,7 @@ const messages: Record<string, string> = {
   selectHint: 'Pilih',
   noMemesTitle: 'Belum ada meme komunitas yang bergerak',
   noMemesDesc:
-    'Jadilah yang pertama meluncurkan token pasokan tetap dengan narasi komunitas di Robinhood Chain.',
+    'Jadilah yang pertama meluncurkan token pasokan tetap dengan narasi komunitas di Robinhood Chain & Arc.',
   launchNow: 'Luncurkan Sekarang',
   tokenImage: 'Gambar Token',
   noFileChosen: 'Belum ada file dipilih',
@@ -198,7 +200,7 @@ const messages: Record<string, string> = {
   txHash: 'Hash Tx',
   activePositions: 'Posisi Aktif',
   totalTrades: 'Total Transaksi',
-  lockerFees: 'Biaya Locker',
+  lockerFees: 'Fee kreator',
   tokensHeld: 'Token saat ini dimiliki',
   buysAndSellsRecorded: 'Beli & Jual tercatat',
   deployedByYou: 'Dideploy oleh dompet Anda',
@@ -344,6 +346,10 @@ const messages: Record<string, string> = {
   maintenanceBanner:
     'Pemeliharaan terjadwal sedang berlangsung. Beberapa fitur mungkin tidak tersedia untuk sementara.',
   maintenanceDismiss: 'Tutup pemberitahuan',
+  communitySentiment: 'Sentimen Komunitas',
+  noSentimentVotes: 'Belum ada vote. Jadilah yang pertama.',
+  v2SubtitleArc:
+    'Luncurkan token langsung ke pool Uniswap v4 yang terkunci. Pajak Anda dibayar dalam USDC di setiap trade.',
 };
 
 export default messages;

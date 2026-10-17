@@ -721,7 +721,7 @@ async function handlePostCallout(): Promise<void> {
 
       if (callShareToX.value && typeof window !== 'undefined') {
         const tweetText = encodeURIComponent(
-          `I just called $${currentToken.value.symbol} at ${formatMarketCap(currentMarketData.value.marketCapUsd)} MC (Target: ${callTargetMcap.value}) on @proto_protocol!\n\n"${content.slice(0, 100)}"\n\n${window.location.href}`,
+          `I just called $${currentToken.value.symbol} at ${formatMarketCap(currentMarketData.value.marketCapUsd)} MC (Target: ${callTargetMcap.value}) on @gotondotfun!\n\n"${content.slice(0, 100)}"\n\n${window.location.href}`,
         );
         window.open(
           `https://twitter.com/intent/tweet?text=${tweetText}`,
@@ -795,7 +795,7 @@ function shareCalloutToX(cmt: TokenCommentEntity) {
   if (typeof window !== 'undefined') {
     const target = cmt.targetMcap ? `(Target: ${cmt.targetMcap}) ` : '';
     const text = encodeURIComponent(
-      `Check out this call on $${currentToken.value.symbol} ${target}on @proto_protocol!\n\n"${cmt.content.slice(0, 120)}"\n\n${window.location.href}`,
+      `Check out this call on $${currentToken.value.symbol} ${target}on @gotondotfun!\n\n"${cmt.content.slice(0, 120)}"\n\n${window.location.href}`,
     );
     window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank', 'noopener,noreferrer');
   }
@@ -1075,7 +1075,16 @@ const activeChartHeaderPrice = computed(() => {
   return formatPriceUsd(currentMarketData.value.priceUsd);
 });
 
-const amountIn = ref('10');
+const amountIn = ref('');
+// Start from the smallest preset of the token's quote currency (10 USDC, 0.01 ETH), and follow
+// the currency when navigating between tokens unless the user typed their own amount.
+watch(
+  buyPresets,
+  (presets, previous) => {
+    if (!amountIn.value || previous?.includes(amountIn.value)) amountIn.value = presets[0];
+  },
+  { immediate: true },
+);
 const tokenNotFound = ref(false);
 const swapSuccessTx = ref<string | null>(null);
 const copied = ref(false);
@@ -1540,7 +1549,7 @@ function copyTokenLink() {
 function shareToX() {
   if (typeof window !== 'undefined') {
     const text = encodeURIComponent(
-      `Trading $${currentToken.value.symbol} on @proto_protocol on ${tokenNetwork.value.name}!\n${window.location.href}`,
+      `Trading $${currentToken.value.symbol} on @gotondotfun on ${tokenNetwork.value.name}!\n${window.location.href}`,
     );
     window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank', 'noopener,noreferrer');
   }

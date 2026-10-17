@@ -319,7 +319,7 @@ function shareOnX(): void {
   const posStr = call.positionUsd ? `Position: $${call.positionUsd.toFixed(1)} ` : '';
   const url = getPostUrl();
   const text = encodeURIComponent(
-    `Verified Call on ${symbolStr}\n${targetStr}${posStr}\n\n"${call.content.slice(0, 100)}"\n\n${url} via @proto_protocol`,
+    `Verified Call on ${symbolStr}\n${targetStr}${posStr}\n\n"${call.content.slice(0, 100)}"\n\n${url} via @gotondotfun`,
   );
   window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank', 'noopener,noreferrer');
 }
