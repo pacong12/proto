@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.1](https://github.com/pacong12/proto/compare/v0.3.0...v0.3.1) (2026-10-17)
+
+
+### Bug Fixes
+
+* **api:** finish the Goton rename in the X handle, DEX metadata and service name ([#158](https://github.com/pacong12/proto/issues/158)) ([2988ab0](https://github.com/pacong12/proto/commit/2988ab0c5a902ea55dc58f4bf82ada5444726e1b))
+* **contracts:** round curve reserves up so trades never shrink k ([#160](https://github.com/pacong12/proto/issues/160)) ([19e50ee](https://github.com/pacong12/proto/commit/19e50eec68e1ab4b0ca5f425b13602d43b919879))
+* **frontoffice:** enforce terms acceptance and make cookie consent revocable ([#161](https://github.com/pacong12/proto/issues/161)) ([674300c](https://github.com/pacong12/proto/commit/674300c6b23812c8c3a3776414460513153a8ce0))
+
+
+### Performance Improvements
+
+* **frontoffice:** cut the entry chunk from 610 KB to 172 KB ([#159](https://github.com/pacong12/proto/issues/159)) ([e6746f2](https://github.com/pacong12/proto/commit/e6746f27532717c43d551b01a9f1db02a9bc79d5))
+
 ## [0.3.0](https://github.com/pacong12/proto/compare/v0.2.0...v0.3.0) (2026-10-17)
 
 
