@@ -70,7 +70,7 @@ fi
 section "Firewall"
 if command -v ufw >/dev/null 2>&1 && ufw status | grep -q "Status: active"; then
   pass "ufw active"
-  ufw status | grep -qE "^Default: deny \(incoming\)|deny \(incoming\)" \
+  ufw status verbose | grep -qE "^Default: deny \(incoming\)" \
     && pass "incoming traffic denied by default" || warn "incoming default is not deny"
   ufw status | grep -qE "3011|6380" && fail "API (3011) or Redis (6380) port opened in ufw" \
     || pass "API and Redis ports not opened in ufw"
