@@ -3,7 +3,7 @@ import { server } from '../src/server';
 import { SqliteTokenRepository } from '../src/modules/tokens/infrastructure/adapters/sqlite-token.repository';
 
 // Fresh addresses per run: responses are cached (Redis when REDIS_URL is set) by pool address.
-const randomAddress = () =>
+const randomAddress = (): `0x${string}` =>
   `0x${Array.from(crypto.getRandomValues(new Uint8Array(20)), (b) => b.toString(16).padStart(2, '0')).join('')}`;
 const TOKEN = randomAddress();
 const POOL = randomAddress();
