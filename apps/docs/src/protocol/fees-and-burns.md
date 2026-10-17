@@ -13,14 +13,14 @@ Where fees come from depends on the chain:
 
 Pool fees and taxes are split by each token's on-chain fee splitter:
 
-- **30% to the protocol** treasury. This is the maximum: the contracts cap the protocol cut at 30% and the launch fee at 10 USDC on Arc (0.01 ETH on Robinhood Chain).
-- **70% to the creator's share**, which the creator can divide once, before public trading starts, between:
+- **To the protocol** treasury: 30% on Robinhood Chain, 20% on Arc. The contracts cap the protocol cut at 30% and the launch fee at 10 USDC on Arc (0.01 ETH on Robinhood Chain).
+- **The rest (70% or 80%) is the creator's share**, which the creator can divide once, before public trading starts, between:
   - **Creator**: claimable by the creator (or their redirected recipient).
   - **Holders**: streamed to token holders pro-rata over 24 hours.
   - **Buyback & Burn**: bought back in the token's own pool by the `GotonV4Buyback` contract and sent to the dead address. Each buyback is capped at the pool's 30-minute TWAP ± 2%, so a manipulated price only pauses the buyback until it normalises.
   - **Liquidity**: sent to the protocol liquidity vault, which is currently the protocol treasury. The goton.fun app does not offer this option, because it does not add liquidity to the token's own pool.
 
-By default the whole 70% goes to the creator. The protocol share is not used for buybacks.
+By default the whole creator share goes to the creator. The protocol share is not used for buybacks.
 
 ---
 

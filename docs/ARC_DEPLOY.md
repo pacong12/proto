@@ -17,18 +17,18 @@ USDC `0x3600000000000000000000000000000000000000` (6-decimal ERC-20 view of nati
 
 ### Launch parameters (factory defaults, owner-tunable via `setLaunchParams`)
 
-| Parameter       | Value                                   | Meaning                                                    |
-| :-------------- | :-------------------------------------- | :--------------------------------------------------------- |
-| Pool            | USDC/token, fee 1% (10000), spacing 200 | Same pool shape as Argus                                   |
-| Opening tick    | `405400`                                | Opening market cap ≈ $2,480.74                             |
-| Bond tick       | `376400`                                | Graduation at ≈ $45,078.87 market cap (~8,094 USDC bought) |
-| Liquidity range | `[-887200, 405400]`, 100% of supply     | Mirrored to `[-405400, 887200]` when the token sorts first |
-| Min prebuy      | 4.50 USDC                               | Mandatory creator buy, atomic with the launch              |
-| Max dev buy     | 5% of supply                            | Launch reverts above this                                  |
-| Launch fee      | 0                                       | Owner-adjustable, hard cap 10 USDC                         |
-| Token tax       | 0–10% buy / sell, at least one > 0      | Fixed forever, charged in USDC by the hook                 |
-| Protocol cut    | 30% of every tax payment                | Owner-adjustable for new launches, hard cap 30%            |
-| Anti-snipe      | 99% → 25% → 3% → 0 over 3 seconds       | Not applied to the creator prebuy                          |
+| Parameter       | Value                                   | Meaning                                                     |
+| :-------------- | :-------------------------------------- | :---------------------------------------------------------- |
+| Pool            | USDC/token, fee 1% (10000), spacing 200 | Same pool shape as Argus                                    |
+| Opening tick    | `405400`                                | Opening market cap ≈ $2,480.74                              |
+| Bond tick       | `376400`                                | Graduation at ≈ $45,078.87 market cap (~8,094 USDC bought)  |
+| Liquidity range | `[-887200, 405400]`, 100% of supply     | Mirrored to `[-405400, 887200]` when the token sorts first  |
+| Min prebuy      | 4.50 USDC                               | Mandatory creator buy, atomic with the launch               |
+| Max dev buy     | 5% of supply                            | Launch reverts above this                                   |
+| Launch fee      | 0                                       | Owner-adjustable, hard cap 10 USDC                          |
+| Token tax       | 0–10% buy / sell, at least one > 0      | Fixed forever, charged in USDC by the hook                  |
+| Protocol cut    | 20% of every tax payment                | `ARC_PROTOCOL_FEE_BPS` at deploy; owner-adjustable, cap 30% |
+| Anti-snipe      | 99% → 25% → 3% → 0 over 3 seconds       | Not applied to the creator prebuy                           |
 
 ## Pre-deployment Requirements
 
@@ -73,7 +73,8 @@ address, so always mine and broadcast with the same key.
 1. `factory.setRecipients(treasury, buybackVault, liquidityVault)` if the burn / liquidity shares should
    not go to the treasury.
 2. Protocol and liquidity shares accrue in each token's splitter (nothing is pushed during a swap, so
-   a USDC-blocklisted recipient cannot block trading). Anyone can pay them out:
+   a USDC-blocklisted recipient cannot block trading). The API keeper (`KEEPER_PRIVATE_KEY`) pays
+   them out every `BUYBACK_KEEPER_INTERVAL_MS`; anyone can also call
    `cast send <SPLITTER> "releaseProtocolFees()"` and `"releaseLiquidityFees()"`.
 3. Set the new addresses for the apps (the legacy `ARC_FACTORY_ADDRESS`, `ARC_FACTORY_V2_ADDRESS`,
    `ARC_LOCKER_ADDRESS`, `ARC_SWAP_ROUTER`, `ARC_POSITION_MANAGER`, `ARC_QUOTER_V2`, `ARC_V3_FACTORY`,
