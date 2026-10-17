@@ -1991,9 +1991,12 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const cached = await cache.get<unknown>(cacheKey);
     if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
 
-    let block: bigint;
+    // DEX Screener asks for the latest block whose events are available, i.e. the indexer's
+    // cursor, not the chain head (requesting events up to the head would return partial data).
+    let block = 0n;
     try {
-      block = await targetClient.getBlockNumber();
+      block = (await repository.getLastIndexedBlock?.(targetNetwork.name)) ?? 0n;
+      if (block <= 0n) block = (await targetClient.getBlockNumber()) - 2n;
     } catch {
       block = 0n;
     }
