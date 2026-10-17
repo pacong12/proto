@@ -1,4 +1,5 @@
 import {
+  LimitOrderEntity,
   LaunchedTokenEntity,
   TokenMarketData,
   TradeEventEntity,
@@ -37,6 +38,19 @@ export interface TokenRepositoryPort {
   findStaleMarketData?(olderThanMs: number, limit: number): Promise<`0x${string}`[]>;
   /** Buy vs sell activity since `sinceMs`: quote volume, trade counts and distinct traders. */
   getTradeFlow?(tokenAddress: `0x${string}`, sinceMs: number): Promise<TradeFlow>;
+  /** Escrowed limit orders (GotonLimitOrders), keyed by `${chainId}-${orderId}`. */
+  saveLimitOrder?(order: LimitOrderEntity): Promise<void>;
+  updateLimitOrder?(
+    key: string,
+    patch: Partial<Pick<LimitOrderEntity, 'status' | 'filledLeg' | 'amountOut' | 'closedTx'>>,
+  ): Promise<void>;
+  listLimitOrders?(filter: {
+    owner?: string;
+    token?: string;
+    status?: LimitOrderEntity['status'];
+    chainId?: number;
+    limit?: number;
+  }): Promise<LimitOrderEntity[]>;
   saveTrade(trade: TradeEventEntity): Promise<void>;
   getTrades(
     tokenAddress: `0x${string}`,

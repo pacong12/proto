@@ -68,6 +68,7 @@ export const ROBINHOOD_NETWORK: NetworkConfig = {
     graduator: getEnv('ROBINHOOD_GRADUATOR', UNDEPLOYED) as `0x${string}`,
     router: getEnv('ROBINHOOD_V4_ROUTER', UNDEPLOYED) as `0x${string}`,
     buyback: getEnv('ROBINHOOD_V4_BUYBACK', UNDEPLOYED) as `0x${string}`,
+    limitOrders: getEnv('ROBINHOOD_LIMIT_ORDERS', UNDEPLOYED) as `0x${string}`,
     poolManagerV4: getEnv(
       'ROBINHOOD_POOL_MANAGER_V4',
       '0x8366a39CC670B4001A1121B8F6A443A643e40951',

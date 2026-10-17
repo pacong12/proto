@@ -61,6 +61,7 @@ export const ARC_NETWORK: NetworkConfig = {
     memeHook: getEnv('ARC_MEME_HOOK', UNDEPLOYED) as `0x${string}`,
     router: getEnv('ARC_V4_ROUTER', UNDEPLOYED) as `0x${string}`,
     buyback: getEnv('ARC_V4_BUYBACK', UNDEPLOYED) as `0x${string}`,
+    limitOrders: getEnv('ARC_LIMIT_ORDERS', UNDEPLOYED) as `0x${string}`,
     poolManagerV4: getEnv(
       'ARC_POOL_MANAGER_V4',
       '0x8366a39CC670B4001A1121B8F6A443A643e40951',
