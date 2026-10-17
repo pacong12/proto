@@ -13,7 +13,7 @@ Where fees come from depends on the chain:
 
 Pool fees and taxes are split by each token's on-chain fee splitter:
 
-- **30% to the protocol** treasury.
+- **30% to the protocol** treasury. This is the maximum: the contracts cap the protocol cut at 30% and the launch fee at 10 USDC on Arc (0.01 ETH on Robinhood Chain).
 - **70% to the creator's share**, which the creator can divide once, before public trading starts, between:
   - **Creator**: claimable by the creator (or their redirected recipient).
   - **Holders**: streamed to token holders pro-rata over 24 hours.

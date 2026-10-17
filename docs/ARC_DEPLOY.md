@@ -25,9 +25,9 @@ USDC `0x3600000000000000000000000000000000000000` (6-decimal ERC-20 view of nati
 | Liquidity range | `[-887200, 405400]`, 100% of supply     | Mirrored to `[-405400, 887200]` when the token sorts first |
 | Min prebuy      | 4.50 USDC                               | Mandatory creator buy, atomic with the launch              |
 | Max dev buy     | 5% of supply                            | Launch reverts above this                                  |
-| Launch fee      | 0                                       |                                                            |
+| Launch fee      | 0                                       | Owner-adjustable, hard cap 10 USDC                         |
 | Token tax       | 0–10% buy / sell, at least one > 0      | Fixed forever, charged in USDC by the hook                 |
-| Protocol cut    | 30% of every tax payment                | Remainder split holders / burn / creator / liquidity       |
+| Protocol cut    | 30% of every tax payment                | Owner-adjustable for new launches, hard cap 30%            |
 | Anti-snipe      | 99% → 25% → 3% → 0 over 3 seconds       | Not applied to the creator prebuy                          |
 
 ## Pre-deployment Requirements
@@ -72,7 +72,10 @@ address, so always mine and broadcast with the same key.
 
 1. `factory.setRecipients(treasury, buybackVault, liquidityVault)` if the burn / liquidity shares should
    not go to the treasury.
-2. Set the new addresses for the apps (the legacy `ARC_FACTORY_ADDRESS`, `ARC_FACTORY_V2_ADDRESS`,
+2. Protocol and liquidity shares accrue in each token's splitter (nothing is pushed during a swap, so
+   a USDC-blocklisted recipient cannot block trading). Anyone can pay them out:
+   `cast send <SPLITTER> "releaseProtocolFees()"` and `"releaseLiquidityFees()"`.
+3. Set the new addresses for the apps (the legacy `ARC_FACTORY_ADDRESS`, `ARC_FACTORY_V2_ADDRESS`,
    `ARC_LOCKER_ADDRESS`, `ARC_SWAP_ROUTER`, `ARC_POSITION_MANAGER`, `ARC_QUOTER_V2`, `ARC_V3_FACTORY`,
    `ARC_GRADUATION_*` and `ARC_LAUNCH_FEE_WEI` keys are no longer read):
 
@@ -83,7 +86,7 @@ address, so always mine and broadcast with the same key.
    ARC_V4_BUYBACK=0x...           # GotonV4Buyback (TWAP-guarded buyback-and-burn)
    ```
 
-3. Update `packages/shared-types/src/chains/arc.ts` fallbacks once the addresses are final.
+4. Update `packages/shared-types/src/chains/arc.ts` fallbacks once the addresses are final.
 
 ## API Services
 
