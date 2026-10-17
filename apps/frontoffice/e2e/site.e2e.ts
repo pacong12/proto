@@ -92,6 +92,97 @@ test.describe('Privacy', () => {
   });
 });
 
+test.describe('Cookie choices', () => {
+  test('a decline is remembered and consent can be withdrawn from the footer', async ({ page }) => {
+    const gaRequests: string[] = [];
+    await page.route('**/www.googletagmanager.com/**', (route) => {
+      gaRequests.push(route.request().url());
+      return route.fulfill({ contentType: 'application/javascript', body: '' });
+    });
+    const banner = page.getByRole('dialog', { name: /cookie consent/i });
+
+    await page.goto('/launchpad');
+    await banner.getByRole('button', { name: /decline/i }).click();
+    await page.reload();
+    await page.waitForLoadState('load');
+    await page.waitForTimeout(1500);
+    await expect(banner).toBeHidden();
+    expect(gaRequests).toHaveLength(0);
+
+    // Change of mind: accept from Cookie settings, then withdraw again.
+    await page.getByRole('button', { name: 'Cookie settings' }).click();
+    await banner.getByRole('button', { name: /accept/i }).click();
+    await expect.poll(() => gaRequests.length, { timeout: 10_000 }).toBeGreaterThan(0);
+
+    await page.getByRole('button', { name: 'Cookie settings' }).click();
+    await expect(banner).toContainText('You accepted analytics cookies.');
+    await banner.getByRole('button', { name: /decline/i }).click();
+    expect(
+      await page.evaluate(() => localStorage.getItem('proto_cookie_consent_accepted_v1')),
+    ).toBe('false');
+    expect(await page.evaluate(() => document.cookie)).not.toMatch(/_ga/);
+  });
+});
+
+test.describe('Terms acceptance', () => {
+  const ADDRESS = '0x1111111111111111111111111111111111111111';
+
+  test.beforeEach(async ({ page }) => {
+    // A connected injected wallet; cookie choice answered so the banner stays out of the way.
+    await page.addInitScript((address) => {
+      localStorage.setItem('proto_cookie_consent_accepted_v1', 'false');
+      localStorage.setItem('proto_wallet_connected', 'true');
+      localStorage.setItem('proto_wallet_provider_id', 'injected');
+      localStorage.setItem('proto_wallet_address', address);
+      localStorage.setItem('proto_wallet_chain_id', '46630');
+      (window as unknown as { ethereum: unknown }).ethereum = {
+        isMetaMask: true,
+        on() {},
+        removeListener() {},
+        request: async ({ method }: { method: string }) =>
+          method === 'eth_accounts' || method === 'eth_requestAccounts'
+            ? [address]
+            : method === 'eth_chainId'
+              ? '0xb626'
+              : '0x0',
+      };
+    }, ADDRESS);
+  });
+
+  test('cannot be dismissed without a choice', async ({ page }) => {
+    await page.goto('/launchpad');
+    const dialog = page.getByRole('dialog', { name: /terms & privacy/i });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('button', { name: /close/i })).toHaveCount(0);
+
+    await page.keyboard.press('Escape');
+    await page.mouse.click(5, 5);
+    await expect(dialog).toBeVisible();
+
+    await expect(dialog.getByRole('button', { name: /accept & continue/i })).toBeDisabled();
+    await dialog.getByRole('switch').click();
+    await dialog.getByRole('button', { name: /accept & continue/i }).click();
+    await expect(dialog).toBeHidden();
+
+    await page.reload();
+    await page.waitForTimeout(1500);
+    await expect(dialog).toBeHidden();
+  });
+
+  test('declining disconnects the wallet', async ({ page }) => {
+    await page.goto('/launchpad');
+    const dialog = page.getByRole('dialog', { name: /terms & privacy/i });
+    await dialog.getByRole('button', { name: /decline & disconnect/i }).click();
+    await expect(dialog).toBeHidden();
+    await expect
+      .poll(() => page.evaluate(() => localStorage.getItem('proto_wallet_connected')))
+      .not.toBe('true');
+    expect(
+      await page.evaluate(() => localStorage.getItem('proto_privacy_policy_accepted_v1')),
+    ).toBeNull();
+  });
+});
+
 test.describe('Performance guards', () => {
   test('the wallet stack (AppKit) is not downloaded on page load', async ({ page }) => {
     const appKitChunks: string[] = [];

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
+import { computed, type HTMLAttributes } from 'vue';
 import {
   DialogClose,
   DialogContent,
@@ -12,9 +12,15 @@ import {
 import { X } from 'lucide-vue-next';
 import { cn } from '@/lib/utils';
 
-const props = defineProps<DialogContentProps & { class?: HTMLAttributes['class'] }>();
+const props = defineProps<
+  DialogContentProps & { class?: HTMLAttributes['class']; hideClose?: boolean }
+>();
 const emits = defineEmits<DialogContentEmits>();
-const forwarded = useForwardPropsEmits(props, emits);
+const delegatedProps = computed(() => {
+  const { class: _, hideClose: __, ...delegated } = props;
+  return delegated;
+});
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
 </script>
 
 <template>
@@ -34,6 +40,7 @@ const forwarded = useForwardPropsEmits(props, emits);
       <slot />
 
       <DialogClose
+        v-if="!hideClose"
         class="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none text-muted-foreground hover:text-foreground"
       >
         <X class="h-4 w-4" />

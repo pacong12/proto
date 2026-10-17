@@ -17,6 +17,7 @@ import {
   type NetworkConfig,
 } from '@goton/shared-types';
 import { walletProvider, walletChainId, STORAGE_PROVIDER_ID_KEY } from './wallet-store';
+import { assertTermsAccepted } from './consent';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -90,6 +91,37 @@ export const publicClient: PublicClient = publicClientMainnet;
 // Wallet clients
 // ---------------------------------------------------------------------------
 
+/** Wallet actions that sign or send something on the user's behalf. */
+const GATED_WALLET_ACTIONS = new Set<PropertyKey>([
+  'writeContract',
+  'sendTransaction',
+  'signTransaction',
+  'deployContract',
+  'signMessage',
+  'signTypedData',
+]);
+
+/**
+ * Every wallet client handed to the app passes through here: signing or sending rejects (and opens
+ * the terms dialog) until the Terms of Service and Privacy Policy are accepted.
+ */
+export function guardWalletWrites<T extends object>(client: T): T {
+  return new Proxy(client, {
+    get(target, prop, receiver) {
+      const value = Reflect.get(target, prop, receiver);
+      if (typeof value !== 'function' || !GATED_WALLET_ACTIONS.has(prop)) return value;
+      return (...args: unknown[]) => {
+        try {
+          assertTermsAccepted();
+        } catch (e) {
+          return Promise.reject(e);
+        }
+        return (value as (...a: unknown[]) => unknown).apply(target, args);
+      };
+    },
+  });
+}
+
 export function createWalletClientFromProvider(provider: unknown, chainId?: number): WalletClient {
   const cfg = chainId ? SUPPORTED_CHAINS[chainId] : undefined;
   const chain = cfg ? toViemChain(cfg) : mainnetChain;
@@ -110,7 +142,7 @@ export async function getWalletClient(): Promise<WalletClient | null> {
       if (!wagmiAdapter) throw new Error('AppKit unavailable');
       const client = await getWagmiWalletClient(wagmiAdapter.wagmiConfig);
       if (client) {
-        return client as unknown as WalletClient;
+        return guardWalletWrites(client as unknown as WalletClient);
       }
     } catch {
       // Reown connector not yet connected or in transition
@@ -154,7 +186,9 @@ export async function getWalletClient(): Promise<WalletClient | null> {
   }
 
   if (!provider) return null;
-  return createWalletClientFromProvider(provider, walletChainId.value ?? undefined);
+  return guardWalletWrites(
+    createWalletClientFromProvider(provider, walletChainId.value ?? undefined),
+  );
 }
 
 // ---------------------------------------------------------------------------

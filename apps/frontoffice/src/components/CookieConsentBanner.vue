@@ -1,41 +1,22 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from '@/lib/i18n';
 import { legalUrl } from '@/lib/site';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-vue-next';
-import { COOKIE_CONSENT_KEY, loadAnalytics } from '@/lib/analytics';
+import { cookieChoice, cookieSettingsOpen, setCookieChoice } from '@/lib/consent';
 
 const { t, locale } = useI18n();
 
-const visible = ref(false);
-
-onMounted(() => {
-  if (typeof window === 'undefined') return;
-  try {
-    const accepted = localStorage.getItem(COOKIE_CONSENT_KEY);
-    if (!accepted) {
-      visible.value = true;
-    }
-  } catch {
-    // Non-blocking
-  }
-});
-
-function acceptCookies() {
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem(COOKIE_CONSENT_KEY, 'true');
-    } catch {
-      // Non-blocking
-    }
-    loadAnalytics();
-  }
-  visible.value = false;
-}
+// The close button hides the banner for this page view only; no choice is stored.
+const dismissed = ref(false);
+const visible = computed(
+  () => cookieSettingsOpen.value || (cookieChoice.value === null && !dismissed.value),
+);
 
 function dismissBanner() {
-  visible.value = false;
+  dismissed.value = true;
+  cookieSettingsOpen.value = false;
 }
 </script>
 
@@ -73,6 +54,9 @@ function dismissBanner() {
       <p class="text-xs text-muted-foreground leading-relaxed">
         {{ t('cookieBannerDesc') }}
       </p>
+      <p v-if="cookieSettingsOpen && cookieChoice" class="text-xs text-foreground">
+        {{ t(cookieChoice === 'accepted' ? 'cookieChoiceAccepted' : 'cookieChoiceDeclined') }}
+      </p>
 
       <div class="flex items-center justify-between pt-1 text-xs">
         <a
@@ -90,7 +74,7 @@ function dismissBanner() {
             variant="ghost"
             size="sm"
             class="h-7 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
-            @click="dismissBanner"
+            @click="setCookieChoice('declined')"
           >
             {{ t('decline') }}
           </Button>
@@ -99,7 +83,7 @@ function dismissBanner() {
             variant="default"
             size="sm"
             class="h-7 text-xs font-bold px-3.5 shadow-sm cursor-pointer"
-            @click="acceptCookies"
+            @click="setCookieChoice('accepted')"
           >
             {{ t('accept') }}
           </Button>

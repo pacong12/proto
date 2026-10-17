@@ -51,4 +51,36 @@ describe('analytics consent gate', () => {
     expect(gtagScripts()[0].src).toContain('id=G-');
     expect(typeof window.gtag).toBe('function');
   });
+
+  it('reads accepted, declined and unanswered choices', async () => {
+    const { readCookieChoice } = await freshModule();
+    expect(readCookieChoice()).toBeNull();
+    localStorage.setItem('proto_cookie_consent_accepted_v1', 'false');
+    expect(readCookieChoice()).toBe('declined');
+    localStorage.setItem('proto_cookie_consent_accepted_v1', 'true');
+    expect(readCookieChoice()).toBe('accepted');
+  });
+
+  it('withdrawing consent stops tracking and deletes the _ga cookies', async () => {
+    const { enableAnalytics, disableAnalytics } = await freshModule();
+    enableAnalytics();
+    const calls: unknown[][] = [];
+    window.gtag = (...args: unknown[]) => calls.push(args);
+    document.cookie = '_ga=GA1.1.123; path=/';
+    document.cookie = '_ga_ABC123=GS1.1.456; path=/';
+    document.cookie = 'theme=dark; path=/';
+
+    disableAnalytics();
+
+    const id = Object.keys(window).find((k) =>
+      k.startsWith('ga-disable-'),
+    ) as `ga-disable-${string}`;
+    expect(window[id]).toBe(true);
+    expect(calls).toContainEqual(['consent', 'update', { analytics_storage: 'denied' }]);
+    expect(document.cookie).not.toMatch(/_ga/);
+    expect(document.cookie).toContain('theme=dark');
+
+    enableAnalytics();
+    expect(window[id]).toBe(false);
+  });
 });
