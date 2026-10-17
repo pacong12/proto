@@ -2,6 +2,7 @@ import { PublicClient, erc20Abi, parseAbiItem, type Address } from 'viem';
 import {
   ROBINHOOD_CHAIN,
   bondingCurveAbi,
+  type LaunchedTokenEntity,
   type NetworkConfig,
   type TradeEventEntity,
 } from '@goton/shared-types';
@@ -61,9 +62,15 @@ const MAX_BLOCK_RANGE = 50n;
 const CONFIRMATIONS = BigInt(process.env.INDEXER_CONFIRMATIONS ?? '2');
 // Maximum contract addresses per eth_getLogs request
 const LOG_ADDRESS_BATCH = 50;
+// Attempts at one block range before it is skipped (and logged as an error).
+const MAX_RANGE_ATTEMPTS = 5;
+// eth_getLogs block span per request when backfilling one curve's history.
+const BACKFILL_CHUNK = BigInt(process.env.INDEXER_BACKFILL_CHUNK || '200000');
 
 export class EventPollerService {
   private lastPolledBlock = 0n;
+  private failedRangeStart: bigint | null = null;
+  private rangeFailures = 0;
   private quoteDecimals: number | null = null;
 
   constructor(
@@ -116,6 +123,27 @@ export class EventPollerService {
       }
       return count;
     } catch (error) {
+      // A range that keeps failing (e.g. one malformed log) must not stall indexing forever:
+      // after MAX_RANGE_ATTEMPTS the range is skipped, loudly.
+      const failedStart = fromBlock ?? (this.lastPolledBlock > 0n ? this.lastPolledBlock + 1n : 0n);
+      this.rangeFailures = this.failedRangeStart === failedStart ? this.rangeFailures + 1 : 1;
+      this.failedRangeStart = failedStart;
+      if (
+        this.rangeFailures >= MAX_RANGE_ATTEMPTS &&
+        fromBlock === undefined &&
+        currentBlock > 0n
+      ) {
+        const skipTo =
+          currentBlock - failedStart > MAX_BLOCK_RANGE
+            ? failedStart + MAX_BLOCK_RANGE
+            : currentBlock;
+        console.error(
+          `[EventPoller:${this.network.name}] skipping blocks ${failedStart}-${skipTo} after ${this.rangeFailures} failed attempts`,
+        );
+        this.lastPolledBlock = skipTo;
+        this.rangeFailures = 0;
+        void this.tokenRepository.setLastIndexedBlock?.(this.network.name, skipTo);
+      }
       const e = error as { code?: number; message?: string };
       if (e?.code === 429 || e?.message?.includes('Too Many Requests')) {
         console.warn(`[EventPoller:${this.network.name}] RPC 429 — backing off`);
@@ -180,7 +208,8 @@ export class EventPollerService {
         `[EventPoller:${this.network.name}] V1 launch poll error:`,
         (e as Error).message,
       );
-      return 0;
+      // Rethrow so pollEvents keeps the cursor and retries this range.
+      throw e;
     }
   }
 
@@ -240,7 +269,8 @@ export class EventPollerService {
         `[EventPoller:${this.network.name}] V2 launch poll error:`,
         (e as Error).message,
       );
-      return 0;
+      // Rethrow so pollEvents keeps the cursor and retries this range.
+      throw e;
     }
   }
 
@@ -277,7 +307,8 @@ export class EventPollerService {
         `[EventPoller:${this.network.name}] V4 launch poll error:`,
         (e as Error).message,
       );
-      return 0;
+      // Rethrow so pollEvents keeps the cursor and retries this range.
+      throw e;
     }
   }
 
@@ -311,7 +342,8 @@ export class EventPollerService {
         `[EventPoller:${this.network.name}] Graduation poll error:`,
         (e as Error).message,
       );
-      return 0;
+      // Rethrow so pollEvents keeps the cursor and retries this range.
+      throw e;
     }
   }
 
@@ -353,113 +385,12 @@ export class EventPollerService {
 
       if (logs.length === 0) return 0;
 
-      // Map curveAddress -> token for O(1) lookup
       const tokenByCurve = new Map(v2Tokens.map((t) => [t.poolAddress.toLowerCase(), t]));
-      const blockTimestamps = new Map<bigint, number>();
-
-      let count = 0;
-      for (const log of logs) {
-        const token = tokenByCurve.get(log.address.toLowerCase());
-        if (!token) continue;
-
-        const { trader, isBuy, ethAmount, tokenAmount } = log.args as {
-          trader: Address;
-          isBuy: boolean;
-          ethAmount: bigint;
-          tokenAmount: bigint;
-          feeEth: bigint;
-        };
-
-        if (ethAmount === undefined || tokenAmount === undefined) continue;
-
-        const ethAmountNum = Number(ethAmount) / 1e18;
-        const tokenAmountNum = Number(tokenAmount) / 1e18;
-
-        let priceUsd = 0;
-        if (tokenAmountNum > 0) {
-          const priceNative = ethAmountNum / tokenAmountNum;
-          priceUsd = priceNative * quotePriceUsd;
-        }
-
-        if (priceUsd <= 0) {
-          try {
-            const [vEth, vToken] = await Promise.all([
-              this.client.readContract({
-                address: log.address,
-                abi: bondingCurveAbi,
-                functionName: 'virtualEthReserve',
-              }) as Promise<bigint>,
-              this.client.readContract({
-                address: log.address,
-                abi: bondingCurveAbi,
-                functionName: 'virtualTokenReserve',
-              }) as Promise<bigint>,
-            ]);
-            if (vToken > 0n) {
-              priceUsd = (Number(vEth) / Number(vToken)) * quotePriceUsd;
-            }
-          } catch {
-            // fallback
-          }
-        }
-
-        const blockNumber = log.blockNumber ?? 0n;
-        let timestamp = blockTimestamps.get(blockNumber);
-        if (timestamp === undefined) {
-          try {
-            const block = await this.client.getBlock({ blockNumber });
-            // Arc Network block.timestamp is in seconds (Unix standard)
-            timestamp = Number(block.timestamp) * 1000;
-          } catch {
-            timestamp = Date.now();
-          }
-          blockTimestamps.set(blockNumber, timestamp);
-        }
-
-        const trade: TradeEventEntity = {
-          id: `${log.transactionHash}-${log.logIndex}`,
-          tokenAddress: token.address,
-          poolAddress: token.poolAddress,
-          trader,
-          isBuy,
-          tokenAmount: tokenAmountNum.toFixed(4),
-          wethAmount: ethAmountNum.toFixed(6),
-          priceUsd,
-          blockNumber,
-          transactionHash: log.transactionHash ?? '0x0',
-          timestamp,
-        };
-
-        await this.tokenRepository.saveTrade(trade);
-        if (priceUsd > 0) {
-          const mkt = await this.tokenRepository.getMarketData(token.address);
-          if (mkt) {
-            const supplyTokens = token.totalSupply
-              ? Number(BigInt(token.totalSupply)) / 1e18
-              : 1_000_000_000;
-            // Recompute 24h volume from stored trades so the value is always accurate
-            // and never lost when saveMarketData overwrites the DB row.
-            const cutoff24h = Date.now() - 86_400_000;
-            const recentTrades = await this.tokenRepository.getTrades(token.address, 500, 0);
-            const volume24hUsd = recentTrades
-              .filter((t) => (t.timestamp ?? 0) >= cutoff24h)
-              .reduce((sum, t) => sum + parseFloat(t.wethAmount || '0') * quotePriceUsd, 0);
-            await this.tokenRepository.saveMarketData({
-              ...mkt,
-              priceUsd,
-              priceInWeth: priceUsd / quotePriceUsd,
-              marketCapUsd: priceUsd * supplyTokens,
-              fdvUsd: priceUsd * supplyTokens,
-              volume24hUsd,
-            });
-          }
-        }
-        count++;
-      }
-      return count;
+      return await this.saveTradeLogs(logs, tokenByCurve, quotePriceUsd);
     } catch (e) {
       console.warn(`[EventPoller:${this.network.name}] V2 trade poll error:`, (e as Error).message);
-      return 0;
+      // Rethrow so pollEvents keeps the cursor and retries this range.
+      throw e;
     }
   }
 
@@ -565,7 +496,8 @@ export class EventPollerService {
       return count;
     } catch (e) {
       console.warn(`[EventPoller:${this.network.name}] V1 swap poll error:`, (e as Error).message);
-      return 0;
+      // Rethrow so pollEvents keeps the cursor and retries this range.
+      throw e;
     }
   }
 
@@ -660,8 +592,151 @@ export class EventPollerService {
         count++;
       }
       return count;
-    } catch {
-      return 0;
+    } catch (e) {
+      console.warn(`[EventPoller:${this.network.name}] V4 swap poll error:`, (e as Error).message);
+      throw e;
     }
+  }
+
+  /** Saves decoded curve Trade logs (idempotent: trade ids are txHash-logIndex). */
+  private async saveTradeLogs(
+    logs: Awaited<ReturnType<EventPollerService['fetchTradeLogs']>>,
+    tokenByCurve: Map<string, LaunchedTokenEntity>,
+    quotePriceUsd: number,
+  ): Promise<number> {
+    const blockTimestamps = new Map<bigint, number>();
+
+    let count = 0;
+    for (const log of logs) {
+      const token = tokenByCurve.get(log.address.toLowerCase());
+      if (!token) continue;
+
+      const { trader, isBuy, ethAmount, tokenAmount } = log.args as {
+        trader: Address;
+        isBuy: boolean;
+        ethAmount: bigint;
+        tokenAmount: bigint;
+        feeEth: bigint;
+      };
+
+      if (ethAmount === undefined || tokenAmount === undefined) continue;
+
+      const ethAmountNum = Number(ethAmount) / 1e18;
+      const tokenAmountNum = Number(tokenAmount) / 1e18;
+
+      let priceUsd = 0;
+      if (tokenAmountNum > 0) {
+        const priceNative = ethAmountNum / tokenAmountNum;
+        priceUsd = priceNative * quotePriceUsd;
+      }
+
+      if (priceUsd <= 0) {
+        try {
+          const [vEth, vToken] = await Promise.all([
+            this.client.readContract({
+              address: log.address,
+              abi: bondingCurveAbi,
+              functionName: 'virtualEthReserve',
+            }) as Promise<bigint>,
+            this.client.readContract({
+              address: log.address,
+              abi: bondingCurveAbi,
+              functionName: 'virtualTokenReserve',
+            }) as Promise<bigint>,
+          ]);
+          if (vToken > 0n) {
+            priceUsd = (Number(vEth) / Number(vToken)) * quotePriceUsd;
+          }
+        } catch {
+          // fallback
+        }
+      }
+
+      const blockNumber = log.blockNumber ?? 0n;
+      let timestamp = blockTimestamps.get(blockNumber);
+      if (timestamp === undefined) {
+        try {
+          const block = await this.client.getBlock({ blockNumber });
+          // Arc Network block.timestamp is in seconds (Unix standard)
+          timestamp = Number(block.timestamp) * 1000;
+        } catch {
+          timestamp = Date.now();
+        }
+        blockTimestamps.set(blockNumber, timestamp);
+      }
+
+      const trade: TradeEventEntity = {
+        id: `${log.transactionHash}-${log.logIndex}`,
+        tokenAddress: token.address,
+        poolAddress: token.poolAddress,
+        trader,
+        isBuy,
+        tokenAmount: tokenAmountNum.toFixed(4),
+        wethAmount: ethAmountNum.toFixed(6),
+        priceUsd,
+        blockNumber,
+        transactionHash: log.transactionHash ?? '0x0',
+        timestamp,
+      };
+
+      await this.tokenRepository.saveTrade(trade);
+      if (priceUsd > 0) {
+        const mkt = await this.tokenRepository.getMarketData(token.address);
+        if (mkt) {
+          const supplyTokens = token.totalSupply
+            ? Number(BigInt(token.totalSupply)) / 1e18
+            : 1_000_000_000;
+          // Recompute 24h volume from stored trades so the value is always accurate
+          // and never lost when saveMarketData overwrites the DB row.
+          const cutoff24h = Date.now() - 86_400_000;
+          const recentTrades = await this.tokenRepository.getTrades(token.address, 500, 0);
+          const volume24hUsd = recentTrades
+            .filter((t) => (t.timestamp ?? 0) >= cutoff24h)
+            .reduce((sum, t) => sum + parseFloat(t.wethAmount || '0') * quotePriceUsd, 0);
+          await this.tokenRepository.saveMarketData({
+            ...mkt,
+            priceUsd,
+            priceInWeth: priceUsd / quotePriceUsd,
+            marketCapUsd: priceUsd * supplyTokens,
+            fdvUsd: priceUsd * supplyTokens,
+            volume24hUsd,
+          });
+        }
+      }
+      count++;
+    }
+    return count;
+  }
+
+  private fetchTradeLogs(address: Address | Address[], fromBlock: bigint, toBlock: bigint) {
+    return this.client.getLogs({ address, event: TRADE_EVENT, fromBlock, toBlock });
+  }
+
+  /**
+   * Indexes a v2 curve's trades in [from, to] in large chunks. For tokens that entered the database
+   * after the live cursor passed their first trades (discovered on a page visit or a late sync),
+   * whose earlier trades the poller would otherwise never see. Idempotent.
+   */
+  async backfillCurveTrades(
+    token: LaunchedTokenEntity,
+    from: bigint,
+    to?: bigint,
+  ): Promise<number> {
+    const curve = (token.curveAddress || token.poolAddress) as Address;
+    if (token.version !== 'v2' || !curve || curve.length !== 42) return 0;
+    const end =
+      to ??
+      (this.lastPolledBlock > 0n
+        ? this.lastPolledBlock
+        : (await this.client.getBlockNumber()) - CONFIRMATIONS);
+    const quotePriceUsd = await this.priceFeed.getQuoteAssetPriceUsd(this.network.chainId);
+    const tokenByCurve = new Map([[curve.toLowerCase(), token]]);
+    let count = 0;
+    for (let start = from < 0n ? 0n : from; start <= end; start += BACKFILL_CHUNK) {
+      const chunkEnd = start + BACKFILL_CHUNK - 1n > end ? end : start + BACKFILL_CHUNK - 1n;
+      const logs = await this.fetchTradeLogs(curve, start, chunkEnd);
+      if (logs.length) count += await this.saveTradeLogs(logs, tokenByCurve, quotePriceUsd);
+    }
+    return count;
   }
 }
