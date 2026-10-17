@@ -17,13 +17,22 @@ const REPLACEMENT_FEE_BUMP = 150n;
 
 export interface V4BuybackResult {
   token: `0x${string}`;
+  /** Defaults to 'buyback'. */
+  action?: 'buyback' | 'releaseProtocolFees' | 'releaseLiquidityFees';
   executed: boolean;
   reason?: string;
   txHash?: `0x${string}`;
 }
 
+/** Splitter shares that accrue during swaps and are paid out by a permissionless call (ARC-01). */
+const FEE_RELEASES = [
+  { action: 'releaseProtocolFees', accrued: 'protocolAccrued' },
+  { action: 'releaseLiquidityFees', accrued: 'liquidityAccrued' },
+] as const;
+
 /**
- * Triggers GotonV4Buyback for every v4 pool on a chain whose burn share is waiting.
+ * Triggers GotonV4Buyback for every v4 pool on a chain whose burn share is waiting, and pays the
+ * splitters' accrued protocol and liquidity shares to the treasury and liquidity vault.
  * The contract enforces the TWAP price guard itself, so the keeper only decides *when* to call;
  * it never supplies a price or minimum (red-team "Echo"). Each call is simulated first so tokens
  * whose oracle is not ready, or whose spot price is outside the guard, cost no gas.
@@ -58,7 +67,7 @@ export class V4BuybackKeeperService {
 
   async runOnce(): Promise<V4BuybackResult[]> {
     const buyback = this.buyback;
-    if (!buyback || !this.walletClient) return [];
+    if (!this.walletClient) return [];
     const [account] = await this.walletClient.getAddresses();
     if (!account) return [];
     if (await this.hasPendingTransaction(account)) return [];
@@ -66,11 +75,64 @@ export class V4BuybackKeeperService {
     const tokens = (await this.repository.findAll(500, 0)).filter((t) => this.isV4Token(t));
     const results: V4BuybackResult[] = [];
     for (const token of tokens) {
-      const result = await this.tryBuyback(buyback, account, token.address);
-      results.push(result);
-      if (result.reason === 'Receipt pending') break;
+      if (buyback) {
+        const result = await this.tryBuyback(buyback, account, token.address);
+        results.push(result);
+        if (result.reason === 'Receipt pending') return results;
+      }
+      for (const release of FEE_RELEASES) {
+        const result = await this.tryRelease(account, token.address, release);
+        if (!result) continue;
+        results.push(result);
+        if (result.reason === 'Receipt pending') return results;
+      }
     }
     return results;
+  }
+
+  /**
+   * Pays out one accrued splitter share. Returns null when there is nothing to do, including for
+   * splitters deployed before the pull model, which have no accrued getter.
+   */
+  private async tryRelease(
+    account: `0x${string}`,
+    token: `0x${string}`,
+    release: (typeof FEE_RELEASES)[number],
+  ): Promise<V4BuybackResult | null> {
+    try {
+      const splitter = await resolveFeeSplitter(this.publicClient, this.network, token);
+      if (!splitter) return null;
+      const accrued: unknown = await this.publicClient
+        .readContract({
+          address: splitter.address,
+          abi: gotonFeeSplitterAbi,
+          functionName: release.accrued,
+        })
+        .catch(() => null);
+      if (typeof accrued !== 'bigint' || accrued <= this.minQuote) return null;
+
+      const { request } = await this.publicClient.simulateContract({
+        address: splitter.address,
+        abi: gotonFeeSplitterAbi,
+        functionName: release.action,
+        account,
+      });
+      const txHash = await this.walletClient!.writeContract(request);
+      try {
+        await this.publicClient.waitForTransactionReceipt({ hash: txHash, timeout: 120_000 });
+      } catch {
+        return { token, action: release.action, executed: true, txHash, reason: 'Receipt pending' };
+      }
+      return { token, action: release.action, executed: true, txHash };
+    } catch (e) {
+      // A recipient that rejects payment (e.g. USDC-blocklisted) fails here, never in a swap.
+      return {
+        token,
+        action: release.action,
+        executed: false,
+        reason: (e as Error).message.split('\n')[0],
+      };
+    }
   }
 
   /**

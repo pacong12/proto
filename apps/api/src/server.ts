@@ -265,6 +265,7 @@ setTimeout(scheduleArcPoll, 30_000);
 // ---------------------------------------------------------------------------
 // TWAP-guarded buyback keeper (AUD-HIGH-05 / TKT-06). Enabled with KEEPER_PRIVATE_KEY; the
 // contract enforces the price guard, so the key only pays gas and can never pick a bad price.
+// The same keeper pays the splitters' accrued protocol and liquidity shares to their vaults.
 // ---------------------------------------------------------------------------
 const BUYBACK_KEEPER_INTERVAL_MS = Number(process.env.BUYBACK_KEEPER_INTERVAL_MS ?? 10 * 60_000);
 
@@ -287,7 +288,12 @@ function startBuybackKeepers(): void {
         try {
           const executed = (await keeper.runOnce()).filter((r) => r.executed);
           if (executed.length > 0) {
-            logger.info(`[BuybackKeeper:${network.name}] executed ${executed.length} buyback(s)`);
+            logger.info(
+              `[BuybackKeeper:${network.name}] executed ${executed.length} transaction(s)`,
+              {
+                actions: executed.map((r) => r.action ?? 'buyback'),
+              },
+            );
           }
         } catch (e) {
           logger.warn(`[BuybackKeeper:${network.name}] cycle failed`, {

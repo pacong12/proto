@@ -44,6 +44,10 @@ function setup(opts: {
   accrued: bigint;
   simulatedSpent: bigint;
   nonces?: { latest: number; pending: number };
+  /** Accrued protocol / liquidity shares; omitted = splitter from before the pull model. */
+  protocolAccrued?: bigint;
+  liquidityAccrued?: bigint;
+  releaseReverts?: boolean;
 }) {
   const writes: unknown[] = [];
   const sent: Array<{ nonce: number; maxFeePerGas: bigint }> = [];
@@ -56,11 +60,21 @@ function setup(opts: {
     pending: 0n,
   };
   const publicClient = {
-    readContract: async ({ functionName }: { functionName: string }) => reads[functionName],
-    simulateContract: async () => ({
-      result: [opts.simulatedSpent, 1n],
-      request: { functionName: 'buyback' },
-    }),
+    readContract: async ({ functionName }: { functionName: string }) => {
+      if (functionName === 'protocolAccrued' || functionName === 'liquidityAccrued') {
+        const value = opts[functionName];
+        if (value === undefined) throw new Error('function selector was not recognized');
+        return value;
+      }
+      return reads[functionName];
+    },
+    simulateContract: async ({ functionName }: { functionName: string }) => {
+      if (functionName === 'buyback') {
+        return { result: [opts.simulatedSpent, 1n], request: { functionName: 'buyback' } };
+      }
+      if (opts.releaseReverts) throw new Error('TransferFailed()\nmore detail');
+      return { result: opts.protocolAccrued, request: { functionName } };
+    },
     getTransactionCount: async ({ blockTag }: { blockTag: 'latest' | 'pending' }) =>
       nonces[blockTag],
     waitForTransactionReceipt: async () => ({ status: 'success' }),
@@ -157,5 +171,94 @@ describe('V4BuybackKeeperService', () => {
     expect(sent).toHaveLength(1);
     expect(sent[0]).toMatchObject({ nonce: 7, maxFeePerGas: 150n, value: 0n });
     expect(writes).toHaveLength(0);
+  });
+
+  it('pays accrued protocol and liquidity shares to their vaults', async () => {
+    const repo = new InMemoryTokenRepository();
+    await repo.save(token());
+    const { publicClient, walletClient, writes } = setup({
+      accrued: 0n,
+      simulatedSpent: 0n,
+      protocolAccrued: 3_000_000n,
+      liquidityAccrued: 700_000n,
+    });
+    const results = await new V4BuybackKeeperService(
+      publicClient,
+      walletClient,
+      repo,
+      network,
+    ).runOnce();
+    expect(results.filter((r) => r.executed).map((r) => r.action)).toEqual([
+      'releaseProtocolFees',
+      'releaseLiquidityFees',
+    ]);
+    expect(writes).toEqual([
+      { functionName: 'releaseProtocolFees' },
+      { functionName: 'releaseLiquidityFees' },
+    ]);
+  });
+
+  it('skips empty shares and splitters from before the pull model', async () => {
+    const repo = new InMemoryTokenRepository();
+    await repo.save(token());
+    const empty = setup({
+      accrued: 0n,
+      simulatedSpent: 0n,
+      protocolAccrued: 0n,
+      liquidityAccrued: 0n,
+    });
+    await new V4BuybackKeeperService(
+      empty.publicClient,
+      empty.walletClient,
+      repo,
+      network,
+    ).runOnce();
+    expect(empty.writes).toHaveLength(0);
+
+    const legacy = setup({ accrued: 0n, simulatedSpent: 0n });
+    const results = await new V4BuybackKeeperService(
+      legacy.publicClient,
+      legacy.walletClient,
+      repo,
+      network,
+    ).runOnce();
+    expect(legacy.writes).toHaveLength(0);
+    expect(results.every((r) => r.action === undefined)).toBe(true);
+  });
+
+  it('reports a rejected payout without sending a transaction', async () => {
+    const repo = new InMemoryTokenRepository();
+    await repo.save(token());
+    const { publicClient, walletClient, writes } = setup({
+      accrued: 0n,
+      simulatedSpent: 0n,
+      protocolAccrued: 3_000_000n,
+      releaseReverts: true,
+    });
+    const results = await new V4BuybackKeeperService(
+      publicClient,
+      walletClient,
+      repo,
+      network,
+    ).runOnce();
+    const release = results.find((r) => r.action === 'releaseProtocolFees');
+    expect(release).toMatchObject({ executed: false, reason: 'TransferFailed()' });
+    expect(writes).toHaveLength(0);
+  });
+
+  it('releases fees even on chains without a buyback contract', async () => {
+    const repo = new InMemoryTokenRepository();
+    await repo.save(token());
+    const { publicClient, walletClient, writes } = setup({
+      accrued: 5_000_000n,
+      simulatedSpent: 5_000_000n,
+      protocolAccrued: 1_000_000n,
+    });
+    const noBuyback = {
+      ...network,
+      contracts: { ...network.contracts, buyback: '0x0000000000000000000000000000000000000000' },
+    } as typeof network;
+    await new V4BuybackKeeperService(publicClient, walletClient, repo, noBuyback).runOnce();
+    expect(writes).toEqual([{ functionName: 'releaseProtocolFees' }]);
   });
 });
