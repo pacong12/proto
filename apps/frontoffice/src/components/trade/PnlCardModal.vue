@@ -351,7 +351,7 @@ async function downloadCard(): Promise<void> {
 
 function shareOnX(): void {
   const tweetText = encodeURIComponent(
-    `Holding $${props.currentToken.symbol} on @protodotfun!\n\n` +
+    `Holding $${props.currentToken.symbol} on @gotondotfun!\n\n` +
       `Current Return: ${formattedMultiplier.value} | MC: $${formatCompactUsd(props.currentMarketData.marketCapUsd || 4200)}\n\n` +
       `${window.location.href}`,
   );
