@@ -8,7 +8,8 @@ on:
     workflows: ['Release Automation & Changelog']
     types: [completed]
   schedule:
-    - cron: '30 6 * * *' # daily, catches drift and expired certificates or files
+    # Hourly: also watches indexer lag and keeper gas; a failed run emails the repo admins.
+    - cron: '17 * * * *'
   workflow_dispatch:
     inputs:
       environment:
@@ -42,4 +43,6 @@ jobs:
       - name: Run smoke checks
         env:
           SMOKE_ENV: ${{ inputs.environment || 'production' }}
+          # Public address only; set it as a repository variable to watch the keeper's gas.
+          SMOKE_KEEPER_ADDRESS: ${{ vars.KEEPER_ADDRESS }}
         run: bun run scripts/smoke.ts
