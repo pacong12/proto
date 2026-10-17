@@ -344,10 +344,15 @@ const messages: Record<string, string> = {
   maintenanceBanner:
     'Scheduled maintenance is in progress. Some features may be unavailable for a short time.',
   maintenanceDismiss: 'Dismiss notice',
-  communitySentiment: 'Community Sentiment',
-  noSentimentVotes: 'No votes yet. Be the first to call it.',
   v2SubtitleArc:
     'Launch a token straight into a locked Uniswap v4 pool. Your tax is paid in USDC on every trade.',
+  buySellPressure: 'Buy / sell pressure',
+  timeWindow: 'Time window',
+  noTradesInWindow: 'No trades in this window yet.',
+  buys: 'buys',
+  sells: 'sells',
+  buyers: 'buyers',
+  sellers: 'sellers',
 };
 
 export default messages;

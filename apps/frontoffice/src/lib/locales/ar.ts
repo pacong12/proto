@@ -337,9 +337,14 @@ const messages: Record<string, string> = {
   notFoundDocs: 'قراءة الوثائق',
   maintenanceBanner: 'تجري صيانة مجدولة حاليًا. قد لا تتوفر بعض الميزات لفترة قصيرة.',
   maintenanceDismiss: 'إغلاق الإشعار',
-  communitySentiment: 'مزاج المجتمع',
-  noSentimentVotes: 'لا توجد أصوات بعد. كن أول من يصوّت.',
   v2SubtitleArc: 'أطلق رمزًا مباشرة في مجمع Uniswap v4 مقفل. تُدفع ضريبتك بعملة USDC في كل صفقة.',
+  buySellPressure: 'ضغط الشراء / البيع',
+  timeWindow: 'الفترة الزمنية',
+  noTradesInWindow: 'لا توجد صفقات في هذه الفترة بعد.',
+  buys: 'شراء',
+  sells: 'بيع',
+  buyers: 'مشترين',
+  sellers: 'بائعين',
 };
 
 export default messages;

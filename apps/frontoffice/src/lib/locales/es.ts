@@ -348,10 +348,15 @@ const messages: Record<string, string> = {
   maintenanceBanner:
     'Mantenimiento programado en curso. Algunas funciones pueden no estar disponibles por un tiempo.',
   maintenanceDismiss: 'Cerrar aviso',
-  communitySentiment: 'Sentimiento de la comunidad',
-  noSentimentVotes: 'Aún no hay votos. Sé el primero.',
   v2SubtitleArc:
     'Lanza un token directamente en un pool bloqueado de Uniswap v4. Tu impuesto se paga en USDC en cada operación.',
+  buySellPressure: 'Presión de compra / venta',
+  timeWindow: 'Ventana de tiempo',
+  noTradesInWindow: 'Aún no hay operaciones en este periodo.',
+  buys: 'compras',
+  sells: 'ventas',
+  buyers: 'compradores',
+  sellers: 'vendedores',
 };
 
 export default messages;

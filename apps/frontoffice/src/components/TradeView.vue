@@ -57,8 +57,8 @@
         :symbol="currentToken.symbol"
       />
 
-      <!-- Community Sentiment Gauge (Bull vs Bear 1-click voting) -->
-      <SentimentGauge :token-address="currentToken.address" :account="account || undefined" />
+      <!-- Buy vs sell pressure from real trades (Binance-style B% / S%) -->
+      <TradeFlowGauge :token-address="currentToken.address" />
 
       <!-- ============================================================
            HYBRID PONS X GOTON TRADING GRID
@@ -465,7 +465,7 @@ import {
   TradeAboutTab,
   TradeCalloutsTab,
   MobileTradeDock,
-  SentimentGauge,
+  TradeFlowGauge,
   PnlCardModal,
 } from './trade';
 import { useHolderDividends, type HolderDividendEntry } from '../composables/useHolderDividends';

@@ -346,10 +346,15 @@ const messages: Record<string, string> = {
   maintenanceBanner:
     'Pemeliharaan terjadwal sedang berlangsung. Beberapa fitur mungkin tidak tersedia untuk sementara.',
   maintenanceDismiss: 'Tutup pemberitahuan',
-  communitySentiment: 'Sentimen Komunitas',
-  noSentimentVotes: 'Belum ada vote. Jadilah yang pertama.',
   v2SubtitleArc:
     'Luncurkan token langsung ke pool Uniswap v4 yang terkunci. Pajak Anda dibayar dalam USDC di setiap trade.',
+  buySellPressure: 'Tekanan beli / jual',
+  timeWindow: 'Rentang waktu',
+  noTradesInWindow: 'Belum ada trade di rentang ini.',
+  buys: 'beli',
+  sells: 'jual',
+  buyers: 'pembeli',
+  sellers: 'penjual',
 };
 
 export default messages;

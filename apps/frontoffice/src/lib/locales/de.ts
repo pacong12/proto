@@ -347,10 +347,15 @@ const messages: Record<string, string> = {
   maintenanceBanner:
     'Geplante Wartung läuft. Einige Funktionen sind vorübergehend nicht verfügbar.',
   maintenanceDismiss: 'Hinweis schließen',
-  communitySentiment: 'Community-Stimmung',
-  noSentimentVotes: 'Noch keine Stimmen. Sei der Erste.',
   v2SubtitleArc:
     'Starte einen Token direkt in einem gesperrten Uniswap-v4-Pool. Deine Steuer wird bei jedem Trade in USDC gezahlt.',
+  buySellPressure: 'Kauf- / Verkaufsdruck',
+  timeWindow: 'Zeitraum',
+  noTradesInWindow: 'In diesem Zeitraum noch keine Trades.',
+  buys: 'Käufe',
+  sells: 'Verkäufe',
+  buyers: 'Käufer',
+  sellers: 'Verkäufer',
 };
 
 export default messages;

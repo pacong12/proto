@@ -340,9 +340,14 @@ const messages: Record<string, string> = {
   notFoundDocs: '문서 보기',
   maintenanceBanner: '정기 점검이 진행 중입니다. 일부 기능을 잠시 사용할 수 없을 수 있습니다.',
   maintenanceDismiss: '알림 닫기',
-  communitySentiment: '커뮤니티 심리',
-  noSentimentVotes: '아직 투표가 없습니다. 첫 번째로 투표하세요.',
   v2SubtitleArc: '잠긴 Uniswap v4 풀에 바로 토큰을 발행합니다. 거래마다 세금이 USDC로 지급됩니다.',
+  buySellPressure: '매수 / 매도 압력',
+  timeWindow: '기간',
+  noTradesInWindow: '이 기간에는 아직 거래가 없습니다.',
+  buys: '매수',
+  sells: '매도',
+  buyers: '매수자',
+  sellers: '매도자',
 };
 
 export default messages;

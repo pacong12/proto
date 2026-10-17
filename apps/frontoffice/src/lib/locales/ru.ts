@@ -348,10 +348,15 @@ const messages: Record<string, string> = {
   maintenanceBanner:
     'Идут плановые технические работы. Некоторые функции могут быть временно недоступны.',
   maintenanceDismiss: 'Закрыть уведомление',
-  communitySentiment: 'Настроение сообщества',
-  noSentimentVotes: 'Голосов пока нет. Будьте первым.',
   v2SubtitleArc:
     'Запустите токен сразу в заблокированный пул Uniswap v4. Ваш налог выплачивается в USDC с каждой сделки.',
+  buySellPressure: 'Давление покупок / продаж',
+  timeWindow: 'Период',
+  noTradesInWindow: 'В этом периоде ещё нет сделок.',
+  buys: 'покупок',
+  sells: 'продаж',
+  buyers: 'покупателей',
+  sellers: 'продавцов',
 };
 
 export default messages;
