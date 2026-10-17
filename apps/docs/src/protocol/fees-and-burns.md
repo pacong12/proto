@@ -18,7 +18,7 @@ Pool fees and taxes are split by each token's on-chain fee splitter:
   - **Creator**: claimable by the creator (or their redirected recipient).
   - **Holders**: streamed to token holders pro-rata over 24 hours.
   - **Buyback & Burn**: bought back in the token's own pool by the `GotonV4Buyback` contract and sent to the dead address. Each buyback is capped at the pool's 30-minute TWAP ± 2%, so a manipulated price only pauses the buyback until it normalises.
-  - **Liquidity**: sent to the protocol liquidity vault.
+  - **Liquidity**: sent to the protocol liquidity vault, which is currently the protocol treasury. The goton.fun app does not offer this option, because it does not add liquidity to the token's own pool.
 
 By default the whole 70% goes to the creator. The protocol share is not used for buybacks.
 

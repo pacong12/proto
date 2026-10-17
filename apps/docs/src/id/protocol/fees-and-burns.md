@@ -18,7 +18,7 @@ Fee pool dan pajak dibagi oleh fee splitter on-chain milik setiap token:
   - **Kreator**: dapat diklaim kreator (atau penerima yang dialihkan).
   - **Holder**: dialirkan ke pemegang token secara proporsional selama 24 jam.
   - **Buyback & Burn**: dibelikan token di pool-nya sendiri oleh kontrak `GotonV4Buyback` lalu dikirim ke alamat mati. Setiap buyback dibatasi TWAP 30 menit pool ± 2%, sehingga harga yang dimanipulasi hanya menunda buyback sampai harga normal.
-  - **Likuiditas**: dikirim ke vault likuiditas protokol.
+  - **Likuiditas**: dikirim ke vault likuiditas protokol, yang saat ini adalah treasury protokol. Aplikasi goton.fun tidak menawarkan opsi ini, karena tidak menambah likuiditas pool token itu sendiri.
 
 Secara default seluruh 70% menjadi milik kreator. Bagian protokol tidak dipakai untuk buyback.
 
