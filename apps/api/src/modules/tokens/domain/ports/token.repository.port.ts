@@ -21,6 +21,11 @@ export interface TokenRepositoryPort {
   getVolumeByToken?(sinceMs: number): Promise<Array<{ tokenAddress: string; totalWeth: number }>>;
   saveMarketData(marketData: TokenMarketData): Promise<void>;
   getMarketData(address: `0x${string}`): Promise<TokenMarketData | null>;
+  /**
+   * Tokens whose market data is missing or was last written before `olderThanMs`, oldest first.
+   * Used to keep list prices current (USD values move with the quote price, 24h volume ages out).
+   */
+  findStaleMarketData?(olderThanMs: number, limit: number): Promise<`0x${string}`[]>;
   saveTrade(trade: TradeEventEntity): Promise<void>;
   getTrades(
     tokenAddress: `0x${string}`,

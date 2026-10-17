@@ -52,6 +52,21 @@ EOF
 docker compose up -d --build redis api
 ```
 
+### Memulihkan trade yang terlewat indexer
+
+Token yang tercatat setelah indexer melewati trade pertamanya (misalnya ditemukan saat halaman
+token dibuka) kehilangan riwayat trade awalnya. API sekarang mengisinya otomatis untuk token baru;
+untuk data lama, jalankan sekali:
+
+```bash
+H=$(docker exec proto-api sh -c 'wget -qO- http://127.0.0.1:3001/dex/latest-block?chain=robinhood' \
+  | sed 's/.*"block":\([0-9]*\).*/\1/')
+docker exec proto-api bun run scripts/backfill-tokens.ts --chain robinhood \
+  --from $((H - 4000000)) --trades-only
+```
+
+Trade disimpan dengan id `txHash-logIndex`, jadi menjalankan ulang aman.
+
 ---
 
 ## GitHub Secrets yang Digunakan

@@ -116,6 +116,8 @@ const getTokenByAddressUseCase = new GetTokenByAddressUseCase(
   chainIndexer,
   calculatePricing,
   priceFeed,
+  Date.now,
+  (token) => scheduleTradeBackfill(token),
 );
 const tokenController = new TokenController(
   getTokensUseCase,
@@ -300,6 +302,34 @@ function startBuybackKeepers(): void {
 }
 startBuybackKeepers();
 
+// Market data refresh: list endpoints read stored rows, which otherwise change only on a trade or
+// a token page visit. USD values follow the quote price and 24h volume ages out, so rows older than
+// MARKET_DATA_MAX_AGE_MS are recomputed from chain, oldest first, a batch per interval.
+const MARKET_DATA_MAX_AGE_MS = Number(process.env.MARKET_DATA_MAX_AGE_MS || 5 * 60_000);
+const MARKET_DATA_BATCH = Number(process.env.MARKET_DATA_BATCH || 25);
+if (process.env.NODE_ENV !== 'test' && repository.findStaleMarketData) {
+  let refreshing = false;
+  setInterval(async () => {
+    if (refreshing) return;
+    refreshing = true;
+    try {
+      const stale = await repository.findStaleMarketData!(
+        Date.now() - MARKET_DATA_MAX_AGE_MS,
+        MARKET_DATA_BATCH,
+      );
+      for (const address of stale) {
+        try {
+          await getTokenByAddressUseCase.execute(address);
+        } catch {
+          // RPC hiccup: the row stays stale and is retried next interval.
+        }
+      }
+    } finally {
+      refreshing = false;
+    }
+  }, 60_000).unref();
+}
+
 // DR-04: daily hot backups of the SQLite database (DB_BACKUP_INTERVAL_MS=0 disables).
 const DB_BACKUP_INTERVAL_MS = Number(process.env.DB_BACKUP_INTERVAL_MS ?? 24 * 60 * 60_000);
 const DB_BACKUP_KEEP = Number(process.env.DB_BACKUP_KEEP ?? 7);
@@ -319,6 +349,32 @@ if (DB_BACKUP_INTERVAL_MS > 0 && process.env.NODE_ENV !== 'test') {
 const TRADE_EVENT = parseAbiItem(
   'event Trade(address indexed trader, bool indexed isBuy, uint256 ethAmount, uint256 tokenAmount, uint256 feeEth)',
 );
+
+/**
+ * Tokens can enter the database after the live poller has passed their first trades (found on a
+ * page visit, or synced late). Their earlier curve trades are re-indexed in the background, from
+ * the launch block when known, otherwise over TRADE_BACKFILL_BLOCKS (default 4M blocks, about 12
+ * days on Robinhood Chain).
+ */
+const TRADE_BACKFILL_BLOCKS = BigInt(process.env.TRADE_BACKFILL_BLOCKS || '4000000');
+function scheduleTradeBackfill(token: LaunchedTokenEntity, fromBlock?: bigint): void {
+  if (token.version !== 'v2' || process.env.NODE_ENV === 'test') return;
+  const poller =
+    chainRegistry.resolveForToken(token).network.chainId === ARC_CHAIN.chainId
+      ? arcPoller
+      : robinhoodPoller;
+  const chain = chainRegistry.resolveForToken(token);
+  void (async () => {
+    const head = await chain.client.getBlockNumber();
+    const from = fromBlock ?? (head > TRADE_BACKFILL_BLOCKS ? head - TRADE_BACKFILL_BLOCKS : 0n);
+    const found = await poller.backfillCurveTrades(token, from);
+    if (found > 0) logger.info(`[Backfill] ${found} trade(s) for ${token.symbol} ${token.address}`);
+  })().catch((e) =>
+    logger.warn('[Backfill] curve trade backfill failed', {
+      error: { name: (e as Error).name, message: (e as Error).message },
+    }),
+  );
+}
 
 async function indexTradeFromReceipt(
   txHash: `0x${string}`,
@@ -768,12 +824,15 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         // optional body
       }
 
-      if (body.txHash && body.txHash.startsWith('0x') && body.txHash.length === 66) {
-        await indexTradeFromReceipt(body.txHash as `0x${string}`, address);
-      }
+      const txHash =
+        body.txHash && body.txHash.startsWith('0x') && body.txHash.length === 66
+          ? (body.txHash as `0x${string}`)
+          : undefined;
 
       // Refresh or initialize token taxConfig and revenueSplit
       let existing = await repository.findByAddress(address);
+      const isNew = !existing;
+      let launchBlock: bigint | undefined;
       if (!existing) {
         const chainParam =
           url.searchParams.get('chain') || (body.chain ? String(body.chain) : null);
@@ -783,6 +842,21 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           .catch(() => null);
         if (fetched) {
           existing = fetched;
+          // The launch transaction dates the token; without it createdAt is the time of this sync.
+          if (txHash) {
+            try {
+              const receipt = await chain.client.getTransactionReceipt({ hash: txHash });
+              const block = await chain.client.getBlock({ blockNumber: receipt.blockNumber });
+              launchBlock = receipt.blockNumber;
+              existing = {
+                ...existing,
+                createdAt: Number(block.timestamp) * 1000,
+                launchBlock: receipt.blockNumber,
+              };
+            } catch {
+              // keep the fetched values
+            }
+          }
         }
       }
       if (existing) {
@@ -890,7 +964,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           },
         });
         await cache.del(`token:detail:${address.toLowerCase()}`);
+        if (isNew) scheduleTradeBackfill(existing, launchBlock);
       }
+      // After the token is saved, so trades in the launch transaction are not dropped.
+      if (txHash) await indexTradeFromReceipt(txHash, address);
       Promise.allSettled([robinhoodPoller.pollEvents(), arcPoller.pollEvents()]);
       return replyEnvelope(ok({ synced: true, address, txHash: body.txHash ?? null }));
     } catch (e) {

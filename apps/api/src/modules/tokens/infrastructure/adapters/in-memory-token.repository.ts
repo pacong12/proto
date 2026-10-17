@@ -16,6 +16,7 @@ import {
 export class InMemoryTokenRepository implements TokenRepositoryPort {
   private tokens = new Map<string, LaunchedTokenEntity>();
   private marketData = new Map<string, TokenMarketData>();
+  private marketDataUpdatedAt = new Map<string, number>();
   private trades = new Map<string, TradeEventEntity[]>();
 
   async save(token: LaunchedTokenEntity): Promise<void> {
@@ -55,6 +56,20 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
       ...data,
       priceChange24h: data.priceChange24h ?? 0,
     });
+    this.marketDataUpdatedAt.set(data.address.toLowerCase(), Date.now());
+  }
+
+  async findStaleMarketData(olderThanMs: number, limit: number): Promise<`0x${string}`[]> {
+    const all = await this.findAll(Number.MAX_SAFE_INTEGER, 0);
+    return all
+      .map((t) => ({
+        address: t.address,
+        at: this.marketDataUpdatedAt.get(t.address.toLowerCase()) ?? 0,
+      }))
+      .filter((t) => t.at < olderThanMs)
+      .sort((a, b) => a.at - b.at)
+      .slice(0, limit)
+      .map((t) => t.address);
   }
 
   async getMarketData(address: `0x${string}`): Promise<TokenMarketData | null> {

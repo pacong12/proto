@@ -34,6 +34,8 @@ export class GetTokenByAddressUseCase {
     private readonly calculatePricing: CalculatePricingUseCase,
     private readonly priceFeed: PriceFeedPort,
     private readonly now: () => number = Date.now,
+    /** Called when a token is found on chain but was not in the database yet. */
+    private readonly onDiscovered?: (token: LaunchedTokenEntity) => void,
   ) {}
 
   /** Looks the address up on every chain at once; earlier entries win, as in the sequential order. */
@@ -60,8 +62,10 @@ export class GetTokenByAddressUseCase {
     const lookup = Promise.all(attempts.map((a) => a.catch(() => null)))
       .then(async (results) => {
         const token = results.find((t): t is LaunchedTokenEntity => Boolean(t)) ?? null;
-        if (token) await this.tokenRepository.save(token);
-        else this.unknownUntil.set(key, this.now() + UNKNOWN_TOKEN_TTL_MS);
+        if (token) {
+          await this.tokenRepository.save(token);
+          this.onDiscovered?.(token);
+        } else this.unknownUntil.set(key, this.now() + UNKNOWN_TOKEN_TTL_MS);
         return token;
       })
       .finally(() => this.inflight.delete(key));
