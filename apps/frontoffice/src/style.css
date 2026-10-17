@@ -104,32 +104,35 @@ optgroup {
 body {
   font-weight: 500;
 }
-/* Headings: Space & weight hierarchy matched to apps/docs */
-h1 {
-  font-family: var(--vp-font-family-base) !important;
-  font-optical-sizing: auto;
-  font-size: 2rem; /* 32px */
-  line-height: 2.5rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
+/* Headings: Space & weight hierarchy matched to apps/docs. In the base layer, so Tailwind
+   utilities on a heading (text-base, text-2xl, ...) still apply. */
+@layer base {
+  h1 {
+    font-family: var(--vp-font-family-base) !important;
+    font-optical-sizing: auto;
+    font-size: 2rem; /* 32px */
+    line-height: 2.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
 
-h2 {
-  font-family: var(--vp-font-family-base) !important;
-  font-optical-sizing: auto;
-  font-size: 1.5rem; /* 24px */
-  line-height: 2rem;
-  font-weight: 600;
-  letter-spacing: -0.015em;
-}
+  h2 {
+    font-family: var(--vp-font-family-base) !important;
+    font-optical-sizing: auto;
+    font-size: 1.5rem; /* 24px */
+    line-height: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
 
-h3 {
-  font-family: var(--vp-font-family-base) !important;
-  font-optical-sizing: auto;
-  font-size: 1.25rem; /* 20px */
-  line-height: 1.75rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  h3 {
+    font-family: var(--vp-font-family-base) !important;
+    font-optical-sizing: auto;
+    font-size: 1.25rem; /* 20px */
+    line-height: 1.75rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
 }
 
 h4 {
