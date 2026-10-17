@@ -538,6 +538,7 @@ import {
   launchpadTokenAbi,
   launchpadV2FactoryAbi,
   bondingCurveAbi,
+  protoV4PoolKeyFor,
   type LaunchedTokenEntity,
   type TokenMarketData,
   type TokenCommentEntity,
@@ -982,7 +983,13 @@ const ORDER_TYPES = [
 ] as const;
 const orderType = ref<(typeof ORDER_TYPES)[number]['value']>('market');
 const ordersRefresh = ref(0);
-const limitOrdersEnabled = computed(() => limitOrdersAddress(tokenNetwork.value) !== null);
+// Same routes as the keeper: the token's bonding curve, or its Goton v4 pool once one exists.
+const limitOrdersEnabled = computed(() => {
+  if (limitOrdersAddress(tokenNetwork.value) === null) return false;
+  const t = currentToken.value;
+  const onCurve = t.version === 'v2' && !t.isGraduated && !!t.curveAddress;
+  return onCurve || protoV4PoolKeyFor(tokenNetwork.value, t.address) !== null;
+});
 
 const isArcToken = computed(() => tokenNetwork.value.chainId === ARC_CHAIN.chainId);
 
