@@ -7,6 +7,15 @@ import {
   type CreatorProfile,
 } from '@goton/shared-types';
 
+export interface TradeFlow {
+  buyQuote: number;
+  sellQuote: number;
+  buys: number;
+  sells: number;
+  buyers: number;
+  sellers: number;
+}
+
 export interface TokenRepositoryPort {
   save(token: LaunchedTokenEntity): Promise<void>;
   findByAddress(address: `0x${string}`): Promise<LaunchedTokenEntity | null>;
@@ -26,6 +35,8 @@ export interface TokenRepositoryPort {
    * Used to keep list prices current (USD values move with the quote price, 24h volume ages out).
    */
   findStaleMarketData?(olderThanMs: number, limit: number): Promise<`0x${string}`[]>;
+  /** Buy vs sell activity since `sinceMs`: quote volume, trade counts and distinct traders. */
+  getTradeFlow?(tokenAddress: `0x${string}`, sinceMs: number): Promise<TradeFlow>;
   saveTrade(trade: TradeEventEntity): Promise<void>;
   getTrades(
     tokenAddress: `0x${string}`,

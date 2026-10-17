@@ -11,7 +11,7 @@ import {
   getUserIdentity,
   type CreatorProfile,
 } from '@goton/shared-types';
-import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
+import type { TokenRepositoryPort, TradeFlow } from '../../domain/ports/token.repository.port';
 import { backupDatabase, openCheckedDatabase } from './sqlite-maintenance';
 import {
   aggregateCandlesticks,
@@ -539,6 +539,32 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
       marketData.priceChange24h ?? 0,
       Date.now(),
     );
+  }
+
+  async getTradeFlow(tokenAddress: `0x${string}`, sinceMs: number): Promise<TradeFlow> {
+    const rows = this.db
+      .prepare(
+        `SELECT isBuy, SUM(CAST(wethAmount AS REAL)) AS quote, COUNT(*) AS n,
+                COUNT(DISTINCT LOWER(trader)) AS traders
+         FROM trades WHERE tokenAddress = ? COLLATE NOCASE AND timestamp >= ?
+         GROUP BY isBuy`,
+      )
+      .all(tokenAddress, sinceMs) as Array<{
+      isBuy: number;
+      quote: number;
+      n: number;
+      traders: number;
+    }>;
+    const buy = rows.find((r) => Number(r.isBuy) === 1);
+    const sell = rows.find((r) => Number(r.isBuy) === 0);
+    return {
+      buyQuote: Number(buy?.quote ?? 0),
+      sellQuote: Number(sell?.quote ?? 0),
+      buys: Number(buy?.n ?? 0),
+      sells: Number(sell?.n ?? 0),
+      buyers: Number(buy?.traders ?? 0),
+      sellers: Number(sell?.traders ?? 0),
+    };
   }
 
   async findStaleMarketData(olderThanMs: number, limit: number): Promise<`0x${string}`[]> {
