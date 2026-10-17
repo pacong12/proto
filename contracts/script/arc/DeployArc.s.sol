@@ -33,6 +33,8 @@ import {IPoolManagerV4} from "../../src/interfaces/external/IUniswapV4Core.sol";
  *   ARC_POOL_MANAGER_V4        - Uniswap v4 PoolManager
  *   ARC_USDC                   - USDC ERC-20 (6 decimals)
  *   ARC_PROTOCOL_FEE_BPS       - protocol cut of each tax payment (default 2000 = 20%, max 3000)
+ *   OWNER_SAFE                 - Safe multisig that takes ownership (required on mainnet unless
+ *                                ALLOW_EOA_OWNER=true); also the default fee recipient
  */
 contract DeployArc is Script {
     function run() external returns (address factoryAddress, address hookAddress, address routerAddress) {
@@ -54,8 +56,15 @@ contract DeployArc is Script {
             }
         }
 
-        address payable feeRecipient =
-            payable(vm.envOr("PROTOCOL_FEE_RECIPIENT", address(0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2)));
+        // Mainnet admin goes to a Safe multisig (docs/KEY-CUSTODY.md); fees default to it too.
+        address ownerSafe = vm.envOr("OWNER_SAFE", address(0));
+        if (ownerSafe == address(0) && block.chainid == 5042 && !vm.envOr("ALLOW_EOA_OWNER", false)) {
+            revert("Set OWNER_SAFE (Safe multisig) for mainnet, or ALLOW_EOA_OWNER=true");
+        }
+        address payable feeRecipient = payable(vm.envOr(
+                "PROTOCOL_FEE_RECIPIENT",
+                ownerSafe != address(0) ? ownerSafe : address(0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2)
+            ));
         IPoolManagerV4 poolManager =
             IPoolManagerV4(vm.envOr("ARC_POOL_MANAGER_V4", address(0x8366a39CC670B4001A1121B8F6A443A643e40951)));
         address usdc = vm.envOr("ARC_USDC", address(0x3600000000000000000000000000000000000000));
@@ -109,6 +118,12 @@ contract DeployArc is Script {
         address guardian = vm.envOr("EMERGENCY_GUARDIAN", address(0));
         if (guardian != address(0)) LaunchpadV2FactoryArc(factory).setGuardian(guardian);
         _setProtocolFee(LaunchpadV2FactoryArc(factory));
+        // Two-step: the Safe completes each handover with acceptOwnership().
+        address ownerSafe = vm.envOr("OWNER_SAFE", address(0));
+        if (ownerSafe != address(0)) {
+            LaunchpadV2FactoryArc(factory).transferOwnership(ownerSafe);
+            buyback.transferOwnership(ownerSafe);
+        }
     }
 
     /// @dev Protocol cut for new launches; the factory enforces the 30% cap.
