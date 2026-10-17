@@ -147,6 +147,43 @@ check('api: health', async () => {
   await expectStatus(`${target.api}/health`, 200);
 });
 
+// --- Monitoring: indexer freshness and keeper gas ---
+const CHAINS = [
+  { slug: 'robinhood', rpc: 'https://rpc.mainnet.chain.robinhood.com', maxLagBlocks: 2_400 }, // ~10 min
+  { slug: 'arc', rpc: 'https://rpc.mainnet.arc.io', maxLagBlocks: 1_200 }, // ~10 min
+];
+async function rpc<T>(url: string, method: string, params: unknown[]): Promise<T> {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  return ((await res.json()) as { result: T }).result;
+}
+for (const chain of CHAINS) {
+  check(`api: ${chain.slug} indexer is current`, async () => {
+    const res = await expectStatus(`${target.api}/dex/latest-block?chain=${chain.slug}`, 200);
+    const indexed = ((await res.json()) as { block: number }).block;
+    const head = Number(BigInt(await rpc<string>(chain.rpc, 'eth_blockNumber', [])));
+    expect(head - indexed <= chain.maxLagBlocks, `indexer ${head - indexed} blocks behind head`);
+  });
+}
+// SMOKE_KEEPER_ADDRESS: the keeper's public address; it must keep enough gas to run.
+const keeper = process.env.SMOKE_KEEPER_ADDRESS;
+if (keeper) {
+  const minGas = [
+    { slug: 'robinhood', rpc: CHAINS[0].rpc, min: 2n * 10n ** 14n, unit: 'ETH' }, // 0.0002 ETH
+    { slug: 'arc', rpc: CHAINS[1].rpc, min: 2n * 10n ** 17n, unit: 'USDC' }, // 0.2 USDC (18 dp native)
+  ];
+  for (const g of minGas) {
+    check(`keeper: ${g.slug} gas balance`, async () => {
+      const bal = BigInt(await rpc<string>(g.rpc, 'eth_getBalance', [keeper, 'latest']));
+      expect(bal >= g.min, `${Number(bal) / 1e18} ${g.unit} left, top up ${keeper}`);
+    });
+  }
+}
+
 console.log(`Smoke checks for ${envName}: ${target.app} | ${target.docs} | ${target.api}\n`);
 let failed = 0;
 for (const { name, run } of checks) {
