@@ -6,31 +6,38 @@
           class="border-b border-border text-muted-foreground uppercase tracking-wider text-xs"
         >
           <TableHead
-            class="py-3 px-4 font-semibold sticky left-0 z-20 bg-card text-muted-foreground"
+            class="py-3 px-4 font-semibold whitespace-nowrap sticky left-0 z-20 bg-card text-muted-foreground"
           >
             {{ t('tokenCol').toUpperCase() }}
           </TableHead>
-          <TableHead class="py-3 px-4 font-semibold text-center w-24 text-muted-foreground"
+          <TableHead
+            class="py-3 px-4 font-semibold whitespace-nowrap text-center w-24 text-muted-foreground"
             >GRAPH</TableHead
           >
-          <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground">{{
-            t('marketCapCol').toUpperCase()
-          }}</TableHead>
-          <TableHead class="py-3 px-4 font-semibold text-center w-36 text-muted-foreground">{{
-            t('progress').toUpperCase()
-          }}</TableHead>
-          <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground">{{
-            t('timeCol').toUpperCase()
-          }}</TableHead>
-          <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground">{{
-            t('volume24hCol').toUpperCase()
-          }}</TableHead>
-          <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground">{{
-            t('change24hCol').toUpperCase()
-          }}</TableHead>
-          <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground">{{
-            t('actionCol').toUpperCase()
-          }}</TableHead>
+          <TableHead
+            class="py-3 px-4 font-semibold whitespace-nowrap text-right text-muted-foreground"
+            >{{ t('marketCapCol').toUpperCase() }}</TableHead
+          >
+          <TableHead
+            class="py-3 px-4 font-semibold whitespace-nowrap text-center w-36 text-muted-foreground"
+            >{{ t('progress').toUpperCase() }}</TableHead
+          >
+          <TableHead
+            class="py-3 px-4 font-semibold whitespace-nowrap text-right text-muted-foreground"
+            >{{ t('timeCol').toUpperCase() }}</TableHead
+          >
+          <TableHead
+            class="py-3 px-4 font-semibold whitespace-nowrap text-right text-muted-foreground"
+            >{{ t('volume24hCol').toUpperCase() }}</TableHead
+          >
+          <TableHead
+            class="py-3 px-4 font-semibold whitespace-nowrap text-right text-muted-foreground"
+            >{{ t('change24hCol').toUpperCase() }}</TableHead
+          >
+          <TableHead
+            class="py-3 px-4 font-semibold whitespace-nowrap text-right text-muted-foreground"
+            >{{ t('actionCol').toUpperCase() }}</TableHead
+          >
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -163,7 +170,7 @@
           <!-- 5. BONDING / PROGRESS -->
           <TableCell class="py-3.5 px-4">
             <div class="space-y-1.5 max-w-[130px] mx-auto text-center">
-              <div class="flex items-center justify-between text-xs">
+              <div class="flex items-center justify-between gap-2 text-xs whitespace-nowrap">
                 <span class="text-muted-foreground">
                   {{ item.marketData?.isGraduated ? t('graduated') : t('onCurve') }}
                 </span>
@@ -179,7 +186,9 @@
           </TableCell>
 
           <!-- 6. AGE -->
-          <TableCell class="py-3.5 px-4 text-right text-muted-foreground font-semibold text-xs">
+          <TableCell
+            class="py-3.5 px-4 text-right text-muted-foreground font-semibold text-xs whitespace-nowrap"
+          >
             {{ formatRelativeTime(item.token.createdAt) }}
           </TableCell>
 

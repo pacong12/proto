@@ -35,11 +35,11 @@
               v-for="chainOpt in chainFilterOptions"
               :key="chainOpt.key"
               type="button"
-              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition cursor-pointer select-none"
+              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition cursor-pointer select-none whitespace-nowrap"
               :class="
                 selectedChainFilter === chainOpt.key
                   ? 'bg-foreground text-background border-foreground font-bold shadow-2xs'
-                  : 'bg-black border border-border text-muted-foreground hover:text-foreground hover:bg-zinc-950'
+                  : 'bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-muted'
               "
               @click="setChainFilter(chainOpt.key)"
             >
