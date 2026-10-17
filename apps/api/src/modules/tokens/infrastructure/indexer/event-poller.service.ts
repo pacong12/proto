@@ -21,6 +21,17 @@ const SWAP_EVENT = parseAbiItem(
 );
 
 /** V2 — BondingCurve Trade event */
+const LIMIT_ORDER_EVENTS = [
+  parseAbiItem(
+    'event OrderCreated(uint256 indexed id, address indexed owner, address indexed token, (address owner, address token, bool isBuy, uint64 deadline, uint256 amount, uint256 minOut, uint256 slPriceX36, uint256 slMinOut) order)',
+  ),
+  parseAbiItem(
+    'event OrderFilled(uint256 indexed id, address indexed executor, uint8 leg, uint256 amountIn, uint256 amountOut, uint256 fee)',
+  ),
+  parseAbiItem('event OrderCancelled(uint256 indexed id)'),
+] as const;
+const FILL_LEGS = ['takeProfit', 'stopLoss', 'buy'] as const;
+
 const TRADE_EVENT = parseAbiItem(
   'event Trade(address indexed trader, bool indexed isBuy, uint256 ethAmount, uint256 tokenAmount, uint256 feeEth)',
 );
@@ -170,6 +181,7 @@ export class EventPollerService {
     count += await this.pollV2Trades(from, to);
     count += await this.pollV1Swaps(from, to);
     count += await this.pollV4Swaps(from, to);
+    count += await this.pollLimitOrders(from, to);
     return count;
   }
 
@@ -594,6 +606,69 @@ export class EventPollerService {
       return count;
     } catch (e) {
       console.warn(`[EventPoller:${this.network.name}] V4 swap poll error:`, (e as Error).message);
+      throw e;
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Limit orders (GotonLimitOrders)
+  // -------------------------------------------------------------------------
+
+  private async pollLimitOrders(from: bigint, to: bigint): Promise<number> {
+    const address = this.network.contracts.limitOrders;
+    if (!address || address === '0x0000000000000000000000000000000000000000') return 0;
+    if (!this.tokenRepository.saveLimitOrder || !this.tokenRepository.updateLimitOrder) return 0;
+    try {
+      const logs = await this.client.getLogs({
+        address,
+        events: LIMIT_ORDER_EVENTS,
+        fromBlock: from,
+        toBlock: to,
+      });
+      const chainId = this.network.chainId;
+      for (const log of logs) {
+        const key = `${chainId}-${log.args.id}`;
+        if (log.eventName === 'OrderCreated') {
+          const o = log.args.order!;
+          const block = await this.client.getBlock({ blockNumber: log.blockNumber! });
+          const at = Number(block.timestamp) * 1000;
+          await this.tokenRepository.saveLimitOrder({
+            key,
+            chainId,
+            orderId: String(log.args.id),
+            owner: o.owner,
+            token: o.token,
+            isBuy: o.isBuy,
+            amount: o.amount.toString(),
+            minOut: o.minOut.toString(),
+            slPriceX36: o.slPriceX36.toString(),
+            slMinOut: o.slMinOut.toString(),
+            deadline: Number(o.deadline),
+            status: 'open',
+            createdTx: log.transactionHash!,
+            createdAt: at,
+            updatedAt: at,
+          });
+        } else if (log.eventName === 'OrderFilled') {
+          await this.tokenRepository.updateLimitOrder(key, {
+            status: 'filled',
+            filledLeg: FILL_LEGS[Number(log.args.leg)] ?? 'buy',
+            amountOut: String(log.args.amountOut),
+            closedTx: log.transactionHash!,
+          });
+        } else {
+          await this.tokenRepository.updateLimitOrder(key, {
+            status: 'cancelled',
+            closedTx: log.transactionHash!,
+          });
+        }
+      }
+      return logs.length;
+    } catch (e) {
+      console.warn(
+        `[EventPoller:${this.network.name}] limit order poll error:`,
+        (e as Error).message,
+      );
       throw e;
     }
   }

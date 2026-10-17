@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { ChainRegistry } from './modules/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import { V4BuybackKeeperService } from './modules/tokens/infrastructure/keeper/v4-buyback-keeper.service';
+import { LimitOrderKeeperService } from './modules/tokens/infrastructure/keeper/limit-order-keeper.service';
 import {
   SqliteTokenRepository,
   ViemChainIndexerAdapter,
@@ -270,6 +271,8 @@ setTimeout(scheduleArcPoll, 30_000);
 /** docker-compose passes unset variables as empty strings; treat those as unset. */
 const envOr = (name: string, fallback: string): string => process.env[name]?.trim() || fallback;
 
+// Limit, take-profit and stop-loss orders need a quick reaction; each cycle only simulates.
+const LIMIT_ORDER_KEEPER_INTERVAL_MS = Number(envOr('LIMIT_ORDER_KEEPER_INTERVAL_MS', '15000'));
 const BUYBACK_KEEPER_INTERVAL_MS = Number(envOr('BUYBACK_KEEPER_INTERVAL_MS', String(10 * 60_000)));
 /**
  * Smallest accrued amount (quote units) worth a keeper transaction, so the keeper never spends
@@ -300,10 +303,24 @@ function startBuybackKeepers(): void {
       network,
       KEEPER_MIN_QUOTE[network.chainId] ?? 0n,
     );
+    const limitKeeper = new LimitOrderKeeperService(
+      client,
+      walletClient,
+      repository,
+      network,
+      network.chainId === ARC_CHAIN.chainId ? 10n ** 12n : 1n,
+    );
+    // One wallet, two loops: run them one at a time so their transactions never share a nonce.
+    let queue: Promise<unknown> = Promise.resolve();
+    const exclusive = <T>(job: () => Promise<T>): Promise<T> => {
+      const run = queue.then(job, job);
+      queue = run.catch(() => undefined);
+      return run;
+    };
     const tick = (): void => {
       setTimeout(async () => {
         try {
-          const executed = (await keeper.runOnce()).filter((r) => r.executed);
+          const executed = (await exclusive(() => keeper.runOnce())).filter((r) => r.executed);
           if (executed.length > 0) {
             logger.info(
               `[BuybackKeeper:${network.name}] executed ${executed.length} transaction(s)`,
@@ -321,6 +338,24 @@ function startBuybackKeepers(): void {
       }, BUYBACK_KEEPER_INTERVAL_MS);
     };
     tick();
+    const limitTick = (): void => {
+      setTimeout(async () => {
+        try {
+          const filled = (await exclusive(() => limitKeeper.runOnce())).filter((r) => r.executed);
+          if (filled.length > 0) {
+            logger.info(`[LimitOrderKeeper:${network.name}] filled ${filled.length} order(s)`, {
+              orders: filled.map((r) => r.key),
+            });
+          }
+        } catch (e) {
+          logger.warn(`[LimitOrderKeeper:${network.name}] cycle failed`, {
+            error: { name: (e as Error).name, message: (e as Error).message },
+          });
+        }
+        limitTick();
+      }, LIMIT_ORDER_KEEPER_INTERVAL_MS);
+    };
+    limitTick();
   }
 }
 startBuybackKeepers();
@@ -1605,6 +1640,28 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     return new Response(safeStringify({ success: true, data: item, timestamp: Date.now() }), {
       headers,
     });
+  }
+
+  // GET /api/orders?owner=0x..&token=0x..&status=open|filled|cancelled — limit orders (GotonLimitOrders)
+  if (url.pathname === '/api/orders' && req.method === 'GET') {
+    const owner = url.searchParams.get('owner') ?? undefined;
+    const token = url.searchParams.get('token') ?? undefined;
+    const status = url.searchParams.get('status') ?? undefined;
+    const isAddr = (v?: string) => v === undefined || /^0x[a-fA-F0-9]{40}$/.test(v);
+    if (!isAddr(owner) || !isAddr(token))
+      return replyError('INVALID_PARAM', 'owner and token must be addresses', 400);
+    if (!owner && !token) return replyError('INVALID_PARAM', 'owner or token is required', 400);
+    if (status && !['open', 'filled', 'cancelled'].includes(status)) {
+      return replyError('INVALID_PARAM', 'status must be open, filled or cancelled', 400);
+    }
+    const orders =
+      (await repository.listLimitOrders?.({
+        owner,
+        token,
+        status: status as 'open' | 'filled' | 'cancelled' | undefined,
+        limit: 100,
+      })) ?? [];
+    return replyEnvelope(ok(orders));
   }
 
   // GET /api/tokens/:address/flow?window=5m|1h|6h|24h — buy vs sell pressure (Binance-style B%/S%)
