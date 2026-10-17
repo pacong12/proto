@@ -70,7 +70,8 @@ export function getAmountOutBuyWei(
 
   const currentK = virtualEthWei * virtualTokenWei;
   const newEthReserve = virtualEthWei + netEthWei;
-  const newTokenReserve = currentK / newEthReserve;
+  // Round up like CurveMath.sol (CURVE-01): rounding never favors the trader.
+  const newTokenReserve = (currentK + newEthReserve - 1n) / newEthReserve;
 
   let tokenOutWei = virtualTokenWei - newTokenReserve;
 
@@ -99,7 +100,8 @@ export function getAmountOutSellWei(
 
   const currentK = virtualEthWei * virtualTokenWei;
   const newTokenReserve = virtualTokenWei + tokenInWei;
-  const newEthReserve = currentK / newTokenReserve;
+  // Round up like CurveMath.sol (CURVE-01).
+  const newEthReserve = (currentK + newTokenReserve - 1n) / newTokenReserve;
 
   const grossEth = virtualEthWei > newEthReserve ? virtualEthWei - newEthReserve : 0n;
   const feeEthWei = (grossEth * TRADE_FEE_BPS) / BPS;

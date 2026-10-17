@@ -21,10 +21,9 @@ contract CurveMathFuzzTest is Test {
 
         assertEq(fee, (ethIn * FEE_BPS) / BPS, "fee is exactly 1%");
         assertLt(tokenOut, vTok, "never more tokens than the reserve");
-        // floor(k / newEth) can leave k short by less than one rounding step (newEth): the buyer
-        // gets at most 1 wei of token extra. Bounded here; see CURVE-01 in AUDIT-VERIFICATION.md.
+        // Rounding up the new reserve means k never shrinks (CURVE-01 in AUDIT-VERIFICATION.md).
         uint256 newEth = vEth + ethIn - fee;
-        assertGe(newEth * (vTok - tokenOut) + newEth, vEth * vTok, "k shortfall below one rounding step");
+        assertGe(newEth * (vTok - tokenOut), vEth * vTok, "k never decreases");
     }
 
     function testFuzz_Buy_RespectsCurveCap(uint256 vEth, uint256 vTok, uint256 ethIn, uint256 cap) public pure {
@@ -41,9 +40,9 @@ contract CurveMathFuzzTest is Test {
         (uint256 ethOut, uint256 fee) = CurveMath.getAmountOutSell(tokenIn, vEth, vTok);
 
         assertLt(ethOut + fee, vEth + 1, "never more quote than the reserve");
-        // Same bound as buys: the seller gets at most 1 wei of quote extra (CURVE-01).
+        // Same for sells: k never decreases (CURVE-01).
         uint256 newTok = vTok + tokenIn;
-        assertGe((vEth - ethOut - fee) * newTok + newTok, vEth * vTok, "k shortfall below one rounding step");
+        assertGe((vEth - ethOut - fee) * newTok, vEth * vTok, "k never decreases");
     }
 
     /// Buying and immediately selling the same tokens can never return more than was paid.

@@ -19,8 +19,9 @@ library CurveMath {
      * @dev 1% fee is deducted from input before calculating AMM output:
      *      netEth = ethIn - feeEth
      *      k = virtualEthReserve * virtualTokenReserve
-     *      newTokenReserve = k / (virtualEthReserve + netEth)
+     *      newTokenReserve = ceil(k / (virtualEthReserve + netEth))
      *      tokenOut = virtualTokenReserve - newTokenReserve
+     *      Rounding up keeps k from shrinking, so rounding never favors the trader (CURVE-01).
      * @param ethIn Total quote asset paid in wei.
      * @param virtualEthReserve Current virtual quote asset reserve.
      * @param virtualTokenReserve Current virtual token reserve.
@@ -41,7 +42,7 @@ library CurveMath {
 
         uint256 currentK = virtualEthReserve * virtualTokenReserve;
         uint256 newEthReserve = virtualEthReserve + netEth;
-        uint256 newTokenReserve = currentK / newEthReserve;
+        uint256 newTokenReserve = (currentK + newEthReserve - 1) / newEthReserve;
 
         tokenOut = virtualTokenReserve - newTokenReserve;
 
@@ -88,8 +89,9 @@ library CurveMath {
      * @notice Calculate ETH/USDC received and platform fee for tokens sold back to curve.
      * @dev 1% fee is deducted from gross ETH proceeds:
      *      k = virtualEthReserve * virtualTokenReserve
-     *      newEthReserve = k / (virtualTokenReserve + tokenIn)
+     *      newEthReserve = ceil(k / (virtualTokenReserve + tokenIn))
      *      grossEth = virtualEthReserve - newEthReserve
+     *      Rounding up keeps k from shrinking, so rounding never favors the trader (CURVE-01).
      *      feeEth = grossEth * 1%
      *      ethOut = grossEth - feeEth
      * @param tokenIn Tokens to sell in wei.
@@ -107,7 +109,7 @@ library CurveMath {
 
         uint256 currentK = virtualEthReserve * virtualTokenReserve;
         uint256 newTokenReserve = virtualTokenReserve + tokenIn;
-        uint256 newEthReserve = currentK / newTokenReserve;
+        uint256 newEthReserve = (currentK + newTokenReserve - 1) / newTokenReserve;
 
         uint256 grossEth = virtualEthReserve > newEthReserve ? virtualEthReserve - newEthReserve : 0;
         feeEth = (grossEth * TRADE_FEE_BPS) / BPS;
