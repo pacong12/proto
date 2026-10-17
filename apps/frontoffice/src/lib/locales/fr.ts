@@ -356,6 +356,37 @@ const messages: Record<string, string> = {
   sells: 'ventes',
   buyers: 'acheteurs',
   sellers: 'vendeurs',
+  targetMarketCap: 'Capitalisation cible (USD)',
+  now: 'Actuelle',
+  amountOfHoldings: 'Part de vos jetons',
+  takeProfitAt: 'Prise de profit à la capitalisation (USD)',
+  optional: 'Facultatif',
+  stopLossAt: 'Stop loss à la capitalisation (USD)',
+  stopSlippage: 'Glissement du stop (%)',
+  expiresIn: 'Expire dans',
+  escrowNote: "Les fonds restent dans le contrat d'ordres jusqu'à l'exécution ou l'annulation.",
+  placeOrder: "Placer l'ordre",
+  receiveAtLeast: 'Vous recevez au moins',
+  selling: 'Vente',
+  takeProfitReceives: 'La prise de profit rapporte',
+  stopLossReceives: 'Le stop loss rapporte',
+  limitBuyAboveMarket:
+    "Un objectif d'achat au niveau de la capitalisation actuelle ou au-dessus s'exécute tout de suite. Utilisez Marché.",
+  limitSellBelowMarket:
+    "Un objectif de vente au niveau de la capitalisation actuelle ou en dessous s'exécute tout de suite. Utilisez Marché.",
+  stopAboveMarket:
+    'Un stop au niveau de la capitalisation actuelle ou au-dessus se déclenche tout de suite.',
+  orderPlaced: 'Ordre placé',
+  openOrders: 'Ordres ouverts',
+  noOpenOrders: 'Aucun ordre ouvert pour ce jeton.',
+  cancelOrder: 'Annuler',
+  orderCancelled: 'Ordre annulé',
+  limitBuyLabel: 'Achat limite',
+  stopLossLabel: 'Stop loss',
+  takeProfitLabel: 'Prise de profit',
+  orderTypeMarket: 'Marché',
+  orderTypeLimit: 'Limite',
+  orderTypeTpSl: 'TP / SL',
 };
 
 export default messages;

@@ -162,7 +162,53 @@
           @execute-swap="handleSwap"
           @claim-dividends="handleClaimDividends"
           @open-pnl-card="isPnlModalOpen = true"
-        />
+        >
+          <template v-if="limitOrdersEnabled" #order-type>
+            <div class="grid grid-cols-3 gap-1 rounded-xl bg-muted p-1" role="tablist">
+              <button
+                v-for="o in ORDER_TYPES"
+                :key="o.value"
+                type="button"
+                role="tab"
+                class="min-h-8 rounded-lg text-xs font-bold transition cursor-pointer"
+                :class="
+                  orderType === o.value
+                    ? 'bg-background text-foreground shadow-2xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                "
+                :aria-selected="orderType === o.value"
+                @click="orderType = o.value"
+              >
+                {{ t(o.label) }}
+              </button>
+            </div>
+          </template>
+          <template v-if="limitOrdersEnabled && orderType !== 'market'" #alternate-form>
+            <LimitOrderPanel
+              :mode="orderType === 'limit' ? 'limit' : 'tpsl'"
+              :token="currentToken"
+              :market-data="currentMarketData"
+              :network="tokenNetwork"
+              :account="account"
+              :user-token-balance="userTokenBalance"
+              :buy-tax-bps="onchainTaxConfig.buyTaxBps"
+              :sell-tax-bps="onchainTaxConfig.sellTaxBps"
+              @created="ordersRefresh++"
+              @open-wallet="openWallet"
+            />
+          </template>
+          <template v-if="limitOrdersEnabled" #after-card>
+            <div class="rounded-2xl border border-border bg-card p-4">
+              <OpenOrders
+                :token="currentToken.address"
+                :symbol="currentToken.symbol"
+                :network="tokenNetwork"
+                :account="account"
+                :refresh-key="ordersRefresh"
+              />
+            </div>
+          </template>
+        </SwapPanel>
 
         <!-- 3. Bonding Curve & Protocol Facts Card (Pons app-facts style) -->
         <div class="xl:col-start-1 xl:row-start-2 min-w-0 w-full space-y-6">
@@ -416,6 +462,7 @@ import {
 import { useSwap, SLIPPAGE_WARN_THRESHOLD, parseAmountToWei } from '../composables/useSwap';
 import { useTokenStream } from '../composables/useTokenStream';
 import { useWallet } from '../composables/useWallet';
+import { limitOrdersAddress } from '@/composables/useLimitOrders';
 import { useLaunchpad } from '../composables/useLaunchpad';
 import { useTaxConfig } from '../composables/useTaxConfig';
 import { usePinnedTokens } from '../composables/usePinnedTokens';
@@ -466,6 +513,8 @@ import {
   TradeCalloutsTab,
   MobileTradeDock,
   TradeFlowGauge,
+  LimitOrderPanel,
+  OpenOrders,
   PnlCardModal,
 } from './trade';
 import { useHolderDividends, type HolderDividendEntry } from '../composables/useHolderDividends';
@@ -924,6 +973,16 @@ const currentMarketData = ref<TokenMarketData>({
 const tokenNetwork = computed(() =>
   resolveTokenNetwork(currentToken.value, activeNetwork.value.chainId),
 );
+
+// Limit / TP-SL orders appear only where GotonLimitOrders is deployed.
+const ORDER_TYPES = [
+  { value: 'market', label: 'orderTypeMarket' },
+  { value: 'limit', label: 'orderTypeLimit' },
+  { value: 'tpsl', label: 'orderTypeTpSl' },
+] as const;
+const orderType = ref<(typeof ORDER_TYPES)[number]['value']>('market');
+const ordersRefresh = ref(0);
+const limitOrdersEnabled = computed(() => limitOrdersAddress(tokenNetwork.value) !== null);
 
 const isArcToken = computed(() => tokenNetwork.value.chainId === ARC_CHAIN.chainId);
 
