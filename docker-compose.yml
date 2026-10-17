@@ -7,7 +7,7 @@ services:
     # Bind to loopback only; the redis password provides an additional auth layer.
     # Port is mapped to 127.0.0.1 so it is not reachable from outside the host.
     ports:
-      - "127.0.0.1:${REDIS_PORT:-6380}:6379"
+      - '127.0.0.1:${REDIS_PORT:-6380}:6379'
     volumes:
       - proto_redis_data:/data
     networks:
@@ -19,7 +19,7 @@ services:
       --maxmemory-policy allkeys-lru
       --requirepass ${REDIS_PASSWORD:?}
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:?}", "ping"]
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD:?}', 'ping']
       interval: 5s
       timeout: 3s
       retries: 5
@@ -28,7 +28,7 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: "1"
+          cpus: '1'
 
   api:
     build:
@@ -71,6 +71,8 @@ services:
       - SESSION_SECRET=${SESSION_SECRET:-}
       - KEEPER_PRIVATE_KEY=${KEEPER_PRIVATE_KEY:-}
       - BUYBACK_KEEPER_INTERVAL_MS=${BUYBACK_KEEPER_INTERVAL_MS:-}
+      - KEEPER_MIN_QUOTE_ROBINHOOD=${KEEPER_MIN_QUOTE_ROBINHOOD:-}
+      - KEEPER_MIN_QUOTE_ARC=${KEEPER_MIN_QUOTE_ARC:-}
       - INDEXER_CONFIRMATIONS=${INDEXER_CONFIRMATIONS:-}
       - TRUST_PROXY=${TRUST_PROXY:-}
       - DB_BACKUP_INTERVAL_MS=${DB_BACKUP_INTERVAL_MS:-}
@@ -80,12 +82,12 @@ services:
     networks:
       - proto-network
     ports:
-      - "127.0.0.1:${API_PORT:-3011}:3001"
+      - '127.0.0.1:${API_PORT:-3011}:3001'
     depends_on:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/health"]
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3001/health']
       interval: 15s
       timeout: 5s
       retries: 3
@@ -95,7 +97,7 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: "1"
+          cpus: '1'
 
   frontoffice:
     build:
@@ -108,14 +110,14 @@ services:
     environment:
       - API_HOST=api:3001
     ports:
-      - "127.0.0.1:${FRONTOFFICE_PORT:-3010}:3000"
+      - '127.0.0.1:${FRONTOFFICE_PORT:-3010}:3000'
     networks:
       - proto-network
     depends_on:
       api:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/"]
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/']
       interval: 20s
       timeout: 5s
       retries: 3
@@ -125,7 +127,7 @@ services:
       resources:
         limits:
           memory: 512M
-          cpus: "1"
+          cpus: '1'
 
   docs:
     build:
@@ -133,11 +135,11 @@ services:
       dockerfile: Dockerfile.docs
     container_name: proto-docs
     ports:
-      - "127.0.0.1:${DOCS_PORT:-3012}:3002"
+      - '127.0.0.1:${DOCS_PORT:-3012}:3002'
     networks:
       - proto-network
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3002/"]
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3002/']
       interval: 30s
       timeout: 5s
       retries: 3
@@ -147,7 +149,7 @@ services:
       resources:
         limits:
           memory: 256M
-          cpus: "0.5"
+          cpus: '0.5'
 
 volumes:
   proto_redis_data:

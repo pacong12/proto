@@ -42,8 +42,15 @@ contract DeployRobinhoodV2 is Script {
             deployer = msg.sender;
         }
 
-        address payable feeRecipient =
-            payable(vm.envOr("PROTOCOL_FEE_RECIPIENT", address(0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2)));
+        // Mainnet admin goes to a Safe multisig (docs/KEY-CUSTODY.md); fees default to it too.
+        address ownerSafe = vm.envOr("OWNER_SAFE", address(0));
+        if (ownerSafe == address(0) && block.chainid == 4663 && !vm.envOr("ALLOW_EOA_OWNER", false)) {
+            revert("Set OWNER_SAFE (Safe multisig) for mainnet, or ALLOW_EOA_OWNER=true");
+        }
+        address payable feeRecipient = payable(vm.envOr(
+                "PROTOCOL_FEE_RECIPIENT",
+                ownerSafe != address(0) ? ownerSafe : address(0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2)
+            ));
         IPoolManagerV4 poolManager =
             IPoolManagerV4(vm.envOr("POOL_MANAGER_V4", address(0x8366a39CC670B4001A1121B8F6A443A643e40951)));
 
@@ -77,6 +84,12 @@ contract DeployRobinhoodV2 is Script {
         // DR-01: optional incident-response guardian that can pause launches, curve buys and graduations.
         address guardian = vm.envOr("EMERGENCY_GUARDIAN", address(0));
         if (guardian != address(0)) factory.setGuardian(guardian);
+        // Two-step: the Safe completes each handover with acceptOwnership().
+        if (ownerSafe != address(0)) {
+            factory.transferOwnership(ownerSafe);
+            graduator.transferOwnership(ownerSafe);
+            buyback.transferOwnership(ownerSafe);
+        }
 
         vm.stopBroadcast();
 
@@ -93,5 +106,8 @@ contract DeployRobinhoodV2 is Script {
         console.log("GotonV4Buyback     :", address(buyback));
         console.log("Launch Fee         :", factory.launchFee(), "wei (0.0005 ETH)");
         console.log("Graduation Target  :", factory.GRADUATION_TARGET(), "wei (4.2 ETH)");
+        if (ownerSafe != address(0)) {
+            console.log("Pending owner      :", ownerSafe, "(Safe must call acceptOwnership on 3 contracts)");
+        }
     }
 }
