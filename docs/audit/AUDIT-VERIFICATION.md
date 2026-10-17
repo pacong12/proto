@@ -177,6 +177,25 @@ Checked against docs.arc.io (EVM differences, stablecoin native model, AMM porti
 | ARC-04 | Info     | Arc block timestamps have 1-second granularity with 0.5 s blocks; the anti-snipe tax steps per second, so two blocks share each step.                                                                                                             | Accepted: matches the intended 3-second schedule.                                                                                                                               |
 | ARC-05 | Info     | Arc recommends testing value transfers on Arc testnet, since local forks do not reproduce blocklist or EIP-7708 behavior.                                                                                                                         | Open: run the launch flow on Arc testnet (chain 5042002) before the next factory deployment.                                                                                    |
 
+## GotonLimitOrders (2026-10)
+
+Escrowed limit buy, take-profit, stop-loss and OCO orders (`src/core/GotonLimitOrders.sol`). No owner
+or admin functions; funds leave escrow only by filling on the owner's terms or by `cancel`.
+
+| Design point                                      | How it is enforced                                                                                                                                                                                      |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Executor cannot pick a bad price                  | Fills are checked against the owner's (buy) or this contract's (sell) balance change against `minOut` / `slMinOut`, never against router return values                                                  |
+| Executor cannot use other orders' funds           | Routes are limited to curves registered in the trusted factory (`curveToToken`, not the curve's own getters, which a fake curve could spoof) and pools with the trusted hook through the trusted router |
+| Stop-loss cannot be triggered by a one-block push | Pools trigger on the hook's TWAP (`consultTick`); curves on spot (moving it costs real trades)                                                                                                          |
+| Partial fills                                     | Native refunds and unsold tokens go back to the owner; allowances are reset to 0                                                                                                                        |
+| Expiry                                            | Expired orders cannot fill; `cancel` always works                                                                                                                                                       |
+
+Slither: `reentrancy-balance` (High) on `createSellOrder` and `_settleTokens` is a false positive:
+balance deltas are the intended measurement and every entry point is `nonReentrant`.
+`divide-before-multiply` (price scaling, fee rounding), `incorrect-equality` (zero checks) and
+`unused-return` (outcomes measured by balances) are annotated in the source.
+`test/fuzz/GotonLimitOrders.invariant.t.sol` checks that escrow always equals the sum of open orders.
+
 `test/fuzz/GotonFeeSplitter.invariant.t.sol` runs random fee deposits, holder transfers, time jumps
 and claims (256 runs x 500 calls) and checks that the splitter always holds enough for the creator
 share, the buyback share and every holder's claimable dividend, and never pays out more than it
