@@ -276,7 +276,7 @@
                 </div>
               </TableCell>
               <TableCell class="py-3.5 px-4 text-right font-bold text-foreground">
-                ${{ formatCompactUsd(tItem.marketData?.marketCapUsd || 4200) }}
+                {{ formatMarketCap(tItem.marketData?.marketCapUsd) }}
               </TableCell>
               <TableCell class="py-3.5 px-4 text-right font-medium text-foreground">
                 {{
@@ -423,7 +423,7 @@ import {
 } from '@/components/ui/table';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { ShadcnAreaChart, type ChartDataPoint } from '@/components/ui/chart';
-import { formatCompactUsd, getChainIcon } from '@/lib/utils';
+import { formatCompactUsd, getChainIcon, formatMarketCap } from '@/lib/utils';
 
 const { t } = useI18n();
 const router = useRouter();

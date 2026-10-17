@@ -73,7 +73,7 @@
 
           <div class="text-right shrink-0">
             <span class="font-bold text-foreground block text-xs">
-              ${{ formatCompactUsd(tItem.marketData?.marketCapUsd || 4200) }}
+              {{ formatMarketCap(tItem.marketData?.marketCapUsd) }}
             </span>
             <span
               class="text-xs font-bold"
@@ -97,9 +97,9 @@ import { useI18n } from '@/lib/i18n';
 import { Empty } from '@/components/ui/empty';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import {
-  formatCompactUsd,
   getTokenChainIcon as getChainIcon,
   getTokenChainName as getChainName,
+  formatMarketCap,
 } from '@/lib/utils';
 import { useTokenStore } from '@/composables/useTokenStore';
 import type { LaunchedTokenEntity, TokenMarketData } from '@goton/shared-types';

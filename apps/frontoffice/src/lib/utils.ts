@@ -49,6 +49,14 @@ export function formatCompactUsd(value: number | string | undefined | null): str
 }
 
 /**
+ * Market cap for display. Unknown or zero shows a dash instead of an invented figure.
+ */
+export function formatMarketCap(value: number | string | undefined | null): string {
+  const num = typeof value === 'string' ? parseFloat(value) : (value ?? 0);
+  return Number.isFinite(num) && num > 0 ? formatCompactUsd(num) : '—';
+}
+
+/**
  * Format token spot price in USD cleanly without visual overflow.
  */
 export function formatPriceUsd(price: number | string | undefined | null): string {

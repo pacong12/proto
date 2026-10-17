@@ -36,9 +36,9 @@
               </div>
               <span class="text-xs text-muted-foreground block mt-0.5">
                 MC:
-                <strong class="text-foreground"
-                  >${{ formatCompactUsd(currentMarketData.marketCapUsd || 4200) }}</strong
-                >
+                <strong class="text-foreground">{{
+                  formatMarketCap(currentMarketData.marketCapUsd)
+                }}</strong>
                 · Price:
                 <strong class="text-foreground">{{
                   formatPriceUsd(currentMarketData.priceUsd)
@@ -174,7 +174,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
-import { formatCompactUsd, formatPriceUsd, shortenAddress } from '@/lib/utils';
+import { formatPriceUsd, shortenAddress, formatMarketCap } from '@/lib/utils';
 import type { LaunchedTokenEntity, TokenMarketData } from '@goton/shared-types';
 
 const { t } = useI18n();

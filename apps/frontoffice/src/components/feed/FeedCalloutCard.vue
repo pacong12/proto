@@ -131,7 +131,7 @@
             <span
               >MC:
               <strong class="text-foreground">{{
-                formatCompactUsd(call.tokenMarketCapUsd ?? 4200)
+                formatMarketCap(call.tokenMarketCapUsd)
               }}</strong></span
             >
             <span v-if="call.targetMcap" class="text-emerald-500 font-bold truncate">
@@ -319,6 +319,7 @@ import {
   formatCompactUsd,
   getTokenChainIcon as getChainIcon,
   getTokenChainName as getChainName,
+  formatMarketCap,
 } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { calculateUnrealizedPnl } from '@goton/math-sdk';

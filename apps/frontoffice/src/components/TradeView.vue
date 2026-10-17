@@ -473,9 +473,9 @@ import {
   shortenAddress,
   formatTokenNumber,
   formatRelativeTime,
-  formatCompactUsd,
   formatPriceUsd,
   formatSubscriptPrice,
+  formatMarketCap,
 } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { setPageSeo } from '@/lib/seo';
@@ -721,7 +721,7 @@ async function handlePostCallout(): Promise<void> {
 
       if (callShareToX.value && typeof window !== 'undefined') {
         const tweetText = encodeURIComponent(
-          `I just called $${currentToken.value.symbol} at ${formatCompactUsd(currentMarketData.value.marketCapUsd || 4200)} MC (Target: ${callTargetMcap.value}) on @proto_protocol!\n\n"${content.slice(0, 100)}"\n\n${window.location.href}`,
+          `I just called $${currentToken.value.symbol} at ${formatMarketCap(currentMarketData.value.marketCapUsd)} MC (Target: ${callTargetMcap.value}) on @proto_protocol!\n\n"${content.slice(0, 100)}"\n\n${window.location.href}`,
         );
         window.open(
           `https://twitter.com/intent/tweet?text=${tweetText}`,
@@ -1051,7 +1051,7 @@ function toggleHeaderFigure(): void {
 }
 const primaryFigureValue = computed(() => {
   if (primaryFigureMode.value === 'mcap') {
-    return '$' + formatNumberCap(currentMarketData.value.marketCapUsd ?? 4200);
+    return formatMarketCap(currentMarketData.value.marketCapUsd);
   }
   return formatPriceUsd(currentMarketData.value.priceUsd);
 });
@@ -1059,12 +1059,12 @@ const secondaryFigureValue = computed(() => {
   if (primaryFigureMode.value === 'mcap') {
     return formatPriceUsd(currentMarketData.value.priceUsd) + ' price';
   }
-  return '$' + formatNumberCap(currentMarketData.value.marketCapUsd ?? 4200) + ' mcap';
+  return formatMarketCap(currentMarketData.value.marketCapUsd) + ' mcap';
 });
 
 const activeChartHeaderPrice = computed(() => {
   if (chartDisplayMode.value === 'mcap') {
-    return formatCompactUsd(currentMarketData.value.marketCapUsd || 4200);
+    return formatMarketCap(currentMarketData.value.marketCapUsd);
   }
   if (chartCurrencyMode.value === 'native') {
     const val = currentMarketData.value.priceInWeth || 0;
@@ -1544,12 +1544,6 @@ function shareToX() {
     );
     window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank', 'noopener,noreferrer');
   }
-}
-
-function formatNumberCap(val: number): string {
-  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
-  if (val >= 1_000) return `${(val / 1_000).toFixed(1)}K`;
-  return val.toFixed(0);
 }
 
 // -----------------------------------------------------------------------
