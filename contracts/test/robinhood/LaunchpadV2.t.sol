@@ -298,7 +298,7 @@ contract LaunchpadV2Test is Test {
         factoryReject.launchTokenV2{value: 0.0005 ether}("Fail", "FAIL", "", "", "", "", "", 0);
     }
 
-    function test_SetLaunchFee_OwnerOnlyAndCalibrateArcFee() public {
+    function test_SetLaunchFee_OwnerOnlyAndCapped() public {
         // Default launchFee is 0.0005 ether (Robinhood)
         assertEq(factory.launchFee(), 0.0005 ether);
         assertEq(factory.LAUNCH_FEE(), 0.0005 ether);
@@ -306,21 +306,23 @@ contract LaunchpadV2Test is Test {
         // Non-owner cannot change launch fee
         vm.prank(address(0xDEAD));
         vm.expectRevert(LaunchpadV2Factory.Unauthorized.selector);
-        factory.setLaunchFee(1.0 ether);
+        factory.setLaunchFee(0.001 ether);
 
-        // Owner changes fee to 1.0 ether (1.00 USDC for Arc Network)
-        factory.setLaunchFee(1.0 ether);
-        assertEq(factory.launchFee(), 1.0 ether);
-        assertEq(factory.LAUNCH_FEE(), 1.0 ether);
+        // The owner cannot raise it above the hard cap
+        uint256 aboveCap = factory.MAX_LAUNCH_FEE() + 1;
+        vm.expectRevert(LaunchpadV2Factory.InvalidFee.selector);
+        factory.setLaunchFee(aboveCap);
 
-        // Launching with less than 1.0 ether reverts
+        factory.setLaunchFee(0.01 ether);
+        assertEq(factory.launchFee(), 0.01 ether);
+
+        // Launching with less than the fee reverts
         vm.prank(creator);
         vm.expectRevert(LaunchpadV2Factory.InvalidFee.selector);
-        factory.launchTokenV2{value: 0.5 ether}("Arc Token", "ARC", "", "", "", "", "", 0);
+        factory.launchTokenV2{value: 0.005 ether}("Fee Token", "FEE", "", "", "", "", "", 0);
 
-        // Launching with 1.0 ether succeeds
         vm.prank(creator);
-        (address tokenAddress,) = factory.launchTokenV2{value: 1.0 ether}("Arc Token", "ARC", "", "", "", "", "", 0);
+        (address tokenAddress,) = factory.launchTokenV2{value: 0.01 ether}("Fee Token", "FEE", "", "", "", "", "", 0);
         assertNotEq(tokenAddress, address(0));
     }
 

@@ -25,6 +25,8 @@ import {GotonV4Graduator} from "../../core/GotonV4Graduator.sol";
  */
 contract LaunchpadV2Factory is EmergencyPause {
     uint256 public launchFee = 0.0005 ether;
+    /// @notice Hard cap on the owner-set launch fee, so creators can rely on it.
+    uint256 public constant MAX_LAUNCH_FEE = 0.01 ether;
     uint256 public constant GRADUATION_TARGET = 4.2 ether;
     uint256 public constant VIRTUAL_ETH_RESERVE = 1.68 ether;
     uint256 public constant VIRTUAL_TOKEN_RESERVE = 1_000_000_000 * 1e18;
@@ -100,6 +102,7 @@ contract LaunchpadV2Factory is EmergencyPause {
     receive() external payable {}
 
     function setLaunchFee(uint256 _newFee) external onlyOwner {
+        if (_newFee > MAX_LAUNCH_FEE) revert InvalidFee();
         uint256 oldFee = launchFee;
         launchFee = _newFee;
         emit LaunchFeeUpdated(oldFee, _newFee);
