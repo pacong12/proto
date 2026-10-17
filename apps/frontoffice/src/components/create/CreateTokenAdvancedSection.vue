@@ -205,11 +205,12 @@
           <Button
             type="button"
             size="sm"
-            :variant="isPreset(25, 25, 25, 25) ? 'default' : 'outline'"
+            :variant="isPreset(0, 50, 50, 0) ? 'default' : 'outline'"
             class="h-7 text-xs cursor-pointer"
-            @click="setPreset(25, 25, 25, 25)"
+            @click="setPreset(0, 50, 50, 0)"
           >
-            25% Equal
+            <span class="hidden sm:inline">50/50 Holders & Buyback</span>
+            <span class="sm:hidden">Community</span>
           </Button>
         </div>
 
@@ -265,18 +266,6 @@
                 :stroke-dashoffset="donutData.segments.holders.offset"
                 class="transition-all duration-300"
               />
-              <circle
-                v-if="revenueSplit.growth > 0"
-                cx="50"
-                cy="50"
-                r="38"
-                stroke="var(--chart-1)"
-                stroke-width="12"
-                fill="transparent"
-                :stroke-dasharray="`${donutData.segments.growth.stroke} ${donutData.circumference}`"
-                :stroke-dashoffset="donutData.segments.growth.offset"
-                class="transition-all duration-300"
-              />
             </svg>
 
             <!-- Center Text inside Donut -->
@@ -293,7 +282,7 @@
             </div>
           </div>
 
-          <!-- 4 Allocation Share Sliders -->
+          <!-- 3 Allocation Share Sliders -->
           <div class="flex-1 w-full space-y-5">
             <!-- Creator Share Slider -->
             <div class="space-y-2">
@@ -368,32 +357,6 @@
               <div class="flex items-center justify-between text-xs text-muted-foreground">
                 <span>{{ t('holderDividendShare') }}</span>
                 <span class="font-semibold">{{ revenueSplit.holders }}%</span>
-              </div>
-            </div>
-
-            <!-- Liquidity Growth Slider -->
-            <div class="space-y-2">
-              <div class="flex items-center justify-between text-xs">
-                <div class="flex items-center gap-1.5 font-semibold text-foreground">
-                  <span>{{ t('liquidityGrowth') }}</span>
-                  <InfoTooltip
-                    text="Permanently injected into the liquidity pool to deepen market depth and reduce slippage."
-                  />
-                </div>
-                <span class="font-bold text-foreground"> {{ revenueSplit.growth }}% </span>
-              </div>
-              <Slider
-                :model-value="[revenueSplit.growth]"
-                :max="100"
-                :min="0"
-                :step="1"
-                range-class="bg-foreground"
-                thumb-class="border-foreground focus-visible:ring-foreground"
-                @update:model-value="updatePillar('growth', $event ? $event[0] : 0)"
-              />
-              <div class="flex items-center justify-between text-xs text-muted-foreground">
-                <span>{{ t('liquidityInjectionShare') }}</span>
-                <span class="font-semibold">{{ revenueSplit.growth }}%</span>
               </div>
             </div>
 

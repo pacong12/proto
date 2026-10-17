@@ -457,6 +457,7 @@ const {
   launchTokenAddress,
   resetLaunchState,
   checkPendingTransaction,
+  retryRevenueSplit,
 } = useLaunchpad();
 const {
   isConnected,
@@ -781,7 +782,44 @@ async function handleLaunch() {
   });
 
   if (result) {
+    warnIfSettingsMissing(result, activeNetwork.value.chainId, { ...revenueSplit.value });
     emit('tokenCreated', result.tokenAddress);
+  }
+}
+
+/**
+ * On Robinhood Chain the creator tax and the revenue split are separate transactions after the
+ * launch. If one did not land (rejected signature, or a third party bought first), say so instead
+ * of letting the creator believe it is active, and offer a retry while it is still possible.
+ */
+function warnIfSettingsMissing(
+  result: { tokenAddress: `0x${string}`; taxApplied: boolean; splitApplied: boolean },
+  chainId: number,
+  split: typeof revenueSplit.value,
+) {
+  if (!result.splitApplied) {
+    toast.warning('Revenue split was not applied', {
+      description:
+        'Fees will use the default split (all to the creator) unless you retry before the first buy from another wallet.',
+      duration: Infinity,
+      action: {
+        label: 'Retry',
+        onClick: async () => {
+          if (await retryRevenueSplit(result.tokenAddress, split, chainId)) {
+            toast.success('Revenue split applied');
+          } else {
+            toast.error('Revenue split could not be applied. Trading may have started already.');
+          }
+        },
+      },
+    });
+  }
+  if (!result.taxApplied) {
+    toast.warning('Creator tax was not applied', {
+      description:
+        'Your token trades without the tax you set. You can set it from the token page until the first buy from another wallet.',
+      duration: 15_000,
+    });
   }
 }
 </script>

@@ -99,31 +99,45 @@ export class RobinhoodChainAdapter implements ChainAdapter {
       }
     }
 
-    // The LP-fee split is enforced at graduation by GotonV4Graduator (set once, before public trading).
-    const { graduator } = this.network.contracts;
-    if (params.revenueSplit && isDeployed(graduator)) {
-      try {
-        const split = revenueSplitToBps(params.revenueSplit);
-        const splitHash = await walletClient.writeContract({
-          address: graduator,
-          abi: gotonV4GraduatorAbi,
-          functionName: 'setRevenueSplit',
-          args: [
-            result.tokenAddress,
-            split.holdersBps,
-            split.burnBps,
-            split.creatorBps,
-            split.liquidityBps,
-          ],
+    // The LP-fee split is enforced at graduation by GotonV4Graduator (set once, before public
+    // trading). The caller is told when it did not land, so the creator can retry.
+    result.splitApplied = params.revenueSplit
+      ? await this.applyRevenueSplit(
+          result.tokenAddress,
+          params.revenueSplit,
+          walletClient,
+          publicClient,
           account,
-          chain: walletClient.chain,
-        });
-        await waitForReceiptWithFallback(publicClient, splitHash, walletClient);
-      } catch (err) {
-        console.warn('[RobinhoodChainAdapter] Revenue split was not applied:', err);
-      }
-    }
+        )
+      : true;
     return result;
+  }
+
+  async applyRevenueSplit(
+    tokenAddress: `0x${string}`,
+    revenueSplit: NonNullable<ChainLaunchParams['revenueSplit']>,
+    walletClient: WalletClient,
+    publicClient: PublicClient,
+    account: `0x${string}`,
+  ): Promise<boolean> {
+    const { graduator } = this.network.contracts;
+    if (!isDeployed(graduator)) return false;
+    try {
+      const split = revenueSplitToBps(revenueSplit);
+      const splitHash = await walletClient.writeContract({
+        address: graduator,
+        abi: gotonV4GraduatorAbi,
+        functionName: 'setRevenueSplit',
+        args: [tokenAddress, split.holdersBps, split.burnBps, split.creatorBps, split.liquidityBps],
+        account,
+        chain: walletClient.chain,
+      });
+      const receipt = await waitForReceiptWithFallback(publicClient, splitHash, walletClient);
+      return receipt?.status === 'success';
+    } catch (err) {
+      console.warn('[RobinhoodChainAdapter] Revenue split was not applied:', err);
+      return false;
+    }
   }
 
   /**

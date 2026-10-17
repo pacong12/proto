@@ -93,6 +93,9 @@ export function useLaunchpad() {
     tokenAddress: `0x${string}`;
     curveAddress?: `0x${string}`;
     poolAddress?: `0x${string}`;
+    /** False when the creator tax or revenue split did not land on-chain. */
+    taxApplied: boolean;
+    splitApplied: boolean;
   } | null> {
     loading.value = true;
     error.value = null;
@@ -185,6 +188,8 @@ export function useLaunchpad() {
         tokenAddress: result.tokenAddress,
         curveAddress: result.curveAddress,
         poolAddress: result.poolAddress,
+        taxApplied: result.taxApplied ?? true,
+        splitApplied: result.splitApplied ?? true,
       };
     } catch (err) {
       if (isUserRejection(err)) {
@@ -558,6 +563,43 @@ export function useLaunchpad() {
     return null;
   }
 
+  /**
+   * Retries a revenue split that did not land at launch (Robinhood Chain). Works only until the
+   * first third-party buy; after that the default split is final.
+   */
+  async function retryRevenueSplit(
+    tokenAddress: `0x${string}`,
+    revenueSplit: { creator: number; buyback: number; holders: number; growth: number },
+    chainId: number,
+  ): Promise<boolean> {
+    loading.value = true;
+    error.value = null;
+    try {
+      const walletClient = await getWalletClient();
+      if (!walletClient) throw new Error('No Web3 wallet detected');
+      const [account] = await walletClient.getAddresses();
+      if (!account) throw new Error('Please connect your wallet');
+      const network = getNetworkConfig(chainId);
+      if ((await walletClient.getChainId()) !== network.chainId) {
+        throw new Error(`Switch your wallet to ${network.name} and retry.`);
+      }
+      const adapter = getChainAdapter(network.chainId);
+      if (!adapter.applyRevenueSplit) return true;
+      return await adapter.applyRevenueSplit(
+        tokenAddress,
+        revenueSplit,
+        walletClient,
+        getPublicClient(network.chainId),
+        account,
+      );
+    } catch (err) {
+      if (!isUserRejection(err)) error.value = (err as Error).message;
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   async function setTokenTax(
     tokenAddress: `0x${string}`,
     buyTaxPercent: number,
@@ -623,6 +665,7 @@ export function useLaunchpad() {
     claimFees,
     setFeeRedirect,
     setTokenTax,
+    retryRevenueSplit,
     checkPendingTransaction,
   };
 }

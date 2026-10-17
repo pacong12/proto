@@ -23,6 +23,8 @@ export interface ChainLaunchResult {
   curveAddress?: `0x${string}`;
   /** Whether the requested creator tax is live on-chain (only then is it synced to the API). */
   taxApplied?: boolean;
+  /** Whether the requested revenue split is recorded on-chain (false = default split applies). */
+  splitApplied?: boolean;
 }
 
 export interface ChainSwapParams {
@@ -50,6 +52,18 @@ export interface ChainAdapter {
     account: `0x${string}`,
     onHashEmitted?: (hash: `0x${string}`) => void,
   ): Promise<ChainLaunchResult | null>;
+
+  /**
+   * Records the revenue split for a token launched in a separate transaction (Robinhood Chain).
+   * Only possible before the first third-party buy. Absent where the split is part of the launch.
+   */
+  applyRevenueSplit?(
+    tokenAddress: `0x${string}`,
+    revenueSplit: NonNullable<ChainLaunchParams['revenueSplit']>,
+    walletClient: WalletClient,
+    publicClient: PublicClient,
+    account: `0x${string}`,
+  ): Promise<boolean>;
 
   executeSwap(
     params: ChainSwapParams,
