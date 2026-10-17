@@ -74,7 +74,9 @@ export class LimitOrderKeeperService {
     const id = BigInt(order.orderId);
     const token = await this.repository.findByAddress(order.token);
     const onCurve =
-      token?.version === 'v2' && !token.isGraduated && token.curveAddress ? token.curveAddress : null;
+      token?.version === 'v2' && !token.isGraduated && token.curveAddress
+        ? token.curveAddress
+        : null;
     const key = onCurve ? null : protoV4PoolKeyFor(this.network, order.token);
     if (!onCurve && !key) return [];
 

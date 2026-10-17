@@ -630,10 +630,14 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
   }): Promise<LimitOrderEntity[]> {
     const where: string[] = [];
     const args: Array<string | number> = [];
-    if (filter.owner) (where.push('owner = ?'), args.push(filter.owner.toLowerCase()));
-    if (filter.token) (where.push('token = ?'), args.push(filter.token.toLowerCase()));
-    if (filter.status) (where.push('status = ?'), args.push(filter.status));
-    if (filter.chainId) (where.push('chain_id = ?'), args.push(filter.chainId));
+    const add = (clause: string, value: string | number) => {
+      where.push(clause);
+      args.push(value);
+    };
+    if (filter.owner) add('owner = ?', filter.owner.toLowerCase());
+    if (filter.token) add('token = ?', filter.token.toLowerCase());
+    if (filter.status) add('status = ?', filter.status);
+    if (filter.chainId) add('chain_id = ?', filter.chainId);
     const rows = this.db
       .prepare(
         `SELECT * FROM limit_orders ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
