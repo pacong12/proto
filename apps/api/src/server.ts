@@ -267,7 +267,18 @@ setTimeout(scheduleArcPoll, 30_000);
 // contract enforces the price guard, so the key only pays gas and can never pick a bad price.
 // The same keeper pays the splitters' accrued protocol and liquidity shares to their vaults.
 // ---------------------------------------------------------------------------
-const BUYBACK_KEEPER_INTERVAL_MS = Number(process.env.BUYBACK_KEEPER_INTERVAL_MS ?? 10 * 60_000);
+/** docker-compose passes unset variables as empty strings; treat those as unset. */
+const envOr = (name: string, fallback: string): string => process.env[name]?.trim() || fallback;
+
+const BUYBACK_KEEPER_INTERVAL_MS = Number(envOr('BUYBACK_KEEPER_INTERVAL_MS', String(10 * 60_000)));
+/**
+ * Smallest accrued amount (quote units) worth a keeper transaction, so the keeper never spends
+ * more on gas than it moves: 0.001 ETH on Robinhood Chain, 1 USDC (6 decimals) on Arc.
+ */
+const KEEPER_MIN_QUOTE: Record<number, bigint> = {
+  [ROBINHOOD_CHAIN.chainId]: BigInt(envOr('KEEPER_MIN_QUOTE_ROBINHOOD', '1000000000000000')),
+  [ARC_CHAIN.chainId]: BigInt(envOr('KEEPER_MIN_QUOTE_ARC', '1000000')),
+};
 
 function startBuybackKeepers(): void {
   const key = process.env.KEEPER_PRIVATE_KEY?.trim();
@@ -282,7 +293,13 @@ function startBuybackKeepers(): void {
       chain: client.chain,
       transport: rpcTransport(network, 30_000),
     });
-    const keeper = new V4BuybackKeeperService(client, walletClient, repository, network);
+    const keeper = new V4BuybackKeeperService(
+      client,
+      walletClient,
+      repository,
+      network,
+      KEEPER_MIN_QUOTE[network.chainId] ?? 0n,
+    );
     const tick = (): void => {
       setTimeout(async () => {
         try {
@@ -337,8 +354,8 @@ if (process.env.NODE_ENV !== 'test' && repository.findStaleMarketData) {
 }
 
 // DR-04: daily hot backups of the SQLite database (DB_BACKUP_INTERVAL_MS=0 disables).
-const DB_BACKUP_INTERVAL_MS = Number(process.env.DB_BACKUP_INTERVAL_MS ?? 24 * 60 * 60_000);
-const DB_BACKUP_KEEP = Number(process.env.DB_BACKUP_KEEP ?? 7);
+const DB_BACKUP_INTERVAL_MS = Number(envOr('DB_BACKUP_INTERVAL_MS', String(24 * 60 * 60_000)));
+const DB_BACKUP_KEEP = Number(envOr('DB_BACKUP_KEEP', '7'));
 if (DB_BACKUP_INTERVAL_MS > 0 && process.env.NODE_ENV !== 'test') {
   setInterval(() => {
     try {
