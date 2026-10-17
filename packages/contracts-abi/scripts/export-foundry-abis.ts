@@ -112,6 +112,12 @@ const CONTRACTS_TO_EXPORT: ContractExportConfig[] = [
     outputName: 'goton-v4-router.abi.ts',
     exportVarName: 'gotonV4RouterAbi',
   },
+  {
+    sourceFile: 'GotonLimitOrders.sol',
+    contractName: 'GotonLimitOrders',
+    outputName: 'goton-limit-orders.abi.ts',
+    exportVarName: 'gotonLimitOrdersAbi',
+  },
 ];
 
 for (const item of CONTRACTS_TO_EXPORT) {

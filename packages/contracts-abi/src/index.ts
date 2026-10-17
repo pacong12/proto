@@ -13,6 +13,7 @@ export * from './v2/goton-v4-hook.abi';
 export * from './v2/goton-fee-splitter.abi';
 export * from './v2/goton-v4-graduator.abi';
 export * from './v2/goton-v4-router.abi';
+export * from './v2/goton-limit-orders.abi';
 export * from './v2/goton-v4-buyback.abi';
 export * from './external/dex.abi';
 export * from './chains';
