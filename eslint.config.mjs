@@ -19,6 +19,7 @@ export default tseslint.config(
       'contracts/out/**',
       'contracts/cache/**',
       '.nx/**',
+      '**/.wrangler/**',
     ],
   },
   {
