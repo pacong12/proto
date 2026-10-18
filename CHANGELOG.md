@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/pacong12/proto/compare/v0.4.0...v0.4.1) (2026-10-18)
+
+
+### Bug Fixes
+
+* **api:** let the indexer catch up with Robinhood Chain ([#179](https://github.com/pacong12/proto/issues/179)) ([a7ba0a7](https://github.com/pacong12/proto/commit/a7ba0a78a8dbcf88a4d7f84065f87b8f907049df))
+
 ## [0.4.0](https://github.com/pacong12/proto/compare/v0.3.1...v0.4.0) (2026-10-18)
 
 
