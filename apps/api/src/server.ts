@@ -3,6 +3,7 @@ import { ChainRegistry } from './modules/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import { V4BuybackKeeperService } from './modules/tokens/infrastructure/keeper/v4-buyback-keeper.service';
 import { LimitOrderKeeperService } from './modules/tokens/infrastructure/keeper/limit-order-keeper.service';
+import { GraduationKeeperService } from './modules/tokens/infrastructure/keeper/graduation-keeper.service';
 import {
   SqliteTokenRepository,
   ViemChainIndexerAdapter,
@@ -273,6 +274,8 @@ const envOr = (name: string, fallback: string): string => process.env[name]?.tri
 
 // Limit, take-profit and stop-loss orders need a quick reaction; each cycle only simulates.
 const LIMIT_ORDER_KEEPER_INTERVAL_MS = Number(envOr('LIMIT_ORDER_KEEPER_INTERVAL_MS', '15000'));
+// A finished curve cannot trade until it graduates, so check often; each check is one read per curve.
+const GRADUATION_KEEPER_INTERVAL_MS = Number(envOr('GRADUATION_KEEPER_INTERVAL_MS', '30000'));
 const BUYBACK_KEEPER_INTERVAL_MS = Number(envOr('BUYBACK_KEEPER_INTERVAL_MS', String(10 * 60_000)));
 /**
  * Smallest accrued amount (quote units) worth a keeper transaction, so the keeper never spends
@@ -310,7 +313,8 @@ function startBuybackKeepers(): void {
       network,
       network.chainId === ARC_CHAIN.chainId ? 10n ** 12n : 1n,
     );
-    // One wallet, two loops: run them one at a time so their transactions never share a nonce.
+    const graduationKeeper = new GraduationKeeperService(client, walletClient, repository, network);
+    // One wallet, several loops: run them one at a time so their transactions never share a nonce.
     let queue: Promise<unknown> = Promise.resolve();
     const exclusive = <T>(job: () => Promise<T>): Promise<T> => {
       const run = queue.then(job, job);
@@ -356,6 +360,26 @@ function startBuybackKeepers(): void {
       }, LIMIT_ORDER_KEEPER_INTERVAL_MS);
     };
     limitTick();
+    const graduationTick = (): void => {
+      setTimeout(async () => {
+        try {
+          const done = (await exclusive(() => graduationKeeper.runOnce())).filter(
+            (r) => r.executed,
+          );
+          if (done.length > 0) {
+            logger.info(`[GraduationKeeper:${network.name}] graduated ${done.length} token(s)`, {
+              tokens: done.map((r) => r.token),
+            });
+          }
+        } catch (e) {
+          logger.warn(`[GraduationKeeper:${network.name}] cycle failed`, {
+            error: { name: (e as Error).name, message: (e as Error).message },
+          });
+        }
+        graduationTick();
+      }, GRADUATION_KEEPER_INTERVAL_MS);
+    };
+    graduationTick();
   }
 }
 startBuybackKeepers();
