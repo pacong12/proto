@@ -160,3 +160,37 @@ describe('EventPollerService — Uniswap v4', () => {
     expect((await repo.findByAddress(IDEA))?.version).toBe('v4');
   });
 });
+
+describe('EventPollerService — catch-up', () => {
+  it('indexes up to 2,000 blocks a cycle and reports when it is still behind', async () => {
+    let head = 100_002n; // the poller stays 2 blocks behind the head
+    const ranges: Array<[bigint, bigint]> = [];
+    const client = {
+      getBlockNumber: async () => head,
+      getLogs: async ({ fromBlock, toBlock }: { fromBlock: bigint; toBlock: bigint }) => {
+        ranges.push([fromBlock, toBlock]);
+        return [];
+      },
+      readContract: async () => 18,
+      getBlock: async () => ({ timestamp: 1_700_000_000n }),
+    } as unknown as PublicClient;
+    let cursor = 90_000n;
+    const repo = Object.assign(new InMemoryTokenRepository(), {
+      getLastIndexedBlock: async () => cursor,
+      setLastIndexedBlock: async (_: string, block: bigint) => {
+        cursor = block;
+      },
+    });
+    const p = poller(ROBINHOOD_CHAIN, client, repo);
+
+    await p.pollEvents();
+    expect(ranges[0]).toEqual([90_001n, 92_001n]);
+    expect(cursor).toBe(92_001n);
+    expect(p.isBehind).toBe(true);
+
+    head = cursor + 500n;
+    await p.pollEvents();
+    expect(cursor).toBe(head - 2n);
+    expect(p.isBehind).toBe(false);
+  });
+});

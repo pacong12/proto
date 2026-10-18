@@ -67,8 +67,10 @@ const TOKEN_LAUNCHED_V1_EVENT = parseAbiItem(
   'event TokenLaunched(address indexed token, address indexed deployer, address indexed dexFactory, address pairedToken, address pool, uint256 dexId, uint256 launchConfigId, uint256 positionId, uint256 restrictionsEndBlock, uint256 initialBuyAmount)',
 );
 
-// Maximum block range per poll — keeps RPC requests under 2s
-const MAX_BLOCK_RANGE = 50n;
+// Maximum block range per poll cycle (override with INDEXER_MAX_BLOCK_RANGE). Robinhood Chain makes
+// ~10 blocks a second, so the range must be far above one interval's worth or the cursor falls
+// behind for good; both RPCs answer 2,000-block getLogs well under a second.
+const MAX_BLOCK_RANGE = BigInt(process.env.INDEXER_MAX_BLOCK_RANGE ?? '2000');
 // Blocks to stay behind the chain head (override with INDEXER_CONFIRMATIONS)
 const CONFIRMATIONS = BigInt(process.env.INDEXER_CONFIRMATIONS ?? '2');
 // Maximum contract addresses per eth_getLogs request
@@ -80,6 +82,8 @@ const BACKFILL_CHUNK = BigInt(process.env.INDEXER_BACKFILL_CHUNK || '200000');
 
 export class EventPollerService {
   private lastPolledBlock = 0n;
+  /** True when the last cycle stopped short of the chain head; the caller polls again at once. */
+  isBehind = false;
   private failedRangeStart: bigint | null = null;
   private rangeFailures = 0;
   private quoteDecimals: number | null = null;
@@ -129,6 +133,7 @@ export class EventPollerService {
 
       // Advance and persist lastPolledBlock only on success so a failed cycle retries the same range.
       this.lastPolledBlock = batchEnd;
+      this.isBehind = batchEnd < currentBlock;
       if (this.tokenRepository.setLastIndexedBlock) {
         await this.tokenRepository.setLastIndexedBlock(this.network.name, batchEnd);
       }

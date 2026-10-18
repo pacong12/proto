@@ -214,14 +214,16 @@ function safeTokenCompare(a: string, b: string): boolean {
 // Adaptive interval:
 //   - Base: 10s when idle (no events found last cycle) → low RPC load
 //   - Active: 3s when events were found last cycle → fast catch-up
-//   - Robinhood block time ~88ms (L2); Arc ~500ms.
-//     10s idle = safe margin; 3s active = ~34 Robinhood blocks / ~6 Arc blocks per cycle,
-//     well within MAX_BLOCK_RANGE=50 so no block-drop clamping on active chains.
+//   - Catch-up: while the cursor is behind the head (after a restart or an RPC outage), poll
+//     again after POLL_INTERVAL_CATCH_UP_MS until it is current.
+//   - Robinhood block time ~100ms (L2); Arc ~500ms. One cycle covers up to
+//     INDEXER_MAX_BLOCK_RANGE (2,000) blocks, far more than an idle interval produces.
 //
 // Chains are staggered by 5s to avoid simultaneous RPC bursts.
 // Recursive setTimeout (not setInterval) ensures a slow RPC cycle never overlaps the next.
 const POLL_INTERVAL_IDLE_MS = 10_000; // no events found → back off
 const POLL_INTERVAL_ACTIVE_MS = 3_000; // events found    → stay responsive
+const POLL_INTERVAL_CATCH_UP_MS = 250; // behind the head → keep going
 
 let robinhoodPolling = false;
 let robinhoodPollIntervalMs = POLL_INTERVAL_IDLE_MS;
@@ -232,7 +234,11 @@ function scheduleRobinhoodPoll(): void {
       try {
         const found = await robinhoodPoller.pollEvents();
         // Tighten interval when there is active trading; relax when idle
-        robinhoodPollIntervalMs = found > 0 ? POLL_INTERVAL_ACTIVE_MS : POLL_INTERVAL_IDLE_MS;
+        robinhoodPollIntervalMs = robinhoodPoller.isBehind
+          ? POLL_INTERVAL_CATCH_UP_MS
+          : found > 0
+            ? POLL_INTERVAL_ACTIVE_MS
+            : POLL_INTERVAL_IDLE_MS;
       } catch {
         /* non-fatal — lastPolledBlock not advanced, next cycle retries */
       } finally {
@@ -250,7 +256,11 @@ function scheduleArcPoll(): void {
       arcPolling = true;
       try {
         const found = await arcPoller.pollEvents();
-        arcPollIntervalMs = found > 0 ? POLL_INTERVAL_ACTIVE_MS : POLL_INTERVAL_IDLE_MS;
+        arcPollIntervalMs = arcPoller.isBehind
+          ? POLL_INTERVAL_CATCH_UP_MS
+          : found > 0
+            ? POLL_INTERVAL_ACTIVE_MS
+            : POLL_INTERVAL_IDLE_MS;
       } catch {
         /* non-fatal */
       } finally {
