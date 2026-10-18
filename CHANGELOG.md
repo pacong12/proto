@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.4.0](https://github.com/pacong12/proto/compare/v0.3.1...v0.4.0) (2026-10-18)
+
+
+### Features
+
+* Arc v4 stack, auto-graduation keeper, test fixes ([#177](https://github.com/pacong12/proto/issues/177)) ([127d8f3](https://github.com/pacong12/proto/commit/127d8f31241e72b7c99ffea14ce241364abc8919))
+* **contracts:** escrowed limit, take-profit and stop-loss orders ([#173](https://github.com/pacong12/proto/issues/173)) ([87b1e49](https://github.com/pacong12/proto/commit/87b1e49af9bee1b6dd986259cf241fcdd8e5c582))
+* fee keeper, 20% Arc cut, Safe custody, restored DB backups ([#171](https://github.com/pacong12/proto/issues/171)) ([4a48106](https://github.com/pacong12/proto/commit/4a48106b4ecf165674781491929f38f028c4aff2))
+* limit orders and the Robinhood v4 graduation stack ([#174](https://github.com/pacong12/proto/issues/174)) ([a8169b9](https://github.com/pacong12/proto/commit/a8169b98a16c6d2077ce708097fdc39f673bce5c))
+* **scripts:** monitor indexer lag and keeper gas ([#169](https://github.com/pacong12/proto/issues/169)) ([e74d350](https://github.com/pacong12/proto/commit/e74d35060a11e3b31bcedc3330321ee4d00f77a6))
+* **trade:** Binance-style buy/sell pressure; fix 24h price change ([#172](https://github.com/pacong12/proto/issues/172)) ([c6ebb69](https://github.com/pacong12/proto/commit/c6ebb694ec2a14c3a32aae9f5827775de30a1d7b))
+
+
+### Bug Fixes
+
+* **api:** data accuracy for list prices and trade history ([#167](https://github.com/pacong12/proto/issues/167)) ([41bbb05](https://github.com/pacong12/proto/commit/41bbb05c435dde63a52ce85d1f509ffdefcc8317))
+* **api:** remove the non-functional Arc launch relayer ([#163](https://github.com/pacong12/proto/issues/163)) ([fcfd42b](https://github.com/pacong12/proto/commit/fcfd42bb8c51d3c75067aa09c301ac7c483a4086))
+* **contracts:** pull-based protocol fees and hard fee caps ([#164](https://github.com/pacong12/proto/issues/164)) ([736bdd8](https://github.com/pacong12/proto/commit/736bdd8bfb4328259b879b497a96c813aa540112))
+* **docs:** dead locale links and missing security headers ([#168](https://github.com/pacong12/proto/issues/168)) ([858c7ff](https://github.com/pacong12/proto/commit/858c7ff58a5cea2e3bf60635afda58b60ef8d424))
+* **frontoffice:** honest revenue split on the create page ([#165](https://github.com/pacong12/proto/issues/165)) ([d1467f7](https://github.com/pacong12/proto/commit/d1467f7e8a9893967af4f0b1c9b08a54cee0050f))
+* **frontoffice:** UI audit fixes ([#166](https://github.com/pacong12/proto/issues/166)) ([cac96ca](https://github.com/pacong12/proto/commit/cac96ca22da2ad1edb32cdd7521a15333e32780c))
+
 ## [0.3.1](https://github.com/pacong12/proto/compare/v0.3.0...v0.3.1) (2026-10-17)
 
 
