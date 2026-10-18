@@ -12,6 +12,9 @@ export const ARC_CHAIN_ID = 5042 as const;
 /** Native USDC precompile-backed ERC-20 (6 decimals); also the quote currency of every pool. */
 const ARC_USDC = '0x3600000000000000000000000000000000000000' as `0x${string}`;
 
+/** In-pool v4 launch factory (LaunchpadV2FactoryArc). */
+const ARC_V4_FACTORY = '0xd7Bf86061CC5637b2b854d61007f8fD7CD6f0980' as `0x${string}`;
+
 /** Pre-v4 deployments kept so their tokens still resolve to Arc. */
 const ARC_LEGACY_POOL_ADDRESS = '0x00689b589add3ee1995e26e7f4e5cbf262486eb4' as `0x${string}`;
 const ARC_LEGACY_CURVE_FACTORY = '0xf94d16c9E90fCd55b75D318d0104269146612abF' as `0x${string}`;
@@ -29,7 +32,9 @@ const ARC_BOND_SQRT_PRICE_X96 = 11800301107109846379556182205197121619n;
  * the first block; there is no bonding-curve contract and no Uniswap V3 dependency. Values below
  * mirror `ARC_MATH_CONFIG` in @goton/math-sdk (kept in sync by chain-registry.spec.ts).
  *
- * Set ARC_V4_FACTORY_ADDRESS / ARC_MEME_HOOK / ARC_V4_ROUTER after running contracts/script/arc/DeployArc.s.sol.
+ * Defaults are the v4 stack from contracts/script/arc/DeployArc.s.sol (deployed 2026-10-18); the
+ * ARC_V4_FACTORY_ADDRESS / ARC_MEME_HOOK / ARC_V4_ROUTER / ARC_V4_BUYBACK / ARC_LIMIT_ORDERS env
+ * variables override them.
  */
 export const ARC_NETWORK: NetworkConfig = {
   chainId: ARC_CHAIN_ID,
@@ -51,17 +56,26 @@ export const ARC_NETWORK: NetworkConfig = {
   ],
   blockExplorer: getEnv('ARC_BLOCK_EXPLORER_URL', 'https://explorer.arc.io'),
   contracts: {
-    factory: getEnv('ARC_V4_FACTORY_ADDRESS', UNDEPLOYED) as `0x${string}`,
-    factoryV2: getEnv('ARC_V4_FACTORY_ADDRESS', UNDEPLOYED) as `0x${string}`,
+    factory: getEnv('ARC_V4_FACTORY_ADDRESS', ARC_V4_FACTORY) as `0x${string}`,
+    factoryV2: getEnv('ARC_V4_FACTORY_ADDRESS', ARC_V4_FACTORY) as `0x${string}`,
     // LP is locked as a factory-owned v4 position; there is no separate locker.
     locker: UNDEPLOYED,
     // Holder dividends are paid by a per-token GotonFeeSplitter.
     holderFeeDistributor: UNDEPLOYED,
     weth: ARC_USDC,
-    memeHook: getEnv('ARC_MEME_HOOK', UNDEPLOYED) as `0x${string}`,
-    router: getEnv('ARC_V4_ROUTER', UNDEPLOYED) as `0x${string}`,
-    buyback: getEnv('ARC_V4_BUYBACK', UNDEPLOYED) as `0x${string}`,
-    limitOrders: getEnv('ARC_LIMIT_ORDERS', UNDEPLOYED) as `0x${string}`,
+    memeHook: getEnv(
+      'ARC_MEME_HOOK',
+      '0xb5C88A6101e6b979Ad63Bf5e6302dF8F031360Cc',
+    ) as `0x${string}`,
+    router: getEnv('ARC_V4_ROUTER', '0xD8Ec94F07f590F8Ceb620A8D17Bb555fBde366f1') as `0x${string}`,
+    buyback: getEnv(
+      'ARC_V4_BUYBACK',
+      '0xb0C5fCBf9D0326cA2Ed0b2C49c5E754f36c78AFd',
+    ) as `0x${string}`,
+    limitOrders: getEnv(
+      'ARC_LIMIT_ORDERS',
+      '0x3983F223E7Ef0B3c24b3a8F76Db96ed4Bf349Ee6',
+    ) as `0x${string}`,
     poolManagerV4: getEnv(
       'ARC_POOL_MANAGER_V4',
       '0x8366a39CC670B4001A1121B8F6A443A643e40951',
