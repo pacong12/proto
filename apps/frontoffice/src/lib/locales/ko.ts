@@ -376,6 +376,12 @@ const messages: Record<string, string> = {
   orderTypeMarket: '시장가',
   orderTypeLimit: '지정가',
   orderTypeTpSl: '익절 / 손절',
+  footerCurveToV4: '본딩 커브 이후 Uniswap v4',
+  footerPoolFromLaunch: '출시부터 Uniswap v4 풀',
+  footerLiquidityLocked: '유동성 영구 잠금',
+  footerSplitRobinhood: 'LP 수수료: 생성자 70% / 프로토콜 30%',
+  footerSplitArc: '세금: 프로토콜 20%, 나머지는 설정한 분배',
+  arcPoolLiveHint: '첫 블록부터 잠긴 Uniswap v4 풀에서 거래됩니다. 채울 커브가 없습니다.',
 };
 
 export default messages;

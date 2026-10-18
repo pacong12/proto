@@ -385,6 +385,13 @@ const messages: Record<string, string> = {
   orderTypeMarket: 'Mercado',
   orderTypeLimit: 'Limite',
   orderTypeTpSl: 'TP / SL',
+  footerCurveToV4: 'Curva de bonding, depois Uniswap v4',
+  footerPoolFromLaunch: 'Pool Uniswap v4 desde o lançamento',
+  footerLiquidityLocked: 'Liquidez travada para sempre',
+  footerSplitRobinhood: 'Taxas de LP: 70% criador / 30% protocolo',
+  footerSplitArc: 'Imposto: 20% protocolo, o resto conforme sua divisão',
+  arcPoolLiveHint:
+    'Negociado no pool Uniswap v4 travado desde o primeiro bloco. Não há curva para preencher.',
 };
 
 export default messages;

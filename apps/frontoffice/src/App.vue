@@ -91,9 +91,9 @@
           </h2>
           <ul class="space-y-2 text-sm text-muted-foreground">
             <li>{{ activeNetwork.name }} ({{ activeNetwork.chainId }})</li>
-            <li>Uniswap V3 Factory (1% Fee)</li>
-            <li>Direct Permanent Lock</li>
-            <li>70% Creator / 30% Protocol</li>
+            <li>{{ t(isArcFooter ? 'footerPoolFromLaunch' : 'footerCurveToV4') }}</li>
+            <li>{{ t('footerLiquidityLocked') }}</li>
+            <li>{{ t(isArcFooter ? 'footerSplitArc' : 'footerSplitRobinhood') }}</li>
           </ul>
         </div>
 
@@ -207,6 +207,7 @@
 import { defineAsyncComponent, onMounted, onUnmounted, ref, watch, computed } from 'vue';
 import { useRouter, useRoute, RouterLink, RouterView } from 'vue-router';
 import { ExternalLink, BookOpen } from 'lucide-vue-next';
+import { ARC_CHAIN_ID } from '@goton/shared-types';
 import { useI18n } from '@/lib/i18n';
 import { legalUrl, resolveDocsUrl } from '@/lib/site';
 import Navbar from './components/Navbar.vue';
@@ -226,6 +227,7 @@ const CookieConsentBanner = defineAsyncComponent(
 
 const { t, locale } = useI18n();
 const { activeNetwork, disconnectWallet } = useWallet();
+const isArcFooter = computed(() => activeNetwork.value.chainId === ARC_CHAIN_ID);
 const router = useRouter();
 const route = useRoute();
 const docsUrl = computed(() => resolveDocsUrl());

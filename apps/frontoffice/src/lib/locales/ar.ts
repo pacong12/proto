@@ -373,6 +373,12 @@ const messages: Record<string, string> = {
   orderTypeMarket: 'السوق',
   orderTypeLimit: 'محدد',
   orderTypeTpSl: 'TP / SL',
+  footerCurveToV4: 'منحنى الربط ثم Uniswap v4',
+  footerPoolFromLaunch: 'مجمع Uniswap v4 منذ الإطلاق',
+  footerLiquidityLocked: 'السيولة مقفلة بشكل دائم',
+  footerSplitRobinhood: 'رسوم LP: ‏70% للمنشئ / 30% للبروتوكول',
+  footerSplitArc: 'الضريبة: 20% للبروتوكول والباقي حسب توزيعك',
+  arcPoolLiveHint: 'يُتداول في مجمع Uniswap v4 المقفل منذ الكتلة الأولى. لا يوجد منحنى لملئه.',
 };
 
 export default messages;
