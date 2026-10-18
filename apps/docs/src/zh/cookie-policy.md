@@ -10,6 +10,7 @@ Goton 使用浏览器存储保存必要的应用设置。Google Analytics 是唯
 
 - **浏览器存储（`localStorage`）**：严格必要的设置，例如主题、语言、钱包会话，以及您对 Cookie 横幅和服务条款的选择。这些数据不会发送给我们或任何第三方。
 - **Google Analytics Cookie**：可选。仅在您于 Cookie 横幅中点击 **Accept** 后设置。
+- **安全 Cookie（`cf_clearance`）**：严格必要。我们的托管与安全服务商 Cloudflare 会运行一个小型检测脚本（`/cdn-cgi/challenge-platform/…`），用于区分真人与机器人，并将结果保存在此 Cookie 中。它用于保护网站免受自动化滥用，不用于广告或跨站追踪；由于网站需要它才能保持可用，因此无需在横幅中选择即会设置。
 
 ## 2. 本地存储的数据项
 

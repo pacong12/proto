@@ -10,6 +10,7 @@ Goton uses browser storage for essential app settings. Google Analytics is the o
 
 - **Browser storage (`localStorage`)**: strictly necessary settings such as your theme, language, wallet session and your answers to the cookie banner and the terms. It is not sent to us or to anyone else.
 - **Google Analytics cookies**: optional. Set only after you click **Accept** in the cookie banner.
+- **Security cookie (`cf_clearance`)**: strictly necessary. Our hosting and security provider, Cloudflare, runs a small check script (`/cdn-cgi/challenge-platform/…`) to tell people from bots and stores the result in this cookie. It protects the site from automated abuse, is not used for advertising or tracking across sites, and is set without a banner choice because the site needs it to stay available.
 
 ## 2. Information Stored Locally
 
