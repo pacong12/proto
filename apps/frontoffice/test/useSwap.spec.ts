@@ -1,5 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { vi, describe, it, expect } from 'vitest';
 import { useSwap } from '../src/composables/useSwap';
+
+// These tests load the wallet stack (viem, AppKit) on first use, which can exceed the default
+// 5 s under a full parallel run.
+vi.setConfig({ testTimeout: 20_000 });
 
 describe('useSwap Composable', () => {
   it('initializes with default slippage and idle state', () => {

@@ -1,6 +1,10 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// These tests load the wallet stack (viem, AppKit) on first use, which can exceed the default
+// 5 s under a full parallel run.
+vi.setConfig({ testTimeout: 20_000 });
+
 async function fresh() {
   vi.resetModules();
   const consent = await import('../src/lib/consent');
