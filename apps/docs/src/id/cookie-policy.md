@@ -10,6 +10,7 @@ Goton menggunakan penyimpanan peramban untuk pengaturan aplikasi yang diperlukan
 
 - **Penyimpanan peramban (`localStorage`)**: pengaturan yang benar-benar diperlukan seperti tema, bahasa, sesi dompet, serta jawaban Anda atas banner cookie dan ketentuan. Data ini tidak dikirim ke kami atau ke pihak lain.
 - **Cookie Google Analytics**: opsional. Hanya dipasang setelah Anda mengklik **Accept** di banner cookie.
+- **Cookie keamanan (`cf_clearance`)**: benar-benar diperlukan. Penyedia hosting dan keamanan kami, Cloudflare, menjalankan skrip pemeriksaan kecil (`/cdn-cgi/challenge-platform/…`) untuk membedakan manusia dari bot dan menyimpan hasilnya di cookie ini. Cookie ini melindungi situs dari penyalahgunaan otomatis, tidak dipakai untuk iklan atau pelacakan lintas situs, dan dipasang tanpa pilihan di banner karena situs memerlukannya agar tetap tersedia.
 
 ## 2. Informasi yang Tersimpan Secara Lokal
 
