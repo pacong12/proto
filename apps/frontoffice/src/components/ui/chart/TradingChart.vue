@@ -149,6 +149,8 @@ const BULL = '#22c55e';
 const BEAR = '#ef4444';
 const BULL_VOL = 'rgba(34, 197, 94, 0.6)';
 const BEAR_VOL = 'rgba(239, 68, 68, 0.6)';
+/** Bars with no trades (gap fill) draw as a quiet line instead of a bullish tick. */
+const FLAT = 'rgba(113, 113, 122, 0.55)';
 
 function isDark(): boolean {
   return typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
@@ -287,12 +289,25 @@ function updateMarkers() {
 const SUB = '₀₁₂₃₄₅₆₇₈₉';
 const toSub = (n: number) => String(n).replace(/\d/g, (d) => SUB[+d]);
 
+/**
+ * Height of the visible price range, set by autoscale. Axis labels get enough digits to tell
+ * neighbouring ticks apart: a $3.95K-$4.05K range reads $3.96K, $3.98K... instead of $4.0K x7.
+ */
+let visibleSpan = 0;
+
+/** Significant digits needed to resolve steps of visibleSpan / 10 at value v. */
+function sigDigits(v: number, min: number, max: number): number {
+  if (!(visibleSpan > 0) || !(v > 0)) return min;
+  const need = Math.ceil(Math.log10(v / (visibleSpan / 10))) + 1;
+  return Math.min(max, Math.max(min, need));
+}
+
 /** 0.00000012345 -> 0.0₆12345 (DEX convention) */
 function formatPrice(v: number): string {
   if (!isFinite(v) || v === 0) return '0';
   if (v >= 1) return v.toLocaleString(undefined, { maximumFractionDigits: 4 });
   if (v >= 0.0001) return v.toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
-  const [m, e] = v.toExponential(3).split('e');
+  const [m, e] = v.toExponential(sigDigits(v, 4, 7) - 1).split('e');
   const zeros = Math.abs(Number(e)) - 1;
   const sig = m.replace('.', '').replace(/0+$/, '');
   return `0.0${toSub(zeros)}${sig}`;
@@ -301,10 +316,15 @@ function formatPrice(v: number): string {
 function formatCompact(v: number): string {
   if (!isFinite(v)) return '0';
   const a = Math.abs(v);
-  if (a >= 1e9) return `${(v / 1e9).toFixed(2)}B`;
-  if (a >= 1e6) return `${(v / 1e6).toFixed(2)}M`;
-  if (a >= 1e3) return `${(v / 1e3).toFixed(1)}K`;
-  return v.toFixed(a >= 100 ? 0 : 2);
+  const unit = a >= 1e9 ? 1e9 : a >= 1e6 ? 1e6 : a >= 1e3 ? 1e3 : 1;
+  const suffix = unit === 1e9 ? 'B' : unit === 1e6 ? 'M' : unit === 1e3 ? 'K' : '';
+  // Decimals so that the unit-scaled value shows sigDigits() significant digits.
+  const intDigits = Math.max(1, Math.floor(Math.log10(a / unit || 1)) + 1);
+  const decimals = Math.min(
+    4,
+    Math.max(unit === 1 && a < 100 ? 2 : 1, sigDigits(a, 2, 6) - intDigits),
+  );
+  return `${(v / unit).toFixed(unit === 1 && a >= 100 && decimals <= 1 ? 0 : decimals)}${suffix}`;
 }
 
 function formatY(v: number): string {
@@ -318,6 +338,7 @@ function formatTime(t: Time): string {
     month: 'short',
     hour: '2-digit',
     minute: '2-digit',
+    hourCycle: 'h23',
     ...(isSubMinute ? { second: '2-digit' } : {}),
   });
 }
@@ -326,7 +347,31 @@ function formatTime(t: Time): string {
 // Autoscale: ignore extreme wicks so candle bodies stay readable
 // ---------------------------------------------------------------------------
 
+/**
+ * A range narrower than this share of the price would stretch a 0.2% move across the whole pane
+ * (one candle as a full-height bar), so it is widened around its middle.
+ */
+const MIN_RELATIVE_SPAN = 0.04;
+
 function autoscale(original: () => AutoscaleInfo | null): AutoscaleInfo | null {
+  const res = withMinimumSpan(autoscaleRange(original));
+  visibleSpan = res?.priceRange ? res.priceRange.maxValue - res.priceRange.minValue : 0;
+  return res;
+}
+
+function withMinimumSpan(res: AutoscaleInfo | null): AutoscaleInfo | null {
+  if (!res?.priceRange) return res;
+  const { minValue, maxValue } = res.priceRange;
+  const mid = (minValue + maxValue) / 2;
+  const minSpan = Math.abs(mid) * MIN_RELATIVE_SPAN;
+  if (!(minSpan > 0) || maxValue - minValue >= minSpan) return res;
+  return {
+    priceRange: { minValue: Math.max(0, mid - minSpan / 2), maxValue: mid + minSpan / 2 },
+    margins: res.margins,
+  };
+}
+
+function autoscaleRange(original: () => AutoscaleInfo | null): AutoscaleInfo | null {
   const res = original();
   if (!res || !res.priceRange || !chart || shownBars.length === 0) return res;
   const { minValue, maxValue } = res.priceRange;
@@ -443,6 +488,7 @@ function initChart() {
           return d.toLocaleTimeString(undefined, {
             hour: '2-digit',
             minute: '2-digit',
+            hourCycle: 'h23',
             ...((props.resolution ?? 1) < 60 ? { second: '2-digit' } : {}),
           });
         }
@@ -542,15 +588,17 @@ function destroyChart() {
 // Data sync: full reset only when context changes, otherwise incremental
 // ---------------------------------------------------------------------------
 
+const isFlat = (b: Bar) => b.volume === 0 && b.open === b.close && b.high === b.low;
+
 function toMain(b: Bar) {
-  return chartType.value === 'candles'
-    ? { time: b.time, open: b.open, high: b.high, low: b.low, close: b.close }
-    : { time: b.time, value: b.close };
+  if (chartType.value !== 'candles') return { time: b.time, value: b.close };
+  const bar = { time: b.time, open: b.open, high: b.high, low: b.low, close: b.close };
+  return isFlat(b) ? { ...bar, color: FLAT, borderColor: FLAT, wickColor: FLAT } : bar;
 }
 const toVol = (b: Bar) => ({
   time: b.time,
   value: b.volume,
-  color: b.close >= b.open ? BULL_VOL : BEAR_VOL,
+  color: b.volume === 0 ? 'transparent' : b.close >= b.open ? BULL_VOL : BEAR_VOL,
 });
 
 function sync(base: Bar[], forceFull = false) {
@@ -600,6 +648,9 @@ function showLatest(total: number) {
   if (!chart || total <= 0) return;
   requestAnimationFrame(() => {
     if (!chart) return;
+    // fitContent() counts rightOffset as bars: a 6-bar day chart with a 6-bar offset left half the
+    // pane empty. Keep the gap to the price scale small on short histories.
+    chart.timeScale().applyOptions({ rightOffset: total <= 20 ? 1 : 6 });
     if (total <= 20) {
       chart.timeScale().fitContent();
     } else {
