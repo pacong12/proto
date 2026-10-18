@@ -7,6 +7,10 @@ import {
   type WalletProviderLike,
 } from '../src/lib/wallet-store';
 
+// These tests load the wallet stack (viem, AppKit) on first use, which can exceed the default
+// 5 s under a full parallel run.
+vi.setConfig({ testTimeout: 20_000 });
+
 describe('useWallet composable', () => {
   let fakeStore: Record<string, string> = {};
   let listeners: Record<string, ((event: unknown) => void)[]> = {};

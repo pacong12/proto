@@ -24,14 +24,16 @@ For transparency and safety, all Goton launchpad contracts across supported netw
 
 ## 2. Arc Network (Mainnet, Chain ID: 5042)
 
-| Contract Name                         | Address                                      | Function                                     |
-| :------------------------------------ | :------------------------------------------- | :------------------------------------------- |
-| **Launchpad Factory (Bonding Curve)** | `0xf94d16c9E90fCd55b75D318d0104269146612abF` | Deploys tokens and active bonding curves     |
-| **Liquidity Locker**                  | `0x173FF5D4eF626869a5a35FF0EA0c56c0A7e4Cd8b` | Holds and permanently locks LP position NFTs |
-| **Uniswap V3 Factory**                | `0xf0db7b58379503491d857dB50AC9ece64c653918` | Canonical decentralized pool registry        |
-| **Position Manager**                  | `0x39654A85A4C05127f5Fd6ED22CAeC077A0fB1377` | Concentrated liquidity position NFT manager  |
-| **Swap Router**                       | `0x53BF6B0684Ec7eF91e1387Da3D1a1769bC5A6F77` | Direct trade and exact-input swap routing    |
-| **Canonical Quote Token (USDC)**      | `0x3600000000000000000000000000000000000000` | Canonical ERC-20 USDC pair currency (6 dec)  |
+| Contract Name                      | Address                                      | Function                                           |
+| :--------------------------------- | :------------------------------------------- | :------------------------------------------------- |
+| **Launchpad Factory (Uniswap V4)** | `0xd7Bf86061CC5637b2b854d61007f8fD7CD6f0980` | Launches tokens straight into their locked v4 pool |
+| **Goton V4 Hook**                  | `0xb5C88A6101e6b979Ad63Bf5e6302dF8F031360Cc` | Pool fees, anti-snipe and TWAP oracle              |
+| **Goton V4 Router**                | `0xD8Ec94F07f590F8Ceb620A8D17Bb555fBde366f1` | Swaps paid in native USDC                          |
+| **Goton V4 Buyback**               | `0xb0C5fCBf9D0326cA2Ed0b2C49c5E754f36c78AFd` | TWAP-guarded buyback and burn                      |
+| **Limit Orders**                   | `0x3983F223E7Ef0B3c24b3a8F76Db96ed4Bf349Ee6` | Escrowed limit, take-profit and stop-loss orders   |
+| **Uniswap V4 PoolManager**         | `0x8366a39CC670B4001A1121B8F6A443A643e40951` | Canonical v4 singleton                             |
+| **Canonical Quote Token (USDC)**   | `0x3600000000000000000000000000000000000000` | Canonical ERC-20 USDC pair currency (6 dec)        |
+| **Legacy Factory (pre-v4)**        | `0xf94d16c9E90fCd55b75D318d0104269146612abF` | Earlier launches; no new tokens                    |
 
 ## Security Audits
 

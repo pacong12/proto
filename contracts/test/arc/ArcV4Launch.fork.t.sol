@@ -72,7 +72,7 @@ contract ArcV4LaunchForkTest is Test {
     address creator = makeAddr("creator");
     address trader = makeAddr("trader");
 
-    function setUp() public {
+    function setUp() public virtual {
         string memory rpc = vm.envOr("ARC_RPC_URL", string(""));
         if (bytes(rpc).length == 0) {
             vm.skip(true);
@@ -236,7 +236,8 @@ contract ArcV4LaunchForkTest is Test {
     }
 
     function test_OnlyFactoryCanInitializePoolsWithHook() public {
-        PoolKey memory key = PoolKey(USDC, address(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF), 10_000, 200, address(hook));
+        PoolKey memory key =
+            PoolKey(USDC, address(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF), 10_000, 200, address(hook));
         vm.expectRevert();
         IPoolManagerV4(PM).initialize(key, TickMath.getSqrtPriceAtTick(405_400));
     }

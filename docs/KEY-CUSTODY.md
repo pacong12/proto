@@ -7,7 +7,9 @@ funds.
 
 ## What the owner key controls today (Robinhood Chain, read on-chain 2026-10-18)
 
-The v4 stack was deployed with the EOA as owner (`ALLOW_EOA_OWNER=true`) for testing. Hand it to
+The v4 stacks were deployed with the EOA as owner (`ALLOW_EOA_OWNER=true`) for testing, on
+Robinhood Chain and on Arc (LaunchpadV2FactoryArc `0xd7Bf86061CC5637b2b854d61007f8fD7CD6f0980`,
+GotonV4Buyback `0xb0C5fCBf9D0326cA2Ed0b2C49c5E754f36c78AFd`). Hand them to
 the Safe with the same two-step flow as section 2 before real volume arrives.
 
 | Contract                                                  | Address                                      | Owner-only powers                                                                                                | Impact if the key leaks                                                                               |
