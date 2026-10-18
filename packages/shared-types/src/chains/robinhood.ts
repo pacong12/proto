@@ -1,4 +1,4 @@
-import { UNDEPLOYED, type NetworkConfig } from './types';
+import type { NetworkConfig } from './types';
 import { getEnv, getEnvBigInt } from './env';
 
 /**
@@ -31,11 +31,11 @@ export const ROBINHOOD_NETWORK: NetworkConfig = {
   contracts: {
     factory: getEnv(
       'ROBINHOOD_FACTORY_V2_ADDRESS',
-      getEnv('ROBINHOOD_FACTORY_ADDRESS', '0x9f1fAf78adE92C994AB188452338b45c52800748'),
+      getEnv('ROBINHOOD_FACTORY_ADDRESS', '0x0b85876120e797Ca19655C0B81a0C25573f3Fc18'),
     ) as `0x${string}`,
     factoryV2: getEnv(
       'ROBINHOOD_FACTORY_V2_ADDRESS',
-      getEnv('ROBINHOOD_FACTORY_ADDRESS', '0x9f1fAf78adE92C994AB188452338b45c52800748'),
+      getEnv('ROBINHOOD_FACTORY_ADDRESS', '0x0b85876120e797Ca19655C0B81a0C25573f3Fc18'),
     ) as `0x${string}`,
     locker: getEnv(
       'ROBINHOOD_LOCKER_ADDRESS',
@@ -63,14 +63,27 @@ export const ROBINHOOD_NETWORK: NetworkConfig = {
       'ROBINHOOD_WETH_ADDRESS',
       getEnv('WETH_ADDRESS', '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73'),
     ) as `0x${string}`,
-    // The previously deployed ProtoMemeHook (0x6347…D9a7) has invalid v4 permission bits and is not used.
-    memeHook: getEnv('ROBINHOOD_V4_HOOK', UNDEPLOYED) as `0x${string}`,
-    graduator: getEnv('ROBINHOOD_GRADUATOR', UNDEPLOYED) as `0x${string}`,
-    router: getEnv('ROBINHOOD_V4_ROUTER', UNDEPLOYED) as `0x${string}`,
-    buyback: getEnv('ROBINHOOD_V4_BUYBACK', UNDEPLOYED) as `0x${string}`,
+    // v4 graduation stack (DeployRobinhoodV2, 2026-10-18). Tokens from the pre-v4 factory
+    // 0x9f1f…0748 stay indexed from the database but cannot graduate through it.
+    memeHook: getEnv(
+      'ROBINHOOD_V4_HOOK',
+      '0xb5C88A6101e6b979Ad63Bf5e6302dF8F031360Cc',
+    ) as `0x${string}`,
+    graduator: getEnv(
+      'ROBINHOOD_GRADUATOR',
+      '0xaEF6Fff944007b94a51F37e82cf5235fDBF9b771',
+    ) as `0x${string}`,
+    router: getEnv(
+      'ROBINHOOD_V4_ROUTER',
+      '0x5F88CE2BeD0f2639133b5EeB8b8fFE1fD50BA2dc',
+    ) as `0x${string}`,
+    buyback: getEnv(
+      'ROBINHOOD_V4_BUYBACK',
+      '0x240547f435Fe98B8B3F14036936D3a3e0EE87213',
+    ) as `0x${string}`,
     limitOrders: getEnv(
       'ROBINHOOD_LIMIT_ORDERS',
-      '0x3983F223E7Ef0B3c24b3a8F76Db96ed4Bf349Ee6',
+      '0x2f3212D06104eEbb5bA4FA934B9B55b906dC3F61',
     ) as `0x${string}`,
     poolManagerV4: getEnv(
       'ROBINHOOD_POOL_MANAGER_V4',
