@@ -11,3 +11,5 @@ export { default as TradeCalloutsTab } from './TradeCalloutsTab.vue';
 export { default as MobileTradeDock } from './MobileTradeDock.vue';
 export { default as TradeFlowGauge } from './TradeFlowGauge.vue';
 export { default as PnlCardModal } from './PnlCardModal.vue';
+export { default as LimitOrderPanel } from './LimitOrderPanel.vue';
+export { default as OpenOrders } from './OpenOrders.vue';

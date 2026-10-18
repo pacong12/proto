@@ -357,6 +357,37 @@ const messages: Record<string, string> = {
   sells: 'ventas',
   buyers: 'compradores',
   sellers: 'vendedores',
+  targetMarketCap: 'Capitalización objetivo (USD)',
+  now: 'Ahora',
+  amountOfHoldings: 'Cantidad de tus tenencias',
+  takeProfitAt: 'Tomar ganancias en capitalización (USD)',
+  optional: 'Opcional',
+  stopLossAt: 'Stop loss en capitalización (USD)',
+  stopSlippage: 'Deslizamiento del stop (%)',
+  expiresIn: 'Vence en',
+  escrowNote:
+    'Los fondos quedan en el contrato de órdenes hasta que la orden se ejecute o la canceles.',
+  placeOrder: 'Colocar orden',
+  receiveAtLeast: 'Recibes al menos',
+  selling: 'Vendiendo',
+  takeProfitReceives: 'Toma de ganancias paga',
+  stopLossReceives: 'Stop loss paga',
+  limitBuyAboveMarket:
+    'Un objetivo de compra igual o superior a la capitalización actual se ejecuta de inmediato. Usa Mercado.',
+  limitSellBelowMarket:
+    'Un objetivo de venta igual o inferior a la capitalización actual se ejecuta de inmediato. Usa Mercado.',
+  stopAboveMarket: 'Un stop igual o superior a la capitalización actual se activa de inmediato.',
+  orderPlaced: 'Orden colocada',
+  openOrders: 'Órdenes abiertas',
+  noOpenOrders: 'No hay órdenes abiertas para este token.',
+  cancelOrder: 'Cancelar',
+  orderCancelled: 'Orden cancelada',
+  limitBuyLabel: 'Compra límite',
+  stopLossLabel: 'Stop loss',
+  takeProfitLabel: 'Toma de ganancias',
+  orderTypeMarket: 'Mercado',
+  orderTypeLimit: 'Límite',
+  orderTypeTpSl: 'TP / SL',
 };
 
 export default messages;

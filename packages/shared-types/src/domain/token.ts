@@ -193,3 +193,31 @@ export function buildSessionSignMessage(params: { address: string; issuedAt: num
     'Purpose: like, repost and vote as this wallet for 24 hours',
   ].join('\n');
 }
+
+/** An escrowed limit / take-profit / stop-loss order of GotonLimitOrders, as indexed by the API. */
+export interface LimitOrderEntity {
+  /** `${chainId}-${orderId}` */
+  key: string;
+  chainId: number;
+  orderId: string;
+  owner: `0x${string}`;
+  token: `0x${string}`;
+  isBuy: boolean;
+  /** Buy: native quote deposited (wei). Sell: tokens deposited (raw units). */
+  amount: string;
+  /** Buy: minimum tokens. Sell: take-profit floor in quote raw units ('0' = none). */
+  minOut: string;
+  /** Sell stop-loss trigger, quote raw per token raw x 1e36 ('0' = none). */
+  slPriceX36: string;
+  slMinOut: string;
+  /** Unix seconds. */
+  deadline: number;
+  status: 'open' | 'filled' | 'cancelled';
+  /** Set when filled: 'buy' | 'takeProfit' | 'stopLoss'. */
+  filledLeg?: 'buy' | 'takeProfit' | 'stopLoss';
+  amountOut?: string;
+  createdTx: string;
+  closedTx?: string;
+  createdAt: number;
+  updatedAt: number;
+}

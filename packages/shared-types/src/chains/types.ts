@@ -44,6 +44,8 @@ export interface NetworkConfig {
     router?: `0x${string}`;
     /** GotonV4Buyback — TWAP-guarded buyback-and-burn of each token's burn share. */
     buyback?: `0x${string}`;
+    /** GotonLimitOrders — escrowed limit, take-profit and stop-loss orders. */
+    limitOrders?: `0x${string}`;
     poolManagerV4?: `0x${string}`;
     positionManagerV4?: `0x${string}`;
     universalRouter?: `0x${string}`;

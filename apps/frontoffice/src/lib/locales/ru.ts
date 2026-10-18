@@ -357,6 +357,37 @@ const messages: Record<string, string> = {
   sells: 'продаж',
   buyers: 'покупателей',
   sellers: 'продавцов',
+  targetMarketCap: 'Целевая капитализация (USD)',
+  now: 'Сейчас',
+  amountOfHoldings: 'Доля ваших токенов',
+  takeProfitAt: 'Тейк-профит при капитализации (USD)',
+  optional: 'Необязательно',
+  stopLossAt: 'Стоп-лосс при капитализации (USD)',
+  stopSlippage: 'Проскальзывание стопа (%)',
+  expiresIn: 'Истекает через',
+  escrowNote:
+    'Средства хранятся в контракте ордеров, пока ордер не исполнится или вы его не отмените.',
+  placeOrder: 'Разместить ордер',
+  receiveAtLeast: 'Вы получите не меньше',
+  selling: 'Продажа',
+  takeProfitReceives: 'Тейк-профит даст',
+  stopLossReceives: 'Стоп-лосс даст',
+  limitBuyAboveMarket:
+    'Цель покупки на уровне текущей капитализации или выше исполнится сразу. Используйте рыночный ордер.',
+  limitSellBelowMarket:
+    'Цель продажи на уровне текущей капитализации или ниже исполнится сразу. Используйте рыночный ордер.',
+  stopAboveMarket: 'Стоп на уровне текущей капитализации или выше сработает сразу.',
+  orderPlaced: 'Ордер размещён',
+  openOrders: 'Открытые ордера',
+  noOpenOrders: 'Нет открытых ордеров по этому токену.',
+  cancelOrder: 'Отмена',
+  orderCancelled: 'Ордер отменён',
+  limitBuyLabel: 'Лимитная покупка',
+  stopLossLabel: 'Стоп-лосс',
+  takeProfitLabel: 'Тейк-профит',
+  orderTypeMarket: 'Рынок',
+  orderTypeLimit: 'Лимит',
+  orderTypeTpSl: 'TP / SL',
 };
 
 export default messages;
