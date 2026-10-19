@@ -78,9 +78,9 @@ const messages: Record<string, string> = {
   typeSearchHint: 'Введите имя токена, тикер или адрес 0x...',
   navigateHint: 'Навигация',
   selectHint: 'Выбрать',
-  noMemesTitle: 'Пока нет движущихся мем-токенов',
+  noMemesTitle: 'Пока нет memestock',
   noMemesDesc:
-    'Будьте первым, кто запустит токен с фиксированным запасом и нарративом сообщества на Robinhood Chain & Arc.',
+    'Запуск появляется здесь, когда у него есть описанная идея, а создатель купил позицию и держит большую её часть. Все монеты по-прежнему в Explore.',
   launchNow: 'Запустить сейчас',
   tokenImage: 'Изображение токена',
   noFileChosen: 'Файл не выбран',
@@ -112,7 +112,7 @@ const messages: Record<string, string> = {
   protocolBuybackAndBurn: 'Выкуп и сжигание протокола',
   trendingFeed: 'Трендовая лента',
   memestockSubtitle:
-    'Каждый запуск с тезисом сообщества и проверенными позициями, ранжированными по импульсу.',
+    'Запуски с описанной идеей, создатель которых всё ещё держит купленную позицию; порядок — по торговле за последний час.',
   searchingTokens: 'Поиск токенов...',
   scanningForWallets: 'Сканирование кошельков...',
   cookieBannerTitle: 'Настройки Cookie и хранилища',
@@ -395,6 +395,13 @@ const messages: Record<string, string> = {
   footerSplitArc: 'Налог: 20% протоколу, остальное по вашему распределению',
   arcPoolLiveHint:
     'Торгуется в заблокированном пуле Uniswap v4 с первого блока. Кривую заполнять не нужно.',
+  memestockMomentum: 'Импульс',
+  creatorHolds: 'У создателя',
+  creatorHoldsHint: 'Доля предложения, которую создатель купил и всё ещё держит',
+  traders1h: 'трейдеров 1ч',
+  traders24h: 'трейдеров 24ч',
+  buys1h: 'покупок 1ч',
+  browseAllCoins: 'Все монеты',
 };
 
 export default messages;

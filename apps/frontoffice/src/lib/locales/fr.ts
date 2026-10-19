@@ -78,9 +78,9 @@ const messages: Record<string, string> = {
   typeSearchHint: 'Tapez le nom du token, symbole ou adresse 0x...',
   navigateHint: 'Naviguer',
   selectHint: 'Sélectionner',
-  noMemesTitle: 'Aucun mème communautaire pour le moment',
+  noMemesTitle: 'Pas encore de memestock',
   noMemesDesc:
-    'Soyez le premier à lancer un token à offre fixe avec un narratif communautaire sur Robinhood Chain & Arc.',
+    "Un lancement apparaît ici dès qu'il a une thèse écrite et que son créateur achète une position et en garde l'essentiel. Toutes les cryptos restent sur Explore.",
   launchNow: 'Lancer Maintenant',
   tokenImage: 'Image du Jeton',
   noFileChosen: 'Aucun fichier choisi',
@@ -112,7 +112,7 @@ const messages: Record<string, string> = {
   protocolBuybackAndBurn: 'Rachat et Brûlage du Protocole',
   trendingFeed: 'Tendances',
   memestockSubtitle:
-    'Chaque lancement avec une thèse communautaire et des positions vérifiées, classés par momentum.',
+    "Les lancements avec une thèse écrite dont le créateur détient encore une position achetée, classés selon l'activité de la dernière heure.",
   searchingTokens: 'Recherche de tokens...',
   scanningForWallets: 'Scan des portefeuilles...',
   cookieBannerTitle: 'Préférences Cookies & Stockage',
@@ -394,6 +394,13 @@ const messages: Record<string, string> = {
   footerSplitArc: 'Taxe : 20 % protocole, le reste selon votre répartition',
   arcPoolLiveHint:
     'Se négocie dans son pool Uniswap v4 verrouillé dès le premier bloc. Aucune courbe à remplir.',
+  memestockMomentum: 'Momentum',
+  creatorHolds: 'Le créateur détient',
+  creatorHoldsHint: "Part de l'offre achetée par le créateur et toujours détenue",
+  traders1h: 'traders 1 h',
+  traders24h: 'traders 24 h',
+  buys1h: 'achats 1 h',
+  browseAllCoins: 'Voir toutes les cryptos',
 };
 
 export default messages;

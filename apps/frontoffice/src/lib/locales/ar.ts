@@ -77,8 +77,9 @@ const messages: Record<string, string> = {
   typeSearchHint: 'اكتب اسم العملة أو الرمز أو عنوان 0x...',
   navigateHint: 'تنقل',
   selectHint: 'اختيار',
-  noMemesTitle: 'لا توجد عملات مجتمعية تتحرك بعد',
-  noMemesDesc: 'كن أول من يطلق عملة بعرض ثابت وسرد مجتمعي على Robinhood Chain & Arc.',
+  noMemesTitle: 'لا توجد Memestock بعد',
+  noMemesDesc:
+    'يظهر الإطلاق هنا عندما تكون له أطروحة مكتوبة ويشتري منشئه مركزًا ويحتفظ بمعظمه. كل العملات ما زالت في Explore.',
   launchNow: 'أطلق الآن',
   tokenImage: 'صورة العملة',
   noFileChosen: 'لم يتم اختيار ملف',
@@ -108,7 +109,8 @@ const messages: Record<string, string> = {
   totalTokensLaunched: 'إجمالي العملات المطلقة',
   protocolBuybackAndBurn: 'إعادة الشراء وحرق البروتوكول',
   trendingFeed: 'التغذية الرائجة',
-  memestockSubtitle: 'كل إطلاق مع أطروحة مجتمعية ومواقف موثقة مرتبة حسب الزخم.',
+  memestockSubtitle:
+    'إطلاقات لها أطروحة مكتوبة وما زال منشئها يحتفظ بمركز اشتراه، مرتبة حسب التداول في الساعة الأخيرة.',
   searchingTokens: 'جاري البحث...',
   scanningForWallets: 'جاري البحث عن المحافظ...',
   cookieBannerTitle: 'تفضيلات ملفات Cookie والتخزين',
@@ -379,6 +381,13 @@ const messages: Record<string, string> = {
   footerSplitRobinhood: 'رسوم LP: ‏70% للمنشئ / 30% للبروتوكول',
   footerSplitArc: 'الضريبة: 20% للبروتوكول والباقي حسب توزيعك',
   arcPoolLiveHint: 'يُتداول في مجمع Uniswap v4 المقفل منذ الكتلة الأولى. لا يوجد منحنى لملئه.',
+  memestockMomentum: 'الزخم',
+  creatorHolds: 'يحتفظ المنشئ بـ',
+  creatorHoldsHint: 'نسبة المعروض التي اشتراها المنشئ وما زال يحتفظ بها',
+  traders1h: 'متداولون ساعة',
+  traders24h: 'متداولون 24 ساعة',
+  buys1h: 'شراء ساعة',
+  browseAllCoins: 'تصفح كل العملات',
 };
 
 export default messages;

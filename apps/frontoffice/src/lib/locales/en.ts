@@ -35,7 +35,7 @@ const messages: Record<string, string> = {
   createToken: 'Create Token',
   trendingFeed: 'Trending Feed',
   memestockSubtitle:
-    'Every launch with a community thesis and verified positions, ranked by momentum.',
+    'Launches with a written thesis whose creator still holds a position they bought, ranked by trading in the last hour.',
   protocolAnalytics: 'Protocol Analytics',
   livePreview: 'Live Preview',
   analyticsSubtitle:
@@ -128,9 +128,9 @@ const messages: Record<string, string> = {
   typeSearchHint: 'Type token name, ticker, or 0x address...',
   navigateHint: 'Navigate',
   selectHint: 'Select',
-  noMemesTitle: 'No community memes moving yet',
+  noMemesTitle: 'No memestocks yet',
   noMemesDesc:
-    'Be the first to launch a fixed-supply token with a dedicated community narrative on Robinhood Chain & Arc.',
+    'A launch is listed here once it has a written thesis and its creator buys a position and keeps most of it. Every coin is still on Explore.',
   launchNow: 'Launch Now',
   tokenImage: 'Token Image',
   noFileChosen: 'No file chosen',
@@ -390,6 +390,13 @@ const messages: Record<string, string> = {
   footerSplitArc: 'Tax: 20% protocol, rest to your split',
   arcPoolLiveHint:
     'Trades in its locked Uniswap v4 pool from the first block. There is no curve to fill.',
+  memestockMomentum: 'Momentum',
+  creatorHolds: 'Creator holds',
+  creatorHoldsHint: 'Share of supply the creator bought and still holds',
+  traders1h: 'traders 1h',
+  traders24h: 'traders 24h',
+  buys1h: 'buys 1h',
+  browseAllCoins: 'Browse all coins',
 };
 
 export default messages;

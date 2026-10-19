@@ -77,9 +77,9 @@ const messages: Record<string, string> = {
   typeSearchHint: '銘柄名、シンボル、または0xアドレスを入力...',
   navigateHint: '移動',
   selectHint: '選択',
-  noMemesTitle: 'コミュニティミームはまだありません',
+  noMemesTitle: 'まだ Memestock はありません',
   noMemesDesc:
-    'Robinhood Chain & Arc でコミュニティ主導の固定供給トークンを最初にローンチしましょう。',
+    '書面のテーゼがあり、作成者がポジションを購入して大半を保有し続けると、ここに表示されます。すべてのコインは Explore にあります。',
   launchNow: '今すぐ作成',
   tokenImage: 'トークン画像',
   noFileChosen: 'ファイル未選択',
@@ -110,7 +110,8 @@ const messages: Record<string, string> = {
   totalTokensLaunched: '総ローンチトークン数',
   protocolBuybackAndBurn: 'プロトコル買い戻しと焼却',
   trendingFeed: 'トレンドフィード',
-  memestockSubtitle: 'コミュニティ論点と検証済みポジションを持つすべてのローンチ。',
+  memestockSubtitle:
+    '書面のテーゼがあり、作成者が購入したポジションをまだ保有しているローンチを、直近1時間の取引順に表示します。',
   searchingTokens: 'トークン検索中...',
   scanningForWallets: 'ウォレットをスキャン中...',
   cookieBannerTitle: 'Cookieとストレージ設定',
@@ -387,6 +388,13 @@ const messages: Record<string, string> = {
   footerSplitArc: '税：プロトコル 20%、残りはあなたの配分',
   arcPoolLiveHint:
     '最初のブロックからロックされた Uniswap v4 プールで取引されます。埋めるカーブはありません。',
+  memestockMomentum: 'モメンタム',
+  creatorHolds: '作成者の保有',
+  creatorHoldsHint: '作成者が購入しまだ保有している供給の割合',
+  traders1h: '1時間のトレーダー',
+  traders24h: '24時間のトレーダー',
+  buys1h: '1時間の買い',
+  browseAllCoins: 'すべてのコインを見る',
 };
 
 export default messages;

@@ -34,7 +34,7 @@ const messages: Record<string, string> = {
   all: '全部',
   createToken: '创建代币',
   trendingFeed: '热门动态',
-  memestockSubtitle: '包含社区论点与已验证持仓的每一个代币，按势头排序。',
+  memestockSubtitle: '有书面论点且创建者仍持有其买入仓位的发行，按最近一小时交易排序。',
   protocolAnalytics: '协议数据分析',
   livePreview: '实时预览',
   analyticsSubtitle: 'Robinhood Chain & Arc 上的实时链上指标、24小时交易量与合约部署。',
@@ -97,8 +97,9 @@ const messages: Record<string, string> = {
   typeSearchHint: '输入代币名称、符号或 0x 合约地址...',
   navigateHint: '切换',
   selectHint: '选择',
-  noMemesTitle: '暂无社区 Meme 动态',
-  noMemesDesc: '成为首个在 Robinhood Chain & Arc 上发布具有专属社区叙事的固定总量代币的人。',
+  noMemesTitle: '暂无 Memestock',
+  noMemesDesc:
+    '发行在拥有书面论点、且创建者买入并保留大部分仓位后会显示在这里。所有代币仍可在 Explore 查看。',
   launchNow: '立即发行',
   tokenImage: '代币图标',
   noFileChosen: '未选择文件',
@@ -376,6 +377,13 @@ const messages: Record<string, string> = {
   footerSplitRobinhood: 'LP 手续费：70% 创建者 / 30% 协议',
   footerSplitArc: '税费：20% 协议，其余按您的分配',
   arcPoolLiveHint: '从第一个区块起即在锁定的 Uniswap v4 池中交易，无需填满曲线。',
+  memestockMomentum: '动量',
+  creatorHolds: '创建者持有',
+  creatorHoldsHint: '创建者买入并仍持有的供应占比',
+  traders1h: '1小时交易者',
+  traders24h: '24小时交易者',
+  buys1h: '1小时买入',
+  browseAllCoins: '浏览全部代币',
 };
 
 export default messages;

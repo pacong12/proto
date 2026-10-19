@@ -35,7 +35,7 @@ const messages: Record<string, string> = {
   createToken: 'Buat Token',
   trendingFeed: 'Feed Tren',
   memestockSubtitle:
-    'Setiap peluncuran dengan tesis komunitas dan posisi terverifikasi, diurutkan berdasarkan momentum.',
+    'Peluncuran dengan tesis tertulis yang kreatornya masih memegang posisi yang ia beli, diurutkan berdasarkan trading satu jam terakhir.',
   protocolAnalytics: 'Analitik Protokol',
   livePreview: 'Pratinjau Langsung',
   analyticsSubtitle:
@@ -130,9 +130,9 @@ const messages: Record<string, string> = {
   typeSearchHint: 'Ketik nama token, simbol, atau alamat 0x...',
   navigateHint: 'Navigasi',
   selectHint: 'Pilih',
-  noMemesTitle: 'Belum ada meme komunitas yang bergerak',
+  noMemesTitle: 'Belum ada memestock',
   noMemesDesc:
-    'Jadilah yang pertama meluncurkan token pasokan tetap dengan narasi komunitas di Robinhood Chain & Arc.',
+    'Peluncuran tampil di sini setelah punya tesis tertulis dan kreatornya membeli posisi serta mempertahankan sebagian besarnya. Semua koin tetap ada di Explore.',
   launchNow: 'Luncurkan Sekarang',
   tokenImage: 'Gambar Token',
   noFileChosen: 'Belum ada file dipilih',
@@ -392,6 +392,13 @@ const messages: Record<string, string> = {
   footerSplitArc: 'Pajak: 20% protokol, sisanya sesuai split Anda',
   arcPoolLiveHint:
     'Diperdagangkan di pool Uniswap v4 terkunci sejak blok pertama. Tidak ada kurva yang perlu diisi.',
+  memestockMomentum: 'Momentum',
+  creatorHolds: 'Kreator memegang',
+  creatorHoldsHint: 'Porsi pasokan yang dibeli kreator dan masih dipegang',
+  traders1h: 'trader 1j',
+  traders24h: 'trader 24j',
+  buys1h: 'beli 1j',
+  browseAllCoins: 'Lihat semua koin',
 };
 
 export default messages;

@@ -78,9 +78,9 @@ const messages: Record<string, string> = {
   typeSearchHint: 'Token-Name, Kürzel oder 0x-Adresse eingeben...',
   navigateHint: 'Navigieren',
   selectHint: 'Auswählen',
-  noMemesTitle: 'Noch keine Community-Memes in Bewegung',
+  noMemesTitle: 'Noch keine Memestocks',
   noMemesDesc:
-    'Sei der Erste, der einen Token mit festem Angebot und Community-Narrativ auf Robinhood Chain & Arc startet.',
+    'Ein Launch erscheint hier, sobald er eine schriftliche These hat und sein Creator eine Position kauft und den Großteil hält. Alle Coins bleiben in Explore.',
   launchNow: 'Jetzt Starten',
   tokenImage: 'Token-Bild',
   noFileChosen: 'Keine Datei ausgewählt',
@@ -111,7 +111,7 @@ const messages: Record<string, string> = {
   protocolBuybackAndBurn: 'Protokoll-Rückkauf & Verbrennung',
   trendingFeed: 'Trends',
   memestockSubtitle:
-    'Jeder Launch mit Community-These und verifizierten Positionen, nach Momentum geordnet.',
+    'Launches mit einer schriftlichen These, deren Creator eine gekaufte Position noch hält, sortiert nach dem Handel der letzten Stunde.',
   searchingTokens: 'Token suchen...',
   scanningForWallets: 'Wallets scannen...',
   cookieBannerTitle: 'Cookie- & Speicher-Einstellungen',
@@ -393,6 +393,13 @@ const messages: Record<string, string> = {
   footerSplitArc: 'Steuer: 20 % Protokoll, Rest nach deiner Aufteilung',
   arcPoolLiveHint:
     'Wird ab dem ersten Block in seinem gesperrten Uniswap-v4-Pool gehandelt. Es gibt keine Curve zu füllen.',
+  memestockMomentum: 'Momentum',
+  creatorHolds: 'Creator hält',
+  creatorHoldsHint: 'Anteil der Menge, den der Creator gekauft hat und noch hält',
+  traders1h: 'Trader 1 h',
+  traders24h: 'Trader 24 h',
+  buys1h: 'Käufe 1 h',
+  browseAllCoins: 'Alle Coins ansehen',
 };
 
 export default messages;

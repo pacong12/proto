@@ -77,9 +77,9 @@ const messages: Record<string, string> = {
   typeSearchHint: '토큰 이름, 티커 또는 0x 주소를 입력하세요...',
   navigateHint: '이동',
   selectHint: '선택',
-  noMemesTitle: '아직 움직이는 커뮤니티 밈이 없습니다',
+  noMemesTitle: '아직 Memestock이 없습니다',
   noMemesDesc:
-    'Robinhood Chain & Arc에서 전용 커뮤니티 내러티브가 있는 고정 공급 토큰을 가장 먼저 발행하세요.',
+    '서면 논지가 있고 생성자가 포지션을 매수해 대부분을 유지하면 여기에 표시됩니다. 모든 코인은 Explore에 있습니다.',
   launchNow: '지금 발행하기',
   tokenImage: '토큰 이미지',
   noFileChosen: '선택된 파일 없음',
@@ -109,7 +109,8 @@ const messages: Record<string, string> = {
   totalTokensLaunched: '총 토큰 발행 수',
   protocolBuybackAndBurn: '프로토콜 바이백 & 소각',
   trendingFeed: '트렌딩 피드',
-  memestockSubtitle: '모멘텀 순으로 정렬된 커뮤니티 논지와 검증된 포지션을 가진 모든 런치.',
+  memestockSubtitle:
+    '서면 논지가 있고 생성자가 매수한 포지션을 계속 보유한 출시를, 최근 1시간 거래 순으로 보여줍니다.',
   searchingTokens: '토큰 검색 중...',
   scanningForWallets: '지갑 스캔 중...',
   cookieBannerTitle: 'Cookie & 저장소 설정',
@@ -382,6 +383,13 @@ const messages: Record<string, string> = {
   footerSplitRobinhood: 'LP 수수료: 생성자 70% / 프로토콜 30%',
   footerSplitArc: '세금: 프로토콜 20%, 나머지는 설정한 분배',
   arcPoolLiveHint: '첫 블록부터 잠긴 Uniswap v4 풀에서 거래됩니다. 채울 커브가 없습니다.',
+  memestockMomentum: '모멘텀',
+  creatorHolds: '생성자 보유',
+  creatorHoldsHint: '생성자가 매수해 여전히 보유한 공급 비율',
+  traders1h: '1시간 트레이더',
+  traders24h: '24시간 트레이더',
+  buys1h: '1시간 매수',
+  browseAllCoins: '모든 코인 보기',
 };
 
 export default messages;
