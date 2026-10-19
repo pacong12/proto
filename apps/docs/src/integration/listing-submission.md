@@ -1,93 +1,109 @@
-# GMGN.AI & DEX Listing Submission Guide
+# DEX & Aggregator Listing
 
-Panduan dan template resmi untuk mengajukan integrasi Launchpad dan indexing token ke **GMGN.AI**, **DexScreener**, dan **GeckoTerminal** di **Robinhood Chain (Chain ID: 4663)**.
-
----
-
-## 1. Data Kontrak Protokol Resmi
-
-| Parameter | Nilai Onchain | Keterangan |
-| :--- | :--- | :--- |
-| **Chain** | Robinhood Chain | EVM Layer 2 |
-| **Chain ID** | `4663` | Network ID |
-| **Deployer & Fee Recipient** | `0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2` | Protocol Treasury |
-| **Launchpad Factory (Bonding Curve)** | `0xbA42499Cfe59abc05120A100EEc4f859F476034F` | Factory bonding curve — satu-satunya yang aktif |
-| **Liquidity Locker** | `0x070233B6F46ccD61CA2B7bc1E13520c3fE4614E4` | Kontrak pengunci likuiditas permanen pasca-graduasi |
-| **WETH Address** | `0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73` | Paired Asset Utama |
-| **Uniswap V3 Factory** | `0x1f7d7550B1b028f7571E69A784071F0205FD2EfA` | Canonical Uniswap V3 di RH Chain (untuk pool pasca-graduasi) |
-| **Uniswap V3 Position Manager** | `0x73991a25C818Bf1f1128dEAaB1492D45638DE0D3` | NonfungiblePositionManager |
+Reference data for indexers and aggregators (DEX Screener, GeckoTerminal, GMGN and similar) that want to list Goton tokens. Goton also serves the DEX Screener adapter endpoints itself; see [Public API](/integration/api#dex-screener-adapter).
 
 ---
 
-## 2. Arsitektur: Pure Bonding Curve
+## How Trading Works
 
-Goton Launchpad menggunakan arsitektur **Pure Bonding Curve** (V2). Token tidak langsung dibuat di Uniswap V3 — melainkan diperdagangkan di dalam kontrak bonding curve hingga mencapai target graduasi **4.2 ETH**, setelah itu likuiditas secara otomatis dipindah ke Uniswap V3 dan dikunci permanen.
+- **Robinhood Chain (4663)**: a token trades on its own bonding curve until the curve raises **4.2 ETH**. It then graduates into a **Uniswap v4** pool against **native ETH**, with the liquidity locked for good.
+- **Arc Network (5042)**: there is no curve. A token trades in a **Uniswap v4** pool against **USDC** from the first block, with the liquidity locked for good.
 
-### TokenLaunched Event (Bonding Curve Factory)
+Every Goton v4 pool uses the Goton hook, a **1% LP fee** (`fee = 10000`) and `tickSpacing = 200`.
 
-- **Signature**: `TokenLaunched(address,address,address,uint256,uint256)`
-- **ABI Definition**:
+---
+
+## Robinhood Chain (4663)
+
+| Contract | Address |
+| :--- | :--- |
+| Launchpad Factory | `0x0b85876120e797Ca19655C0B81a0C25573f3Fc18` |
+| Graduator | `0xaEF6Fff944007b94a51F37e82cf5235fDBF9b771` |
+| Goton V4 Hook | `0xb5C88A6101e6b979Ad63Bf5e6302dF8F031360Cc` |
+| Uniswap V4 PoolManager | `0x8366a39CC670B4001A1121B8F6A443A643e40951` |
+| Quote asset in pools | Native ETH (`address(0)`) |
+
+**Events**
 
 ```solidity
-event TokenLaunched(
+// Factory: a token and its bonding curve are created.
+event TokenLaunchedV2(
     address indexed token,
-    address indexed deployer,
     address indexed curve,
-    uint256 initialBuyAmount,
-    uint256 supply
+    address indexed creator,
+    string name,
+    string symbol,
+    uint256 initialBuy
 );
+
+// Bonding curve: every buy and sell before graduation.
+event Trade(address indexed trader, bool indexed isBuy, uint256 ethAmount, uint256 tokenAmount, uint256 feeEth);
+
+// Factory: the curve's liquidity moved into its locked v4 pool.
+event TokenGraduated(address indexed token, bytes32 indexed poolId, address splitter);
 ```
 
-### TokenGraduated Event (pasca-4.2 ETH)
-
-```solidity
-event TokenGraduated(
-    address indexed token,
-    address indexed pool,
-    uint256 liquidityAmount
-);
-```
+After graduation, trades are standard Uniswap v4 `Swap` events on the PoolManager for that `poolId`.
 
 ---
 
-## 3. Template Surat Pengajuan GMGN.AI
+## Arc Network (5042)
+
+| Contract | Address |
+| :--- | :--- |
+| Launchpad Factory (v4) | `0xd7Bf86061CC5637b2b854d61007f8fD7CD6f0980` |
+| Goton V4 Hook | `0xb5C88A6101e6b979Ad63Bf5e6302dF8F031360Cc` |
+| Uniswap V4 PoolManager | `0x8366a39CC670B4001A1121B8F6A443A643e40951` |
+| Quote asset in pools | USDC `0x3600000000000000000000000000000000000000` (6 decimals) |
+
+**Events**
+
+```solidity
+// Factory: a token is created directly in its locked v4 pool.
+event TokenLaunchedV4(
+    address indexed token,
+    bytes32 indexed poolId,
+    address indexed creator,
+    address splitter,
+    string name,
+    string symbol,
+    uint256 prebuyUsdc6,
+    uint256 creatorTokens
+);
+```
+
+Trades are Uniswap v4 `Swap` events on the PoolManager for that `poolId`.
+
+---
+
+## Token Facts
+
+- Fixed supply of **1,000,000,000** tokens, 18 decimals, no mint function.
+- Creators can set a buy and sell tax of 0–10% at launch, split on-chain between the creator's share and the protocol. See [Creator Fees & Rewards](/protocol/fees-and-burns).
+- Earlier factories have tokens that are still indexed but do not take new launches. All current addresses are on [Verified Smart Contracts](/integration/contracts).
+
+---
+
+## Submission Template
 
 ```text
-Subject: New Bonding Curve Launchpad Integration - Robinhood Chain (4663)
+Subject: Goton launchpad listing - Robinhood Chain (4663) and Arc (5042)
 
-Hi GMGN Team,
+Hi team,
 
-We have deployed a Pure Bonding Curve launchpad on Robinhood Chain (Chain ID: 4663).
-Tokens trade on an internal AMM until 4.2 ETH is reached, then graduate automatically
-to Uniswap V3 with liquidity locked permanently.
+Goton (https://goton.fun) is a fixed-supply token launchpad.
 
-=== PROTOCOL SPECIFICATION ===
-- Platform Name: Goton Launchpad
-- Website: https://yourdomain.com
-- Documentation: https://docs.yourdomain.com
-- Network: Robinhood Chain (Chain ID: 4663)
-- Architecture: Pure Bonding Curve (no direct pool at launch)
-- Launchpad Factory: 0xbA42499Cfe59abc05120A100EEc4f859F476034F
-- Liquidity Locker: 0x070233B6F46ccD61CA2B7bc1E13520c3fE4614E4
-- Graduation Target: 4.2 ETH
-- Underlying DEX (post-graduation): Uniswap V3
-  - Factory: 0x1f7d7550B1b028f7571E69A784071F0205FD2EfA
-  - Base Asset: WETH (0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73)
-  - Pool Fee: 10000 (1%)
+- Robinhood Chain (4663): tokens trade on a bonding curve until 4.2 ETH, then graduate
+  into a Uniswap v4 pool against native ETH with liquidity locked for good.
+  Factory 0x0b85876120e797Ca19655C0B81a0C25573f3Fc18 (TokenLaunchedV2, TokenGraduated),
+  curve Trade events before graduation.
+- Arc (5042): tokens launch straight into a Uniswap v4 pool against USDC
+  (0x3600000000000000000000000000000000000000), liquidity locked.
+  Factory 0xd7Bf86061CC5637b2b854d61007f8fD7CD6f0980 (TokenLaunchedV4).
+- Uniswap v4 PoolManager on both chains: 0x8366a39CC670B4001A1121B8F6A443A643e40951,
+  Goton hook 0xb5C88A6101e6b979Ad63Bf5e6302dF8F031360Cc, fee 10000, tickSpacing 200.
+- DEX Screener adapter: https://goton.fun/dex/{latest-block,asset,pair,events}, dexId "goton".
+- Docs: https://docs.goton.fun
 
 Thank you!
 ```
-
----
-
-## 4. Alur Listing Otomatis DexScreener & GeckoTerminal
-
-1. **Syarat Muncul Otomatis**:
-   - Token harus memiliki minimal **1 transaksi swap** di bonding curve.
-   - Setelah graduasi, pool Uniswap V3 terdaftar otomatis.
-2. **Cek Pasangan Pool (pasca-graduasi)**:
-   - URL DexScreener: `https://dexscreener.com/robinhood/<ALAMAT_POOL>`
-   - URL GeckoTerminal: `https://www.geckoterminal.com/robinhood/pools/<ALAMAT_POOL>`
-3. **Klaim Profil / Update Token Info**:
-   - Buka `https://marketplace.dexscreener.com/product/token-info`
-   - Masukkan alamat pool/token untuk menambahkan logo kustom, website, dan channel media sosial.

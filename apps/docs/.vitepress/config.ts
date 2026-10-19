@@ -270,6 +270,7 @@ export default defineConfig({
             items: [
               { text: 'How to Launch a Token', link: '/protocol/launches' },
               { text: 'Trading & Swaps Guide', link: '/protocol/trading-guide' },
+              { text: 'Limit, Take-Profit & Stop-Loss', link: '/protocol/advanced-orders' },
               { text: 'Anti-Snipe & Fair Launch', link: '/protocol/anti-snipe' },
             ],
           },
@@ -279,6 +280,7 @@ export default defineConfig({
             items: [
               { text: 'Creator Fees & Rewards', link: '/protocol/fees-and-burns' },
               { text: 'Community Takeovers (CTO)', link: '/protocol/community-takeovers' },
+              { text: 'Feed, Calls, Memestock & Following', link: '/protocol/social' },
             ],
           },
           {
@@ -287,6 +289,8 @@ export default defineConfig({
             items: [
               { text: 'Network Setup (Robinhood & Arc)', link: '/integration/network' },
               { text: 'Verified Smart Contracts', link: '/integration/contracts' },
+              { text: 'Public API', link: '/integration/api' },
+              { text: 'DEX & Aggregator Listing', link: '/integration/listing-submission' },
             ],
           },
           {
@@ -330,6 +334,7 @@ export default defineConfig({
             items: [
               { text: 'Cara Meluncurkan Token', link: '/id/protocol/launches' },
               { text: 'Panduan Trading & Swap', link: '/id/protocol/trading-guide' },
+              { text: 'Limit, Take-Profit & Stop-Loss', link: '/id/protocol/advanced-orders' },
               { text: 'Anti-Snipe & Fair Launch', link: '/id/protocol/anti-snipe' },
             ],
           },
@@ -339,6 +344,7 @@ export default defineConfig({
             items: [
               { text: 'Fee Kreator & Reward', link: '/id/protocol/fees-and-burns' },
               { text: 'Pengambilalihan Komunitas (CTO)', link: '/id/protocol/community-takeovers' },
+              { text: 'Feed, Call, Memestock & Follow', link: '/id/protocol/social' },
             ],
           },
           {
@@ -347,6 +353,11 @@ export default defineConfig({
             items: [
               { text: 'Konfigurasi Jaringan', link: '/id/integration/network' },
               { text: 'Kontrak Pintar Terverifikasi', link: '/id/integration/contracts' },
+              { text: 'Public API (English)', link: '/integration/api' },
+              {
+                text: 'Listing DEX & Agregator (English)',
+                link: '/integration/listing-submission',
+              },
             ],
           },
           {
@@ -390,6 +401,7 @@ export default defineConfig({
             items: [
               { text: '如何发行代币', link: '/zh/protocol/launches' },
               { text: '交易与兑换指南', link: '/zh/protocol/trading-guide' },
+              { text: '限价、止盈与止损', link: '/zh/protocol/advanced-orders' },
               { text: '防抢跑与公平发射', link: '/zh/protocol/anti-snipe' },
             ],
           },
@@ -399,6 +411,7 @@ export default defineConfig({
             items: [
               { text: '创作者分成与回购销毁', link: '/zh/protocol/fees-and-burns' },
               { text: '社区接管 (CTO)', link: '/zh/protocol/community-takeovers' },
+              { text: '动态、喊单、Memestock 与关注', link: '/zh/protocol/social' },
             ],
           },
           {
@@ -407,6 +420,8 @@ export default defineConfig({
             items: [
               { text: '网络配置 (Robinhood & Arc)', link: '/zh/integration/network' },
               { text: '已验证智能合约', link: '/zh/integration/contracts' },
+              { text: '公开 API（英文）', link: '/integration/api' },
+              { text: 'DEX 与聚合器上架（英文）', link: '/integration/listing-submission' },
             ],
           },
           {

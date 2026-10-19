@@ -33,7 +33,7 @@ Sertakan tautan resmi agar para trader dapat memverifikasi komunitas Anda:
 
 ### 5. Pembelian Awal / Developer Buy (Opsional)
 
-Jika Anda ingin memiliki alokasi awal sebagai kreator pada harga terendah peluncuran, masukkan nominal pembelian yang diinginkan.
+Jika Anda ingin memiliki alokasi awal sebagai kreator pada harga terendah peluncuran, masukkan nominal pembelian yang diinginkan (ETH di Robinhood Chain, USDC di Arc). Pembelian awal, bersama deskripsi tertulis, juga yang membuat peluncuran tampil di [Memestock](/id/protocol/social#memestock).
 
 ### 6. Konfirmasi & Peluncuran
 
@@ -52,3 +52,12 @@ Setiap token yang dibuat melalui Goton memiliki pasokan yang mutlak dan tidak da
 - **Desimal**: 18.
 - **Tanpa Pencetakan Tambahan**: Tidak tersedia fungsi pencetakan token baru setelah peluncuran.
 - **Tanpa Pembekuan**: Token tidak dapat dibekukan atau dimasukkan ke daftar hitam.
+
+---
+
+## Graduasi
+
+- **Robinhood Chain**: token diperdagangkan di bonding curve-nya sampai curve mengumpulkan **4.2 ETH**. Curve lalu ditutup, dan ETH serta sisa tokennya dipindahkan ke pool Uniswap v4 yang likuiditasnya dikunci permanen. Graduasi tidak memerlukan izin: keeper Goton memicunya dalam sekitar 30 detik, dan jika ada yang bertransaksi lebih dulu, transaksinya yang memicu graduasi.
+- **Arc Network**: tidak ada curve. Token diperdagangkan di pool Uniswap v4 terkunci sejak blok pertama.
+
+Setelah graduasi, token tetap diperdagangkan di halaman yang sama; aplikasi mengarahkan transaksi ke pool.
