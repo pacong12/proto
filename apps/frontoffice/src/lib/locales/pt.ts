@@ -406,6 +406,14 @@ const messages: Record<string, string> = {
   noFollowers: 'Ainda sem seguidores.',
   noFollowing: 'Ainda não segue ninguém.',
   followingTab: 'Seguindo',
+  orderHistory: 'Histórico',
+  noOrderHistory: 'Ainda não há ordens executadas ou canceladas.',
+  orderReceived: 'Recebido',
+  orderCancelledLabel: 'Cancelada',
+  orderFilledLabel: 'Executada',
+  orderFilledToast: 'executada',
+  viewToken: 'Ver',
+  viewTransaction: 'Ver transação',
 };
 
 export default messages;

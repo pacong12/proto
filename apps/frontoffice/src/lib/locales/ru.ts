@@ -409,6 +409,14 @@ const messages: Record<string, string> = {
   noFollowers: 'Пока нет подписчиков.',
   noFollowing: 'Пока ни на кого не подписан.',
   followingTab: 'Подписки',
+  orderHistory: 'История',
+  noOrderHistory: 'Пока нет исполненных или отменённых ордеров.',
+  orderReceived: 'Получено',
+  orderCancelledLabel: 'Отменён',
+  orderFilledLabel: 'Исполнен',
+  orderFilledToast: 'исполнен',
+  viewToken: 'Открыть',
+  viewTransaction: 'Открыть транзакцию',
 };
 
 export default messages;

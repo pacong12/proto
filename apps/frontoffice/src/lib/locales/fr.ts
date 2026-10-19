@@ -408,6 +408,14 @@ const messages: Record<string, string> = {
   noFollowers: "Pas encore d'abonnés.",
   noFollowing: 'Ne suit encore personne.',
   followingTab: 'Abonnements',
+  orderHistory: 'Historique',
+  noOrderHistory: 'Aucun ordre exécuté ou annulé pour le moment.',
+  orderReceived: 'Reçu',
+  orderCancelledLabel: 'Annulé',
+  orderFilledLabel: 'Exécuté',
+  orderFilledToast: 'exécuté',
+  viewToken: 'Voir',
+  viewTransaction: 'Voir la transaction',
 };
 
 export default messages;

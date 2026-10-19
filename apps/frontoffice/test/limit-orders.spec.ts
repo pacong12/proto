@@ -49,3 +49,24 @@ describe('limit order math', () => {
     expect(stopPriceX36(7e-6, usdc)).toBe(7n * 10n ** 18n); // 7e-6 * 1e6 / 1e18 * 1e36
   });
 });
+
+describe('order payout', () => {
+  it('shows tokens for a filled buy and the quote for a filled sell', async () => {
+    const { orderPayout, formatRawAmount } = await import('../src/lib/limit-orders');
+    expect(formatRawAmount(1_500_000n * 10n ** 18n, 18)).toBe((1_500_000).toLocaleString());
+    expect(
+      orderPayout(
+        { isBuy: true, status: 'filled', amountOut: String(2n * 10n ** 18n) },
+        'PROT',
+        'ETH',
+      ),
+    ).toBe('2 PROT');
+    // Arc pays out the 6-decimal USDC ERC-20.
+    expect(
+      orderPayout({ isBuy: false, status: 'filled', amountOut: '12500000' }, 'X', 'USDC'),
+    ).toBe(`${(12.5).toLocaleString()} USDC`);
+    expect(
+      orderPayout({ isBuy: false, status: 'cancelled', amountOut: '1' }, 'X', 'ETH'),
+    ).toBeNull();
+  });
+});

@@ -395,6 +395,14 @@ const messages: Record<string, string> = {
   noFollowers: 'لا يوجد متابِعون بعد.',
   noFollowing: 'لا يتابع أحدًا بعد.',
   followingTab: 'المتابَعون',
+  orderHistory: 'السجل',
+  noOrderHistory: 'لا توجد أوامر منفذة أو ملغاة بعد.',
+  orderReceived: 'تم استلام',
+  orderCancelledLabel: 'ملغى',
+  orderFilledLabel: 'منفذ',
+  orderFilledToast: 'تم تنفيذه',
+  viewToken: 'عرض',
+  viewTransaction: 'عرض المعاملة',
 };
 
 export default messages;

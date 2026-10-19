@@ -75,3 +75,32 @@ export function sellMinOut(
 export function stopPriceX36(price: number, ctx: PriceContext): bigint {
   return toScaled(price, 36 + ctx.quoteDecimals - ctx.tokenDecimals);
 }
+
+/** Raw quote decimals of a network's pools: 6 for the Arc USDC ERC-20, else 18. */
+export function quoteDecimalsOf(nativeSymbol: string): number {
+  return nativeSymbol === 'USDC' ? 6 : 18;
+}
+
+/** Raw amount to a short decimal string (up to 6 significant digits). */
+export function formatRawAmount(raw: string | bigint | undefined, decimals: number): string {
+  if (raw === undefined || raw === null || raw === '') return '0';
+  const n = BigInt(raw);
+  const unit = 10n ** BigInt(decimals);
+  const value = Number(n / unit) + Number(n % unit) / Number(unit);
+  return value.toLocaleString(undefined, { maximumSignificantDigits: 6 });
+}
+
+/**
+ * What a closed order paid out: tokens for a filled buy, the quote asset for a filled sell.
+ * Null when the order did not fill.
+ */
+export function orderPayout(
+  order: { isBuy: boolean; status: string; amountOut?: string },
+  tokenSymbol: string,
+  nativeSymbol: string,
+): string | null {
+  if (order.status !== 'filled' || !order.amountOut) return null;
+  return order.isBuy
+    ? `${formatRawAmount(order.amountOut, 18)} ${tokenSymbol}`
+    : `${formatRawAmount(order.amountOut, quoteDecimalsOf(nativeSymbol))} ${nativeSymbol}`;
+}

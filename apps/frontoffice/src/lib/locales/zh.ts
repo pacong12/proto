@@ -391,6 +391,14 @@ const messages: Record<string, string> = {
   noFollowers: '还没有粉丝。',
   noFollowing: '还没有关注任何人。',
   followingTab: '关注',
+  orderHistory: '历史',
+  noOrderHistory: '还没有已成交或已取消的订单。',
+  orderReceived: '收到',
+  orderCancelledLabel: '已取消',
+  orderFilledLabel: '已成交',
+  orderFilledToast: '已成交',
+  viewToken: '查看',
+  viewTransaction: '查看交易',
 };
 
 export default messages;

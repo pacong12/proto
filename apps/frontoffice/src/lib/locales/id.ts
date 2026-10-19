@@ -406,6 +406,14 @@ const messages: Record<string, string> = {
   noFollowers: 'Belum ada pengikut.',
   noFollowing: 'Belum mengikuti siapa pun.',
   followingTab: 'Diikuti',
+  orderHistory: 'Riwayat',
+  noOrderHistory: 'Belum ada order yang terisi atau dibatalkan.',
+  orderReceived: 'Diterima',
+  orderCancelledLabel: 'Dibatalkan',
+  orderFilledLabel: 'Terisi',
+  orderFilledToast: 'terisi',
+  viewToken: 'Lihat',
+  viewTransaction: 'Lihat transaksi',
 };
 
 export default messages;

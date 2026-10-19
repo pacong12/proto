@@ -402,6 +402,14 @@ const messages: Record<string, string> = {
   noFollowers: 'まだフォロワーはいません。',
   noFollowing: 'まだ誰もフォローしていません。',
   followingTab: 'フォロー中',
+  orderHistory: '履歴',
+  noOrderHistory: '約定またはキャンセルされた注文はまだありません。',
+  orderReceived: '受取',
+  orderCancelledLabel: 'キャンセル済み',
+  orderFilledLabel: '約定',
+  orderFilledToast: 'が約定',
+  viewToken: '表示',
+  viewTransaction: '取引を表示',
 };
 
 export default messages;

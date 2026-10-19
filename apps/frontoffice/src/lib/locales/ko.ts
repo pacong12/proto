@@ -397,6 +397,14 @@ const messages: Record<string, string> = {
   noFollowers: '아직 팔로워가 없습니다.',
   noFollowing: '아직 팔로우한 사람이 없습니다.',
   followingTab: '팔로잉',
+  orderHistory: '내역',
+  noOrderHistory: '아직 체결되거나 취소된 주문이 없습니다.',
+  orderReceived: '수령',
+  orderCancelledLabel: '취소됨',
+  orderFilledLabel: '체결됨',
+  orderFilledToast: '체결',
+  viewToken: '보기',
+  viewTransaction: '거래 보기',
 };
 
 export default messages;
