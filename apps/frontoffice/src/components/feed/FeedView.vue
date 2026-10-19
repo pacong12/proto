@@ -11,7 +11,7 @@
       <div class="space-y-4 min-w-0">
         <!-- 1. Feed Filter Tabs Bar + Multi-Chain Filter -->
         <div
-          class="px-3 pt-2 pb-1 border-b border-border bg-card/60 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+          class="px-3 pt-2 pb-1 border-b border-border bg-card/60 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-2"
         >
           <Tabs v-model="activeFilter" class="w-auto">
             <TabsList
@@ -30,7 +30,7 @@
           </Tabs>
 
           <!-- Chain Filter (All Chains default / Robinhood / Arc) -->
-          <div class="flex items-center gap-1 text-sm self-end sm:self-auto pb-1 sm:pb-0">
+          <div class="flex items-center gap-1 text-sm self-end md:self-auto pb-1 md:pb-0 shrink-0">
             <button
               v-for="chainOpt in chainFilterOptions"
               :key="chainOpt.key"

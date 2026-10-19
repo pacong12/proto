@@ -39,10 +39,10 @@
 
     <!-- Navigation Filter Pills (Shadcn Tabs variant="line") + Search Bar (identical to Explore) -->
     <div
-      class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-border text-sm"
+      class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-2 border-b border-border text-sm"
     >
       <!-- Filter Tabs -->
-      <Tabs v-model="selectedSort" class="w-full md:w-auto">
+      <Tabs v-model="selectedSort" class="w-full lg:w-auto">
         <TabsList
           variant="line"
           class="overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0 w-auto"
@@ -54,7 +54,7 @@
       </Tabs>
 
       <!-- Search Bar -->
-      <div class="relative w-full md:w-64 shrink-0">
+      <div class="relative w-full lg:w-64 shrink-0">
         <Search class="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-2.5" />
         <Input
           v-model="searchQuery"

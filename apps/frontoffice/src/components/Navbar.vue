@@ -227,16 +227,17 @@ function copyAddress() {
           variant="outline"
           size="sm"
           @click="$emit('openSearch')"
-          class="h-9 w-9 p-0 sm:w-auto sm:px-3 text-xs text-muted-foreground gap-2 font-normal border-border bg-card hover:bg-muted hover:text-foreground rounded-xl shrink-0"
+          class="h-9 w-9 p-0 md:w-auto md:px-3 lg:w-9 lg:px-0 xl:w-auto xl:px-3 text-xs text-muted-foreground gap-2 font-normal border-border bg-card hover:bg-muted hover:text-foreground rounded-xl shrink-0"
           title="Search (⌘K)"
           aria-label="Search"
         >
           <Search class="w-3.5 h-3.5" />
-          <span class="hidden sm:inline">{{
+          <!-- Labels show at md and xl only; below md and at lg (nav links visible) the bar would overflow. -->
+          <span class="hidden md:inline lg:hidden xl:inline">{{
             t('searchPlaceholder') ? 'Search...' : 'Search'
           }}</span>
           <kbd
-            class="hidden sm:inline text-xs bg-muted border border-border px-1.5 py-0.5 rounded-md"
+            class="hidden md:inline lg:hidden xl:inline text-xs bg-muted border border-border px-1.5 py-0.5 rounded-md"
           >
             ⌘K
           </kbd>
@@ -257,7 +258,7 @@ function copyAddress() {
                 :alt="activeNetwork.name"
                 class="w-4 h-4 rounded-xs object-contain shrink-0"
               />
-              <span class="font-semibold text-foreground hidden sm:inline">
+              <span class="font-semibold text-foreground hidden md:inline lg:hidden xl:inline">
                 {{ activeNetwork.name }}
               </span>
             </div>
