@@ -13,7 +13,7 @@
         <div
           class="px-3 pt-2 pb-1 border-b border-border bg-card/60 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-2"
         >
-          <Tabs v-model="activeFilter" class="w-auto">
+          <Tabs v-model="activeFilter" class="w-auto min-w-0 md:flex-1">
             <TabsList
               variant="line"
               class="text-sm overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0"
