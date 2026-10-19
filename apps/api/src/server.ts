@@ -4,6 +4,7 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { V4BuybackKeeperService } from './modules/tokens/infrastructure/keeper/v4-buyback-keeper.service';
 import { LimitOrderKeeperService } from './modules/tokens/infrastructure/keeper/limit-order-keeper.service';
 import { GraduationKeeperService } from './modules/tokens/infrastructure/keeper/graduation-keeper.service';
+import { isMemestock, memestockSignals } from './modules/tokens/application/memestock';
 import {
   SqliteTokenRepository,
   ViemChainIndexerAdapter,
@@ -797,6 +798,37 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       await cache.set(cacheKey, res, 10); // Cache for 10s
     }
     return replyJson(res, 200, { 'x-cache': 'MISS' });
+  }
+
+  // GET /api/memestock?chainId= — launches with a thesis whose creator still holds a bought
+  // position, ranked by momentum (see modules/tokens/application/memestock.ts).
+  if (url.pathname === '/api/memestock' && req.method === 'GET') {
+    const network = resolveNetworkByParam(
+      url.searchParams.get('chainId') || url.searchParams.get('chain'),
+    );
+    const cacheKey = `memestock:${network.chainId}`;
+    const cached = await cache.get<unknown>(cacheKey);
+    if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
+
+    const res = await tokenController.listTokens(100, 0);
+    if (!res.success || !res.data) return replyJson(res, 500);
+    const now = Date.now();
+    const rows = [];
+    for (const item of res.data) {
+      if (resolveTokenNetwork(item.token).chainId !== network.chainId) continue;
+      const trades = await repository.getTrades(item.token.address, 500, 0);
+      const signals = memestockSignals(item.token, trades, now);
+      if (!isMemestock(item.token.description, signals)) continue;
+      rows.push({ ...item, signals });
+    }
+    rows.sort(
+      (a, b) =>
+        b.signals.score - a.signals.score ||
+        (b.marketData?.marketCapUsd ?? 0) - (a.marketData?.marketCapUsd ?? 0),
+    );
+    const payload = ok(rows);
+    await cache.set(cacheKey, payload, 15);
+    return replyJson(payload, 200, { 'x-cache': 'MISS' });
   }
 
   // GET /api/users/resolve?query=:query
