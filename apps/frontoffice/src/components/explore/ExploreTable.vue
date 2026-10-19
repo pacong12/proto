@@ -6,36 +6,36 @@
           class="border-b border-border text-muted-foreground uppercase tracking-wider text-xs"
         >
           <TableHead
-            class="py-3 px-4 font-semibold whitespace-nowrap sticky left-0 z-20 bg-card text-muted-foreground"
+            class="py-3 px-3 xl:px-4 font-semibold whitespace-nowrap sticky left-0 z-20 bg-card text-muted-foreground"
           >
             {{ t('tokenCol').toUpperCase() }}
           </TableHead>
           <TableHead
-            class="py-3 px-4 font-semibold whitespace-nowrap text-center w-24 text-muted-foreground"
+            class="py-3 px-3 xl:px-4 font-semibold whitespace-nowrap text-center w-24 text-muted-foreground hidden xl:table-cell"
             >GRAPH</TableHead
           >
           <TableHead
-            class="py-3 px-4 font-semibold whitespace-nowrap text-right text-muted-foreground"
+            class="py-3 px-3 xl:px-4 font-semibold whitespace-nowrap text-right text-muted-foreground"
             >{{ t('marketCapCol').toUpperCase() }}</TableHead
           >
           <TableHead
-            class="py-3 px-4 font-semibold whitespace-nowrap text-center w-36 text-muted-foreground"
+            class="py-3 px-3 xl:px-4 font-semibold whitespace-nowrap text-center w-36 text-muted-foreground"
             >{{ t('progress').toUpperCase() }}</TableHead
           >
           <TableHead
-            class="py-3 px-4 font-semibold whitespace-nowrap text-right text-muted-foreground"
+            class="py-3 px-3 xl:px-4 font-semibold whitespace-nowrap text-right text-muted-foreground"
             >{{ t('timeCol').toUpperCase() }}</TableHead
           >
           <TableHead
-            class="py-3 px-4 font-semibold whitespace-nowrap text-right text-muted-foreground"
+            class="py-3 px-3 xl:px-4 font-semibold whitespace-nowrap text-right text-muted-foreground"
             >{{ t('volume24hCol').toUpperCase() }}</TableHead
           >
           <TableHead
-            class="py-3 px-4 font-semibold whitespace-nowrap text-right text-muted-foreground"
+            class="py-3 px-3 xl:px-4 font-semibold whitespace-nowrap text-right text-muted-foreground"
             >{{ t('change24hCol').toUpperCase() }}</TableHead
           >
           <TableHead
-            class="py-3 px-4 font-semibold whitespace-nowrap text-right text-muted-foreground"
+            class="py-3 px-3 xl:px-4 font-semibold whitespace-nowrap text-right text-muted-foreground"
             >{{ t('actionCol').toUpperCase() }}</TableHead
           >
         </TableRow>
@@ -49,9 +49,9 @@
         >
           <!-- 1. COIN (Pin + Logo + Name + Symbol + Creator + Copy Contract) -->
           <TableCell
-            class="py-3.5 px-4 sticky left-0 z-10 bg-card group-hover:bg-muted/50 transition-colors"
+            class="py-3.5 px-3 xl:px-4 sticky left-0 z-10 bg-card group-hover:bg-muted/50 transition-colors w-[18rem] max-w-[18rem] xl:w-[22rem] xl:max-w-[22rem]"
           >
-            <div class="flex items-center gap-2.5">
+            <div class="flex items-center gap-2.5 min-w-0">
               <!-- Pons-style Pin / Star Button -->
               <button
                 type="button"
@@ -87,31 +87,35 @@
                 />
               </div>
 
-              <div class="min-w-0 truncate">
-                <div class="flex items-center gap-1.5 truncate">
+              <div class="min-w-0 flex-1">
+                <!-- Line 1: name, ticker, tax, holder dividends -->
+                <div class="flex items-center gap-1.5 min-w-0">
                   <span
-                    class="font-bold text-sm text-foreground group-hover:text-primary transition truncate"
+                    class="font-bold text-sm text-foreground group-hover:text-primary transition truncate min-w-0"
                   >
                     {{ item.token.name }}
                   </span>
-                </div>
-                <div class="flex items-center gap-2 mt-0.5">
-                  <span class="font-bold text-xs text-muted-foreground"
+                  <span class="font-bold text-xs text-muted-foreground shrink-0"
                     >${{ item.token.symbol }}</span
                   >
-                  <span class="text-muted-foreground/50 text-xs hidden sm:inline">&middot;</span>
-                  <button
-                    v-if="item.token.deployer"
-                    type="button"
-                    class="text-xs text-muted-foreground hover:text-foreground truncate hidden sm:inline cursor-pointer transition-colors hover:underline underline-offset-2"
-                    :title="`View profile: ${getUserIdentity(item.token.deployer).displayName}`"
-                    @click.stop="navigateToDeployer(item.token.deployer)"
+                  <TaxTooltip
+                    :buy-tax-bps="item.token.taxConfig?.buyTaxBps"
+                    :sell-tax-bps="item.token.taxConfig?.sellTaxBps"
+                    custom-class="text-xs shrink-0"
+                  />
+                  <span
+                    v-if="(item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0"
+                    class="text-xs text-sky-400 px-1.5 py-0.5 rounded border border-sky-500/20 bg-sky-500/5 shrink-0 whitespace-nowrap"
+                    title="Holder Fee Sharing Enabled"
                   >
-                    by {{ getUserIdentity(item.token.deployer).displayName }}
-                  </button>
+                    {{ item.token.taxConfig?.revenueSplit?.holders }}% Divs
+                  </span>
+                </div>
+                <!-- Line 2: contract address, creator -->
+                <div class="flex items-center gap-2 mt-0.5 min-w-0">
                   <button
                     type="button"
-                    class="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 bg-muted/40 hover:bg-muted border border-border px-1.5 py-0.5 rounded transition cursor-pointer"
+                    class="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 bg-muted/40 hover:bg-muted border border-border px-1.5 py-0.5 rounded transition cursor-pointer shrink-0"
                     title="Copy Contract Address"
                     @click.stop="copyAddress(item.token.address)"
                   >
@@ -122,25 +126,22 @@
                     />
                     <Copy v-else class="w-3 h-3" />
                   </button>
-                  <TaxTooltip
-                    :buy-tax-bps="item.token.taxConfig?.buyTaxBps"
-                    :sell-tax-bps="item.token.taxConfig?.sellTaxBps"
-                    custom-class="text-xs"
-                  />
-                  <span
-                    v-if="(item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0"
-                    class="text-xs text-sky-400 px-1.5 py-0.5 rounded border border-sky-500/20 bg-sky-500/5"
-                    title="Holder Fee Sharing Enabled"
+                  <button
+                    v-if="item.token.deployer"
+                    type="button"
+                    class="text-xs text-muted-foreground hover:text-foreground truncate min-w-0 cursor-pointer transition-colors hover:underline underline-offset-2"
+                    :title="`View profile: ${getUserIdentity(item.token.deployer).displayName}`"
+                    @click.stop="navigateToDeployer(item.token.deployer)"
                   >
-                    {{ item.token.taxConfig?.revenueSplit?.holders }}% Divs
-                  </span>
+                    by {{ getUserIdentity(item.token.deployer).displayName }}
+                  </button>
                 </div>
               </div>
             </div>
           </TableCell>
 
           <!-- 3. GRAPH (Mini SVG Sparkline curve) -->
-          <TableCell class="py-3.5 px-4 text-center">
+          <TableCell class="py-3.5 px-3 xl:px-4 text-center hidden xl:table-cell">
             <svg
               class="inline-block overflow-visible"
               width="72"
@@ -159,7 +160,7 @@
           </TableCell>
 
           <!-- 4. MARKET CAP -->
-          <TableCell class="py-3.5 px-4 text-right font-extrabold text-sm text-foreground">
+          <TableCell class="py-3.5 px-3 xl:px-4 text-right font-extrabold text-sm text-foreground">
             {{
               (item.marketData?.marketCapUsd ?? 0) > 0
                 ? `$${formatNumberCap(item.marketData?.marketCapUsd ?? 0)}`
@@ -168,7 +169,7 @@
           </TableCell>
 
           <!-- 5. BONDING / PROGRESS -->
-          <TableCell class="py-3.5 px-4">
+          <TableCell class="py-3.5 px-3 xl:px-4">
             <div class="space-y-1.5 max-w-[130px] mx-auto text-center">
               <div class="flex items-center justify-between gap-2 text-xs whitespace-nowrap">
                 <span class="text-muted-foreground">
@@ -187,13 +188,15 @@
 
           <!-- 6. AGE -->
           <TableCell
-            class="py-3.5 px-4 text-right text-muted-foreground font-semibold text-xs whitespace-nowrap"
+            class="py-3.5 px-3 xl:px-4 text-right text-muted-foreground font-semibold text-xs whitespace-nowrap"
           >
             {{ formatRelativeTime(item.token.createdAt) }}
           </TableCell>
 
           <!-- 7. VOLUME 24H -->
-          <TableCell class="py-3.5 px-4 text-right text-muted-foreground font-semibold text-xs">
+          <TableCell
+            class="py-3.5 px-3 xl:px-4 text-right text-muted-foreground font-semibold text-xs"
+          >
             {{
               (item.marketData?.volume24hUsd ?? 0) > 0
                 ? formatCompactUsd(item.marketData?.volume24hUsd)
@@ -203,7 +206,7 @@
 
           <!-- 8. 24H % -->
           <TableCell
-            class="py-3.5 px-4 text-right font-extrabold text-xs"
+            class="py-3.5 px-3 xl:px-4 text-right font-extrabold text-xs"
             :class="
               (item.marketData?.priceChange24h ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'
             "
@@ -213,7 +216,7 @@
           </TableCell>
 
           <!-- 9. ACTION (Quick Buy / Trade button) -->
-          <TableCell class="py-3.5 px-4 text-right">
+          <TableCell class="py-3.5 px-3 xl:px-4 text-right">
             <Button
               size="sm"
               variant="outline"
