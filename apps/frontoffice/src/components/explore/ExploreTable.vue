@@ -150,8 +150,8 @@
               fill="none"
             >
               <path
-                :d="getSparkline(item.marketData?.priceChange24h ?? 0, 72, 24).d"
-                :stroke="getSparkline(item.marketData?.priceChange24h ?? 0, 72, 24).color"
+                :d="spark(item.token.address).d"
+                :stroke="TREND_COLOR[spark(item.token.address).trend]"
                 stroke-width="2"
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -247,7 +247,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { Star, Copy, Check, ArrowRight } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
@@ -267,6 +267,9 @@ import TaxTooltip from '@/components/ui/TaxTooltip.vue';
 import { shortenAddress, formatRelativeTime, formatCompactUsd, getChainIcon } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { useTokenStore } from '@/composables/useTokenStore';
+import { useWallet } from '@/composables/useWallet';
+import { apiFetch } from '@/lib/api-client';
+import { sparklinePath, type SparkTrend } from '@/lib/sparkline';
 import type { LaunchedTokenEntity, TokenMarketData } from '@goton/shared-types';
 
 interface TokenItem {
@@ -297,6 +300,30 @@ defineEmits<{
 
 const router = useRouter();
 const tokenStore = useTokenStore();
+const { activeNetwork } = useWallet();
+
+// Sparklines: the last 24 hourly closes per token (GET /api/sparklines), for the active chain.
+const TREND_COLOR: Record<SparkTrend, string> = {
+  up: '#22c55e',
+  down: '#ef4444',
+  flat: '#71717a',
+};
+const sparklines = ref<Record<string, number[]>>({});
+async function loadSparklines() {
+  try {
+    const res = await apiFetch<{ success: boolean; data: Record<string, number[]> }>(
+      `/api/sparklines?chainId=${activeNetwork.value.chainId}`,
+    );
+    if (res.success) sparklines.value = res.data;
+  } catch {
+    // Leave the level placeholder lines.
+  }
+}
+function spark(address: string) {
+  return sparklinePath(sparklines.value[address.toLowerCase()], 72, 24);
+}
+onMounted(loadSparklines);
+watch(() => activeNetwork.value.chainId, loadSparklines);
 const copiedAddress = ref<string | null>(null);
 
 function copyAddress(address: string) {
@@ -318,15 +345,5 @@ function formatNumberCap(val: number): string {
   if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
   if (val >= 1_000) return `${(val / 1_000).toFixed(1)}K`;
   return val.toFixed(0);
-}
-
-function getSparkline(change: number, width = 72, height = 24) {
-  const isUp = change >= 0;
-  const color = isUp ? '#22c55e' : '#ef4444';
-  const startY = isUp ? height - 4 : 4;
-  const endY = isUp ? 4 : height - 4;
-  const controlY = height / 2;
-  const d = `M 0 ${startY} Q ${width / 2} ${controlY} ${width} ${endY}`;
-  return { d, color };
 }
 </script>
