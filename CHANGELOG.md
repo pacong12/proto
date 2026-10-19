@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/pacong12/proto/compare/v0.4.1...v0.4.2) (2026-10-19)
+
+
+### Bug Fixes
+
+* chart polish and page audit fixes ([#181](https://github.com/pacong12/proto/issues/181)) ([268c3b2](https://github.com/pacong12/proto/commit/268c3b2e98a6bc9bbdb76969b519e76e3ba310c9))
+
 ## [0.4.1](https://github.com/pacong12/proto/compare/v0.4.0...v0.4.1) (2026-10-18)
 
 
