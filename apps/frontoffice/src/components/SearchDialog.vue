@@ -224,7 +224,8 @@ const emit = defineEmits<{
 }>();
 
 const query = ref('');
-const searchInput = ref<HTMLInputElement | null>(null);
+// A ref on the Input component holds the component instance; its root is the <input>.
+const searchInput = ref<{ $el: HTMLInputElement } | null>(null);
 const loading = tokenStore.loading;
 const searchingTx = ref(false);
 const matchedTrade = ref<TradeEventEntity | null>(null);
@@ -283,7 +284,7 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 onMounted(async () => {
-  searchInput.value?.focus();
+  searchInput.value?.$el?.focus();
   // Share the already-fetched token list from the store; no extra network request
   // if ExploreView already populated it within the last 15 seconds.
   await tokenStore.fetchTokens();

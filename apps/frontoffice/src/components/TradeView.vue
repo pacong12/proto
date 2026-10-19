@@ -329,6 +329,9 @@
                   :deployer="currentToken.deployer"
                   :locker-address="ROBINHOOD_CHAIN.contracts.locker"
                   :pool-address="currentToken.poolAddress"
+                  :curve-address="currentToken.curveAddress"
+                  :decimals="currentToken.decimals ?? 18"
+                  :is-graduated="!!currentMarketData.isGraduated"
                   :explorer-url="explorerUrl"
                 />
               </TabsContent>
