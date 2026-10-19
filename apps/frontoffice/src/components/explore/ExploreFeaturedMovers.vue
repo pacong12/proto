@@ -6,7 +6,7 @@
       @click="$emit('selectToken', item.token.address)"
       class="p-3.5 rounded-2xl bg-card border border-border hover:border-primary/60 transition-all cursor-pointer flex items-center justify-between gap-3 group shadow-xs hover:shadow-md"
     >
-      <div class="flex items-center gap-2.5 min-w-0">
+      <div class="flex items-center gap-2.5 min-w-0 flex-1">
         <button
           type="button"
           class="min-w-6 min-h-6 inline-flex items-center justify-center p-1 -ml-1 rounded-lg transition-transform hover:scale-110 cursor-pointer select-none shrink-0"
@@ -39,21 +39,21 @@
             class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border border-black bg-black object-contain shadow-xs"
           />
         </div>
-        <div class="min-w-0 truncate">
-          <div class="flex items-center gap-1.5 truncate">
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-1.5 min-w-0">
             <h4
-              class="font-bold text-xs sm:text-sm text-foreground truncate group-hover:text-primary transition"
+              class="min-w-0 font-bold text-xs sm:text-sm text-foreground truncate group-hover:text-primary transition"
             >
               {{ item.token.name }}
             </h4>
+          </div>
+          <div class="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
+            <span class="truncate min-w-0">${{ item.token.symbol }}</span>
             <TaxTooltip
               :buy-tax-bps="item.token.taxConfig?.buyTaxBps"
               :sell-tax-bps="item.token.taxConfig?.sellTaxBps"
-              custom-class="text-xs"
+              custom-class="text-xs shrink-0"
             />
-          </div>
-          <div class="flex items-center gap-1.5 text-xs text-muted-foreground truncate">
-            <span>${{ item.token.symbol }}</span>
             <span
               v-if="(item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0"
               class="text-sky-400 text-xs"

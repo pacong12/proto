@@ -370,6 +370,12 @@ const messages: Record<string, string> = {
   orderTypeMarket: '市价',
   orderTypeLimit: '限价',
   orderTypeTpSl: '止盈 / 止损',
+  footerCurveToV4: '联合曲线，之后 Uniswap v4',
+  footerPoolFromLaunch: '发行即进入 Uniswap v4 池',
+  footerLiquidityLocked: '流动性永久锁定',
+  footerSplitRobinhood: 'LP 手续费：70% 创建者 / 30% 协议',
+  footerSplitArc: '税费：20% 协议，其余按您的分配',
+  arcPoolLiveHint: '从第一个区块起即在锁定的 Uniswap v4 池中交易，无需填满曲线。',
 };
 
 export default messages;

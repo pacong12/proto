@@ -380,6 +380,13 @@ const messages: Record<string, string> = {
   orderTypeMarket: '成行',
   orderTypeLimit: '指値',
   orderTypeTpSl: '利確 / 損切り',
+  footerCurveToV4: 'ボンディングカーブ、その後 Uniswap v4',
+  footerPoolFromLaunch: 'ローンチ時から Uniswap v4 プール',
+  footerLiquidityLocked: '流動性は永久ロック',
+  footerSplitRobinhood: 'LP 手数料：作成者 70% / プロトコル 30%',
+  footerSplitArc: '税：プロトコル 20%、残りはあなたの配分',
+  arcPoolLiveHint:
+    '最初のブロックからロックされた Uniswap v4 プールで取引されます。埋めるカーブはありません。',
 };
 
 export default messages;

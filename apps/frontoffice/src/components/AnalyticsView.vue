@@ -423,7 +423,7 @@ import { formatCompactUsd, getChainIcon, formatMarketCap } from '@/lib/utils';
 const { t } = useI18n();
 const router = useRouter();
 const { activeNetwork } = useWallet();
-const { networkTokens } = useTokenStore();
+const { networkTokens, fetchTokens } = useTokenStore();
 
 const totalVolume = ref(0);
 const totalTokens = ref(0);
@@ -530,15 +530,22 @@ const contractEntries = computed(() => {
   const entries: { name: string; address?: `0x${string}` }[] = [
     { name: 'Launchpad Factory', address: c.factoryV2 || c.factory },
     { name: 'Liquidity Locker', address: c.locker },
+    { name: 'Graduator (Uniswap V4)', address: c.graduator },
     { name: 'Goton Hook (Uniswap V4)', address: c.memeHook },
+    { name: 'Goton V4 Router', address: c.router },
+    { name: 'Goton V4 Buyback', address: c.buyback },
+    { name: 'Limit Orders', address: c.limitOrders },
     { name: 'Uniswap V4 PoolManager', address: c.poolManagerV4 },
     { name: 'Uniswap Universal Router', address: c.universalRouter },
     { name: 'Uniswap V3 Factory', address: c.uniswapV3Factory },
     { name: 'Position Manager', address: c.positionManager },
     { name: 'Swap Router', address: c.swapRouter },
   ];
-  // Only list contracts that exist on this chain (Arc has no V3; Robinhood may lack V4 entries).
-  return entries.filter((e): e is { name: string; address: `0x${string}` } => Boolean(e.address));
+  // Only list contracts deployed on this chain (Arc has no locker or V3; legacy V3 entries stay
+  // on Robinhood).
+  return entries.filter((e): e is { name: string; address: `0x${string}` } =>
+    isContractDeployed(e.address),
+  );
 });
 
 function isContractDeployed(address?: string): boolean {
@@ -571,7 +578,7 @@ async function fetchAnalytics() {
         tokenHistory?: ChartDataPoint[];
       };
       error?: { message?: string };
-    }>('/api/analytics');
+    }>(`/api/analytics?chainId=${activeNetwork.value.chainId}`);
     if (envelope.success && envelope.data) {
       totalVolume.value = envelope.data.totalVolume;
       totalTokens.value = envelope.data.totalTokens;
@@ -601,5 +608,7 @@ watch(
 
 onMounted(() => {
   fetchAnalytics();
+  // Top coins read the shared token list, which is empty when this page is opened directly.
+  void fetchTokens();
 });
 </script>

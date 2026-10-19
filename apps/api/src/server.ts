@@ -1881,7 +1881,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
   // GET /api/analytics
   if (url.pathname === '/api/analytics' && req.method === 'GET') {
-    const cacheKey = 'protocol:analytics';
+    // ?chainId= (or ?chain=) scopes every figure to one network; without it, all networks.
+    const chainParam = url.searchParams.get('chainId') || url.searchParams.get('chain');
+    const scopedNetwork = chainParam ? resolveNetworkByParam(chainParam) : null;
+    const cacheKey = `protocol:analytics:${scopedNetwork?.chainId ?? 'all'}`;
     const cached = await cache.get<unknown>(cacheKey);
     if (cached) {
       return new Response(safeStringify(cached), {
@@ -1892,7 +1895,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     // Fetch tokens (metadata only — no trades loop) and aggregate volume via a single SQL query.
     // Previous approach: N+1 — one getTrades() call per token. Replaced with getVolumeByToken()
     // which executes one GROUP BY query returning (tokenAddress, totalWeth) for the 24h window.
-    const tokens = await repository.findAll();
+    const tokens = (await repository.findAll()).filter(
+      (t) => !scopedNetwork || resolveTokenNetwork(t).chainId === scopedNetwork.chainId,
+    );
     const totalTokens = tokens.length;
     let totalVolumeUsd = 0;
 
@@ -1942,6 +1947,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       ? await repository.getVolumeByToken(dayAgoMs)
       : [];
     for (const row of volumeRows) {
+      if (!tokenPairMap.has(row.tokenAddress.toLowerCase())) continue; // other network
       const pairedToken = tokenPairMap.get(row.tokenAddress.toLowerCase()) ?? '';
       const quotePriceUsd = pairedToken === arcWeth ? 1.0 : ethPriceUsd;
       const tradeUsd = row.totalWeth * quotePriceUsd;
@@ -1952,7 +1958,11 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const trades24h = repository.getTradesSince ? await repository.getTradesSince(dayAgoMs) : [];
     for (const tr of trades24h) {
       const age = now - tr.timestamp;
-      if (age >= 0 && age < 24 * 60 * 60 * 1000) {
+      if (
+        age >= 0 &&
+        age < 24 * 60 * 60 * 1000 &&
+        tokenPairMap.has(tr.tokenAddress.toLowerCase())
+      ) {
         const slotIdx = 6 - Math.min(6, Math.floor(age / fourHoursMs));
         const pairedToken = tokenPairMap.get(tr.tokenAddress.toLowerCase()) ?? '';
         const quotePriceUsd = pairedToken === arcWeth ? 1.0 : ethPriceUsd;

@@ -385,6 +385,13 @@ const messages: Record<string, string> = {
   orderTypeMarket: 'Market',
   orderTypeLimit: 'Limit',
   orderTypeTpSl: 'TP / SL',
+  footerCurveToV4: 'Bonding curve, lalu Uniswap v4',
+  footerPoolFromLaunch: 'Pool Uniswap v4 sejak peluncuran',
+  footerLiquidityLocked: 'Likuiditas dikunci permanen',
+  footerSplitRobinhood: 'Fee LP: 70% kreator / 30% protokol',
+  footerSplitArc: 'Pajak: 20% protokol, sisanya sesuai split Anda',
+  arcPoolLiveHint:
+    'Diperdagangkan di pool Uniswap v4 terkunci sejak blok pertama. Tidak ada kurva yang perlu diisi.',
 };
 
 export default messages;

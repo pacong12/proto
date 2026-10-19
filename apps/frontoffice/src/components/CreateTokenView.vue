@@ -205,7 +205,9 @@
 
           <p class="text-xs text-muted-foreground">
             {{
-              `Graduates once the curve raises ${graduationTargetFormatted} ${currencySymbol} into Uniswap liquidity.`
+              isArcNetwork
+                ? t('arcPoolLiveHint')
+                : `Graduates once the curve raises ${graduationTargetFormatted} ${currencySymbol} into Uniswap liquidity.`
             }}
           </p>
         </div>

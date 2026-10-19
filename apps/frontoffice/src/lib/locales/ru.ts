@@ -388,6 +388,13 @@ const messages: Record<string, string> = {
   orderTypeMarket: 'Рынок',
   orderTypeLimit: 'Лимит',
   orderTypeTpSl: 'TP / SL',
+  footerCurveToV4: 'Бондинг-кривая, затем Uniswap v4',
+  footerPoolFromLaunch: 'Пул Uniswap v4 с запуска',
+  footerLiquidityLocked: 'Ликвидность заблокирована навсегда',
+  footerSplitRobinhood: 'Комиссии LP: 70% создателю / 30% протоколу',
+  footerSplitArc: 'Налог: 20% протоколу, остальное по вашему распределению',
+  arcPoolLiveHint:
+    'Торгуется в заблокированном пуле Uniswap v4 с первого блока. Кривую заполнять не нужно.',
 };
 
 export default messages;

@@ -197,7 +197,7 @@
               @open-wallet="openWallet"
             />
           </template>
-          <template v-if="limitOrdersEnabled" #after-card>
+          <template v-if="limitOrdersEnabled && account" #after-card>
             <div class="rounded-2xl border border-border bg-card p-4">
               <OpenOrders
                 :token="currentToken.address"
