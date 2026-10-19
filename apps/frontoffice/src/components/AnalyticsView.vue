@@ -529,7 +529,6 @@ const contractEntries = computed(() => {
   const c = activeNetwork.value.contracts;
   const entries: { name: string; address?: `0x${string}` }[] = [
     { name: 'Launchpad Factory', address: c.factoryV2 || c.factory },
-    { name: 'Liquidity Locker', address: c.locker },
     { name: 'Graduator (Uniswap V4)', address: c.graduator },
     { name: 'Goton Hook (Uniswap V4)', address: c.memeHook },
     { name: 'Goton V4 Router', address: c.router },
@@ -537,12 +536,9 @@ const contractEntries = computed(() => {
     { name: 'Limit Orders', address: c.limitOrders },
     { name: 'Uniswap V4 PoolManager', address: c.poolManagerV4 },
     { name: 'Uniswap Universal Router', address: c.universalRouter },
-    { name: 'Uniswap V3 Factory', address: c.uniswapV3Factory },
-    { name: 'Position Manager', address: c.positionManager },
-    { name: 'Swap Router', address: c.swapRouter },
   ];
-  // Only list contracts deployed on this chain (Arc has no locker or V3; legacy V3 entries stay
-  // on Robinhood).
+  // The v4 stack only: liquidity is locked by the graduator / factory, so the pre-v4 locker and
+  // Uniswap V3 contracts (still in the chain config for old tokens) are not listed.
   return entries.filter((e): e is { name: string; address: `0x${string}` } =>
     isContractDeployed(e.address),
   );
