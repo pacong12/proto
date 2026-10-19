@@ -109,7 +109,6 @@
                     class="px-2 py-1 text-xs text-muted-foreground uppercase font-bold flex items-center justify-between border-b border-border/50"
                   >
                     <span class="flex items-center gap-1">
-                      <Sparkles class="w-3 h-3 text-primary" />
                       Select Token for Callout ${{ cashtagQuery || '' }}
                     </span>
                     <span class="text-xs">Tab / Enter to pick</span>
@@ -411,7 +410,6 @@ import {
   Search,
   Loader2,
   BarChart2,
-  Sparkles,
   ChevronDown,
   Image as ImageIcon,
   AlertCircle,

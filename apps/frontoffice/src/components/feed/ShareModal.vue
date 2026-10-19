@@ -144,7 +144,6 @@
               class="flex items-center justify-between relative z-10 border-b border-border pb-2"
             >
               <div class="flex items-center gap-1.5 font-bold tracking-wider text-xs text-primary">
-                <Sparkles class="w-3.5 h-3.5" />
                 <span>{{ t('protoAlphaSignal') }}</span>
               </div>
               <Badge variant="outline" class="text-xs border-primary/30 text-primary">
@@ -259,7 +258,6 @@ import {
   ChevronDown,
   ChevronRight,
   ExternalLink,
-  Sparkles,
   Download,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';

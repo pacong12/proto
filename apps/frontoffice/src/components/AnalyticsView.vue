@@ -190,7 +190,6 @@
       <div class="flex items-center justify-between">
         <div>
           <h2 class="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
-            <Zap class="w-4 h-4 text-amber-500 fill-amber-500" />
             <span>Top Coins on {{ activeNetwork.name }}</span>
           </h2>
           <p class="text-xs text-muted-foreground font-sans">
@@ -405,7 +404,6 @@ import {
   Rocket,
   Flame,
   Coins,
-  Zap,
   BarChart2,
 } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';

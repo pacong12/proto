@@ -32,7 +32,6 @@
           v-if="currentToken.version === 'v2' && !currentMarketData.isGraduated"
           class="flex items-center gap-1.5 text-foreground"
         >
-          <Sparkles class="w-3.5 h-3.5 text-primary" />
           <span>{{ t('graduatesAt100') }}</span>
         </span>
         <span
@@ -201,7 +200,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Sparkles, Check, Copy, ExternalLink } from 'lucide-vue-next';
+import { Check, Copy, ExternalLink } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
