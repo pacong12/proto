@@ -346,6 +346,18 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     `);
 
     this.db.run(`
+      CREATE TABLE IF NOT EXISTS follows (
+        follower TEXT NOT NULL,
+        followee TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (follower, followee)
+      );
+    `);
+    this.db.run(
+      `CREATE INDEX IF NOT EXISTS idx_follows_followee ON follows (followee, created_at DESC);`,
+    );
+
+    this.db.run(`
       CREATE TABLE IF NOT EXISTS comment_likes (
         comment_id TEXT NOT NULL,
         user_address TEXT NOT NULL,
@@ -1465,6 +1477,66 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
         return { reposted: true, repostsCount: countRow ? Number(countRow.reposts_count) : 1 };
       }
     });
+  }
+
+  async toggleFollow(
+    follower: string,
+    followee: string,
+  ): Promise<{ following: boolean; followers: number }> {
+    const a = follower.toLowerCase();
+    const b = followee.toLowerCase();
+    return this.runInTransaction(() => {
+      const existing = this.db
+        .prepare(`SELECT 1 FROM follows WHERE follower = ? AND followee = ? LIMIT 1`)
+        .get(a, b);
+      if (existing) {
+        this.db.prepare(`DELETE FROM follows WHERE follower = ? AND followee = ?`).run(a, b);
+      } else {
+        this.db
+          .prepare(`INSERT INTO follows (follower, followee, created_at) VALUES (?, ?, ?)`)
+          .run(a, b, Date.now());
+      }
+      const row = this.db
+        .prepare(`SELECT COUNT(*) AS n FROM follows WHERE followee = ?`)
+        .get(b) as { n: number };
+      return { following: !existing, followers: Number(row.n) };
+    });
+  }
+
+  async getFollowStats(
+    address: string,
+    viewer?: string,
+  ): Promise<{ followers: number; following: number; isFollowing: boolean }> {
+    const a = address.toLowerCase();
+    const count = (sql: string) => Number((this.db.prepare(sql).get(a) as { n: number }).n);
+    const isFollowing = viewer
+      ? !!this.db
+          .prepare(`SELECT 1 FROM follows WHERE follower = ? AND followee = ? LIMIT 1`)
+          .get(viewer.toLowerCase(), a)
+      : false;
+    return {
+      followers: count(`SELECT COUNT(*) AS n FROM follows WHERE followee = ?`),
+      following: count(`SELECT COUNT(*) AS n FROM follows WHERE follower = ?`),
+      isFollowing,
+    };
+  }
+
+  async listFollows(
+    address: string,
+    direction: 'followers' | 'following',
+    limit = 100,
+  ): Promise<Array<{ address: string; since: number }>> {
+    const [match, pick] =
+      direction === 'followers' ? ['followee', 'follower'] : ['follower', 'followee'];
+    const rows = this.db
+      .prepare(
+        `SELECT ${pick} AS address, created_at AS since FROM follows WHERE ${match} = ? ORDER BY created_at DESC LIMIT ?`,
+      )
+      .all(address.toLowerCase(), Math.min(limit, 500)) as Array<{
+      address: string;
+      since: number;
+    }>;
+    return rows.map((r) => ({ address: r.address, since: Number(r.since) }));
   }
 
   async toggleCommentLike(

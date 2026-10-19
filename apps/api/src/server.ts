@@ -847,6 +847,65 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     return replyJson(ok({ address: resolvedAddress, identity }), 200);
   }
 
+  // Follows: GET /api/users/:id/follows?viewer=, GET /api/users/:id/followers|following,
+  // POST /api/users/:id/follow { userAddress } (wallet session required, toggles).
+  const followMatch = url.pathname.match(
+    /^\/api\/users\/([a-zA-Z0-9_#.-]+)\/(follows|followers|following|follow)$/,
+  );
+  if (followMatch) {
+    const [, identifier, action] = followMatch;
+    let address = identifier;
+    if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+      const resolved = repository.findAddressByIdentity
+        ? await repository.findAddressByIdentity(address)
+        : null;
+      if (!resolved) {
+        return replyJson(err('USER_NOT_FOUND', 'User identity could not be resolved'), 404);
+      }
+      address = resolved;
+    }
+    if (!repository.getFollowStats || !repository.toggleFollow || !repository.listFollows) {
+      return replyError('NOT_SUPPORTED', 'Follows are not available', 501);
+    }
+
+    if (action === 'follow' && req.method === 'POST') {
+      try {
+        const body = await parseJsonBody<{ userAddress?: string }>(req, 2048);
+        const userAddress = String(body.userAddress || '').trim();
+        if (!/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
+          return replyError('INVALID_ADDRESS', 'Valid Ethereum address required to follow', 400);
+        }
+        if (userAddress.toLowerCase() === address.toLowerCase()) {
+          return replyError('INVALID_FOLLOW', 'You cannot follow yourself', 400);
+        }
+        const sessionError = requireSocialSession(req, userAddress, 'follow');
+        if (sessionError) {
+          return replyError(sessionError.code, sessionError.message, sessionError.status);
+        }
+        return replyJson(ok(await repository.toggleFollow(userAddress, address)), 200);
+      } catch (e) {
+        if (e instanceof PayloadTooLargeError) {
+          return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
+        }
+        return replyError('FOLLOW_ERROR', 'Failed to process follow', 400);
+      }
+    }
+
+    if (req.method === 'GET' && action === 'follows') {
+      const viewer = url.searchParams.get('viewer') ?? undefined;
+      const validViewer = viewer && /^0x[a-fA-F0-9]{40}$/.test(viewer) ? viewer : undefined;
+      return replyJson(ok(await repository.getFollowStats(address, validViewer)), 200);
+    }
+
+    if (req.method === 'GET' && (action === 'followers' || action === 'following')) {
+      const limit = Math.min(Math.max(1, Number(url.searchParams.get('limit')) || 100), 500);
+      const rows = await repository.listFollows(address, action, limit);
+      return replyJson(ok(rows.map((r) => ({ ...r, identity: getUserIdentity(r.address) }))), 200);
+    }
+
+    return replyError('METHOD_NOT_ALLOWED', 'Method not allowed', 405);
+  }
+
   // GET /api/users/:identifier/portfolio
   const userPortfolioMatch = url.pathname.match(/^\/api\/users\/([a-zA-Z0-9_#.-]+)\/portfolio$/);
   if (userPortfolioMatch && req.method === 'GET') {

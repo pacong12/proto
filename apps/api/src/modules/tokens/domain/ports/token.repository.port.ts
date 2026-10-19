@@ -103,6 +103,21 @@ export interface TokenRepositoryPort {
     calloutId: string,
     viewerAddress?: string,
   ): Promise<import('@goton/shared-types').FeedCalloutItem | null>;
+  /** Follows (addresses are compared lowercase). Toggles and returns the new state. */
+  toggleFollow?(
+    follower: string,
+    followee: string,
+  ): Promise<{ following: boolean; followers: number }>;
+  getFollowStats?(
+    address: string,
+    viewer?: string,
+  ): Promise<{ followers: number; following: number; isFollowing: boolean }>;
+  /** Newest first. */
+  listFollows?(
+    address: string,
+    direction: 'followers' | 'following',
+    limit?: number,
+  ): Promise<Array<{ address: string; since: number }>>;
   toggleCommentLike?(
     commentId: string,
     userAddress: string,

@@ -369,6 +369,49 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
     return null;
   }
 
+  private follows = new Map<string, number>(); // "follower|followee" -> created at
+
+  async toggleFollow(
+    follower: string,
+    followee: string,
+  ): Promise<{ following: boolean; followers: number }> {
+    const key = `${follower.toLowerCase()}|${followee.toLowerCase()}`;
+    const following = !this.follows.has(key);
+    if (following) this.follows.set(key, Date.now());
+    else this.follows.delete(key);
+    return { following, followers: (await this.getFollowStats(followee)).followers };
+  }
+
+  async getFollowStats(
+    address: string,
+    viewer?: string,
+  ): Promise<{ followers: number; following: number; isFollowing: boolean }> {
+    const a = address.toLowerCase();
+    const keys = [...this.follows.keys()].map((k) => k.split('|'));
+    return {
+      followers: keys.filter(([, b]) => b === a).length,
+      following: keys.filter(([f]) => f === a).length,
+      isFollowing: viewer ? this.follows.has(`${viewer.toLowerCase()}|${a}`) : false,
+    };
+  }
+
+  async listFollows(
+    address: string,
+    direction: 'followers' | 'following',
+    limit = 100,
+  ): Promise<Array<{ address: string; since: number }>> {
+    const a = address.toLowerCase();
+    return [...this.follows]
+      .map(([k, since]) => ({ pair: k.split('|'), since }))
+      .filter(({ pair }) => (direction === 'followers' ? pair[1] === a : pair[0] === a))
+      .sort((x, y) => y.since - x.since)
+      .slice(0, limit)
+      .map(({ pair, since }) => ({
+        address: direction === 'followers' ? pair[0] : pair[1],
+        since,
+      }));
+  }
+
   async toggleCommentLike(
     commentId: string,
     userAddress: string,
