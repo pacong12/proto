@@ -11,6 +11,7 @@
             {{ t('tokenCol').toUpperCase() }}
           </TableHead>
           <TableHead
+            title="Price since launch"
             class="py-3 px-3 xl:px-4 font-semibold whitespace-nowrap text-center w-24 text-muted-foreground hidden xl:table-cell"
             >GRAPH</TableHead
           >
@@ -302,7 +303,7 @@ const router = useRouter();
 const tokenStore = useTokenStore();
 const { activeNetwork } = useWallet();
 
-// Sparklines: the last 24 hourly closes per token (GET /api/sparklines), for the active chain.
+// Sparklines: each token's price from launch to now (GET /api/sparklines), for the active chain.
 const TREND_COLOR: Record<SparkTrend, string> = {
   up: '#22c55e',
   down: '#ef4444',

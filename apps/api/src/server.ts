@@ -5,6 +5,7 @@ import { V4BuybackKeeperService } from './modules/tokens/infrastructure/keeper/v
 import { LimitOrderKeeperService } from './modules/tokens/infrastructure/keeper/limit-order-keeper.service';
 import { GraduationKeeperService } from './modules/tokens/infrastructure/keeper/graduation-keeper.service';
 import { isMemestock, memestockSignals } from './modules/tokens/application/memestock';
+import { SPARKLINE_POINTS, sparklineSince } from './modules/tokens/application/sparkline';
 import {
   SqliteTokenRepository,
   ViemChainIndexerAdapter,
@@ -800,8 +801,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     return replyJson(res, 200, { 'x-cache': 'MISS' });
   }
 
-  // GET /api/sparklines?chainId= — per token, the last 24 hourly closes (USD) for the list
-  // sparklines.
+  // GET /api/sparklines?chainId= — per token, its price path from launch to now (about 40 points,
+  // USD, from indexed trades) for the list sparklines.
   if (url.pathname === '/api/sparklines' && req.method === 'GET') {
     const network = resolveNetworkByParam(
       url.searchParams.get('chainId') || url.searchParams.get('chain'),
@@ -812,13 +813,15 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
     const res = await tokenController.listTokens(100, 0);
     if (!res.success || !res.data) return replyJson(res, 500);
+    const now = Date.now();
     const lines: Record<string, number[]> = {};
     for (const item of res.data) {
       if (resolveTokenNetwork(item.token).chainId !== network.chainId) continue;
-      const candles = await repository.getCandlesticks(item.token.address, 3600, true);
-      // Trade closes only: appending today's USD price would draw the quote asset's drift as a
-      // move, the same mistake the 24h change used to make for quiet tokens.
-      lines[item.token.address.toLowerCase()] = candles.slice(-24).map((c) => c.close);
+      // Hourly candles cover up to 1,000 h (about 41 days); older tokens use daily ones.
+      const ageMs = now - (item.token.createdAt || now);
+      const resolution = ageMs > 900 * 3_600_000 ? 86_400 : 3_600;
+      const candles = await repository.getCandlesticks(item.token.address, resolution, true);
+      lines[item.token.address.toLowerCase()] = sparklineSince(candles, SPARKLINE_POINTS);
     }
     const payload = ok(lines);
     await cache.set(cacheKey, payload, 60);
