@@ -800,6 +800,31 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     return replyJson(res, 200, { 'x-cache': 'MISS' });
   }
 
+  // GET /api/sparklines?chainId= — per token, the last 24 hourly closes (USD) for the list
+  // sparklines.
+  if (url.pathname === '/api/sparklines' && req.method === 'GET') {
+    const network = resolveNetworkByParam(
+      url.searchParams.get('chainId') || url.searchParams.get('chain'),
+    );
+    const cacheKey = `sparklines:${network.chainId}`;
+    const cached = await cache.get<unknown>(cacheKey);
+    if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
+
+    const res = await tokenController.listTokens(100, 0);
+    if (!res.success || !res.data) return replyJson(res, 500);
+    const lines: Record<string, number[]> = {};
+    for (const item of res.data) {
+      if (resolveTokenNetwork(item.token).chainId !== network.chainId) continue;
+      const candles = await repository.getCandlesticks(item.token.address, 3600, true);
+      // Trade closes only: appending today's USD price would draw the quote asset's drift as a
+      // move, the same mistake the 24h change used to make for quiet tokens.
+      lines[item.token.address.toLowerCase()] = candles.slice(-24).map((c) => c.close);
+    }
+    const payload = ok(lines);
+    await cache.set(cacheKey, payload, 60);
+    return replyJson(payload, 200, { 'x-cache': 'MISS' });
+  }
+
   // GET /api/memestock?chainId= — launches with a thesis whose creator still holds a bought
   // position, ranked by momentum (see modules/tokens/application/memestock.ts).
   if (url.pathname === '/api/memestock' && req.method === 'GET') {
