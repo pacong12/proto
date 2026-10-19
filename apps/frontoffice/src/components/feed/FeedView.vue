@@ -134,7 +134,7 @@
                         :fallback-text="tItem.token.symbol"
                         :width="22"
                         :height="22"
-                        class="rounded-full shrink-0 border border-border/50"
+                        class="rounded-md shrink-0 border border-border/50"
                       />
                       <div class="min-w-0">
                         <span class="font-black text-foreground block text-xs truncate">

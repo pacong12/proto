@@ -23,7 +23,7 @@
               :fallback-text="currentToken.symbol"
               :width="36"
               :height="36"
-              class="rounded-full border border-border shrink-0"
+              class="rounded-lg border border-border shrink-0"
             />
             <div class="min-w-0">
               <div class="flex items-center gap-1.5">

@@ -256,7 +256,7 @@
                     :fallback-text="tItem.token.symbol"
                     :width="32"
                     :height="32"
-                    class="rounded-full border border-border/70 shrink-0"
+                    class="rounded-lg border border-border/70 shrink-0"
                   />
                   <div>
                     <span

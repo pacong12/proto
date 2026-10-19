@@ -26,6 +26,9 @@ const props = withDefaults(defineProps<Props>(), {
   currencyBadge: '',
 });
 
+/** Whether the caller chose a corner radius; otherwise default to rounded-lg. */
+const hasRadius = computed(() => /(^|\s)rounded(-|\s|$)/.test(props.class));
+
 const isLoaded = ref(false);
 const hasError = ref(false);
 const gatewayIndex = ref(0);
@@ -74,9 +77,10 @@ function handleError() {
 </script>
 
 <template>
-  <div class="relative inline-block shrink-0" :class="props.class">
+  <!-- The caller's rounded-* class sets the shape; the clipped box and skeleton inherit it. -->
+  <div class="relative inline-block shrink-0" :class="[props.class, hasRadius ? '' : 'rounded-lg']">
     <div
-      class="@container relative flex items-center justify-center overflow-hidden rounded-lg bg-muted text-muted-foreground select-none"
+      class="@container relative flex items-center justify-center overflow-hidden rounded-[inherit] bg-muted text-muted-foreground select-none"
       :style="{
         width: typeof width === 'number' ? `${width}px` : width,
         height: typeof height === 'number' ? `${height}px` : height,
@@ -86,7 +90,7 @@ function handleError() {
       <!-- Placeholder / Blur skeleton while loading -->
       <div
         v-if="!isLoaded && !hasError && resolvedSrc"
-        class="absolute inset-0 bg-muted animate-pulse rounded-lg"
+        class="absolute inset-0 bg-muted animate-pulse rounded-[inherit]"
         aria-hidden="true"
       />
 

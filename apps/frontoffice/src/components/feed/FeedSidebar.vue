@@ -52,7 +52,7 @@
                 :fallback-text="tItem.token.symbol"
                 :width="26"
                 :height="26"
-                class="rounded-full shrink-0 border border-border/60"
+                class="rounded-md shrink-0 border border-border/60"
               />
               <img
                 :src="getChainIcon(tItem.token.address)"

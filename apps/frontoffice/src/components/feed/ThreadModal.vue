@@ -101,7 +101,7 @@
                 :fallback-text="targetCall.tokenSymbol || 'TOK'"
                 :width="28"
                 :height="28"
-                class="rounded-full border border-border shrink-0"
+                class="rounded-lg border border-border shrink-0"
               />
               <div class="min-w-0">
                 <span class="font-black text-foreground block text-xs">

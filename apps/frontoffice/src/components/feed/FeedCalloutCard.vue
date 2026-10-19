@@ -92,7 +92,7 @@
             :fallback-text="call.tokenSymbol || 'TOK'"
             :width="36"
             :height="36"
-            class="rounded-full border border-border/70 shrink-0 shadow-2xs"
+            class="rounded-lg border border-border/70 shrink-0 shadow-2xs"
           />
           <img
             :src="getChainIcon(call.tokenAddress)"

@@ -339,7 +339,7 @@
                   :fallback-text="currentToken.symbol"
                   :width="24"
                   :height="24"
-                  class="rounded-full border border-border object-cover shrink-0 w-6 h-6"
+                  class="rounded-md border border-border object-cover shrink-0 w-6 h-6"
                 />
                 <div
                   v-else

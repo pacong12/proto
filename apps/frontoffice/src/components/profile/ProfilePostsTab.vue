@@ -86,7 +86,7 @@
                 :fallback-text="call.tokenSymbol || 'TOK'"
                 :width="32"
                 :height="32"
-                class="rounded-full border border-border shrink-0"
+                class="rounded-lg border border-border shrink-0"
               />
               <img
                 :src="getChainIcon(getTokenNetwork(call.tokenAddress))"

@@ -77,7 +77,7 @@
                   :fallback-text="item.token.symbol"
                   :width="36"
                   :height="36"
-                  class="rounded-full border border-border object-cover shrink-0 ring-1 ring-border group-hover:ring-primary/50 transition"
+                  class="rounded-lg border border-border object-cover shrink-0 ring-1 ring-border group-hover:ring-primary/50 transition"
                 />
                 <img
                   :src="getChainIcon(tokenStore.getTokenNetwork(item.token.address))"

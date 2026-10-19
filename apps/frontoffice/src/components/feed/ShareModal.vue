@@ -161,7 +161,7 @@
                   :fallback-text="call.tokenSymbol || 'TOK'"
                   :width="40"
                   :height="40"
-                  class="rounded-full border border-border shrink-0"
+                  class="rounded-lg border border-border shrink-0"
                 />
                 <div>
                   <h3 class="font-black text-sm text-foreground">
