@@ -123,7 +123,7 @@ const messages: Record<string, string> = {
   myProfileAndFees: 'Profil & Biaya Saya',
   copyAddress: 'Salin Alamat',
   addressCopied: 'Alamat Disalin!',
-  switchManageWallet: 'Ganti / Kelola Dompet',
+  switchManageWallet: 'Ganti Dompet',
   disconnect: 'Putuskan Koneksi',
   switchToRobinhood: 'Beralih ke Robinhood',
   noMatchingTokens: 'Tidak ada token yang cocok untuk',

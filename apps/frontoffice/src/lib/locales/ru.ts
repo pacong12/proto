@@ -71,7 +71,7 @@ const messages: Record<string, string> = {
   myProfileAndFees: 'Мой профиль и комиссии',
   copyAddress: 'Скопировать адрес',
   addressCopied: 'Адрес скопирован!',
-  switchManageWallet: 'Сменить / Управлять кошельком',
+  switchManageWallet: 'Сменить кошелёк',
   disconnect: 'Отключить',
   switchToRobinhood: 'Переключить на Robinhood',
   noMatchingTokens: 'Нет токенов по запросу',

@@ -70,7 +70,7 @@ const messages: Record<string, string> = {
   myProfileAndFees: 'ملفي الشخصي والرسوم',
   copyAddress: 'نسخ العنوان',
   addressCopied: 'تم نسخ العنوان!',
-  switchManageWallet: 'تبديل / إدارة المحفظة',
+  switchManageWallet: 'تبديل المحفظة',
   disconnect: 'قطع الاتصال',
   switchToRobinhood: 'التبديل إلى Robinhood',
   noMatchingTokens: 'لا توجد عملات مطابقة لـ',

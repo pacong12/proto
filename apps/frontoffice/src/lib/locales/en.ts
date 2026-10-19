@@ -121,7 +121,7 @@ const messages: Record<string, string> = {
   myProfileAndFees: 'My Profile & Fees',
   copyAddress: 'Copy Address',
   addressCopied: 'Address Copied!',
-  switchManageWallet: 'Switch / Manage Wallet',
+  switchManageWallet: 'Switch Wallet',
   disconnect: 'Disconnect',
   switchToRobinhood: 'Switch to Robinhood',
   noMatchingTokens: 'No matching tokens for',

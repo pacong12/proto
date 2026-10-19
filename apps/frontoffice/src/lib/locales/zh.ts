@@ -90,7 +90,7 @@ const messages: Record<string, string> = {
   myProfileAndFees: '个人中心与收益',
   copyAddress: '复制地址',
   addressCopied: '地址已复制！',
-  switchManageWallet: '切换 / 管理钱包',
+  switchManageWallet: '切换钱包',
   disconnect: '断开连接',
   switchToRobinhood: '切换到 Robinhood',
   noMatchingTokens: '未找到匹配代币：',

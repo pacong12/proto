@@ -70,7 +70,7 @@ const messages: Record<string, string> = {
   myProfileAndFees: '내 프로필 및 수수료',
   copyAddress: '주소 복사',
   addressCopied: '주소가 복사되었습니다!',
-  switchManageWallet: '지갑 변경 / 관리',
+  switchManageWallet: '지갑 변경',
   disconnect: '연결 해제',
   switchToRobinhood: 'Robinhood 네트워크로 전환',
   noMatchingTokens: '일치하는 가상자산이 없습니다:',

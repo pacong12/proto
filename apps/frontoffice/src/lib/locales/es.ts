@@ -71,7 +71,7 @@ const messages: Record<string, string> = {
   myProfileAndFees: 'Mi Perfil y Tarifas',
   copyAddress: 'Copiar Dirección',
   addressCopied: '¡Dirección Copiada!',
-  switchManageWallet: 'Cambiar / Administrar Billetera',
+  switchManageWallet: 'Cambiar Billetera',
   disconnect: 'Desconectar',
   switchToRobinhood: 'Cambiar a Robinhood',
   noMatchingTokens: 'No se encontraron tokens para',

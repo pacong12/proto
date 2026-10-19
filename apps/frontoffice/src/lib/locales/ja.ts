@@ -70,7 +70,7 @@ const messages: Record<string, string> = {
   myProfileAndFees: 'マイプロフィール & 手数料',
   copyAddress: 'アドレスをコピー',
   addressCopied: 'アドレスをコピーしました！',
-  switchManageWallet: 'ウォレット切り替え / 管理',
+  switchManageWallet: 'ウォレットを切り替え',
   disconnect: '接続解除',
   switchToRobinhood: 'Robinhoodに切り替え',
   noMatchingTokens: '一致する銘柄がありません：',
