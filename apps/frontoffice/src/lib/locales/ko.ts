@@ -390,6 +390,13 @@ const messages: Record<string, string> = {
   traders24h: '24시간 트레이더',
   buys1h: '1시간 매수',
   browseAllCoins: '모든 코인 보기',
+  followAction: '팔로우',
+  followingAction: '팔로잉',
+  followersLabel: '팔로워',
+  followingLabel: '팔로잉',
+  noFollowers: '아직 팔로워가 없습니다.',
+  noFollowing: '아직 팔로우한 사람이 없습니다.',
+  followingTab: '팔로잉',
 };
 
 export default messages;

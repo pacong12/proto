@@ -388,6 +388,13 @@ const messages: Record<string, string> = {
   traders24h: 'متداولون 24 ساعة',
   buys1h: 'شراء ساعة',
   browseAllCoins: 'تصفح كل العملات',
+  followAction: 'متابعة',
+  followingAction: 'تتابعه',
+  followersLabel: 'المتابِعون',
+  followingLabel: 'يتابع',
+  noFollowers: 'لا يوجد متابِعون بعد.',
+  noFollowing: 'لا يتابع أحدًا بعد.',
+  followingTab: 'المتابَعون',
 };
 
 export default messages;

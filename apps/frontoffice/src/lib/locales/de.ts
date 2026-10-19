@@ -400,6 +400,13 @@ const messages: Record<string, string> = {
   traders24h: 'Trader 24 h',
   buys1h: 'Käufe 1 h',
   browseAllCoins: 'Alle Coins ansehen',
+  followAction: 'Folgen',
+  followingAction: 'Folge ich',
+  followersLabel: 'Follower',
+  followingLabel: 'Folgt',
+  noFollowers: 'Noch keine Follower.',
+  noFollowing: 'Folgt noch niemandem.',
+  followingTab: 'Gefolgt',
 };
 
 export default messages;

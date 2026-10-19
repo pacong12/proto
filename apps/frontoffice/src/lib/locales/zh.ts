@@ -384,6 +384,13 @@ const messages: Record<string, string> = {
   traders24h: '24小时交易者',
   buys1h: '1小时买入',
   browseAllCoins: '浏览全部代币',
+  followAction: '关注',
+  followingAction: '已关注',
+  followersLabel: '粉丝',
+  followingLabel: '关注中',
+  noFollowers: '还没有粉丝。',
+  noFollowing: '还没有关注任何人。',
+  followingTab: '关注',
 };
 
 export default messages;

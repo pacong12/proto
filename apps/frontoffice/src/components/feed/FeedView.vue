@@ -405,6 +405,7 @@ import { useWallet } from '@/composables/useWallet';
 import { useTokenStore } from '@/composables/useTokenStore';
 import { usePinnedTokens } from '@/composables/usePinnedTokens';
 import { useFeed, isWhaleCaller, type FeedFilterType } from '@/composables/useFeed';
+import { useFollows } from '@/composables/useFollows';
 import { uploadFile } from '@/lib/api-client';
 import {
   Search,
@@ -459,6 +460,7 @@ const {
 } = useTokenStore();
 const {
   callouts,
+  followedAuthors,
   loading,
   activeFilter,
   searchQuery,
@@ -745,6 +747,7 @@ async function checkCallerPosition(tokenAddress: string): Promise<void> {
 
 const filterTabs = computed<Array<{ key: FeedFilterType; label: string }>>(() => [
   { key: 'all', label: 'All Calls' },
+  ...(account.value ? [{ key: 'following' as const, label: t('followingTab') }] : []),
   { key: 'target', label: 'Targets' },
   { key: 'whale', label: 'Whales' },
   { key: 'profit', label: 'In Profit' },
@@ -769,6 +772,22 @@ const availableTokensList = computed(() => {
     )
     .slice(0, 15);
 });
+
+// Following tab: the authors the connected wallet follows.
+const { list: listFollows } = useFollows();
+watch(
+  () => account.value,
+  async (viewer) => {
+    if (!viewer) {
+      followedAuthors.value = new Set();
+      if (activeFilter.value === 'following') activeFilter.value = 'all';
+      return;
+    }
+    const rows = await listFollows(viewer, 'following');
+    followedAuthors.value = new Set(rows.map((r) => r.address.toLowerCase()));
+  },
+  { immediate: true },
+);
 
 // Sidebar: the tokens moving most in the last 24h (volume first, then price change).
 const hotTokens = computed(() => {

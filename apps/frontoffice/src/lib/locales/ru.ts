@@ -402,6 +402,13 @@ const messages: Record<string, string> = {
   traders24h: 'трейдеров 24ч',
   buys1h: 'покупок 1ч',
   browseAllCoins: 'Все монеты',
+  followAction: 'Подписаться',
+  followingAction: 'Вы подписаны',
+  followersLabel: 'Подписчики',
+  followingLabel: 'Подписки',
+  noFollowers: 'Пока нет подписчиков.',
+  noFollowing: 'Пока ни на кого не подписан.',
+  followingTab: 'Подписки',
 };
 
 export default messages;

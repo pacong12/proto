@@ -4,7 +4,7 @@ import { getSessionHeaders } from '../lib/session';
 import { apiFetch } from '@/lib/api-client';
 import { getWalletClient } from '@/lib/viem-client';
 
-export type FeedFilterType = 'all' | 'target' | 'whale' | 'profit' | 'media';
+export type FeedFilterType = 'all' | 'following' | 'target' | 'whale' | 'profit' | 'media';
 
 /**
  * Global crypto/launchpad whale rule:
@@ -19,6 +19,7 @@ export function useFeed(): {
   loading: Ref<boolean>;
   error: Ref<string | null>;
   activeFilter: Ref<FeedFilterType>;
+  followedAuthors: Ref<Set<string>>;
   searchQuery: Ref<string>;
   currentPage: Ref<number>;
   pageSize: number;
@@ -57,6 +58,8 @@ export function useFeed(): {
   const loading = ref(false);
   const error = ref<string | null>(null);
   const activeFilter = ref<FeedFilterType>('all');
+  /** Lowercase addresses the viewer follows, for the Following tab. */
+  const followedAuthors = ref<Set<string>>(new Set());
   const searchQuery = ref('');
   const currentPage = ref(1);
   const pageSize = 10;
@@ -304,7 +307,9 @@ export function useFeed(): {
   const filteredCallouts = computed<FeedCalloutItem[]>(() => {
     let list = callouts.value;
 
-    if (activeFilter.value === 'target') {
+    if (activeFilter.value === 'following') {
+      list = list.filter((c) => followedAuthors.value.has(c.authorAddress.toLowerCase()));
+    } else if (activeFilter.value === 'target') {
       list = list.filter((c) => Boolean(c.targetMcap));
     } else if (activeFilter.value === 'whale') {
       list = list.filter((c) => isWhaleCaller(c));
@@ -334,6 +339,7 @@ export function useFeed(): {
   });
 
   return {
+    followedAuthors,
     callouts,
     loading,
     error,

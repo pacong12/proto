@@ -399,6 +399,13 @@ const messages: Record<string, string> = {
   traders24h: 'trader 24j',
   buys1h: 'beli 1j',
   browseAllCoins: 'Lihat semua koin',
+  followAction: 'Ikuti',
+  followingAction: 'Mengikuti',
+  followersLabel: 'Pengikut',
+  followingLabel: 'Mengikuti',
+  noFollowers: 'Belum ada pengikut.',
+  noFollowing: 'Belum mengikuti siapa pun.',
+  followingTab: 'Diikuti',
 };
 
 export default messages;

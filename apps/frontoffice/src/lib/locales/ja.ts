@@ -395,6 +395,13 @@ const messages: Record<string, string> = {
   traders24h: '24時間のトレーダー',
   buys1h: '1時間の買い',
   browseAllCoins: 'すべてのコインを見る',
+  followAction: 'フォロー',
+  followingAction: 'フォロー中',
+  followersLabel: 'フォロワー',
+  followingLabel: 'フォロー中',
+  noFollowers: 'まだフォロワーはいません。',
+  noFollowing: 'まだ誰もフォローしていません。',
+  followingTab: 'フォロー中',
 };
 
 export default messages;
