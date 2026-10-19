@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-6xl mx-auto space-y-4 font-sans">
     <!-- Top Live Dex & Alpha Ticker Ribbon Component -->
-    <FeedAlphaTicker :hot-tokens="hotTokens" @select-token="navigateToToken" />
+    <FeedAlphaTicker :hot-tokens="radarTokens" @select-token="navigateToToken" />
 
     <!-- Main Two-Column Hybrid Layout -->
     <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-5 items-start">
@@ -770,11 +770,37 @@ const availableTokensList = computed(() => {
     .slice(0, 15);
 });
 
+// Sidebar: the tokens moving most in the last 24h (volume first, then price change).
 const hotTokens = computed(() => {
   if (!networkTokens.value) return [];
   return [...networkTokens.value]
-    .sort((a, b) => (b.marketData?.marketCapUsd ?? 0) - (a.marketData?.marketCapUsd ?? 0))
+    .sort(
+      (a, b) =>
+        (b.marketData?.volume24hUsd ?? 0) - (a.marketData?.volume24hUsd ?? 0) ||
+        Math.abs(b.marketData?.priceChange24h ?? 0) - Math.abs(a.marketData?.priceChange24h ?? 0),
+    )
     .slice(0, 5);
+});
+
+// Alpha Radar: the most-called tokens of the last 24h, with how many calls each has.
+const radarTokens = computed(() => {
+  const since = Date.now() - 86_400_000;
+  const counts = new Map<string, number>();
+  for (const c of callouts.value) {
+    const at = c.createdAt < 1e12 ? c.createdAt * 1000 : c.createdAt;
+    if (c.parentId || at < since) continue;
+    const key = c.tokenAddress.toLowerCase();
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return [...counts]
+    .map(([address, calls]) => ({
+      item: networkTokens.value.find((t) => t.token.address.toLowerCase() === address),
+      calls,
+    }))
+    .filter((x): x is { item: (typeof networkTokens.value)[number]; calls: number } => !!x.item)
+    .sort((a, b) => b.calls - a.calls)
+    .slice(0, 8)
+    .map(({ item, calls }) => ({ ...item, calls }));
 });
 
 function detectTokenFromContent(text: string): LaunchedTokenEntity | null {

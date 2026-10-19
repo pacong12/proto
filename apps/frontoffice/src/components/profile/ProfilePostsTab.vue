@@ -44,7 +44,10 @@
                 </span>
                 <TraderTagBadge v-if="isWhaleCaller(call)" tag="whale" size="sm" />
               </div>
-              <span class="text-xs text-muted-foreground">Verified Caller</span>
+              <!-- Every call needs a signature and an on-chain holding, so state the holding itself. -->
+              <span class="text-xs text-muted-foreground">
+                {{ holdingLabel(call) }}
+              </span>
             </div>
           </div>
 
@@ -278,5 +281,12 @@ function openImage(url?: string): void {
   if (url && typeof window !== 'undefined') {
     window.open(resolveSafeUrl(url), '_blank', 'noopener,noreferrer');
   }
+}
+
+/** The caller's share of supply when they posted (every call is checked on-chain). */
+function holdingLabel(c: { supplyPercent?: number }): string {
+  const pct = c.supplyPercent ?? 0;
+  if (pct <= 0) return 'Holder at call';
+  return `Held ${pct < 0.01 ? '<0.01' : pct < 1 ? pct.toFixed(2) : pct.toFixed(1)}% of supply at call`;
 }
 </script>
