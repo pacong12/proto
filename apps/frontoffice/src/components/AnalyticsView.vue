@@ -218,22 +218,26 @@
               class="border-b border-border/70 text-muted-foreground text-xs uppercase bg-black hover:bg-black"
             >
               <TableHead
-                class="py-3 px-3 font-semibold w-12 text-center text-muted-foreground bg-black"
+                class="py-3 px-2 sm:px-3 font-semibold w-12 text-center text-muted-foreground bg-black"
                 >#</TableHead
               >
-              <TableHead class="py-3 px-4 font-semibold text-muted-foreground bg-black"
+              <TableHead class="py-3 px-2 sm:px-4 font-semibold text-muted-foreground bg-black"
                 >TOKEN</TableHead
               >
-              <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black"
+              <TableHead
+                class="py-3 px-2 sm:px-4 font-semibold text-right text-muted-foreground bg-black"
                 >MARKET CAP</TableHead
               >
-              <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black"
+              <TableHead
+                class="hidden sm:table-cell py-3 px-2 sm:px-4 font-semibold text-right text-muted-foreground bg-black"
                 >24H VOLUME</TableHead
               >
-              <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black"
+              <TableHead
+                class="py-3 px-2 sm:px-4 font-semibold text-right text-muted-foreground bg-black"
                 >24H CHANGE</TableHead
               >
-              <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black"
+              <TableHead
+                class="hidden sm:table-cell py-3 px-2 sm:px-4 font-semibold text-right text-muted-foreground bg-black"
                 >ACTION</TableHead
               >
             </TableRow>
@@ -245,10 +249,10 @@
               class="hover:bg-zinc-900/40 transition-colors cursor-pointer group bg-black"
               @click="router.push(`/token/${tItem.token.address}`)"
             >
-              <TableCell class="py-3.5 px-3 text-center text-muted-foreground font-bold">
+              <TableCell class="py-3.5 px-2 sm:px-3 text-center text-muted-foreground font-bold">
                 {{ idx + 1 }}
               </TableCell>
-              <TableCell class="py-3.5 px-4">
+              <TableCell class="py-3.5 px-2 sm:px-4">
                 <div class="flex items-center gap-3">
                   <OptimizedImage
                     :src="tItem.token.logo"
@@ -270,10 +274,12 @@
                   </div>
                 </div>
               </TableCell>
-              <TableCell class="py-3.5 px-4 text-right font-bold text-foreground">
+              <TableCell class="py-3.5 px-2 sm:px-4 text-right font-bold text-foreground">
                 {{ formatMarketCap(tItem.marketData?.marketCapUsd) }}
               </TableCell>
-              <TableCell class="py-3.5 px-4 text-right font-medium text-foreground">
+              <TableCell
+                class="hidden sm:table-cell py-3.5 px-2 sm:px-4 text-right font-medium text-foreground"
+              >
                 {{
                   (tItem.marketData?.volume24hUsd ?? 0) > 0
                     ? formatCompactUsd(tItem.marketData?.volume24hUsd)
@@ -281,7 +287,7 @@
                 }}
               </TableCell>
               <TableCell
-                class="py-3.5 px-4 text-right font-bold"
+                class="py-3.5 px-2 sm:px-4 text-right font-bold"
                 :class="
                   (tItem.marketData?.priceChange24h ?? 0) >= 0
                     ? 'text-emerald-500'
@@ -291,7 +297,7 @@
                 {{ (tItem.marketData?.priceChange24h ?? 0) >= 0 ? '+' : ''
                 }}{{ (tItem.marketData?.priceChange24h ?? 0).toFixed(1) }}%
               </TableCell>
-              <TableCell class="py-3.5 px-4 text-right">
+              <TableCell class="hidden sm:table-cell py-3.5 px-2 sm:px-4 text-right">
                 <Button
                   size="sm"
                   variant="outline"
