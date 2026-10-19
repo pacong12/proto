@@ -122,8 +122,9 @@ export class GetTopTradersUseCase {
 
       return {
         address: traderAddr,
-        buyVolumeUsd: Math.round(stats.buyUsd),
-        sellVolumeUsd: Math.round(stats.sellUsd),
+        // Cents, not whole dollars: a $0.24 memecoin buy rounded to $0.
+        buyVolumeUsd: Math.round(stats.buyUsd * 100) / 100,
+        sellVolumeUsd: Math.round(stats.sellUsd * 100) / 100,
         totalTrades: stats.trades,
         profitUsd,
         isDev,
