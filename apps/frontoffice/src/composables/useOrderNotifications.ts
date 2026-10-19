@@ -3,7 +3,7 @@ import type { Router } from 'vue-router';
 import { CHAINS, type LimitOrderEntity } from '@goton/shared-types';
 import { toast } from '@/components/ui/sonner';
 import { orderPayout } from '@/lib/limit-orders';
-import { useLimitOrders } from './useLimitOrders';
+import { apiFetch } from '@/lib/api-client';
 import { useTokenStore } from './useTokenStore';
 
 const POLL_MS = 20_000;
@@ -18,7 +18,18 @@ export function useOrderNotifications(
   router: Router,
   t: (key: string) => string,
 ) {
-  const { listByOwner } = useLimitOrders();
+  // Plain API reads: this runs in the app shell, so it must not pull the wallet stack
+  // (useLimitOrders imports viem) into the first page's JavaScript.
+  async function listByOwner(owner: string): Promise<LimitOrderEntity[]> {
+    try {
+      const res = await apiFetch<{ success: boolean; data: LimitOrderEntity[] }>(
+        `/api/orders?owner=${owner}`,
+      );
+      return res?.success ? res.data : [];
+    } catch {
+      return [];
+    }
+  }
   const tokenStore = useTokenStore();
   const known = new Map<string, LimitOrderEntity['status']>();
   let since = Date.now();
