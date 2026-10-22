@@ -200,3 +200,21 @@ balance deltas are the intended measurement and every entry point is `nonReentra
 and claims (256 runs x 500 calls) and checks that the splitter always holds enough for the creator
 share, the buyback share and every holder's claimable dividend, and never pays out more than it
 received.
+
+## GotonTeamSplitter (2026-10)
+
+Fixed team payout for a token's tax recipient or fee-splitter creator payout
+(`src/core/GotonTeamSplitter.sol`). Up to 10 payees with shares summing to 100%, fixed at
+construction; no owner and nothing changeable. Deployed through `GotonTeamSplitterFactory` with
+CREATE2 so the app can name the address before it exists.
+
+| Design point                        | How it is enforced                                                                                          |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Nobody can redirect a payout        | `release(asset, payee)` always pays `payee`, whoever calls it; payees and shares are immutable              |
+| Payees are independent              | Each is owed its share of everything ever received minus what it was paid, so release order does not matter |
+| One stuck payee cannot block others | A payee that rejects ETH only makes its own `release` revert                                                |
+| ERC-20s without a return value      | `transfer` is called low-level and accepts empty return data                                                |
+
+Slither: `arbitrary-send-eth` (`to` is always a constructor payee) and `incorrect-equality` (nothing
+due is exactly zero) are false positives, annotated in the source. `testFuzz_NeverOverpays` checks that
+no payee is paid more than its share and the contract never pays out more than it received.
