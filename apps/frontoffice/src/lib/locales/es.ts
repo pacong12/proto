@@ -429,6 +429,11 @@ const messages: Record<string, string> = {
     'Se crea un contrato de billetera del equipo antes del lanzamiento. Las comisiones e impuestos van a ti hasta que el cambio de pago propuesto al lanzar se active tras 48 horas (acéptalo desde tu perfil). Cada miembro retira su parte.',
   teamFeesUnavailable:
     'Los pagos de equipo aún no están disponibles en esta cadena. Todas las comisiones e impuestos van a tu billetera.',
+  teamPayouts: 'Pagos del equipo',
+  teamPayoutsHint:
+    'Este token paga la parte del creador a una billetera de equipo. Cualquiera puede liberar las partes; cada miembro siempre cobra directamente.',
+  releaseAll: 'Liberar todo',
+  teamPaid: 'Partes del equipo liberadas',
 };
 
 export default messages;

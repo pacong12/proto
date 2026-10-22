@@ -426,6 +426,11 @@ const messages: Record<string, string> = {
     'Um contrato de carteira da equipe é criado antes do lançamento. Taxas e impostos vão para você até que o redirecionamento proposto no lançamento fique ativo após 48 horas (aceite no seu perfil). Cada membro saca a própria parte.',
   teamFeesUnavailable:
     'Pagamentos de equipe ainda não estão disponíveis nesta rede. Todas as taxas e impostos vão para a sua carteira.',
+  teamPayouts: 'Pagamentos da equipe',
+  teamPayoutsHint:
+    'Este token paga a parte do criador a uma carteira de equipe. Qualquer pessoa pode liberar as partes; cada membro sempre recebe diretamente.',
+  releaseAll: 'Liberar tudo',
+  teamPaid: 'Partes da equipe liberadas',
 };
 
 export default messages;

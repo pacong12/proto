@@ -417,6 +417,11 @@ const messages: Record<string, string> = {
     '출시 전에 팀 지갑 컨트랙트가 생성됩니다. 출시 때 제안한 지급처 변경이 48시간 후 활성화될 때까지(프로필에서 승인) 수수료와 세금은 본인에게 갑니다. 각 멤버가 자신의 몫을 인출합니다.',
   teamFeesUnavailable:
     '이 체인에서는 아직 팀 분배를 사용할 수 없습니다. 모든 생성자 수수료와 세금은 본인 지갑으로 갑니다.',
+  teamPayouts: '팀 지급',
+  teamPayoutsHint:
+    '이 토큰은 생성자 몫을 팀 지갑으로 지급합니다. 누구나 멤버 몫을 지급할 수 있으며 항상 멤버에게 직접 지급됩니다.',
+  releaseAll: '모두 지급',
+  teamPaid: '팀 몫이 지급되었습니다',
 };
 
 export default messages;

@@ -409,6 +409,11 @@ const messages: Record<string, string> = {
   teamFeesArc:
     '发行前会创建团队钱包合约。在发行时提交的收款转向于 48 小时后生效之前（在个人主页确认），费用和税费仍归您。每位成员自行提取自己的份额。',
   teamFeesUnavailable: '该链暂不支持团队分账。所有创作者费用和税费将进入您的钱包。',
+  teamPayouts: '团队分账',
+  teamPayoutsHint:
+    '该代币将创作者份额支付到团队钱包。任何人都可以发放成员的份额，资金始终直接支付给成员。',
+  releaseAll: '全部发放',
+  teamPaid: '团队份额已发放',
 };
 
 export default messages;

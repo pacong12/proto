@@ -426,6 +426,11 @@ const messages: Record<string, string> = {
     'Kontrak dompet tim dibuat sebelum peluncuran. Fee dan pajak masuk ke Anda sampai pengalihan payout yang diajukan saat peluncuran aktif setelah 48 jam (setujui dari profil Anda). Setiap anggota menarik bagiannya sendiri.',
   teamFeesUnavailable:
     'Payout tim belum tersedia di chain ini. Semua fee kreator dan pajak masuk ke dompet Anda.',
+  teamPayouts: 'Payout tim',
+  teamPayoutsHint:
+    'Token ini membayar bagian kreatornya ke dompet tim. Siapa pun bisa merilis bagian anggota; setiap anggota selalu dibayar langsung.',
+  releaseAll: 'Rilis semua',
+  teamPaid: 'Bagian tim dirilis',
 };
 
 export default messages;

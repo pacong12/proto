@@ -349,6 +349,12 @@
                   @copy-address="copyAddress"
                   @open-tax-modal="taxModalOpen = true"
                 />
+                <TeamPayouts
+                  class="mt-4"
+                  :token="currentToken.address"
+                  :symbol="currentToken.symbol"
+                  :network="tokenNetwork"
+                />
               </TabsContent>
             </Tabs>
           </div>
@@ -499,6 +505,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
+import TeamPayouts from '@/components/trade/TeamPayouts.vue';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { TradingChart } from '@/components/ui/chart';

@@ -424,6 +424,11 @@ const messages: Record<string, string> = {
     'A team wallet contract is created before launch. Fees and tax go to you until the payout redirect proposed at launch becomes active after 48 hours (accept it from your profile). Each member withdraws their own share.',
   teamFeesUnavailable:
     'Team payouts are not available on this chain yet. All creator fees and tax go to your wallet.',
+  teamPayouts: 'Team payouts',
+  teamPayoutsHint:
+    "This token pays its creator share to a team wallet. Anyone can release the members' shares; each member is always paid directly.",
+  releaseAll: 'Release all',
+  teamPaid: 'Team shares released',
 };
 
 export default messages;

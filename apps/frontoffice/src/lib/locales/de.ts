@@ -427,6 +427,11 @@ const messages: Record<string, string> = {
     'Vor dem Launch wird ein Team-Wallet-Vertrag erstellt. Gebühren und Steuern gehen an dich, bis die beim Launch vorgeschlagene Umleitung nach 48 Stunden aktiv wird (im Profil bestätigen). Jedes Mitglied zieht seinen Anteil selbst ab.',
   teamFeesUnavailable:
     'Team-Auszahlungen sind auf dieser Chain noch nicht verfügbar. Alle Creator-Gebühren und Steuern gehen an deine Wallet.',
+  teamPayouts: 'Team-Auszahlungen',
+  teamPayoutsHint:
+    'Dieser Token zahlt den Creator-Anteil an eine Team-Wallet. Jeder kann die Anteile auszahlen; jedes Mitglied wird immer direkt bezahlt.',
+  releaseAll: 'Alles auszahlen',
+  teamPaid: 'Team-Anteile ausgezahlt',
 };
 
 export default messages;

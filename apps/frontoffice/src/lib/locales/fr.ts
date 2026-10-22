@@ -428,6 +428,11 @@ const messages: Record<string, string> = {
     "Un contrat de portefeuille d'équipe est créé avant le lancement. Les frais et taxes vous reviennent jusqu'à ce que la redirection proposée au lancement s'active après 48 heures (acceptez-la depuis votre profil). Chaque membre retire sa part.",
   teamFeesUnavailable:
     "Les paiements d'équipe ne sont pas encore disponibles sur cette chaîne. Tous les frais et taxes vont à votre portefeuille.",
+  teamPayouts: "Paiements de l'équipe",
+  teamPayoutsHint:
+    "Ce jeton verse la part du créateur à un portefeuille d'équipe. Tout le monde peut verser les parts ; chaque membre est toujours payé directement.",
+  releaseAll: 'Tout verser',
+  teamPaid: "Parts de l'équipe versées",
 };
 
 export default messages;
