@@ -410,6 +410,18 @@ const messages: Record<string, string> = {
   orderFilledToast: 'が約定',
   viewToken: '表示',
   viewTransaction: '取引を表示',
+  feeRecipients: '手数料の受取人',
+  feeRecipientsHint:
+    '作成者の手数料分とトークン税を受け取る人。チームウォレットを追加すると固定比率で分配できます。',
+  addTeamWallet: 'チームウォレットを追加',
+  removeTeamWallet: 'ウォレットを削除',
+  feeRecipientDefault: '作成者の手数料と税はすべて次へ:',
+  teamFeesRobinhood:
+    'ローンチ前にチームウォレットのコントラクトを作成します。トークン税はローンチ時からそこに入り、卒業後はプロフィールからプール手数料をそこへ向けられます(48時間のタイムロック)。各メンバーが自分の分を引き出します。',
+  teamFeesArc:
+    'ローンチ前にチームウォレットのコントラクトを作成します。ローンチ時に提案した受取先変更が48時間後に有効になるまで(プロフィールで承認)、手数料と税はあなたに入ります。各メンバーが自分の分を引き出します。',
+  teamFeesUnavailable:
+    'このチェーンではまだチーム分配を利用できません。作成者の手数料と税はすべてあなたのウォレットに入ります。',
 };
 
 export default messages;

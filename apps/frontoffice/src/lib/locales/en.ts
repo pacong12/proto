@@ -412,6 +412,18 @@ const messages: Record<string, string> = {
   orderFilledToast: 'filled',
   viewToken: 'View',
   viewTransaction: 'View transaction',
+  feeRecipients: 'Fee recipients',
+  feeRecipientsHint:
+    'Who receives the creator share of fees and the token tax. Add team wallets to split it with fixed shares.',
+  addTeamWallet: 'Add team wallet',
+  removeTeamWallet: 'Remove wallet',
+  feeRecipientDefault: 'All creator fees and tax go to',
+  teamFeesRobinhood:
+    'A team wallet contract is created before launch. The token tax goes to it from launch; after graduation, route the pool fees to it from your profile (48-hour timelock). Each member withdraws their own share.',
+  teamFeesArc:
+    'A team wallet contract is created before launch. Fees and tax go to you until the payout redirect proposed at launch becomes active after 48 hours (accept it from your profile). Each member withdraws their own share.',
+  teamFeesUnavailable:
+    'Team payouts are not available on this chain yet. All creator fees and tax go to your wallet.',
 };
 
 export default messages;

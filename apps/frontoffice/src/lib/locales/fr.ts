@@ -416,6 +416,18 @@ const messages: Record<string, string> = {
   orderFilledToast: 'exécuté',
   viewToken: 'Voir',
   viewTransaction: 'Voir la transaction',
+  feeRecipients: 'Destinataires des frais',
+  feeRecipientsHint:
+    "Qui reçoit la part créateur des frais et la taxe du jeton. Ajoutez des portefeuilles d'équipe pour la partager à parts fixes.",
+  addTeamWallet: "Ajouter un portefeuille d'équipe",
+  removeTeamWallet: 'Retirer le portefeuille',
+  feeRecipientDefault: 'Tous les frais et taxes du créateur vont à',
+  teamFeesRobinhood:
+    "Un contrat de portefeuille d'équipe est créé avant le lancement. La taxe du jeton y arrive dès le lancement ; après la graduation, dirigez-y les frais du pool depuis votre profil (délai de 48 heures). Chaque membre retire sa part.",
+  teamFeesArc:
+    "Un contrat de portefeuille d'équipe est créé avant le lancement. Les frais et taxes vous reviennent jusqu'à ce que la redirection proposée au lancement s'active après 48 heures (acceptez-la depuis votre profil). Chaque membre retire sa part.",
+  teamFeesUnavailable:
+    "Les paiements d'équipe ne sont pas encore disponibles sur cette chaîne. Tous les frais et taxes vont à votre portefeuille.",
 };
 
 export default messages;

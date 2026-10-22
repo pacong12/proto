@@ -414,6 +414,18 @@ const messages: Record<string, string> = {
   orderFilledToast: 'terisi',
   viewToken: 'Lihat',
   viewTransaction: 'Lihat transaksi',
+  feeRecipients: 'Penerima fee',
+  feeRecipientsHint:
+    'Siapa yang menerima bagian fee kreator dan pajak token. Tambahkan dompet tim untuk membaginya dengan porsi tetap.',
+  addTeamWallet: 'Tambah dompet tim',
+  removeTeamWallet: 'Hapus dompet',
+  feeRecipientDefault: 'Semua fee kreator dan pajak masuk ke',
+  teamFeesRobinhood:
+    'Kontrak dompet tim dibuat sebelum peluncuran. Pajak token masuk ke kontrak itu sejak peluncuran; setelah graduasi, arahkan fee pool ke sana dari profil Anda (timelock 48 jam). Setiap anggota menarik bagiannya sendiri.',
+  teamFeesArc:
+    'Kontrak dompet tim dibuat sebelum peluncuran. Fee dan pajak masuk ke Anda sampai pengalihan payout yang diajukan saat peluncuran aktif setelah 48 jam (setujui dari profil Anda). Setiap anggota menarik bagiannya sendiri.',
+  teamFeesUnavailable:
+    'Payout tim belum tersedia di chain ini. Semua fee kreator dan pajak masuk ke dompet Anda.',
 };
 
 export default messages;

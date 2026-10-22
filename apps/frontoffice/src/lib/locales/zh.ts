@@ -399,6 +399,16 @@ const messages: Record<string, string> = {
   orderFilledToast: '已成交',
   viewToken: '查看',
   viewTransaction: '查看交易',
+  feeRecipients: '费用接收方',
+  feeRecipientsHint: '谁接收创作者的费用份额和代币税。添加团队钱包即可按固定比例分配。',
+  addTeamWallet: '添加团队钱包',
+  removeTeamWallet: '移除钱包',
+  feeRecipientDefault: '所有创作者费用和税费将发送至',
+  teamFeesRobinhood:
+    '发行前会创建团队钱包合约。代币税从发行起即进入该合约；毕业后可在个人主页将池子费用转向该合约（48 小时时间锁）。每位成员自行提取自己的份额。',
+  teamFeesArc:
+    '发行前会创建团队钱包合约。在发行时提交的收款转向于 48 小时后生效之前（在个人主页确认），费用和税费仍归您。每位成员自行提取自己的份额。',
+  teamFeesUnavailable: '该链暂不支持团队分账。所有创作者费用和税费将进入您的钱包。',
 };
 
 export default messages;

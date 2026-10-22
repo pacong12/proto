@@ -417,6 +417,18 @@ const messages: Record<string, string> = {
   orderFilledToast: 'ejecutada',
   viewToken: 'Ver',
   viewTransaction: 'Ver transacción',
+  feeRecipients: 'Destinatarios de comisiones',
+  feeRecipientsHint:
+    'Quién recibe la parte del creador de las comisiones y el impuesto del token. Añade billeteras del equipo para repartirla con porcentajes fijos.',
+  addTeamWallet: 'Añadir billetera del equipo',
+  removeTeamWallet: 'Quitar billetera',
+  feeRecipientDefault: 'Todas las comisiones e impuestos del creador van a',
+  teamFeesRobinhood:
+    'Se crea un contrato de billetera del equipo antes del lanzamiento. El impuesto del token llega a él desde el lanzamiento; tras la graduación, dirige las comisiones del pool a él desde tu perfil (bloqueo de 48 horas). Cada miembro retira su parte.',
+  teamFeesArc:
+    'Se crea un contrato de billetera del equipo antes del lanzamiento. Las comisiones e impuestos van a ti hasta que el cambio de pago propuesto al lanzar se active tras 48 horas (acéptalo desde tu perfil). Cada miembro retira su parte.',
+  teamFeesUnavailable:
+    'Los pagos de equipo aún no están disponibles en esta cadena. Todas las comisiones e impuestos van a tu billetera.',
 };
 
 export default messages;

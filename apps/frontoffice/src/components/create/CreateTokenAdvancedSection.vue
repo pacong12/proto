@@ -19,34 +19,75 @@
     </Button>
 
     <div v-show="isOpen" class="p-6 sm:p-7 space-y-7 border-t border-border">
-      <!-- Connected Creator Wallet -->
-      <div class="space-y-2">
+      <!-- Fee recipients: the creator by default, or a team with fixed shares -->
+      <div class="space-y-2.5">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-1.5">
-            <Label class="text-sm font-semibold">{{ t('creatorWallet') }}</Label>
-            <InfoTooltip
-              text="Receives creator fees, trading taxes, and governance permissions. Defaults to your connected wallet if left blank."
+            <Label class="text-sm font-semibold">{{ t('feeRecipients') }}</Label>
+            <InfoTooltip :text="t('feeRecipientsHint')" />
+          </div>
+          <span
+            class="text-xs font-semibold tabular-nums"
+            :class="recipientTotal === 100 ? 'text-muted-foreground' : 'text-rose-500'"
+          >
+            {{ recipientTotal }}%
+          </span>
+        </div>
+
+        <div v-for="(row, i) in feeRecipients" :key="i" class="flex items-center gap-2">
+          <Input
+            :model-value="row.address"
+            type="text"
+            :placeholder="i === 0 ? account || '0x... (your wallet)' : '0x... team wallet'"
+            class="h-10 text-xs rounded-xl bg-muted/20 flex-1 min-w-0"
+            @update:model-value="setRow(i, { address: String($event) })"
+          />
+          <div class="relative w-24 shrink-0">
+            <Input
+              :model-value="row.percent"
+              type="number"
+              inputmode="decimal"
+              min="0"
+              max="100"
+              class="h-10 text-xs rounded-xl bg-muted/20 pr-7 text-right"
+              @update:model-value="setRow(i, { percent: Number($event) || 0 })"
             />
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground"
+              >%</span
+            >
           </div>
           <button
-            v-if="account && creatorWallet !== account"
+            v-if="i > 0"
             type="button"
-            class="text-xs text-primary hover:underline cursor-pointer"
-            @click="$emit('update:creatorWallet', account)"
+            class="h-10 w-10 shrink-0 inline-flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+            :aria-label="t('removeTeamWallet')"
+            @click="removeRow(i)"
           >
-            Use Connected Wallet
+            <X class="w-4 h-4" />
           </button>
         </div>
-        <Input
-          :model-value="creatorWallet"
-          type="text"
-          :placeholder="account || '0x... (defaults to deployer)'"
-          class="h-10 text-xs rounded-xl bg-muted/20"
-          @update:model-value="$emit('update:creatorWallet', String($event))"
-        />
+
+        <Button
+          v-if="teamAvailable && feeRecipients.length < MAX_TEAM_PAYEES"
+          type="button"
+          variant="outline"
+          size="sm"
+          class="h-8 text-xs rounded-xl gap-1.5 cursor-pointer"
+          @click="addRow"
+        >
+          <Plus class="w-3.5 h-3.5" />
+          {{ t('addTeamWallet') }}
+        </Button>
+
         <p class="text-xs text-muted-foreground">
-          Recipient for fee revenue and tax collections. Defaults to
-          {{ account ? shortenAddress(account) : 'deployer' }}.
+          <template v-if="feeRecipients.length > 1">
+            {{ isArc ? t('teamFeesArc') : t('teamFeesRobinhood') }}
+          </template>
+          <template v-else-if="!teamAvailable">{{ t('teamFeesUnavailable') }}</template>
+          <template v-else>
+            {{ t('feeRecipientDefault') }}
+            {{ account ? shortenAddress(account) : '' }}
+          </template>
         </p>
       </div>
 
@@ -400,7 +441,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { ChevronDown } from 'lucide-vue-next';
+import { ChevronDown, Plus, X } from 'lucide-vue-next';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -410,6 +451,7 @@ import { Slider } from '@/components/ui/slider';
 import { InfoTooltip } from '@/components/ui/tooltip';
 import { useI18n } from '@/lib/i18n';
 import { shortenAddress } from '@/lib/utils';
+import { MAX_TEAM_PAYEES, type FeeRecipientRow } from '@/lib/team-fees';
 import {
   type RevenueSplit,
   calculateTotalSplit,
@@ -422,7 +464,10 @@ const { t } = useI18n();
 
 interface Props {
   account?: string | null;
-  creatorWallet: string;
+  feeRecipients: FeeRecipientRow[];
+  /** A team splitter factory is deployed on the active chain. */
+  teamAvailable?: boolean;
+  isArc?: boolean;
   buyTax: string;
   sellTax: string;
   revenueSplit: RevenueSplit;
@@ -432,10 +477,12 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   account: '',
   open: false,
+  teamAvailable: false,
+  isArc: false,
 });
 
 const emit = defineEmits<{
-  (e: 'update:creatorWallet', val: string): void;
+  (e: 'update:feeRecipients', val: FeeRecipientRow[]): void;
   (e: 'update:buyTax', val: string): void;
   (e: 'update:sellTax', val: string): void;
   (e: 'update:revenueSplit', val: RevenueSplit): void;
@@ -446,6 +493,31 @@ const isOpen = computed({
   get: () => props.open,
   set: (val: boolean) => emit('update:open', val),
 });
+
+const recipientTotal = computed(
+  () =>
+    Math.round(props.feeRecipients.reduce((a, r) => a + (Number(r.percent) || 0), 0) * 100) / 100,
+);
+function setRow(i: number, patch: Partial<FeeRecipientRow>) {
+  emit(
+    'update:feeRecipients',
+    props.feeRecipients.map((r, j) => (j === i ? { ...r, ...patch } : r)),
+  );
+}
+/** A new wallet takes half of the first wallet's share, so the total stays at 100%. */
+function addRow() {
+  const rows = props.feeRecipients.map((r) => ({ ...r }));
+  const give = Math.floor((rows[0].percent / 2) * 100) / 100;
+  rows[0].percent = Math.round((rows[0].percent - give) * 100) / 100;
+  rows.push({ address: '', percent: give });
+  emit('update:feeRecipients', rows);
+}
+function removeRow(i: number) {
+  const rows = props.feeRecipients.map((r) => ({ ...r }));
+  const [removed] = rows.splice(i, 1);
+  rows[0].percent = Math.round((rows[0].percent + removed.percent) * 100) / 100;
+  emit('update:feeRecipients', rows);
+}
 
 const totalSplit = computed(() => calculateTotalSplit(props.revenueSplit));
 

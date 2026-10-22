@@ -415,6 +415,18 @@ const messages: Record<string, string> = {
   orderFilledToast: 'ausgeführt',
   viewToken: 'Ansehen',
   viewTransaction: 'Transaktion ansehen',
+  feeRecipients: 'Gebührenempfänger',
+  feeRecipientsHint:
+    'Wer den Creator-Anteil der Gebühren und die Token-Steuer erhält. Füge Team-Wallets hinzu, um ihn mit festen Anteilen zu teilen.',
+  addTeamWallet: 'Team-Wallet hinzufügen',
+  removeTeamWallet: 'Wallet entfernen',
+  feeRecipientDefault: 'Alle Creator-Gebühren und Steuern gehen an',
+  teamFeesRobinhood:
+    'Vor dem Launch wird ein Team-Wallet-Vertrag erstellt. Die Token-Steuer geht ab dem Launch dorthin; nach der Graduierung leitest du die Pool-Gebühren im Profil dorthin um (48 Stunden Timelock). Jedes Mitglied zieht seinen Anteil selbst ab.',
+  teamFeesArc:
+    'Vor dem Launch wird ein Team-Wallet-Vertrag erstellt. Gebühren und Steuern gehen an dich, bis die beim Launch vorgeschlagene Umleitung nach 48 Stunden aktiv wird (im Profil bestätigen). Jedes Mitglied zieht seinen Anteil selbst ab.',
+  teamFeesUnavailable:
+    'Team-Auszahlungen sind auf dieser Chain noch nicht verfügbar. Alle Creator-Gebühren und Steuern gehen an deine Wallet.',
 };
 
 export default messages;

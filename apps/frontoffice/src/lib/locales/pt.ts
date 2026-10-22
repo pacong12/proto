@@ -414,6 +414,18 @@ const messages: Record<string, string> = {
   orderFilledToast: 'executada',
   viewToken: 'Ver',
   viewTransaction: 'Ver transação',
+  feeRecipients: 'Destinatários das taxas',
+  feeRecipientsHint:
+    'Quem recebe a parte do criador nas taxas e o imposto do token. Adicione carteiras da equipe para dividir com percentuais fixos.',
+  addTeamWallet: 'Adicionar carteira da equipe',
+  removeTeamWallet: 'Remover carteira',
+  feeRecipientDefault: 'Todas as taxas e impostos do criador vão para',
+  teamFeesRobinhood:
+    'Um contrato de carteira da equipe é criado antes do lançamento. O imposto do token vai para ele desde o lançamento; após a graduação, direcione as taxas do pool para ele no seu perfil (timelock de 48 horas). Cada membro saca a própria parte.',
+  teamFeesArc:
+    'Um contrato de carteira da equipe é criado antes do lançamento. Taxas e impostos vão para você até que o redirecionamento proposto no lançamento fique ativo após 48 horas (aceite no seu perfil). Cada membro saca a própria parte.',
+  teamFeesUnavailable:
+    'Pagamentos de equipe ainda não estão disponíveis nesta rede. Todas as taxas e impostos vão para a sua carteira.',
 };
 
 export default messages;

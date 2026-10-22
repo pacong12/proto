@@ -405,6 +405,18 @@ const messages: Record<string, string> = {
   orderFilledToast: '체결',
   viewToken: '보기',
   viewTransaction: '거래 보기',
+  feeRecipients: '수수료 수령인',
+  feeRecipientsHint:
+    '생성자 수수료 몫과 토큰 세금을 받을 사람입니다. 팀 지갑을 추가해 고정 비율로 나눌 수 있습니다.',
+  addTeamWallet: '팀 지갑 추가',
+  removeTeamWallet: '지갑 삭제',
+  feeRecipientDefault: '모든 생성자 수수료와 세금은 다음으로 갑니다:',
+  teamFeesRobinhood:
+    '출시 전에 팀 지갑 컨트랙트가 생성됩니다. 토큰 세금은 출시부터 그곳으로 가며, 졸업 후에는 프로필에서 풀 수수료를 그곳으로 돌릴 수 있습니다(48시간 타임락). 각 멤버가 자신의 몫을 인출합니다.',
+  teamFeesArc:
+    '출시 전에 팀 지갑 컨트랙트가 생성됩니다. 출시 때 제안한 지급처 변경이 48시간 후 활성화될 때까지(프로필에서 승인) 수수료와 세금은 본인에게 갑니다. 각 멤버가 자신의 몫을 인출합니다.',
+  teamFeesUnavailable:
+    '이 체인에서는 아직 팀 분배를 사용할 수 없습니다. 모든 생성자 수수료와 세금은 본인 지갑으로 갑니다.',
 };
 
 export default messages;
