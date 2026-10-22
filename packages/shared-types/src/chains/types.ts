@@ -46,6 +46,8 @@ export interface NetworkConfig {
     buyback?: `0x${string}`;
     /** GotonLimitOrders — escrowed limit, take-profit and stop-loss orders. */
     limitOrders?: `0x${string}`;
+    /** GotonTeamSplitterFactory: fixed team payouts for a creator's tax and fees. */
+    teamSplitterFactory?: `0x${string}`;
     poolManagerV4?: `0x${string}`;
     positionManagerV4?: `0x${string}`;
     universalRouter?: `0x${string}`;

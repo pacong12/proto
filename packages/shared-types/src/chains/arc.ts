@@ -76,6 +76,7 @@ export const ARC_NETWORK: NetworkConfig = {
       'ARC_LIMIT_ORDERS',
       '0x3983F223E7Ef0B3c24b3a8F76Db96ed4Bf349Ee6',
     ) as `0x${string}`,
+    teamSplitterFactory: getEnv('ARC_TEAM_SPLITTER_FACTORY', UNDEPLOYED) as `0x${string}`,
     poolManagerV4: getEnv(
       'ARC_POOL_MANAGER_V4',
       '0x8366a39CC670B4001A1121B8F6A443A643e40951',

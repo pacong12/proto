@@ -1,4 +1,4 @@
-import type { NetworkConfig } from './types';
+import { UNDEPLOYED, type NetworkConfig } from './types';
 import { getEnv, getEnvBigInt } from './env';
 
 /**
@@ -85,6 +85,7 @@ export const ROBINHOOD_NETWORK: NetworkConfig = {
       'ROBINHOOD_LIMIT_ORDERS',
       '0x2f3212D06104eEbb5bA4FA934B9B55b906dC3F61',
     ) as `0x${string}`,
+    teamSplitterFactory: getEnv('ROBINHOOD_TEAM_SPLITTER_FACTORY', UNDEPLOYED) as `0x${string}`,
     poolManagerV4: getEnv(
       'ROBINHOOD_POOL_MANAGER_V4',
       '0x8366a39CC670B4001A1121B8F6A443A643e40951',
