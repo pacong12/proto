@@ -34,9 +34,9 @@
       
       <rect x="728" width="220" height="44" rx="22" fill="#18181b" stroke="#27272a" stroke-width="1.5"/>
       <circle cx="754" cy="22" r="7" fill="#F59E0B"/>
-      <text x="848" y="27" font-family="Poppins, -apple-system, system-ui, sans-serif" font-size="15" font-weight="600" fill="#e4e4e7" text-anchor="middle">Argus Dividends</text>
+      <text x="848" y="27" font-family="Poppins, -apple-system, system-ui, sans-serif" font-size="15" font-weight="600" fill="#e4e4e7" text-anchor="middle">Holder Dividends</text>
     </g>
   </g>
   
-  <text x="100" y="575" font-family="Poppins, -apple-system, system-ui, sans-serif" font-size="15" font-weight="600" fill="#71717a">%APP_HOST% · Decentralized Multi-Chain Launchpad &amp; Trading Floor</text>
+  <text x="100" y="575" font-family="Poppins, -apple-system, system-ui, sans-serif" font-size="15" font-weight="600" fill="#71717a">%APP_HOST% · Non-custodial launchpad on Robinhood Chain &amp; Arc</text>
 </svg>
