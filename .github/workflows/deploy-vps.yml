@@ -29,30 +29,9 @@ jobs:
           username: ${{ secrets.VPS_USER || 'deploy' }}
           key: ${{ secrets.VPS_SSH_KEY || secrets.DEPLOY }}
           port: ${{ secrets.VPS_PORT || 22 }}
-          script: |
-            set -e
-
-            echo "[Deploy] Navigating to project directory on VPS..."
-            cd ${{ secrets.VPS_APP_DIR || '/var/www/proto' }}
-
-            echo "[Deploy] Pulling latest commits from GitHub..."
-            git fetch origin production
-            git reset --hard origin/production
-
-            echo "[Deploy] Rebuilding and restarting API and Redis containers via Docker Compose..."
-            if docker compose version > /dev/null 2>&1; then
-              docker compose up -d --build --no-deps redis api
-            else
-              sudo docker compose up -d --build --no-deps redis api
-            fi
-
-            echo "[Deploy] Waiting for API service readiness..."
-            sleep 4
-
-            echo "[Deploy] Running health check..."
-            curl -s http://127.0.0.1:3011/health || true
-
-            echo "[Deploy] VPS backend deployment completed successfully."
+          # The key's authorized_keys entry forces this command (command="...",restrict), so the
+          # key can only deploy. See scripts/vps/deploy.sh for setup.
+          script: /home/deploy/bin/goton-deploy
 
       - name: Skip VPS deployment (secrets not configured)
         if: env.SSH_KEY == '' || env.VPS_HOST == ''
