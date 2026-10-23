@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/pacong12/proto/compare/v0.6.0...v0.6.1) (2026-10-23)
+
+
+### Bug Fixes
+
+* **worker:** redirect www to the apex domain ([#188](https://github.com/pacong12/proto/issues/188)) ([933d039](https://github.com/pacong12/proto/commit/933d039083a9de75e3ee6fc55a166227f012844e))
+
 ## [0.6.0](https://github.com/pacong12/proto/compare/v0.5.0...v0.6.0) (2026-10-23)
 
 
