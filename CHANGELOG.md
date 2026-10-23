@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/pacong12/proto/compare/v0.6.2...v0.7.0) (2026-10-23)
+
+
+### Features
+
+* page text and structured data for search and AI answers ([#196](https://github.com/pacong12/proto/issues/196)) ([6cce319](https://github.com/pacong12/proto/commit/6cce319b36d6166bdf67db693be347892c9382f6))
+
 ## [0.6.2](https://github.com/pacong12/proto/compare/v0.6.1...v0.6.2) (2026-10-23)
 
 
