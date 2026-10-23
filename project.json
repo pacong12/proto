@@ -7,6 +7,17 @@
       "command": "eslint . --max-warnings=0 --ignore-pattern 'apps/**' --ignore-pattern 'packages/**'",
       "cache": true
     },
+    "typecheck": {
+      "command": "tsc -p tsconfig.json",
+      "cache": true,
+      "inputs": [
+        "{workspaceRoot}/worker.ts",
+        "{workspaceRoot}/seo.ts",
+        "{workspaceRoot}/tests/**/*",
+        "{workspaceRoot}/tsconfig.json",
+        "{workspaceRoot}/tsconfig.base.json"
+      ]
+    },
     "test": {
       "command": "vitest run tests",
       "cache": true,

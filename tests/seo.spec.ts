@@ -134,7 +134,7 @@ describe('edge worker SEO', () => {
   });
 
   it('serves token pages with their own meta', async () => {
-    const fetchMock = vi.fn(async () =>
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL) =>
       Response.json({
         success: true,
         data: { token: apiToken, marketData: { marketCapUsd: 2_300_000 } },
