@@ -53,9 +53,11 @@ project or target with `bun run nx run <project>:<target>`, for example
 `bun run nx run @goton/api:test` or `bun run nx run contracts:gas-snapshot`, and list them with
 `bun run nx show projects`.
 
-Use `bun run nx` rather than a bare `bunx nx`: the script sets `NX_LOAD_DOT_ENV_FILES=false`, so Nx
-does not load the root `.env` (the API's runtime secrets and addresses) into every task. The
-frontoffice and docs builds are not cached because their output depends on `VITE_*` variables.
+`bunx nx` works too (for example `bunx nx run-many -t test`). Plain Nx loads the root `.env` (the
+API's runtime secrets and addresses) into every task, so the API tests pin `NODE_ENV=test` in
+`apps/api/vitest.config.ts`; the `bun run` scripts also set `NX_LOAD_DOT_ENV_FILES=false` to keep
+those secrets out of tasks entirely. The frontoffice and docs builds are not cached because their
+output depends on `VITE_*` variables.
 
 ## Herdr Workspaces & Multi-Worktree Orchestration
 

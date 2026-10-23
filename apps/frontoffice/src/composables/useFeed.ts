@@ -181,7 +181,7 @@ export function useFeed(): {
       }
       return null;
     } catch (err) {
-      throw new Error((err as Error).message || 'Failed to post callout');
+      throw new Error((err as Error).message || 'Failed to post callout', { cause: err });
     }
   }
 

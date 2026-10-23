@@ -35,15 +35,15 @@ Pengujian Monte Carlo mensimulasikan 10,000 transaksi acak (55% order beli acak 
 
 ### Matriks Hasil Simulasi
 
-| Parameter Metrik                        | Robinhood Chain (4663)              | Arc Network (5042)                  | Evaluasi Keamanan    |
-| :-------------------------------------- | :---------------------------------- | :---------------------------------- | :------------------- |
-| **Jumlah Transaksi Dieksekusi**         | 10,000                              | 10,000                              | 100% Selesai         |
-| **Invarian Awal ($K_{\text{init}}$)**   | $1.68 \times 10^{45}$               | $2.442 \times 10^{49}$              | Baseline             |
-| **Invarian Akhir ($K_{\text{final}}$)** | $1.6799999999999981 \times 10^{45}$ | $2.4419999999999999 \times 10^{49}$ | Presisi Tinggi       |
-| **Persentase Drift Invarian ($K$)**     | $-1.128 \times 10^{-13}\%$          | $-7.915 \times 10^{-18}\%$          | Bounded / Negligible |
-| **Transaksi Jual Revert (> 100 wei)**   | 0                                   | 0                                   | Bersih               |
-| **Discrepancy Saldo Maksimal**          | 0 wei                               | 0 wei                               | Sempurna             |
-| **Saldo Fisik Kontrak Akhir**           | 3.0275 ETH                          | 44,005.08 USDC                      | Solven               |
+| Parameter Metrik                         | Robinhood Chain (4663)              | Arc Network (5042)                  | Evaluasi Keamanan    |
+| :--------------------------------------- | :---------------------------------- | :---------------------------------- | :------------------- |
+| **Jumlah Transaksi Dieksekusi**          | 10,000                              | 10,000                              | 100% Selesai         |
+| **Invarian Awal ($K\_{\text{init}}$)**   | $1.68 \times 10^{45}$               | $2.442 \times 10^{49}$              | Baseline             |
+| **Invarian Akhir ($K\_{\text{final}}$)** | $1.6799999999999981 \times 10^{45}$ | $2.4419999999999999 \times 10^{49}$ | Presisi Tinggi       |
+| **Persentase Drift Invarian ($K$)**      | $-1.128 \times 10^{-13}\%$          | $-7.915 \times 10^{-18}\%$          | Bounded / Negligible |
+| **Transaksi Jual Revert (> 100 wei)**    | 0                                   | 0                                   | Bersih               |
+| **Discrepancy Saldo Maksimal**           | 0 wei                               | 0 wei                               | Sempurna             |
+| **Saldo Fisik Kontrak Akhir**            | 3.0275 ETH                          | 44,005.08 USDC                      | Solven               |
 
 ### Temuan Simulasi Monte Carlo dengan Pajak Jual (Sell Tax Token Leakage) — ❌ INVALID
 

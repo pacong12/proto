@@ -91,6 +91,7 @@ export class CoinGeckoPriceFeedAdapter implements PriceFeedPort {
 
       throw new Error(
         `Failed to retrieve live ETH price from live feeds: ${(err as Error).message}`,
+        { cause: err },
       );
     }
   }
