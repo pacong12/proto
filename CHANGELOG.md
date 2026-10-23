@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/pacong12/proto/compare/v0.5.0...v0.6.0) (2026-10-23)
+
+
+### Features
+
+* enable team fee recipients with the deployed splitter factory ([#185](https://github.com/pacong12/proto/issues/185)) ([0c3bbb8](https://github.com/pacong12/proto/commit/0c3bbb891eec3c759758619529604b865c831f1e))
+
 ## [0.5.0](https://github.com/pacong12/proto/compare/v0.4.2...v0.5.0) (2026-10-23)
 
 
