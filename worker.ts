@@ -179,6 +179,13 @@ export default {
     const url = new URL(request.url);
     const rayId = request.headers.get('cf-ray') || crypto.randomUUID();
 
+    // One host for search engines: www serves the same site, so send it to the apex instead of
+    // letting it publish a second copy with its own canonical URLs and sitemap.
+    if (url.hostname.startsWith('www.')) {
+      url.hostname = url.hostname.slice(4);
+      return Response.redirect(url.toString(), 301);
+    }
+
     // Block common scanner paths for dotfiles and admin panels (/.well-known/ stays public:
     // security.txt and similar standard files live there).
     if (
