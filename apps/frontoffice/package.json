@@ -7,7 +7,9 @@
     "dev": "vite --port 3010",
     "build": "vue-tsc --noEmit && vite build",
     "typecheck": "vue-tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "eslint . --max-warnings=0",
+    "e2e": "playwright test --config ../../playwright.config.ts"
   },
   "dependencies": {
     "@headlessui/vue": "^1.7.23",
@@ -42,5 +44,12 @@
     "vite": "^6.1.0",
     "vitest": "4.1.11",
     "vue-tsc": "^2.2.0"
+  },
+  "nx": {
+    "targets": {
+      "build": {
+        "cache": false
+      }
+    }
   }
 }

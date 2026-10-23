@@ -12,23 +12,24 @@
   },
   "scripts": {
     "prepare": "sh scripts/setup-git-hooks.sh || true",
-    "lint": "eslint . --max-warnings=0",
+    "lint": "NX_LOAD_DOT_ENV_FILES=false nx run-many -t lint",
     "lint:fix": "eslint . --fix",
-    "typecheck": "bun run --filter '*' typecheck",
-    "test": "vitest run --config vitest.config.ts",
-    "test:contracts": "cd contracts && forge test",
-    "test:e2e": "playwright test",
+    "typecheck": "NX_LOAD_DOT_ENV_FILES=false nx run-many -t typecheck",
+    "test": "NX_LOAD_DOT_ENV_FILES=false nx run-many -t test --exclude=contracts",
+    "test:contracts": "NX_LOAD_DOT_ENV_FILES=false nx run contracts:test",
+    "test:e2e": "NX_LOAD_DOT_ENV_FILES=false nx run @goton/frontoffice:e2e",
     "test:load": "bun run scripts/load-test.ts",
     "test:smoke": "bun run scripts/smoke.ts",
     "deploy:local": "cd contracts && forge script script/robinhood/DeployRobinhoodV2.s.sol --rpc-url http://127.0.0.1:8545 --broadcast",
     "deploy:robinhood": "cd contracts && forge script script/robinhood/DeployRobinhoodV2.s.sol --rpc-url https://rpc.mainnet.chain.robinhood.com --broadcast",
     "deploy:arc": "cd contracts && forge script script/arc/DeployArc.s.sol --rpc-url https://rpc.mainnet.arc.io --broadcast",
-    "build": "bun run --filter '*' build",
-    "ci": "bun run lint && bun run typecheck && bun run test && bun run test:contracts && bun run build",
+    "build": "NX_LOAD_DOT_ENV_FILES=false nx run-many -t build --exclude=contracts",
+    "ci": "NX_LOAD_DOT_ENV_FILES=false nx run-many -t lint typecheck test build",
     "format:check": "prettier --check \"**/*.{ts,js,json,md,vue}\"",
     "format:write": "prettier --write \"**/*.{ts,js,json,md,vue}\"",
     "audit:i18n": "bun run scripts/audit-i18n.mjs",
-    "commitlint": "commitlint"
+    "commitlint": "commitlint",
+    "nx": "NX_LOAD_DOT_ENV_FILES=false nx"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",
@@ -43,6 +44,7 @@
     "eslint": "^9.20.0",
     "eslint-config-prettier": "^10.0.1",
     "globals": "^15.14.0",
+    "nx": "^24.0.0",
     "prettier": "^3.5.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.23.0",
@@ -52,5 +54,8 @@
   },
   "dependencies": {
     "viem": "^2.23.0"
+  },
+  "nx": {
+    "includedScripts": []
   }
 }

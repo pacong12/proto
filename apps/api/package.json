@@ -6,7 +6,8 @@
     "start": "bun run --env-file=../../.env src/server.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "eslint . --max-warnings=0"
   },
   "dependencies": {
     "@goton/shared-types": "*",

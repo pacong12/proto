@@ -13,7 +13,8 @@
   "scripts": {
     "export-abis": "bun run scripts/export-foundry-abis.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "eslint . --max-warnings=0"
   },
   "dependencies": {
     "viem": "^2.23.0"
