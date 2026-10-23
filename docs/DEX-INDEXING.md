@@ -120,7 +120,7 @@ GMGN membaca data dari GeckoTerminal, jadi cukup daftar ke GeckoTerminal.
 ## Langkah Pendaftaran Manual
 
 Semua langkah ini harus dikerjakan oleh owner setelah API di-deploy ke domain publik
-(`https://api.robinmood.xyz` atau sejenisnya).
+(`https://api.goton.cloud` atau sejenisnya).
 
 ### DEX Screener
 
@@ -135,7 +135,7 @@ Semua langkah ini harus dikerjakan oleh owner setelah API di-deploy ke domain pu
    RPC URL          : https://rpc.mainnet.chain.robinhood.com
    Block Explorer   : https://robinhoodchain.blockscout.com
    DEX Name         : Goton
-   Partner API URL  : https://api.robinmood.xyz
+   Partner API URL  : https://api.goton.cloud
    Protocol Type    : Bonding Curve + Uniswap V3
    Contact          : [email owner]
    ```
@@ -148,7 +148,7 @@ Semua langkah ini harus dikerjakan oleh owner setelah API di-deploy ke domain pu
    RPC URL          : https://rpc.mainnet.arc.io
    Block Explorer   : https://explorer.arc.io
    DEX Name         : Goton
-   Partner API URL  : https://api.robinmood.xyz
+   Partner API URL  : https://api.goton.cloud
    ```
 
 3. DEX Screener akan memverifikasi endpoint `/dex/latest-block`, `/dex/asset`,
@@ -162,7 +162,7 @@ Estimasi waktu: 1-2 minggu setelah submission.
 2. Isi form:
    - Network Name: `Robinhood Chain`
    - Chain ID: `4663`
-   - API Base URL: `https://api.robinmood.xyz/api/v1/networks/robinhood`
+   - API Base URL: `https://api.goton.cloud/api/v1/networks/robinhood`
    - Explorer: `https://robinhoodchain.blockscout.com`
 3. Ulangi untuk Arc Network (Chain ID 5042).
 
@@ -190,7 +190,7 @@ secara otomatis setelah chain terdaftar di sana. Tidak perlu submit terpisah.
 ## Pra-syarat Teknis Sebelum Submit
 
 - [ ] **Deploy API ke Publik**: API harus bisa diakses dari internet publik (bukan localhost).
-      Deploy ke VPS dengan domain publik (contoh: `https://api.robinmood.xyz`) menggunakan workflow
+      Deploy ke VPS dengan domain publik (contoh: `https://api.goton.cloud`) menggunakan workflow
       `.github/workflows/deploy-vps.yml`.
 - [x] **CORS Wildcard**: Header `Access-Control-Allow-Origin: *` aktif pada semua endpoint
       `/dex/*` dan `/api/v1/*` sehingga crawler agregator tidak terblokir. (SUDAH IMPLEMENTED)

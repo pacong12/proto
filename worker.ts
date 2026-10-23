@@ -6,7 +6,7 @@ export interface Env {
   };
   // Set to 'true' in wrangler.toml [vars] to send CSP as Report-Only.
   // Use this in staging before enforcing in production.
-  // Backend API URL on VPS (e.g. https://api.robinmood.xyz)
+  // Backend API URL on VPS (e.g. https://api.goton.cloud)
   BACKEND_API_URL?: string;
   // Set to 'true' in wrangler.toml [vars] to send CSP as Report-Only.
   // Use this in staging before enforcing in production.
@@ -236,7 +236,7 @@ export default {
       url.pathname.startsWith('/api/v1/') ||
       url.pathname === '/health'
     ) {
-      const backendBase = env.BACKEND_API_URL || 'https://api.robinmood.xyz';
+      const backendBase = env.BACKEND_API_URL || 'https://api.goton.cloud';
       const targetUrl = new URL(url.pathname + url.search, backendBase);
       const forwardHeaders = new Headers(request.headers);
       forwardHeaders.set('x-forwarded-host', url.host);
@@ -347,7 +347,7 @@ const ARC_USDC = '0x3600000000000000000000000000000000000000';
 const SEO_FETCH_TIMEOUT_MS = 1_500;
 
 async function backendJson<T>(env: Env, path: string): Promise<T | null> {
-  const base = env.BACKEND_API_URL || 'https://api.robinmood.xyz';
+  const base = env.BACKEND_API_URL || 'https://api.goton.cloud';
   try {
     const res = await fetch(new URL(path, base).toString(), {
       signal: AbortSignal.timeout(SEO_FETCH_TIMEOUT_MS),

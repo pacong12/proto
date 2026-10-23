@@ -9,7 +9,7 @@ command = "VITE_REOWN_PROJECT_ID=4832fd788725bf7c34d6bc2ca2d54a85 bun run --filt
 
 [vars]
 VITE_REOWN_PROJECT_ID = "4832fd788725bf7c34d6bc2ca2d54a85"
-BACKEND_API_URL = "https://api.robinmood.xyz"
+BACKEND_API_URL = "https://api.goton.cloud"
 DOCS_URL = "https://docs.goton.fun"
 
 [assets]
@@ -38,7 +38,7 @@ command = "VITE_APP_URL=https://proto-dev.mutingudin12.workers.dev VITE_DOCS_URL
 
 [env.development.vars]
 VITE_REOWN_PROJECT_ID = "4832fd788725bf7c34d6bc2ca2d54a85"
-BACKEND_API_URL = "https://api.robinmood.xyz"
+BACKEND_API_URL = "https://api.goton.cloud"
 # Report CSP violations instead of blocking them while developing.
 CSP_REPORT_ONLY = "true"
 # Keep the development site out of search results (X-Robots-Tag: noindex).
@@ -52,4 +52,4 @@ name = "proto-production"
 [env.production.vars]
 CSP_REPORT_ONLY = "false"
 VITE_REOWN_PROJECT_ID = "4832fd788725bf7c34d6bc2ca2d54a85"
-BACKEND_API_URL = "https://api.robinmood.xyz"
+BACKEND_API_URL = "https://api.goton.cloud"
