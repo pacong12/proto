@@ -14,6 +14,7 @@
 | **Goton V4 Router**               | `0x5F88CE2BeD0f2639133b5EeB8b8fFE1fD50BA2dc` | 毕业后池的兑换                               |
 | **Goton V4 Buyback**              | `0x240547f435Fe98B8B3F14036936D3a3e0EE87213` | 受 TWAP 保护的回购销毁                       |
 | **Limit Orders**                  | `0x2f3212D06104eEbb5bA4FA934B9B55b906dC3F61` | 托管的限价、止盈与止损订单                   |
+| **Team Splitter Factory**         | `0xF2187BdcDcdB0999Bf1143b18089dc37c09f7Ef4` | 为创作者费用创建固定比例的团队分账合约       |
 | **Liquidity Locker (Uniswap V4)** | `0x7A1AD6AD30B1c9e276eD80a853E8dA897fE5D63E` | 永久锁定 Uniswap LP NFT 仓位                 |
 | **Uniswap V3 Factory**            | `0x1f7d7550B1b028f7571E69A784071F0205FD2EfA` | 官方去中心化交易池注册表                     |
 | **Position Manager**              | `0x73991a25C818Bf1f1128dEAaB1492D45638DE0D3` | 集中流动性头寸管理合约                       |
@@ -24,16 +25,17 @@
 
 ## 2. Arc Network (主网, Chain ID: 5042)
 
-| 合约名称                           | 合约地址                                     | 核心功能                           |
-| :--------------------------------- | :------------------------------------------- | :--------------------------------- |
-| **Launchpad Factory (Uniswap V4)** | `0xd7Bf86061CC5637b2b854d61007f8fD7CD6f0980` | 直接在锁定的 v4 池中发行代币       |
-| **Goton V4 Hook**                  | `0xb5C88A6101e6b979Ad63Bf5e6302dF8F031360Cc` | 池手续费、防狙击与 TWAP 预言机     |
-| **Goton V4 Router**                | `0xD8Ec94F07f590F8Ceb620A8D17Bb555fBde366f1` | 使用原生 USDC 支付的兑换           |
-| **Goton V4 Buyback**               | `0xb0C5fCBf9D0326cA2Ed0b2C49c5E754f36c78AFd` | 受 TWAP 保护的回购销毁             |
-| **Limit Orders**                   | `0x3983F223E7Ef0B3c24b3a8F76Db96ed4Bf349Ee6` | 托管的限价、止盈与止损订单         |
-| **Uniswap V4 PoolManager**         | `0x8366a39CC670B4001A1121B8F6A443A643e40951` | 官方 v4 单例合约                   |
-| **报价代币 (USDC)**                | `0x3600000000000000000000000000000000000000` | 官方 ERC-20 USDC 交易对 (6 位小数) |
-| **旧版 Factory (v4 之前)**         | `0xf94d16c9E90fCd55b75D318d0104269146612abF` | 早期发行；不再创建新代币           |
+| 合约名称                           | 合约地址                                     | 核心功能                               |
+| :--------------------------------- | :------------------------------------------- | :------------------------------------- |
+| **Launchpad Factory (Uniswap V4)** | `0xd7Bf86061CC5637b2b854d61007f8fD7CD6f0980` | 直接在锁定的 v4 池中发行代币           |
+| **Goton V4 Hook**                  | `0xb5C88A6101e6b979Ad63Bf5e6302dF8F031360Cc` | 池手续费、防狙击与 TWAP 预言机         |
+| **Goton V4 Router**                | `0xD8Ec94F07f590F8Ceb620A8D17Bb555fBde366f1` | 使用原生 USDC 支付的兑换               |
+| **Goton V4 Buyback**               | `0xb0C5fCBf9D0326cA2Ed0b2C49c5E754f36c78AFd` | 受 TWAP 保护的回购销毁                 |
+| **Limit Orders**                   | `0x3983F223E7Ef0B3c24b3a8F76Db96ed4Bf349Ee6` | 托管的限价、止盈与止损订单             |
+| **Team Splitter Factory**          | `0x1F64014D2fA9B8Dd277E2Fbd6581553916175C09` | 为创作者费用创建固定比例的团队分账合约 |
+| **Uniswap V4 PoolManager**         | `0x8366a39CC670B4001A1121B8F6A443A643e40951` | 官方 v4 单例合约                       |
+| **报价代币 (USDC)**                | `0x3600000000000000000000000000000000000000` | 官方 ERC-20 USDC 交易对 (6 位小数)     |
+| **旧版 Factory (v4 之前)**         | `0xf94d16c9E90fCd55b75D318d0104269146612abF` | 早期发行；不再创建新代币               |
 
 ---
 

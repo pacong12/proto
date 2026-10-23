@@ -51,13 +51,14 @@ Amounts in `token` fields are raw units (strings). Prices are numbers.
 
 ## Contracts
 
-|                  | Robinhood Chain (4663)                       | Arc (5042)                                                     |
-| :--------------- | :------------------------------------------- | :------------------------------------------------------------- |
-| RPC              | https://rpc.mainnet.chain.robinhood.com      | https://rpc.mainnet.arc.io                                     |
-| Quote currency   | native ETH (`address(0)` in pools)           | USDC `0x3600000000000000000000000000000000000000` (6 decimals) |
-| Uniswap v4 hook  | `0xb5C88A6101e6b979Ad63Bf5e6302dF8F031360Cc` | `0xb5C88A6101e6b979Ad63Bf5e6302dF8F031360Cc`                   |
-| GotonV4Router    | `0x5F88CE2BeD0f2639133b5EeB8b8fFE1fD50BA2dc` | `0xD8Ec94F07f590F8Ceb620A8D17Bb555fBde366f1`                   |
-| GotonLimitOrders | `0x2f3212D06104eEbb5bA4FA934B9B55b906dC3F61` | `0x3983F223E7Ef0B3c24b3a8F76Db96ed4Bf349Ee6`                   |
+|                          | Robinhood Chain (4663)                       | Arc (5042)                                                     |
+| :----------------------- | :------------------------------------------- | :------------------------------------------------------------- |
+| RPC                      | https://rpc.mainnet.chain.robinhood.com      | https://rpc.mainnet.arc.io                                     |
+| Quote currency           | native ETH (`address(0)` in pools)           | USDC `0x3600000000000000000000000000000000000000` (6 decimals) |
+| Uniswap v4 hook          | `0xb5C88A6101e6b979Ad63Bf5e6302dF8F031360Cc` | `0xb5C88A6101e6b979Ad63Bf5e6302dF8F031360Cc`                   |
+| GotonV4Router            | `0x5F88CE2BeD0f2639133b5EeB8b8fFE1fD50BA2dc` | `0xD8Ec94F07f590F8Ceb620A8D17Bb555fBde366f1`                   |
+| GotonLimitOrders         | `0x2f3212D06104eEbb5bA4FA934B9B55b906dC3F61` | `0x3983F223E7Ef0B3c24b3a8F76Db96ed4Bf349Ee6`                   |
+| GotonTeamSplitterFactory | `0xF2187BdcDcdB0999Bf1143b18089dc37c09f7Ef4` | `0x1F64014D2fA9B8Dd277E2Fbd6581553916175C09`                   |
 
 Always cross-check with https://docs.goton.fun/integration/contracts before the first trade.
 
