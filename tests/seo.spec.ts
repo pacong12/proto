@@ -1,5 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { applyMeta, buildSitemap, pageMeta, previewImage } from '../seo';
+import {
+  applyContent,
+  applyMeta,
+  buildSitemap,
+  HOME_FAQ,
+  pageContent,
+  pageMeta,
+  previewImage,
+} from '../seo';
 import worker, { type Env } from '../worker';
 
 const ORIGIN = 'https://goton.fun';
@@ -33,6 +41,15 @@ const apiToken = {
   createdAt: 1_791_916_442_657,
   pairedToken: '0x3600000000000000000000000000000000000000',
 };
+
+const DOCS = 'https://docs.goton.fun';
+const SHELL = '<html><head><title>goton</title></head><body><div id="app"></div></body></html>';
+
+/** The structured data a page carries, parsed back from its JSON-LD script. */
+function jsonLdOf(html: string): { '@graph': Array<Record<string, unknown>> } {
+  const match = html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s);
+  return JSON.parse(match![1]);
+}
 
 describe('seo pageMeta', () => {
   it('gives known pages their own title and canonical', () => {
@@ -100,6 +117,94 @@ describe('seo applyMeta', () => {
   });
 });
 
+describe('seo pageContent', () => {
+  it('gives the homepage an h1, FAQ text and FAQPage data', () => {
+    const content = pageContent(ORIGIN, DOCS, '/', pageMeta(ORIGIN, '/'))!;
+    expect(content.html).toContain('<h1>goton: launch fixed-supply tokens');
+    for (const [question] of HOME_FAQ) expect(content.html).toContain(question);
+    const graph = content.jsonLd['@graph'] as Array<Record<string, unknown>>;
+    expect(graph.map((node) => node['@type'])).toEqual(['WebSite', ['WebPage', 'FAQPage']]);
+    expect(graph[1].mainEntity).toHaveLength(HOME_FAQ.length);
+  });
+
+  it('gives static pages a breadcrumb and nothing to unknown routes', () => {
+    const content = pageContent(ORIGIN, DOCS, '/memestock/', pageMeta(ORIGIN, '/memestock'))!;
+    expect(content.html).toContain('<h1>Memestock: launches with a thesis</h1>');
+    const graph = content.jsonLd['@graph'] as Array<Record<string, unknown>>;
+    expect(graph[1]['@type']).toBe('BreadcrumbList');
+    expect(
+      pageContent(ORIGIN, DOCS, '/profile/0xabc', pageMeta(ORIGIN, '/profile/0xabc')),
+    ).toBeNull();
+  });
+
+  it('lists the latest launches on Explore', () => {
+    const listed = [{ address: TOKEN, name: 'Moon', symbol: 'MOON' }];
+    const content = pageContent(
+      ORIGIN,
+      DOCS,
+      '/launchpad',
+      pageMeta(ORIGIN, '/launchpad'),
+      null,
+      listed,
+    )!;
+    expect(content.html).toContain(
+      `href="${ORIGIN}/token/${TOKEN.toLowerCase()}">Moon ($MOON)</a>`,
+    );
+    const page = (content.jsonLd['@graph'] as Array<Record<string, unknown>>)[0];
+    expect(page['@type']).toBe('CollectionPage');
+  });
+
+  it('describes a token with its facts, escaped, and only https links', () => {
+    const token = {
+      ...apiToken,
+      chainName: 'Arc',
+      marketCapUsd: 2_300_000,
+      priceUsd: 0.0023,
+      deployer: '0xED654C622F3FB49C6C81A5BAC091B015669DB799',
+      socials: { twitter: 'https://x.com/moon', website: 'javascript:alert(1)', telegram: '' },
+    };
+    const meta = pageMeta(ORIGIN, `/token/${TOKEN}`, token);
+    const content = pageContent(ORIGIN, DOCS, `/token/${TOKEN}`, meta, token)!;
+    expect(content.html).toContain('<h1>Moon ($MOON)</h1>');
+    expect(content.html).toContain('A &lt;token&gt; &amp; a &quot;thesis&quot;');
+    expect(content.html).toContain(`<dd>${TOKEN.toLowerCase()}</dd>`);
+    expect(content.html).toContain('<dd>$2.30M</dd>');
+    expect(content.html).toContain('<dd>$0.00230</dd>');
+    expect(content.html).toContain('https://explorer.arc.io/token/');
+    expect(content.html).toContain('https://x.com/moon');
+    expect(content.html).not.toContain('javascript:');
+    const entity = (content.jsonLd['@graph'] as Array<Record<string, unknown>>)[1];
+    expect(entity.identifier).toEqual({
+      '@type': 'PropertyValue',
+      propertyID: 'Arc contract address',
+      value: TOKEN.toLowerCase(),
+    });
+    expect(entity.sameAs).toEqual([
+      `https://explorer.arc.io/token/${TOKEN.toLowerCase()}`,
+      'https://x.com/moon',
+    ]);
+  });
+
+  it('keeps token text from closing the JSON-LD script', () => {
+    const token = { ...apiToken, name: '</script><script>alert(1)</script>' };
+    const meta = pageMeta(ORIGIN, `/token/${TOKEN}`, token);
+    const html = applyContent(SHELL, pageContent(ORIGIN, DOCS, `/token/${TOKEN}`, meta, token));
+    expect(html).not.toContain('<script>alert(1)');
+    expect(html.match(/<script/g)).toHaveLength(1);
+    const entity = jsonLdOf(html)['@graph'][1];
+    expect(entity.name).toBe('</script><script>alert(1)</script> (MOON)');
+  });
+
+  it('fills the empty app shell and adds the JSON-LD to <head>', () => {
+    const content = pageContent(ORIGIN, DOCS, '/feed', pageMeta(ORIGIN, '/feed'));
+    const html = applyContent(SHELL, content);
+    expect(html).toContain('<div id="app"><main class="seo-static"><nav aria-label="Breadcrumb">');
+    expect(html.indexOf('application/ld+json')).toBeLessThan(html.indexOf('</head>'));
+    expect(applyContent('<div id="root"></div>', content)).toBe('<div id="root"></div>');
+    expect(applyContent(SHELL, null)).toBe(SHELL);
+  });
+});
+
 describe('seo buildSitemap', () => {
   it('lists static pages and unique token pages', () => {
     const xml = buildSitemap(
@@ -147,6 +252,45 @@ describe('edge worker SEO', () => {
     expect(html).toContain('<title>Moon ($MOON) · $2.30M market cap · goton</title>');
     expect(html).toContain('content="A &lt;token&gt; &amp; a &quot;thesis&quot;"');
     expect(html).toContain(`href="${ORIGIN}/token/${TOKEN.toLowerCase()}"`);
+  });
+
+  it('renders the token page text and structured data into the app shell', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        Response.json({
+          success: true,
+          data: { token: apiToken, marketData: { marketCapUsd: 2_300_000, isGraduated: true } },
+        }),
+      ),
+    );
+    const res = await worker.fetch(new Request(`${ORIGIN}/token/${TOKEN}`), {
+      ...env(),
+      ASSETS: {
+        fetch: async () => new Response(SHELL, { headers: { 'content-type': 'text/html' } }),
+      },
+    });
+    const html = await res.text();
+    expect(html).toContain('<h1>Moon ($MOON)</h1>');
+    expect(html).toContain('<dd>Trading in a locked Uniswap v4 pool</dd>');
+    expect(jsonLdOf(html)['@graph'][1]['@id']).toBe(`${ORIGIN}/token/${TOKEN.toLowerCase()}#token`);
+  });
+
+  it('links the latest launches from Explore', async () => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL) =>
+      Response.json({ success: true, data: [{ token: apiToken }] }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const res = await worker.fetch(new Request(`${ORIGIN}/launchpad`), {
+      ...env(),
+      ASSETS: {
+        fetch: async () => new Response(SHELL, { headers: { 'content-type': 'text/html' } }),
+      },
+    });
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe('https://api.test/api/tokens?limit=30');
+    expect(await res.text()).toContain(
+      `<a href="${ORIGIN}/token/${TOKEN.toLowerCase()}">Moon ($MOON)</a>`,
+    );
   });
 
   it('keeps the default meta when the API is down', async () => {

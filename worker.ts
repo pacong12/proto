@@ -1,4 +1,12 @@
-import { applyMeta, buildSitemap, pageMeta, type SeoToken } from './seo';
+import {
+  applyContent,
+  applyMeta,
+  buildSitemap,
+  pageContent,
+  pageMeta,
+  type ListedToken,
+  type SeoToken,
+} from './seo';
 
 export interface Env {
   ASSETS: {
@@ -377,9 +385,19 @@ interface ApiToken {
   logo?: string;
   createdAt?: number;
   pairedToken?: string;
+  isGraduated?: boolean;
+  deployer?: string;
+  socials?: Record<string, string>;
 }
 
-function toSeoToken(token: ApiToken, marketCapUsd?: number): SeoToken {
+interface ApiMarketData {
+  marketCapUsd?: number;
+  priceUsd?: number;
+  volume24hUsd?: number;
+  isGraduated?: boolean;
+}
+
+function toSeoToken(token: ApiToken, market?: ApiMarketData): SeoToken {
   return {
     address: token.address,
     name: token.name,
@@ -387,7 +405,12 @@ function toSeoToken(token: ApiToken, marketCapUsd?: number): SeoToken {
     description: token.description,
     logo: token.logo,
     createdAt: token.createdAt,
-    marketCapUsd,
+    marketCapUsd: market?.marketCapUsd,
+    priceUsd: market?.priceUsd,
+    volume24hUsd: market?.volume24hUsd,
+    isGraduated: market?.isGraduated ?? token.isGraduated,
+    deployer: token.deployer,
+    socials: token.socials,
     chainName: (token.pairedToken ?? '').toLowerCase() === ARC_USDC ? 'Arc' : 'Robinhood Chain',
   };
 }
@@ -397,15 +420,27 @@ export async function withPageMeta(response: Response, url: URL, env: Env): Prom
   try {
     const html = await response.clone().text();
     let token: SeoToken | null = null;
+    let listed: ListedToken[] = [];
     const match = url.pathname.match(/^\/token\/(0x[a-fA-F0-9]{40})\/?$/);
     if (match) {
-      const data = await backendJson<{ token: ApiToken; marketData?: { marketCapUsd?: number } }>(
+      const data = await backendJson<{ token: ApiToken; marketData?: ApiMarketData }>(
         env,
         `/api/tokens/${match[1]}`,
       );
-      if (data?.token) token = toSeoToken(data.token, data.marketData?.marketCapUsd);
+      if (data?.token) token = toSeoToken(data.token, data.marketData);
+    } else if (/^\/launchpad\/?$/.test(url.pathname)) {
+      // Links to the latest launches, so crawlers find token pages from the Explore page too.
+      const page = await backendJson<Array<{ token: ApiToken }>>(env, '/api/tokens?limit=30');
+      listed = (page ?? []).map(({ token: t }) => ({
+        address: t.address,
+        name: t.name,
+        symbol: t.symbol,
+      }));
     }
-    const out = applyMeta(html, pageMeta(url.origin, url.pathname, token));
+    const meta = pageMeta(url.origin, url.pathname, token);
+    const docsUrl = env.DOCS_URL || 'https://docs.goton.fun';
+    const content = pageContent(url.origin, docsUrl, url.pathname, meta, token, listed);
+    const out = applyContent(applyMeta(html, meta), content);
     const headers = new Headers(response.headers);
     headers.delete('content-length');
     return new Response(out, { status: response.status, statusText: response.statusText, headers });

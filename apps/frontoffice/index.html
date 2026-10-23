@@ -7,6 +7,19 @@
 
     <!-- Google Analytics loads from src/lib/analytics.ts after cookie consent. -->
 
+    <!--
+      The edge worker renders each page's text into #app for readers without JavaScript (search
+      and AI crawlers). Browsers that run the app hide it until Vue replaces it on mount.
+    -->
+    <script>
+      document.documentElement.classList.add('js');
+    </script>
+    <style>
+      .js .seo-static {
+        display: none;
+      }
+    </style>
+
     <!-- Primary Meta Tags -->
     <title>goton · Launch fixed-supply tokens on Robinhood & Arc Chain</title>
     <meta name="title" content="goton · Launch fixed-supply tokens on Robinhood & Arc Chain" />
