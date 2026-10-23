@@ -142,7 +142,8 @@ function buildCsp(reportUri?: string): string {
   const directives: string[] = [
     "default-src 'self'",
     // static.cloudflareinsights.com: Cloudflare Web Analytics beacon (cookie-free), injected by Cloudflare.
-    "script-src 'self' 'unsafe-inline' blob: https://static.cloudflareinsights.com",
+    // www.googletagmanager.com: Tag Manager and gtag.js, loaded only after cookie consent.
+    "script-src 'self' 'unsafe-inline' blob: https://static.cloudflareinsights.com https://www.googletagmanager.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com https://fonts.reown.com data:",
     [

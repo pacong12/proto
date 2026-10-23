@@ -1,10 +1,11 @@
 /**
- * Google Analytics, loaded only after the visitor accepts the cookie banner (GRC-04) and only once
+ * Google Tag Manager and Google Analytics, loaded only after the visitor accepts the cookie banner (GRC-04) and only once
  * the browser is idle, so gtag.js (~175 KB) never competes with the first paint. Consent can be
  * withdrawn from the footer "Cookie settings" link: tracking stops and the _ga cookies are removed.
  */
 export const COOKIE_CONSENT_KEY = 'proto_cookie_consent_accepted_v1';
 const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID || 'G-WEG4HF874Z';
+const GTM_CONTAINER_ID = import.meta.env.VITE_GTM_ID || 'GTM-5SS9JQGV';
 
 export type CookieChoice = 'accepted' | 'declined' | null;
 
@@ -44,9 +45,16 @@ function whenIdle(task: () => void): void {
   else window.addEventListener('load', run, { once: true });
 }
 
-/** Injects gtag.js once. Call only after consent. */
+function addScript(src: string): void {
+  const script = document.createElement('script');
+  script.async = true;
+  script.src = src;
+  document.head.appendChild(script);
+}
+
+/** Injects gtag.js and the Tag Manager container once. Call only after consent. */
 export function loadAnalytics(): void {
-  if (loaded || typeof window === 'undefined' || !GA_MEASUREMENT_ID) return;
+  if (loaded || typeof window === 'undefined' || (!GA_MEASUREMENT_ID && !GTM_CONTAINER_ID)) return;
   loaded = true;
   whenIdle(() => {
     window.dataLayer = window.dataLayer || [];
@@ -55,12 +63,16 @@ export function loadAnalytics(): void {
       // eslint-disable-next-line prefer-rest-params
       window.dataLayer!.push(arguments);
     };
-    window.gtag('js', new Date());
-    window.gtag('config', GA_MEASUREMENT_ID);
-    const script = document.createElement('script');
-    script.async = true;
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
-    document.head.appendChild(script);
+    window.gtag('consent', 'default', { analytics_storage: 'granted', ad_storage: 'denied' });
+    if (GTM_CONTAINER_ID) {
+      window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+      addScript(`https://www.googletagmanager.com/gtm.js?id=${GTM_CONTAINER_ID}`);
+    }
+    if (GA_MEASUREMENT_ID) {
+      window.gtag('js', new Date());
+      window.gtag('config', GA_MEASUREMENT_ID);
+      addScript(`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`);
+    }
   });
 }
 

@@ -24,7 +24,7 @@ Goton uses browser storage for essential app settings. Google Analytics is the o
 
 ## 3. Optional Analytics Cookies
 
-If you accept analytics, Google Analytics (`gtag.js`) sets the cookies `_ga` and `_ga_<id>` (up to 2 years) and sends page-view and device data to Google, so we can understand how the app is used. If you decline, or close the banner without choosing, Google Analytics is not loaded and no analytics cookies are set.
+If you accept analytics, the app loads Google Tag Manager (`gtm.js`) and Google Analytics (`gtag.js`). Google Analytics sets the cookies `_ga` and `_ga_<id>` (up to 2 years) and sends page-view and device data to Google, so we can understand how the app is used. If you decline, or close the banner without choosing, Google Analytics is not loaded and no analytics cookies are set.
 
 - **No advertising trackers**: we do not load Facebook Pixel or other advertising or behavioral trackers.
 - **No fingerprinting**: we do not fingerprint your hardware, browser canvas, or location.
