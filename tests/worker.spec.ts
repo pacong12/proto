@@ -87,6 +87,18 @@ describe('edge worker indexing', () => {
   });
 });
 
+describe('edge worker www redirect', () => {
+  it('sends www to the apex with a permanent redirect, keeping path and query', async () => {
+    const res = await worker.fetch(new Request('https://www.goton.fun/sitemap.xml?x=1'), makeEnv());
+    expect(res.status).toBe(301);
+    expect(res.headers.get('location')).toBe('https://goton.fun/sitemap.xml?x=1');
+  });
+
+  it('serves the apex directly', async () => {
+    expect((await get('/', makeEnv())).status).toBe(200);
+  });
+});
+
 describe('edge worker dotfile guard', () => {
   it('serves /.well-known/security.txt', async () => {
     expect((await get('/.well-known/security.txt', makeEnv())).status).toBe(200);
