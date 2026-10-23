@@ -1,4 +1,4 @@
-import { UNDEPLOYED, type NetworkConfig } from './types';
+import type { NetworkConfig } from './types';
 import { getEnv, getEnvBigInt } from './env';
 
 /**
