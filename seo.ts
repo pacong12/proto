@@ -126,12 +126,11 @@ export function pageMeta(origin: string, pathname: string, token?: SeoToken | nu
 const escapeAttr = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 /** Replace one `<meta {attr}="{key}" content="…">` tag, whatever its line breaks. */
 function setMeta(html: string, attr: 'name' | 'property', key: string, value: string): string {
-  const re = new RegExp(
-    `<meta\\s+${attr}="${key.replace(/[:]/g, '\\:')}"\\s+content="[^"]*"\\s*/?>`,
-    'i',
-  );
+  const re = new RegExp(`<meta\\s+${attr}="${escapeRegExp(key)}"\\s+content="[^"]*"\\s*/?>`, 'i');
   return html.replace(re, `<meta ${attr}="${key}" content="${escapeAttr(value)}" />`);
 }
 
