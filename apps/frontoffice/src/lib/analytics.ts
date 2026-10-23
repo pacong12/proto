@@ -94,7 +94,9 @@ export function disableAnalytics(): void {
     const name = cookie.split('=')[0].trim();
     if (name !== '_ga' && !name.startsWith('_ga_')) continue;
     for (const domain of domains) {
-      document.cookie = `${name}=; Max-Age=0; path=/${domain ? `; domain=${domain}` : ''}`;
+      // A past Expires as well as Max-Age=0: some cookie stores treat Max-Age=0 as "expires now"
+      // and keep the cookie for the rest of that millisecond.
+      document.cookie = `${name}=; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/${domain ? `; domain=${domain}` : ''}`;
     }
   }
 }
