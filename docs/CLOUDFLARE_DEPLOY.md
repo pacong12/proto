@@ -12,9 +12,9 @@
 
 ## Environment Variables (Cloudflare Pages Dashboard)
 
-| Variable                | Value                       | Notes                      |
-| ----------------------- | --------------------------- | -------------------------- |
-| `VITE_REOWN_PROJECT_ID` | `<your_reown_project_id>`   | Required for wallet modal  |
+| Variable                | Value                     | Notes                      |
+| ----------------------- | ------------------------- | -------------------------- |
+| `VITE_REOWN_PROJECT_ID` | `<your_reown_project_id>` | Required for wallet modal  |
 | `VITE_API_BASE_URL`     | `https://api.goton.cloud` | URL of deployed API server |
 
 ## Files Added
