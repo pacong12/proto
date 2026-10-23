@@ -46,6 +46,17 @@ bun run build          # Production bundling for all applications
 bun run ci             # Full CI pipeline execution
 ```
 
+These scripts run through Nx (`nx run-many`), with lint, typecheck and test results cached in
+`.nx/cache`. The projects are the six workspaces in `apps/` and `packages/`, `contracts` (Foundry,
+`contracts/project.json`) and `@goton/source` (the edge worker, `seo.ts` and `tests/`). Run one
+project or target with `bun run nx run <project>:<target>`, for example
+`bun run nx run @goton/api:test` or `bun run nx run contracts:gas-snapshot`, and list them with
+`bun run nx show projects`.
+
+Use `bun run nx` rather than a bare `bunx nx`: the script sets `NX_LOAD_DOT_ENV_FILES=false`, so Nx
+does not load the root `.env` (the API's runtime secrets and addresses) into every task. The
+frontoffice and docs builds are not cached because their output depends on `VITE_*` variables.
+
 ## Herdr Workspaces & Multi-Worktree Orchestration
 
 Herdr server is fully configured and ready for parallel agent orchestration:
