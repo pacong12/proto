@@ -92,7 +92,7 @@ export async function executeCurveSwap(
       // fallback
     }
 
-    let currentAllowance = 0n;
+    let currentAllowance: bigint;
     try {
       currentAllowance = await publicClient.readContract({
         address: params.tokenAddress,
