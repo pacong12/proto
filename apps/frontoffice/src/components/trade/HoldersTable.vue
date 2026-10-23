@@ -43,7 +43,11 @@
             <TableCell class="py-2.5 px-3 whitespace-nowrap">
               <div class="flex items-center gap-1.5">
                 <Jazzicon :address="holder.address" :size="14" />
+                <span v-if="contractLabel(holder.address)" class="text-foreground font-medium">
+                  {{ contractLabel(holder.address) }}
+                </span>
                 <RouterLink
+                  v-else
                   :to="'/' + getUserIdentity(holder.address).name"
                   class="text-foreground font-medium hover:underline"
                 >
@@ -64,10 +68,7 @@
                   size="sm"
                 />
                 <TraderTagBadge
-                  v-else-if="
-                    holder.percent >= 3.0 &&
-                    holder.address.toLowerCase() !== lockerAddress.toLowerCase()
-                  "
+                  v-else-if="holder.percent >= 3.0 && !contractLabel(holder.address)"
                   tag="whale"
                   size="sm"
                 />
@@ -89,7 +90,7 @@
               </div>
             </TableCell>
             <TableCell class="py-2.5 px-3 whitespace-nowrap text-right text-foreground">
-              {{ formatTokenNumber(holder.balance) }}
+              {{ formatTokenNumber(wholeTokens(holder.balance)) }}
             </TableCell>
             <TableCell class="py-2.5 px-3 whitespace-nowrap text-right">
               <a
@@ -150,6 +151,10 @@ interface Props {
   deployer?: string;
   lockerAddress?: string;
   poolAddress?: string;
+  curveAddress?: string;
+  /** Token decimals: holder balances arrive in raw units. */
+  decimals?: number;
+  isGraduated?: boolean;
   explorerUrl?: string;
 }
 
@@ -158,6 +163,9 @@ const props = withDefaults(defineProps<Props>(), {
   deployer: '',
   lockerAddress: '',
   poolAddress: '',
+  curveAddress: '',
+  decimals: 18,
+  isGraduated: false,
   explorerUrl: '',
 });
 
@@ -190,11 +198,34 @@ watch(
   },
 );
 
+/** Raw balance (smallest units) to whole tokens. */
+function wholeTokens(raw: string | number | bigint): number {
+  try {
+    const n = BigInt(String(raw).split('.')[0]);
+    const unit = 10n ** BigInt(props.decimals);
+    return Number(n / unit) + Number(n % unit) / Number(unit);
+  } catch {
+    return Number(raw) || 0;
+  }
+}
+
+/** Protocol contracts holding supply are named, not shown as a user profile. */
+function contractLabel(addr: string): string | null {
+  const lower = addr.toLowerCase();
+  if (props.curveAddress && lower === props.curveAddress.toLowerCase()) {
+    return props.isGraduated ? 'Pool' : 'Bonding curve';
+  }
+  if (props.poolAddress && lower === props.poolAddress.toLowerCase()) {
+    return props.isGraduated ? 'Pool' : 'Bonding curve';
+  }
+  if (props.lockerAddress && lower === props.lockerAddress.toLowerCase()) return 'LP Locker';
+  return null;
+}
+
 function getHolderBadge(addr: string): string | null {
   const lower = addr.toLowerCase();
-  if (props.lockerAddress && lower === props.lockerAddress.toLowerCase()) return 'LP Locker';
+  if (contractLabel(addr)) return null;
   if (props.deployer && lower === props.deployer.toLowerCase()) return 'Creator';
-  if (props.poolAddress && lower === props.poolAddress.toLowerCase()) return 'Pool';
   return null;
 }
 </script>

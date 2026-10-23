@@ -39,10 +39,10 @@
 
     <!-- Navigation Filter Pills (Shadcn Tabs variant="line") + Search Bar (identical to Explore) -->
     <div
-      class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-border text-sm"
+      class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-2 border-b border-border text-sm"
     >
       <!-- Filter Tabs -->
-      <Tabs v-model="selectedSort" class="w-full md:w-auto">
+      <Tabs v-model="selectedSort" class="w-full lg:w-auto">
         <TabsList
           variant="line"
           class="overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0 w-auto"
@@ -54,7 +54,7 @@
       </Tabs>
 
       <!-- Search Bar -->
-      <div class="relative w-full md:w-64 shrink-0">
+      <div class="relative w-full lg:w-64 shrink-0">
         <Search class="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-2.5" />
         <Input
           v-model="searchQuery"
@@ -99,19 +99,36 @@
       "
     >
       <template #action>
-        <Button
-          v-if="!searchQuery"
-          @click="$emit('selectTab', 'create')"
-          variant="default"
-          size="default"
-          class="font-bold gap-2 shadow-md cursor-pointer"
-        >
-          <Plus class="w-4 h-4" />
-          {{ t('launchNow') }}
-        </Button>
-        <Button v-else @click="searchQuery = ''" variant="outline" size="sm" class="cursor-pointer">
-          Clear search
-        </Button>
+        <div class="flex flex-wrap items-center justify-center gap-2">
+          <Button
+            v-if="!searchQuery"
+            @click="$emit('selectTab', 'create')"
+            variant="default"
+            size="default"
+            class="font-bold gap-2 shadow-md cursor-pointer"
+          >
+            <Plus class="w-4 h-4" />
+            {{ t('launchNow') }}
+          </Button>
+          <Button
+            v-if="!searchQuery"
+            variant="outline"
+            size="default"
+            class="cursor-pointer"
+            @click="router.push('/launchpad')"
+          >
+            {{ t('browseAllCoins') }}
+          </Button>
+          <Button
+            v-else
+            @click="searchQuery = ''"
+            variant="outline"
+            size="sm"
+            class="cursor-pointer"
+          >
+            Clear search
+          </Button>
+        </div>
       </template>
     </Empty>
 
@@ -202,10 +219,7 @@
             </div>
 
             <p class="text-sm leading-relaxed text-muted-foreground line-clamp-2">
-              {{
-                item.token.description ||
-                `Community-backed fixed-supply memestock on ${activeNetwork.name}.`
-              }}
+              {{ item.token.description }}
             </p>
 
             <div class="flex items-center gap-2 flex-wrap text-sm">
@@ -227,7 +241,22 @@
               >
                 {{ item.token.taxConfig?.revenueSplit?.buyback }}% Buyback
               </Badge>
-              <span class="text-muted-foreground ml-auto">Pool: 1%</span>
+              <span
+                class="ml-auto text-xs text-emerald-500 font-semibold whitespace-nowrap"
+                :title="t('creatorHoldsHint')"
+              >
+                {{ t('creatorHolds') }} {{ formatPct(item.signals.creatorHoldsPct) }}
+              </span>
+            </div>
+            <div class="flex items-center gap-3 text-xs text-muted-foreground">
+              <span>{{ item.signals.traders1h }} {{ t('traders1h') }}</span>
+              <span>{{ item.signals.traders24h }} {{ t('traders24h') }}</span>
+              <span
+                v-if="item.signals.buyPressure1h !== null"
+                :class="item.signals.buyPressure1h >= 0.5 ? 'text-emerald-500' : 'text-rose-500'"
+              >
+                {{ Math.round(item.signals.buyPressure1h * 100) }}% {{ t('buys1h') }}
+              </span>
             </div>
           </div>
 
@@ -250,7 +279,7 @@
                 </span>
               </div>
             </div>
-            <div class="flex justify-between text-sm pt-1">
+            <div v-if="item.token.version === 'v2'" class="flex justify-between text-sm pt-1">
               <span class="text-muted-foreground">Graduation ({{ graduationTargetDisplay }})</span>
               <span class="text-foreground font-semibold">
                 {{ (item.marketData.graduationProgress * 100).toFixed(1) }}%
@@ -258,7 +287,11 @@
             </div>
 
             <!-- Shadcn Progress -->
-            <Progress :model-value="item.marketData.graduationProgress * 100" class="h-1.5" />
+            <Progress
+              v-if="item.token.version === 'v2'"
+              :model-value="item.marketData.graduationProgress * 100"
+              class="h-1.5"
+            />
           </div>
         </Card>
       </div>
@@ -310,13 +343,19 @@ const tokenStore = useTokenStore();
 const router = useRouter();
 const { isPinned, togglePin, pinnedTokens } = usePinnedTokens();
 
+function formatPct(pct: number): string {
+  if (pct <= 0) return '0%';
+  if (pct < 0.01) return '<0.01%';
+  return `${pct < 1 ? pct.toFixed(2) : pct.toFixed(1)}%`;
+}
+
 function navigateToDeployer(deployerAddress: string) {
   if (!deployerAddress) return;
   router.push(`/${getUserIdentity(deployerAddress).name}`);
 }
 
 const memestockTabs = computed(() => [
-  { label: 'Trending', value: 'Trending' },
+  { label: t('memestockMomentum'), value: 'Trending' },
   { label: 'New', value: 'Newest' },
   { label: 'Dividends', value: 'Dividends' },
   { label: 'Top Gainers', value: 'Top Gainers' },
@@ -328,7 +367,18 @@ const selectedSort = ref('Trending');
 const searchQuery = ref('');
 const loading = ref(true);
 const apiError = ref<string | null>(null);
-const items = ref<Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }>>([]);
+interface MemestockSignals {
+  creatorHoldsPct: number;
+  traders1h: number;
+  traders24h: number;
+  buyPressure1h: number | null;
+  score: number;
+}
+// Server-curated (GET /api/memestock): a written thesis and a creator who still holds a bought
+// position, already ranked by momentum.
+const items = ref<
+  Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData; signals: MemestockSignals }>
+>([]);
 
 const currentPage = ref(1);
 const pageSize = 9;
@@ -388,13 +438,8 @@ const filteredAndSortedItems = computed(() => {
       (a, b) => (b.marketData.volume24hUsd || 0) - (a.marketData.volume24hUsd || 0),
     );
   }
-  // Default 'Trending'
-  return [...list].sort(
-    (a, b) =>
-      (b.marketData.volume24hUsd || 0) +
-      b.marketData.graduationProgress * 1000 -
-      ((a.marketData.volume24hUsd || 0) + a.marketData.graduationProgress * 1000),
-  );
+  // Default: momentum, as ranked by the server
+  return list;
 });
 
 const paginatedItems = computed(() => {
@@ -408,9 +453,13 @@ async function fetchTokens() {
   try {
     const envelope = await apiFetch<{
       success: boolean;
-      data: Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }>;
+      data: Array<{
+        token: LaunchedTokenEntity;
+        marketData: TokenMarketData;
+        signals: MemestockSignals;
+      }>;
       error?: { message?: string };
-    }>('/api/tokens');
+    }>(`/api/memestock?chainId=${activeNetwork.value.chainId}`);
     if (envelope.success && Array.isArray(envelope.data)) {
       items.value = envelope.data;
     } else {

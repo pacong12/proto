@@ -76,12 +76,12 @@
             </TableCell>
             <TableCell class="py-2.5 px-3 text-right">
               <span class="text-foreground font-medium">
-                ${{ trader.buyVolumeUsd.toLocaleString() }}
+                {{ formatCompactUsd(trader.buyVolumeUsd) }}
               </span>
             </TableCell>
             <TableCell class="py-2.5 px-3 text-right">
               <span class="text-muted-foreground font-medium">
-                ${{ trader.sellVolumeUsd.toLocaleString() }}
+                {{ formatCompactUsd(trader.sellVolumeUsd) }}
               </span>
             </TableCell>
             <TableCell class="py-2.5 px-3 text-right">
@@ -169,7 +169,7 @@ import {
 import { Pagination } from '@/components/ui/pagination';
 import { Jazzicon } from '@/components/ui/avatar';
 import { TraderTagBadge, type TraderTagType } from '@/components/ui/badge';
-import { formatTokenNumber } from '@/lib/utils';
+import { formatCompactUsd, formatTokenNumber } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { calculateRealizedPnl, calculateTraderTotalPnl } from '@goton/math-sdk';
 

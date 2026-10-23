@@ -2,14 +2,14 @@
   <div class="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-xs">
     <!-- Graduation Progress Bar Strip -->
     <div class="space-y-2.5">
-      <div class="flex items-center justify-between text-xs">
-        <div class="flex items-center gap-2">
-          <span class="font-bold text-foreground">
+      <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="font-bold text-foreground truncate">
             {{ currentToken.version === 'v2' ? t('bondingCurveProgress') : t('uniswapLiquidity') }}
           </span>
           <Badge
             :variant="currentMarketData.isGraduated ? 'default' : 'outline'"
-            class="text-xs h-4 px-1.5 uppercase"
+            class="text-xs h-4 px-1.5 uppercase whitespace-nowrap shrink-0"
           >
             {{
               currentMarketData.isGraduated
@@ -18,7 +18,7 @@
             }}
           </Badge>
         </div>
-        <span class="text-muted-foreground text-xs">
+        <span class="text-muted-foreground text-xs whitespace-nowrap">
           {{ currentMarketData.pairedPrincipalWeth }} /
           {{ currentMarketData.graduationThresholdWeth }} {{ currencySymbol }}
         </span>
@@ -32,7 +32,6 @@
           v-if="currentToken.version === 'v2' && !currentMarketData.isGraduated"
           class="flex items-center gap-1.5 text-foreground"
         >
-          <Sparkles class="w-3.5 h-3.5 text-primary" />
           <span>{{ t('graduatesAt100') }}</span>
         </span>
         <span
@@ -201,7 +200,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Sparkles, Check, Copy, ExternalLink } from 'lucide-vue-next';
+import { Check, Copy, ExternalLink } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';

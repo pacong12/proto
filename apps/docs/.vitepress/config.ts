@@ -71,6 +71,41 @@ export default defineConfig({
   transformPageData(pageData) {
     pageData.frontmatter = JSON.parse(renderSiteUrls(JSON.stringify(pageData.frontmatter), SITE));
   },
+  // Per-page canonical, Open Graph and X tags, plus hreflang links between the EN / ID / ZH copies
+  // of a page (the static head only had one title and description for the whole site).
+  transformHead({ pageData, title, description, siteConfig }) {
+    const page = pageData.relativePath.replace(/(^|\/)index\.md$/, '$1').replace(/\.md$/, '');
+    const url = `${SITE.docsUrl}/${page}`;
+    const head: [string, Record<string, string>][] = [
+      ['link', { rel: 'canonical', href: url }],
+      ['meta', { property: 'og:url', content: url }],
+      ['meta', { property: 'og:title', content: title }],
+      ['meta', { property: 'og:description', content: description }],
+      ['meta', { name: 'twitter:title', content: title }],
+      ['meta', { name: 'twitter:description', content: description }],
+    ];
+    const base = page.replace(/^(id|zh)\//, '');
+    const variants: Array<[string, string]> = [
+      ['en', base],
+      ['id', `id/${base}`],
+      ['zh', `zh/${base}`],
+    ];
+    const exists = (p: string) =>
+      fs.existsSync(
+        path.join(siteConfig.srcDir, p === '' || p.endsWith('/') ? `${p}index.md` : `${p}.md`),
+      );
+    const present = variants.filter(([, p]) => exists(p));
+    if (present.length > 1) {
+      for (const [lang, p] of present) {
+        head.push(['link', { rel: 'alternate', hreflang: lang, href: `${SITE.docsUrl}/${p}` }]);
+      }
+      head.push([
+        'link',
+        { rel: 'alternate', hreflang: 'x-default', href: `${SITE.docsUrl}/${base}` },
+      ]);
+    }
+    return head;
+  },
   buildEnd(siteConfig) {
     for (const file of SITE_URL_FILES) {
       const target = path.join(siteConfig.outDir, file);
@@ -142,26 +177,11 @@ export default defineConfig({
     [
       'meta',
       {
-        property: 'og:title',
-        content: 'Goton User Guide · Fair Token Launchpad',
-      },
-    ],
-    [
-      'meta',
-      {
-        property: 'og:description',
-        content:
-          'Clean, step-by-step user guide and knowledge base for trading, launching, and exploring tokens on Robinhood Chain.',
-      },
-    ],
-    [
-      'meta',
-      {
         property: 'og:image',
-        content: `${SITE.docsUrl}/opengraph-docs.svg`,
+        content: `${SITE.docsUrl}/opengraph-docs.png`,
       },
     ],
-    ['meta', { property: 'og:image:type', content: 'image/svg+xml' }],
+    ['meta', { property: 'og:image:type', content: 'image/png' }],
     ['meta', { property: 'og:image:width', content: '1200' }],
     ['meta', { property: 'og:image:height', content: '630' }],
     [
@@ -176,23 +196,8 @@ export default defineConfig({
     [
       'meta',
       {
-        name: 'twitter:title',
-        content: 'Goton User Guide · Fair Token Launchpad',
-      },
-    ],
-    [
-      'meta',
-      {
-        name: 'twitter:description',
-        content:
-          'Clean, step-by-step user guide and knowledge base for trading, launching, and exploring tokens on Robinhood Chain.',
-      },
-    ],
-    [
-      'meta',
-      {
         name: 'twitter:image',
-        content: `${SITE.docsUrl}/opengraph-docs.svg`,
+        content: `${SITE.docsUrl}/opengraph-docs.png`,
       },
     ],
     [
@@ -270,6 +275,7 @@ export default defineConfig({
             items: [
               { text: 'How to Launch a Token', link: '/protocol/launches' },
               { text: 'Trading & Swaps Guide', link: '/protocol/trading-guide' },
+              { text: 'Limit, Take-Profit & Stop-Loss', link: '/protocol/advanced-orders' },
               { text: 'Anti-Snipe & Fair Launch', link: '/protocol/anti-snipe' },
             ],
           },
@@ -279,6 +285,7 @@ export default defineConfig({
             items: [
               { text: 'Creator Fees & Rewards', link: '/protocol/fees-and-burns' },
               { text: 'Community Takeovers (CTO)', link: '/protocol/community-takeovers' },
+              { text: 'Feed, Calls, Memestock & Following', link: '/protocol/social' },
             ],
           },
           {
@@ -287,6 +294,9 @@ export default defineConfig({
             items: [
               { text: 'Network Setup (Robinhood & Arc)', link: '/integration/network' },
               { text: 'Verified Smart Contracts', link: '/integration/contracts' },
+              { text: 'Public API', link: '/integration/api' },
+              { text: 'For AI Agents', link: '/integration/agents' },
+              { text: 'DEX & Aggregator Listing', link: '/integration/listing-submission' },
             ],
           },
           {
@@ -330,6 +340,7 @@ export default defineConfig({
             items: [
               { text: 'Cara Meluncurkan Token', link: '/id/protocol/launches' },
               { text: 'Panduan Trading & Swap', link: '/id/protocol/trading-guide' },
+              { text: 'Limit, Take-Profit & Stop-Loss', link: '/id/protocol/advanced-orders' },
               { text: 'Anti-Snipe & Fair Launch', link: '/id/protocol/anti-snipe' },
             ],
           },
@@ -339,6 +350,7 @@ export default defineConfig({
             items: [
               { text: 'Fee Kreator & Reward', link: '/id/protocol/fees-and-burns' },
               { text: 'Pengambilalihan Komunitas (CTO)', link: '/id/protocol/community-takeovers' },
+              { text: 'Feed, Call, Memestock & Follow', link: '/id/protocol/social' },
             ],
           },
           {
@@ -347,6 +359,12 @@ export default defineConfig({
             items: [
               { text: 'Konfigurasi Jaringan', link: '/id/integration/network' },
               { text: 'Kontrak Pintar Terverifikasi', link: '/id/integration/contracts' },
+              { text: 'Public API (English)', link: '/integration/api' },
+              { text: 'Untuk AI Agent (English)', link: '/integration/agents' },
+              {
+                text: 'Listing DEX & Agregator (English)',
+                link: '/integration/listing-submission',
+              },
             ],
           },
           {
@@ -390,6 +408,7 @@ export default defineConfig({
             items: [
               { text: '如何发行代币', link: '/zh/protocol/launches' },
               { text: '交易与兑换指南', link: '/zh/protocol/trading-guide' },
+              { text: '限价、止盈与止损', link: '/zh/protocol/advanced-orders' },
               { text: '防抢跑与公平发射', link: '/zh/protocol/anti-snipe' },
             ],
           },
@@ -399,6 +418,7 @@ export default defineConfig({
             items: [
               { text: '创作者分成与回购销毁', link: '/zh/protocol/fees-and-burns' },
               { text: '社区接管 (CTO)', link: '/zh/protocol/community-takeovers' },
+              { text: '动态、喊单、Memestock 与关注', link: '/zh/protocol/social' },
             ],
           },
           {
@@ -407,6 +427,9 @@ export default defineConfig({
             items: [
               { text: '网络配置 (Robinhood & Arc)', link: '/zh/integration/network' },
               { text: '已验证智能合约', link: '/zh/integration/contracts' },
+              { text: '公开 API（英文）', link: '/integration/api' },
+              { text: 'AI 代理（英文）', link: '/integration/agents' },
+              { text: 'DEX 与聚合器上架（英文）', link: '/integration/listing-submission' },
             ],
           },
           {

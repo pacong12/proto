@@ -23,7 +23,10 @@
             <!-- Caller Whale Badge with GMGN/Web3Icons SVG -->
             <TraderTagBadge v-if="isWhaleCaller(call)" tag="whale" size="sm" />
           </div>
-          <span class="text-xs text-muted-foreground"> Verified Caller </span>
+          <!-- Every call needs a signature and an on-chain holding, so state the holding itself. -->
+          <span class="text-xs text-muted-foreground">
+            {{ holdingLabel(call) }}
+          </span>
         </div>
       </div>
 
@@ -92,7 +95,7 @@
             :fallback-text="call.tokenSymbol || 'TOK'"
             :width="36"
             :height="36"
-            class="rounded-full border border-border/70 shrink-0 shadow-2xs"
+            class="rounded-lg border border-border/70 shrink-0 shadow-2xs"
           />
           <img
             :src="getChainIcon(call.tokenAddress)"
@@ -363,5 +366,12 @@ function callPnlPct(call: FeedCalloutItem): number {
 function callPnlUsd(call: FeedCalloutItem): number | null {
   return calculateUnrealizedPnl(call.priceAtPost ?? 0, call.tokenPriceUsd ?? 0, call.positionUsd)
     .pnlUsd;
+}
+
+/** The caller's share of supply when they posted (every call is checked on-chain). */
+function holdingLabel(c: { supplyPercent?: number }): string {
+  const pct = c.supplyPercent ?? 0;
+  if (pct <= 0) return 'Holder at call';
+  return `Held ${pct < 0.01 ? '<0.01' : pct < 1 ? pct.toFixed(2) : pct.toFixed(1)}% of supply at call`;
 }
 </script>

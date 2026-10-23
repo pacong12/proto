@@ -17,21 +17,18 @@
     <!-- Hot Movers on Call Widget -->
     <div class="rounded-2xl border border-border/80 bg-card/70 p-4 space-y-3 shadow-2xs">
       <div class="flex items-center justify-between">
-        <h2 class="font-bold text-sm text-foreground flex items-center gap-1.5">
-          <Flame class="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-          <span>Hot Tokens on Call</span>
-        </h2>
-        <span class="text-xs text-muted-foreground uppercase font-bold">Dex Movers</span>
+        <h2 class="font-bold text-sm text-foreground">Top Movers</h2>
+        <span class="text-xs text-muted-foreground uppercase font-bold">24h</span>
       </div>
 
       <Empty
         v-if="hotTokens.length === 0"
-        title="No hot movers"
-        description="No trending tokens on this chain today."
+        title="No movers yet"
+        description="No token on this chain traded in the last 24h."
         class="py-6 border-none bg-muted/20"
       >
         <template #icon>
-          <Flame class="w-5 h-5 text-muted-foreground" />
+          <TrendingUp class="w-5 h-5 text-muted-foreground" />
         </template>
       </Empty>
       <div v-else class="space-y-2">
@@ -52,7 +49,7 @@
                 :fallback-text="tItem.token.symbol"
                 :width="26"
                 :height="26"
-                class="rounded-full shrink-0 border border-border/60"
+                class="rounded-md shrink-0 border border-border/60"
               />
               <img
                 :src="getChainIcon(tItem.token.address)"
@@ -92,7 +89,7 @@
 </template>
 
 <script setup lang="ts">
-import { Search, Flame } from 'lucide-vue-next';
+import { Search, TrendingUp } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { Empty } from '@/components/ui/empty';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';

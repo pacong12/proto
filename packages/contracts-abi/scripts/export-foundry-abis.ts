@@ -118,6 +118,18 @@ const CONTRACTS_TO_EXPORT: ContractExportConfig[] = [
     outputName: 'goton-limit-orders.abi.ts',
     exportVarName: 'gotonLimitOrdersAbi',
   },
+  {
+    sourceFile: 'GotonTeamSplitter.sol',
+    contractName: 'GotonTeamSplitter',
+    outputName: 'goton-team-splitter.abi.ts',
+    exportVarName: 'gotonTeamSplitterAbi',
+  },
+  {
+    sourceFile: 'GotonTeamSplitter.sol',
+    contractName: 'GotonTeamSplitterFactory',
+    outputName: 'goton-team-splitter-factory.abi.ts',
+    exportVarName: 'gotonTeamSplitterFactoryAbi',
+  },
 ];
 
 for (const item of CONTRACTS_TO_EXPORT) {

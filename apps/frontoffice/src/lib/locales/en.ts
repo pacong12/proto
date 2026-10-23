@@ -35,7 +35,7 @@ const messages: Record<string, string> = {
   createToken: 'Create Token',
   trendingFeed: 'Trending Feed',
   memestockSubtitle:
-    'Every launch with a community thesis and verified positions, ranked by momentum.',
+    'Launches with a written thesis whose creator still holds a position they bought, ranked by trading in the last hour.',
   protocolAnalytics: 'Protocol Analytics',
   livePreview: 'Live Preview',
   analyticsSubtitle:
@@ -121,16 +121,16 @@ const messages: Record<string, string> = {
   myProfileAndFees: 'My Profile & Fees',
   copyAddress: 'Copy Address',
   addressCopied: 'Address Copied!',
-  switchManageWallet: 'Switch / Manage Wallet',
+  switchManageWallet: 'Switch Wallet',
   disconnect: 'Disconnect',
   switchToRobinhood: 'Switch to Robinhood',
   noMatchingTokens: 'No matching tokens for',
   typeSearchHint: 'Type token name, ticker, or 0x address...',
   navigateHint: 'Navigate',
   selectHint: 'Select',
-  noMemesTitle: 'No community memes moving yet',
+  noMemesTitle: 'No memestocks yet',
   noMemesDesc:
-    'Be the first to launch a fixed-supply token with a dedicated community narrative on Robinhood Chain & Arc.',
+    'A launch is listed here once it has a written thesis and its creator buys a position and keeps most of it. Every coin is still on Explore.',
   launchNow: 'Launch Now',
   tokenImage: 'Token Image',
   noFileChosen: 'No file chosen',
@@ -390,6 +390,45 @@ const messages: Record<string, string> = {
   footerSplitArc: 'Tax: 20% protocol, rest to your split',
   arcPoolLiveHint:
     'Trades in its locked Uniswap v4 pool from the first block. There is no curve to fill.',
+  memestockMomentum: 'Momentum',
+  creatorHolds: 'Creator holds',
+  creatorHoldsHint: 'Share of supply the creator bought and still holds',
+  traders1h: 'traders 1h',
+  traders24h: 'traders 24h',
+  buys1h: 'buys 1h',
+  browseAllCoins: 'Browse all coins',
+  followAction: 'Follow',
+  followingAction: 'Following',
+  followersLabel: 'Followers',
+  followingLabel: 'Following',
+  noFollowers: 'No followers yet.',
+  noFollowing: 'Not following anyone yet.',
+  followingTab: 'Following',
+  orderHistory: 'History',
+  noOrderHistory: 'No filled or cancelled orders yet.',
+  orderReceived: 'Received',
+  orderCancelledLabel: 'Cancelled',
+  orderFilledLabel: 'Filled',
+  orderFilledToast: 'filled',
+  viewToken: 'View',
+  viewTransaction: 'View transaction',
+  feeRecipients: 'Fee recipients',
+  feeRecipientsHint:
+    'Who receives the creator share of fees and the token tax. Add team wallets to split it with fixed shares.',
+  addTeamWallet: 'Add team wallet',
+  removeTeamWallet: 'Remove wallet',
+  feeRecipientDefault: 'All creator fees and tax go to',
+  teamFeesRobinhood:
+    'A team wallet contract is created before launch. The token tax goes to it from launch; after graduation, route the pool fees to it from your profile (48-hour timelock). Each member withdraws their own share.',
+  teamFeesArc:
+    'A team wallet contract is created before launch. Fees and tax go to you until the payout redirect proposed at launch becomes active after 48 hours (accept it from your profile). Each member withdraws their own share.',
+  teamFeesUnavailable:
+    'Team payouts are not available on this chain yet. All creator fees and tax go to your wallet.',
+  teamPayouts: 'Team payouts',
+  teamPayoutsHint:
+    "This token pays its creator share to a team wallet. Anyone can release the members' shares; each member is always paid directly.",
+  releaseAll: 'Release all',
+  teamPaid: 'Team shares released',
 };
 
 export default messages;

@@ -23,6 +23,9 @@ Goton mendukung semua dompet Web3 standar yang kompatibel dengan EVM, termasuk:
 - Rabby Wallet
 - Rainbow Wallet
 - Dompet seluler berbasis WalletConnect / Reown
+
+Goton hanya menghubungkan dompet. Tidak ada login email atau sosial, sehingga aplikasi tidak pernah menyimpan kunci untuk Anda.
+
 - Login sosial melalui Google, X, Discord, dan GitHub via embedded wallet
 
 ---
@@ -40,6 +43,14 @@ Kegagalan transaksi umumnya disebabkan oleh dua faktor:
 
 - **On Curve (v2)**: Token sedang diperdagangkan pada kurva harga dinamis. Harga bertambah seiring banyaknya token yang dibeli.
 - **Graduated**: Di Robinhood Chain, kurva telah mengumpulkan target 4,2 ETH dan pasar pindah permanen ke pool Uniswap v4 yang terkunci. Di Arc Network, token diperdagangkan di pool Uniswap v4 sejak peluncuran dan lulus di dalam pool saat kapitalisasi pasar melewati sekitar $45.000.
+
+### Bisakah saya membeli atau menjual di harga target?
+
+Bisa. Tab **Limit** dan **TP / SL** memasang order yang terisi otomatis saat market cap mencapai target Anda, dan dapat dibatalkan kapan saja. Lihat [Order Limit, Take-Profit & Stop-Loss](/id/protocol/advanced-orders).
+
+### Apa beda Explore dan Memestock?
+
+Explore menampilkan semua token. Memestock hanya menampilkan peluncuran dengan tesis tertulis yang kreatornya membeli dan masih memegang sebagian besar posisinya, diurutkan berdasarkan trading terbaru. Lihat [Feed, Call, Memestock & Follow](/id/protocol/social).
 
 ### Apakah ada batasan saat menjual token?
 
@@ -59,7 +70,7 @@ Biaya protokol sebesar **0.0005 ETH** di Robinhood Chain atau **Gratis (0 USDC)*
 
 ### Bagaimana kreator mendapatkan pendapatan?
 
-Kreator secara otomatis mengakumulasi **70% dari fee transaksi sebesar 1%** yang terjadi pada pasar token mereka. Anda dapat memeriksa dan mengklaim pendapatan fee tersebut kapan saja di halaman **Profile** (`/profile`).
+Fee dan pajak setiap token dibagi on-chain: **70% untuk bagian kreator di Robinhood Chain, 80% di Arc**, dan sisanya untuk protokol. Kreator dapat membagi bagiannya sekali, sebelum trading publik dimulai, antara dirinya, holder, dan buyback-and-burn. Lihat [Fee Kreator & Reward](/id/protocol/fees-and-burns). Klaim fee yang terkumpul di halaman **Profile**.
 
 ---
 

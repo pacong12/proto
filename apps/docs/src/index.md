@@ -23,8 +23,8 @@ features:
     details: Liquidity is minted and locked permanently inside smart contracts on day one. No developer or admin can withdraw pool reserves.
   - title: Built-In Sniper Protection
     details: Automated anti-snipe safeguards prevent bots from cornering token supply at launch, giving genuine community members a fair entry.
-  - title: 70% Creator Rewards
-    details: Creators earn 70% of accumulated trading fees, with seamless options to redirect rewards to community treasuries.
+  - title: Creator Rewards
+    details: Creators keep 70% (Robinhood Chain) or 80% (Arc) of each token's fees and tax, and can share it with holders or a buyback, or redirect it to a community treasury.
   - title: Buyback & Burn
     details: 'Creators can direct part of their fee share to buyback-and-burn: a contract buys the token in its own pool, guarded by a 30-minute TWAP, and sends it to the dead address.'
   - title: Fast & Low Cost

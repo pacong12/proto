@@ -33,7 +33,7 @@ You can include official links so traders can verify and join your project:
 
 ### 5. Initial Buy (Optional)
 
-If you wish to purchase an initial allocation as the creator at the launch price, enter the desired ETH amount.
+If you wish to purchase an initial allocation as the creator at the launch price, enter the amount (ETH on Robinhood Chain, USDC on Arc). An initial buy is also what lists a launch on [Memestock](/protocol/social#memestock), together with a written description.
 
 ### 6. Confirm & Deploy
 
@@ -52,3 +52,12 @@ Every token created on Goton has a strictly fixed supply:
 - **Decimals**: 18.
 - **No Minting**: No function exists to mint additional tokens after launch.
 - **No Pausing**: The token cannot be frozen or blacklisted.
+
+---
+
+## Graduation
+
+- **Robinhood Chain**: a token trades on its bonding curve until the curve raises **4.2 ETH**. The curve then closes, and its ETH and remaining tokens move into a Uniswap v4 pool whose liquidity is locked for good. Graduation is permissionless: Goton's keeper triggers it within about 30 seconds, and if anyone trades first, their transaction triggers it instead.
+- **Arc Network**: there is no curve. A token trades in its locked Uniswap v4 pool from the first block.
+
+After graduation the token keeps trading on the same page; the app routes trades to the pool.

@@ -1,21 +1,12 @@
+# goton.fun
+# One group for every crawler: a crawler-specific group would replace this one and drop the
+# Disallow rules below for that crawler.
 User-agent: *
 Allow: /
 Disallow: /api/
+Disallow: /dex/
 Disallow: /devops
-Disallow: /profile
 
-# AI & Search crawlers
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
+# AI assistants and agents: see %APP_URL%/llms.txt and %DOCS_URL%/llms.txt
 
 Sitemap: %APP_URL%/sitemap.xml
-Host: %APP_URL%

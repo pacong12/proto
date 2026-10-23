@@ -42,13 +42,15 @@ describe('analytics consent gate', () => {
     expect(gtagScripts()).toHaveLength(0);
   });
 
-  it('loads gtag.js once for visitors who consented', async () => {
+  it('loads Tag Manager and gtag.js once for visitors who consented', async () => {
     localStorage.setItem('proto_cookie_consent_accepted_v1', 'true');
     const { initAnalytics, loadAnalytics } = await freshModule();
     initAnalytics();
     loadAnalytics();
-    expect(gtagScripts()).toHaveLength(1);
-    expect(gtagScripts()[0].src).toContain('id=G-');
+    const srcs = gtagScripts().map((s) => s.src);
+    expect(srcs).toHaveLength(2);
+    expect(srcs.some((src) => src.includes('gtm.js?id=GTM-'))).toBe(true);
+    expect(srcs.some((src) => src.includes('gtag/js?id=G-'))).toBe(true);
     expect(typeof window.gtag).toBe('function');
   });
 

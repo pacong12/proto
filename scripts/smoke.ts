@@ -19,13 +19,13 @@ const ENVIRONMENTS: Record<string, Target> = {
   production: {
     app: 'https://goton.fun',
     docs: 'https://docs.goton.fun',
-    api: 'https://api.robinmood.xyz',
+    api: 'https://api.goton.cloud',
     expectNoindex: false,
   },
   development: {
     app: 'https://proto-dev.mutingudin12.workers.dev',
     docs: 'https://proto-docs-dev.mutingudin12.workers.dev',
-    api: 'https://api.robinmood.xyz',
+    api: 'https://api.goton.cloud',
     expectNoindex: true,
   },
 };

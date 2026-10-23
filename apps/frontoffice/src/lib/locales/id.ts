@@ -35,7 +35,7 @@ const messages: Record<string, string> = {
   createToken: 'Buat Token',
   trendingFeed: 'Feed Tren',
   memestockSubtitle:
-    'Setiap peluncuran dengan tesis komunitas dan posisi terverifikasi, diurutkan berdasarkan momentum.',
+    'Peluncuran dengan tesis tertulis yang kreatornya masih memegang posisi yang ia beli, diurutkan berdasarkan trading satu jam terakhir.',
   protocolAnalytics: 'Analitik Protokol',
   livePreview: 'Pratinjau Langsung',
   analyticsSubtitle:
@@ -123,16 +123,16 @@ const messages: Record<string, string> = {
   myProfileAndFees: 'Profil & Biaya Saya',
   copyAddress: 'Salin Alamat',
   addressCopied: 'Alamat Disalin!',
-  switchManageWallet: 'Ganti / Kelola Dompet',
+  switchManageWallet: 'Ganti Dompet',
   disconnect: 'Putuskan Koneksi',
   switchToRobinhood: 'Beralih ke Robinhood',
   noMatchingTokens: 'Tidak ada token yang cocok untuk',
   typeSearchHint: 'Ketik nama token, simbol, atau alamat 0x...',
   navigateHint: 'Navigasi',
   selectHint: 'Pilih',
-  noMemesTitle: 'Belum ada meme komunitas yang bergerak',
+  noMemesTitle: 'Belum ada memestock',
   noMemesDesc:
-    'Jadilah yang pertama meluncurkan token pasokan tetap dengan narasi komunitas di Robinhood Chain & Arc.',
+    'Peluncuran tampil di sini setelah punya tesis tertulis dan kreatornya membeli posisi serta mempertahankan sebagian besarnya. Semua koin tetap ada di Explore.',
   launchNow: 'Luncurkan Sekarang',
   tokenImage: 'Gambar Token',
   noFileChosen: 'Belum ada file dipilih',
@@ -392,6 +392,45 @@ const messages: Record<string, string> = {
   footerSplitArc: 'Pajak: 20% protokol, sisanya sesuai split Anda',
   arcPoolLiveHint:
     'Diperdagangkan di pool Uniswap v4 terkunci sejak blok pertama. Tidak ada kurva yang perlu diisi.',
+  memestockMomentum: 'Momentum',
+  creatorHolds: 'Kreator memegang',
+  creatorHoldsHint: 'Porsi pasokan yang dibeli kreator dan masih dipegang',
+  traders1h: 'trader 1j',
+  traders24h: 'trader 24j',
+  buys1h: 'beli 1j',
+  browseAllCoins: 'Lihat semua koin',
+  followAction: 'Ikuti',
+  followingAction: 'Mengikuti',
+  followersLabel: 'Pengikut',
+  followingLabel: 'Mengikuti',
+  noFollowers: 'Belum ada pengikut.',
+  noFollowing: 'Belum mengikuti siapa pun.',
+  followingTab: 'Diikuti',
+  orderHistory: 'Riwayat',
+  noOrderHistory: 'Belum ada order yang terisi atau dibatalkan.',
+  orderReceived: 'Diterima',
+  orderCancelledLabel: 'Dibatalkan',
+  orderFilledLabel: 'Terisi',
+  orderFilledToast: 'terisi',
+  viewToken: 'Lihat',
+  viewTransaction: 'Lihat transaksi',
+  feeRecipients: 'Penerima fee',
+  feeRecipientsHint:
+    'Siapa yang menerima bagian fee kreator dan pajak token. Tambahkan dompet tim untuk membaginya dengan porsi tetap.',
+  addTeamWallet: 'Tambah dompet tim',
+  removeTeamWallet: 'Hapus dompet',
+  feeRecipientDefault: 'Semua fee kreator dan pajak masuk ke',
+  teamFeesRobinhood:
+    'Kontrak dompet tim dibuat sebelum peluncuran. Pajak token masuk ke kontrak itu sejak peluncuran; setelah graduasi, arahkan fee pool ke sana dari profil Anda (timelock 48 jam). Setiap anggota menarik bagiannya sendiri.',
+  teamFeesArc:
+    'Kontrak dompet tim dibuat sebelum peluncuran. Fee dan pajak masuk ke Anda sampai pengalihan payout yang diajukan saat peluncuran aktif setelah 48 jam (setujui dari profil Anda). Setiap anggota menarik bagiannya sendiri.',
+  teamFeesUnavailable:
+    'Payout tim belum tersedia di chain ini. Semua fee kreator dan pajak masuk ke dompet Anda.',
+  teamPayouts: 'Payout tim',
+  teamPayoutsHint:
+    'Token ini membayar bagian kreatornya ke dompet tim. Siapa pun bisa merilis bagian anggota; setiap anggota selalu dibayar langsung.',
+  releaseAll: 'Rilis semua',
+  teamPaid: 'Bagian tim dirilis',
 };
 
 export default messages;

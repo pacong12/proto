@@ -148,5 +148,18 @@ export function useLimitOrders() {
     }
   }
 
-  return { busy, error, createBuy, createSell, cancel, listOpen };
+  /** Every order of an owner (optionally one token), newest first. */
+  async function listByOwner(owner: string, token?: string): Promise<LimitOrderEntity[]> {
+    try {
+      const q = token ? `&token=${token}` : '';
+      const res = await apiFetch<{ success: boolean; data: LimitOrderEntity[] }>(
+        `/api/orders?owner=${owner}${q}`,
+      );
+      return res?.success ? res.data : [];
+    } catch {
+      return [];
+    }
+  }
+
+  return { busy, error, createBuy, createSell, cancel, listOpen, listByOwner };
 }

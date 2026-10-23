@@ -329,6 +329,9 @@
                   :deployer="currentToken.deployer"
                   :locker-address="ROBINHOOD_CHAIN.contracts.locker"
                   :pool-address="currentToken.poolAddress"
+                  :curve-address="currentToken.curveAddress"
+                  :decimals="currentToken.decimals ?? 18"
+                  :is-graduated="!!currentMarketData.isGraduated"
                   :explorer-url="explorerUrl"
                 />
               </TabsContent>
@@ -345,6 +348,12 @@
                   :is-creator="isCreator"
                   @copy-address="copyAddress"
                   @open-tax-modal="taxModalOpen = true"
+                />
+                <TeamPayouts
+                  class="mt-4"
+                  :token="currentToken.address"
+                  :symbol="currentToken.symbol"
+                  :network="tokenNetwork"
                 />
               </TabsContent>
             </Tabs>
@@ -496,6 +505,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
+import TeamPayouts from '@/components/trade/TeamPayouts.vue';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { TradingChart } from '@/components/ui/chart';
@@ -984,11 +994,39 @@ const ORDER_TYPES = [
 const orderType = ref<(typeof ORDER_TYPES)[number]['value']>('market');
 const ordersRefresh = ref(0);
 // Same routes as the keeper: the token's bonding curve, or its Goton v4 pool once one exists.
+// Same routes as the keeper and the contract: a curve of the current factory (curveToToken), or
+// the token's Goton v4 pool. Curves of older factories are refused on-chain, so orders on them
+// could never fill.
+const curveRegistered = ref(false);
+watch(
+  () => [currentToken.value.address, currentToken.value.curveAddress, tokenNetwork.value.chainId],
+  async () => {
+    curveRegistered.value = false;
+    const t = currentToken.value;
+    const factory = tokenNetwork.value.contracts.factoryV2 ?? tokenNetwork.value.contracts.factory;
+    if (!t.curveAddress || !factory || limitOrdersAddress(tokenNetwork.value) === null) return;
+    try {
+      const owner = await getPublicClient(tokenNetwork.value.chainId).readContract({
+        address: factory,
+        abi: launchpadV2FactoryAbi,
+        functionName: 'curveToToken',
+        args: [t.curveAddress as `0x${string}`],
+      });
+      if (t.address === currentToken.value.address) {
+        curveRegistered.value = owner.toLowerCase() === t.address.toLowerCase();
+      }
+    } catch {
+      // Factory without curves (Arc) or RPC error: no curve route.
+    }
+  },
+  { immediate: true },
+);
 const limitOrdersEnabled = computed(() => {
   if (limitOrdersAddress(tokenNetwork.value) === null) return false;
   const t = currentToken.value;
   const onCurve = t.version === 'v2' && !t.isGraduated && !!t.curveAddress;
-  return onCurve || protoV4PoolKeyFor(tokenNetwork.value, t.address) !== null;
+  if (onCurve) return curveRegistered.value;
+  return protoV4PoolKeyFor(tokenNetwork.value, t.address) !== null;
 });
 
 const isArcToken = computed(() => tokenNetwork.value.chainId === ARC_CHAIN.chainId);

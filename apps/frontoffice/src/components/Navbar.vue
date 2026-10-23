@@ -111,6 +111,15 @@ const {
   openWallet,
 } = useWallet();
 
+/**
+ * AppKit's account view only offers Disconnect, so switching means ending this session and
+ * showing the wallet list again.
+ */
+async function switchWallet() {
+  await disconnectWallet();
+  await openWallet();
+}
+
 function handleChainSelect(val: unknown) {
   const chainId = Number(val);
   const target = SUPPORTED_CHAINS[chainId];
@@ -227,16 +236,17 @@ function copyAddress() {
           variant="outline"
           size="sm"
           @click="$emit('openSearch')"
-          class="h-9 w-9 p-0 sm:w-auto sm:px-3 text-xs text-muted-foreground gap-2 font-normal border-border bg-card hover:bg-muted hover:text-foreground rounded-xl shrink-0"
+          class="h-9 w-9 p-0 md:w-auto md:px-3 lg:w-9 lg:px-0 xl:w-auto xl:px-3 text-xs text-muted-foreground gap-2 font-normal border-border bg-card hover:bg-muted hover:text-foreground rounded-xl shrink-0"
           title="Search (⌘K)"
           aria-label="Search"
         >
           <Search class="w-3.5 h-3.5" />
-          <span class="hidden sm:inline">{{
+          <!-- Labels show at md and xl only; below md and at lg (nav links visible) the bar would overflow. -->
+          <span class="hidden md:inline lg:hidden xl:inline">{{
             t('searchPlaceholder') ? 'Search...' : 'Search'
           }}</span>
           <kbd
-            class="hidden sm:inline text-xs bg-muted border border-border px-1.5 py-0.5 rounded-md"
+            class="hidden md:inline lg:hidden xl:inline text-xs bg-muted border border-border px-1.5 py-0.5 rounded-md"
           >
             ⌘K
           </kbd>
@@ -257,7 +267,7 @@ function copyAddress() {
                 :alt="activeNetwork.name"
                 class="w-4 h-4 rounded-xs object-contain shrink-0"
               />
-              <span class="font-semibold text-foreground hidden sm:inline">
+              <span class="font-semibold text-foreground hidden md:inline lg:hidden xl:inline">
                 {{ activeNetwork.name }}
               </span>
             </div>
@@ -361,21 +371,18 @@ function copyAddress() {
                   :size="40"
                   class="rounded-full border border-border shrink-0"
                 />
-                <div class="truncate min-w-0 flex-1">
-                  <div class="flex items-center justify-between gap-1">
-                    <span class="text-sm font-bold text-foreground truncate">
-                      {{ getUserIdentity(account).displayName }}
+                <div class="min-w-0 flex-1">
+                  <span class="block text-sm font-bold text-foreground truncate">
+                    {{ getUserIdentity(account).displayName }}
+                  </span>
+                  <div class="flex items-center justify-between gap-2 mt-0.5 text-xs">
+                    <span class="font-medium text-muted-foreground" :title="account || ''">
+                      {{ formattedAddress }}
                     </span>
-                    <span class="text-sm font-bold text-primary shrink-0">
+                    <span class="font-bold text-primary whitespace-nowrap">
                       {{ formattedBalance }}
                     </span>
                   </div>
-                  <span
-                    class="block text-xs font-medium text-muted-foreground truncate mt-0.5"
-                    :title="account || ''"
-                  >
-                    {{ account }}
-                  </span>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator class="my-1.5 border-border" />
@@ -400,7 +407,7 @@ function copyAddress() {
               </DropdownMenuItem>
 
               <DropdownMenuItem
-                @click="openWallet"
+                @click="switchWallet"
                 class="cursor-pointer text-foreground px-3.5 py-3 text-sm font-medium rounded-xl hover:bg-muted transition flex items-center gap-3"
               >
                 <Wallet class="w-4.5 h-4.5" />
@@ -426,13 +433,13 @@ function copyAddress() {
               <!-- Language Submenu using DropdownMenuPortal (Scroll-Free 2-Column Grid) -->
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger
-                  class="flex items-center justify-between px-3.5 py-3 text-sm font-medium rounded-xl cursor-pointer hover:bg-muted transition"
+                  class="flex items-center px-3.5 py-3 text-sm font-medium rounded-xl cursor-pointer hover:bg-muted transition"
                 >
                   <div class="flex items-center gap-3">
                     <Globe class="w-4.5 h-4.5 text-muted-foreground" />
                     <span>Language</span>
                   </div>
-                  <span class="text-sm text-primary font-bold uppercase mr-1">{{
+                  <span class="ml-auto pl-3 text-sm text-primary font-bold uppercase">{{
                     currentLocaleOption.code
                   }}</span>
                 </DropdownMenuSubTrigger>

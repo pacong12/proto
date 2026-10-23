@@ -1,16 +1,19 @@
 <template>
   <div
     v-if="hotTokens.length > 0"
-    class="p-2 sm:p-2.5 rounded-2xl border border-border/80 bg-card/60 backdrop-blur-md flex items-center justify-between gap-3 overflow-x-auto no-scrollbar select-none text-xs shadow-2xs"
+    class="p-2 sm:p-2.5 rounded-2xl border border-border/80 bg-card/60 flex items-center gap-3 select-none text-xs shadow-2xs min-w-0"
   >
     <div
-      class="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-primary/10 text-primary font-bold shrink-0 text-xs border border-primary/20"
+      class="flex flex-col px-2.5 py-1 rounded-xl bg-primary/10 text-primary font-bold shrink-0 border border-primary/20 leading-tight"
     >
-      <Flame class="w-3.5 h-3.5 fill-current" />
       <span>ALPHA RADAR</span>
+      <span class="text-[10px] font-semibold text-primary/70">Most called · 24h</span>
     </div>
 
-    <div class="flex items-center gap-2 shrink-0">
+    <!-- Scrolls sideways; the fade shows there is more instead of cutting a chip in half. -->
+    <div
+      class="flex items-center gap-2 min-w-0 overflow-x-auto no-scrollbar [mask-image:linear-gradient(to_right,black_92%,transparent)]"
+    >
       <button
         v-for="(tItem, idx) in hotTokens"
         :key="tItem.token.address"
@@ -26,7 +29,7 @@
             :fallback-text="tItem.token.symbol"
             :width="18"
             :height="18"
-            class="rounded-full shrink-0 border border-border/50"
+            class="rounded-md shrink-0 border border-border/50"
           />
           <img
             :src="getChainIcon(tItem.token.address)"
@@ -38,8 +41,8 @@
         <span class="font-black text-foreground group-hover:text-primary transition-colors">
           ${{ tItem.token.symbol }}
         </span>
-        <span class="text-muted-foreground text-xs">
-          {{ formatMarketCap(tItem.marketData?.marketCapUsd) }}
+        <span class="text-muted-foreground text-xs whitespace-nowrap">
+          {{ tItem.calls }} {{ tItem.calls === 1 ? 'call' : 'calls' }}
         </span>
         <span
           class="text-xs font-bold"
@@ -56,19 +59,16 @@
 </template>
 
 <script setup lang="ts">
-import { Flame } from 'lucide-vue-next';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
-import {
-  getTokenChainIcon as getChainIcon,
-  getTokenChainName as getChainName,
-  formatMarketCap,
-} from '@/lib/utils';
+import { getTokenChainIcon as getChainIcon, getTokenChainName as getChainName } from '@/lib/utils';
 import { useTokenStore } from '@/composables/useTokenStore';
 import type { LaunchedTokenEntity, TokenMarketData } from '@goton/shared-types';
 
 interface TokenItem {
   token: LaunchedTokenEntity;
   marketData?: TokenMarketData | null;
+  /** Calls on this token in the last 24h. */
+  calls: number;
 }
 
 interface Props {

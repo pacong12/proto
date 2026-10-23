@@ -92,6 +92,9 @@ export class GetTokenByAddressUseCase {
     // The newest trade at or before the cutoff or, for a token younger than 24h, its first trade
     // (change since launch). Order-independent: repositories differ in sort order.
     const byTime = [...trades].sort((a, b) => a.timestamp - b.timestamp);
+    // No trade in the window: the price in the quote asset has not moved. Comparing against an
+    // older trade would report the quote's USD drift since then (e.g. -9.85% after 16 quiet days).
+    if (!byTime.some((t) => t.timestamp > cutoff)) return 0;
     const anchor = byTime.filter((t) => t.timestamp <= cutoff).pop() ?? byTime[0];
     if (!anchor || anchor.priceUsd <= 0) return 0;
     return ((currentPriceUsd - anchor.priceUsd) / anchor.priceUsd) * 100;

@@ -23,8 +23,8 @@ features:
     details: Posisi likuiditas dicetak dan dikunci secara permanen di smart contract sejak blok pertama. Tidak ada pihak yang dapat menarik dana cadangan pool.
   - title: Perlindungan Sniper Terintegrasi
     details: Batasan anti-snipe otomatis mencegah bot memborong pasokan token di awal, menjamin peluang yang adil bagi seluruh komunitas.
-  - title: 70% Reward untuk Kreator
-    details: Kreator memperoleh 70% dari akumulasi fee transaksi, dengan opsi mudah untuk mengalihkan reward ke kas komunitas.
+  - title: Reward untuk Kreator
+    details: Kreator memegang 70% (Robinhood Chain) atau 80% (Arc) dari fee dan pajak tiap token, dan bisa membaginya ke holder atau buyback, atau mengalihkannya ke kas komunitas.
   - title: Buyback & Burn
     details: 'Kreator dapat mengalokasikan sebagian bagian fee mereka untuk buyback & burn: kontrak membeli token di pool-nya sendiri, dijaga TWAP 30 menit, lalu mengirimnya ke alamat mati.'
   - title: Cepat & Hemat Biaya

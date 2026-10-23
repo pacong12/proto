@@ -1,26 +1,32 @@
-# Goton Documentation & Knowledge Base
-> Official user guide and reference for Goton Protocol on Robinhood Chain.
+# goton documentation
 
-Goton is a decentralized, non-custodial crypto launchpad on Robinhood Chain (L2). It allows anyone to launch fixed-supply tokens, trade on interactive bonding curves or Uniswap V3 pools, and participate in fair launches with permanently locked liquidity.
+> Documentation for goton, the non-custodial launchpad for fixed-supply tokens on Robinhood Chain (chain id 4663) and Arc (chain id 5042). Tokens launch on a bonding curve that graduates into a locked Uniswap v4 pool (Robinhood Chain) or straight into a locked Uniswap v4 pool (Arc).
 
-## Documentation Sections
-- Getting Started: %DOCS_URL%/protocol/overview
-- How to Launch a Token: %DOCS_URL%/protocol/launches
-- Trading & Swaps Guide: %DOCS_URL%/protocol/trading-guide
-- Frequently Asked Questions: %DOCS_URL%/protocol/faq
-- Anti-Snipe Safeguards: %DOCS_URL%/protocol/anti-snipe
-- Creator Rewards & Fees: %DOCS_URL%/protocol/fees-and-burns
-- Community Takeovers: %DOCS_URL%/protocol/community-takeovers
-- Network Setup: %DOCS_URL%/integration/network
-- Verified Contracts: %DOCS_URL%/integration/contracts
-- Terms of Service: %DOCS_URL%/terms-of-service
-- Privacy Policy: %DOCS_URL%/privacy-policy
-- Cookie Policy: %DOCS_URL%/cookie-policy
+Every token has a supply of 1,000,000,000 (18 decimals), no mint function and liquidity locked for good. Creators keep 70% (Robinhood Chain) or 80% (Arc) of each token's fees and tax, and can share it with holders, a buyback or a team.
 
-## Protocol Key Parameters
-- Network: Robinhood Chain (Chain ID: 4663)
-- Token Supply: Fixed 1,000,000,000 (18 decimals)
-- Launch Fee: 0.0005 ETH
-- Graduation Target (v2): 4.2 ETH
-- Fee Split: 70% Creator / 30% Protocol
-- Automated Buyback & Burn: 80% of protocol fees burned
+## Protocol
+
+- [Overview](%DOCS_URL%/protocol/overview)
+- [Launching a token](%DOCS_URL%/protocol/launches)
+- [Trading guide](%DOCS_URL%/protocol/trading-guide)
+- [Limit, take-profit and stop-loss orders](%DOCS_URL%/protocol/advanced-orders)
+- [Fees, dividends and buybacks](%DOCS_URL%/protocol/fees-and-burns)
+- [Anti-snipe protection](%DOCS_URL%/protocol/anti-snipe)
+- [Calls, follows, Feed and Memestock](%DOCS_URL%/protocol/social)
+- [Community takeovers](%DOCS_URL%/protocol/community-takeovers)
+- [FAQ](%DOCS_URL%/protocol/faq)
+
+## Integration
+
+- [For AI agents](%DOCS_URL%/integration/agents): reading data and trading with an agent's own wallet
+- [Agent skill file](%DOCS_URL%/skills/goton/SKILL.md): a downloadable SKILL.md
+- [Public API](%DOCS_URL%/integration/api): read-only JSON API
+- [Verified smart contracts](%DOCS_URL%/integration/contracts)
+- [Network setup](%DOCS_URL%/integration/network)
+- [DEX and aggregator listing](%DOCS_URL%/integration/listing-submission)
+
+## Legal
+
+- [Terms of Service](%DOCS_URL%/terms-of-service)
+- [Privacy Policy](%DOCS_URL%/privacy-policy)
+- [Cookie Policy](%DOCS_URL%/cookie-policy)

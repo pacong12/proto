@@ -4,6 +4,8 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { V4BuybackKeeperService } from './modules/tokens/infrastructure/keeper/v4-buyback-keeper.service';
 import { LimitOrderKeeperService } from './modules/tokens/infrastructure/keeper/limit-order-keeper.service';
 import { GraduationKeeperService } from './modules/tokens/infrastructure/keeper/graduation-keeper.service';
+import { isMemestock, memestockSignals } from './modules/tokens/application/memestock';
+import { SPARKLINE_POINTS, sparklineSince } from './modules/tokens/application/sparkline';
 import {
   SqliteTokenRepository,
   ViemChainIndexerAdapter,
@@ -799,6 +801,64 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     return replyJson(res, 200, { 'x-cache': 'MISS' });
   }
 
+  // GET /api/sparklines?chainId= — per token, its price path from launch to now (about 40 points,
+  // USD, from indexed trades) for the list sparklines.
+  if (url.pathname === '/api/sparklines' && req.method === 'GET') {
+    const network = resolveNetworkByParam(
+      url.searchParams.get('chainId') || url.searchParams.get('chain'),
+    );
+    const cacheKey = `sparklines:${network.chainId}`;
+    const cached = await cache.get<unknown>(cacheKey);
+    if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
+
+    const res = await tokenController.listTokens(100, 0);
+    if (!res.success || !res.data) return replyJson(res, 500);
+    const now = Date.now();
+    const lines: Record<string, number[]> = {};
+    for (const item of res.data) {
+      if (resolveTokenNetwork(item.token).chainId !== network.chainId) continue;
+      // Hourly candles cover up to 1,000 h (about 41 days); older tokens use daily ones.
+      const ageMs = now - (item.token.createdAt || now);
+      const resolution = ageMs > 900 * 3_600_000 ? 86_400 : 3_600;
+      const candles = await repository.getCandlesticks(item.token.address, resolution, true);
+      lines[item.token.address.toLowerCase()] = sparklineSince(candles, SPARKLINE_POINTS);
+    }
+    const payload = ok(lines);
+    await cache.set(cacheKey, payload, 60);
+    return replyJson(payload, 200, { 'x-cache': 'MISS' });
+  }
+
+  // GET /api/memestock?chainId= — launches with a thesis whose creator still holds a bought
+  // position, ranked by momentum (see modules/tokens/application/memestock.ts).
+  if (url.pathname === '/api/memestock' && req.method === 'GET') {
+    const network = resolveNetworkByParam(
+      url.searchParams.get('chainId') || url.searchParams.get('chain'),
+    );
+    const cacheKey = `memestock:${network.chainId}`;
+    const cached = await cache.get<unknown>(cacheKey);
+    if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
+
+    const res = await tokenController.listTokens(100, 0);
+    if (!res.success || !res.data) return replyJson(res, 500);
+    const now = Date.now();
+    const rows = [];
+    for (const item of res.data) {
+      if (resolveTokenNetwork(item.token).chainId !== network.chainId) continue;
+      const trades = await repository.getTrades(item.token.address, 500, 0);
+      const signals = memestockSignals(item.token, trades, now);
+      if (!isMemestock(item.token.description, signals)) continue;
+      rows.push({ ...item, signals });
+    }
+    rows.sort(
+      (a, b) =>
+        b.signals.score - a.signals.score ||
+        (b.marketData?.marketCapUsd ?? 0) - (a.marketData?.marketCapUsd ?? 0),
+    );
+    const payload = ok(rows);
+    await cache.set(cacheKey, payload, 15);
+    return replyJson(payload, 200, { 'x-cache': 'MISS' });
+  }
+
   // GET /api/users/resolve?query=:query
   if (url.pathname === '/api/users/resolve' && req.method === 'GET') {
     const q = url.searchParams.get('query') || '';
@@ -813,6 +873,65 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     }
     const identity = getUserIdentity(resolvedAddress);
     return replyJson(ok({ address: resolvedAddress, identity }), 200);
+  }
+
+  // Follows: GET /api/users/:id/follows?viewer=, GET /api/users/:id/followers|following,
+  // POST /api/users/:id/follow { userAddress } (wallet session required, toggles).
+  const followMatch = url.pathname.match(
+    /^\/api\/users\/([a-zA-Z0-9_#.-]+)\/(follows|followers|following|follow)$/,
+  );
+  if (followMatch) {
+    const [, identifier, action] = followMatch;
+    let address = identifier;
+    if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+      const resolved = repository.findAddressByIdentity
+        ? await repository.findAddressByIdentity(address)
+        : null;
+      if (!resolved) {
+        return replyJson(err('USER_NOT_FOUND', 'User identity could not be resolved'), 404);
+      }
+      address = resolved;
+    }
+    if (!repository.getFollowStats || !repository.toggleFollow || !repository.listFollows) {
+      return replyError('NOT_SUPPORTED', 'Follows are not available', 501);
+    }
+
+    if (action === 'follow' && req.method === 'POST') {
+      try {
+        const body = await parseJsonBody<{ userAddress?: string }>(req, 2048);
+        const userAddress = String(body.userAddress || '').trim();
+        if (!/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
+          return replyError('INVALID_ADDRESS', 'Valid Ethereum address required to follow', 400);
+        }
+        if (userAddress.toLowerCase() === address.toLowerCase()) {
+          return replyError('INVALID_FOLLOW', 'You cannot follow yourself', 400);
+        }
+        const sessionError = requireSocialSession(req, userAddress, 'follow');
+        if (sessionError) {
+          return replyError(sessionError.code, sessionError.message, sessionError.status);
+        }
+        return replyJson(ok(await repository.toggleFollow(userAddress, address)), 200);
+      } catch (e) {
+        if (e instanceof PayloadTooLargeError) {
+          return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
+        }
+        return replyError('FOLLOW_ERROR', 'Failed to process follow', 400);
+      }
+    }
+
+    if (req.method === 'GET' && action === 'follows') {
+      const viewer = url.searchParams.get('viewer') ?? undefined;
+      const validViewer = viewer && /^0x[a-fA-F0-9]{40}$/.test(viewer) ? viewer : undefined;
+      return replyJson(ok(await repository.getFollowStats(address, validViewer)), 200);
+    }
+
+    if (req.method === 'GET' && (action === 'followers' || action === 'following')) {
+      const limit = Math.min(Math.max(1, Number(url.searchParams.get('limit')) || 100), 500);
+      const rows = await repository.listFollows(address, action, limit);
+      return replyJson(ok(rows.map((r) => ({ ...r, identity: getUserIdentity(r.address) }))), 200);
+    }
+
+    return replyError('METHOD_NOT_ALLOWED', 'Method not allowed', 405);
   }
 
   // GET /api/users/:identifier/portfolio

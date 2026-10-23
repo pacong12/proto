@@ -32,7 +32,7 @@
           class="h-6 px-2 text-[11px] font-bold gap-1 rounded-lg border-primary/30 text-primary hover:bg-primary/10 cursor-pointer"
           @click="$emit('openPnlCard')"
         >
-          <Sparkles class="w-3 h-3" />
+          <Share2 class="w-3 h-3" />
           <span>Share PnL</span>
         </Button>
       </div>
@@ -339,7 +339,7 @@
                   :fallback-text="currentToken.symbol"
                   :width="24"
                   :height="24"
-                  class="rounded-full border border-border object-cover shrink-0 w-6 h-6"
+                  class="rounded-md border border-border object-cover shrink-0 w-6 h-6"
                 />
                 <div
                   v-else
@@ -443,7 +443,7 @@
 </template>
 
 <script setup lang="ts">
-import { AlertCircle, Settings, ArrowUpDown, Loader2, Sparkles } from 'lucide-vue-next';
+import { AlertCircle, Settings, ArrowUpDown, Loader2, Share2 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';

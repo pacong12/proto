@@ -77,6 +77,12 @@ describe('priceChange24h', () => {
     expect(change).toBeCloseTo(100, 6); // 3e-6 -> 6e-6
   });
 
+  it('is 0 when nothing traded in the last 24h, whatever the quote did since', async () => {
+    // TEST on Robinhood showed -9.85%: its last trade was 16 days old and ETH had moved since.
+    const change = await changeWith([{ priceUsd: 3e-6, agoMs: 16 * 86_400_000 }]);
+    expect(change).toBe(0);
+  });
+
   it('for a token younger than 24h, compares with its first trade', async () => {
     const change = await changeWith([
       { priceUsd: 5e-6, agoMs: 600_000 },

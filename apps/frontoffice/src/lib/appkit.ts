@@ -85,11 +85,20 @@ export const appKit =
           url: typeof window !== 'undefined' ? window.location.origin : SITE.appUrl,
           icons: ['/favicon.svg'],
         },
+        // Wallet connections only: no email or social logins (embedded wallets), and none of the
+        // modal's extra flows (swap, buy crypto, send/receive, activity), which trading here
+        // does not use.
         features: {
           analytics: false,
-          email: true,
-          socials: ['google', 'x', 'discord', 'github', 'apple', 'farcaster'],
-          emailShowWallets: true,
+          email: false,
+          socials: false,
+          emailShowWallets: false,
+          swaps: false,
+          onramp: false,
+          send: false,
+          receive: false,
+          history: false,
+          smartSessions: false,
         },
         featuredWalletIds: [
           '38f5d18bd8522c244bdd70cb4a68e0e7188651522e1e7c704d3252b861635166', // Bitget Wallet

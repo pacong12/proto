@@ -295,7 +295,9 @@
         <!-- Advanced Accordion Component -->
         <CreateTokenAdvancedSection
           v-model:open="advancedOpen"
-          v-model:creator-wallet="form.creatorWallet"
+          v-model:fee-recipients="feeRecipients"
+          :team-available="teamFactoryAddress(activeNetwork) !== null"
+          :is-arc="isArcNetwork"
           v-model:buy-tax="form.buyTax"
           v-model:sell-tax="form.sellTax"
           v-model:revenue-split="revenueSplit"
@@ -426,6 +428,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import { AlertCircle, UploadCloud, Loader2, Check, Trash2 } from 'lucide-vue-next';
+import { planRecipients, type FeeRecipientRow } from '@/lib/team-fees';
+import { createTeamSplitter, teamFactoryAddress } from '@/composables/useTeamFees';
 import { useLaunchpad } from '../composables/useLaunchpad';
 import { useWallet } from '../composables/useWallet';
 import { uploadFile } from '@/lib/api-client';
@@ -460,6 +464,7 @@ const {
   resetLaunchState,
   checkPendingTransaction,
   retryRevenueSplit,
+  setFeeRedirect,
 } = useLaunchpad();
 const {
   isConnected,
@@ -657,8 +662,9 @@ const form = ref({
   initialBuyEth: '',
   buyTax: '0',
   sellTax: '0',
-  creatorWallet: '',
 });
+// Creator fee and tax recipients: the creator alone by default, or a team with fixed shares.
+const feeRecipients = ref<FeeRecipientRow[]>([{ address: '', percent: 100 }]);
 const pendingImageFile = ref<File | null>(null);
 
 function triggerFileInput() {
@@ -731,6 +737,12 @@ async function handleLaunch() {
     );
     return;
   }
+  const recipients = planRecipients(feeRecipients.value, account.value);
+  if (!recipients.ok) {
+    advancedOpen.value = true;
+    toast.error(recipients.error);
+    return;
+  }
   if (totalSplit.value !== 100) {
     advancedOpen.value = true;
     toast.error(
@@ -765,6 +777,23 @@ async function handleLaunch() {
       isUploadingIpfs.value = false;
     }
   }
+  // A team gets its own splitter before the launch, so the launch can name it as the recipient.
+  let recipient = recipients.payees[0];
+  if (recipients.isTeam) {
+    try {
+      recipient = await createTeamSplitter(
+        activeNetwork.value,
+        recipients.payees,
+        recipients.sharesBps,
+      );
+    } catch (err) {
+      const msg = (err as Error).message ?? String(err);
+      if (!/user rejected|denied/i.test(msg)) toast.error(msg.split('\n')[0]);
+      return;
+    }
+  }
+  const toCreator = recipient.toLowerCase() === (account.value ?? '').toLowerCase();
+
   isModalOpen.value = true;
   const result = await launchToken({
     name: form.value.name.trim(),
@@ -779,13 +808,42 @@ async function handleLaunch() {
     initialBuyAmountEth: String(form.value.initialBuyEth || '0').trim(),
     buyTaxPercent: parseFloat(form.value.buyTax || '0'),
     sellTaxPercent: parseFloat(form.value.sellTax || '0'),
-    creatorTaxWallet: form.value.creatorWallet.trim() || undefined,
+    creatorTaxWallet: toCreator ? undefined : recipient,
     revenueSplit: { ...revenueSplit.value },
   });
 
   if (result) {
     warnIfSettingsMissing(result, activeNetwork.value.chainId, { ...revenueSplit.value });
+    if (!toCreator) void routeCreatorFees(result.tokenAddress, recipient);
     emit('tokenCreated', result.tokenAddress);
+  }
+}
+
+/**
+ * Points the creator payout at a team or another wallet. On Robinhood Chain the token tax already
+ * goes there from launch; the LP fees after graduation follow the same 48-hour redirect from the
+ * profile. On Arc fees and tax flow through the fee splitter, so the redirect is proposed now and
+ * becomes active after its 48-hour timelock (accepted from the profile).
+ */
+async function routeCreatorFees(token: `0x${string}`, recipient: `0x${string}`) {
+  if (!isArcNetwork.value) {
+    toast.info('Token tax goes to the team from launch', {
+      description: 'After graduation, route the pool fees to the same wallet from your profile.',
+      duration: 12_000,
+    });
+    return;
+  }
+  const hash = await setFeeRedirect(token, recipient);
+  if (hash) {
+    toast.info('Payout to the team proposed', {
+      description: 'It becomes active after 48 hours. Accept it then from your profile.',
+      duration: 15_000,
+    });
+  } else {
+    toast.warning('Payout redirect was not proposed', {
+      description: 'Fees go to your wallet until you propose it from your profile.',
+      duration: 15_000,
+    });
   }
 }
 

@@ -33,6 +33,17 @@ Secara default seluruh bagian kreator menjadi milik kreator. Bagian protokol tid
 
 ---
 
+## Payout Tim
+
+Kreator dapat membagi bagian fee-nya dengan tim. Di halaman create, buka **Advanced → Penerima fee** lalu tambahkan dompet tim dengan persentase tetap (maksimal 10 dompet, total 100%). Aplikasi lalu membuat `GotonTeamSplitter` untuk tim tersebut sebelum peluncuran:
+
+- **Robinhood Chain**: pajak token masuk ke tim sejak peluncuran. Setelah graduasi, arahkan fee pool ke tim yang sama dari profil Anda (timelock 48 jam).
+- **Arc**: fee dan pajak masuk ke tim setelah pengalihan payout yang diajukan saat peluncuran aktif, 48 jam kemudian. Sebelum itu, semuanya masuk ke kreator.
+
+Kontrak tim tidak punya owner, dan anggota serta porsinya tidak pernah bisa diubah. Siapa pun bisa merilis bagian anggota dari halaman token (**About → Payout tim**); setiap anggota selalu dibayar langsung.
+
+---
+
 ## Pengalihan Fee (Community Takeovers)
 
 Jika kreator ingin memberikan reward kepada komunitas atau menyerahkan kepemimpinan proyek:

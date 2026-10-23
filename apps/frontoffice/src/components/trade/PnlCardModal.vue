@@ -10,7 +10,6 @@
       <!-- Header -->
       <div class="flex items-center justify-between px-5 py-4 border-b border-border">
         <div class="flex items-center gap-2">
-          <Sparkles class="w-4 h-4 text-primary" />
           <h2 class="text-sm font-bold text-foreground">{{ t('pnlShareTitle') }}</h2>
         </div>
         <button
@@ -168,7 +167,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Sparkles, X, Download } from 'lucide-vue-next';
+import { X, Download } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { formatCompactUsd, formatMarketCap } from '@/lib/utils';

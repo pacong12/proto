@@ -1,10 +1,12 @@
+import { applyMeta, buildSitemap, pageMeta, type SeoToken } from './seo';
+
 export interface Env {
   ASSETS: {
     fetch: (request: Request) => Promise<Response>;
   };
   // Set to 'true' in wrangler.toml [vars] to send CSP as Report-Only.
   // Use this in staging before enforcing in production.
-  // Backend API URL on VPS (e.g. https://api.robinmood.xyz)
+  // Backend API URL on VPS (e.g. https://api.goton.cloud)
   BACKEND_API_URL?: string;
   // Set to 'true' in wrangler.toml [vars] to send CSP as Report-Only.
   // Use this in staging before enforcing in production.
@@ -140,7 +142,8 @@ function buildCsp(reportUri?: string): string {
   const directives: string[] = [
     "default-src 'self'",
     // static.cloudflareinsights.com: Cloudflare Web Analytics beacon (cookie-free), injected by Cloudflare.
-    "script-src 'self' 'unsafe-inline' blob: https://static.cloudflareinsights.com",
+    // www.googletagmanager.com: Tag Manager and gtag.js, loaded only after cookie consent.
+    "script-src 'self' 'unsafe-inline' blob: https://static.cloudflareinsights.com https://www.googletagmanager.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com https://fonts.reown.com data:",
     [
@@ -234,7 +237,7 @@ export default {
       url.pathname.startsWith('/api/v1/') ||
       url.pathname === '/health'
     ) {
-      const backendBase = env.BACKEND_API_URL || 'https://api.robinmood.xyz';
+      const backendBase = env.BACKEND_API_URL || 'https://api.goton.cloud';
       const targetUrl = new URL(url.pathname + url.search, backendBase);
       const forwardHeaders = new Headers(request.headers);
       forwardHeaders.set('x-forwarded-host', url.host);
@@ -270,7 +273,20 @@ export default {
       }
     }
 
-    const response = await env.ASSETS.fetch(request);
+    if (url.pathname === '/sitemap.xml' && request.method === 'GET') {
+      const sitemap = await dynamicSitemap(url.origin, env);
+      if (sitemap) return sitemap;
+    }
+
+    let response = await env.ASSETS.fetch(request);
+    // The SPA ships one title, description and canonical for every URL; write the page's own.
+    if (
+      request.method === 'GET' &&
+      response.status === 200 &&
+      (response.headers.get('content-type') ?? '').includes('text/html')
+    ) {
+      response = await withPageMeta(response, url, env);
+    }
     const durationMs = Math.round((performance.now() - startTime) * 100) / 100;
 
     // Hash the IP before logging; do not store raw PII (fix MED-04).
@@ -323,3 +339,93 @@ export default {
     });
   },
 };
+
+// ---------------------------------------------------------------------------
+// SEO: per-page meta and a sitemap with token pages (see seo.ts)
+// ---------------------------------------------------------------------------
+
+const ARC_USDC = '0x3600000000000000000000000000000000000000';
+const SEO_FETCH_TIMEOUT_MS = 1_500;
+
+async function backendJson<T>(env: Env, path: string): Promise<T | null> {
+  const base = env.BACKEND_API_URL || 'https://api.goton.cloud';
+  try {
+    const res = await fetch(new URL(path, base).toString(), {
+      signal: AbortSignal.timeout(SEO_FETCH_TIMEOUT_MS),
+      headers: { accept: 'application/json' },
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { success?: boolean; data?: T };
+    return body?.success ? (body.data ?? null) : null;
+  } catch {
+    return null;
+  }
+}
+
+interface ApiToken {
+  address: string;
+  name: string;
+  symbol: string;
+  description?: string;
+  logo?: string;
+  createdAt?: number;
+  pairedToken?: string;
+}
+
+function toSeoToken(token: ApiToken, marketCapUsd?: number): SeoToken {
+  return {
+    address: token.address,
+    name: token.name,
+    symbol: token.symbol,
+    description: token.description,
+    logo: token.logo,
+    createdAt: token.createdAt,
+    marketCapUsd,
+    chainName: (token.pairedToken ?? '').toLowerCase() === ARC_USDC ? 'Arc' : 'Robinhood Chain',
+  };
+}
+
+/** index.html with the page's own meta; the original response when anything fails. */
+export async function withPageMeta(response: Response, url: URL, env: Env): Promise<Response> {
+  try {
+    const html = await response.clone().text();
+    let token: SeoToken | null = null;
+    const match = url.pathname.match(/^\/token\/(0x[a-fA-F0-9]{40})\/?$/);
+    if (match) {
+      const data = await backendJson<{ token: ApiToken; marketData?: { marketCapUsd?: number } }>(
+        env,
+        `/api/tokens/${match[1]}`,
+      );
+      if (data?.token) token = toSeoToken(data.token, data.marketData?.marketCapUsd);
+    }
+    const out = applyMeta(html, pageMeta(url.origin, url.pathname, token));
+    const headers = new Headers(response.headers);
+    headers.delete('content-length');
+    return new Response(out, { status: response.status, statusText: response.statusText, headers });
+  } catch {
+    return response;
+  }
+}
+
+/** Sitemap with every token page, or null to fall back to the static sitemap.xml. */
+export async function dynamicSitemap(origin: string, env: Env): Promise<Response | null> {
+  const tokens: SeoToken[] = [];
+  for (let offset = 0; offset < 1_000; offset += 100) {
+    const page = await backendJson<Array<{ token: ApiToken }>>(
+      env,
+      `/api/tokens?limit=100&offset=${offset}`,
+    );
+    if (!page) {
+      if (offset === 0) return null;
+      break;
+    }
+    tokens.push(...page.map((item) => toSeoToken(item.token)));
+    if (page.length < 100) break;
+  }
+  return new Response(buildSitemap(origin, tokens), {
+    headers: {
+      'content-type': 'application/xml; charset=utf-8',
+      'cache-control': 'public, max-age=3600',
+    },
+  });
+}

@@ -36,7 +36,7 @@ You may clear your browser storage at any time to remove these local settings.
 
 - **Social features**: comments, likes, reposts, sentiment votes and creator profiles you submit are stored by the Goton API together with your wallet address and shown publicly.
 - **Server logs**: the API keeps request logs for security and rate limiting. Client IP addresses are written to logs only as a one-way hash.
-- **Analytics**: only if you accept analytics cookies, the web app loads Google Analytics (`gtag.js`), which sets cookies and sends page-view and device data to Google. You can withdraw consent at any time from **Cookie settings** in the app footer (see the [Cookie Policy](/cookie-policy)).
+- **Analytics**: only if you accept analytics cookies, the web app loads Google Tag Manager (`gtm.js`) and Google Analytics (`gtag.js`), which set cookies and sends page-view and device data to Google. You can withdraw consent at any time from **Cookie settings** in the app footer (see the [Cookie Policy](/cookie-policy)).
 - **Erasure**: you can delete your comments, likes, reposts, sentiment votes and profile at any time from **Profile → Edit Profile → Delete my social data** (API: `DELETE /api/users/{address}/data`, signed in with that wallet). Onchain records cannot be erased by anyone.
 
 ## 4. Third-Party Protocols & Infrastructure

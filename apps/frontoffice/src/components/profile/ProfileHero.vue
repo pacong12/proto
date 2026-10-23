@@ -64,6 +64,16 @@
         <!-- Action Buttons (Top Right of Profile) -->
         <div class="flex items-center gap-2 self-start sm:self-end">
           <Button
+            v-if="!isOwnProfile && profileAddress"
+            :variant="stats.isFollowing ? 'outline' : 'default'"
+            size="sm"
+            class="h-8 min-w-24 text-xs font-bold cursor-pointer rounded-xl"
+            :disabled="busy"
+            @click="onFollow"
+          >
+            {{ stats.isFollowing ? t('followingAction') : t('followAction') }}
+          </Button>
+          <Button
             v-if="isOwnProfile"
             variant="outline"
             size="sm"
@@ -107,6 +117,27 @@
           <span>{{ profileAddress ? shortenAddress(profileAddress, 6, 4) : '' }}</span>
         </p>
 
+        <!-- Followers / following -->
+        <div v-if="profileAddress" class="flex items-center gap-4 text-sm">
+          <button
+            type="button"
+            class="inline-flex items-baseline gap-1 hover:underline underline-offset-2 cursor-pointer"
+            @click="openList('followers')"
+          >
+            <span class="font-bold text-foreground tabular-nums">{{ stats.followers }}</span>
+            <span class="text-muted-foreground"> {{ t('followersLabel') }}</span>
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-baseline gap-1 hover:underline underline-offset-2 cursor-pointer"
+            @click="openList('following')"
+          >
+            <span class="font-bold text-foreground tabular-nums">{{ stats.following }}</span>
+            <span class="text-muted-foreground"> {{ t('followingLabel') }}</span>
+          </button>
+          <span v-if="followError" class="text-xs text-rose-500">{{ followError }}</span>
+        </div>
+
         <p class="text-sm sm:text-base text-foreground/90 max-w-2xl font-sans leading-relaxed">
           {{
             profileData.bio ||
@@ -147,10 +178,44 @@
         </div>
       </div>
     </div>
+
+    <Dialog v-model:open="listOpen">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            {{ listDirection === 'followers' ? t('followersLabel') : t('followingLabel') }}
+          </DialogTitle>
+        </DialogHeader>
+        <p v-if="listRows.length === 0" class="py-6 text-center text-sm text-muted-foreground">
+          {{ listDirection === 'followers' ? t('noFollowers') : t('noFollowing') }}
+        </p>
+        <ul v-else class="max-h-80 overflow-y-auto -mx-2">
+          <li v-for="row in listRows" :key="row.address">
+            <RouterLink
+              :to="`/${row.identity.name}`"
+              class="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-muted transition"
+              @click="listOpen = false"
+            >
+              <Jazzicon :address="row.address" :size="32" class="rounded-full shrink-0" />
+              <div class="min-w-0">
+                <span class="block text-sm font-bold text-foreground truncate">
+                  {{ row.identity.displayName }}
+                </span>
+                <span class="block text-xs text-muted-foreground">
+                  {{ shortenAddress(row.address) }}
+                </span>
+              </div>
+            </RouterLink>
+          </li>
+        </ul>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, watch } from 'vue';
+import { RouterLink } from 'vue-router';
 import { Camera, Edit3, Share2, ExternalLink } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
@@ -159,10 +224,13 @@ import { shortenAddress } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import type { ProfileStorageData } from './types';
 import type { NetworkConfig } from '@goton/shared-types';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useFollows, type FollowRow } from '@/composables/useFollows';
+import { useWallet } from '@/composables/useWallet';
 
 const { t } = useI18n();
 
-defineProps<{
+const props = defineProps<{
   profileAddress: string | null;
   isOwnProfile: boolean;
   profileData: ProfileStorageData;
@@ -176,4 +244,35 @@ const emit = defineEmits<{
   (e: 'edit'): void;
   (e: 'share'): void;
 }>();
+
+const { account, openWallet } = useWallet();
+const { stats, busy, error: followError, load, toggle, list } = useFollows();
+
+watch(
+  () => [props.profileAddress, account.value] as const,
+  ([address, viewer]) => {
+    if (address) void load(address, viewer);
+  },
+  { immediate: true },
+);
+
+async function onFollow() {
+  if (!props.profileAddress) return;
+  if (!account.value) {
+    await openWallet();
+    return;
+  }
+  await toggle(props.profileAddress, account.value);
+}
+
+const listOpen = ref(false);
+const listDirection = ref<'followers' | 'following'>('followers');
+const listRows = ref<FollowRow[]>([]);
+async function openList(direction: 'followers' | 'following') {
+  if (!props.profileAddress) return;
+  listDirection.value = direction;
+  listRows.value = [];
+  listOpen.value = true;
+  listRows.value = await list(props.profileAddress, direction);
+}
 </script>

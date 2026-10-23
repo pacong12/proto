@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-6xl mx-auto space-y-4 font-sans">
     <!-- Top Live Dex & Alpha Ticker Ribbon Component -->
-    <FeedAlphaTicker :hot-tokens="hotTokens" @select-token="navigateToToken" />
+    <FeedAlphaTicker :hot-tokens="radarTokens" @select-token="navigateToToken" />
 
     <!-- Main Two-Column Hybrid Layout -->
     <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-5 items-start">
@@ -11,9 +11,9 @@
       <div class="space-y-4 min-w-0">
         <!-- 1. Feed Filter Tabs Bar + Multi-Chain Filter -->
         <div
-          class="px-3 pt-2 pb-1 border-b border-border bg-card/60 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+          class="px-3 pt-2 pb-1 border-b border-border bg-card/60 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-2"
         >
-          <Tabs v-model="activeFilter" class="w-auto">
+          <Tabs v-model="activeFilter" class="w-auto min-w-0 md:flex-1">
             <TabsList
               variant="line"
               class="text-sm overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0"
@@ -30,7 +30,7 @@
           </Tabs>
 
           <!-- Chain Filter (All Chains default / Robinhood / Arc) -->
-          <div class="flex items-center gap-1 text-sm self-end sm:self-auto pb-1 sm:pb-0">
+          <div class="flex items-center gap-1 text-sm self-end md:self-auto pb-1 md:pb-0 shrink-0">
             <button
               v-for="chainOpt in chainFilterOptions"
               :key="chainOpt.key"
@@ -109,7 +109,6 @@
                     class="px-2 py-1 text-xs text-muted-foreground uppercase font-bold flex items-center justify-between border-b border-border/50"
                   >
                     <span class="flex items-center gap-1">
-                      <Sparkles class="w-3 h-3 text-primary" />
                       Select Token for Callout ${{ cashtagQuery || '' }}
                     </span>
                     <span class="text-xs">Tab / Enter to pick</span>
@@ -134,7 +133,7 @@
                         :fallback-text="tItem.token.symbol"
                         :width="22"
                         :height="22"
-                        class="rounded-full shrink-0 border border-border/50"
+                        class="rounded-md shrink-0 border border-border/50"
                       />
                       <div class="min-w-0">
                         <span class="font-black text-foreground block text-xs truncate">
@@ -405,12 +404,12 @@ import { useWallet } from '@/composables/useWallet';
 import { useTokenStore } from '@/composables/useTokenStore';
 import { usePinnedTokens } from '@/composables/usePinnedTokens';
 import { useFeed, isWhaleCaller, type FeedFilterType } from '@/composables/useFeed';
+import { useFollows } from '@/composables/useFollows';
 import { uploadFile } from '@/lib/api-client';
 import {
   Search,
   Loader2,
   BarChart2,
-  Sparkles,
   ChevronDown,
   Image as ImageIcon,
   AlertCircle,
@@ -459,6 +458,7 @@ const {
 } = useTokenStore();
 const {
   callouts,
+  followedAuthors,
   loading,
   activeFilter,
   searchQuery,
@@ -745,6 +745,7 @@ async function checkCallerPosition(tokenAddress: string): Promise<void> {
 
 const filterTabs = computed<Array<{ key: FeedFilterType; label: string }>>(() => [
   { key: 'all', label: 'All Calls' },
+  ...(account.value ? [{ key: 'following' as const, label: t('followingTab') }] : []),
   { key: 'target', label: 'Targets' },
   { key: 'whale', label: 'Whales' },
   { key: 'profit', label: 'In Profit' },
@@ -770,11 +771,53 @@ const availableTokensList = computed(() => {
     .slice(0, 15);
 });
 
+// Following tab: the authors the connected wallet follows.
+const { list: listFollows } = useFollows();
+watch(
+  () => account.value,
+  async (viewer) => {
+    if (!viewer) {
+      followedAuthors.value = new Set();
+      if (activeFilter.value === 'following') activeFilter.value = 'all';
+      return;
+    }
+    const rows = await listFollows(viewer, 'following');
+    followedAuthors.value = new Set(rows.map((r) => r.address.toLowerCase()));
+  },
+  { immediate: true },
+);
+
+// Sidebar: the tokens moving most in the last 24h (volume first, then price change).
 const hotTokens = computed(() => {
   if (!networkTokens.value) return [];
   return [...networkTokens.value]
-    .sort((a, b) => (b.marketData?.marketCapUsd ?? 0) - (a.marketData?.marketCapUsd ?? 0))
+    .sort(
+      (a, b) =>
+        (b.marketData?.volume24hUsd ?? 0) - (a.marketData?.volume24hUsd ?? 0) ||
+        Math.abs(b.marketData?.priceChange24h ?? 0) - Math.abs(a.marketData?.priceChange24h ?? 0),
+    )
     .slice(0, 5);
+});
+
+// Alpha Radar: the most-called tokens of the last 24h, with how many calls each has.
+const radarTokens = computed(() => {
+  const since = Date.now() - 86_400_000;
+  const counts = new Map<string, number>();
+  for (const c of callouts.value) {
+    const at = c.createdAt < 1e12 ? c.createdAt * 1000 : c.createdAt;
+    if (c.parentId || at < since) continue;
+    const key = c.tokenAddress.toLowerCase();
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return [...counts]
+    .map(([address, calls]) => ({
+      item: networkTokens.value.find((t) => t.token.address.toLowerCase() === address),
+      calls,
+    }))
+    .filter((x): x is { item: (typeof networkTokens.value)[number]; calls: number } => !!x.item)
+    .sort((a, b) => b.calls - a.calls)
+    .slice(0, 8)
+    .map(({ item, calls }) => ({ ...item, calls }));
 });
 
 function detectTokenFromContent(text: string): LaunchedTokenEntity | null {

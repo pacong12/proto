@@ -16,7 +16,7 @@ Membeli dan menjual token di Goton dirancang agar cepat, aman, dan responsif. Se
    - Masukkan jumlah aset gas (ETH atau USDC) yang ingin dibelanjakan, atau gunakan tombol pintas nominal yang tersedia.
    - Panel akan secara otomatis menghitung estimasi jumlah token yang akan diterima berdasarkan rumus kurva bonding.
 5. **Konfigurasi Slippage Tolerance (Opsional)**:
-   - Klik ikon pengaturan untuk menentukan toleransi slippage (pilihan: 0.5%, 1.0%, 2.0%, atau custom).
+   - Klik ikon pengaturan untuk menentukan toleransi slippage (preset 0.5%, 1%, 2.5% dan 5%, nilai custom, atau Auto).
    - Fitur slippage menjamin transaksi otomatis dibatalkan jika harga bergerak melebihi batas toleransi Anda saat konfirmasi blok berlangsung.
 6. **Eksekusi Pembelian**: Klik tombol **Buy [Simbol Token]** dan konfirmasikan transaksi di dompet Anda.
 
@@ -38,3 +38,22 @@ Membeli dan menjual token di Goton dirancang agar cepat, aman, dan responsif. Se
 
 - **Price Impact**: Pada pasar terdesentralisasi, membeli porsi besar dari token yang tersedia akan menggeser harga ke atas. Pada token kurva bonding, harga bergerak secara matematis mengikuti formula $x \cdot y = k$.
 - **Slippage Protection**: Melindungi Anda dari manipulasi harga atau serangan front-running. Jika ada transaksi lain yang dieksekusi tepat sebelum transaksi Anda, proteksi on-chain menjamin Anda menerima minimal output yang disepakati atau transaksi akan dibatalkan secara aman.
+
+---
+
+## Membaca Halaman Token
+
+- **Market cap** adalah nilai total token saat ini: harga × total pasokan (1 miliar). Angka ini ikut bergerak bersama harga meskipun tidak ada yang bertransaksi.
+- **Volume 24 jam** adalah nilai semua pembelian dan penjualan dalam 24 jam terakhir. Token bisa punya market cap tinggi tanpa volume: bernilai, tetapi sepi.
+- **Perubahan 24 jam** membandingkan harga dengan 24 jam lalu. Token yang tidak diperdagangkan dalam rentang itu menunjukkan 0%.
+- **Buy / sell pressure** membagi volume terbaru menjadi beli dan jual dalam 5 menit, 1 jam, 6 jam, atau 24 jam.
+- **Holders** menampilkan saldo terbesar. Bonding curve (atau pool setelah graduasi) diberi label tersendiri, bukan sebagai pengguna.
+- **Top traders** menampilkan pembelian, penjualan, saldo, dan profit setiap dompet.
+- **Chart** menampilkan harga atau market cap dalam candle dari 1 detik hingga 1 hari. Bar tanpa transaksi digambar abu-abu.
+- Di Explore, **grafik** kecil di samping setiap token adalah harganya sejak peluncuran hingga sekarang.
+
+---
+
+## Limit, Take-Profit & Stop-Loss
+
+Untuk membeli atau menjual di harga target, gunakan tab **Limit** dan **TP / SL** di panel trading. Lihat [Order Limit, Take-Profit & Stop-Loss](/id/protocol/advanced-orders).

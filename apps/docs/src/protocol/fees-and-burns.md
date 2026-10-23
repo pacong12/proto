@@ -33,6 +33,17 @@ By default the whole creator share goes to the creator. The protocol share is no
 
 ---
 
+## Team Payouts
+
+A creator can share their fee share with a team. Under **Advanced → Fee recipients** on the create page, add team wallets with fixed percentages (up to 10 wallets, adding up to 100%). The app then creates a `GotonTeamSplitter` for the team before the launch:
+
+- **Robinhood Chain**: the token tax goes to the team from launch. After graduation, route the pool fees to the same team from your profile (48-hour timelock).
+- **Arc**: fees and tax reach the team once the payout redirect proposed at launch becomes active, 48 hours later. Until then they go to the creator.
+
+The team contract has no owner and its members and shares can never change. Anyone can release the members' shares from the token page (**About → Team payouts**); each member is always paid directly.
+
+---
+
 ## Fee Redirection (Community Takeovers)
 
 If a creator wishes to reward their community or hand over project leadership:

@@ -1,26 +1,20 @@
 # goton
-> Multi-chain launchpad for fixed-supply tokens on Robinhood Chain and Arc Network.
 
-goton is the premier multi-chain launchpad for fixed-supply tokens. Explore new launches, create tokens, and trade with permanently locked liquidity or dynamic bonding curves across Robinhood Chain and Arc Network.
+> Non-custodial launchpad for fixed-supply tokens on Robinhood Chain (chain id 4663) and Arc (chain id 5042). Tokens launch on a bonding curve that graduates into a locked Uniswap v4 pool (Robinhood Chain) or straight into a locked Uniswap v4 pool (Arc).
 
-## Products & Features
-- Explore newest token launches on Robinhood Chain and Arc Network
-- Constant-Product bonding curve with automatic graduation to permanently locked liquidity
-- Decentralized trading interface with live charts and real-time order books
-- Built-in metadata storage pinned to IPFS
+goton lets anyone launch a 1,000,000,000-supply token with no mint function and liquidity locked for good, trade it, place limit, take-profit and stop-loss orders, post calls on tokens they hold, and follow other callers. Creators keep 70% (Robinhood Chain) or 80% (Arc) of each token's fees and tax, and can split it with holders, a buyback or a team.
 
-## Public Surfaces
-- App / Explore: %APP_URL%/launchpad
-- Create Token: %APP_URL%/launchpad/create
-- Analytics: %APP_URL%/analytics
-- Memestock Community Feed: %APP_URL%/memestock
-- Documentation: %DOCS_URL%
-- Robots: %APP_URL%/robots.txt
-- Sitemap: %APP_URL%/sitemap.xml
+## App
 
-## Supported Networks
-- **Robinhood Chain** (Chain ID: 4663): Native gas ETH (18 decimals)
-- **Arc Network** (Chain ID: 5042): Native gas USDC (18 decimals)
-- Token Supply: Fixed 1,000,000,000 (18 decimals)
-- Pool Fee: 1% (10000)
-- Launch Fee: 0.0005 ETH (Robinhood) / 1 USDC (Arc)
+- [Explore](%APP_URL%/launchpad): every token with market cap, volume and price since launch
+- [Memestock](%APP_URL%/memestock): launches with a written thesis whose creator still holds a bought position
+- [Feed](%APP_URL%/feed): holder calls, Alpha Radar and Top Movers
+- [Create](%APP_URL%/launchpad/create): launch a token
+- Token pages: %APP_URL%/token/{address}
+
+## For developers and agents
+
+- [Public API](%DOCS_URL%/integration/api): read-only JSON at %APP_URL%/api (tokens, candles, trades, holders, orders, Memestock)
+- [For AI agents](%DOCS_URL%/integration/agents): how an agent reads goton data and trades with its own wallet, plus a downloadable skill
+- [Contracts](%DOCS_URL%/integration/contracts): verified addresses on both chains
+- [Docs](%DOCS_URL%): full documentation

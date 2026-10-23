@@ -190,7 +190,6 @@
       <div class="flex items-center justify-between">
         <div>
           <h2 class="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
-            <Zap class="w-4 h-4 text-amber-500 fill-amber-500" />
             <span>Top Coins on {{ activeNetwork.name }}</span>
           </h2>
           <p class="text-xs text-muted-foreground font-sans">
@@ -218,22 +217,26 @@
               class="border-b border-border/70 text-muted-foreground text-xs uppercase bg-black hover:bg-black"
             >
               <TableHead
-                class="py-3 px-3 font-semibold w-12 text-center text-muted-foreground bg-black"
+                class="py-3 px-2 sm:px-3 font-semibold w-12 text-center text-muted-foreground bg-black"
                 >#</TableHead
               >
-              <TableHead class="py-3 px-4 font-semibold text-muted-foreground bg-black"
+              <TableHead class="py-3 px-2 sm:px-4 font-semibold text-muted-foreground bg-black"
                 >TOKEN</TableHead
               >
-              <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black"
+              <TableHead
+                class="py-3 px-2 sm:px-4 font-semibold text-right text-muted-foreground bg-black"
                 >MARKET CAP</TableHead
               >
-              <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black"
+              <TableHead
+                class="hidden sm:table-cell py-3 px-2 sm:px-4 font-semibold text-right text-muted-foreground bg-black"
                 >24H VOLUME</TableHead
               >
-              <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black"
+              <TableHead
+                class="py-3 px-2 sm:px-4 font-semibold text-right text-muted-foreground bg-black"
                 >24H CHANGE</TableHead
               >
-              <TableHead class="py-3 px-4 font-semibold text-right text-muted-foreground bg-black"
+              <TableHead
+                class="hidden sm:table-cell py-3 px-2 sm:px-4 font-semibold text-right text-muted-foreground bg-black"
                 >ACTION</TableHead
               >
             </TableRow>
@@ -245,10 +248,10 @@
               class="hover:bg-zinc-900/40 transition-colors cursor-pointer group bg-black"
               @click="router.push(`/token/${tItem.token.address}`)"
             >
-              <TableCell class="py-3.5 px-3 text-center text-muted-foreground font-bold">
+              <TableCell class="py-3.5 px-2 sm:px-3 text-center text-muted-foreground font-bold">
                 {{ idx + 1 }}
               </TableCell>
-              <TableCell class="py-3.5 px-4">
+              <TableCell class="py-3.5 px-2 sm:px-4">
                 <div class="flex items-center gap-3">
                   <OptimizedImage
                     :src="tItem.token.logo"
@@ -256,7 +259,7 @@
                     :fallback-text="tItem.token.symbol"
                     :width="32"
                     :height="32"
-                    class="rounded-full border border-border/70 shrink-0"
+                    class="rounded-lg border border-border/70 shrink-0"
                   />
                   <div>
                     <span
@@ -270,10 +273,12 @@
                   </div>
                 </div>
               </TableCell>
-              <TableCell class="py-3.5 px-4 text-right font-bold text-foreground">
+              <TableCell class="py-3.5 px-2 sm:px-4 text-right font-bold text-foreground">
                 {{ formatMarketCap(tItem.marketData?.marketCapUsd) }}
               </TableCell>
-              <TableCell class="py-3.5 px-4 text-right font-medium text-foreground">
+              <TableCell
+                class="hidden sm:table-cell py-3.5 px-2 sm:px-4 text-right font-medium text-foreground"
+              >
                 {{
                   (tItem.marketData?.volume24hUsd ?? 0) > 0
                     ? formatCompactUsd(tItem.marketData?.volume24hUsd)
@@ -281,7 +286,7 @@
                 }}
               </TableCell>
               <TableCell
-                class="py-3.5 px-4 text-right font-bold"
+                class="py-3.5 px-2 sm:px-4 text-right font-bold"
                 :class="
                   (tItem.marketData?.priceChange24h ?? 0) >= 0
                     ? 'text-emerald-500'
@@ -291,7 +296,7 @@
                 {{ (tItem.marketData?.priceChange24h ?? 0) >= 0 ? '+' : ''
                 }}{{ (tItem.marketData?.priceChange24h ?? 0).toFixed(1) }}%
               </TableCell>
-              <TableCell class="py-3.5 px-4 text-right">
+              <TableCell class="hidden sm:table-cell py-3.5 px-2 sm:px-4 text-right">
                 <Button
                   size="sm"
                   variant="outline"
@@ -399,7 +404,6 @@ import {
   Rocket,
   Flame,
   Coins,
-  Zap,
   BarChart2,
 } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
@@ -529,7 +533,6 @@ const contractEntries = computed(() => {
   const c = activeNetwork.value.contracts;
   const entries: { name: string; address?: `0x${string}` }[] = [
     { name: 'Launchpad Factory', address: c.factoryV2 || c.factory },
-    { name: 'Liquidity Locker', address: c.locker },
     { name: 'Graduator (Uniswap V4)', address: c.graduator },
     { name: 'Goton Hook (Uniswap V4)', address: c.memeHook },
     { name: 'Goton V4 Router', address: c.router },
@@ -537,12 +540,9 @@ const contractEntries = computed(() => {
     { name: 'Limit Orders', address: c.limitOrders },
     { name: 'Uniswap V4 PoolManager', address: c.poolManagerV4 },
     { name: 'Uniswap Universal Router', address: c.universalRouter },
-    { name: 'Uniswap V3 Factory', address: c.uniswapV3Factory },
-    { name: 'Position Manager', address: c.positionManager },
-    { name: 'Swap Router', address: c.swapRouter },
   ];
-  // Only list contracts deployed on this chain (Arc has no locker or V3; legacy V3 entries stay
-  // on Robinhood).
+  // The v4 stack only: liquidity is locked by the graduator / factory, so the pre-v4 locker and
+  // Uniswap V3 contracts (still in the chain config for old tokens) are not listed.
   return entries.filter((e): e is { name: string; address: `0x${string}` } =>
     isContractDeployed(e.address),
   );

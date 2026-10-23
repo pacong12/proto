@@ -23,6 +23,9 @@ Goton 支持所有主流 EVM 兼容 Web3 钱包，包括：
 - Rabby Wallet
 - Rainbow Wallet
 - 任何支持 WalletConnect / Reown 的移动端钱包
+
+Goton 只连接钱包，不提供邮箱或社交账号登录，因此应用从不替您保管私钥。
+
 - 支持 Google、X、Discord、GitHub 社交一键免插件登录（嵌入式非托管钱包）
 
 ---
@@ -40,6 +43,14 @@ Goton 支持所有主流 EVM 兼容 Web3 钱包，包括：
 
 - **On Curve**：代币当前正在联合曲线上交易，随着买入代币增加价格稳定上升。
 - **Graduated**：在 Robinhood 链上，曲线已募集满 4.2 ETH，市场永久迁入锁定的 Uniswap v4 池。在 Arc 网络上，代币从上线起就在 Uniswap v4 池中交易，市值超过约 $45,000 时在池内毕业。
+
+### 可以按目标价格买入或卖出吗？
+
+可以。**Limit** 和 **TP / SL** 标签会挂出订单，在市值达到目标时自动成交，并可随时取消。详见[限价、止盈与止损订单](/zh/protocol/advanced-orders)。
+
+### Explore 和 Memestock 有什么区别？
+
+Explore 列出所有代币。Memestock 只列出有书面论点、且创作者买入并仍持有大部分仓位的发行，按近期交易排序。详见[动态、喊单、Memestock 与关注](/zh/protocol/social)。
 
 ### 出售代币是否有限制？
 
@@ -59,4 +70,4 @@ Goton 支持所有主流 EVM 兼容 Web3 钱包，包括：
 
 ### 创作者如何获得收益分成？
 
-创作者将自动获得其代币交易中 **1% 手续费的 70%**。您可以随时在 **Profile** 个人中心页面查看并一键提取积累的收益。
+每个代币的手续费和税费在链上分配：**Robinhood Chain 上 70% 归创作者份额，Arc 上为 80%**，其余归协议。创作者可在公开交易开始前一次性将其份额分配给自己、持有者和回购销毁。详见[创作者分成与回购销毁](/zh/protocol/fees-and-burns)。在 **Profile** 页面领取累积的收益。
