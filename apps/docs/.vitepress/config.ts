@@ -51,6 +51,66 @@ function writeUntranslatedRedirects(outDir: string): void {
   }
 }
 
+/** Markdown inline syntax to plain text, one line. */
+function plainText(markdown: string): string {
+  return markdown
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/<[^>]+>/g, '')
+    .replace(/[*_`]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function clip(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max - 1);
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(' '), max - 20))}…`;
+}
+
+/** Page source without its frontmatter. */
+function pageBody(srcDir: string, relativePath: string): string {
+  const file = path.join(srcDir, relativePath);
+  if (!fs.existsSync(file)) return '';
+  return fs.readFileSync(file, 'utf8').replace(/^---\n[\s\S]*?\n---\n/, '');
+}
+
+/** The first prose paragraph of a page, for pages whose frontmatter has no description. */
+function firstParagraph(body: string): string {
+  for (const block of body.split(/\n\s*\n/)) {
+    const text = block.trim();
+    if (!text || /^(#|<|\||-|\*|>|:::|```|---|!\[|\d+\.)/.test(text)) continue;
+    const plain = plainText(text);
+    if (plain.length >= 40) return clip(plain, 160);
+  }
+  return '';
+}
+
+/** Question/answer pairs from a FAQ page: each `### question` and the text up to the next heading. */
+function faqEntries(body: string): Array<[string, string]> {
+  const entries: Array<[string, string]> = [];
+  const parts = body.split(/^### /m).slice(1);
+  for (const part of parts) {
+    const [question, ...rest] = part.split('\n');
+    const answer = plainText(
+      rest
+        .join('\n')
+        .split(/^(#{1,3} |---)/m)[0]
+        // Paragraphs end with a period and list items become "a; b; c", so they stay separate
+        // once the text is one line.
+        .replace(/([^.!?:;\s])[ \t]*\n\s*\n/g, '$1.\n\n')
+        .replace(/:\s*\n\s*(?:[-*]|\d+\.)\s+/g, ': ')
+        .replace(/\n\s*(?:[-*]|\d+\.)\s+/g, '; ')
+        .replace(/^\s*(?:[-*]|\d+\.)\s+/gm, ''),
+    );
+    if (question.trim() && answer) entries.push([plainText(question), answer]);
+  }
+  return entries;
+}
+
+/** JSON for a <script> element, with `<` escaped so page text cannot close the tag. */
+const scriptJson = (value: unknown) => JSON.stringify(value).replace(/</g, '\\u003c');
+
 export default defineConfig({
   title: 'Goton User Guide',
   description:
@@ -68,22 +128,34 @@ export default defineConfig({
       });
     },
   },
-  transformPageData(pageData) {
+  transformPageData(pageData, { siteConfig }) {
     pageData.frontmatter = JSON.parse(renderSiteUrls(JSON.stringify(pageData.frontmatter), SITE));
+    // Search and AI answers quote the description: give every page its own, from its first
+    // paragraph, unless the frontmatter sets one.
+    if (!pageData.frontmatter.description) {
+      const intro = firstParagraph(
+        renderSiteUrls(pageBody(siteConfig.srcDir, pageData.relativePath), SITE),
+      );
+      if (intro) {
+        pageData.frontmatter.description = intro;
+        pageData.description = intro;
+      }
+    }
   },
   // Per-page canonical, Open Graph and X tags, plus hreflang links between the EN / ID / ZH copies
   // of a page (the static head only had one title and description for the whole site).
   transformHead({ pageData, title, description, siteConfig }) {
     const page = pageData.relativePath.replace(/(^|\/)index\.md$/, '$1').replace(/\.md$/, '');
     const url = `${SITE.docsUrl}/${page}`;
-    const head: [string, Record<string, string>][] = [
-      ['link', { rel: 'canonical', href: url }],
-      ['meta', { property: 'og:url', content: url }],
-      ['meta', { property: 'og:title', content: title }],
-      ['meta', { property: 'og:description', content: description }],
-      ['meta', { name: 'twitter:title', content: title }],
-      ['meta', { name: 'twitter:description', content: description }],
-    ];
+    const head: Array<[string, Record<string, string>] | [string, Record<string, string>, string]> =
+      [
+        ['link', { rel: 'canonical', href: url }],
+        ['meta', { property: 'og:url', content: url }],
+        ['meta', { property: 'og:title', content: title }],
+        ['meta', { property: 'og:description', content: description }],
+        ['meta', { name: 'twitter:title', content: title }],
+        ['meta', { name: 'twitter:description', content: description }],
+      ];
     const base = page.replace(/^(id|zh)\//, '');
     const variants: Array<[string, string]> = [
       ['en', base],
@@ -102,6 +174,49 @@ export default defineConfig({
       head.push([
         'link',
         { rel: 'alternate', hreflang: 'x-default', href: `${SITE.docsUrl}/${base}` },
+      ]);
+    }
+    // Structured data: every page is an article of the goton docs; FAQ pages also list their
+    // questions and answers (FAQPage) for answer engines.
+    const lang = /^(id|zh|ja|ko|es|ru|ar|fr|de|pt)\//.exec(page)?.[1] ?? 'en';
+    const graph: Array<Record<string, unknown>> = [];
+    if (pageData.frontmatter.layout !== 'home') {
+      graph.push({
+        '@type': 'TechArticle',
+        '@id': `${url}#article`,
+        headline: title.replace(/ \| .*$/, ''),
+        description,
+        url,
+        inLanguage: lang,
+        ...(pageData.lastUpdated
+          ? { dateModified: new Date(pageData.lastUpdated).toISOString() }
+          : {}),
+        isPartOf: { '@id': `${SITE.docsUrl}/#website` },
+      });
+    }
+    if (/(^|\/)protocol\/faq\.md$/.test(pageData.relativePath)) {
+      const entries = faqEntries(
+        renderSiteUrls(pageBody(siteConfig.srcDir, pageData.relativePath), SITE),
+      );
+      if (entries.length) {
+        graph.push({
+          '@type': 'FAQPage',
+          '@id': `${url}#faq`,
+          url,
+          inLanguage: lang,
+          mainEntity: entries.map(([q, a]) => ({
+            '@type': 'Question',
+            name: q,
+            acceptedAnswer: { '@type': 'Answer', text: a },
+          })),
+        });
+      }
+    }
+    if (graph.length) {
+      head.push([
+        'script',
+        { type: 'application/ld+json' },
+        scriptJson({ '@context': 'https://schema.org', '@graph': graph }),
       ]);
     }
     return head;
@@ -226,13 +341,6 @@ export default defineConfig({
               url: `${SITE.appUrl}`,
               logo: `${SITE.appUrl}/favicon.svg`,
             },
-          },
-          {
-            '@type': 'TechArticle',
-            '@id': `${SITE.docsUrl}/#article`,
-            url: `${SITE.docsUrl}`,
-            name: 'Goton Protocol User Documentation',
-            headline: 'Fair Token Launchpad Protocol Guides & Reference',
           },
         ],
       }),
