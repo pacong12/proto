@@ -14,6 +14,7 @@ Untuk menjaga transparansi dan keamanan, seluruh smart contract launchpad Goton 
 | **Goton V4 Router**                   | `0x5F88CE2BeD0f2639133b5EeB8b8fFE1fD50BA2dc` | Swap di pool yang sudah graduate                                             |
 | **Goton V4 Buyback**                  | `0x240547f435Fe98B8B3F14036936D3a3e0EE87213` | Buyback dan burn yang dijaga TWAP                                            |
 | **Limit Orders**                      | `0x2f3212D06104eEbb5bA4FA934B9B55b906dC3F61` | Order limit, take-profit dan stop-loss dengan escrow                         |
+| **Team Splitter Factory**             | `0xF2187BdcDcdB0999Bf1143b18089dc37c09f7Ef4` | Membuat splitter tim dengan bagian tetap untuk fee kreator                   |
 | **Liquidity Locker (Uniswap V4)**     | `0x7A1AD6AD30B1c9e276eD80a853E8dA897fE5D63E` | Mengunci NFT posisi LP secara permanen                                       |
 | **Uniswap V3 Factory**                | `0x1f7d7550B1b028f7571E69A784071F0205FD2EfA` | Registri pool terdesentralisasi kanonikal                                    |
 | **Position Manager**                  | `0x73991a25C818Bf1f1128dEAaB1492D45638DE0D3` | Pengelola posisi likuiditas terkonsentrasi                                   |
@@ -24,16 +25,17 @@ Untuk menjaga transparansi dan keamanan, seluruh smart contract launchpad Goton 
 
 ## 2. Arc Network (Mainnet, Chain ID: 5042)
 
-| Nama Kontrak                       | Alamat                                       | Fungsi                                               |
-| :--------------------------------- | :------------------------------------------- | :--------------------------------------------------- |
-| **Launchpad Factory (Uniswap V4)** | `0xd7Bf86061CC5637b2b854d61007f8fD7CD6f0980` | Meluncurkan token langsung ke pool v4 terkunci       |
-| **Goton V4 Hook**                  | `0xb5C88A6101e6b979Ad63Bf5e6302dF8F031360Cc` | Fee pool, anti-snipe dan oracle TWAP                 |
-| **Goton V4 Router**                | `0xD8Ec94F07f590F8Ceb620A8D17Bb555fBde366f1` | Swap dibayar dengan USDC native                      |
-| **Goton V4 Buyback**               | `0xb0C5fCBf9D0326cA2Ed0b2C49c5E754f36c78AFd` | Buyback dan burn yang dijaga TWAP                    |
-| **Limit Orders**                   | `0x3983F223E7Ef0B3c24b3a8F76Db96ed4Bf349Ee6` | Order limit, take-profit dan stop-loss dengan escrow |
-| **Uniswap V4 PoolManager**         | `0x8366a39CC670B4001A1121B8F6A443A643e40951` | Singleton v4 resmi                                   |
-| **Token Quote (USDC)**             | `0x3600000000000000000000000000000000000000` | USDC ERC-20 resmi sebagai pasangan (6 desimal)       |
-| **Factory Lama (pra-v4)**          | `0xf94d16c9E90fCd55b75D318d0104269146612abF` | Peluncuran sebelumnya; tidak ada token baru          |
+| Nama Kontrak                       | Alamat                                       | Fungsi                                                     |
+| :--------------------------------- | :------------------------------------------- | :--------------------------------------------------------- |
+| **Launchpad Factory (Uniswap V4)** | `0xd7Bf86061CC5637b2b854d61007f8fD7CD6f0980` | Meluncurkan token langsung ke pool v4 terkunci             |
+| **Goton V4 Hook**                  | `0xb5C88A6101e6b979Ad63Bf5e6302dF8F031360Cc` | Fee pool, anti-snipe dan oracle TWAP                       |
+| **Goton V4 Router**                | `0xD8Ec94F07f590F8Ceb620A8D17Bb555fBde366f1` | Swap dibayar dengan USDC native                            |
+| **Goton V4 Buyback**               | `0xb0C5fCBf9D0326cA2Ed0b2C49c5E754f36c78AFd` | Buyback dan burn yang dijaga TWAP                          |
+| **Limit Orders**                   | `0x3983F223E7Ef0B3c24b3a8F76Db96ed4Bf349Ee6` | Order limit, take-profit dan stop-loss dengan escrow       |
+| **Team Splitter Factory**          | `0x1F64014D2fA9B8Dd277E2Fbd6581553916175C09` | Membuat splitter tim dengan bagian tetap untuk fee kreator |
+| **Uniswap V4 PoolManager**         | `0x8366a39CC670B4001A1121B8F6A443A643e40951` | Singleton v4 resmi                                         |
+| **Token Quote (USDC)**             | `0x3600000000000000000000000000000000000000` | USDC ERC-20 resmi sebagai pasangan (6 desimal)             |
+| **Factory Lama (pra-v4)**          | `0xf94d16c9E90fCd55b75D318d0104269146612abF` | Peluncuran sebelumnya; tidak ada token baru                |
 
 ---
 
