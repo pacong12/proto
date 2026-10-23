@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/pacong12/proto/compare/v0.4.2...v0.5.0) (2026-10-23)
+
+
+### Features
+
+* Memestock curation, follows, audit and layout fixes ([#183](https://github.com/pacong12/proto/issues/183)) ([2109f54](https://github.com/pacong12/proto/commit/2109f54d8e4513289cb00de64748c270c0519c39))
+
 ## [0.4.2](https://github.com/pacong12/proto/compare/v0.4.1...v0.4.2) (2026-10-19)
 
 
