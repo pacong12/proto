@@ -2277,7 +2277,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
     // DEX Screener asks for the latest block whose events are available, i.e. the indexer's
     // cursor, not the chain head (requesting events up to the head would return partial data).
-    let block = 0n;
+    let block: bigint;
     try {
       block = (await repository.getLastIndexedBlock?.(targetNetwork.name)) ?? 0n;
       if (block <= 0n) block = (await targetClient.getBlockNumber()) - 2n;
