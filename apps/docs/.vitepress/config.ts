@@ -244,7 +244,6 @@ export default defineConfig({
         '@': path.resolve(__dirname, '../src'),
       },
     },
-    // @ts-expect-error Tailwind v4 Vite 6 plugin interface divergence with VitePress bundled Vite 5
     plugins: [tailwindcss()],
   },
   locales: {
