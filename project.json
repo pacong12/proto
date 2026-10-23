@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/nx/schemas/project-schema.json",
+  "name": "@goton/source",
+  "//": "The edge worker (worker.ts, seo.ts), its tests in tests/ and repo tooling outside apps/ and packages/.",
+  "targets": {
+    "lint": {
+      "command": "eslint . --max-warnings=0 --ignore-pattern 'apps/**' --ignore-pattern 'packages/**'",
+      "cache": true
+    },
+    "test": {
+      "command": "vitest run tests",
+      "cache": true,
+      "inputs": [
+        "{workspaceRoot}/worker.ts",
+        "{workspaceRoot}/seo.ts",
+        "{workspaceRoot}/tests/**/*",
+        "{workspaceRoot}/vitest.config.ts",
+        "{workspaceRoot}/apps/frontoffice/public/**/*",
+        "{workspaceRoot}/apps/docs/src/public/**/*"
+      ]
+    }
+  }
+}

@@ -8,7 +8,8 @@
     "build": "vitepress build",
     "preview": "vitepress preview --port 3002",
     "typecheck": "tsc --noEmit",
-    "deploy": "bunx wrangler deploy"
+    "deploy": "bunx wrangler deploy",
+    "lint": "eslint . --max-warnings=0"
   },
   "dependencies": {
     "@goton/shared-types": "*",
@@ -25,5 +26,12 @@
   "devDependencies": {
     "typescript": "^5.7.3",
     "vitepress": "^1.6.4"
+  },
+  "nx": {
+    "targets": {
+      "build": {
+        "cache": false
+      }
+    }
   }
 }

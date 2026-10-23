@@ -1,0 +1,35 @@
+{
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "name": "contracts",
+  "projectType": "library",
+  "namedInputs": {
+    "solidity": [
+      "{projectRoot}/src/**/*",
+      "{projectRoot}/script/**/*",
+      "{projectRoot}/test/**/*",
+      "{projectRoot}/foundry.toml",
+      "{projectRoot}/remappings.txt"
+    ]
+  },
+  "targets": {
+    "build": {
+      "command": "forge build --sizes",
+      "options": { "cwd": "{projectRoot}" },
+      "inputs": ["solidity"],
+      "outputs": ["{projectRoot}/out"],
+      "cache": true
+    },
+    "test": {
+      "command": "forge test",
+      "options": { "cwd": "{projectRoot}" },
+      "inputs": ["solidity"],
+      "cache": true
+    },
+    "gas-snapshot": {
+      "command": "forge snapshot --no-match-test 'testFuzz|invariant' --no-match-path '*fork*' --check --tolerance 2",
+      "options": { "cwd": "{projectRoot}" },
+      "inputs": ["solidity", "{projectRoot}/.gas-snapshot"],
+      "cache": true
+    }
+  }
+}
