@@ -40,6 +40,4 @@ jobs:
         run: bun run test
 
       - name: Run Smart Contract Unit Tests (Foundry Forge)
-        run: |
-          cd contracts
-          forge test -vvv
+        run: bun run nx run contracts:test -- -vvv

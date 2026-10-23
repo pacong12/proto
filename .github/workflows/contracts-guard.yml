@@ -23,6 +23,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies with Bun
+        run: bun install --frozen-lockfile
+
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
@@ -52,14 +60,11 @@ jobs:
           '
 
       - name: Run Foundry Full Unit & Invariant Tests
-        run: |
-          cd contracts
-          forge test -vvv
+        run: bun run nx run contracts:test -- -vvv
 
       - name: Gas Snapshot Regression Check
-        run: |
-          cd contracts
-          # Fails when any test's gas grows more than 2% over .gas-snapshot. Fuzz, invariant and
-          # fork tests are excluded (their gas is not deterministic). After an intended change,
-          # run the same command without --check/--tolerance and commit .gas-snapshot.
-          forge snapshot --no-match-test "testFuzz|invariant" --no-match-path "*fork*" --check --tolerance 2
+        # Fails when any test's gas grows more than 2% over .gas-snapshot. Fuzz, invariant and
+        # fork tests are excluded (their gas is not deterministic). After an intended change, run
+        # `forge snapshot --no-match-test "testFuzz|invariant" --no-match-path "*fork*"` in contracts/
+        # and commit .gas-snapshot.
+        run: bun run nx run contracts:gas-snapshot
