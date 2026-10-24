@@ -4,6 +4,16 @@
  * Pure functions, so worker.ts stays thin and this stays testable.
  */
 
+import {
+  canonicalPath,
+  clipText,
+  isAddress,
+  SEO_DEFAULT_DESCRIPTION,
+  SEO_DEFAULT_TITLE,
+  SEO_PAGES,
+  tokenSeoDescription,
+} from './packages/shared-types/src/constants/seo';
+
 export interface PageMeta {
   title: string;
   description: string;
@@ -32,42 +42,14 @@ export interface SeoToken {
   socials?: Record<string, string>;
 }
 
-const SITE_TITLE = 'goton · Launch fixed-supply tokens on Robinhood Chain & Arc';
-const SITE_DESCRIPTION =
-  'goton is the non-custodial launchpad for fixed-supply tokens on Robinhood Chain and Arc. Launch on a bonding curve or straight into a locked Uniswap v4 pool, then trade, call and follow.';
-
 /** Static pages listed in the sitemap, with how often they change. */
 export const STATIC_PAGES: Array<{ path: string; changefreq: string; priority: string }> = [
-  { path: '/', changefreq: 'hourly', priority: '1.0' },
   { path: '/launchpad', changefreq: 'hourly', priority: '1.0' },
   { path: '/memestock', changefreq: 'hourly', priority: '0.8' },
   { path: '/feed', changefreq: 'hourly', priority: '0.8' },
   { path: '/analytics', changefreq: 'daily', priority: '0.6' },
   { path: '/launchpad/create', changefreq: 'monthly', priority: '0.7' },
 ];
-
-const PAGE_TITLES: Record<string, [string, string]> = {
-  '/launchpad': [
-    'Explore tokens',
-    'Every token launched on goton, with live market cap, volume and price since launch.',
-  ],
-  '/memestock': [
-    'Memestock',
-    'Launches with a written thesis whose creator still holds a position they bought, ranked by trading in the last hour.',
-  ],
-  '/feed': [
-    'Feed',
-    'Calls from holders on goton tokens: theses, targets and the share of supply each caller held.',
-  ],
-  '/analytics': [
-    'Analytics',
-    'Protocol volume, launches and deployed contracts on Robinhood Chain and Arc.',
-  ],
-  '/launchpad/create': [
-    'Create a token',
-    'Launch a fixed-supply token on Robinhood Chain or Arc with locked liquidity.',
-  ],
-};
 
 /** USD as $4.1K / $2.30M. */
 function usd(value: number): string {
@@ -78,14 +60,6 @@ function usd(value: number): string {
   return `$${value.toFixed(2)}`;
 }
 
-/** Collapse whitespace and cut to `max` characters on a word boundary. */
-function clip(text: string, max: number): string {
-  const t = text.replace(/\s+/g, ' ').trim();
-  if (t.length <= max) return t;
-  const cut = t.slice(0, max - 1);
-  return `${cut.slice(0, Math.max(cut.lastIndexOf(' '), max - 20))}…`;
-}
-
 /** An image a link preview can load: an https URL (IPFS hashes go through a public gateway). */
 export function previewImage(logo: string | undefined, fallback: string): string {
   const l = (logo ?? '').trim();
@@ -94,13 +68,45 @@ export function previewImage(logo: string | undefined, fallback: string): string
   return fallback;
 }
 
+/** How the edge answers an app URL; mirrors apps/frontoffice/src/router/index.ts. */
+export type AppRoute =
+  | { kind: 'redirect'; to: string }
+  | { kind: 'token'; address: string }
+  | { kind: 'page' }
+  | { kind: 'not-found' };
+
+const APP_PAGES = [
+  /^\/(launchpad|explore|launchpad\/create|memestock|feed|analytics)$/,
+  /^\/post\/[^/]+$/,
+  /^\/(u|profile|user)(\/[^/]+)?$/,
+  /^\/@[^/]*$/,
+  // /:username profile slug (one path segment)
+  /^\/[a-zA-Z0-9_#.-]+$/,
+];
+
+/**
+ * Matches a path against the app's routes, so the edge can send real redirects and 404 statuses
+ * instead of the SPA answering every URL with 200 (Google reads that as a soft 404). Token pages
+ * need the API to tell whether the token exists.
+ */
+export function appRoute(pathname: string): AppRoute {
+  const path = pathname.replace(/\/+$/, '') || '/';
+  if (path === '/' || path === '/trade') return { kind: 'redirect', to: '/launchpad' };
+  const token = /^\/(?:token|launchpad|trade)\/([^/]+)$/.exec(path);
+  if (token && path !== '/launchpad/create') {
+    return isAddress(token[1]) ? { kind: 'token', address: token[1] } : { kind: 'not-found' };
+  }
+  return APP_PAGES.some((re) => re.test(path)) ? { kind: 'page' } : { kind: 'not-found' };
+}
+
 /** Meta for a path. `token` is the token behind /token/:address, when it could be loaded. */
 export function pageMeta(origin: string, pathname: string, token?: SeoToken | null): PageMeta {
-  const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+  // The app sets the same canonical after it renders (src/lib/seo.ts); both use canonicalPath.
+  const path = canonicalPath(pathname);
   const defaultImage = `${origin}/opengraph-image.png`;
   const base: PageMeta = {
-    title: SITE_TITLE,
-    description: SITE_DESCRIPTION,
+    title: SEO_DEFAULT_TITLE,
+    description: SEO_DEFAULT_DESCRIPTION,
     canonical: `${origin}${path === '/' ? '' : path}`,
     image: defaultImage,
     card: 'summary_large_image',
@@ -108,15 +114,16 @@ export function pageMeta(origin: string, pathname: string, token?: SeoToken | nu
 
   if (token && /^\/token\/0x[a-fA-F0-9]{40}$/.test(path)) {
     const mc = usd(token.marketCapUsd ?? 0);
-    const chain = token.chainName ? ` on ${token.chainName}` : '';
-    const about = token.description?.trim()
-      ? clip(token.description, 140)
-      : `Trade ${token.name} ($${token.symbol})${chain} on goton.`;
+    const about = tokenSeoDescription(
+      token.name,
+      token.symbol,
+      token.chainName ?? 'Robinhood Chain',
+      token.description,
+    );
     const image = previewImage(token.logo, defaultImage);
     return {
       ...base,
-      // Canonical uses the lowercase address so mixed-case links do not split the page.
-      canonical: `${origin}/token/${token.address.toLowerCase()}`,
+      canonical: `${origin}${path}`,
       title: `${token.name} ($${token.symbol})${mc ? ` · ${mc} market cap` : ''} · goton`,
       description: about,
       image,
@@ -124,8 +131,8 @@ export function pageMeta(origin: string, pathname: string, token?: SeoToken | nu
     };
   }
 
-  const known = PAGE_TITLES[path];
-  if (known) return { ...base, title: `${known[0]} · goton`, description: known[1] };
+  const known = SEO_PAGES[path];
+  if (known) return { ...base, title: `${known.title} · goton`, description: known.description };
   return base;
 }
 
@@ -239,18 +246,13 @@ interface StaticPageCopy {
 }
 
 const PAGE_COPY: Record<string, StaticPageCopy> = {
-  '/': {
+  // The app's home: / redirects here (worker.ts, as the router does).
+  '/launchpad': {
     h1: 'goton: launch fixed-supply tokens on Robinhood Chain and Arc',
     body: [
       'goton is a non-custodial launchpad for fixed-supply tokens on Robinhood Chain and Arc. Every token has a supply of 1,000,000,000, no mint function and liquidity locked for good.',
       'Launch on a bonding curve that graduates into a locked Uniswap v4 pool, or straight into a Uniswap v4 pool paired with USDC on Arc. Trade with live charts, place limit, take-profit and stop-loss orders, post calls on tokens you hold and follow other callers.',
-    ],
-  },
-  '/launchpad': {
-    h1: 'Explore tokens on goton',
-    crumb: 'Explore',
-    body: [
-      'Every token launched on goton, with live market cap, 24 hour volume and price since launch. Tokens on Robinhood Chain trade on a bonding curve until it raises 4.2 ETH, then in a locked Uniswap v4 pool; tokens on Arc trade in a locked Uniswap v4 pool paired with USDC from launch.',
+      'Explore lists every token launched on goton, with live market cap, 24 hour volume and price since launch. Tokens on Robinhood Chain trade on a bonding curve until it raises 4.2 ETH, then in a locked Uniswap v4 pool; tokens on Arc trade in a locked Uniswap v4 pool paired with USDC from launch.',
     ],
   },
   '/memestock': {
@@ -318,7 +320,6 @@ function price(value?: number): string {
 
 function nav(origin: string, docsUrl: string): string {
   const links: Array<[string, string]> = [
-    [`${origin}/`, 'Home'],
     [`${origin}/launchpad`, 'Explore tokens'],
     [`${origin}/memestock`, 'Memestock'],
     [`${origin}/feed`, 'Feed'],
@@ -355,7 +356,7 @@ export function pageContent(
   token?: SeoToken | null,
   listed: ListedToken[] = [],
 ): PageContent | null {
-  const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+  const path = canonicalPath(pathname);
   const docs = docsUrl.replace(/\/+$/, '');
   const webPage = {
     '@type': 'WebPage',
@@ -395,9 +396,9 @@ export function pageContent(
       if (/^https:\/\/[^\s"<>]+$/.test(url)) links.push([url, `${token.name} on ${kind}`]);
     }
     links.push([`${docs}/protocol/trading-guide`, 'How to trade on goton']);
-    const description = token.description?.trim() ? clip(token.description, 600) : '';
+    const description = token.description?.trim() ? clipText(token.description, 600) : '';
     const html = [
-      `<nav aria-label="Breadcrumb"><a href="${esc(origin)}/">goton</a> › <a href="${esc(origin)}/launchpad">Explore</a> › ${esc(token.name)}</nav>`,
+      `<nav aria-label="Breadcrumb"><a href="${esc(origin)}/launchpad">goton</a> › ${esc(token.name)}</nav>`,
       `<h1>${esc(token.name)} ($${esc(token.symbol)})</h1>`,
       `<p>${esc(token.name)} ($${esc(token.symbol)}) is a fixed-supply token launched on goton on ${esc(chain)}.</p>`,
       description ? `<p>${esc(description)}</p>` : '',
@@ -442,8 +443,7 @@ export function pageContent(
           },
           {
             ...breadcrumbs([
-              ['goton', `${origin}/`],
-              ['Explore', `${origin}/launchpad`],
+              ['goton', `${origin}/launchpad`],
               [token.name, meta.canonical],
             ]),
             '@id': `${meta.canonical}#breadcrumb`,
@@ -457,41 +457,15 @@ export function pageContent(
   if (!copy) return null;
   const parts = [
     copy.crumb
-      ? `<nav aria-label="Breadcrumb"><a href="${esc(origin)}/">goton</a> › ${esc(copy.crumb)}</nav>`
+      ? `<nav aria-label="Breadcrumb"><a href="${esc(origin)}/launchpad">goton</a> › ${esc(copy.crumb)}</nav>`
       : '',
     `<h1>${esc(copy.h1)}</h1>`,
     ...copy.body.map((p) => `<p>${esc(p)}</p>`),
   ];
   const graph: Array<Record<string, unknown>> = [];
 
-  if (path === '/') {
-    parts.push(
-      '<h2>Frequently asked questions</h2>',
-      HOME_FAQ.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join(''),
-    );
-    graph.push(
-      {
-        '@type': 'WebSite',
-        '@id': `${origin}/#website`,
-        url: `${origin}/`,
-        name: 'goton',
-        description: meta.description,
-        inLanguage: 'en',
-        publisher: { '@id': `${origin}/#organization` },
-      },
-      {
-        ...webPage,
-        '@type': ['WebPage', 'FAQPage'],
-        mainEntity: HOME_FAQ.map(([q, a]) => ({
-          '@type': 'Question',
-          name: q,
-          acceptedAnswer: { '@type': 'Answer', text: a },
-        })),
-      },
-    );
-  } else {
-    const isList = path === '/launchpad' && listed.length > 0;
-    if (isList) {
+  if (path === '/launchpad') {
+    if (listed.length) {
       parts.push(
         '<h2>Latest launches</h2>',
         `<ul>${listed
@@ -502,12 +476,24 @@ export function pageContent(
           .join('')}</ul>`,
       );
     }
+    parts.push(
+      '<h2>Frequently asked questions</h2>',
+      HOME_FAQ.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join(''),
+    );
     graph.push(
       {
+        '@type': 'WebSite',
+        '@id': `${origin}/#website`,
+        url: `${origin}/`,
+        name: 'goton',
+        description: SEO_DEFAULT_DESCRIPTION,
+        inLanguage: 'en',
+        publisher: { '@id': `${origin}/#organization` },
+      },
+      {
         ...webPage,
-        '@type': isList ? 'CollectionPage' : 'WebPage',
-        breadcrumb: { '@id': `${meta.canonical}#breadcrumb` },
-        ...(isList
+        '@type': 'CollectionPage',
+        ...(listed.length
           ? {
               mainEntity: {
                 '@type': 'ItemList',
@@ -522,8 +508,23 @@ export function pageContent(
           : {}),
       },
       {
+        '@type': 'FAQPage',
+        '@id': `${meta.canonical}#faq`,
+        url: meta.canonical,
+        inLanguage: 'en',
+        mainEntity: HOME_FAQ.map(([q, a]) => ({
+          '@type': 'Question',
+          name: q,
+          acceptedAnswer: { '@type': 'Answer', text: a },
+        })),
+      },
+    );
+  } else {
+    graph.push(
+      { ...webPage, breadcrumb: { '@id': `${meta.canonical}#breadcrumb` } },
+      {
         ...breadcrumbs([
-          ['goton', `${origin}/`],
+          ['goton', `${origin}/launchpad`],
           [copy.crumb ?? copy.h1, meta.canonical],
         ]),
         '@id': `${meta.canonical}#breadcrumb`,

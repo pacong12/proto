@@ -95,7 +95,7 @@ describe('edge worker www redirect', () => {
   });
 
   it('serves the apex directly', async () => {
-    expect((await get('/', makeEnv())).status).toBe(200);
+    expect((await get('/launchpad', makeEnv())).status).toBe(200);
   });
 });
 
@@ -155,7 +155,7 @@ describe('edge worker caching', () => {
   });
 
   it('sends the same security headers on every page', async () => {
-    for (const path of ['/', '/launchpad', '/assets/a.js']) {
+    for (const path of ['/launchpad', '/memestock', '/assets/a.js']) {
       const res = await get(path, assetEnv('text/html'));
       expect(res.headers.get('strict-transport-security'), path).toContain('max-age=');
       expect(res.headers.get('content-security-policy'), path).toContain("frame-ancestors 'none'");

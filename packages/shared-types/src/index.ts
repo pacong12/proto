@@ -4,5 +4,6 @@ export * from './domain/intents';
 export * from './domain/envelope';
 export * from './constants/network';
 export * from './constants/site';
+export * from './constants/seo';
 export * from './chains';
 export * from './abis/contracts';
