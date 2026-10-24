@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.1](https://github.com/pacong12/proto/compare/v0.7.0...v0.7.1) (2026-10-24)
+
+
+### Bug Fixes
+
+* flaky API and analytics tests ([#198](https://github.com/pacong12/proto/issues/198)) ([a69f118](https://github.com/pacong12/proto/commit/a69f118d19b052e8ede5ec96898e435b4a82eb6a))
+* real redirects and 404s, one canonical per page (GSC) ([#202](https://github.com/pacong12/proto/issues/202)) ([8bfd859](https://github.com/pacong12/proto/commit/8bfd859766250f71fc1dc98fc32b382dbdd86e06))
+
 ## [0.7.0](https://github.com/pacong12/proto/compare/v0.6.2...v0.7.0) (2026-10-23)
 
 
