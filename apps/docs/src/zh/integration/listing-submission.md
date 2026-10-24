@@ -15,13 +15,13 @@
 
 ## Robinhood Chain (4663)
 
-| 合约 | 地址 |
-| :--- | :--- |
-| Launchpad Factory | `0x0b85876120e797Ca19655C0B81a0C25573f3Fc18` |
-| Graduator | `0xaEF6Fff944007b94a51F37e82cf5235fDBF9b771` |
-| Goton V4 Hook | `0xb5C88A6101e6b979Ad63Bf5e6302dF8F031360Cc` |
+| 合约                   | 地址                                         |
+| :--------------------- | :------------------------------------------- |
+| Launchpad Factory      | `0x0b85876120e797Ca19655C0B81a0C25573f3Fc18` |
+| Graduator              | `0xaEF6Fff944007b94a51F37e82cf5235fDBF9b771` |
+| Goton V4 Hook          | `0xb5C88A6101e6b979Ad63Bf5e6302dF8F031360Cc` |
 | Uniswap V4 PoolManager | `0x8366a39CC670B4001A1121B8F6A443A643e40951` |
-| 池中的报价资产 | 原生 ETH（`address(0)`） |
+| 池中的报价资产         | 原生 ETH（`address(0)`）                     |
 
 **事件**
 
@@ -49,12 +49,12 @@ event TokenGraduated(address indexed token, bytes32 indexed poolId, address spli
 
 ## Arc Network (5042)
 
-| 合约 | 地址 |
-| :--- | :--- |
-| Launchpad Factory (v4) | `0xd7Bf86061CC5637b2b854d61007f8fD7CD6f0980` |
-| Goton V4 Hook | `0xb5C88A6101e6b979Ad63Bf5e6302dF8F031360Cc` |
-| Uniswap V4 PoolManager | `0x8366a39CC670B4001A1121B8F6A443A643e40951` |
-| 池中的报价资产 | USDC `0x3600000000000000000000000000000000000000`（6 位小数） |
+| 合约                   | 地址                                                          |
+| :--------------------- | :------------------------------------------------------------ |
+| Launchpad Factory (v4) | `0xd7Bf86061CC5637b2b854d61007f8fD7CD6f0980`                  |
+| Goton V4 Hook          | `0xb5C88A6101e6b979Ad63Bf5e6302dF8F031360Cc`                  |
+| Uniswap V4 PoolManager | `0x8366a39CC670B4001A1121B8F6A443A643e40951`                  |
+| 池中的报价资产         | USDC `0x3600000000000000000000000000000000000000`（6 位小数） |
 
 **事件**
 
