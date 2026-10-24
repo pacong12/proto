@@ -9,7 +9,9 @@ import {
   loadLocale,
 } from '../src/lib/i18n';
 
-describe('Internationalization (i18n) Engine', () => {
+// Loading the 11 locale files transforms each one on first import, which can pass the default
+// 5 s timeout when other projects' tests run in parallel (nx run-many, CI).
+describe('Internationalization (i18n) Engine', { timeout: 30_000 }, () => {
   // Runs first, before other tests load more locales.
   it('ships only English up front and loads other locales on demand', async () => {
     expect(Object.keys(messages)).not.toContain('ko');
