@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   applyContent,
   applyMeta,
+  appRoute,
   buildSitemap,
   HOME_FAQ,
   pageContent,
@@ -64,6 +65,16 @@ describe('seo pageMeta', () => {
     expect(pageMeta(ORIGIN, '/nope').title).toContain('Launch fixed-supply tokens');
   });
 
+  it('gives aliases and mixed-case token links one canonical URL', () => {
+    expect(pageMeta(ORIGIN, '/explore').canonical).toBe(`${ORIGIN}/launchpad`);
+    expect(pageMeta(ORIGIN, '/explore').title).toBe('Explore tokens · goton');
+    for (const alias of ['token', 'launchpad', 'trade']) {
+      expect(pageMeta(ORIGIN, `/${alias}/${TOKEN}/`).canonical).toBe(
+        `${ORIGIN}/token/${TOKEN.toLowerCase()}`,
+      );
+    }
+  });
+
   it('builds token meta with market cap, lowercase canonical and the logo', () => {
     const meta = pageMeta(ORIGIN, `/token/${TOKEN}`, {
       address: TOKEN,
@@ -75,7 +86,9 @@ describe('seo pageMeta', () => {
     });
     expect(meta.title).toBe('Moon ($MOON) · $6.7K market cap · goton');
     expect(meta.canonical).toBe(`${ORIGIN}/token/${TOKEN.toLowerCase()}`);
-    expect(meta.description).toBe('Trade Moon ($MOON) on Arc on goton.');
+    expect(meta.description).toBe(
+      'Trade Moon ($MOON) on Arc on goton: price, chart, holders and live trades.',
+    );
     expect(meta.image).toBe('https://ipfs.io/ipfs/QmHash');
     expect(meta.card).toBe('summary');
   });
@@ -117,14 +130,53 @@ describe('seo applyMeta', () => {
   });
 });
 
+describe('seo appRoute', () => {
+  it('mirrors the app router: redirects, token pages, pages and 404s', () => {
+    expect(appRoute('/')).toEqual({ kind: 'redirect', to: '/launchpad' });
+    expect(appRoute('/trade/')).toEqual({ kind: 'redirect', to: '/launchpad' });
+    expect(appRoute(`/launchpad/${TOKEN}`)).toEqual({ kind: 'token', address: TOKEN });
+    expect(appRoute('/token/not-an-address').kind).toBe('not-found');
+    for (const page of [
+      '/launchpad',
+      '/explore',
+      '/launchpad/create',
+      '/memestock',
+      '/feed/',
+      '/analytics',
+      '/post/abc123',
+      '/u',
+      '/u/0xabc',
+      '/profile/alice',
+      '/@alice',
+      '/alice.eth',
+    ]) {
+      expect(appRoute(page).kind, page).toBe('page');
+    }
+    for (const missing of ['/no/such/page', '/assets/missing.js/x', '/token/0x12/extra']) {
+      expect(appRoute(missing).kind, missing).toBe('not-found');
+    }
+  });
+
+  it('handles long runs of slashes in linear time', () => {
+    const started = performance.now();
+    expect(appRoute(`/memestock${'/'.repeat(100_000)}`).kind).toBe('page');
+    expect(pageMeta(ORIGIN, `/feed${'/'.repeat(100_000)}`).canonical).toBe(`${ORIGIN}/feed`);
+    expect(appRoute('/'.repeat(100_000))).toEqual({ kind: 'redirect', to: '/launchpad' });
+    expect(performance.now() - started).toBeLessThan(200);
+  });
+});
+
 describe('seo pageContent', () => {
-  it('gives the homepage an h1, FAQ text and FAQPage data', () => {
-    const content = pageContent(ORIGIN, DOCS, '/', pageMeta(ORIGIN, '/'))!;
+  it('gives the home page (/launchpad) an h1, FAQ text and FAQPage data', () => {
+    const content = pageContent(ORIGIN, DOCS, '/launchpad', pageMeta(ORIGIN, '/launchpad'))!;
     expect(content.html).toContain('<h1>goton: launch fixed-supply tokens');
     for (const [question] of HOME_FAQ) expect(content.html).toContain(question);
     const graph = content.jsonLd['@graph'] as Array<Record<string, unknown>>;
-    expect(graph.map((node) => node['@type'])).toEqual(['WebSite', ['WebPage', 'FAQPage']]);
-    expect(graph[1].mainEntity).toHaveLength(HOME_FAQ.length);
+    expect(graph.map((node) => node['@type'])).toEqual(['WebSite', 'CollectionPage', 'FAQPage']);
+    expect(graph[2].mainEntity).toHaveLength(HOME_FAQ.length);
+    expect(pageContent(ORIGIN, DOCS, '/explore', pageMeta(ORIGIN, '/explore'))?.html).toBe(
+      content.html,
+    );
   });
 
   it('gives static pages a breadcrumb and nothing to unknown routes', () => {
@@ -150,8 +202,9 @@ describe('seo pageContent', () => {
     expect(content.html).toContain(
       `href="${ORIGIN}/token/${TOKEN.toLowerCase()}">Moon ($MOON)</a>`,
     );
-    const page = (content.jsonLd['@graph'] as Array<Record<string, unknown>>)[0];
+    const page = (content.jsonLd['@graph'] as Array<Record<string, unknown>>)[1];
     expect(page['@type']).toBe('CollectionPage');
+    expect((page.mainEntity as { itemListElement: unknown[] }).itemListElement).toHaveLength(1);
   });
 
   it('describes a token with its facts, escaped, and only https links', () => {
@@ -216,7 +269,8 @@ describe('seo buildSitemap', () => {
       ],
       new Date('2026-10-23T00:00:00Z'),
     );
-    expect(xml).toContain(`<loc>${ORIGIN}/</loc>`);
+    expect(xml).not.toContain(`<loc>${ORIGIN}/</loc>`);
+    expect(xml).toContain(`<loc>${ORIGIN}/launchpad</loc>`);
     expect(xml).toContain(`<loc>${ORIGIN}/memestock</loc>`);
     expect(xml.match(/\/token\//g)).toHaveLength(1);
     expect(xml).toContain('<lastmod>2023-11-14T22:13:20.000Z</lastmod>');
@@ -300,7 +354,31 @@ describe('edge worker SEO', () => {
     );
     const res = await worker.fetch(new Request(`${ORIGIN}/token/${TOKEN}`), env());
     expect(res.status).toBe(200);
-    expect(await res.text()).toContain(`<link rel="canonical" href="${ORIGIN}/token/${TOKEN}" />`);
+    expect(await res.text()).toContain(
+      `<link rel="canonical" href="${ORIGIN}/token/${TOKEN.toLowerCase()}" />`,
+    );
+  });
+
+  it('answers unknown routes and missing tokens with a real 404', async () => {
+    const fetchMock = vi.fn(async () => new Response('{"success":false}', { status: 404 }));
+    vi.stubGlobal('fetch', fetchMock);
+    for (const path of ['/no/such/page', '/token/not-an-address', `/token/${TOKEN}`]) {
+      const res = await worker.fetch(new Request(`${ORIGIN}${path}`), env());
+      expect(res.status, path).toBe(404);
+      expect(await res.text(), path).toContain('<meta name="robots" content="noindex" />');
+    }
+    // Only the well-formed address needed the API.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('redirects / and /trade to /launchpad like the app router', async () => {
+    for (const path of ['/', '/trade', '/?ref=x']) {
+      const res = await worker.fetch(new Request(`${ORIGIN}${path}`), env());
+      expect(res.status, path).toBe(301);
+      expect(res.headers.get('location'), path).toBe(
+        `${ORIGIN}/launchpad${path.includes('?') ? '?ref=x' : ''}`,
+      );
+    }
   });
 
   it('builds the sitemap from the token list', async () => {

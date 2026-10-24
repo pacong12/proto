@@ -1,6 +1,8 @@
+import { canonicalPath, seoChainName } from './packages/shared-types/src/constants/seo';
 import {
   applyContent,
   applyMeta,
+  appRoute,
   buildSitemap,
   pageContent,
   pageMeta,
@@ -293,6 +295,13 @@ export default {
       if (sitemap) return sitemap;
     }
 
+    // The router sends / and /trade to /launchpad in the browser; redirect on the server too, so
+    // crawlers see a redirect instead of a page that changes its URL after rendering.
+    const route = appRoute(url.pathname);
+    if (route.kind === 'redirect' && (request.method === 'GET' || request.method === 'HEAD')) {
+      return Response.redirect(`${url.origin}${route.to}${url.search}`, 301);
+    }
+
     let response = await env.ASSETS.fetch(request);
     // The SPA ships one title, description and canonical for every URL; write the page's own.
     if (
@@ -362,19 +371,24 @@ export default {
 const ARC_USDC = '0x3600000000000000000000000000000000000000';
 const SEO_FETCH_TIMEOUT_MS = 1_500;
 
-async function backendJson<T>(env: Env, path: string): Promise<T | null> {
+/** GET from the API with the SEO timeout. `status` is 0 when the request failed or timed out. */
+async function backendGet<T>(env: Env, path: string): Promise<{ status: number; data: T | null }> {
   const base = env.BACKEND_API_URL || 'https://api.goton.cloud';
   try {
     const res = await fetch(new URL(path, base).toString(), {
       signal: AbortSignal.timeout(SEO_FETCH_TIMEOUT_MS),
       headers: { accept: 'application/json' },
     });
-    if (!res.ok) return null;
+    if (!res.ok) return { status: res.status, data: null };
     const body = (await res.json()) as { success?: boolean; data?: T };
-    return body?.success ? (body.data ?? null) : null;
+    return { status: res.status, data: body?.success ? (body.data ?? null) : null };
   } catch {
-    return null;
+    return { status: 0, data: null };
   }
+}
+
+async function backendJson<T>(env: Env, path: string): Promise<T | null> {
+  return (await backendGet<T>(env, path)).data;
 }
 
 interface ApiToken {
@@ -411,7 +425,7 @@ function toSeoToken(token: ApiToken, market?: ApiMarketData): SeoToken {
     isGraduated: market?.isGraduated ?? token.isGraduated,
     deployer: token.deployer,
     socials: token.socials,
-    chainName: (token.pairedToken ?? '').toLowerCase() === ARC_USDC ? 'Arc' : 'Robinhood Chain',
+    chainName: seoChainName((token.pairedToken ?? '').toLowerCase() === ARC_USDC ? 5042 : 4663),
   };
 }
 
@@ -419,17 +433,21 @@ function toSeoToken(token: ApiToken, market?: ApiMarketData): SeoToken {
 export async function withPageMeta(response: Response, url: URL, env: Env): Promise<Response> {
   try {
     const html = await response.clone().text();
+    const route = appRoute(url.pathname);
+    // A URL no route matches, a malformed token address, or a token the API does not know is a
+    // real 404 (the app shows its not-found view in the same HTML). An API outage keeps 200.
+    let notFound = route.kind === 'not-found';
     let token: SeoToken | null = null;
     let listed: ListedToken[] = [];
-    const match = url.pathname.match(/^\/token\/(0x[a-fA-F0-9]{40})\/?$/);
-    if (match) {
-      const data = await backendJson<{ token: ApiToken; marketData?: ApiMarketData }>(
+    if (route.kind === 'token') {
+      const { status, data } = await backendGet<{ token: ApiToken; marketData?: ApiMarketData }>(
         env,
-        `/api/tokens/${match[1]}`,
+        `/api/tokens/${route.address}`,
       );
-      if (data?.token) token = toSeoToken(data.token, data.marketData);
-    } else if (/^\/launchpad\/?$/.test(url.pathname)) {
-      // Links to the latest launches, so crawlers find token pages from the Explore page too.
+      if (status === 404) notFound = true;
+      else if (data?.token) token = toSeoToken(data.token, data.marketData);
+    } else if (canonicalPath(url.pathname) === '/launchpad') {
+      // Links to the latest launches, so crawlers find token pages from the home page too.
       const page = await backendJson<Array<{ token: ApiToken }>>(env, '/api/tokens?limit=30');
       listed = (page ?? []).map(({ token: t }) => ({
         address: t.address,
@@ -437,12 +455,16 @@ export async function withPageMeta(response: Response, url: URL, env: Env): Prom
         symbol: t.symbol,
       }));
     }
+    const headers = new Headers(response.headers);
+    headers.delete('content-length');
+    if (notFound) {
+      const out = html.replace(/<\/head>/i, '<meta name="robots" content="noindex" />\n</head>');
+      return new Response(out, { status: 404, statusText: 'Not Found', headers });
+    }
     const meta = pageMeta(url.origin, url.pathname, token);
     const docsUrl = env.DOCS_URL || 'https://docs.goton.fun';
     const content = pageContent(url.origin, docsUrl, url.pathname, meta, token, listed);
     const out = applyContent(applyMeta(html, meta), content);
-    const headers = new Headers(response.headers);
-    headers.delete('content-length');
     return new Response(out, { status: response.status, statusText: response.statusText, headers });
   } catch {
     return response;
