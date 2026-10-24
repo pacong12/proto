@@ -416,6 +416,30 @@ contract LaunchpadV2Test is Test {
         factory.emergencyWithdrawFromCurve(curveAddress, payable(address(this)));
     }
 
+    /// @dev The emergency path detaches the curve too, so the creator's buy tax cannot skim it.
+    function test_EmergencyWithdrawDoesNotPayCreatorBuyTax() public {
+        vm.prank(creator);
+        (address tokenAddress, address curveAddress) =
+            factory.launchTokenV2{value: 0.0005 ether}("T", "T", "", "", "", "", "", 0);
+        LaunchpadToken token = LaunchpadToken(tokenAddress);
+        address taxWallet = address(0x7A7);
+        vm.prank(creator);
+        token.setInitialTaxConfig(1_000, 0, taxWallet);
+        vm.warp(block.timestamp + 10);
+        vm.roll(block.number + 5);
+        vm.prank(buyer1);
+        BondingCurve(payable(curveAddress)).buy{value: 10 ether}(0);
+        uint256 taxBefore = token.balanceOf(taxWallet);
+        uint256 curveTokens = token.balanceOf(curveAddress);
+
+        vm.warp(block.timestamp + 180 days);
+        address payable recovery = payable(address(0x2EC0));
+        factory.emergencyWithdrawFromCurve(curveAddress, recovery);
+
+        assertEq(token.balanceOf(taxWallet), taxBefore, "no tax on emergency withdrawal");
+        assertEq(token.balanceOf(recovery), curveTokens, "every curve token recovered");
+    }
+
     function test_GraduateRejectsUnknownAndActiveTokens() public {
         vm.expectRevert(LaunchpadV2Factory.UnknownToken.selector);
         factory.graduate(address(0xBEEF));
@@ -463,7 +487,8 @@ contract LaunchpadV2Test is Test {
         vm.expectRevert(EmergencyPause.EmergencyPaused.selector);
         factory.launchTokenV2{value: 0.0005 ether}("X", "X", "", "", "", "", "", 0);
 
-        vm.expectRevert(EmergencyPause.EmergencyPaused.selector);
+        // Graduation is an exit, not an entry: the pause does not block it (only the curve state does).
+        vm.expectRevert(LaunchpadV2Factory.NotGraduated.selector);
         factory.graduate(tokenAddress);
 
         // Holders can always exit.

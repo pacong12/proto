@@ -7,7 +7,7 @@ pragma solidity ^0.8.24;
  *
  *   - The owner or a dedicated guardian (e.g. an incident-response multisig) can pause instantly;
  *     only the owner can unpause.
- *   - Pausing stops *new money entering*: launches, bonding-curve buys and graduations.
+ *   - Pausing stops *new money entering*: launches and bonding-curve buys.
  *   - Exits are deliberately never pausable — curve sells, pool swaps and fee claims stay open — so
  *     the pause can contain an exploit without ever trapping user funds.
  */

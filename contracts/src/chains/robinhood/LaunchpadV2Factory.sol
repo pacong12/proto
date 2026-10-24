@@ -253,20 +253,19 @@ contract LaunchpadV2Factory is EmergencyPause {
 
     /**
      * @notice Moves a graduated curve's liquidity into its locked Uniswap v4 pool. Permissionless.
+     * @dev Not pausable: a graduated curve no longer accepts sells, so graduating is its holders'
+     *      only exit, and a pause must never trap them until emergencyWithdrawFromCurve opens.
      */
     // slither-disable-next-line reentrancy-no-eth (guarded by nonReentrant / onlyPoolManager / trusted caller; see docs/audit/AUDIT-VERIFICATION.md)
-    function graduate(address tokenAddress)
-        external
-        nonReentrant
-        whenNotPaused
-        returns (bytes32 poolId, address splitter)
-    {
+    function graduate(address tokenAddress) external nonReentrant returns (bytes32 poolId, address splitter) {
         V2Launch storage launch = launches[tokenAddress];
         if (launch.curve == address(0)) revert UnknownToken();
         BondingCurve curve = BondingCurve(payable(launch.curve));
         if (!curve.graduated()) revert NotGraduated();
 
         uint160 sqrtPriceX96 = curve.graduationSqrtPriceX96();
+        // Otherwise the curve -> graduator transfer counts as a buy and pays the creator's buy tax.
+        LaunchpadToken(tokenAddress).clearLiquidityPool();
         curve.migrateLiquidity(payable(address(graduator)));
         (poolId, splitter) = graduator.graduate(tokenAddress, launch.creator, launch.curve, sqrtPriceX96);
 
@@ -282,8 +281,9 @@ contract LaunchpadV2Factory is EmergencyPause {
      * @dev F-11 fix: also marks graduated = true to reflect the curve has exited.
      */
     function emergencyWithdrawFromCurve(address curve, address payable recipient) external onlyOwner {
-        BondingCurve(payable(curve)).emergencyWithdraw(recipient);
         address token = curveToToken[curve];
+        if (token != address(0)) LaunchpadToken(token).clearLiquidityPool();
+        BondingCurve(payable(curve)).emergencyWithdraw(recipient);
         if (token != address(0)) {
             launches[token].graduated = true;
         }

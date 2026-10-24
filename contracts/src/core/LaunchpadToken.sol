@@ -290,6 +290,12 @@ contract LaunchpadToken is ILaunchpadToken {
         liquidityPool = pool;
     }
 
+    /// @notice Detaches a graduated bonding curve, so moving its liquidity into the v4 pool is a plain
+    ///         transfer rather than a taxed "buy" paid to the creator's tax recipient.
+    function clearLiquidityPool() external onlyFactory {
+        liquidityPool = address(0);
+    }
+
     function setRestrictionExempt(address account, bool exempt) external onlyFactory {
         if (account == address(0)) revert ZeroAddress();
         isRestrictionExempt[account] = exempt;
