@@ -156,6 +156,14 @@ describe('seo appRoute', () => {
       expect(appRoute(missing).kind, missing).toBe('not-found');
     }
   });
+
+  it('handles long runs of slashes in linear time', () => {
+    const started = performance.now();
+    expect(appRoute(`/memestock${'/'.repeat(100_000)}`).kind).toBe('page');
+    expect(pageMeta(ORIGIN, `/feed${'/'.repeat(100_000)}`).canonical).toBe(`${ORIGIN}/feed`);
+    expect(appRoute('/'.repeat(100_000))).toEqual({ kind: 'redirect', to: '/launchpad' });
+    expect(performance.now() - started).toBeLessThan(200);
+  });
 });
 
 describe('seo pageContent', () => {

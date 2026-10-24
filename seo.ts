@@ -12,6 +12,7 @@ import {
   SEO_DEFAULT_TITLE,
   SEO_PAGES,
   tokenSeoDescription,
+  trimTrailingSlashes,
 } from './packages/shared-types/src/constants/seo';
 
 export interface PageMeta {
@@ -90,7 +91,7 @@ const APP_PAGES = [
  * need the API to tell whether the token exists.
  */
 export function appRoute(pathname: string): AppRoute {
-  const path = pathname.replace(/\/+$/, '') || '/';
+  const path = trimTrailingSlashes(pathname) || '/';
   if (path === '/' || path === '/trade') return { kind: 'redirect', to: '/launchpad' };
   const token = /^\/(?:token|launchpad|trade)\/([^/]+)$/.exec(path);
   if (token && path !== '/launchpad/create') {
@@ -357,7 +358,7 @@ export function pageContent(
   listed: ListedToken[] = [],
 ): PageContent | null {
   const path = canonicalPath(pathname);
-  const docs = docsUrl.replace(/\/+$/, '');
+  const docs = trimTrailingSlashes(docsUrl);
   const webPage = {
     '@type': 'WebPage',
     '@id': `${meta.canonical}#webpage`,

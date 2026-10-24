@@ -48,11 +48,21 @@ export function isAddress(value: string): boolean {
 }
 
 /**
+ * `path` without trailing slashes, in linear time (a /\/+$/ regex backtracks on long runs of
+ * slashes, and paths come from the request URL).
+ */
+export function trimTrailingSlashes(path: string): string {
+  let end = path.length;
+  while (end > 0 && path.charCodeAt(end - 1) === 47 /* '/' */) end--;
+  return path.slice(0, end);
+}
+
+/**
  * The canonical path of an app URL: no trailing slash, `/explore` is `/launchpad`, and a token
  * page under any of its aliases is `/token/<lowercase address>`.
  */
 export function canonicalPath(pathname: string): string {
-  const path = pathname.replace(/\/+$/, '') || '/';
+  const path = trimTrailingSlashes(pathname) || '/';
   if (path === '/explore') return '/launchpad';
   const token = /^\/(?:token|launchpad|trade)\/(0x[a-fA-F0-9]{40})$/.exec(path);
   if (token) return `/token/${token[1].toLowerCase()}`;
