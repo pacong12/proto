@@ -15,13 +15,13 @@ Every Goton v4 pool uses the Goton hook, a **1% LP fee** (`fee = 10000`) and `ti
 
 ## Robinhood Chain (4663)
 
-| Contract | Address |
-| :--- | :--- |
-| Launchpad Factory | `0x0b85876120e797Ca19655C0B81a0C25573f3Fc18` |
-| Graduator | `0xaEF6Fff944007b94a51F37e82cf5235fDBF9b771` |
-| Goton V4 Hook | `0xb5C88A6101e6b979Ad63Bf5e6302dF8F031360Cc` |
+| Contract               | Address                                      |
+| :--------------------- | :------------------------------------------- |
+| Launchpad Factory      | `0x0b85876120e797Ca19655C0B81a0C25573f3Fc18` |
+| Graduator              | `0xaEF6Fff944007b94a51F37e82cf5235fDBF9b771` |
+| Goton V4 Hook          | `0xb5C88A6101e6b979Ad63Bf5e6302dF8F031360Cc` |
 | Uniswap V4 PoolManager | `0x8366a39CC670B4001A1121B8F6A443A643e40951` |
-| Quote asset in pools | Native ETH (`address(0)`) |
+| Quote asset in pools   | Native ETH (`address(0)`)                    |
 
 **Events**
 
@@ -49,12 +49,12 @@ After graduation, trades are standard Uniswap v4 `Swap` events on the PoolManage
 
 ## Arc Network (5042)
 
-| Contract | Address |
-| :--- | :--- |
-| Launchpad Factory (v4) | `0xd7Bf86061CC5637b2b854d61007f8fD7CD6f0980` |
-| Goton V4 Hook | `0xb5C88A6101e6b979Ad63Bf5e6302dF8F031360Cc` |
-| Uniswap V4 PoolManager | `0x8366a39CC670B4001A1121B8F6A443A643e40951` |
-| Quote asset in pools | USDC `0x3600000000000000000000000000000000000000` (6 decimals) |
+| Contract               | Address                                                        |
+| :--------------------- | :------------------------------------------------------------- |
+| Launchpad Factory (v4) | `0xd7Bf86061CC5637b2b854d61007f8fD7CD6f0980`                   |
+| Goton V4 Hook          | `0xb5C88A6101e6b979Ad63Bf5e6302dF8F031360Cc`                   |
+| Uniswap V4 PoolManager | `0x8366a39CC670B4001A1121B8F6A443A643e40951`                   |
+| Quote asset in pools   | USDC `0x3600000000000000000000000000000000000000` (6 decimals) |
 
 **Events**
 

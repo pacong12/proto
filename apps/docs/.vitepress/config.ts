@@ -466,12 +466,9 @@ export default defineConfig({
             items: [
               { text: 'Konfigurasi Jaringan', link: '/id/integration/network' },
               { text: 'Kontrak Pintar Terverifikasi', link: '/id/integration/contracts' },
-              { text: 'Public API (English)', link: '/integration/api' },
+              { text: 'Public API', link: '/id/integration/api' },
               { text: 'Untuk AI Agent', link: '/id/integration/agents' },
-              {
-                text: 'Listing DEX & Agregator (English)',
-                link: '/integration/listing-submission',
-              },
+              { text: 'Listing DEX & Agregator', link: '/id/integration/listing-submission' },
             ],
           },
           {
@@ -534,9 +531,9 @@ export default defineConfig({
             items: [
               { text: '网络配置 (Robinhood & Arc)', link: '/zh/integration/network' },
               { text: '已验证智能合约', link: '/zh/integration/contracts' },
-              { text: '公开 API（英文）', link: '/integration/api' },
+              { text: '公开 API', link: '/zh/integration/api' },
               { text: 'AI 代理', link: '/zh/integration/agents' },
-              { text: 'DEX 与聚合器上架（英文）', link: '/integration/listing-submission' },
+              { text: 'DEX 与聚合器上架', link: '/zh/integration/listing-submission' },
             ],
           },
           {

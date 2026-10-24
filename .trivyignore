@@ -1,0 +1,11 @@
+# Accepted risks for the Trivy scan (.github/workflows/security-audit.yml). Each entry says why
+# and expires, so Trivy reports it again for review on that date.
+
+# CVE-2023-54404: zod <4.6.6, validating an unbounded array, set or map can exhaust memory.
+# Reown AppKit brings it in: @reown/appkit-wallet pins zod 3.22.4 and the Coinbase CDP SDK (via
+# @base-org/account) needs ^3.25.76. No zod 3 release has the change, and per the advisory no
+# release fixes unbounded schemas at all, so forcing zod 4 would risk the wallet without closing
+# the issue. zod runs only in the browser, in the wallet chunk loaded when a user connects, so the
+# worst case is the user's own tab running out of memory. Revisit when AppKit or the CDP SDK
+# moves to a newer zod.
+CVE-2023-54404 exp:2027-01-31
