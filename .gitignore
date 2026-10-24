@@ -42,6 +42,8 @@ Thumbs.db
 listing-submission*.md
 apps/docs/src/integration/listing-submission.md
 *submission*.txt
+# The published docs page and its translations are public, not drafts.
+!apps/docs/src/**/integration/listing-submission.md
 
 # VitePress Cache & Local Temp
 .vitepress/dist/
