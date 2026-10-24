@@ -1,4 +1,5 @@
 import type { RouteLocationNormalized } from 'vue-router';
+import { canonicalPath, SEO_DEFAULT_DESCRIPTION, SEO_DEFAULT_TITLE } from '@goton/shared-types';
 import { SITE } from './site';
 
 export interface PageSeo {
@@ -15,9 +16,8 @@ declare module 'vue-router' {
 }
 
 const BRAND = 'goton';
-export const DEFAULT_TITLE = `${BRAND} · Launch fixed-supply tokens on Robinhood & Arc Chain`;
-export const DEFAULT_DESCRIPTION =
-  'goton is the non-custodial launchpad for fixed-supply tokens on Robinhood Chain and Arc Network. Deploy pure bonding curves with automatic liquidity graduation.';
+export const DEFAULT_TITLE = SEO_DEFAULT_TITLE;
+export const DEFAULT_DESCRIPTION = SEO_DEFAULT_DESCRIPTION;
 
 function setMeta(attr: 'name' | 'property', key: string, content: string): void {
   let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);
@@ -41,13 +41,15 @@ function setCanonical(href: string): void {
 
 /**
  * Applies title, description, canonical URL and social tags for the current page. The canonical
- * URL always points at the production domain, so preview hosts never compete in search results.
+ * URL always points at the production domain, so preview hosts never compete in search results,
+ * and matches the one the edge worker writes into the HTML (both use canonicalPath).
  */
 export function setPageSeo(path: string, seo: PageSeo = {}): void {
   if (typeof document === 'undefined') return;
   const title = seo.title ? `${seo.title} · ${BRAND}` : DEFAULT_TITLE;
   const description = seo.description ?? DEFAULT_DESCRIPTION;
-  const url = `${SITE.appUrl}${path === '/' ? '' : path}`;
+  const canonical = canonicalPath(path);
+  const url = `${SITE.appUrl}${canonical === '/' ? '' : canonical}`;
 
   document.title = title;
   setMeta('name', 'description', description);

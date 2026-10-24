@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { SEO_PAGES } from '@goton/shared-types';
 import { currentLocale } from '@/lib/i18n';
 import { legalUrl, type LegalPage } from '@/lib/site';
 import NotFoundPage from '@/pages/NotFoundPage.vue';
@@ -28,11 +29,7 @@ export const router = createRouter({
       alias: ['/explore'],
       name: 'explore',
       meta: {
-        seo: {
-          title: 'Explore tokens',
-          description:
-            'Discover trending, new and graduated fixed-supply tokens on Robinhood Chain and Arc Network.',
-        },
+        seo: SEO_PAGES['/launchpad'],
       },
       component: () => import('@/pages/ExplorePage.vue'),
     },
@@ -41,11 +38,7 @@ export const router = createRouter({
       alias: ['/create'],
       name: 'create',
       meta: {
-        seo: {
-          title: 'Create a token',
-          description:
-            'Launch a fixed-supply token in minutes on Robinhood Chain or Arc Network. No code, permanently locked liquidity.',
-        },
+        seo: SEO_PAGES['/launchpad/create'],
       },
       component: () => import('@/pages/CreatePage.vue'),
     },
@@ -53,10 +46,7 @@ export const router = createRouter({
       path: '/memestock',
       name: 'memestock',
       meta: {
-        seo: {
-          title: 'Memestock',
-          description: 'Community calls and sentiment for tokens launched on goton.',
-        },
+        seo: SEO_PAGES['/memestock'],
       },
       component: () => import('@/pages/MemestockPage.vue'),
     },
@@ -64,10 +54,7 @@ export const router = createRouter({
       path: '/feed',
       name: 'feed',
       meta: {
-        seo: {
-          title: 'Feed',
-          description: 'The latest posts, calls and trades from the goton community.',
-        },
+        seo: SEO_PAGES['/feed'],
       },
       component: () => import('@/pages/FeedPage.vue'),
     },
@@ -93,11 +80,7 @@ export const router = createRouter({
       path: '/analytics',
       name: 'analytics',
       meta: {
-        seo: {
-          title: 'Analytics',
-          description:
-            'Protocol volume, launches, graduations and buybacks across Robinhood Chain and Arc Network.',
-        },
+        seo: SEO_PAGES['/analytics'],
       },
       component: () => import('@/pages/AnalyticsPage.vue'),
     },

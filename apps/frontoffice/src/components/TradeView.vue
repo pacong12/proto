@@ -554,6 +554,8 @@ import {
   type TokenCommentEntity,
   type FeedCalloutItem,
   type TradeEventEntity,
+  seoChainName,
+  tokenSeoDescription,
 } from '@goton/shared-types';
 import {
   calculateCurveBuyOutput,
@@ -1038,9 +1040,12 @@ watch(
     if (!name || !symbol) return;
     setPageSeo(`/token/${address}`, {
       title: `${name} ($${symbol})`,
-      description:
-        currentToken.value.description?.slice(0, 155) ||
-        `Trade ${name} ($${symbol}) on ${tokenNetwork.value.name}: price, chart, holders and live trades on goton.`,
+      description: tokenSeoDescription(
+        name,
+        symbol,
+        seoChainName(tokenNetwork.value.chainId),
+        currentToken.value.description,
+      ),
     });
   },
   { immediate: true },
