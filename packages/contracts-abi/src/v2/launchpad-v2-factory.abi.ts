@@ -40,19 +40,6 @@ export const launchpadV2FactoryAbi = [
   },
   {
     type: 'function',
-    name: 'LAUNCH_FEE',
-    inputs: [],
-    outputs: [
-      {
-        name: '',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     name: 'MAX_LAUNCH_FEE',
     inputs: [],
     outputs: [
@@ -112,6 +99,19 @@ export const launchpadV2FactoryAbi = [
         name: '',
         type: 'address',
         internalType: 'address',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'curveDeployer',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'contract BondingCurveDeployer',
       },
     ],
     stateMutability: 'view',

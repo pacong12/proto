@@ -67,7 +67,7 @@ interface IBondingCurve {
 
     function feeRecipient() external view returns (address payable);
 
-    function migrateToV4(address payable recipient) external;
+    function migrateLiquidity(address payable recipient) external;
 
     function emergencyWithdraw(address payable recipient) external;
 }

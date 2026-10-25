@@ -13,7 +13,7 @@ import {AntiSnipeLogic} from "../libraries/AntiSnipeLogic.sol";
  * Lifecycle:
  *   1. Traders buy and sell through this contract until totalEthRaised >= graduationTarget.
  *   2. Upon graduation, the contract records the pool key and marks itself as graduated.
- *   3. A privileged migration keeper calls migrateToV4() once the Uniswap V4 PoolManager
+ *   3. A privileged migration keeper calls migrateLiquidity() once the Uniswap V4 PoolManager
  *      is live on Robinhood Chain, depositing locked ETH and tokens into the pool.
  *   4. If migration has not occurred within MIGRATION_DEADLINE seconds, the factory owner
  *      may call emergencyWithdraw() to recover funds to a specified recipient.
@@ -22,7 +22,7 @@ import {AntiSnipeLogic} from "../libraries/AntiSnipeLogic.sol";
  *   - nonReentrant guard on all state-mutating external functions.
  *   - CEI pattern: all state changes precede external calls.
  *   - C-02 fix: funds are no longer permanently locked. Two recovery paths exist:
- *       migrateToV4()       — normal path, executed by factory after V4 is live.
+ *       migrateLiquidity()  — normal path, executed by factory after V4 is live.
  *       emergencyWithdraw() — safety valve, callable by factory after MIGRATION_DEADLINE.
  *   - Initializer pattern: no constructor args. initialize() replaces the constructor
  *     so bytecode is argument-free and identical across all deployments, enabling
@@ -153,14 +153,6 @@ contract BondingCurve {
         launchTime = block.timestamp;
         oracle.lastTimestamp = uint32(block.timestamp);
         oracle.newerTimestamp = uint32(block.timestamp);
-    }
-
-    function POOL_RESERVE_SUPPLY() external view returns (uint256) {
-        return poolReserveSupply > 0 ? poolReserveSupply : 200_000_000 * 1e18;
-    }
-
-    function CURVE_TOKEN_SUPPLY() external view returns (uint256) {
-        return virtualTokenReserve > poolReserveSupply ? virtualTokenReserve - poolReserveSupply : 800_000_000 * 1e18;
     }
 
     // ---------------------------------------------------------------------------
@@ -417,23 +409,11 @@ contract BondingCurve {
         return CurveMath.computeSqrtPriceX96(virtualEthReserve, virtualTokenReserve);
     }
 
-    /// @notice Babylonian integer square root (floor).
-    function _sqrt(uint256 x) internal pure returns (uint256 y) {
-        return CurveMath.sqrt(x);
-    }
-
     /**
      * @notice Release the graduated curve's ETH and tokens to the factory's v4 graduator.
      * @dev Callable only by the factory once graduation target is reached.
      */
     function migrateLiquidity(address payable recipient) external nonReentrant onlyFactory {
-        _executeMigration(recipient);
-    }
-
-    /**
-     * @notice Backward-compatible alias for migrateLiquidity.
-     */
-    function migrateToV4(address payable recipient) external nonReentrant onlyFactory {
         _executeMigration(recipient);
     }
 
@@ -495,9 +475,21 @@ contract BondingCurve {
      * @notice Accept ETH only while the bonding curve is active (not yet graduated).
      * @dev H-01 fix: after graduation all ETH in this contract belongs to the V4
      *      migration pool. Accepting arbitrary ETH post-graduation would distort
-     *      the pool's sqrtPriceX96 when migrateToV4() forwards address(this).balance.
+     *      the pool's sqrtPriceX96 when migrateLiquidity() forwards address(this).balance.
      */
     receive() external payable {
         revert Unauthorized();
+    }
+}
+
+/**
+ * @title BondingCurveDeployer
+ * @notice Deploys BondingCurve instances for LaunchpadV2Factory, which would exceed the EIP-170
+ *         size limit if it embedded the curve's bytecode next to the token's. Salts are namespaced
+ *         by the caller, so nobody can occupy an address the factory is about to deploy to.
+ */
+contract BondingCurveDeployer {
+    function deploy(bytes32 salt) external returns (address) {
+        return address(new BondingCurve{salt: keccak256(abi.encode(msg.sender, salt))}());
     }
 }

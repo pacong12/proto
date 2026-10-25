@@ -301,7 +301,7 @@ contract LaunchpadV2Test is Test {
     function test_SetLaunchFee_OwnerOnlyAndCapped() public {
         // Default launchFee is 0.0005 ether (Robinhood)
         assertEq(factory.launchFee(), 0.0005 ether);
-        assertEq(factory.LAUNCH_FEE(), 0.0005 ether);
+        assertEq(factory.launchFee(), 0.0005 ether);
 
         // Non-owner cannot change launch fee
         vm.prank(address(0xDEAD));

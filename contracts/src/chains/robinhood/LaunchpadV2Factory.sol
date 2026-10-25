@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import {EmergencyPause} from "../../core/EmergencyPause.sol";
 import {LaunchpadToken} from "../../core/LaunchpadToken.sol";
 import {ILaunchpadToken} from "../../interfaces/ILaunchpadToken.sol";
-import {BondingCurve} from "../../core/BondingCurve.sol";
+import {BondingCurve, BondingCurveDeployer} from "../../core/BondingCurve.sol";
 import {GotonV4Graduator} from "../../core/GotonV4Graduator.sol";
 
 /**
@@ -33,6 +33,9 @@ contract LaunchpadV2Factory is EmergencyPause {
 
     address payable public immutable protocolFeeRecipient;
     GotonV4Graduator public immutable graduator;
+    /// @notice Deploys this factory's curves (created here, so its code stays out of our runtime).
+    BondingCurveDeployer public immutable curveDeployer;
+    bytes32 private immutable _curveInitCodeHash;
 
     address public owner;
     address public pendingOwner;
@@ -95,6 +98,8 @@ contract LaunchpadV2Factory is EmergencyPause {
 
         protocolFeeRecipient = _feeRecipient;
         graduator = _graduator;
+        curveDeployer = new BondingCurveDeployer();
+        _curveInitCodeHash = keccak256(type(BondingCurve).creationCode);
         owner = msg.sender;
     }
 
@@ -110,10 +115,6 @@ contract LaunchpadV2Factory is EmergencyPause {
 
     function _pauseOwner() internal view override returns (address) {
         return owner;
-    }
-
-    function LAUNCH_FEE() external view returns (uint256) {
-        return launchFee;
     }
 
     // ---------------------------------------------------------------------------
@@ -143,7 +144,7 @@ contract LaunchpadV2Factory is EmergencyPause {
      * @param salt The salt used (keccak256 of deployer + nonce).
      */
     function predictTokenAddress(bytes32 salt) external view returns (address) {
-        return _predict(type(LaunchpadToken).creationCode, salt);
+        return _predict(address(this), salt, keccak256(type(LaunchpadToken).creationCode));
     }
 
     /**
@@ -151,11 +152,11 @@ contract LaunchpadV2Factory is EmergencyPause {
      * @param salt The salt used (keccak256 of deployer + nonce + 1).
      */
     function predictCurveAddress(bytes32 salt) external view returns (address) {
-        return _predict(type(BondingCurve).creationCode, salt);
+        return _predict(address(curveDeployer), keccak256(abi.encode(address(this), salt)), _curveInitCodeHash);
     }
 
-    function _predict(bytes memory creationCode, bytes32 salt) internal view returns (address) {
-        bytes32 hash = keccak256(abi.encodePacked(bytes1(0xff), address(this), salt, keccak256(creationCode)));
+    function _predict(address deployer, bytes32 salt, bytes32 initCodeHash) internal pure returns (address) {
+        bytes32 hash = keccak256(abi.encodePacked(bytes1(0xff), deployer, salt, initCodeHash));
         return address(uint160(uint256(hash)));
     }
 
@@ -189,7 +190,7 @@ contract LaunchpadV2Factory is EmergencyPause {
 
         // CREATE2 deploy — no constructor args; bytecode is identical across all tokens.
         LaunchpadToken token = new LaunchpadToken{salt: tokenSalt}();
-        BondingCurve curve = new BondingCurve{salt: curveSalt}();
+        BondingCurve curve = BondingCurve(payable(curveDeployer.deploy(curveSalt)));
 
         tokenAddress = address(token);
         curveAddress = address(curve);

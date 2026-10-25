@@ -24,19 +24,6 @@ export const bondingCurveAbi = [
   },
   {
     type: 'function',
-    name: 'CURVE_TOKEN_SUPPLY',
-    inputs: [],
-    outputs: [
-      {
-        name: '',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     name: 'MIGRATION_DEADLINE',
     inputs: [],
     outputs: [
@@ -57,19 +44,6 @@ export const bondingCurveAbi = [
         name: '',
         type: 'uint32',
         internalType: 'uint32',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
-    name: 'POOL_RESERVE_SUPPLY',
-    inputs: [],
-    outputs: [
-      {
-        name: '',
-        type: 'uint256',
-        internalType: 'uint256',
       },
     ],
     stateMutability: 'view',
@@ -419,19 +393,6 @@ export const bondingCurveAbi = [
   {
     type: 'function',
     name: 'migrateLiquidity',
-    inputs: [
-      {
-        name: 'recipient',
-        type: 'address',
-        internalType: 'address payable',
-      },
-    ],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
-    name: 'migrateToV4',
     inputs: [
       {
         name: 'recipient',
