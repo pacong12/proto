@@ -9,6 +9,7 @@ import {
   type NetworkConfig,
 } from '@goton/shared-types';
 import type { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
+import { findAllTokens } from '../../application/all-tokens';
 
 /** A pending keeper transaction older than this is replaced (DR-03). */
 const STUCK_AFTER_MS = 5 * 60_000;
@@ -72,7 +73,7 @@ export class V4BuybackKeeperService {
     if (!account) return [];
     if (await this.hasPendingTransaction(account)) return [];
 
-    const tokens = (await this.repository.findAll(500, 0)).filter((t) => this.isV4Token(t));
+    const tokens = (await findAllTokens(this.repository)).filter((t) => this.isV4Token(t));
     const results: V4BuybackResult[] = [];
     for (const token of tokens) {
       if (buyback) {

@@ -7,6 +7,7 @@ import {
   type TradeEventEntity,
 } from '@goton/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
+import { findAllTokens } from '../../application/all-tokens';
 import { ViemChainIndexerAdapter } from '../adapters/viem-chain-indexer.adapter';
 import { PriceFeedPort } from '../../domain/ports/price-feed.port';
 import { CalculatePricingUseCase } from '../../application/use-cases/calculate-pricing.use-case';
@@ -371,7 +372,7 @@ export class EventPollerService {
 
   private async pollV2Trades(from: bigint, to: bigint): Promise<number> {
     // Fetch all V2 tokens from repository
-    const allTokens = await this.tokenRepository.findAll(200, 0);
+    const allTokens = await findAllTokens(this.tokenRepository);
     const v2Tokens = allTokens.filter(
       (t) =>
         t.version === 'v2' &&
@@ -416,7 +417,7 @@ export class EventPollerService {
   // -------------------------------------------------------------------------
 
   private async pollV1Swaps(from: bigint, to: bigint): Promise<number> {
-    const allTokens = await this.tokenRepository.findAll(200, 0);
+    const allTokens = await findAllTokens(this.tokenRepository);
     // Only poll V1 tokens (or graduated V2 which now have a Uniswap V3 pool)
     const v1Tokens = allTokens.filter(
       (t) =>
@@ -432,12 +433,19 @@ export class EventPollerService {
 
     try {
       const poolAddresses = v1Tokens.map((t) => t.poolAddress as Address);
-      const logs = await this.client.getLogs({
-        address: poolAddresses.length === 1 ? poolAddresses[0] : poolAddresses,
-        event: SWAP_EVENT,
-        fromBlock: from,
-        toBlock: to,
-      });
+      // API-08: same address batching as the V2 trade poll.
+      const logs = [];
+      for (let i = 0; i < poolAddresses.length; i += LOG_ADDRESS_BATCH) {
+        const batch = poolAddresses.slice(i, i + LOG_ADDRESS_BATCH);
+        logs.push(
+          ...(await this.client.getLogs({
+            address: batch.length === 1 ? batch[0] : batch,
+            event: SWAP_EVENT,
+            fromBlock: from,
+            toBlock: to,
+          })),
+        );
+      }
 
       if (logs.length === 0) return 0;
 
@@ -546,7 +554,7 @@ export class EventPollerService {
 
       if (logs.length === 0) return 0;
 
-      const allTokens = await this.tokenRepository.findAll(500, 0);
+      const allTokens = await findAllTokens(this.tokenRepository);
       const tokenByPoolId = new Map(allTokens.map((t) => [t.poolAddress.toLowerCase(), t]));
       const quotePriceUsd = await this.priceFeed.getQuoteAssetPriceUsd(this.network.chainId);
       const blockTimestamps = new Map<bigint, number>();

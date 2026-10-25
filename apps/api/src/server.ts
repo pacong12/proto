@@ -6,6 +6,7 @@ import { LimitOrderKeeperService } from './modules/tokens/infrastructure/keeper/
 import { GraduationKeeperService } from './modules/tokens/infrastructure/keeper/graduation-keeper.service';
 import { isMemestock, memestockSignals } from './modules/tokens/application/memestock';
 import { SPARKLINE_POINTS, sparklineSince } from './modules/tokens/application/sparkline';
+import { findAllTokens } from './modules/tokens/application/all-tokens';
 import {
   SqliteTokenRepository,
   ViemChainIndexerAdapter,
@@ -2014,7 +2015,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     // Fetch tokens (metadata only — no trades loop) and aggregate volume via a single SQL query.
     // Previous approach: N+1 — one getTrades() call per token. Replaced with getVolumeByToken()
     // which executes one GROUP BY query returning (tokenAddress, totalWeth) for the 24h window.
-    const tokens = (await repository.findAll()).filter(
+    const tokens = (await findAllTokens(repository)).filter(
       (t) => !scopedNetwork || resolveTokenNetwork(t).chainId === scopedNetwork.chainId,
     );
     const totalTokens = tokens.length;

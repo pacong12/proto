@@ -7,6 +7,7 @@ import {
   type NetworkConfig,
 } from '@goton/shared-types';
 import type { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
+import { findAllTokens } from '../../application/all-tokens';
 
 export interface GraduationResult {
   token: string;
@@ -47,7 +48,7 @@ export class GraduationKeeperService {
     const [account] = await this.walletClient.getAddresses();
     if (!account) return [];
 
-    const curves = (await this.repository.findAll(500, 0)).filter((t) => this.isLiveCurve(t));
+    const curves = (await findAllTokens(this.repository)).filter((t) => this.isLiveCurve(t));
     const results: GraduationResult[] = [];
     for (const token of curves) {
       const finished = await this.publicClient
