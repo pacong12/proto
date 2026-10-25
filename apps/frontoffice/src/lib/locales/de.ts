@@ -363,6 +363,8 @@ const messages: Record<string, string> = {
   optional: 'Optional',
   stopLossAt: 'Stop Loss bei Marktkapitalisierung (USD)',
   stopSlippage: 'Stop-Slippage (%)',
+  stopTwapNote:
+    'Ein Stop löst erst aus, wenn der Preis eine Weile darunter bleibt (zeitgewichteter Durchschnitt), ein kurzer Einbruch verkauft also nichts.',
   expiresIn: 'Läuft ab in',
   escrowNote: 'Das Guthaben bleibt im Order-Vertrag, bis die Order ausgeführt oder storniert wird.',
   placeOrder: 'Order platzieren',

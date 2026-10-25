@@ -364,6 +364,8 @@ const messages: Record<string, string> = {
   optional: 'Opcional',
   stopLossAt: 'Stop loss en capitalización (USD)',
   stopSlippage: 'Deslizamiento del stop (%)',
+  stopTwapNote:
+    'El stop solo se activa cuando el precio se mantiene por debajo durante un tiempo (promedio ponderado por tiempo), así que una caída breve no vende tus tokens.',
   expiresIn: 'Vence en',
   escrowNote:
     'Los fondos quedan en el contrato de órdenes hasta que la orden se ejecute o la canceles.',

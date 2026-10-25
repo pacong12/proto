@@ -363,6 +363,8 @@ const messages: Record<string, string> = {
   optional: 'Facultatif',
   stopLossAt: 'Stop loss à la capitalisation (USD)',
   stopSlippage: 'Glissement du stop (%)',
+  stopTwapNote:
+    'Le stop ne se déclenche que si le prix reste en dessous un moment (moyenne pondérée dans le temps) : une brève chute ne vend pas vos tokens.',
   expiresIn: 'Expire dans',
   escrowNote: "Les fonds restent dans le contrat d'ordres jusqu'à l'exécution ou l'annulation.",
   placeOrder: "Placer l'ordre",

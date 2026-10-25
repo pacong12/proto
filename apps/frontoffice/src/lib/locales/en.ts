@@ -360,6 +360,8 @@ const messages: Record<string, string> = {
   optional: 'Optional',
   stopLossAt: 'Stop loss at market cap (USD)',
   stopSlippage: 'Stop slippage (%)',
+  stopTwapNote:
+    'A stop fires only after the price has stayed at or below it for a while (time-weighted average), so a brief dip does not sell your tokens.',
   expiresIn: 'Expires in',
   escrowNote: 'Funds stay in the order contract until the order fills or you cancel it.',
   placeOrder: 'Place order',

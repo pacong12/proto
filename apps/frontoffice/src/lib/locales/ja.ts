@@ -360,6 +360,8 @@ const messages: Record<string, string> = {
   optional: '任意',
   stopLossAt: '損切りの時価総額（USD）',
   stopSlippage: '損切りスリッページ (%)',
+  stopTwapNote:
+    'ストップは価格がしばらくその水準以下にとどまった場合（時間加重平均）にのみ発動するため、一時的な下落では売却されません。',
   expiresIn: '有効期限',
   escrowNote: '注文が約定するかキャンセルするまで、資金は注文コントラクトに保管されます。',
   placeOrder: '注文する',
