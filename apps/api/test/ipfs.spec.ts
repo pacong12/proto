@@ -116,9 +116,17 @@ describe('IPFS Service & Controller', () => {
 
   describe('POST /api/ipfs/upload HTTP Integration', () => {
     const controller = new IpfsController();
+    const JPEG = Buffer.concat([
+      Buffer.from([0xff, 0xd8, 0xff, 0xe0]),
+      Buffer.from('token-logo-bytes'),
+    ]);
+    const PNG = Buffer.concat([
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      Buffer.from('binary-file-content'),
+    ]);
 
     it('handles JSON base64 upload over HTTP', async () => {
-      const base64Data = Buffer.from('token-logo-bytes').toString('base64');
+      const base64Data = JPEG.toString('base64');
       const dataUrl = `data:image/jpeg;base64,${base64Data}`;
 
       const req = new Request('http://localhost:3001/api/ipfs/upload', {
@@ -138,7 +146,7 @@ describe('IPFS Service & Controller', () => {
 
     it('handles multipart form data over HTTP', async () => {
       const formData = new FormData();
-      const blob = new Blob(['binary-file-content'], { type: 'image/png' });
+      const blob = new Blob([PNG], { type: 'image/png' });
       formData.append('file', blob, 'coin.png');
 
       const req = new Request('http://localhost:3001/api/ipfs/upload', {
@@ -152,6 +160,27 @@ describe('IPFS Service & Controller', () => {
         expect(response.data.cid).toBeDefined();
         expect(response.data.url).toContain(response.data.cid);
       }
+    });
+
+    it('rejects a file whose bytes are not the image type it claims', async () => {
+      const formData = new FormData();
+      formData.append('file', new Blob(['<html>not a png</html>'], { type: 'image/png' }), 'x.png');
+      const req = new Request('http://localhost:3001/api/ipfs/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const response = await controller.handleUpload(req);
+      expect(response.success).toBe(false);
+      expect(response.error?.code).toBe('CONTENT_TYPE_MISMATCH');
+
+      const json = await controller.handleUpload(
+        new Request('http://localhost:3001/api/ipfs/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dataUrl: `data:image/jpeg;base64,${PNG.toString('base64')}` }),
+        }),
+      );
+      expect(json.error?.code).toBe('CONTENT_TYPE_MISMATCH');
     });
 
     it('returns error on empty multipart upload without file', async () => {

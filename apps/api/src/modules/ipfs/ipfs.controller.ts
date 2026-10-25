@@ -48,6 +48,31 @@ export class IpfsController {
     );
   }
 
+  /**
+   * True when the bytes really are the declared image type. The declared type is only the
+   * client's word, so without this any file could be pinned to our IPFS account as "image/png".
+   */
+  private static contentMatchesType(mimeType: string, buffer: ArrayBuffer | Buffer): boolean {
+    const b = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
+    const ascii = (start: number, end: number) => b.subarray(start, end).toString('latin1');
+    switch (mimeType) {
+      case 'image/png':
+        return b
+          .subarray(0, 8)
+          .equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+      case 'image/jpeg':
+        return b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff;
+      case 'image/gif':
+        return ascii(0, 6) === 'GIF87a' || ascii(0, 6) === 'GIF89a';
+      case 'image/webp':
+        return ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP';
+      case 'image/svg+xml':
+        return b.subarray(0, 1024).toString('utf8').toLowerCase().includes('<svg');
+      default:
+        return false;
+    }
+  }
+
   async handleUpload(req: Request): Promise<ApiEnvelope<IpfsUploadResult>> {
     try {
       const cl = req.headers.get('content-length');
@@ -86,6 +111,9 @@ export class IpfsController {
             'MALICIOUS_PAYLOAD',
             'SVG contains disallowed executable scripts or event handlers',
           );
+        }
+        if (!IpfsController.contentMatchesType(mimeType, arrayBuffer)) {
+          return err('CONTENT_TYPE_MISMATCH', `File content is not a valid ${mimeType}`);
         }
 
         const result = await this.ipfsService.uploadFile(arrayBuffer, fileName, mimeType);
@@ -136,6 +164,9 @@ export class IpfsController {
             'SVG contains disallowed executable scripts or event handlers',
           );
         }
+        if (!IpfsController.contentMatchesType(mimeType, buffer)) {
+          return err('CONTENT_TYPE_MISMATCH', `File content is not a valid ${mimeType}`);
+        }
 
         const fileName =
           body.fileName ||
@@ -162,6 +193,9 @@ export class IpfsController {
             'MALICIOUS_PAYLOAD',
             'SVG contains disallowed executable scripts or event handlers',
           );
+        }
+        if (!IpfsController.contentMatchesType(mimeType, arrayBuffer)) {
+          return err('CONTENT_TYPE_MISMATCH', `File content is not a valid ${mimeType}`);
         }
         const fileName = req.headers.get('x-file-name') || 'upload.bin';
         const result = await this.ipfsService.uploadFile(arrayBuffer, fileName, mimeType);
