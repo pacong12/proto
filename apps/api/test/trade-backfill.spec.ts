@@ -96,6 +96,39 @@ describe('curve trade backfill', () => {
     expect(await repo.getTrades(token.address, 10, 0)).toHaveLength(1);
   });
 
+  it('prices a curve trade at the spot after its block, not at its taxed token ratio', async () => {
+    // An anti-snipe buy: 99% of the tokens went to the tax, so ethAmount / tokenAmount is 100x
+    // the real price. The curve's reserves at that block give the real one.
+    const reads: Array<{ functionName: string; blockNumber?: bigint }> = [];
+    const { p, repo } = poller({
+      getLogs: (async () => [tradeLog(42n, 0)]) as never,
+      getBlock: (async () => ({ timestamp: 1_792_074_238n })) as never,
+      readContract: (async (args: { functionName: string; blockNumber?: bigint }) => {
+        reads.push(args);
+        return args.functionName === 'virtualEthReserve' ? 2n * 10n ** 18n : 10n ** 27n;
+      }) as never,
+    });
+    await repo.save(token);
+    await p.backfillCurveTrades(token, 0n, 100n);
+    const [trade] = await repo.getTrades(token.address, 10, 0);
+    expect(trade.priceUsd).toBeCloseTo((2 / 1e9) * 2400, 12); // spot 2e-9 ETH per token
+    expect(reads.every((r) => r.blockNumber === 42n)).toBe(true);
+  });
+
+  it('falls back to the trade ratio when the block is older than the RPC state history', async () => {
+    const { p, repo } = poller({
+      getLogs: (async () => [tradeLog(42n, 0)]) as never,
+      getBlock: (async () => ({ timestamp: 1_792_074_238n })) as never,
+      readContract: (async () => {
+        throw new Error('historical state not available');
+      }) as never,
+    });
+    await repo.save(token);
+    await p.backfillCurveTrades(token, 0n, 100n);
+    const [trade] = await repo.getTrades(token.address, 10, 0);
+    expect(trade.priceUsd).toBeCloseTo((1e-4 / 1e4) * 2400, 12); // 0.0001 ETH for 10,000 tokens
+  });
+
   it('keeps the cursor when a trade poll fails, so the range is retried', async () => {
     let fail = true;
     const repo = new SqliteTokenRepository(':memory:');

@@ -558,6 +558,7 @@ export class EventPollerService {
       const tokenByPoolId = new Map(allTokens.map((t) => [t.poolAddress.toLowerCase(), t]));
       const quotePriceUsd = await this.priceFeed.getQuoteAssetPriceUsd(this.network.chainId);
       const blockTimestamps = new Map<bigint, number>();
+      const txSenders = new Map<string, Address | null>();
 
       let count = 0;
       for (const log of logs) {
@@ -599,11 +600,14 @@ export class EventPollerService {
           blockTimestamps.set(blockNumber, timestamp);
         }
 
+        // The Swap event's sender is whatever called PoolManager.swap: the router, the limit-order
+        // contract or the buyback, never the trader. The transaction's signer is the trader.
+        const signer = await this.txSender(log.transactionHash, txSenders);
         const trade: TradeEventEntity = {
           id: `${log.transactionHash}-${log.logIndex}`,
           tokenAddress: token.address,
           poolAddress: token.poolAddress,
-          trader: (sender ?? '0x0000000000000000000000000000000000000000') as Address,
+          trader: (signer ?? sender ?? '0x0000000000000000000000000000000000000000') as Address,
           isBuy,
           tokenAmount: tokenAmountNum.toFixed(4),
           wethAmount: usdcAmountNum.toFixed(6),
@@ -693,6 +697,7 @@ export class EventPollerService {
     quotePriceUsd: number,
   ): Promise<number> {
     const blockTimestamps = new Map<bigint, number>();
+    const spotAtBlock = new Map<string, number | null>();
 
     let count = 0;
     for (const log of logs) {
@@ -712,32 +717,16 @@ export class EventPollerService {
       const ethAmountNum = Number(ethAmount) / 1e18;
       const tokenAmountNum = Number(tokenAmount) / 1e18;
 
+      // The curve's spot price after the trade's block. The trade's own ratio is not a price:
+      // in the first seconds the anti-snipe tax (up to 99%) shrinks tokenAmount and made a buy
+      // look up to 100x dearer, and the fee and price impact skew it too.
+      const spotNative = await this.curveSpotAtBlock(log.address, log.blockNumber, spotAtBlock);
       let priceUsd = 0;
-      if (tokenAmountNum > 0) {
-        const priceNative = ethAmountNum / tokenAmountNum;
-        priceUsd = priceNative * quotePriceUsd;
-      }
-
-      if (priceUsd <= 0) {
-        try {
-          const [vEth, vToken] = await Promise.all([
-            this.client.readContract({
-              address: log.address,
-              abi: bondingCurveAbi,
-              functionName: 'virtualEthReserve',
-            }) as Promise<bigint>,
-            this.client.readContract({
-              address: log.address,
-              abi: bondingCurveAbi,
-              functionName: 'virtualTokenReserve',
-            }) as Promise<bigint>,
-          ]);
-          if (vToken > 0n) {
-            priceUsd = (Number(vEth) / Number(vToken)) * quotePriceUsd;
-          }
-        } catch {
-          // fallback
-        }
+      if (spotNative !== null) {
+        priceUsd = spotNative * quotePriceUsd;
+      } else if (tokenAmountNum > 0) {
+        // Older than the RPC's state history (a deep backfill): the trade ratio is all there is.
+        priceUsd = (ethAmountNum / tokenAmountNum) * quotePriceUsd;
       }
 
       const blockNumber = log.blockNumber ?? 0n;
@@ -794,6 +783,58 @@ export class EventPollerService {
       count++;
     }
     return count;
+  }
+
+  /** The address that signed `hash`, or null if the transaction cannot be read. */
+  private async txSender(
+    hash: `0x${string}` | null,
+    cache: Map<string, Address | null>,
+  ): Promise<Address | null> {
+    if (!hash) return null;
+    const cached = cache.get(hash);
+    if (cached !== undefined) return cached;
+    let from: Address | null = null;
+    try {
+      from = (await this.client.getTransaction({ hash })).from;
+    } catch {
+      // Unreadable transaction: the caller falls back to the Swap event's sender.
+    }
+    cache.set(hash, from);
+    return from;
+  }
+
+  /** Curve spot price (quote per token) at the end of `blockNumber`, or null if unreadable. */
+  private async curveSpotAtBlock(
+    curve: Address,
+    blockNumber: bigint | null,
+    cache: Map<string, number | null>,
+  ): Promise<number | null> {
+    if (blockNumber === null) return null;
+    const key = `${curve.toLowerCase()}-${blockNumber}`;
+    const cached = cache.get(key);
+    if (cached !== undefined) return cached;
+    let spot: number | null = null;
+    try {
+      const [vEth, vToken] = await Promise.all([
+        this.client.readContract({
+          address: curve,
+          abi: bondingCurveAbi,
+          functionName: 'virtualEthReserve',
+          blockNumber,
+        }) as Promise<bigint>,
+        this.client.readContract({
+          address: curve,
+          abi: bondingCurveAbi,
+          functionName: 'virtualTokenReserve',
+          blockNumber,
+        }) as Promise<bigint>,
+      ]);
+      if (vToken > 0n) spot = Number(vEth) / Number(vToken);
+    } catch {
+      // The RPC keeps a limited state history (about 2,000 blocks on Robinhood Chain).
+    }
+    cache.set(key, spot);
+    return spot;
   }
 
   private fetchTradeLogs(address: Address | Address[], fromBlock: bigint, toBlock: bigint) {
