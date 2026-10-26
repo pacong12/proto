@@ -257,7 +257,7 @@ Audit mengidentifikasi **8 temuan keamanan dan kelemahan konfigurasi**:
 - **Lokasi Kode**:
   - Root `.env`, `contracts/.env`
 - **Akar Masalah**:
-  File `.env` lokal menyimpan private key aktif (`PRIVATE_KEY=0x2e...`), token JWT Pinata, dan API key Etherscan/RobinScan. Meskipun `.gitignore` telah mengecualikan `.env`, pengembang dapat secara tidak sengaja menjalankan `git add -f` atau menyalin secret ke file pengujian yang ter-commit.
+  File `.env` lokal menyimpan private key aktif (`PRIVATE_KEY=<redacted>`), token JWT Pinata, dan API key Etherscan/RobinScan. Meskipun `.gitignore` telah mengecualikan `.env`, pengembang dapat secara tidak sengaja menjalankan `git add -f` atau menyalin secret ke file pengujian yang ter-commit.
 - **Dampak**:
   Resiko kebocoran kunci deployment blockchain di masa mendatang jika file `.env` terpapar secara tidak sengaja.
 - **Rekomendasi Remediasi**:

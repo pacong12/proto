@@ -64,7 +64,7 @@ Kunci `token=>beneficiary` satu slot, `createVestingSchedule` permissionless. At
 **File:** `proto/.env:8,11,12,109,114`
 
 - `:8` `VITE_REOWN_PROJECT_ID=4832fd78…` — publik by-design tapi asli.
-- `:11` `PRIVATE_KEY=0x2e28…` — kunci deployer mainnet. Kuasai penuh deploy factory/locker.
+- `:11` `PRIVATE_KEY=<redacted>` — kunci deployer mainnet. Kuasai penuh deploy factory/locker.
 - `:12` `PINATA_JWT=eyJhbGciOi…` — kontrol pin IPFS penuh.
 - `:109` `COINGECKO_API_KEY=CG-2eeE…` — kuota berbayar bisa dicuri.
 - `:114` `ADMIN_SECRET=dev-secret-change-me` — default lemah, kemungkinan dipakai di prod.
