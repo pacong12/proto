@@ -290,6 +290,12 @@ contract LaunchpadToken is ILaunchpadToken {
         liquidityPool = pool;
     }
 
+    /// @notice Detaches a graduated bonding curve, so moving its liquidity into the v4 pool is a plain
+    ///         transfer rather than a taxed "buy" paid to the creator's tax recipient.
+    function clearLiquidityPool() external onlyFactory {
+        liquidityPool = address(0);
+    }
+
     function setRestrictionExempt(address account, bool exempt) external onlyFactory {
         if (account == address(0)) revert ZeroAddress();
         isRestrictionExempt[account] = exempt;
@@ -352,11 +358,13 @@ contract LaunchpadToken is ILaunchpadToken {
 
         // Anti-snipe restriction window: blocks [launchBlock, restrictionsEndBlock].
         if (block.number <= restrictionsEndBlock && from == liquidityPool && liquidityPool != address(0)) {
-            if (to == deployer || to == factory || to == _taxConfig.taxRecipient || isRestrictionExempt[to]) {
+            // The tax recipient is not exempt: the creator picks it, so it would be a second wallet
+            // free of every launch limit. Taxes are credited to it directly, never through here.
+            if (to == factory || isRestrictionExempt[to]) {
                 // Exempt from anti-snipe restrictions
             } else if (block.number <= launchBlock) {
                 // At launch block only the deployer may receive tokens from the pool.
-                revert OnlyDeployerCanBuyAtLaunchBlock();
+                if (to != deployer) revert OnlyDeployerCanBuyAtLaunchBlock();
             } else {
                 // Blocks launchBlock+1 and launchBlock+2: enforce buy and wallet caps.
                 // M-02 fix: deployer is not exempt from quantity limits in post-launch
@@ -374,10 +382,7 @@ contract LaunchpadToken is ILaunchpadToken {
         uint256 taxAmount = 0;
         if (liquidityPool != address(0)) {
             bool isBuy = from == liquidityPool;
-            if (
-                isBuy && !publicTradingStarted && to != deployer && to != factory && to != _taxConfig.taxRecipient
-                    && !isRestrictionExempt[to]
-            ) {
+            if (isBuy && !publicTradingStarted && to != deployer && to != factory && !isRestrictionExempt[to]) {
                 publicTradingStarted = true;
             }
             bool isSell = to == liquidityPool;

@@ -350,6 +350,8 @@ const messages: Record<string, string> = {
   optional: '可选',
   stopLossAt: '止损市值（美元）',
   stopSlippage: '止损滑点 (%)',
+  stopTwapNote:
+    '只有当价格在止损价以下持续一段时间（时间加权平均价）后才会触发，短暂下跌不会卖出您的代币。',
   expiresIn: '有效期',
   escrowNote: '资金存放在订单合约中，直到订单成交或您取消。',
   placeOrder: '下单',

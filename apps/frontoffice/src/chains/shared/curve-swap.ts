@@ -25,20 +25,21 @@ export async function executeCurveSwap(
 ): Promise<`0x${string}`> {
   if (params.isBuy) {
     // Send the native quote (ETH, or Arc native USDC in 18 dp) straight to buy().
-    let expectedOut = params.expectedAmountOut;
-    if (!expectedOut || expectedOut <= 0n) {
-      try {
-        const [quotedTokens] = await publicClient.readContract({
-          address: params.curveAddress!,
-          abi: bondingCurveAbi,
-          functionName: 'getAmountOutBuy',
-          args: [params.amountInWei],
-        });
-        if (quotedTokens > 0n) expectedOut = quotedTokens;
-      } catch {
-        // fallback
-      }
+    // Prefer the on-chain quote, as sells do: the caller's estimate comes from cached market data,
+    // and a stale one either fails the buy or silently loosens the slippage floor.
+    let expectedOut: bigint | undefined;
+    try {
+      const [quotedTokens] = await publicClient.readContract({
+        address: params.curveAddress!,
+        abi: bondingCurveAbi,
+        functionName: 'getAmountOutBuy',
+        args: [params.amountInWei],
+      });
+      if (quotedTokens > 0n) expectedOut = quotedTokens;
+    } catch {
+      // fall back to the caller's estimate
     }
+    expectedOut ??= params.expectedAmountOut;
 
     const minTokensOut = resolveMinAmountOut(
       params.amountOutMinimum,
@@ -114,6 +115,8 @@ export async function executeCurveSwap(
         chain: walletClient.chain,
       });
       params.onApproveSubmitted?.(approveHash);
+      // The sell's gas estimate reads the allowance, so it must be mined first (as in v4-swap).
+      await waitForReceiptWithFallback(publicClient, approveHash, walletClient);
     }
 
     let expectedOut = params.expectedAmountOut;

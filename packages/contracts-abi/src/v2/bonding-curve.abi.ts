@@ -24,19 +24,6 @@ export const bondingCurveAbi = [
   },
   {
     type: 'function',
-    name: 'CURVE_TOKEN_SUPPLY',
-    inputs: [],
-    outputs: [
-      {
-        name: '',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-    ],
-    stateMutability: 'view',
-  },
-  {
-    type: 'function',
     name: 'MIGRATION_DEADLINE',
     inputs: [],
     outputs: [
@@ -50,13 +37,13 @@ export const bondingCurveAbi = [
   },
   {
     type: 'function',
-    name: 'POOL_RESERVE_SUPPLY',
+    name: 'ORACLE_PERIOD',
     inputs: [],
     outputs: [
       {
         name: '',
-        type: 'uint256',
-        internalType: 'uint256',
+        type: 'uint32',
+        internalType: 'uint32',
       },
     ],
     stateMutability: 'view',
@@ -103,6 +90,24 @@ export const bondingCurveAbi = [
       },
     ],
     stateMutability: 'payable',
+  },
+  {
+    type: 'function',
+    name: 'consultPriceX36',
+    inputs: [],
+    outputs: [
+      {
+        name: 'twapX36',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'window',
+        type: 'uint32',
+        internalType: 'uint32',
+      },
+    ],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -400,19 +405,6 @@ export const bondingCurveAbi = [
   },
   {
     type: 'function',
-    name: 'migrateToV4',
-    inputs: [
-      {
-        name: 'recipient',
-        type: 'address',
-        internalType: 'address payable',
-      },
-    ],
-    outputs: [],
-    stateMutability: 'nonpayable',
-  },
-  {
-    type: 'function',
     name: 'migrationExecuted',
     inputs: [],
     outputs: [
@@ -420,6 +412,44 @@ export const bondingCurveAbi = [
         name: '',
         type: 'bool',
         internalType: 'bool',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'oracle',
+    inputs: [],
+    outputs: [
+      {
+        name: 'cumulative',
+        type: 'uint128',
+        internalType: 'uint128',
+      },
+      {
+        name: 'lastTimestamp',
+        type: 'uint32',
+        internalType: 'uint32',
+      },
+      {
+        name: 'olderCumulative',
+        type: 'uint128',
+        internalType: 'uint128',
+      },
+      {
+        name: 'olderTimestamp',
+        type: 'uint32',
+        internalType: 'uint32',
+      },
+      {
+        name: 'newerCumulative',
+        type: 'uint128',
+        internalType: 'uint128',
+      },
+      {
+        name: 'newerTimestamp',
+        type: 'uint32',
+        internalType: 'uint32',
       },
     ],
     stateMutability: 'view',
@@ -473,6 +503,19 @@ export const bondingCurveAbi = [
       },
     ],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'spotPriceX36',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
   },
   {
     type: 'function',
@@ -690,6 +733,11 @@ export const bondingCurveAbi = [
   {
     type: 'error',
     name: 'NotGraduated',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'OracleNotReady',
     inputs: [],
   },
   {

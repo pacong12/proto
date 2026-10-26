@@ -8,6 +8,7 @@ import {BondingCurve} from "../../src/core/BondingCurve.sol";
 import {LaunchpadToken} from "../../src/core/LaunchpadToken.sol";
 import {EmergencyPause} from "../../src/core/EmergencyPause.sol";
 import {ILaunchpadToken} from "../../src/interfaces/ILaunchpadToken.sol";
+import {GotonV4Graduator} from "../../src/core/GotonV4Graduator.sol";
 
 contract ReentrantAttackerRecipient {
     LaunchpadV2Factory public factory;
@@ -301,7 +302,7 @@ contract LaunchpadV2Test is Test {
     function test_SetLaunchFee_OwnerOnlyAndCapped() public {
         // Default launchFee is 0.0005 ether (Robinhood)
         assertEq(factory.launchFee(), 0.0005 ether);
-        assertEq(factory.LAUNCH_FEE(), 0.0005 ether);
+        assertEq(factory.launchFee(), 0.0005 ether);
 
         // Non-owner cannot change launch fee
         vm.prank(address(0xDEAD));
@@ -416,6 +417,108 @@ contract LaunchpadV2Test is Test {
         factory.emergencyWithdrawFromCurve(curveAddress, payable(address(this)));
     }
 
+    /// @dev The emergency path detaches the curve too, so the creator's buy tax cannot skim it.
+    function test_EmergencyWithdrawDoesNotPayCreatorBuyTax() public {
+        vm.prank(creator);
+        (address tokenAddress, address curveAddress) =
+            factory.launchTokenV2{value: 0.0005 ether}("T", "T", "", "", "", "", "", 0);
+        LaunchpadToken token = LaunchpadToken(tokenAddress);
+        address taxWallet = address(0x7A7);
+        vm.prank(creator);
+        token.setInitialTaxConfig(1_000, 0, taxWallet);
+        vm.warp(block.timestamp + 10);
+        vm.roll(block.number + 5);
+        vm.prank(buyer1);
+        BondingCurve(payable(curveAddress)).buy{value: 10 ether}(0);
+        uint256 taxBefore = token.balanceOf(taxWallet);
+        uint256 curveTokens = token.balanceOf(curveAddress);
+
+        vm.warp(block.timestamp + 180 days);
+        address payable recovery = payable(address(0x2EC0));
+        factory.emergencyWithdrawFromCurve(curveAddress, recovery);
+
+        assertEq(token.balanceOf(taxWallet), taxBefore, "no tax on emergency withdrawal");
+        assertEq(token.balanceOf(recovery), curveTokens, "every curve token recovered");
+    }
+
+    /// @dev The creator tax lands in the launch transaction: a follow-up one would miss the
+    ///      two-block window (about 0.2 s on Robinhood Chain).
+    function test_LaunchWithTaxSetsItAtomically() public {
+        address taxWallet = address(0x7A7);
+        vm.prank(creator);
+        (address tokenAddress, address curveAddress) = factory.launchTokenV2WithConfig{value: 0.0005 ether + 0.1 ether}(
+            "T", "T", "", "", "", "", "", 0, LaunchpadV2Factory.LaunchTax(300, 500, taxWallet),
+            LaunchpadV2Factory.LaunchSplit(0, 0, 0, 0)
+        );
+        LaunchpadToken token = LaunchpadToken(tokenAddress);
+        (uint16 buyTax, uint16 sellTax, address recipient) = token.taxConfig();
+        assertEq(buyTax, 300);
+        assertEq(sellTax, 500);
+        assertEq(recipient, taxWallet);
+        assertEq(token.balanceOf(taxWallet), 0, "the creator's own initial buy is untaxed");
+
+        vm.roll(block.number + 5);
+        vm.warp(block.timestamp + 10);
+        vm.prank(buyer1);
+        uint256 bought = BondingCurve(payable(curveAddress)).buy{value: 0.1 ether}(0);
+        assertEq(token.balanceOf(taxWallet), (bought * 300) / 10_000, "later buys pay the buy tax");
+    }
+
+    /// @dev The split is recorded in the launch transaction, before any buyer could lock it.
+    function test_LaunchWithConfigRecordsTheRevenueSplit() public {
+        GotonV4Graduator graduator = factory.graduator();
+        graduator.setLauncher(address(factory));
+        vm.prank(creator);
+        (address tokenAddress,) = factory.launchTokenV2WithConfig{value: 0.0005 ether}(
+            "T",
+            "T",
+            "",
+            "",
+            "",
+            "",
+            "",
+            0,
+            LaunchpadV2Factory.LaunchTax(0, 0, address(0)),
+            LaunchpadV2Factory.LaunchSplit(5_000, 0, 5_000, 0)
+        );
+        assertTrue(graduator.hasTokenSplit(tokenAddress));
+        (, uint16 holders, uint16 burn, uint16 creatorShare, uint16 liquidity) = graduator.tokenSplits(tokenAddress);
+        assertEq(holders, 5_000);
+        assertEq(burn, 0);
+        assertEq(creatorShare, 5_000);
+        assertEq(liquidity, 0);
+
+        // Set once: the creator cannot change it afterwards.
+        vm.prank(creator);
+        vm.expectRevert(GotonV4Graduator.SplitLocked.selector);
+        graduator.setRevenueSplit(tokenAddress, 10_000, 0, 0, 0);
+    }
+
+    function test_LaunchWithConfigRejectsAnInvalidSplit() public {
+        factory.graduator().setLauncher(address(factory));
+        vm.prank(creator);
+        vm.expectRevert(GotonV4Graduator.InvalidSplit.selector);
+        factory.launchTokenV2WithConfig{value: 0.0005 ether}(
+            "T", "T", "", "", "", "", "", 0, LaunchpadV2Factory.LaunchTax(0, 0, address(0)), LaunchpadV2Factory.LaunchSplit(5_000, 0, 0, 0)
+        );
+    }
+
+    function test_OnlyTheLauncherSetsSplitsForCreators() public {
+        GotonV4Graduator graduator = factory.graduator();
+        graduator.setLauncher(address(factory));
+        vm.expectRevert(GotonV4Graduator.Unauthorized.selector);
+        graduator.setRevenueSplitByLauncher(address(0xBEEF), 10_000, 0, 0, 0);
+    }
+
+    function test_LaunchWithTaxRejectsMoreThanTenPercent() public {
+        vm.prank(creator);
+        vm.expectRevert(LaunchpadToken.ExcessiveTax.selector);
+        factory.launchTokenV2WithConfig{value: 0.0005 ether}(
+            "T", "T", "", "", "", "", "", 0, LaunchpadV2Factory.LaunchTax(1_001, 0, address(0)),
+            LaunchpadV2Factory.LaunchSplit(0, 0, 0, 0)
+        );
+    }
+
     function test_GraduateRejectsUnknownAndActiveTokens() public {
         vm.expectRevert(LaunchpadV2Factory.UnknownToken.selector);
         factory.graduate(address(0xBEEF));
@@ -463,7 +566,8 @@ contract LaunchpadV2Test is Test {
         vm.expectRevert(EmergencyPause.EmergencyPaused.selector);
         factory.launchTokenV2{value: 0.0005 ether}("X", "X", "", "", "", "", "", 0);
 
-        vm.expectRevert(EmergencyPause.EmergencyPaused.selector);
+        // Graduation is an exit, not an entry: the pause does not block it (only the curve state does).
+        vm.expectRevert(LaunchpadV2Factory.NotGraduated.selector);
         factory.graduate(tokenAddress);
 
         // Holders can always exit.

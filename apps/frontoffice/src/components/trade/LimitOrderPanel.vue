@@ -80,6 +80,7 @@
           class="w-20 text-right"
         />
       </label>
+      <p v-if="slTarget > 0" class="text-xs text-muted-foreground">{{ t('stopTwapNote') }}</p>
     </template>
 
     <label class="flex items-center justify-between gap-2 text-xs">

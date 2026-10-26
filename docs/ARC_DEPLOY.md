@@ -62,6 +62,10 @@ PRIVATE_KEY=<hex> forge script script/arc/DeployArc.s.sol \
   --broadcast
 ```
 
+`OWNER_SAFE` (Safe multisig) takes ownership and is the default treasury. Without it the script
+refuses mainnet unless `ALLOW_EOA_OWNER=true`, and then `PROTOCOL_FEE_RECIPIENT` is required: there
+is no built-in fallback wallet.
+
 Optional env overrides: `MNEMONIC`, `PROTOCOL_FEE_RECIPIENT` (treasury; also the default buyback and
 liquidity vault), `ARC_POOL_MANAGER_V4`, `ARC_USDC`, `EMERGENCY_GUARDIAN` (incident-response multisig
 that may call `pause()`; only the owner can `unpause()`. Pausing stops launches, never exits). The hook is deployed through the deterministic

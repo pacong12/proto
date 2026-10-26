@@ -55,7 +55,7 @@ export async function compressAndConvertToWebp(
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img, 0, 0, width, height);
 
-      // Attempt to encode as image/webp, with fallback to image/jpeg if unsupported
+      // Encode as image/webp; browsers without a WebP encoder fall back to PNG
       canvas.toBlob(
         (blob) => {
           if (!blob) {
@@ -63,10 +63,13 @@ export async function compressAndConvertToWebp(
             return;
           }
 
+          // Safari and every iOS browser hand back a PNG: label the file with what was
+          // actually encoded, since the API checks the bytes against the type.
+          const type = blob.type || 'image/png';
           const baseName = file.name.replace(/\.[^/.]+$/, '');
-          const outputName = `${baseName}.webp`;
-          const convertedFile = new File([blob], outputName, { type: 'image/webp' });
-          const dataUrl = canvas.toDataURL('image/webp', quality);
+          const outputName = `${baseName}.${type.split('/')[1]}`;
+          const convertedFile = new File([blob], outputName, { type });
+          const dataUrl = canvas.toDataURL(type, quality);
 
           resolve({
             file: convertedFile,

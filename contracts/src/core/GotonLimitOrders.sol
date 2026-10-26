@@ -20,6 +20,7 @@ interface ICurveFactoryLO {
 interface IBondingCurveLO {
     function virtualEthReserve() external view returns (uint256);
     function virtualTokenReserve() external view returns (uint256);
+    function consultPriceX36() external view returns (uint256 twapX36, uint32 window);
     function buyFor(address recipient, uint256 minTokensOut) external payable returns (uint256);
     function sell(uint256 tokenIn, uint256 minEthOut) external returns (uint256);
 }
@@ -56,8 +57,8 @@ interface IGotonV4HookLO {
  *         restricted to a bonding curve of the trusted factory or a Goton v4 pool via the trusted
  *         router, and every fill is checked against the owner's balance change, not router output.
  *
- *         Stop-loss triggers on the bonding curve's spot price, or on a v4 pool's TWAP (hook
- *         oracle) so that a one-block price push cannot trigger stops.
+ *         Stop-loss triggers when the bonding curve's spot price and its TWAP are both at or below the
+ *         trigger, or on a v4 pool's TWAP (hook oracle), so a one-block price push cannot trigger stops.
  */
 contract GotonLimitOrders {
     using PoolIdLibrary for PoolKey;
@@ -248,8 +249,11 @@ contract GotonLimitOrders {
         _checkCurve(curve, o.token);
         if (leg == Leg.StopLoss) {
             if (o.slPriceX36 == 0) revert NotTriggered();
+            // Spot alone can be pushed below the trigger and back within one transaction; the
+            // curve's TWAP must agree, so a stop only fires on a price that actually held.
             uint256 spot = (curve.virtualEthReserve() * 1e36) / curve.virtualTokenReserve();
-            if (spot > o.slPriceX36) revert NotTriggered();
+            (uint256 twap,) = curve.consultPriceX36();
+            if (spot > o.slPriceX36 || twap > o.slPriceX36) revert NotTriggered();
         }
         delete orders[id];
         uint256 tokensBefore = IERC20LO(o.token).balanceOf(address(this));

@@ -113,6 +113,15 @@ describe('GraduationKeeperService', () => {
     expect(writes).toHaveLength(0);
   });
 
+  it('graduates old curves too, not only the newest page of tokens', async () => {
+    const repo = new InMemoryTokenRepository();
+    for (let n = 1; n <= 600; n++) await repo.save(curveToken(n));
+    const oldest = curveToken(1);
+    const { publicClient, walletClient, writes } = setup([oldest.curveAddress!]);
+    await new GraduationKeeperService(publicClient, walletClient, repo, network).runOnce();
+    expect(writes).toEqual([{ functionName: 'graduate', args: [oldest.address] }]);
+  });
+
   it('does nothing where no graduator is deployed', async () => {
     const repo = new InMemoryTokenRepository();
     await repo.save(curveToken(1));

@@ -1,10 +1,5 @@
 import { parseEventLogs, type PublicClient, type WalletClient } from 'viem';
-import {
-  ROBINHOOD_CHAIN,
-  launchpadTokenAbi,
-  launchpadV2FactoryAbi,
-  gotonV4GraduatorAbi,
-} from '@goton/shared-types';
+import { ROBINHOOD_CHAIN, launchpadV2FactoryAbi, gotonV4GraduatorAbi } from '@goton/shared-types';
 import { revenueSplitToBps, taxPercentToBps } from '@goton/math-sdk';
 import type { ChainAdapter, ChainLaunchParams, ChainLaunchResult, ChainSwapParams } from '../types';
 import { waitForReceiptWithFallback } from '../../lib/viem-client';
@@ -36,24 +31,50 @@ export class RobinhoodChainAdapter implements ChainAdapter {
     }
 
     const initialBuyWei = parseInitialBuyWei(params.initialBuyAmountEth);
-    const hash = await walletClient.writeContract({
-      address: factory,
-      abi: launchpadV2FactoryAbi,
-      functionName: 'launchTokenV2',
-      args: [
-        params.name,
-        params.symbol,
-        params.logo,
-        params.description,
-        params.socials.twitter ?? '',
-        params.socials.telegram ?? '',
-        params.socials.website ?? '',
-        params.minInitialTokensOut ?? 0n,
-      ],
-      value: this.network.launchConfig.launchFeeWei + initialBuyWei,
-      account,
-      chain: walletClient.chain,
-    });
+    const launchArgs = [
+      params.name,
+      params.symbol,
+      params.logo,
+      params.description,
+      params.socials.twitter ?? '',
+      params.socials.telegram ?? '',
+      params.socials.website ?? '',
+      params.minInitialTokensOut ?? 0n,
+    ] as const;
+    // The tax and the LP-fee split go into the launch transaction itself: the token accepts an
+    // initial tax only within two blocks of launch (~0.2 s here) and the split locks at the first
+    // third-party buy, so follow-up transactions the creator still has to sign lose both races.
+    const buyTaxBps = taxPercentToBps(params.buyTaxPercent ?? 0);
+    const sellTaxBps = taxPercentToBps(params.sellTaxPercent ?? 0);
+    const withSplit = Boolean(params.revenueSplit) && isDeployed(this.network.contracts.graduator);
+    const split = withSplit
+      ? revenueSplitToBps(params.revenueSplit)
+      : { holdersBps: 0, burnBps: 0, creatorBps: 0, liquidityBps: 0 };
+    const configured = buyTaxBps > 0 || sellTaxBps > 0 || withSplit;
+    const value = this.network.launchConfig.launchFeeWei + initialBuyWei;
+    const hash = configured
+      ? await walletClient.writeContract({
+          address: factory,
+          abi: launchpadV2FactoryAbi,
+          functionName: 'launchTokenV2WithConfig',
+          args: [
+            ...launchArgs,
+            { buyTaxBps, sellTaxBps, taxRecipient: params.creatorTaxWallet ?? account },
+            split,
+          ],
+          value,
+          account,
+          chain: walletClient.chain,
+        })
+      : await walletClient.writeContract({
+          address: factory,
+          abi: launchpadV2FactoryAbi,
+          functionName: 'launchTokenV2',
+          args: launchArgs,
+          value,
+          account,
+          chain: walletClient.chain,
+        });
 
     onHashEmitted?.(hash);
     const receipt = await waitForReceiptWithFallback(publicClient, hash, walletClient);
@@ -74,42 +95,10 @@ export class RobinhoodChainAdapter implements ChainAdapter {
       tokenAddress: launch.args.token,
       curveAddress: launch.args.curve,
       poolAddress: launch.args.curve,
-      taxApplied: false,
+      // Both were part of the launch transaction, which was mined successfully.
+      taxApplied: true,
+      splitApplied: !params.revenueSplit || withSplit,
     };
-
-    // Creator tax and revenue split are follow-up transactions that only succeed before any
-    // third-party buy (S18), so they are sent right after the launch is mined.
-    const buyTaxBps = taxPercentToBps(params.buyTaxPercent ?? 0);
-    const sellTaxBps = taxPercentToBps(params.sellTaxPercent ?? 0);
-    result.taxApplied = buyTaxBps === 0 && sellTaxBps === 0;
-    if (!result.taxApplied) {
-      try {
-        const taxHash = await walletClient.writeContract({
-          address: result.tokenAddress,
-          abi: launchpadTokenAbi,
-          functionName: 'setInitialTaxConfig',
-          args: [buyTaxBps, sellTaxBps, params.creatorTaxWallet ?? account],
-          account,
-          chain: walletClient.chain,
-        });
-        const taxReceipt = await waitForReceiptWithFallback(publicClient, taxHash, walletClient);
-        result.taxApplied = taxReceipt?.status === 'success';
-      } catch (err) {
-        console.warn('[RobinhoodChainAdapter] Initial tax was not applied:', err);
-      }
-    }
-
-    // The LP-fee split is enforced at graduation by GotonV4Graduator (set once, before public
-    // trading). The caller is told when it did not land, so the creator can retry.
-    result.splitApplied = params.revenueSplit
-      ? await this.applyRevenueSplit(
-          result.tokenAddress,
-          params.revenueSplit,
-          walletClient,
-          publicClient,
-          account,
-        )
-      : true;
     return result;
   }
 

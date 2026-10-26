@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import {EmergencyPause} from "../../core/EmergencyPause.sol";
 import {LaunchpadToken} from "../../core/LaunchpadToken.sol";
 import {ILaunchpadToken} from "../../interfaces/ILaunchpadToken.sol";
-import {BondingCurve} from "../../core/BondingCurve.sol";
+import {BondingCurve, BondingCurveDeployer} from "../../core/BondingCurve.sol";
 import {GotonV4Graduator} from "../../core/GotonV4Graduator.sol";
 
 /**
@@ -33,6 +33,9 @@ contract LaunchpadV2Factory is EmergencyPause {
 
     address payable public immutable protocolFeeRecipient;
     GotonV4Graduator public immutable graduator;
+    /// @notice Deploys this factory's curves (created here, so its code stays out of our runtime).
+    BondingCurveDeployer public immutable curveDeployer;
+    bytes32 private immutable _curveInitCodeHash;
 
     address public owner;
     address public pendingOwner;
@@ -95,6 +98,8 @@ contract LaunchpadV2Factory is EmergencyPause {
 
         protocolFeeRecipient = _feeRecipient;
         graduator = _graduator;
+        curveDeployer = new BondingCurveDeployer();
+        _curveInitCodeHash = keccak256(type(BondingCurve).creationCode);
         owner = msg.sender;
     }
 
@@ -110,10 +115,6 @@ contract LaunchpadV2Factory is EmergencyPause {
 
     function _pauseOwner() internal view override returns (address) {
         return owner;
-    }
-
-    function LAUNCH_FEE() external view returns (uint256) {
-        return launchFee;
     }
 
     // ---------------------------------------------------------------------------
@@ -143,7 +144,7 @@ contract LaunchpadV2Factory is EmergencyPause {
      * @param salt The salt used (keccak256 of deployer + nonce).
      */
     function predictTokenAddress(bytes32 salt) external view returns (address) {
-        return _predict(type(LaunchpadToken).creationCode, salt);
+        return _predict(address(this), salt, keccak256(type(LaunchpadToken).creationCode));
     }
 
     /**
@@ -151,17 +152,33 @@ contract LaunchpadV2Factory is EmergencyPause {
      * @param salt The salt used (keccak256 of deployer + nonce + 1).
      */
     function predictCurveAddress(bytes32 salt) external view returns (address) {
-        return _predict(type(BondingCurve).creationCode, salt);
+        return _predict(address(curveDeployer), keccak256(abi.encode(address(this), salt)), _curveInitCodeHash);
     }
 
-    function _predict(bytes memory creationCode, bytes32 salt) internal view returns (address) {
-        bytes32 hash = keccak256(abi.encodePacked(bytes1(0xff), address(this), salt, keccak256(creationCode)));
+    function _predict(address deployer, bytes32 salt, bytes32 initCodeHash) internal pure returns (address) {
+        bytes32 hash = keccak256(abi.encodePacked(bytes1(0xff), deployer, salt, initCodeHash));
         return address(uint160(uint256(hash)));
     }
 
     // ---------------------------------------------------------------------------
     // Core launch
     // ---------------------------------------------------------------------------
+
+    /// @notice Creator buy/sell tax set in the launch transaction (0 / 0 = none).
+    struct LaunchTax {
+        uint16 buyTaxBps;
+        uint16 sellTaxBps;
+        /// @dev address(0) = the creator.
+        address taxRecipient;
+    }
+
+    /// @notice Creator split of the post-protocol LP fees (all zero = the graduator's default).
+    struct LaunchSplit {
+        uint16 holdersBps;
+        uint16 burnBps;
+        uint16 creatorBps;
+        uint16 liquidityBps;
+    }
 
     function launchTokenV2(
         string memory name,
@@ -173,6 +190,53 @@ contract LaunchpadV2Factory is EmergencyPause {
         string memory website,
         uint256 minInitialTokensOut
     ) external payable nonReentrant whenNotPaused returns (address tokenAddress, address curveAddress) {
+        return _launch(
+            name,
+            symbol,
+            logo,
+            description,
+            twitter,
+            telegram,
+            website,
+            minInitialTokensOut,
+            LaunchTax(0, 0, address(0)),
+            LaunchSplit(0, 0, 0, 0)
+        );
+    }
+
+    /**
+     * @notice launchTokenV2 plus the creator's initial tax and LP-fee split, set atomically. The
+     *         token accepts an initial tax only in the launch block and the two after it (about
+     *         0.2 s on Robinhood Chain), and the split locks at the first third-party buy, so a
+     *         second transaction the creator still has to sign would lose both races.
+     */
+    function launchTokenV2WithConfig(
+        string memory name,
+        string memory symbol,
+        string memory logo,
+        string memory description,
+        string memory twitter,
+        string memory telegram,
+        string memory website,
+        uint256 minInitialTokensOut,
+        LaunchTax calldata tax,
+        LaunchSplit calldata split
+    ) external payable nonReentrant whenNotPaused returns (address tokenAddress, address curveAddress) {
+        return _launch(name, symbol, logo, description, twitter, telegram, website, minInitialTokensOut, tax, split);
+    }
+
+    function _launch(
+        string memory name,
+        string memory symbol,
+        string memory logo,
+        string memory description,
+        string memory twitter,
+        string memory telegram,
+        string memory website,
+        uint256 minInitialTokensOut,
+        LaunchTax memory tax,
+        LaunchSplit memory split
+    ) private returns (address tokenAddress, address curveAddress) {
         if (msg.value < launchFee) revert InvalidFee();
 
         uint256 initialBuyEth = msg.value - launchFee;
@@ -189,7 +253,7 @@ contract LaunchpadV2Factory is EmergencyPause {
 
         // CREATE2 deploy — no constructor args; bytecode is identical across all tokens.
         LaunchpadToken token = new LaunchpadToken{salt: tokenSalt}();
-        BondingCurve curve = new BondingCurve{salt: curveSalt}();
+        BondingCurve curve = BondingCurve(payable(curveDeployer.deploy(curveSalt)));
 
         tokenAddress = address(token);
         curveAddress = address(curve);
@@ -244,6 +308,15 @@ contract LaunchpadV2Factory is EmergencyPause {
             }
         }
 
+        // After the creator's initial buy (untaxed: the pool is not set yet), before any other buyer.
+        if (tax.buyTaxBps != 0 || tax.sellTaxBps != 0) {
+            token.setInitialTaxConfig(tax.buyTaxBps, tax.sellTaxBps, tax.taxRecipient);
+        }
+        if (split.holdersBps != 0 || split.burnBps != 0 || split.creatorBps != 0 || split.liquidityBps != 0) {
+            graduator.setRevenueSplitByLauncher(
+                tokenAddress, split.holdersBps, split.burnBps, split.creatorBps, split.liquidityBps
+            );
+        }
         token.setLiquidityPool(curveAddress);
     }
 
@@ -253,20 +326,19 @@ contract LaunchpadV2Factory is EmergencyPause {
 
     /**
      * @notice Moves a graduated curve's liquidity into its locked Uniswap v4 pool. Permissionless.
+     * @dev Not pausable: a graduated curve no longer accepts sells, so graduating is its holders'
+     *      only exit, and a pause must never trap them until emergencyWithdrawFromCurve opens.
      */
     // slither-disable-next-line reentrancy-no-eth (guarded by nonReentrant / onlyPoolManager / trusted caller; see docs/audit/AUDIT-VERIFICATION.md)
-    function graduate(address tokenAddress)
-        external
-        nonReentrant
-        whenNotPaused
-        returns (bytes32 poolId, address splitter)
-    {
+    function graduate(address tokenAddress) external nonReentrant returns (bytes32 poolId, address splitter) {
         V2Launch storage launch = launches[tokenAddress];
         if (launch.curve == address(0)) revert UnknownToken();
         BondingCurve curve = BondingCurve(payable(launch.curve));
         if (!curve.graduated()) revert NotGraduated();
 
         uint160 sqrtPriceX96 = curve.graduationSqrtPriceX96();
+        // Otherwise the curve -> graduator transfer counts as a buy and pays the creator's buy tax.
+        LaunchpadToken(tokenAddress).clearLiquidityPool();
         curve.migrateLiquidity(payable(address(graduator)));
         (poolId, splitter) = graduator.graduate(tokenAddress, launch.creator, launch.curve, sqrtPriceX96);
 
@@ -282,8 +354,9 @@ contract LaunchpadV2Factory is EmergencyPause {
      * @dev F-11 fix: also marks graduated = true to reflect the curve has exited.
      */
     function emergencyWithdrawFromCurve(address curve, address payable recipient) external onlyOwner {
-        BondingCurve(payable(curve)).emergencyWithdraw(recipient);
         address token = curveToToken[curve];
+        if (token != address(0)) LaunchpadToken(token).clearLiquidityPool();
+        BondingCurve(payable(curve)).emergencyWithdraw(recipient);
         if (token != address(0)) {
             launches[token].graduated = true;
         }

@@ -61,10 +61,9 @@ contract DeployArc is Script {
         if (ownerSafe == address(0) && block.chainid == 5042 && !vm.envOr("ALLOW_EOA_OWNER", false)) {
             revert("Set OWNER_SAFE (Safe multisig) for mainnet, or ALLOW_EOA_OWNER=true");
         }
-        address payable feeRecipient = payable(vm.envOr(
-                "PROTOCOL_FEE_RECIPIENT",
-                ownerSafe != address(0) ? ownerSafe : address(0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2)
-            ));
+        // No hardcoded fallback: a forgotten env var must stop the deploy, not route fees to an old wallet.
+        address payable feeRecipient = payable(vm.envOr("PROTOCOL_FEE_RECIPIENT", ownerSafe));
+        if (feeRecipient == address(0)) revert("Set PROTOCOL_FEE_RECIPIENT or OWNER_SAFE");
         IPoolManagerV4 poolManager =
             IPoolManagerV4(vm.envOr("ARC_POOL_MANAGER_V4", address(0x8366a39CC670B4001A1121B8F6A443A643e40951)));
         address usdc = vm.envOr("ARC_USDC", address(0x3600000000000000000000000000000000000000));

@@ -356,6 +356,8 @@ const messages: Record<string, string> = {
   optional: '선택',
   stopLossAt: '손절 시가총액 (USD)',
   stopSlippage: '손절 슬리피지 (%)',
+  stopTwapNote:
+    '스톱은 가격이 일정 시간 그 아래에 머물 때(시간 가중 평균)만 발동하므로, 잠깐의 하락으로는 토큰이 팔리지 않습니다.',
   expiresIn: '만료',
   escrowNote: '주문이 체결되거나 취소할 때까지 자금은 주문 컨트랙트에 보관됩니다.',
   placeOrder: '주문하기',

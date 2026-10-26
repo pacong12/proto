@@ -56,9 +56,20 @@ contract LOCurve {
 
     receive() external payable {}
 
+    /// @dev 0 = the TWAP follows the spot price.
+    uint256 public twapX36;
+
     function setRate(uint256 _rate) external {
         rate = _rate;
         virtualTokenReserve = _rate * 1 ether;
+    }
+
+    function setTwap(uint256 _twapX36) external {
+        twapX36 = _twapX36;
+    }
+
+    function consultPriceX36() external view returns (uint256, uint32) {
+        return (twapX36 != 0 ? twapX36 : (virtualEthReserve * 1e36) / virtualTokenReserve, 10 minutes);
     }
 
     function buyFor(address recipient, uint256) external payable returns (uint256 out) {
@@ -260,6 +271,21 @@ contract GotonLimitOrdersTest is Test {
         lo.executeSellOnCurve(id, IBondingCurveLO(address(curve)), GotonLimitOrders.Leg.StopLoss);
 
         curve.setRate(RATE * 2); // price halves -> at the trigger
+        lo.executeSellOnCurve(id, IBondingCurveLO(address(curve)), GotonLimitOrders.Leg.StopLoss);
+        assertGt(alice.balance, 100 ether);
+    }
+
+    /// @dev A spot price pushed below the trigger (e.g. a sandwich) does not fire while the TWAP disagrees.
+    function test_StopLossOnCurveNeedsTheTwapBelowTheTrigger() public {
+        uint256 spot = 1e36 / RATE;
+        uint256 id = _sellOrder(1_000_000 ether, 0, spot / 2, 0.4 ether);
+
+        curve.setRate(RATE * 2); // spot at the trigger...
+        curve.setTwap(spot); // ...but the price held above it until now
+        vm.expectRevert(GotonLimitOrders.NotTriggered.selector);
+        lo.executeSellOnCurve(id, IBondingCurveLO(address(curve)), GotonLimitOrders.Leg.StopLoss);
+
+        curve.setTwap(spot / 2); // the drop held long enough
         lo.executeSellOnCurve(id, IBondingCurveLO(address(curve)), GotonLimitOrders.Leg.StopLoss);
         assertGt(alice.balance, 100 ether);
     }

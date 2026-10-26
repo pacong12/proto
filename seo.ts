@@ -145,15 +145,20 @@ const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 /** Replace one `<meta {attr}="{key}" content="…">` tag, whatever its line breaks. */
 function setMeta(html: string, attr: 'name' | 'property', key: string, value: string): string {
   const re = new RegExp(`<meta\\s+${attr}="${escapeRegExp(key)}"\\s+content="[^"]*"\\s*/?>`, 'i');
-  return html.replace(re, `<meta ${attr}="${key}" content="${escapeAttr(value)}" />`);
+  return html.replace(re, () => `<meta ${attr}="${key}" content="${escapeAttr(value)}" />`);
 }
 
 /** Writes `meta` into the app's index.html: title, description, canonical, Open Graph, X. */
 export function applyMeta(html: string, meta: PageMeta): string {
-  let out = html.replace(/<title>[^<]*<\/title>/i, `<title>${escapeAttr(meta.title)}</title>`);
+  // Every replacement below is a function: a string replacement expands `$'`, `$&` and the like,
+  // so a token named "Moon $'" would copy the rest of the page into its <title>.
+  let out = html.replace(
+    /<title>[^<]*<\/title>/i,
+    () => `<title>${escapeAttr(meta.title)}</title>`,
+  );
   out = out.replace(
     /<link\s+rel="canonical"\s+href="[^"]*"\s*\/?>/i,
-    `<link rel="canonical" href="${escapeAttr(meta.canonical)}" />`,
+    () => `<link rel="canonical" href="${escapeAttr(meta.canonical)}" />`,
   );
   const pairs: Array<['name' | 'property', string, string]> = [
     ['name', 'title', meta.title],
@@ -550,9 +555,9 @@ export function applyContent(html: string, content: PageContent | null): string 
   const shell = /<div id="app"><\/div>/;
   if (!shell.test(html)) return html;
   return html
-    .replace(shell, `<div id="app"><main class="seo-static">${content.html}</main></div>`)
+    .replace(shell, () => `<div id="app"><main class="seo-static">${content.html}</main></div>`)
     .replace(
       /<\/head>/i,
-      `<script type="application/ld+json">${scriptJson(content.jsonLd)}</script>\n</head>`,
+      () => `<script type="application/ld+json">${scriptJson(content.jsonLd)}</script>\n</head>`,
     );
 }

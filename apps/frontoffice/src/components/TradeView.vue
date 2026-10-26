@@ -1468,14 +1468,17 @@ const estimatedOutputAmount = computed(() => {
     (currentToken.value.version === 'v2' || Boolean(currentToken.value.curveAddress)) &&
     !currentMarketData.value.isGraduated;
 
+  // On the curve the token itself takes the creator's tax: the buy tax from the tokens received,
+  // the sell tax from the tokens sold. Show what actually reaches the wallet.
+  const { buyTaxBps, sellTaxBps } = onchainTaxConfig.value;
   if (isBuy.value) {
     const tokens = isV2OnCurve
-      ? computeCurveBuyOutput(input)
+      ? computeCurveBuyOutput(input) * (1 - buyTaxBps / 10_000)
       : input / (currentMarketData.value.priceInWeth || 0.000001);
     return tokens.toLocaleString(undefined, { maximumFractionDigits: 2 });
   } else {
     const weth = isV2OnCurve
-      ? computeCurveSellOutput(input)
+      ? computeCurveSellOutput(input * (1 - sellTaxBps / 10_000))
       : input * (currentMarketData.value.priceInWeth || 0);
     const decimals = currencySymbol.value === 'USDC' ? 2 : 6;
     return weth.toFixed(decimals);

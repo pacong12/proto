@@ -362,6 +362,8 @@ const messages: Record<string, string> = {
   optional: 'Opsional',
   stopLossAt: 'Stop loss pada market cap (USD)',
   stopSlippage: 'Slippage stop (%)',
+  stopTwapNote:
+    'Stop loss baru terpicu setelah harga bertahan di bawahnya beberapa saat (rata-rata berbobot waktu), jadi penurunan sesaat tidak menjual token Anda.',
   expiresIn: 'Berlaku',
   escrowNote: 'Dana tersimpan di kontrak order sampai order terisi atau Anda batalkan.',
   placeOrder: 'Pasang order',

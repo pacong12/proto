@@ -76,7 +76,8 @@ contract RobinhoodLimitOrdersForkTest is Test {
         assertEq(IERC20Fork(TOKEN).balanceOf(alice), bought);
     }
 
-    function test_StopLossTriggersOnTheLiveCurveSpotPrice() public {
+    /// @dev Curves from before the TWAP oracle cannot be stop-lossed: spot alone is manipulable.
+    function test_StopLossNeedsTheCurveOracle() public {
         vm.prank(alice);
         uint256 buyId = lo.createBuyOrder{value: 0.01 ether}(TOKEN, 1, uint64(block.timestamp + 1 days));
         lo.executeBuyOnCurve(buyId, CURVE);
@@ -89,10 +90,13 @@ contract RobinhoodLimitOrdersForkTest is Test {
         uint256 id = lo.createSellOrder(TOKEN, bought, 0, stop, 0.005 ether, uint64(block.timestamp + 1 days));
         vm.stopPrank();
 
-        uint256 before = alice.balance;
+        vm.expectRevert();
         lo.executeSellOnCurve(id, CURVE, GotonLimitOrders.Leg.StopLoss);
-        assertGt(alice.balance - before, 0.005 ether, "sold above the stop floor");
-        assertEq(IERC20Fork(TOKEN).balanceOf(address(lo)), 0, "nothing left in escrow");
+
+        // The owner can still take the tokens back.
+        vm.prank(alice);
+        lo.cancel(id);
+        assertEq(IERC20Fork(TOKEN).balanceOf(alice), bought);
     }
 
     receive() external payable {}

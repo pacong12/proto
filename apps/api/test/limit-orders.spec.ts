@@ -173,6 +173,20 @@ describe('LimitOrderKeeperService', () => {
     expect(writes).toHaveLength(0);
   });
 
+  it('still fills the take-profit leg when the stop-loss fee does not cover gas', async () => {
+    const sell = order({
+      isBuy: false,
+      minOut: '1000000000000000000', // fee 1e15 wei covers 300k gas at 0.02 gwei
+      slPriceX36: '7',
+      slMinOut: '1000', // fee rounds to 0
+    });
+    const { results, writes } = await run(sell, token(), {
+      fillable: ['executeSellOnCurve:1', 'executeSellOnCurve:0'],
+    });
+    expect(writes).toEqual([{ functionName: 'executeSellOnCurve', args: [1n, CURVE, 0] }]);
+    expect(results[0]).toMatchObject({ executed: true });
+  });
+
   it('ignores expired orders', async () => {
     const { simulated } = await run(order({ deadline: NOW / 1000 - 1 }), token(), {
       fillable: ['executeBuyOnCurve:'],

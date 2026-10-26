@@ -13,7 +13,7 @@ import {AntiSnipeLogic} from "../libraries/AntiSnipeLogic.sol";
  * Lifecycle:
  *   1. Traders buy and sell through this contract until totalEthRaised >= graduationTarget.
  *   2. Upon graduation, the contract records the pool key and marks itself as graduated.
- *   3. A privileged migration keeper calls migrateToV4() once the Uniswap V4 PoolManager
+ *   3. A privileged migration keeper calls migrateLiquidity() once the Uniswap V4 PoolManager
  *      is live on Robinhood Chain, depositing locked ETH and tokens into the pool.
  *   4. If migration has not occurred within MIGRATION_DEADLINE seconds, the factory owner
  *      may call emergencyWithdraw() to recover funds to a specified recipient.
@@ -22,7 +22,7 @@ import {AntiSnipeLogic} from "../libraries/AntiSnipeLogic.sol";
  *   - nonReentrant guard on all state-mutating external functions.
  *   - CEI pattern: all state changes precede external calls.
  *   - C-02 fix: funds are no longer permanently locked. Two recovery paths exist:
- *       migrateToV4()       — normal path, executed by factory after V4 is live.
+ *       migrateLiquidity()  — normal path, executed by factory after V4 is live.
  *       emergencyWithdraw() — safety valve, callable by factory after MIGRATION_DEADLINE.
  *   - Initializer pattern: no constructor args. initialize() replaces the constructor
  *     so bytecode is argument-free and identical across all deployments, enabling
@@ -63,6 +63,23 @@ contract BondingCurve {
     bytes32 public graduatedPoolId;
     bool public migrationExecuted;
 
+    /// @notice Minimum span of the time-weighted price that stop-loss orders trigger on.
+    uint32 public constant ORACLE_PERIOD = 10 minutes;
+
+    /// @dev Spot price accumulator (quote raw per token raw x1e36, times seconds) plus two
+    ///      checkpoints at least ORACLE_PERIOD apart, as in GotonV4Hook. uint128 holds the highest
+    ///      spot (~2e28) for centuries.
+    struct Oracle {
+        uint128 cumulative;
+        uint32 lastTimestamp;
+        uint128 olderCumulative;
+        uint32 olderTimestamp;
+        uint128 newerCumulative;
+        uint32 newerTimestamp;
+    }
+
+    Oracle public oracle;
+
     bool private _initialized;
     uint256 private _locked;
 
@@ -83,6 +100,7 @@ contract BondingCurve {
     error Reentrancy();
     error ZeroAddress();
     error Unauthorized();
+    error OracleNotReady();
 
     modifier nonReentrant() {
         if (_locked == 1) revert Reentrancy();
@@ -133,14 +151,8 @@ contract BondingCurve {
         poolManagerV4 = _poolManagerV4;
         memeHook = _memeHook;
         launchTime = block.timestamp;
-    }
-
-    function POOL_RESERVE_SUPPLY() external view returns (uint256) {
-        return poolReserveSupply > 0 ? poolReserveSupply : 200_000_000 * 1e18;
-    }
-
-    function CURVE_TOKEN_SUPPLY() external view returns (uint256) {
-        return virtualTokenReserve > poolReserveSupply ? virtualTokenReserve - poolReserveSupply : 800_000_000 * 1e18;
+        oracle.lastTimestamp = uint32(block.timestamp);
+        oracle.newerTimestamp = uint32(block.timestamp);
     }
 
     // ---------------------------------------------------------------------------
@@ -187,6 +199,43 @@ contract BondingCurve {
         return CurveMath.getEthInForTokens(tokensOut, virtualEthReserve, virtualTokenReserve);
     }
 
+    /// @notice Spot price: quote raw units per token raw unit, times 1e36.
+    function spotPriceX36() public view returns (uint256) {
+        return (virtualEthReserve * 1e36) / virtualTokenReserve;
+    }
+
+    /**
+     * @notice Time-weighted average spot price (x1e36) over the window ending now and starting at
+     *         the older checkpoint (between ORACLE_PERIOD and 2 x ORACLE_PERIOD ago while trading).
+     * @dev A trade writes the oracle before it moves the price, so a price pushed in this block has
+     *      no weight yet. Reverts until the curve has a full ORACLE_PERIOD of history.
+     */
+    // slither-disable-next-line incorrect-equality (exact zero checks; see docs/audit/AUDIT-VERIFICATION.md)
+    function consultPriceX36() external view returns (uint256 twapX36, uint32 window) {
+        Oracle memory o = oracle;
+        if (o.olderTimestamp == 0) revert OracleNotReady();
+        uint256 cumulativeNow = o.cumulative + spotPriceX36() * (uint32(block.timestamp) - o.lastTimestamp);
+        window = uint32(block.timestamp) - o.olderTimestamp;
+        if (window == 0) revert OracleNotReady();
+        twapX36 = (cumulativeNow - o.olderCumulative) / window;
+    }
+
+    /// @dev Accumulates the spot price that prevailed since the last trade (read before this trade moves it).
+    // slither-disable-next-line incorrect-equality (same-block check; see docs/audit/AUDIT-VERIFICATION.md)
+    function _writeOracle() private {
+        Oracle storage o = oracle;
+        uint32 nowTs = uint32(block.timestamp);
+        if (nowTs == o.lastTimestamp) return;
+        o.cumulative += uint128(spotPriceX36() * (nowTs - o.lastTimestamp));
+        o.lastTimestamp = nowTs;
+        if (nowTs - o.newerTimestamp >= ORACLE_PERIOD) {
+            o.olderCumulative = o.newerCumulative;
+            o.olderTimestamp = o.newerTimestamp;
+            o.newerCumulative = o.cumulative;
+            o.newerTimestamp = nowTs;
+        }
+    }
+
     // ---------------------------------------------------------------------------
     // Trading
     // ---------------------------------------------------------------------------
@@ -208,6 +257,7 @@ contract BondingCurve {
         if (msg.sender != factory && IFactoryPause(factory).paused()) revert Paused();
         if (msg.value == 0) revert InvalidAmount();
         if (recipient == address(0)) revert ZeroAddress();
+        _writeOracle();
 
         (tokensOut,) = getAmountOutBuy(msg.value);
         if (tokensOut == 0) revert InvalidAmount();
@@ -291,6 +341,7 @@ contract BondingCurve {
     function sell(uint256 tokenIn, uint256 minEthOut) external nonReentrant returns (uint256 ethOut) {
         if (graduated) revert AlreadyGraduated();
         if (tokenIn == 0) revert InvalidAmount();
+        _writeOracle();
 
         uint256 fee;
         (ethOut, fee) = getAmountOutSell(tokenIn);
@@ -358,23 +409,11 @@ contract BondingCurve {
         return CurveMath.computeSqrtPriceX96(virtualEthReserve, virtualTokenReserve);
     }
 
-    /// @notice Babylonian integer square root (floor).
-    function _sqrt(uint256 x) internal pure returns (uint256 y) {
-        return CurveMath.sqrt(x);
-    }
-
     /**
      * @notice Release the graduated curve's ETH and tokens to the factory's v4 graduator.
      * @dev Callable only by the factory once graduation target is reached.
      */
     function migrateLiquidity(address payable recipient) external nonReentrant onlyFactory {
-        _executeMigration(recipient);
-    }
-
-    /**
-     * @notice Backward-compatible alias for migrateLiquidity.
-     */
-    function migrateToV4(address payable recipient) external nonReentrant onlyFactory {
         _executeMigration(recipient);
     }
 
@@ -436,9 +475,21 @@ contract BondingCurve {
      * @notice Accept ETH only while the bonding curve is active (not yet graduated).
      * @dev H-01 fix: after graduation all ETH in this contract belongs to the V4
      *      migration pool. Accepting arbitrary ETH post-graduation would distort
-     *      the pool's sqrtPriceX96 when migrateToV4() forwards address(this).balance.
+     *      the pool's sqrtPriceX96 when migrateLiquidity() forwards address(this).balance.
      */
     receive() external payable {
         revert Unauthorized();
+    }
+}
+
+/**
+ * @title BondingCurveDeployer
+ * @notice Deploys BondingCurve instances for LaunchpadV2Factory, which would exceed the EIP-170
+ *         size limit if it embedded the curve's bytecode next to the token's. Salts are namespaced
+ *         by the caller, so nobody can occupy an address the factory is about to deploy to.
+ */
+contract BondingCurveDeployer {
+    function deploy(bytes32 salt) external returns (address) {
+        return address(new BondingCurve{salt: keccak256(abi.encode(msg.sender, salt))}());
     }
 }

@@ -64,15 +64,20 @@ async function expectStatus(url: string, status: number): Promise<Response> {
 }
 
 // --- App (edge worker + static frontoffice) ---
-check('app: home page renders', async () => {
-  const res = await expectStatus(`${target.app}/`, 200);
+// The router's home is /launchpad; the edge redirects / there so crawlers see one URL.
+check('app: home redirects to launchpad', async () => {
+  const res = await expectStatus(`${target.app}/`, 301);
+  expect(
+    new URL(res.headers.get('location') ?? '', target.app).pathname === '/launchpad',
+    'wrong redirect',
+  );
+});
+check('app: launchpad renders', async () => {
+  const res = await expectStatus(`${target.app}/launchpad`, 200);
   expect((await res.text()).includes('<title>'), 'no <title> in HTML');
 });
-check('app: SPA route launchpad', async () => {
-  await expectStatus(`${target.app}/launchpad`, 200);
-});
 check('app: security headers', async () => {
-  const res = await get(`${target.app}/`);
+  const res = await get(`${target.app}/launchpad`);
   expect(res.headers.get('x-frame-options') === 'DENY', 'X-Frame-Options missing');
   expect(res.headers.get('x-content-type-options') === 'nosniff', 'nosniff missing');
   expect(res.headers.get('strict-transport-security'), 'HSTS missing');

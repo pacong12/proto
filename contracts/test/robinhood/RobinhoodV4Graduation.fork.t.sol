@@ -112,6 +112,38 @@ contract RobinhoodV4GraduationForkTest is Test {
     // Graduation
     // ---------------------------------------------------------------------------
 
+    /// @dev The curve -> graduator transfer must not pay the creator's buy tax.
+    function test_GraduationDoesNotPayCreatorBuyTax() public {
+        (address token, BondingCurve curve) = _launch();
+        address taxWallet = makeAddr("taxWallet");
+        vm.prank(creator);
+        LaunchpadToken(token).setInitialTaxConfig(1_000, 1_000, taxWallet);
+        _fillCurve(curve);
+        uint256 taxBefore = LaunchpadToken(token).balanceOf(taxWallet);
+        uint256 pmTokensBefore = LaunchpadToken(token).balanceOf(address(PM));
+        uint256 curveTokens = LaunchpadToken(token).balanceOf(address(curve));
+
+        factory.graduate(token);
+
+        assertEq(LaunchpadToken(token).balanceOf(taxWallet), taxBefore, "no tax on migration");
+        assertEq(LaunchpadToken(token).liquidityPool(), address(0), "curve detached");
+        assertApproxEqAbs(
+            LaunchpadToken(token).balanceOf(address(PM)) - pmTokensBefore,
+            curveTokens,
+            curveTokens / 1e9,
+            "every curve token reaches the pool"
+        );
+    }
+
+    /// @dev A pause stops new money, but never the only exit of a graduated curve.
+    function test_GraduationWorksWhilePaused() public {
+        (address token, BondingCurve curve) = _launch();
+        _fillCurve(curve);
+        factory.pause();
+        factory.graduate(token);
+        assertTrue(curve.migrationExecuted());
+    }
+
     function test_GraduationIsPermissionlessAndLocksAllLiquidity() public {
         (address token, BondingCurve curve) = _launch();
         vm.expectRevert(LaunchpadV2Factory.NotGraduated.selector);

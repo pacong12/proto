@@ -140,6 +140,13 @@ export const launchpadTokenAbi = [
   },
   {
     type: 'function',
+    name: 'clearLiquidityPool',
+    inputs: [],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'decimals',
     inputs: [],
     outputs: [

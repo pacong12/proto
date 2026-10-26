@@ -42,6 +42,21 @@ contract FeeCapsTest is Test {
         factory.setLaunchParams(initialTick, bondTick, minPrebuy, maxDevBuy, 3_001);
     }
 
+    function test_ArcFactory_DevBuyCappedAtTenPercent() public {
+        LaunchpadV2FactoryArc factory =
+            new LaunchpadV2FactoryArc(PM, USDC, HOOK, new GotonFeeSplitterDeployer(), treasury);
+        int24 initialTick = factory.initialTick();
+        int24 bondTick = factory.bondTick();
+        uint256 minPrebuy = factory.minPrebuyUsdc6();
+        uint16 protocolFee = factory.protocolFeeBps();
+
+        factory.setLaunchParams(initialTick, bondTick, minPrebuy, 1_000, protocolFee);
+        assertEq(factory.maxDevBuyBps(), 1_000);
+
+        vm.expectRevert(LaunchpadV2FactoryArc.InvalidParams.selector);
+        factory.setLaunchParams(initialTick, bondTick, minPrebuy, 1_001, protocolFee);
+    }
+
     function test_Graduator_ProtocolCutCappedAtThirtyPercent() public {
         GotonFeeSplitter.Split memory split =
             GotonFeeSplitter.Split({protocolBps: 3_000, holdersBps: 5_000, burnBps: 0, creatorBps: 5_000, liquidityBps: 0});

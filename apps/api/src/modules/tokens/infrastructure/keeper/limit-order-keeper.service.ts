@@ -112,6 +112,8 @@ export class LimitOrderKeeperService {
     order: LimitOrderEntity,
   ): Promise<LimitOrderFill | null> {
     const calls = await this.candidateCalls(order).catch(() => []);
+    // A leg whose fee does not cover gas must not hide the order's other leg.
+    let unprofitable: LimitOrderFill | null = null;
     for (const call of calls) {
       try {
         const { request } = await this.publicClient.simulateContract({
@@ -132,7 +134,8 @@ export class LimitOrderKeeperService {
           this.publicClient.getGasPrice(),
         ]);
         if (gas * gasPrice > this.feeFloor(order, call)) {
-          return { key: order.key, executed: false, reason: 'Fee does not cover gas' };
+          unprofitable = { key: order.key, executed: false, reason: 'Fee does not cover gas' };
+          continue;
         }
         const txHash = await this.walletClient!.writeContract(request);
         try {
@@ -145,6 +148,6 @@ export class LimitOrderKeeperService {
         // Not fillable on this leg yet (limit not reached, stop not triggered, oracle not ready).
       }
     }
-    return null;
+    return unprofitable;
   }
 }

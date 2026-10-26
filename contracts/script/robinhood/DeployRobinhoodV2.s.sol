@@ -47,10 +47,9 @@ contract DeployRobinhoodV2 is Script {
         if (ownerSafe == address(0) && block.chainid == 4663 && !vm.envOr("ALLOW_EOA_OWNER", false)) {
             revert("Set OWNER_SAFE (Safe multisig) for mainnet, or ALLOW_EOA_OWNER=true");
         }
-        address payable feeRecipient = payable(vm.envOr(
-                "PROTOCOL_FEE_RECIPIENT",
-                ownerSafe != address(0) ? ownerSafe : address(0x555C0456641d5ff4Fb47E24D6472b4a16aC1b0c2)
-            ));
+        // No hardcoded fallback: a forgotten env var must stop the deploy, not route fees to an old wallet.
+        address payable feeRecipient = payable(vm.envOr("PROTOCOL_FEE_RECIPIENT", ownerSafe));
+        if (feeRecipient == address(0)) revert("Set PROTOCOL_FEE_RECIPIENT or OWNER_SAFE");
         IPoolManagerV4 poolManager =
             IPoolManagerV4(vm.envOr("POOL_MANAGER_V4", address(0x8366a39CC670B4001A1121B8F6A443A643e40951)));
 
@@ -81,7 +80,7 @@ contract DeployRobinhoodV2 is Script {
         GotonV4Router router = new GotonV4Router(poolManager, address(0), 0);
         GotonV4Buyback buyback = new GotonV4Buyback(poolManager, hook);
         graduator.setRecipients(feeRecipient, address(buyback), feeRecipient);
-        // DR-01: optional incident-response guardian that can pause launches, curve buys and graduations.
+        // DR-01: optional incident-response guardian that can pause launches and curve buys.
         address guardian = vm.envOr("EMERGENCY_GUARDIAN", address(0));
         if (guardian != address(0)) factory.setGuardian(guardian);
         // Two-step: the Safe completes each handover with acceptOwnership().
