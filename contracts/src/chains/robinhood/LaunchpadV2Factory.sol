@@ -206,9 +206,10 @@ contract LaunchpadV2Factory is EmergencyPause {
 
     /**
      * @notice launchTokenV2 plus the creator's initial tax and LP-fee split, set atomically. The
-     *         token accepts an initial tax only in the launch block and the two after it (about
-     *         0.2 s on Robinhood Chain), and the split locks at the first third-party buy, so a
-     *         second transaction the creator still has to sign would lose both races.
+     *         token accepts an initial tax only until its restriction window ends and before any
+     *         third-party buy (block.number on Robinhood Chain is Ethereum's, so about 24 to 36
+     *         seconds), and the split locks at the first third-party buy. A second transaction the
+     *         creator still has to sign races every early buyer for both.
      */
     function launchTokenV2WithConfig(
         string memory name,
