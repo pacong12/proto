@@ -5,11 +5,11 @@ Step-by-step commands for deploying the launch-release contracts on Robinhood Ch
 checks. The app side (addresses, database, release order) is in `docs/RELEASE-REDEPLOY.md`.
 
 Run everything from `contracts/` with Foundry **1.7.1** (the version CI pins), on `main`.
-Verify on the explorers the app links to. On Robinhood Chain that is **Blockscout**
-(`robinhoodchain.blockscout.com`, no API key). A plain `--verify` would use the `[etherscan]`
-entry in `foundry.toml`: Etherscan v2 does not serve chain 4663 on the free plan, and an
-Etherscan verification does not show on Blockscout. For Arc, `--verify` uses that Etherscan v2
-entry (`ROBINSCAN_API_KEY` in `contracts/.env`); check each contract on Arc's explorer afterwards.
+Verify on the explorers the app links to. Both are **Blockscout**: `robinhoodchain.blockscout.com`
+and `explorer.arc.io`, and their verifier needs no API key. A plain `--verify` would use the
+`[etherscan]` entries in `foundry.toml` instead (Etherscan v2, `robin.etherscan.io` and
+`arc.etherscan.io`), and an Etherscan verification does not show on Blockscout. Verifying on
+Etherscan as well is optional; see the end of section 7.
 
 ```bash
 cd contracts
@@ -18,6 +18,7 @@ forge build
 RH=https://rpc.mainnet.chain.robinhood.com
 ARC=https://rpc.mainnet.arc.io
 RH_VERIFIER="--verifier blockscout --verifier-url https://robinhoodchain.blockscout.com/api/"
+ARC_VERIFIER="--verifier blockscout --verifier-url https://explorer.arc.io/api/"
 ```
 
 > [!WARNING]
@@ -101,7 +102,7 @@ Deploys the hook, factory, router and buyback, with a 20% protocol cut (`ARC_PRO
 ```bash
 forge script script/arc/DeployArc.s.sol --fork-url $ARC --sender $DEPLOYER      # dry-run
 forge script script/arc/DeployArc.s.sol --rpc-url $ARC \
-  --account deployer --sender $DEPLOYER --broadcast --verify
+  --account deployer --sender $DEPLOYER --broadcast --verify $ARC_VERIFIER
 ARC_FACTORY=0x...   ARC_HOOK=0x...   ARC_ROUTER=0x...   ARC_BUYBACK=0x...
 ```
 
@@ -123,13 +124,13 @@ CURVE_FACTORY=$RH_FACTORY ROUTER=$RH_ROUTER HOOK=$RH_HOOK \
   --account deployer --sender $DEPLOYER --broadcast --verify $RH_VERIFIER
 ROUTER=$ARC_ROUTER HOOK=$ARC_HOOK \
   forge script script/DeployLimitOrders.s.sol --rpc-url $ARC \
-  --account deployer --sender $DEPLOYER --broadcast --verify
+  --account deployer --sender $DEPLOYER --broadcast --verify $ARC_VERIFIER
 RH_LIMIT_ORDERS=0x...   ARC_LIMIT_ORDERS=0x...
 
 forge script script/DeployTeamSplitterFactory.s.sol --rpc-url $RH \
   --account deployer --sender $DEPLOYER --broadcast --verify $RH_VERIFIER
 forge script script/DeployTeamSplitterFactory.s.sol --rpc-url $ARC \
-  --account deployer --sender $DEPLOYER --broadcast --verify
+  --account deployer --sender $DEPLOYER --broadcast --verify $ARC_VERIFIER
 RH_TEAM_SPLITTER_FACTORY=0x...   ARC_TEAM_SPLITTER_FACTORY=0x...
 ```
 
@@ -188,7 +189,7 @@ token and curve once lets the explorer match every later one. Do it right after 
 ```bash
 forge verify-contract <TOKEN> src/core/LaunchpadToken.sol:LaunchpadToken --chain-id 4663 $RH_VERIFIER
 forge verify-contract <CURVE> src/core/BondingCurve.sol:BondingCurve   --chain-id 4663 $RH_VERIFIER
-forge verify-contract <ARC_TOKEN> src/core/LaunchpadToken.sol:LaunchpadToken --chain arc
+forge verify-contract <ARC_TOKEN> src/core/LaunchpadToken.sol:LaunchpadToken --chain-id 5042 $ARC_VERIFIER
 ```
 
 Check that a second launch then shows as verified without a submission.
@@ -196,6 +197,13 @@ Check that a second launch then shows as verified without a submission.
 Then run one test launch on each chain from the deployer or a scratch wallet: a launch with a tax
 and a split, and a buy and a sell. On Robinhood Chain, also check
 `token.taxConfig()` and `graduator.hasTokenSplit(token)` right after the launch.
+
+### Optional: Etherscan as well
+
+`robin.etherscan.io` and `arc.etherscan.io` index both chains too. To verify there, rerun
+`forge verify-contract <ADDRESS> <PATH>:<NAME> --chain robinhood` (or `--chain arc`) with
+`ROBINSCAN_API_KEY` in `contracts/.env`, adding `--constructor-args` where a contract has them.
+Etherscan's free plan refuses some endpoints on these chains, so a paid key may be needed.
 
 ## 8. Hand off to the app release
 
