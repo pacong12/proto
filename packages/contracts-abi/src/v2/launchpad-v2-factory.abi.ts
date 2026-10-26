@@ -290,6 +290,87 @@ export const launchpadV2FactoryAbi = [
   },
   {
     type: 'function',
+    name: 'launchTokenV2WithTax',
+    inputs: [
+      {
+        name: 'name',
+        type: 'string',
+        internalType: 'string',
+      },
+      {
+        name: 'symbol',
+        type: 'string',
+        internalType: 'string',
+      },
+      {
+        name: 'logo',
+        type: 'string',
+        internalType: 'string',
+      },
+      {
+        name: 'description',
+        type: 'string',
+        internalType: 'string',
+      },
+      {
+        name: 'twitter',
+        type: 'string',
+        internalType: 'string',
+      },
+      {
+        name: 'telegram',
+        type: 'string',
+        internalType: 'string',
+      },
+      {
+        name: 'website',
+        type: 'string',
+        internalType: 'string',
+      },
+      {
+        name: 'minInitialTokensOut',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'tax',
+        type: 'tuple',
+        internalType: 'struct LaunchpadV2Factory.LaunchTax',
+        components: [
+          {
+            name: 'buyTaxBps',
+            type: 'uint16',
+            internalType: 'uint16',
+          },
+          {
+            name: 'sellTaxBps',
+            type: 'uint16',
+            internalType: 'uint16',
+          },
+          {
+            name: 'taxRecipient',
+            type: 'address',
+            internalType: 'address',
+          },
+        ],
+      },
+    ],
+    outputs: [
+      {
+        name: 'tokenAddress',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'curveAddress',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    stateMutability: 'payable',
+  },
+  {
+    type: 'function',
     name: 'launches',
     inputs: [
       {

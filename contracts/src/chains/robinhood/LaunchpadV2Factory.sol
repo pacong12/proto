@@ -164,6 +164,14 @@ contract LaunchpadV2Factory is EmergencyPause {
     // Core launch
     // ---------------------------------------------------------------------------
 
+    /// @notice Creator buy/sell tax set in the launch transaction (0 / 0 = none).
+    struct LaunchTax {
+        uint16 buyTaxBps;
+        uint16 sellTaxBps;
+        /// @dev address(0) = the creator.
+        address taxRecipient;
+    }
+
     function launchTokenV2(
         string memory name,
         string memory symbol,
@@ -174,6 +182,41 @@ contract LaunchpadV2Factory is EmergencyPause {
         string memory website,
         uint256 minInitialTokensOut
     ) external payable nonReentrant whenNotPaused returns (address tokenAddress, address curveAddress) {
+        return _launch(
+            name, symbol, logo, description, twitter, telegram, website, minInitialTokensOut, LaunchTax(0, 0, address(0))
+        );
+    }
+
+    /**
+     * @notice launchTokenV2 plus the creator's initial tax, set atomically. The token accepts an
+     *         initial tax only in the launch block and the two after it (about 0.2 s on Robinhood
+     *         Chain), which a second transaction the creator still has to sign cannot reach.
+     */
+    function launchTokenV2WithTax(
+        string memory name,
+        string memory symbol,
+        string memory logo,
+        string memory description,
+        string memory twitter,
+        string memory telegram,
+        string memory website,
+        uint256 minInitialTokensOut,
+        LaunchTax calldata tax
+    ) external payable nonReentrant whenNotPaused returns (address tokenAddress, address curveAddress) {
+        return _launch(name, symbol, logo, description, twitter, telegram, website, minInitialTokensOut, tax);
+    }
+
+    function _launch(
+        string memory name,
+        string memory symbol,
+        string memory logo,
+        string memory description,
+        string memory twitter,
+        string memory telegram,
+        string memory website,
+        uint256 minInitialTokensOut,
+        LaunchTax memory tax
+    ) private returns (address tokenAddress, address curveAddress) {
         if (msg.value < launchFee) revert InvalidFee();
 
         uint256 initialBuyEth = msg.value - launchFee;
@@ -245,6 +288,10 @@ contract LaunchpadV2Factory is EmergencyPause {
             }
         }
 
+        // After the creator's initial buy (untaxed: the pool is not set yet), before any other buyer.
+        if (tax.buyTaxBps != 0 || tax.sellTaxBps != 0) {
+            token.setInitialTaxConfig(tax.buyTaxBps, tax.sellTaxBps, tax.taxRecipient);
+        }
         token.setLiquidityPool(curveAddress);
     }
 

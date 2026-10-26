@@ -440,6 +440,36 @@ contract LaunchpadV2Test is Test {
         assertEq(token.balanceOf(recovery), curveTokens, "every curve token recovered");
     }
 
+    /// @dev The creator tax lands in the launch transaction: a follow-up one would miss the
+    ///      two-block window (about 0.2 s on Robinhood Chain).
+    function test_LaunchWithTaxSetsItAtomically() public {
+        address taxWallet = address(0x7A7);
+        vm.prank(creator);
+        (address tokenAddress, address curveAddress) = factory.launchTokenV2WithTax{value: 0.0005 ether + 0.1 ether}(
+            "T", "T", "", "", "", "", "", 0, LaunchpadV2Factory.LaunchTax(300, 500, taxWallet)
+        );
+        LaunchpadToken token = LaunchpadToken(tokenAddress);
+        (uint16 buyTax, uint16 sellTax, address recipient) = token.taxConfig();
+        assertEq(buyTax, 300);
+        assertEq(sellTax, 500);
+        assertEq(recipient, taxWallet);
+        assertEq(token.balanceOf(taxWallet), 0, "the creator's own initial buy is untaxed");
+
+        vm.roll(block.number + 5);
+        vm.warp(block.timestamp + 10);
+        vm.prank(buyer1);
+        uint256 bought = BondingCurve(payable(curveAddress)).buy{value: 0.1 ether}(0);
+        assertEq(token.balanceOf(taxWallet), (bought * 300) / 10_000, "later buys pay the buy tax");
+    }
+
+    function test_LaunchWithTaxRejectsMoreThanTenPercent() public {
+        vm.prank(creator);
+        vm.expectRevert(LaunchpadToken.ExcessiveTax.selector);
+        factory.launchTokenV2WithTax{value: 0.0005 ether}(
+            "T", "T", "", "", "", "", "", 0, LaunchpadV2Factory.LaunchTax(1_001, 0, address(0))
+        );
+    }
+
     function test_GraduateRejectsUnknownAndActiveTokens() public {
         vm.expectRevert(LaunchpadV2Factory.UnknownToken.selector);
         factory.graduate(address(0xBEEF));
