@@ -2492,8 +2492,14 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const mkt = await repository.getMarketData(token.address as `0x${string}`);
     let vol24h = 0;
     const cutoff = Date.now() - 86_400_000;
-    for (const tr of trades) {
-      if ((tr.timestamp ?? 0) >= cutoff) vol24h += parseFloat(tr.wethAmount);
+    if (repository.getTradeFlow) {
+      // Summed in SQL: the newest 500 trades undercount an active pool's 24h volume.
+      const flow = await repository.getTradeFlow(token.address as `0x${string}`, cutoff);
+      vol24h = flow.buyQuote + flow.sellQuote;
+    } else {
+      for (const tr of trades) {
+        if ((tr.timestamp ?? 0) >= cutoff) vol24h += parseFloat(tr.wethAmount);
+      }
     }
 
     const priceUsdValue = trades[0]?.priceUsd ?? mkt?.priceUsd ?? 0;

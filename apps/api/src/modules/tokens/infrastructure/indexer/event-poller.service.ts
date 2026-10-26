@@ -764,12 +764,20 @@ export class EventPollerService {
             ? Number(BigInt(token.totalSupply)) / 1e18
             : 1_000_000_000;
           // Recompute 24h volume from stored trades so the value is always accurate
-          // and never lost when saveMarketData overwrites the DB row.
+          // and never lost when saveMarketData overwrites the DB row. Summed in SQL: the newest
+          // 500 trades undercount any token that trades more often than that in a day.
           const cutoff24h = Date.now() - 86_400_000;
-          const recentTrades = await this.tokenRepository.getTrades(token.address, 500, 0);
-          const volume24hUsd = recentTrades
-            .filter((t) => (t.timestamp ?? 0) >= cutoff24h)
-            .reduce((sum, t) => sum + parseFloat(t.wethAmount || '0') * quotePriceUsd, 0);
+          let volume24hQuote: number;
+          if (this.tokenRepository.getTradeFlow) {
+            const flow = await this.tokenRepository.getTradeFlow(token.address, cutoff24h);
+            volume24hQuote = flow.buyQuote + flow.sellQuote;
+          } else {
+            const recentTrades = await this.tokenRepository.getTrades(token.address, 500, 0);
+            volume24hQuote = recentTrades
+              .filter((t) => (t.timestamp ?? 0) >= cutoff24h)
+              .reduce((sum, t) => sum + parseFloat(t.wethAmount || '0'), 0);
+          }
+          const volume24hUsd = volume24hQuote * quotePriceUsd;
           await this.tokenRepository.saveMarketData({
             ...mkt,
             priceUsd,

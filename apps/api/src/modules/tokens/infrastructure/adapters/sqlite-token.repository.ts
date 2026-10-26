@@ -247,7 +247,8 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     );
     this.db.run(`CREATE INDEX IF NOT EXISTS idx_trades_trader ON trades(trader COLLATE NOCASE);`);
     // Composite index covering the most common query: all trades for a token ordered by time.
-    // COLLATE NOCASE on the leading column lets LOWER(tokenAddress) = LOWER(?) use the index.
+    // Query it as `tokenAddress = ? COLLATE NOCASE`: LOWER(tokenAddress) = LOWER(?) cannot use it
+    // and scans every trade.
     this.db.run(
       `CREATE INDEX IF NOT EXISTS idx_trades_token_ts ON trades(tokenAddress COLLATE NOCASE, timestamp DESC);`,
     );
@@ -771,12 +772,32 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
   ): Promise<TradeEventEntity[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM trades
-      WHERE LOWER(tokenAddress) = LOWER(?)
+      WHERE tokenAddress = ? COLLATE NOCASE
       ORDER BY timestamp DESC, rowid DESC
       LIMIT ? OFFSET ?
     `);
     const rows = stmt.all(tokenAddress, limit, offset) as TradeRow[];
     return rows.map((row) => this.mapRowToTrade(row));
+  }
+
+  async getPriceAnchor(
+    tokenAddress: `0x${string}`,
+    cutoffMs: number,
+  ): Promise<TradeEventEntity | null> {
+    const row =
+      (this.db
+        .prepare(
+          `SELECT * FROM trades WHERE tokenAddress = ? COLLATE NOCASE AND timestamp <= ?
+           ORDER BY timestamp DESC, rowid DESC LIMIT 1`,
+        )
+        .get(tokenAddress, cutoffMs) as TradeRow | null) ??
+      (this.db
+        .prepare(
+          `SELECT * FROM trades WHERE tokenAddress = ? COLLATE NOCASE
+           ORDER BY timestamp ASC, rowid ASC LIMIT 1`,
+        )
+        .get(tokenAddress) as TradeRow | null);
+    return row ? this.mapRowToTrade(row) : null;
   }
 
   async getCandlesticks(
@@ -788,7 +809,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     const mkt = await this.getMarketData(tokenAddress);
     const stmt = this.db.prepare(`
       SELECT * FROM trades
-      WHERE LOWER(tokenAddress) = LOWER(?)
+      WHERE tokenAddress = ? COLLATE NOCASE
       ORDER BY timestamp ASC, rowid ASC
     `);
     const rows = stmt.all(tokenAddress) as TradeRow[];

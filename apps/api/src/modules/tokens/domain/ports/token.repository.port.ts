@@ -38,6 +38,11 @@ export interface TokenRepositoryPort {
   findStaleMarketData?(olderThanMs: number, limit: number): Promise<`0x${string}`[]>;
   /** Buy vs sell activity since `sinceMs`: quote volume, trade counts and distinct traders. */
   getTradeFlow?(tokenAddress: `0x${string}`, sinceMs: number): Promise<TradeFlow>;
+  /**
+   * The newest trade at or before `cutoffMs`, or the token's first trade if it is younger: the
+   * reference price for a 24h change, found without loading the trades in between.
+   */
+  getPriceAnchor?(tokenAddress: `0x${string}`, cutoffMs: number): Promise<TradeEventEntity | null>;
   /** Escrowed limit orders (GotonLimitOrders), keyed by `${chainId}-${orderId}`. */
   saveLimitOrder?(order: LimitOrderEntity): Promise<void>;
   updateLimitOrder?(
