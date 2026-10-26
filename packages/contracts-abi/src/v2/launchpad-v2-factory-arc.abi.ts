@@ -51,6 +51,19 @@ export const launchpadV2FactoryArcAbi = [
   },
   {
     type: 'function',
+    name: 'MAX_DEV_BUY_BPS',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'uint16',
+        internalType: 'uint16',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'MAX_LAUNCH_FEE',
     inputs: [],
     outputs: [

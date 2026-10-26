@@ -81,6 +81,8 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
     ///         decimals) per launch and 30% of each token's tax.
     uint256 public constant MAX_LAUNCH_FEE = 10 ether;
     uint16 public constant MAX_PROTOCOL_FEE_BPS = 3_000;
+    /// @notice Hard cap on the creator prebuy the owner can allow (10% of supply at the opening price).
+    uint16 public constant MAX_DEV_BUY_BPS = 1_000;
 
     IPoolManagerV4 public immutable poolManager;
     address public immutable quoteAsset;
@@ -454,7 +456,7 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
     ) external onlyOwner {
         if (
             _initialTick <= 0 || _initialTick % TICK_SPACING != 0 || _initialTick >= FULL_RANGE_TICK
-                || _bondTick >= _initialTick || _maxDevBuyBps > BPS || _protocolFeeBps > MAX_PROTOCOL_FEE_BPS
+                || _bondTick >= _initialTick || _maxDevBuyBps > MAX_DEV_BUY_BPS || _protocolFeeBps > MAX_PROTOCOL_FEE_BPS
         ) revert InvalidParams();
         initialTick = _initialTick;
         bondTick = _bondTick;
