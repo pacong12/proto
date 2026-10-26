@@ -116,6 +116,20 @@ describe('seo applyMeta', () => {
     expect(html).toContain('og:image:width');
   });
 
+  it("inserts token text literally, never as a $' or $& replacement pattern", () => {
+    const html = applyMeta(INDEX, {
+      title: "Moon $'",
+      description: 'desc $` $&',
+      canonical: `${ORIGIN}/token/$'`,
+      image: '',
+      card: 'summary',
+    });
+    expect(html).toContain("<title>Moon $'</title>");
+    expect(html).toContain('<meta name="description" content="desc $` $&amp;" />');
+    expect(html).toContain(`<link rel="canonical" href="${ORIGIN}/token/$'" />`);
+    expect(html.match(/<title>/g)).toHaveLength(1);
+  });
+
   it('drops the default image size hints for a token logo', () => {
     const html = applyMeta(INDEX, {
       title: 't',
@@ -246,6 +260,15 @@ describe('seo pageContent', () => {
     expect(html.match(/<script/g)).toHaveLength(1);
     const entity = jsonLdOf(html)['@graph'][1];
     expect(entity.name).toBe('</script><script>alert(1)</script> (MOON)');
+  });
+
+  it('keeps $-patterns in token text from copying the page into the content', () => {
+    const token = { ...apiToken, name: "Moon $' $`" };
+    const meta = pageMeta(ORIGIN, `/token/${TOKEN}`, token);
+    const html = applyContent(SHELL, pageContent(ORIGIN, DOCS, `/token/${TOKEN}`, meta, token));
+    expect(html.match(/<main/g)).toHaveLength(1);
+    expect(html.match(/<head>/g)).toHaveLength(1);
+    expect(jsonLdOf(html)['@graph'][1].name).toBe("Moon $' $` (MOON)");
   });
 
   it('fills the empty app shell and adds the JSON-LD to <head>', () => {
