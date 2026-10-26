@@ -181,6 +181,9 @@ async function releaseAll(asset: `0x${string}`) {
     const wallet = await getWalletClient();
     if (!wallet) throw new Error('Connect your wallet first');
     const [account] = await wallet.getAddresses();
+    if ((await wallet.getChainId()) !== props.network.chainId) {
+      throw new Error(`Switch your wallet to ${props.network.name} and retry.`);
+    }
     const hash = await wallet.writeContract({
       address: team.value.address,
       abi: gotonTeamSplitterAbi,
