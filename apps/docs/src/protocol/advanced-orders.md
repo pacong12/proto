@@ -22,7 +22,7 @@ A take profit and a stop loss can share one deposit (**one-cancels-other**): the
 
 - **Anyone can fill an order** once its condition is met. Goton runs a keeper that checks open orders every 15 seconds and fills them, but the contract accepts any caller.
 - **The filler earns 0.1%** of the quote side (the executor fee). The keeper only fills when that fee covers its gas, so very small orders may wait until someone else fills them, or until you cancel.
-- **Stop losses use a manipulation-resistant price.** On a bonding curve the stop triggers on the curve's spot price. On a Uniswap v4 pool it triggers on the pool's TWAP (time-weighted average price from the Goton hook), so a single block's price push cannot trigger your stop.
+- **Stop losses use a manipulation-resistant price.** On a bonding curve the stop triggers only when both the curve's spot price and its TWAP (time-weighted average over about 10 to 20 minutes) are at or below your stop. On a Uniswap v4 pool it triggers on the pool's TWAP from the Goton hook. Either way, a single block's price push cannot trigger your stop, and a stop on a new token waits until the price has about 10 minutes of history.
 - **Every fill is checked against your balance change.** The contract measures what actually reached your wallet, not what a router reports, and refunds anything a partial fill leaves over.
 
 ---

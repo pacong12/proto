@@ -22,7 +22,7 @@ Take profit dan stop loss bisa memakai satu setoran yang sama (**one-cancels-oth
 
 - **Siapa pun bisa mengisi order** begitu syaratnya terpenuhi. Goton menjalankan keeper yang memeriksa order terbuka setiap 15 detik dan mengisinya, tetapi kontrak menerima pemanggil mana pun.
 - **Pengisi mendapat 0,1%** dari sisi quote (fee eksekutor). Keeper hanya mengisi jika fee itu menutup biaya gas, jadi order yang sangat kecil mungkin menunggu sampai ada pihak lain yang mengisinya, atau sampai Anda membatalkannya.
-- **Stop loss memakai harga yang tahan manipulasi.** Di bonding curve, stop terpicu oleh harga spot curve. Di pool Uniswap v4, stop terpicu oleh TWAP pool (harga rata-rata berbobot waktu dari hook Goton), sehingga dorongan harga dalam satu blok tidak bisa memicu stop Anda.
+- **Stop loss memakai harga yang tahan manipulasi.** Di bonding curve, stop hanya terpicu jika harga spot curve dan TWAP-nya (harga rata-rata berbobot waktu selama sekitar 10 sampai 20 menit) sama-sama berada di atau di bawah harga stop Anda. Di pool Uniswap v4, stop terpicu oleh TWAP pool dari hook Goton. Dalam kedua kasus, dorongan harga dalam satu blok tidak bisa memicu stop Anda, dan stop pada token baru menunggu sampai harga punya riwayat sekitar 10 menit.
 - **Setiap pengisian dicek terhadap perubahan saldo Anda.** Kontrak mengukur apa yang benar-benar sampai ke dompet Anda, bukan apa yang dilaporkan router, dan mengembalikan sisa dari pengisian parsial.
 
 ---
