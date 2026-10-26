@@ -21,6 +21,7 @@ async function launch(params: Record<string, unknown>) {
       contracts: {
         ...ROBINHOOD_CHAIN.contracts,
         factoryV2: '0x00000000000000000000000000000000000000fa',
+        graduator: '0x00000000000000000000000000000000000000ab',
       },
     },
   });
@@ -39,11 +40,31 @@ describe('RobinhoodChainAdapter.launchToken', () => {
   it('sets the creator tax inside the launch transaction', async () => {
     const calls = await launch({ buyTaxPercent: 3, sellTaxPercent: 5 });
     expect(calls).toHaveLength(1);
-    expect(calls[0].functionName).toBe('launchTokenV2WithTax');
-    expect(calls[0].args.at(-1)).toEqual({
+    expect(calls[0].functionName).toBe('launchTokenV2WithConfig');
+    expect(calls[0].args.at(-2)).toEqual({
       buyTaxBps: 300,
       sellTaxBps: 500,
       taxRecipient: ACCOUNT,
+    });
+    expect(calls[0].args.at(-1)).toEqual({
+      holdersBps: 0,
+      burnBps: 0,
+      creatorBps: 0,
+      liquidityBps: 0,
+    });
+  });
+
+  it('records the revenue split inside the launch transaction', async () => {
+    const calls = await launch({
+      revenueSplit: { creator: 50, buyback: 0, holders: 50, growth: 0 },
+    });
+    expect(calls).toHaveLength(1);
+    expect(calls[0].functionName).toBe('launchTokenV2WithConfig');
+    expect(calls[0].args.at(-1)).toEqual({
+      holdersBps: 5_000,
+      burnBps: 0,
+      creatorBps: 5_000,
+      liquidityBps: 0,
     });
   });
 

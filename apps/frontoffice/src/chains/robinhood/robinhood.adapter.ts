@@ -41,24 +41,26 @@ export class RobinhoodChainAdapter implements ChainAdapter {
       params.socials.website ?? '',
       params.minInitialTokensOut ?? 0n,
     ] as const;
-    // The token accepts an initial tax only within two blocks of launch (~0.2 s here), so the
-    // tax goes into the launch transaction itself; a follow-up transaction would always miss it.
+    // The tax and the LP-fee split go into the launch transaction itself: the token accepts an
+    // initial tax only within two blocks of launch (~0.2 s here) and the split locks at the first
+    // third-party buy, so follow-up transactions the creator still has to sign lose both races.
     const buyTaxBps = taxPercentToBps(params.buyTaxPercent ?? 0);
     const sellTaxBps = taxPercentToBps(params.sellTaxPercent ?? 0);
-    const hasTax = buyTaxBps > 0 || sellTaxBps > 0;
+    const withSplit = Boolean(params.revenueSplit) && isDeployed(this.network.contracts.graduator);
+    const split = withSplit
+      ? revenueSplitToBps(params.revenueSplit)
+      : { holdersBps: 0, burnBps: 0, creatorBps: 0, liquidityBps: 0 };
+    const configured = buyTaxBps > 0 || sellTaxBps > 0 || withSplit;
     const value = this.network.launchConfig.launchFeeWei + initialBuyWei;
-    const hash = hasTax
+    const hash = configured
       ? await walletClient.writeContract({
           address: factory,
           abi: launchpadV2FactoryAbi,
-          functionName: 'launchTokenV2WithTax',
+          functionName: 'launchTokenV2WithConfig',
           args: [
             ...launchArgs,
-            {
-              buyTaxBps,
-              sellTaxBps,
-              taxRecipient: params.creatorTaxWallet ?? account,
-            },
+            { buyTaxBps, sellTaxBps, taxRecipient: params.creatorTaxWallet ?? account },
+            split,
           ],
           value,
           account,
@@ -93,22 +95,10 @@ export class RobinhoodChainAdapter implements ChainAdapter {
       tokenAddress: launch.args.token,
       curveAddress: launch.args.curve,
       poolAddress: launch.args.curve,
-      // Set in the launch transaction, which was mined successfully.
+      // Both were part of the launch transaction, which was mined successfully.
       taxApplied: true,
+      splitApplied: !params.revenueSplit || withSplit,
     };
-
-    // The revenue split is a follow-up transaction that only succeeds before any third-party buy
-    // (S18), so it is sent right after the launch is mined. GotonV4Graduator enforces it at
-    // graduation; the caller is told when it did not land, so the creator can retry.
-    result.splitApplied = params.revenueSplit
-      ? await this.applyRevenueSplit(
-          result.tokenAddress,
-          params.revenueSplit,
-          walletClient,
-          publicClient,
-          account,
-        )
-      : true;
     return result;
   }
 
