@@ -175,6 +175,9 @@ export const eventPoller: EventPollerService = robinhoodPoller; // Backward comp
 const requestTracker = new HttpRequestTracker(logger, cache);
 const devopsController = new DevopsController(requestTracker);
 
+/** A DEX pair id: a v4 pool id (32 bytes) or a curve / pool address (20 bytes), longest first. */
+const DEX_PAIR_ID = /(0x[a-fA-F0-9]{64}|0x[a-fA-F0-9]{40})/;
+
 // Rate limiting: namespaced by tier so crawler and API buckets do not collide.
 // Falls back to in-memory when Redis throws (Redis down should not open-pass the server).
 async function checkRateLimit(
@@ -2336,7 +2339,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   // GET /dex/pair — pool/pair metadata
   if (url.pathname === '/dex/pair' && req.method === 'GET') {
     const id = url.searchParams.get('id') ?? '';
-    const addrMatch = id.match(/(0x[a-fA-F0-9]{40})/);
+    // A v4 pair id is the 32-byte pool id; matching 20 bytes cut it short and found nothing.
+    const addrMatch = id.match(DEX_PAIR_ID);
     if (!addrMatch) return replyError('BAD_REQUEST', 'Missing or invalid id param', 400);
 
     const address = addrMatch[1].toLowerCase() as `0x${string}`;
@@ -2395,7 +2399,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const fromBlock = BigInt(rawFromBlock ?? '0');
     const toBlock = BigInt(rawToBlock ?? '0');
     const pairId = url.searchParams.get('id') ?? '';
-    const poolMatch = pairId.match(/(0x[a-fA-F0-9]{40})/);
+    const poolMatch = pairId.match(DEX_PAIR_ID);
     const poolAddress = poolMatch ? (poolMatch[1].toLowerCase() as `0x${string}`) : null;
 
     const cacheKey = `dex:events:${poolAddress ?? 'all'}:${fromBlock}:${toBlock}`;
@@ -2412,12 +2416,11 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       await cache.set(cacheKey, empty, 5);
       return replyJson(empty, 200, { 'x-cache': 'MISS' });
     }
-    const trades = eventsToken
-      ? (await repository.getTrades(eventsToken.address, 1000, 0)).filter((t) => {
-          const bn = BigInt(t.blockNumber ?? 0);
-          return bn >= fromBlock && (toBlock === 0n || bn <= toBlock);
-        })
-      : ((await repository.getTradesInBlockRange?.(fromBlock, toBlock, 1000)) ?? []);
+    // A pair's events come from the same block-range query: filtering its newest 1,000 trades
+    // returned nothing for any older range.
+    const trades =
+      (await repository.getTradesInBlockRange?.(fromBlock, toBlock, 1000, eventsToken?.address)) ??
+      [];
 
     const tokens = new Map<string, LaunchedTokenEntity | null>();
     const swaps: unknown[] = [];
@@ -2442,7 +2445,9 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         eventType: trade.isBuy ? 'buy' : 'sell',
         txnId: trade.transactionHash,
         txnIndex: 0,
-        eventIndex: 0,
+        // Trade ids are `${txHash}-${logIndex}`: several swaps in one transaction (a router or
+        // buyback call) need distinct event indexes.
+        eventIndex: Number(trade.id.split('-').pop()) || 0,
         maker: trade.trader,
         pairId: `${network.chainId}_${token.poolAddress}`,
         asset0In: trade.isBuy ? quoteAmount : '0',
