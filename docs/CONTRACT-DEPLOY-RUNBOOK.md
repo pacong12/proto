@@ -5,8 +5,11 @@ Step-by-step commands for deploying the launch-release contracts on Robinhood Ch
 checks. The app side (addresses, database, release order) is in `docs/RELEASE-REDEPLOY.md`.
 
 Run everything from `contracts/` with Foundry **1.7.1** (the version CI pins), on `main`.
-`--verify` reads `ROBINSCAN_API_KEY` (an Etherscan v2 key, used for both chains through
-`[etherscan]` in `foundry.toml`) from `contracts/.env`; that file should hold nothing else.
+Verify on the explorers the app links to. On Robinhood Chain that is **Blockscout**
+(`robinhoodchain.blockscout.com`, no API key). A plain `--verify` would use the `[etherscan]`
+entry in `foundry.toml`: Etherscan v2 does not serve chain 4663 on the free plan, and an
+Etherscan verification does not show on Blockscout. For Arc, `--verify` uses that Etherscan v2
+entry (`ROBINSCAN_API_KEY` in `contracts/.env`); check each contract on Arc's explorer afterwards.
 
 ```bash
 cd contracts
@@ -14,6 +17,7 @@ forge --version            # forge Version: 1.7.1
 forge build
 RH=https://rpc.mainnet.chain.robinhood.com
 ARC=https://rpc.mainnet.arc.io
+RH_VERIFIER="--verifier blockscout --verifier-url https://robinhoodchain.blockscout.com/api/"
 ```
 
 > [!WARNING]
@@ -80,7 +84,7 @@ forge script script/robinhood/DeployRobinhoodV2.s.sol --fork-url $RH --sender $D
 
 # Broadcast and verify on the explorer
 forge script script/robinhood/DeployRobinhoodV2.s.sol --rpc-url $RH \
-  --account deployer --sender $DEPLOYER --broadcast --verify
+  --account deployer --sender $DEPLOYER --broadcast --verify $RH_VERIFIER
 ```
 
 `LaunchpadV2Factory.protocolFeeRecipient` is **immutable**: if the dry-run shows anything other than
@@ -101,7 +105,11 @@ forge script script/arc/DeployArc.s.sol --rpc-url $ARC \
 ARC_FACTORY=0x...   ARC_HOOK=0x...   ARC_ROUTER=0x...   ARC_BUYBACK=0x...
 ```
 
-If `--verify` fails, verify by hand as in `docs/ARC_DEPLOY.md` ("Source Verification").
+If verification fails, or the explorer refuses the request (Blockscout sits behind a Cloudflare
+check that can turn command-line clients away), verify in the explorer's web UI instead: "Verify &
+publish", method "Solidity (Standard JSON input)", with the file from
+`forge verify-contract <ADDRESS> <PATH>:<NAME> --show-standard-json-input > input.json` and the
+constructor arguments from `cast abi-encode`. See `docs/ARC_DEPLOY.md` ("Source Verification").
 
 ## 5. Limit orders and team splitter factory
 
@@ -112,16 +120,16 @@ scale.
 ```bash
 CURVE_FACTORY=$RH_FACTORY ROUTER=$RH_ROUTER HOOK=$RH_HOOK \
   forge script script/DeployLimitOrders.s.sol --rpc-url $RH \
-  --account deployer --sender $DEPLOYER --broadcast --verify
+  --account deployer --sender $DEPLOYER --broadcast --verify $RH_VERIFIER
 ROUTER=$ARC_ROUTER HOOK=$ARC_HOOK \
   forge script script/DeployLimitOrders.s.sol --rpc-url $ARC \
   --account deployer --sender $DEPLOYER --broadcast --verify
 RH_LIMIT_ORDERS=0x...   ARC_LIMIT_ORDERS=0x...
 
-for RPC in $RH $ARC; do
-  forge script script/DeployTeamSplitterFactory.s.sol --rpc-url $RPC \
-    --account deployer --sender $DEPLOYER --broadcast --verify
-done
+forge script script/DeployTeamSplitterFactory.s.sol --rpc-url $RH \
+  --account deployer --sender $DEPLOYER --broadcast --verify $RH_VERIFIER
+forge script script/DeployTeamSplitterFactory.s.sol --rpc-url $ARC \
+  --account deployer --sender $DEPLOYER --broadcast --verify
 RH_TEAM_SPLITTER_FACTORY=0x...   ARC_TEAM_SPLITTER_FACTORY=0x...
 ```
 
@@ -170,6 +178,20 @@ cast call $ARC_HOOK    "factory()(address)"              --rpc-url $ARC   # $ARC
 cast call $ARC_LIMIT_ORDERS "quoteAsset()(address)"      --rpc-url $ARC   # 0x3600…0000
 cast call $ARC_LIMIT_ORDERS "nativeScale()(uint256)"     --rpc-url $ARC   # 1000000000000
 ```
+
+### Verify the first token and curve
+
+Tokens and curves are created by the factory, so the deploy scripts never verify them. All of them
+share one bytecode (initializer pattern, no constructor arguments), so verifying the first launch's
+token and curve once lets the explorer match every later one. Do it right after the test launch below:
+
+```bash
+forge verify-contract <TOKEN> src/core/LaunchpadToken.sol:LaunchpadToken --chain-id 4663 $RH_VERIFIER
+forge verify-contract <CURVE> src/core/BondingCurve.sol:BondingCurve   --chain-id 4663 $RH_VERIFIER
+forge verify-contract <ARC_TOKEN> src/core/LaunchpadToken.sol:LaunchpadToken --chain arc
+```
+
+Check that a second launch then shows as verified without a submission.
 
 Then run one test launch on each chain from the deployer or a scratch wallet: a launch with a tax
 and a split, and a buy and a sell. On Robinhood Chain, also check
