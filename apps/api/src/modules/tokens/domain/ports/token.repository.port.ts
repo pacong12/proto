@@ -71,6 +71,14 @@ export interface TokenRepositoryPort {
     tokenAddress: string,
     limit?: number,
   ): Promise<Array<{ address: string; balance: string; percent: number }>>;
+  /** Stores on-chain balances; a zero balance removes the holder. */
+  saveBalances?(
+    tokenAddress: `0x${string}`,
+    balances: Array<{ holder: `0x${string}`; balance: bigint }>,
+  ): Promise<void>;
+  /** Marks a token whose Transfer history since launch is indexed: getHolders then uses balances. */
+  markHoldersIndexed?(tokenAddress: `0x${string}`): Promise<void>;
+  getHolderIndexedTokens?(): Promise<Set<string>>;
   getRecentTrades?(limit?: number): Promise<TradeEventEntity[]>;
   getTradesByTrader?(trader: string, limit?: number): Promise<TradeEventEntity[]>;
   getTradesSince?(sinceMs: number): Promise<TradeEventEntity[]>;

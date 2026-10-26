@@ -136,6 +136,37 @@ function toBaseUnits(amount: string, decimals: number): bigint {
   }
 }
 
+/**
+ * Holders from indexed on-chain balances, largest first. The v4 PoolManager holds a pool's tokens
+ * for every pool on the chain, so its row is shown under the token's pool address, which the app
+ * labels as the pool.
+ */
+export function holdersFromBalances(
+  token: LaunchedTokenEntity | null,
+  balances: Array<{ holder: string; balance: string }>,
+  limit = 50,
+  poolHolders: string[] = [],
+): HolderItem[] {
+  let totalSupply = 1_000_000_000n * 10n ** 18n;
+  try {
+    if (token?.totalSupply) totalSupply = BigInt(token.totalSupply);
+  } catch {
+    // keep the default supply
+  }
+  const pool = new Set(poolHolders.map((a) => a.toLowerCase()));
+  return balances
+    .map((b) => ({ holder: b.holder, amount: BigInt(b.balance) }))
+    .filter((b) => b.amount > 0n)
+    .sort((a, b) => (b.amount > a.amount ? 1 : b.amount < a.amount ? -1 : 0))
+    .slice(0, limit)
+    .map((b) => ({
+      address:
+        pool.has(b.holder.toLowerCase()) && token?.poolAddress ? token.poolAddress : b.holder,
+      balance: b.amount.toString(),
+      percent: Number((b.amount * 10000n) / totalSupply) / 100,
+    }));
+}
+
 export function computeHoldersDistribution(
   token: LaunchedTokenEntity | null,
   trades: TradeEventEntity[],

@@ -10,6 +10,8 @@ import {
   CandlestickEntity,
   TokenCommentEntity,
   getUserIdentity,
+  ARC_CHAIN,
+  ROBINHOOD_CHAIN,
   type CreatorProfile,
 } from '@goton/shared-types';
 import type { TokenRepositoryPort, TradeFlow } from '../../domain/ports/token.repository.port';
@@ -17,7 +19,14 @@ import { backupDatabase, openCheckedDatabase } from './sqlite-maintenance';
 import {
   aggregateCandlesticks,
   computeHoldersDistribution,
+  holdersFromBalances,
 } from '../../domain/services/token-aggregation.service';
+
+/** Contracts that hold v4 pool liquidity for every pool on their chain. */
+const POOL_HOLDERS = [
+  ROBINHOOD_CHAIN.contracts.poolManagerV4,
+  ARC_CHAIN.contracts.poolManagerV4,
+].filter((a): a is `0x${string}` => Boolean(a));
 
 interface TokenRow {
   address: string;
@@ -381,6 +390,23 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
         network TEXT PRIMARY KEY,
         last_block TEXT NOT NULL,
         updated_at INTEGER NOT NULL
+      );
+    `);
+
+    // On-chain token balances, refreshed with balanceOf for every holder a Transfer touches.
+    // holder_index marks tokens whose whole Transfer history has been read since launch.
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS token_balances (
+        token_address TEXT NOT NULL COLLATE NOCASE,
+        holder TEXT NOT NULL COLLATE NOCASE,
+        balance TEXT NOT NULL,
+        PRIMARY KEY (token_address, holder)
+      );
+    `);
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS holder_index (
+        token_address TEXT PRIMARY KEY COLLATE NOCASE,
+        indexed_at INTEGER NOT NULL
       );
     `);
 
@@ -827,8 +853,58 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     limit = 50,
   ): Promise<Array<{ address: string; balance: string; percent: number }>> {
     const token = await this.findByAddress(tokenAddress as `0x${string}`);
+    const indexed = this.db
+      .prepare(`SELECT 1 FROM holder_index WHERE token_address = ? COLLATE NOCASE`)
+      .get(tokenAddress);
+    if (indexed) {
+      const balances = this.db
+        .prepare(
+          `SELECT holder, balance FROM token_balances WHERE token_address = ? COLLATE NOCASE`,
+        )
+        .all(tokenAddress) as Array<{ holder: string; balance: string }>;
+      return holdersFromBalances(token, balances, limit, POOL_HOLDERS);
+    }
+    // Not indexed yet: an estimate from the newest trades (misses transfers and older trades).
     const trades = await this.getTrades(tokenAddress as `0x${string}`, 1000, 0);
     return computeHoldersDistribution(token, trades, limit);
+  }
+
+  async saveBalances(
+    tokenAddress: `0x${string}`,
+    balances: Array<{ holder: `0x${string}`; balance: bigint }>,
+  ): Promise<void> {
+    const upsert = this.db.prepare(
+      `INSERT INTO token_balances (token_address, holder, balance) VALUES (?, ?, ?)
+       ON CONFLICT(token_address, holder) DO UPDATE SET balance = excluded.balance`,
+    );
+    const remove = this.db.prepare(
+      `DELETE FROM token_balances WHERE token_address = ? COLLATE NOCASE AND holder = ? COLLATE NOCASE`,
+    );
+    this.db.run('BEGIN');
+    try {
+      for (const b of balances) {
+        if (b.balance > 0n)
+          upsert.run(tokenAddress.toLowerCase(), b.holder.toLowerCase(), b.balance.toString());
+        else remove.run(tokenAddress, b.holder);
+      }
+      this.db.run('COMMIT');
+    } catch (err) {
+      this.db.run('ROLLBACK');
+      throw err;
+    }
+  }
+
+  async markHoldersIndexed(tokenAddress: `0x${string}`): Promise<void> {
+    this.db
+      .prepare(`INSERT OR REPLACE INTO holder_index (token_address, indexed_at) VALUES (?, ?)`)
+      .run(tokenAddress.toLowerCase(), Date.now());
+  }
+
+  async getHolderIndexedTokens(): Promise<Set<string>> {
+    const rows = this.db.prepare(`SELECT token_address FROM holder_index`).all() as Array<{
+      token_address: string;
+    }>;
+    return new Set(rows.map((r) => r.token_address.toLowerCase()));
   }
 
   async getRecentTrades(limit = 50): Promise<TradeEventEntity[]> {
