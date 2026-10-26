@@ -531,6 +531,39 @@ export const gotonV4GraduatorAbi = [
   },
   {
     type: 'function',
+    name: 'setRevenueSplitByLauncher',
+    inputs: [
+      {
+        name: 'token',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'holdersBps',
+        type: 'uint16',
+        internalType: 'uint16',
+      },
+      {
+        name: 'burnBps',
+        type: 'uint16',
+        internalType: 'uint16',
+      },
+      {
+        name: 'creatorBps',
+        type: 'uint16',
+        internalType: 'uint16',
+      },
+      {
+        name: 'liquidityBps',
+        type: 'uint16',
+        internalType: 'uint16',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
     name: 'splitterDeployer',
     inputs: [],
     outputs: [

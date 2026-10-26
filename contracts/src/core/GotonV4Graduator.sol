@@ -169,6 +169,25 @@ contract GotonV4Graduator is IUnlockCallback {
     {
         (,, address creator,,) = ILauncherLaunches(launcher).launches(token);
         if (creator == address(0) || msg.sender != creator) revert Unauthorized();
+        _setRevenueSplit(token, holdersBps, burnBps, creatorBps, liquidityBps);
+    }
+
+    /// @notice The launcher records the creator's split inside the launch transaction, before any
+    ///         buyer can lock it to the default by trading first. Same rules as setRevenueSplit.
+    function setRevenueSplitByLauncher(
+        address token,
+        uint16 holdersBps,
+        uint16 burnBps,
+        uint16 creatorBps,
+        uint16 liquidityBps
+    ) external {
+        if (msg.sender != launcher) revert Unauthorized();
+        _setRevenueSplit(token, holdersBps, burnBps, creatorBps, liquidityBps);
+    }
+
+    function _setRevenueSplit(address token, uint16 holdersBps, uint16 burnBps, uint16 creatorBps, uint16 liquidityBps)
+        private
+    {
         if (
             hasTokenSplit[token] || graduations[token].splitter != address(0)
                 || IGraduationToken(token).publicTradingStarted()

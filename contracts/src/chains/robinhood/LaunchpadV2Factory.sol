@@ -172,6 +172,14 @@ contract LaunchpadV2Factory is EmergencyPause {
         address taxRecipient;
     }
 
+    /// @notice Creator split of the post-protocol LP fees (all zero = the graduator's default).
+    struct LaunchSplit {
+        uint16 holdersBps;
+        uint16 burnBps;
+        uint16 creatorBps;
+        uint16 liquidityBps;
+    }
+
     function launchTokenV2(
         string memory name,
         string memory symbol,
@@ -183,16 +191,26 @@ contract LaunchpadV2Factory is EmergencyPause {
         uint256 minInitialTokensOut
     ) external payable nonReentrant whenNotPaused returns (address tokenAddress, address curveAddress) {
         return _launch(
-            name, symbol, logo, description, twitter, telegram, website, minInitialTokensOut, LaunchTax(0, 0, address(0))
+            name,
+            symbol,
+            logo,
+            description,
+            twitter,
+            telegram,
+            website,
+            minInitialTokensOut,
+            LaunchTax(0, 0, address(0)),
+            LaunchSplit(0, 0, 0, 0)
         );
     }
 
     /**
-     * @notice launchTokenV2 plus the creator's initial tax, set atomically. The token accepts an
-     *         initial tax only in the launch block and the two after it (about 0.2 s on Robinhood
-     *         Chain), which a second transaction the creator still has to sign cannot reach.
+     * @notice launchTokenV2 plus the creator's initial tax and LP-fee split, set atomically. The
+     *         token accepts an initial tax only in the launch block and the two after it (about
+     *         0.2 s on Robinhood Chain), and the split locks at the first third-party buy, so a
+     *         second transaction the creator still has to sign would lose both races.
      */
-    function launchTokenV2WithTax(
+    function launchTokenV2WithConfig(
         string memory name,
         string memory symbol,
         string memory logo,
@@ -201,9 +219,10 @@ contract LaunchpadV2Factory is EmergencyPause {
         string memory telegram,
         string memory website,
         uint256 minInitialTokensOut,
-        LaunchTax calldata tax
+        LaunchTax calldata tax,
+        LaunchSplit calldata split
     ) external payable nonReentrant whenNotPaused returns (address tokenAddress, address curveAddress) {
-        return _launch(name, symbol, logo, description, twitter, telegram, website, minInitialTokensOut, tax);
+        return _launch(name, symbol, logo, description, twitter, telegram, website, minInitialTokensOut, tax, split);
     }
 
     function _launch(
@@ -215,7 +234,8 @@ contract LaunchpadV2Factory is EmergencyPause {
         string memory telegram,
         string memory website,
         uint256 minInitialTokensOut,
-        LaunchTax memory tax
+        LaunchTax memory tax,
+        LaunchSplit memory split
     ) private returns (address tokenAddress, address curveAddress) {
         if (msg.value < launchFee) revert InvalidFee();
 
@@ -291,6 +311,11 @@ contract LaunchpadV2Factory is EmergencyPause {
         // After the creator's initial buy (untaxed: the pool is not set yet), before any other buyer.
         if (tax.buyTaxBps != 0 || tax.sellTaxBps != 0) {
             token.setInitialTaxConfig(tax.buyTaxBps, tax.sellTaxBps, tax.taxRecipient);
+        }
+        if (split.holdersBps != 0 || split.burnBps != 0 || split.creatorBps != 0 || split.liquidityBps != 0) {
+            graduator.setRevenueSplitByLauncher(
+                tokenAddress, split.holdersBps, split.burnBps, split.creatorBps, split.liquidityBps
+            );
         }
         token.setLiquidityPool(curveAddress);
     }

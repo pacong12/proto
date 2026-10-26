@@ -290,7 +290,7 @@ export const launchpadV2FactoryAbi = [
   },
   {
     type: 'function',
-    name: 'launchTokenV2WithTax',
+    name: 'launchTokenV2WithConfig',
     inputs: [
       {
         name: 'name',
@@ -351,6 +351,33 @@ export const launchpadV2FactoryAbi = [
             name: 'taxRecipient',
             type: 'address',
             internalType: 'address',
+          },
+        ],
+      },
+      {
+        name: 'split',
+        type: 'tuple',
+        internalType: 'struct LaunchpadV2Factory.LaunchSplit',
+        components: [
+          {
+            name: 'holdersBps',
+            type: 'uint16',
+            internalType: 'uint16',
+          },
+          {
+            name: 'burnBps',
+            type: 'uint16',
+            internalType: 'uint16',
+          },
+          {
+            name: 'creatorBps',
+            type: 'uint16',
+            internalType: 'uint16',
+          },
+          {
+            name: 'liquidityBps',
+            type: 'uint16',
+            internalType: 'uint16',
           },
         ],
       },

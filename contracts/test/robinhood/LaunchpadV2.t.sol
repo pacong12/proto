@@ -8,6 +8,7 @@ import {BondingCurve} from "../../src/core/BondingCurve.sol";
 import {LaunchpadToken} from "../../src/core/LaunchpadToken.sol";
 import {EmergencyPause} from "../../src/core/EmergencyPause.sol";
 import {ILaunchpadToken} from "../../src/interfaces/ILaunchpadToken.sol";
+import {GotonV4Graduator} from "../../src/core/GotonV4Graduator.sol";
 
 contract ReentrantAttackerRecipient {
     LaunchpadV2Factory public factory;
@@ -445,8 +446,9 @@ contract LaunchpadV2Test is Test {
     function test_LaunchWithTaxSetsItAtomically() public {
         address taxWallet = address(0x7A7);
         vm.prank(creator);
-        (address tokenAddress, address curveAddress) = factory.launchTokenV2WithTax{value: 0.0005 ether + 0.1 ether}(
-            "T", "T", "", "", "", "", "", 0, LaunchpadV2Factory.LaunchTax(300, 500, taxWallet)
+        (address tokenAddress, address curveAddress) = factory.launchTokenV2WithConfig{value: 0.0005 ether + 0.1 ether}(
+            "T", "T", "", "", "", "", "", 0, LaunchpadV2Factory.LaunchTax(300, 500, taxWallet),
+            LaunchpadV2Factory.LaunchSplit(0, 0, 0, 0)
         );
         LaunchpadToken token = LaunchpadToken(tokenAddress);
         (uint16 buyTax, uint16 sellTax, address recipient) = token.taxConfig();
@@ -462,11 +464,58 @@ contract LaunchpadV2Test is Test {
         assertEq(token.balanceOf(taxWallet), (bought * 300) / 10_000, "later buys pay the buy tax");
     }
 
+    /// @dev The split is recorded in the launch transaction, before any buyer could lock it.
+    function test_LaunchWithConfigRecordsTheRevenueSplit() public {
+        GotonV4Graduator graduator = factory.graduator();
+        graduator.setLauncher(address(factory));
+        vm.prank(creator);
+        (address tokenAddress,) = factory.launchTokenV2WithConfig{value: 0.0005 ether}(
+            "T",
+            "T",
+            "",
+            "",
+            "",
+            "",
+            "",
+            0,
+            LaunchpadV2Factory.LaunchTax(0, 0, address(0)),
+            LaunchpadV2Factory.LaunchSplit(5_000, 0, 5_000, 0)
+        );
+        assertTrue(graduator.hasTokenSplit(tokenAddress));
+        (, uint16 holders, uint16 burn, uint16 creatorShare, uint16 liquidity) = graduator.tokenSplits(tokenAddress);
+        assertEq(holders, 5_000);
+        assertEq(burn, 0);
+        assertEq(creatorShare, 5_000);
+        assertEq(liquidity, 0);
+
+        // Set once: the creator cannot change it afterwards.
+        vm.prank(creator);
+        vm.expectRevert(GotonV4Graduator.SplitLocked.selector);
+        graduator.setRevenueSplit(tokenAddress, 10_000, 0, 0, 0);
+    }
+
+    function test_LaunchWithConfigRejectsAnInvalidSplit() public {
+        factory.graduator().setLauncher(address(factory));
+        vm.prank(creator);
+        vm.expectRevert(GotonV4Graduator.InvalidSplit.selector);
+        factory.launchTokenV2WithConfig{value: 0.0005 ether}(
+            "T", "T", "", "", "", "", "", 0, LaunchpadV2Factory.LaunchTax(0, 0, address(0)), LaunchpadV2Factory.LaunchSplit(5_000, 0, 0, 0)
+        );
+    }
+
+    function test_OnlyTheLauncherSetsSplitsForCreators() public {
+        GotonV4Graduator graduator = factory.graduator();
+        graduator.setLauncher(address(factory));
+        vm.expectRevert(GotonV4Graduator.Unauthorized.selector);
+        graduator.setRevenueSplitByLauncher(address(0xBEEF), 10_000, 0, 0, 0);
+    }
+
     function test_LaunchWithTaxRejectsMoreThanTenPercent() public {
         vm.prank(creator);
         vm.expectRevert(LaunchpadToken.ExcessiveTax.selector);
-        factory.launchTokenV2WithTax{value: 0.0005 ether}(
-            "T", "T", "", "", "", "", "", 0, LaunchpadV2Factory.LaunchTax(1_001, 0, address(0))
+        factory.launchTokenV2WithConfig{value: 0.0005 ether}(
+            "T", "T", "", "", "", "", "", 0, LaunchpadV2Factory.LaunchTax(1_001, 0, address(0)),
+            LaunchpadV2Factory.LaunchSplit(0, 0, 0, 0)
         );
     }
 
