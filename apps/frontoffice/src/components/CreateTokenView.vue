@@ -877,7 +877,7 @@ function warnIfSettingsMissing(
   if (!result.taxApplied) {
     toast.warning('Creator tax was not applied', {
       description:
-        'Your token trades without the tax you set. You can set it from the token page until the first buy from another wallet.',
+        'Your token trades without the tax you set. You can propose it from the token page; it takes effect 24 hours later.',
       duration: 15_000,
     });
   }
