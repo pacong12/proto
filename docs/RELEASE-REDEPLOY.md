@@ -11,11 +11,15 @@ over. Work through the steps in order: several settings are immutable once deplo
       (about 19M gas on Robinhood Chain for the full stack).
 - [ ] Safe multisig on each chain with hardware-wallet signers. It becomes every owner and the
       default treasury (`OWNER_SAFE`).
-- [ ] New keeper key for the API (`KEEPER_PRIVATE_KEY`); it only pays gas. Keep its balance small.
+- [x] New keeper key for the API (`KEEPER_PRIVATE_KEY`); it only pays gas. Prepared on the VPS
+      (`0xBD9b…88E3`, funded with the old keeper's balance); it starts with the release deploy.
 - [ ] Optional incident-response guardian (`EMERGENCY_GUARDIAN`). It can pause launches and curve
       buys, never exits or graduation.
 
 ## 2. Contracts
+
+Exact commands for every step below, including the Safe and the ownership handover:
+`docs/CONTRACT-DEPLOY-RUNBOOK.md`.
 
 Dry-run each script on a fork first (`--fork-url … --sender <deployer>`), then broadcast with
 `--account deployer` (keystore) or `--ledger`.
