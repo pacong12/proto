@@ -4,7 +4,7 @@ import {
   type LaunchedTokenEntity,
   type TradeEventEntity,
 } from '@goton/shared-types';
-import type { ChainRegistry } from '../../../chains';
+import type { ChainRegistryPort } from '../../../chains';
 import type { CachePort } from '../../../../core/ports/cache.port';
 import type { LoggerPort } from '../../../../core/ports/logger.port';
 import type { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
@@ -27,7 +27,7 @@ export class TradeSyncService {
   constructor(
     private readonly repository: TokenRepositoryPort,
     private readonly cache: CachePort,
-    private readonly chainRegistry: ChainRegistry,
+    private readonly chainRegistry: ChainRegistryPort,
     private readonly pollers: ReadonlyMap<number, EventPollerService>,
     private readonly logger: LoggerPort,
   ) {}

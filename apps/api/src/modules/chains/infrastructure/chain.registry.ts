@@ -7,13 +7,13 @@ import {
   resolveNetworkByParam,
 } from '@goton/shared-types';
 import type { PublicClient } from 'viem';
-import type { IChainService } from './chain.interface';
-import type { PriceFeedPort } from '../tokens/domain/ports/price-feed.port';
+import type { ChainRegistryPort, IChainService } from '../domain/chain.port';
+import type { PriceFeedPort } from '../../tokens/domain/ports/price-feed.port';
 import { ChainService } from './chain.service';
-import { createChainClient } from '../../core/rpc';
+import { createChainClient } from '../../../core/rpc';
 
 /** One ChainService per network in the shared chain registry (CHAINS). */
-export class ChainRegistry {
+export class ChainRegistry implements ChainRegistryPort {
   private readonly services = new Map<number, IChainService>();
 
   constructor(
