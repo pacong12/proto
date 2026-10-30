@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.3](https://github.com/pacong12/proto/compare/v0.7.2...v0.7.3) (2026-10-30)
+
+
+### Bug Fixes
+
+* **frontoffice:** launch on the deployed Robinhood factory again ([#212](https://github.com/pacong12/proto/issues/212)) ([53654e4](https://github.com/pacong12/proto/commit/53654e412eae990313a26c1610707fa8e438ac7b))
+
 ## [0.7.2](https://github.com/pacong12/proto/compare/v0.7.1...v0.7.2) (2026-10-30)
 
 
