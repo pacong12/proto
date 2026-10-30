@@ -3,8 +3,8 @@
     <Button
       type="button"
       variant="ghost"
-      @click="isOpen = !isOpen"
       class="w-full flex items-center justify-between px-5 py-4 h-auto text-sm font-semibold transition hover:bg-muted/40 cursor-pointer rounded-none"
+      @click="isOpen = !isOpen"
     >
       <div class="flex items-center gap-2">
         <span class="font-bold">{{ t('advanced') }}</span>
@@ -472,7 +472,7 @@ interface Props {
   buyTax: string;
   sellTax: string;
   revenueSplit: RevenueSplit;
-  open: boolean;
+  open?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {

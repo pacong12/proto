@@ -399,7 +399,9 @@ async function handleLikeReply(replyId: string): Promise<void> {
         rep.isLikedByViewer = data.data.liked;
       }
     }
-  } catch {}
+  } catch {
+    // A like that fails leaves the reply as it was.
+  }
 }
 
 function resolveSafeUrl(url?: string): string {

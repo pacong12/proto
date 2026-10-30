@@ -248,16 +248,16 @@
           v-if="launchStep === 'error' || launchStep === 'confirming'"
           variant="outline"
           size="sm"
-          @click="$emit('close')"
           class="h-9 px-4 text-xs font-medium cursor-pointer"
+          @click="$emit('close')"
         >
           {{ t('closeModal') }}
         </Button>
         <Button
           v-if="launchStep === 'success'"
           size="sm"
-          @click="$emit('trade')"
           class="h-9 px-4 text-xs font-bold bg-primary text-primary-foreground hover:opacity-90 flex items-center gap-1.5"
+          @click="$emit('trade')"
         >
           <span>{{ t('tradeToken') }}</span>
           <ArrowRight class="w-3.5 h-3.5" />

@@ -11,22 +11,22 @@
 
     <!-- Form container using Shadcn Card -->
     <Card class="p-4 sm:p-8 lg:p-10 border border-border bg-card shadow-sm rounded-3xl">
-      <form @submit.prevent="handleLaunch" class="space-y-7">
+      <form class="space-y-7" @submit.prevent="handleLaunch">
         <!-- Top Info Section: Image on the side + Name, Ticker, Description -->
         <div class="flex flex-col sm:flex-row gap-6 sm:gap-8 items-start">
           <!-- Token Image Dropzone (Side Column) -->
           <div class="space-y-2 w-full sm:w-48 shrink-0">
             <Label>{{ t('tokenImage') }}</Label>
             <div
-              @dragover.prevent="dragOver = true"
-              @dragleave.prevent="dragOver = false"
-              @drop.prevent="handleDrop"
               :class="[
                 'relative border-2 border-dashed rounded-2xl transition-all flex flex-col items-center justify-center text-center cursor-pointer overflow-hidden p-3 aspect-square w-full sm:w-48 h-48 group',
                 dragOver
                   ? 'border-primary bg-primary/10'
                   : 'border-border hover:border-primary/60 bg-muted/30',
               ]"
+              @dragover.prevent="dragOver = true"
+              @dragleave.prevent="dragOver = false"
+              @drop.prevent="handleDrop"
               @click="triggerFileInput"
             >
               <input
@@ -296,11 +296,11 @@
         <CreateTokenAdvancedSection
           v-model:open="advancedOpen"
           v-model:fee-recipients="feeRecipients"
-          :team-available="teamFactoryAddress(activeNetwork) !== null"
-          :in-pool-launch="isInPoolLaunch"
           v-model:buy-tax="form.buyTax"
           v-model:sell-tax="form.sellTax"
           v-model:revenue-split="revenueSplit"
+          :team-available="teamFactoryAddress(activeNetwork) !== null"
+          :in-pool-launch="isInPoolLaunch"
           :account="account"
         />
 
