@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { encodeAbiParameters, encodeEventTopics, parseAbiItem, type PublicClient } from 'viem';
-import { ROBINHOOD_CHAIN, type LaunchedTokenEntity } from '@goton/shared-types';
+import { ROBINHOOD_CHAIN, type LaunchedTokenEntity, type NetworkConfig } from '@goton/shared-types';
 import { EventPollerService } from '../src/modules/tokens/infrastructure/indexer/event-poller.service';
 import { SqliteTokenRepository } from '../src/modules/tokens/infrastructure/adapters/sqlite-token.repository';
 
@@ -54,15 +54,20 @@ function tradeLog(blockNumber: bigint, logIndex: number) {
   };
 }
 
-function poller(client: Partial<PublicClient>, repo = new SqliteTokenRepository(':memory:')) {
+function poller(
+  client: Partial<PublicClient>,
+  repo = new SqliteTokenRepository(':memory:'),
+  network: NetworkConfig = ROBINHOOD_CHAIN,
+) {
   const p = new EventPollerService(
     client as PublicClient,
     repo,
     {} as never,
     {} as never,
     { getQuoteAssetPriceUsd: async () => 2400 } as never,
-    ROBINHOOD_CHAIN,
+    network,
   );
+  Object.assign(p, { sleep: async () => undefined });
   return { p, repo };
 }
 
@@ -94,6 +99,53 @@ describe('curve trade backfill', () => {
     // Running it again upserts the same trade.
     await p.backfillCurveTrades(token, 0n, 500_000n);
     expect(await repo.getTrades(token.address, 10, 0)).toHaveLength(1);
+  });
+
+  it("keeps each request within the chain's eth_getLogs limit", async () => {
+    const ranges: Array<[bigint, bigint]> = [];
+    const { p, repo } = poller(
+      {
+        getLogs: (async ({ fromBlock, toBlock }: { fromBlock: bigint; toBlock: bigint }) => {
+          ranges.push([fromBlock, toBlock]);
+          return [];
+        }) as never,
+      },
+      undefined,
+      { ...ROBINHOOD_CHAIN, maxLogBlockRange: 10_000 },
+    );
+    await repo.save(token);
+    await p.backfillCurveTrades(token, 0n, 25_000n);
+    expect(ranges).toEqual([
+      [0n, 9_999n],
+      [10_000n, 19_999n],
+      [20_000n, 25_000n],
+    ]);
+  });
+
+  it('retries a rate-limited chunk instead of failing the backfill', async () => {
+    const ranges: bigint[] = [];
+    let calls = 0;
+    const { p, repo } = poller({
+      getLogs: (async ({ fromBlock }: { fromBlock: bigint }) => {
+        calls += 1;
+        if (calls % 2 === 1) throw new Error('rate limit exceeded');
+        ranges.push(fromBlock);
+        return [];
+      }) as never,
+    });
+    await repo.save(token);
+    await p.backfillCurveTrades(token, 0n, 450_000n);
+    expect(ranges).toEqual([0n, 200_000n, 400_000n]);
+  });
+
+  it('gives up on a chunk that keeps failing', async () => {
+    const { p, repo } = poller({
+      getLogs: (async () => {
+        throw new Error('RPC down');
+      }) as never,
+    });
+    await repo.save(token);
+    await expect(p.backfillCurveTrades(token, 0n, 100n)).rejects.toThrow('RPC down');
   });
 
   it('prices a curve trade at the spot after its block, not at its taxed token ratio', async () => {

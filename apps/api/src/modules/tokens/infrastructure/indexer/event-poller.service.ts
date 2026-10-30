@@ -86,8 +86,13 @@ const CONFIRMATIONS = BigInt(process.env.INDEXER_CONFIRMATIONS ?? '2');
 const LOG_ADDRESS_BATCH = 50;
 // Attempts at one block range before it is skipped (and logged as an error).
 const MAX_RANGE_ATTEMPTS = 5;
-// eth_getLogs block span per request when backfilling one curve's history.
+// eth_getLogs block span per request when backfilling one curve's history, capped per chain by
+// NetworkConfig.maxLogBlockRange.
 const BACKFILL_CHUNK = BigInt(process.env.INDEXER_BACKFILL_CHUNK || '200000');
+// A backfill is hundreds of requests in a row, paced by NetworkConfig.backfillRequestIntervalMs; a
+// rate-limited one is retried after these pauses rather than failing the whole history. The
+// fallback RPCs cannot take over: they keep no old history or only accept a few blocks per request.
+const BACKFILL_RETRY_DELAYS_MS = [2_000, 5_000, 15_000, 30_000];
 
 export class EventPollerService {
   private lastPolledBlock = 0n;
@@ -98,6 +103,9 @@ export class EventPollerService {
   private quoteDecimals: number | null = null;
   /** When a token whose holder backfill failed may be tried again (ms). */
   private readonly holderRetryAt = new Map<string, number>();
+  /** The holder history being read in the background, one token at a time. */
+  private holderBackfill: Promise<void> | null = null;
+  private lastBackfillRequestAt = 0;
 
   constructor(
     private readonly client: PublicClient,
@@ -107,6 +115,35 @@ export class EventPollerService {
     private readonly priceFeed: PriceFeedPort,
     private readonly network: NetworkConfig = ROBINHOOD_CHAIN,
   ) {}
+
+  /** Waits between backfill requests and retries; tests replace it. */
+  protected sleep = (ms: number): Promise<void> =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+
+  /** Resolves once the holder history being read in the background is done. */
+  async holderBackfillSettled(): Promise<void> {
+    await this.holderBackfill;
+  }
+
+  private async withBackfillRetry<T>(request: () => Promise<T>): Promise<T> {
+    const interval = this.network.backfillRequestIntervalMs ?? 0;
+    for (let attempt = 0; ; attempt += 1) {
+      const wait = this.lastBackfillRequestAt + interval - Date.now();
+      if (wait > 0) await this.sleep(wait);
+      this.lastBackfillRequestAt = Date.now();
+      try {
+        return await request();
+      } catch (e) {
+        if (attempt >= BACKFILL_RETRY_DELAYS_MS.length) throw e;
+        await this.sleep(BACKFILL_RETRY_DELAYS_MS[attempt]!);
+      }
+    }
+  }
+
+  private get backfillChunk(): bigint {
+    const cap = this.network.maxLogBlockRange;
+    return cap && BigInt(cap) < BACKFILL_CHUNK ? BigInt(cap) : BACKFILL_CHUNK;
+  }
 
   // -------------------------------------------------------------------------
   // Main polling loop
@@ -717,15 +754,30 @@ export class EventPollerService {
       (t) => resolveTokenNetwork(t).chainId === this.network.chainId,
     );
     const indexed = await repo.getHolderIndexedTokens();
-    // One history per cycle, so a backlog of unindexed tokens never holds up trade indexing; a
-    // token whose backfill failed waits, so it cannot block the others.
+    // A history is read in the background, one token at a time: on a rate-limited RPC it takes
+    // minutes, and a failure must never fail this cycle (a range that keeps failing is skipped,
+    // trades included). A token whose backfill failed waits, so it cannot block the others.
     const now = Date.now();
-    const pending = tokens.find(
-      (t) =>
-        !indexed.has(t.address.toLowerCase()) &&
-        (this.holderRetryAt.get(t.address.toLowerCase()) ?? 0) <= now,
-    );
-    if (pending) await this.backfillHolders(pending, to);
+    const pending = this.holderBackfill
+      ? undefined
+      : tokens.find(
+          (t) =>
+            !indexed.has(t.address.toLowerCase()) &&
+            (this.holderRetryAt.get(t.address.toLowerCase()) ?? 0) <= now,
+        );
+    if (pending) {
+      this.holderBackfill = this.backfillHolders(pending, to)
+        .catch((e: unknown) => {
+          this.holderRetryAt.set(pending.address.toLowerCase(), Date.now() + HOLDER_RETRY_MS);
+          console.warn(
+            `[EventPoller:${this.network.name}] holder history of ${pending.address} failed, retrying later:`,
+            ((e as Error)?.message ?? String(e)).split('\n')[0],
+          );
+        })
+        .finally(() => {
+          this.holderBackfill = null;
+        });
+    }
     const live = tokens.filter((t) => indexed.has(t.address.toLowerCase())).map((t) => t.address);
     let count = 0;
     for (let i = 0; i < live.length; i += LOG_ADDRESS_BATCH) {
@@ -766,23 +818,35 @@ export class EventPollerService {
       }
       return;
     }
-    const fromBlock = await this.firstBlockOfParentBlock(launchBlock, to);
     const touched = new Map<string, Set<`0x${string}`>>();
-    for (let start = fromBlock; start <= to; start += BACKFILL_CHUNK) {
-      const end = start + BACKFILL_CHUNK - 1n > to ? to : start + BACKFILL_CHUNK - 1n;
-      const logs = await this.client.getLogs({
-        address: token.address,
-        event: TRANSFER_EVENT,
-        fromBlock: start,
-        toBlock: end,
-      });
-      for (const [t, holders] of this.holdersTouched(logs)) {
-        const set = touched.get(t) ?? new Set();
-        holders.forEach((h) => set.add(h));
-        touched.set(t, set);
+    let from = await this.firstBlockOfParentBlock(launchBlock, to);
+    let target = to;
+    for (;;) {
+      for (let start = from; start <= target; start += this.backfillChunk) {
+        const end =
+          start + this.backfillChunk - 1n > target ? target : start + this.backfillChunk - 1n;
+        const logs = await this.withBackfillRetry(() =>
+          this.client.getLogs({
+            address: token.address,
+            event: TRANSFER_EVENT,
+            fromBlock: start,
+            toBlock: end,
+          }),
+        );
+        for (const [t, holders] of this.holdersTouched(logs)) {
+          const set = touched.get(t) ?? new Set();
+          holders.forEach((h) => set.add(h));
+          touched.set(t, set);
+        }
       }
+      // The poller kept indexing other tokens meanwhile, without this one: read up to the head
+      // before handing it over, so no transfer falls between the backfill and the live polls.
+      const head = (await this.client.getBlockNumber()) - CONFIRMATIONS;
+      if (head <= target) break;
+      from = target + 1n;
+      target = head;
     }
-    await this.refreshBalances(touched, to);
+    await this.refreshBalances(touched, target);
     await this.tokenRepository.markHoldersIndexed!(token.address);
   }
 
@@ -1032,9 +1096,10 @@ export class EventPollerService {
     const quotePriceUsd = await this.priceFeed.getQuoteAssetPriceUsd(this.network.chainId);
     const tokenByCurve = new Map([[curve.toLowerCase(), token]]);
     let count = 0;
-    for (let start = from < 0n ? 0n : from; start <= end; start += BACKFILL_CHUNK) {
-      const chunkEnd = start + BACKFILL_CHUNK - 1n > end ? end : start + BACKFILL_CHUNK - 1n;
-      const logs = await this.fetchTradeLogs(curve, start, chunkEnd);
+    for (let start = from < 0n ? 0n : from; start <= end; start += this.backfillChunk) {
+      const chunkEnd =
+        start + this.backfillChunk - 1n > end ? end : start + this.backfillChunk - 1n;
+      const logs = await this.withBackfillRetry(() => this.fetchTradeLogs(curve, start, chunkEnd));
       if (logs.length) count += await this.saveTradeLogs(logs, tokenByCurve, quotePriceUsd);
     }
     return count;

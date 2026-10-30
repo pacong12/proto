@@ -41,7 +41,7 @@ const transfer = (from: `0x${string}`, to: `0x${string}`) => ({
   args: { from, to },
 });
 
-function setup(balances: Record<string, bigint>) {
+function setup(balances: Record<string, bigint>, failTransfers = false) {
   const repo = new SqliteTokenRepository(':memory:');
   const getLogsRanges: Array<[bigint, bigint]> = [];
   const client = {
@@ -58,6 +58,7 @@ function setup(balances: Record<string, bigint>) {
     }) => {
       if (event?.name !== 'Transfer') return [];
       getLogsRanges.push([fromBlock, toBlock]);
+      if (failTransfers && fromBlock < 900n) throw new Error('rate limit exceeded');
       // Mint to the factory, the factory funds the curve, Alice buys, then sends some to Bob
       // (who never trades), and the curve's last tokens move to the PoolManager.
       return [
@@ -94,22 +95,31 @@ function setup(balances: Record<string, bigint>) {
     { getQuoteAssetPriceUsd: async () => 2400 } as never,
     ROBINHOOD_CHAIN,
   );
-  return { repo, poller, getLogsRanges };
+  Object.assign(poller, { sleep: async () => undefined });
+  // The history is read in the background; wait for it like the next cycles would.
+  const poll = async (from: bigint, to: bigint) => {
+    const count = await poller.pollEvents(from, to);
+    await poller.holderBackfillSettled();
+    return count;
+  };
+  return { repo, poller, poll, getLogsRanges };
 }
 
 describe('holders from Transfer logs', () => {
   it('records every holder on chain, including one that only received a transfer', async () => {
-    const { repo, poller, getLogsRanges } = setup({
+    const { repo, poll, getLogsRanges } = setup({
       [ALICE]: 100_000_000n * E18,
       [BOB]: 50_000_000n * E18,
       [CURVE]: 0n,
       [POOL_MANAGER]: 850_000_000n * E18,
     });
     await repo.save(token);
-    await poller.pollEvents(900n, 949n);
+    await poll(900n, 949n);
 
-    // The first sight of the token reads its history from its on-chain launch block.
-    expect(getLogsRanges[0][0]).toBe(500n);
+    // The first sight of the token reads its history from its on-chain launch block, then up to
+    // the head (1,000 minus 2 confirmations), as the poller moved on meanwhile.
+    expect(getLogsRanges[0]).toEqual([500n, 949n]);
+    expect(getLogsRanges[1]).toEqual([950n, 998n]);
     const holders = await repo.getHolders(TOKEN, 10);
     expect(holders.map((h) => [h.address, h.percent])).toEqual([
       [CURVE, 85], // the PoolManager's balance, shown under the token's pool address
@@ -119,35 +129,50 @@ describe('holders from Transfer logs', () => {
   });
 
   it('gives the same balances when a range is indexed again', async () => {
-    const { repo, poller } = setup({ [ALICE]: 7n * E18, [BOB]: 3n * E18 });
+    const { repo, poll } = setup({ [ALICE]: 7n * E18, [BOB]: 3n * E18 });
     await repo.save(token);
-    await poller.pollEvents(900n, 949n);
-    await poller.pollEvents(900n, 949n);
+    await poll(900n, 949n);
+    await poll(900n, 949n);
     const holders = await repo.getHolders(TOKEN, 10);
     expect(holders.map((h) => h.balance)).toEqual([(7n * E18).toString(), (3n * E18).toString()]);
   });
 
   it('does not let an address without a contract block the next token', async () => {
-    const { repo, poller } = setup({ [ALICE]: 7n * E18 });
+    const { repo, poll } = setup({ [ALICE]: 7n * E18 });
     await repo.save(token);
     // Saved last, so listed first: the dead address is the first backfill tried.
     await repo.save({ ...token, address: DEAD } as LaunchedTokenEntity);
-    await poller.pollEvents(900n, 949n);
-    await poller.pollEvents(950n, 999n);
+    await poll(900n, 949n);
+    await poll(950n, 999n);
     expect(await repo.getHolderIndexedTokens()).toEqual(new Set([DEAD, TOKEN]));
     expect(await repo.getHolders(DEAD, 10)).toEqual([]);
     expect((await repo.getHolders(TOKEN, 10)).map((h) => h.address)).toEqual([ALICE]);
   });
 
   it('skips tokens of another chain', async () => {
-    const { repo, poller, getLogsRanges } = setup({});
+    const { repo, poll, getLogsRanges } = setup({});
     // The repository keeps no chain id; an Arc token is recognised by its USDC quote.
     await repo.save({
       ...token,
       pairedToken: ARC_CHAIN.contracts.weth,
       version: 'v4',
     } as LaunchedTokenEntity);
-    await poller.pollEvents(900n, 949n);
+    await poll(900n, 949n);
     expect(getLogsRanges).toHaveLength(0);
+  });
+
+  it('does not fail the cycle when a history cannot be read, and tries the token again later', async () => {
+    const { repo, poller, getLogsRanges } = setup({ [ALICE]: 7n * E18 }, true);
+    await repo.save(token);
+    await poller.pollEvents(900n, 949n);
+    await poller.holderBackfillSettled();
+    // The cycle succeeded: its range is done, not left to be retried and finally skipped.
+    expect(await repo.getLastIndexedBlock(ROBINHOOD_CHAIN.name)).toBe(949n);
+    expect(await repo.getHolderIndexedTokens()).toEqual(new Set());
+    const tries = getLogsRanges.length;
+    // Within the retry delay the token is left alone.
+    await poller.pollEvents(950n, 999n);
+    await poller.holderBackfillSettled();
+    expect(getLogsRanges.filter(([from]) => from < 900n)).toHaveLength(tries);
   });
 });
