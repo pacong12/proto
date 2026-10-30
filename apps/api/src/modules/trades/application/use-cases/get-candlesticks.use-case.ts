@@ -1,22 +1,19 @@
 import type { Address } from 'viem';
-import { aggregateCandlesticks, type CandlestickBar } from '@goton/math-sdk';
-import type { TradeRepositoryPort } from '../../domain/ports/trade-repository.port';
+import type { CandlestickEntity } from '@goton/shared-types';
 import type { TokenRepositoryPort } from '../../../tokens/domain/ports/token.repository.port';
 import { ValidationError } from '../../../../core/errors/app-error';
 
+/** Candle widths the API serves, in seconds. */
 export const VALID_RESOLUTIONS = [1, 60, 300, 900, 3600, 14400, 86400];
 
 export class GetCandlesticksUseCase {
-  constructor(
-    private readonly tradeRepository: TradeRepositoryPort,
-    private readonly tokenRepository: TokenRepositoryPort,
-  ) {}
+  constructor(private readonly tokenRepository: TokenRepositoryPort) {}
 
   async execute(
     address: string,
     resolutionSeconds = 1,
     fillGaps = false,
-  ): Promise<CandlestickBar[]> {
+  ): Promise<CandlestickEntity[]> {
     if (!address.startsWith('0x') || address.length !== 42) {
       throw new ValidationError(
         'Token address must be a valid 42-character hex string',
@@ -31,19 +28,6 @@ export class GetCandlesticksUseCase {
       );
     }
 
-    const token = await this.tokenRepository.findByAddress(address as Address);
-    const mkt = await this.tokenRepository.getMarketData(address as Address);
-    const trades = await this.tradeRepository.getTrades(address as Address, 1000, 0);
-
-    // Convert trades to chronological order for candlestick aggregation
-    const chronologicalTrades = [...trades].sort((a, b) => a.timestamp - b.timestamp);
-
-    return aggregateCandlesticks(chronologicalTrades, resolutionSeconds, {
-      startTime: token?.createdAt,
-      endTime: Date.now(),
-      fillGaps,
-      maxCandles: 1000,
-      fallbackPrice: mkt?.priceUsd || 0.0000042,
-    });
+    return this.tokenRepository.getCandlesticks(address as Address, resolutionSeconds, fillGaps);
   }
 }
