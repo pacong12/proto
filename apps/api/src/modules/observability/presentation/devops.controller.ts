@@ -45,6 +45,51 @@ export class DevopsController {
     return lines.join('\n') + '\n';
   }
 
+  /** The sign-in page shown on /devops without a valid token; inline code runs only with `nonce`. */
+  getLoginHtml(nonce: string): string {
+    const devopsNonce = nonce;
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'nonce-${devopsNonce}'; style-src 'nonce-${devopsNonce}'">
+  <title>401 Unauthorized - DevOps Gateway</title>
+  <style nonce="${devopsNonce}">
+    body { background: #121212; color: #ececec; font-family: ui-monospace, Menlo, monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    .card { background: #1a1a1a; border: 1px solid #292929; border-radius: 12px; padding: 24px; max-width: 420px; text-align: center; }
+    h1 { font-size: 18px; color: #ef4444; margin-bottom: 8px; }
+    p { font-size: 13px; color: #888; line-height: 1.5; margin-bottom: 16px; }
+    input { width: 100%; box-sizing: border-box; background: #121212; border: 1px solid #333; color: #fff; padding: 8px 12px; border-radius: 6px; font-family: inherit; font-size: 13px; margin-bottom: 12px; }
+    button { width: 100%; background: #10b981; color: #000; font-weight: 700; border: none; padding: 10px; border-radius: 6px; cursor: pointer; }
+  </style>
+  <script nonce="${devopsNonce}">
+    async function authenticate(e) {
+      e.preventDefault();
+      const token = document.getElementById('token-input').value;
+      const res = await fetch('/devops', { headers: { Authorization: 'Bearer ' + token } });
+      if (res.ok) {
+        // Safe DOM replacement — avoids document.write
+        document.documentElement.innerHTML = await res.text();
+      } else {
+        document.getElementById('err').textContent = 'Authentication failed.';
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="card">
+    <h1>DevOps Authentication Required</h1>
+    <p>This telemetry dashboard is restricted to authorized engineers.</p>
+    <form onsubmit="authenticate(event)">
+      <input type="password" id="token-input" placeholder="Enter DEVOPS_AUTH_TOKEN..." required autofocus />
+      <button type="submit">Authenticate</button>
+    </form>
+    <p id="err" style="color:#ef4444;margin-top:8px;"></p>
+  </div>
+</body>
+</html>`;
+  }
+
   getDashboardHtml(): string {
     return `<!DOCTYPE html>
 <html lang="en">
