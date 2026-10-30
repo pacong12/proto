@@ -1,13 +1,9 @@
-import { LaunchedTokenEntity, GraduationStatus, type NetworkConfig } from '@goton/shared-types';
-
-/** Shape of on-chain V2 bonding-curve state returned by the indexer. */
-export interface V2CurveState {
-  totalEthRaised: bigint;
-  virtualEthReserve: bigint;
-  virtualTokenReserve: bigint;
-  graduationTarget: bigint;
-  graduated: boolean;
-}
+import {
+  LaunchedTokenEntity,
+  GraduationStatus,
+  type CurveState,
+  type NetworkConfig,
+} from '@goton/shared-types';
 
 /**
  * Port for reading on-chain state.
@@ -50,8 +46,5 @@ export interface ChainIndexerPort {
   fetchWethBalance(account: `0x${string}`): Promise<bigint>;
 
   /** Reads live reserve + graduation state directly from the bonding-curve contract. */
-  fetchV2CurveState(
-    curveAddress: `0x${string}`,
-    networkConfig: NetworkConfig,
-  ): Promise<V2CurveState>;
+  fetchV2CurveState(curveAddress: `0x${string}`, networkConfig: NetworkConfig): Promise<CurveState>;
 }

@@ -201,7 +201,6 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router';
 import { Megaphone, Loader2, MessageCircle, Heart, BarChart2, Share2 } from 'lucide-vue-next';
-import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Empty } from '@/components/ui/empty';
@@ -227,8 +226,6 @@ interface Props {
 }
 
 defineProps<Props>();
-
-const { t } = useI18n();
 
 defineEmits<{
   (e: 'openCallModal'): void;

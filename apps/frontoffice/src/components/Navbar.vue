@@ -9,7 +9,6 @@ import {
   LogOut,
   Copy,
   Check,
-  ChevronDown,
   User,
   Menu,
   X,

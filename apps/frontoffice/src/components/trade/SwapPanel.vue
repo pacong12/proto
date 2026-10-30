@@ -12,7 +12,9 @@
         <div class="space-y-0.5">
           <span class="text-muted-foreground text-xs block">{{ t('yourHoldings') }}</span>
           <span class="font-bold text-foreground text-sm">
-            {{ formatTokenBalance(userTokenBalance) }} ${{ currentToken.symbol }}
+            {{ formatTokenBalance(userTokenBalance, currentToken.decimals || 18) }} ${{
+              currentToken.symbol
+            }}
           </span>
         </div>
         <div class="text-right space-y-0.5">
@@ -261,7 +263,11 @@
                   ...
                 </span>
                 <span v-else class="font-bold text-foreground">
-                  {{ isBuy ? formatEthBalance(balanceWei) : formatTokenBalance(userTokenBalance) }}
+                  {{
+                    isBuy
+                      ? formatQuoteBalance(balanceWei, currencySymbol)
+                      : formatTokenBalance(userTokenBalance, currentToken.decimals || 18)
+                  }}
                 </span>
                 <span class="text-muted-foreground">
                   {{ isBuy ? currencySymbol : currentToken.symbol }}
@@ -449,7 +455,7 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { useI18n } from '@/lib/i18n';
-import { formatCompactUsd } from '@/lib/utils';
+import { formatCompactUsd, formatQuoteBalance, formatTokenBalance } from '@/lib/utils';
 import type { LaunchedTokenEntity, NetworkConfig } from '@goton/shared-types';
 
 interface Props {
@@ -509,27 +515,5 @@ function selectSlippage(preset: number) {
   emit('update:slippage', preset);
   emit('update:isCustomSlippage', false);
   emit('update:customSlippageInput', '');
-}
-
-function formatEthBalance(wei: bigint): string {
-  const isUsdQuote =
-    props.currencySymbol === 'USDC' ||
-    props.currencySymbol === 'USDT' ||
-    props.currencySymbol === 'USDG';
-  const val = Number(wei) / 1e18;
-  if (val === 0) return isUsdQuote ? '0.00' : '0.0000';
-  if (isUsdQuote) return val < 0.01 ? val.toFixed(4) : val.toFixed(2);
-  return val < 0.0001 ? val.toFixed(6) : val.toFixed(4);
-}
-
-function formatTokenBalance(wei: bigint): string {
-  const decimals = props.currentToken.decimals || 18;
-  const val = Number(wei) / 10 ** decimals;
-  if (val === 0) return '0.00';
-  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(2)}M`;
-  if (val >= 1_000) return `${(val / 1_000).toFixed(2)}K`;
-  if (val >= 1) return val.toFixed(2);
-  if (val >= 0.0001) return val.toFixed(4);
-  return val.toFixed(6);
 }
 </script>

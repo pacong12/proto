@@ -403,38 +403,24 @@ import { useRouter } from 'vue-router';
 import { useWallet } from '@/composables/useWallet';
 import { useTokenStore } from '@/composables/useTokenStore';
 import { usePinnedTokens } from '@/composables/usePinnedTokens';
-import { useFeed, isWhaleCaller, type FeedFilterType } from '@/composables/useFeed';
+import { useFeed, type FeedFilterType } from '@/composables/useFeed';
 import { useFollows } from '@/composables/useFollows';
 import { uploadFile } from '@/lib/api-client';
-import {
-  Search,
-  Loader2,
-  BarChart2,
-  ChevronDown,
-  Image as ImageIcon,
-  AlertCircle,
-  Megaphone,
-  Flame,
-  ShieldCheck,
-  X,
-  Link2,
-} from 'lucide-vue-next';
+import { Loader2, Image as ImageIcon, Megaphone, ShieldCheck, X, Link2 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Pagination } from '@/components/ui/pagination';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { Jazzicon } from '@/components/ui/avatar';
-import CashtagText from './CashtagText.vue';
 import ShareModal from './ShareModal.vue';
 import ThreadModal from './ThreadModal.vue';
 import QuoteModal from './QuoteModal.vue';
 import FeedAlphaTicker from './FeedAlphaTicker.vue';
 import FeedSidebar from './FeedSidebar.vue';
 import FeedCalloutCard from './FeedCalloutCard.vue';
-import { shortenAddress, getChainIcon, getChainShortName, formatMarketCap } from '@/lib/utils';
+import { getChainIcon, getChainShortName, formatMarketCap } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';
 import { SUPPORTED_CHAINS } from '@goton/shared-types';
 import { getUserIdentity } from '@/lib/username';
@@ -449,13 +435,7 @@ const emit = defineEmits<{
 const router = useRouter();
 const { t } = useI18n();
 const { account, openWallet, activeNetwork } = useWallet();
-const {
-  tokens: allTokens,
-  networkTokens,
-  isTokenOnActiveNetwork,
-  getTokenNetwork,
-  fetchTokens,
-} = useTokenStore();
+const { tokens: allTokens, networkTokens, getTokenNetwork, fetchTokens } = useTokenStore();
 const {
   callouts,
   followedAuthors,
@@ -522,7 +502,7 @@ watch(activeNetwork, () => {
 });
 
 // Watchlist Pin Feature — shared singleton composable (FE-02)
-const { pinnedTokens, togglePin, isPinned } = usePinnedTokens();
+const { togglePin, isPinned } = usePinnedTokens();
 
 // Social Modals state
 const isShareModalOpen = ref(false);
@@ -585,8 +565,6 @@ const isUploadingMedia = ref(false);
 const showMediaInput = ref(false);
 const isPostingCall = ref(false);
 const composerError = ref<string | null>(null);
-const isTokenPickerOpen = ref(false);
-const tokenSearchQuery = ref('');
 const selectedToken = ref<LaunchedTokenEntity | null>(null);
 const callerTokenBalance = ref<number>(0);
 const checkingBalance = ref(false);
@@ -757,20 +735,6 @@ function handleFilterClick(key: FeedFilterType): void {
   currentPage.value = 1;
 }
 
-const availableTokensList = computed(() => {
-  if (!networkTokens.value) return [];
-  if (!tokenSearchQuery.value.trim()) return networkTokens.value.slice(0, 15);
-  const q = tokenSearchQuery.value.trim().toLowerCase();
-  return networkTokens.value
-    .filter(
-      (tItem) =>
-        tItem.token.symbol.toLowerCase().includes(q) ||
-        tItem.token.name.toLowerCase().includes(q) ||
-        tItem.token.address.toLowerCase().includes(q),
-    )
-    .slice(0, 15);
-});
-
 // Following tab: the authors the connected wallet follows.
 const { list: listFollows } = useFollows();
 watch(
@@ -848,15 +812,6 @@ const callerPositionUsd = computed(() => {
   const price = item?.marketData?.priceUsd || 0;
   return callerTokenBalance.value * price;
 });
-
-function pickToken(token: LaunchedTokenEntity): void {
-  selectedToken.value = token;
-  isTokenPickerOpen.value = false;
-  checkCallerPosition(token.address);
-  if (!composerContent.value) {
-    composerContent.value = `$${token.symbol} `;
-  }
-}
 
 async function submitCallout(): Promise<void> {
   if (!account.value) {

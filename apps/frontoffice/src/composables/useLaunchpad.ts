@@ -29,7 +29,6 @@ import {
   getNetworkConfig,
   launchpadV2FactoryAbi,
   launchpadTokenAbi,
-  bondingCurveAbi,
   gotonFeeSplitterAbi,
   resolveFeeSplitter,
   type LaunchedTokenEntity,
@@ -39,7 +38,6 @@ import {
 import { getPublicClient, getWalletClient } from '../lib/viem-client';
 import { getChainAdapter } from '../chains';
 import { walletChainId } from '../lib/wallet-store';
-import { getLiveEthPriceUsd } from '../lib/price-feed';
 
 export type LaunchStep =
   | 'idle'
@@ -202,157 +200,6 @@ export function useLaunchpad() {
       return null;
     } finally {
       loading.value = false;
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Read: fetch token details from chain
-  // ---------------------------------------------------------------------------
-
-  async function fetchTokenDetails(tokenAddress: `0x${string}`) {
-    try {
-      const network = getNetworkConfig(walletChainId.value ?? undefined);
-      const client = getPublicClient(network.chainId);
-      const factoryAddress = network.contracts.factoryV2 ?? network.contracts.factory;
-
-      const [name, symbol, logo, description, launchRecord, restrictionsEndBlock, launchBlock] =
-        await Promise.all([
-          client.readContract({
-            address: tokenAddress,
-            abi: launchpadTokenAbi,
-            functionName: 'name',
-          }),
-          client.readContract({
-            address: tokenAddress,
-            abi: launchpadTokenAbi,
-            functionName: 'symbol',
-          }),
-          client.readContract({
-            address: tokenAddress,
-            abi: launchpadTokenAbi,
-            functionName: 'logo',
-          }),
-          client.readContract({
-            address: tokenAddress,
-            abi: launchpadTokenAbi,
-            functionName: 'description',
-          }),
-          client
-            .readContract({
-              address: factoryAddress,
-              abi: launchpadV2FactoryAbi,
-              functionName: 'launches',
-              args: [tokenAddress],
-            })
-            .catch(() => null),
-          client
-            .readContract({
-              address: tokenAddress,
-              abi: launchpadTokenAbi,
-              functionName: 'restrictionsEndBlock',
-            })
-            .catch(() => 0n),
-          client
-            .readContract({
-              address: tokenAddress,
-              abi: launchpadTokenAbi,
-              functionName: 'launchBlock',
-            })
-            .catch(() => 0n),
-        ]);
-
-      const curveAddress =
-        launchRecord && launchRecord[1] !== '0x0000000000000000000000000000000000000000'
-          ? (launchRecord[1] as `0x${string}`)
-          : null;
-      const deployer =
-        launchRecord && launchRecord[2] !== '0x0000000000000000000000000000000000000000'
-          ? (launchRecord[2] as `0x${string}`)
-          : tokenAddress;
-
-      let graduated = launchRecord ? Boolean(launchRecord[4]) : false;
-      let totalRaisedWei = 0n;
-      let targetWei = network.launchConfigV2?.graduationTargetWei ?? 4_200_000_000_000_000_000n;
-
-      if (curveAddress) {
-        try {
-          const [raised, target, grad] = await Promise.all([
-            client
-              .readContract({
-                address: curveAddress,
-                abi: bondingCurveAbi,
-                functionName: 'totalEthRaised',
-              })
-              .catch(() => 0n),
-            client
-              .readContract({
-                address: curveAddress,
-                abi: bondingCurveAbi,
-                functionName: 'graduationTarget',
-              })
-              .catch(() => targetWei),
-            client
-              .readContract({
-                address: curveAddress,
-                abi: bondingCurveAbi,
-                functionName: 'graduated',
-              })
-              .catch(() => graduated),
-          ]);
-          totalRaisedWei = raised;
-          targetWei = target;
-          graduated = grad;
-        } catch {
-          // ignore
-        }
-      }
-
-      const progress =
-        Number(targetWei) > 0 ? Math.min(1.0, Number(totalRaisedWei) / Number(targetWei)) : 0;
-
-      const ethPriceUsd = await getLiveEthPriceUsd();
-      const priceInWeth = 0.0000042;
-      const priceUsd = priceInWeth * ethPriceUsd;
-      const supplyTokens = 1_000_000_000;
-      const marketCapUsd = priceUsd * supplyTokens;
-
-      return {
-        token: {
-          address: tokenAddress,
-          name,
-          symbol,
-          decimals: 18,
-          totalSupply: (1_000_000_000n * 10n ** 18n).toString(),
-          logo,
-          description,
-          socials: {},
-          deployer,
-          pairedToken: network.contracts.weth,
-          poolAddress: curveAddress ?? tokenAddress,
-          curveAddress: curveAddress ?? undefined,
-          isToken0: false,
-          poolFee: 10000,
-          positionId: 0n,
-          restrictionsEndBlock: restrictionsEndBlock as bigint,
-          launchBlock: launchBlock as bigint,
-          createdAt: Date.now(),
-        },
-        marketData: {
-          address: tokenAddress,
-          priceInWeth,
-          priceUsd,
-          marketCapUsd,
-          fdvUsd: marketCapUsd,
-          pairedPrincipalWeth: (Number(totalRaisedWei) / 1e18).toFixed(4),
-          graduationThresholdWeth: (Number(targetWei) / 1e18).toFixed(1),
-          graduationProgress: progress,
-          isGraduated: graduated,
-          volume24hUsd: 0,
-        },
-      };
-    } catch (err) {
-      error.value = (err as Error).message;
-      return null;
     }
   }
 
@@ -661,7 +508,6 @@ export function useLaunchpad() {
     resetLaunchState,
     tokens,
     launchToken,
-    fetchTokenDetails,
     claimFees,
     setFeeRedirect,
     setTokenTax,

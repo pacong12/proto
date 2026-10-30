@@ -1,6 +1,7 @@
 export * from './constants';
 export * from './bonding-curve';
 export * from './fee-distribution';
+export * from './market-data';
 export * from './ohlcv-aggregator';
 export * from './pnl';
 export * from './revenue-split';

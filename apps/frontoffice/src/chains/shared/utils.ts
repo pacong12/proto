@@ -1,9 +1,5 @@
 import { parseEther } from 'viem';
-import { UNDEPLOYED } from '@goton/shared-types';
-
-export function isDeployed(address?: string | null): address is `0x${string}` {
-  return Boolean(address) && address!.toLowerCase() !== UNDEPLOYED;
-}
+export { isDeployed } from '@goton/shared-types';
 
 /**
  * Parses a user-entered quote amount (native units, 18 dp) to wei, keeping at most 6 decimals.
