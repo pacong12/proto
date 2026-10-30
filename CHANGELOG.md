@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/pacong12/proto/compare/v0.7.3...v0.8.0) (2026-10-30)
+
+
+### Features
+
+* **api:** verify every launched token and curve on Sourcify ([#215](https://github.com/pacong12/proto/issues/215)) ([b48f9b8](https://github.com/pacong12/proto/commit/b48f9b8bb34e5e1ffc6123c4baf9ebb2997c7319))
+
 ## [0.7.3](https://github.com/pacong12/proto/compare/v0.7.2...v0.7.3) (2026-10-30)
 
 
