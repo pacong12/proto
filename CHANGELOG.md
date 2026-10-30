@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.7.2](https://github.com/pacong12/proto/compare/v0.7.1...v0.7.2) (2026-10-30)
+
+
+### Bug Fixes
+
+* **api:** accurate prices, traders, holders, 24h stats and DEX feed ([#207](https://github.com/pacong12/proto/issues/207)) ([8c2c12f](https://github.com/pacong12/proto/commit/8c2c12fe1192c2eb6e2fc584de367710817da96b))
+* **api:** DEX Screener adapter per spec v1.1, v4 pool ids after graduation ([#208](https://github.com/pacong12/proto/issues/208)) ([cddc36e](https://github.com/pacong12/proto/commit/cddc36e4fe813ac430b4be6f2b9839a71003fe95))
+* **frontoffice:** check the wallet's chain before every transaction ([#206](https://github.com/pacong12/proto/issues/206)) ([663fc56](https://github.com/pacong12/proto/commit/663fc561cffa03e5d2821a39667b97b3b2d96f1d))
+* launch readiness for contracts, keepers, uploads and trading flows ([#204](https://github.com/pacong12/proto/issues/204)) ([d32416b](https://github.com/pacong12/proto/commit/d32416b301a6f97f6b49aeb6dd49fac341bb11e9))
+* **worker:** keep thin token pages and crawler files out of search ([#209](https://github.com/pacong12/proto/issues/209)) ([f47c255](https://github.com/pacong12/proto/commit/f47c2550ff6947cda5c7318aeacb5820fbe18d5a))
+
 ## [0.7.1](https://github.com/pacong12/proto/compare/v0.7.0...v0.7.1) (2026-10-24)
 
 
