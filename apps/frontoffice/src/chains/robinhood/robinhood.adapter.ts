@@ -1,5 +1,16 @@
-import { parseEventLogs, type PublicClient, type WalletClient } from 'viem';
-import { ROBINHOOD_CHAIN, launchpadV2FactoryAbi, gotonV4GraduatorAbi } from '@goton/shared-types';
+import {
+  getAbiItem,
+  parseEventLogs,
+  toFunctionSelector,
+  type PublicClient,
+  type WalletClient,
+} from 'viem';
+import {
+  ROBINHOOD_CHAIN,
+  launchpadTokenAbi,
+  launchpadV2FactoryAbi,
+  gotonV4GraduatorAbi,
+} from '@goton/shared-types';
 import { revenueSplitToBps, taxPercentToBps } from '@goton/math-sdk';
 import type { ChainAdapter, ChainLaunchParams, ChainLaunchResult, ChainSwapParams } from '../types';
 import { waitForReceiptWithFallback } from '../../lib/viem-client';
@@ -8,6 +19,34 @@ import { executeV4RouterSwap } from '../shared/v4-swap';
 import { isDeployed, parseInitialBuyWei } from '../shared/utils';
 
 const NATIVE_ETH = '0x0000000000000000000000000000000000000000' as const;
+
+// PUSH4 <selector>, as the factory's function dispatcher has it.
+const LAUNCH_WITH_CONFIG_DISPATCH = `63${toFunctionSelector(
+  getAbiItem({ abi: launchpadV2FactoryAbi, name: 'launchTokenV2WithConfig' }),
+).slice(2)}`;
+const launchConfigSupport = new Map<string, boolean>();
+
+/**
+ * Factories deployed before the launch release have no `launchTokenV2WithConfig`; a call to it
+ * reverts without data. Those factories still take the tax and split as follow-up transactions.
+ * When the bytecode cannot be read, the configured launch is assumed.
+ */
+async function factoryTakesLaunchConfig(
+  publicClient: PublicClient,
+  factory: `0x${string}`,
+): Promise<boolean> {
+  const known = launchConfigSupport.get(factory);
+  if (known !== undefined) return known;
+  try {
+    const code = await publicClient.getCode({ address: factory });
+    if (!code || code === '0x') return true;
+    const supported = code.toLowerCase().includes(LAUNCH_WITH_CONFIG_DISPATCH);
+    launchConfigSupport.set(factory, supported);
+    return supported;
+  } catch {
+    return true;
+  }
+}
 
 /**
  * Robinhood Chain: bonding curve, then permissionless graduation into a locked native-ETH
@@ -51,8 +90,9 @@ export class RobinhoodChainAdapter implements ChainAdapter {
       ? revenueSplitToBps(params.revenueSplit)
       : { holdersBps: 0, burnBps: 0, creatorBps: 0, liquidityBps: 0 };
     const configured = buyTaxBps > 0 || sellTaxBps > 0 || withSplit;
+    const inLaunchTx = configured && (await factoryTakesLaunchConfig(publicClient, factory));
     const value = this.network.launchConfig.launchFeeWei + initialBuyWei;
-    const hash = configured
+    const hash = inLaunchTx
       ? await walletClient.writeContract({
           address: factory,
           abi: launchpadV2FactoryAbi,
@@ -99,6 +139,35 @@ export class RobinhoodChainAdapter implements ChainAdapter {
       taxApplied: true,
       splitApplied: !params.revenueSplit || withSplit,
     };
+    if (!configured || inLaunchTx) return result;
+
+    // Older factory: tax and split follow the launch, before any third-party buy locks them.
+    if (buyTaxBps > 0 || sellTaxBps > 0) {
+      try {
+        const taxHash = await walletClient.writeContract({
+          address: result.tokenAddress,
+          abi: launchpadTokenAbi,
+          functionName: 'setInitialTaxConfig',
+          args: [buyTaxBps, sellTaxBps, params.creatorTaxWallet ?? account],
+          account,
+          chain: walletClient.chain,
+        });
+        const taxReceipt = await waitForReceiptWithFallback(publicClient, taxHash, walletClient);
+        result.taxApplied = taxReceipt?.status === 'success';
+      } catch (err) {
+        console.warn('[RobinhoodChainAdapter] Initial tax was not applied:', err);
+        result.taxApplied = false;
+      }
+    }
+    if (withSplit && params.revenueSplit) {
+      result.splitApplied = await this.applyRevenueSplit(
+        result.tokenAddress,
+        params.revenueSplit,
+        walletClient,
+        publicClient,
+        account,
+      );
+    }
     return result;
   }
 
