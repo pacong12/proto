@@ -111,6 +111,12 @@ export function useSwap() {
       // Clean Architecture: Delegate swap execution to dedicated chain adapter (Strategy Pattern)
       const targetChainId = params.chainId ?? walletChainId.value ?? undefined;
       const chainAdapter = getChainAdapter(targetChainId);
+      // The adapters send with the wallet's own chain, which viem never flags as a mismatch. A
+      // wallet switched behind the UI's back would send the swap, value included, to this
+      // chain's contract address on another chain, where nothing is deployed.
+      if ((await walletClient.getChainId()) !== chainAdapter.chainId) {
+        throw new Error(`Switch your wallet to ${chainAdapter.network.name} and retry.`);
+      }
 
       return await chainAdapter.executeSwap(
         {

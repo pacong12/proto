@@ -22,6 +22,9 @@ export async function createTeamSplitter(
   const wallet = await getWalletClient();
   if (!wallet) throw new Error('Connect your wallet first');
   const [account] = await wallet.getAddresses();
+  if ((await wallet.getChainId()) !== network.chainId) {
+    throw new Error(`Switch your wallet to ${network.name} and retry.`);
+  }
   const publicClient = getPublicClient(network.chainId);
   // A fresh salt per team, so the same members can form more than one team.
   const salt = `0x${Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) =>
