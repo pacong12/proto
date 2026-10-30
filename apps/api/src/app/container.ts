@@ -11,7 +11,7 @@ import {
   SecurityGateService,
   SecurityController,
   EventPollerService,
-  IpfsService,
+  createIpfsService,
   IpfsController,
   CoinGeckoPriceFeedAdapter,
   logger,
@@ -28,6 +28,7 @@ import {
   GetCandlesticksUseCase,
   TradeController,
 } from '../modules/trades';
+import { DexScreenerService, GeckoTerminalService } from '../modules/dex';
 import { TradeSyncService } from '../modules/tokens/infrastructure/indexer/trade-sync.service';
 
 /** Composition root: every service the routes and the background jobs share. */
@@ -80,10 +81,17 @@ export const tradeController = new TradeController(
 export const securityGateService = new SecurityGateService();
 export const securityController = new SecurityController(securityGateService);
 
-export const ipfsService = new IpfsService();
+export const ipfsService = createIpfsService();
 export const ipfsController = new IpfsController(ipfsService);
 
 export const chainRegistry = new ChainRegistry(priceFeed);
+
+export const dexScreenerService = new DexScreenerService(repository, chainRegistry);
+export const geckoTerminalService = new GeckoTerminalService(
+  repository,
+  getTokenByAddressUseCase,
+  getCandlesticksUseCase,
+);
 
 /** One event poller per supported chain, keyed by chain ID. */
 export const pollers = new Map(

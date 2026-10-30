@@ -1,2 +1,2 @@
-export * from './chain.interface';
-export * from './chain.registry';
+export * from './domain/chain.port';
+export * from './infrastructure/chain.registry';
