@@ -72,9 +72,7 @@ describe('v4 swaps after graduation', () => {
       { ...ROBINHOOD_CHAIN, contracts: { ...ROBINHOOD_CHAIN.contracts, poolManagerV4: hex(20) } },
     );
 
-    const saved = await (
-      poller as unknown as { pollV4Swaps(from: bigint, to: bigint): Promise<number> }
-    ).pollV4Swaps(500n, 500n);
+    const saved = await poller.trades.pollV4Swaps(500n, 500n);
     expect(saved).toBe(1);
 
     const [trade] = await repository.getTrades(TOKEN, 10, 0);
