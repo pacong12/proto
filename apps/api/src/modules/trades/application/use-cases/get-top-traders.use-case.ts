@@ -1,5 +1,5 @@
 import type { Address } from 'viem';
-import { ARC_CHAIN } from '@goton/shared-types';
+import { resolveTokenNetwork } from '@goton/shared-types';
 import type { TradeRepositoryPort } from '../../domain/ports/trade-repository.port';
 import type { TokenRepositoryPort } from '../../../tokens/domain/ports/token.repository.port';
 import type { PriceFeedPort } from '../../../tokens/domain/ports/price-feed.port';
@@ -53,15 +53,12 @@ export class GetTopTradersUseCase {
       }
     >();
 
-    // Multi-chain: Arc tokens use USDC quote (always $1.00)
-    const isArcToken = token?.pairedToken?.toLowerCase() === ARC_CHAIN.contracts.weth.toLowerCase();
-    let quotePrice = 1.0;
-    if (!isArcToken) {
-      try {
-        quotePrice = await this.priceFeed.getEthPriceUsd();
-      } catch {
-        quotePrice = 2500; // Resilient fallback
-      }
+    // Each chain prices trades in its own quote asset (ETH, or USDC at $1).
+    let quotePrice: number;
+    try {
+      quotePrice = await this.priceFeed.getQuoteAssetPriceUsd(resolveTokenNetwork(token).chainId);
+    } catch {
+      quotePrice = 2500; // Resilient fallback: only the floating ETH quote can fail
     }
 
     // Trades are sorted newest first, sort chronological to determine first buy

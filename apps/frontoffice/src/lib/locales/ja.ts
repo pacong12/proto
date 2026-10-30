@@ -72,7 +72,7 @@ const messages: Record<string, string> = {
   addressCopied: 'アドレスをコピーしました！',
   switchManageWallet: 'ウォレットを切り替え',
   disconnect: '接続解除',
-  switchToRobinhood: 'Robinhoodに切り替え',
+  switchToNetwork: '{name}に切り替え',
   noMatchingTokens: '一致する銘柄がありません：',
   typeSearchHint: '銘柄名、シンボル、または0xアドレスを入力...',
   navigateHint: '移動',
@@ -344,7 +344,7 @@ const messages: Record<string, string> = {
   maintenanceBanner:
     '定期メンテナンスを実施中です。一部の機能が一時的にご利用いただけない場合があります。',
   maintenanceDismiss: 'お知らせを閉じる',
-  v2SubtitleArc:
+  v2SubtitleInPool:
     'ロックされた Uniswap v4 プールに直接トークンを発行します。取引ごとの税は USDC で支払われます。',
   buySellPressure: '買い / 売り圧力',
   timeWindow: '期間',
@@ -386,9 +386,9 @@ const messages: Record<string, string> = {
   footerCurveToV4: 'ボンディングカーブ、その後 Uniswap v4',
   footerPoolFromLaunch: 'ローンチ時から Uniswap v4 プール',
   footerLiquidityLocked: '流動性は永久ロック',
-  footerSplitRobinhood: 'LP 手数料：作成者 70% / プロトコル 30%',
-  footerSplitArc: '税：プロトコル 20%、残りはあなたの配分',
-  arcPoolLiveHint:
+  footerSplitCurve: 'LP 手数料：作成者 70% / プロトコル 30%',
+  footerSplitInPool: '税：プロトコル 20%、残りはあなたの配分',
+  inPoolLiveHint:
     '最初のブロックからロックされた Uniswap v4 プールで取引されます。埋めるカーブはありません。',
   memestockMomentum: 'モメンタム',
   creatorHolds: '作成者の保有',
@@ -418,9 +418,9 @@ const messages: Record<string, string> = {
   addTeamWallet: 'チームウォレットを追加',
   removeTeamWallet: 'ウォレットを削除',
   feeRecipientDefault: '作成者の手数料と税はすべて次へ:',
-  teamFeesRobinhood:
+  teamFeesCurve:
     'ローンチ前にチームウォレットのコントラクトを作成します。トークン税はローンチ時からそこに入り、卒業後はプロフィールからプール手数料をそこへ向けられます(48時間のタイムロック)。各メンバーが自分の分を引き出します。',
-  teamFeesArc:
+  teamFeesInPool:
     'ローンチ前にチームウォレットのコントラクトを作成します。ローンチ時に提案した受取先変更が48時間後に有効になるまで(プロフィールで承認)、手数料と税はあなたに入ります。各メンバーが自分の分を引き出します。',
   teamFeesUnavailable:
     'このチェーンではまだチーム分配を利用できません。作成者の手数料と税はすべてあなたのウォレットに入ります。',

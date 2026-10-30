@@ -73,7 +73,7 @@ const messages: Record<string, string> = {
   addressCopied: '¡Dirección Copiada!',
   switchManageWallet: 'Cambiar Billetera',
   disconnect: 'Desconectar',
-  switchToRobinhood: 'Cambiar a Robinhood',
+  switchToNetwork: 'Cambiar a {name}',
   noMatchingTokens: 'No se encontraron tokens para',
   typeSearchHint: 'Escribe el nombre del token, símbolo o dirección 0x...',
   navigateHint: 'Navegar',
@@ -348,7 +348,7 @@ const messages: Record<string, string> = {
   maintenanceBanner:
     'Mantenimiento programado en curso. Algunas funciones pueden no estar disponibles por un tiempo.',
   maintenanceDismiss: 'Cerrar aviso',
-  v2SubtitleArc:
+  v2SubtitleInPool:
     'Lanza un token directamente en un pool bloqueado de Uniswap v4. Tu impuesto se paga en USDC en cada operación.',
   buySellPressure: 'Presión de compra / venta',
   timeWindow: 'Ventana de tiempo',
@@ -393,9 +393,9 @@ const messages: Record<string, string> = {
   footerCurveToV4: 'Curva de bonding, luego Uniswap v4',
   footerPoolFromLaunch: 'Pool de Uniswap v4 desde el lanzamiento',
   footerLiquidityLocked: 'Liquidez bloqueada para siempre',
-  footerSplitRobinhood: 'Comisiones LP: 70% creador / 30% protocolo',
-  footerSplitArc: 'Impuesto: 20% protocolo, el resto según tu reparto',
-  arcPoolLiveHint:
+  footerSplitCurve: 'Comisiones LP: 70% creador / 30% protocolo',
+  footerSplitInPool: 'Impuesto: 20% protocolo, el resto según tu reparto',
+  inPoolLiveHint:
     'Se negocia en su pool bloqueado de Uniswap v4 desde el primer bloque. No hay curva que llenar.',
   memestockMomentum: 'Momentum',
   creatorHolds: 'El creador tiene',
@@ -425,9 +425,9 @@ const messages: Record<string, string> = {
   addTeamWallet: 'Añadir billetera del equipo',
   removeTeamWallet: 'Quitar billetera',
   feeRecipientDefault: 'Todas las comisiones e impuestos del creador van a',
-  teamFeesRobinhood:
+  teamFeesCurve:
     'Se crea un contrato de billetera del equipo antes del lanzamiento. El impuesto del token llega a él desde el lanzamiento; tras la graduación, dirige las comisiones del pool a él desde tu perfil (bloqueo de 48 horas). Cada miembro retira su parte.',
-  teamFeesArc:
+  teamFeesInPool:
     'Se crea un contrato de billetera del equipo antes del lanzamiento. Las comisiones e impuestos van a ti hasta que el cambio de pago propuesto al lanzar se active tras 48 horas (acéptalo desde tu perfil). Cada miembro retira su parte.',
   teamFeesUnavailable:
     'Los pagos de equipo aún no están disponibles en esta cadena. Todas las comisiones e impuestos van a tu billetera.',

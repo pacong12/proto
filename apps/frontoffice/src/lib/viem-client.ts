@@ -4,16 +4,17 @@ import {
   fallback,
   custom,
   createWalletClient,
-  defineChain,
   type PublicClient,
   type WalletClient,
   type TransactionReceipt,
 } from 'viem';
 import { appKitConfigured, loadAppKit } from './appkit-loader';
 import {
-  ROBINHOOD_CHAIN,
-  ARC_CHAIN,
+  CHAINS,
+  DEFAULT_NETWORK,
   SUPPORTED_CHAINS,
+  rpcUrlsFor,
+  toViemChain,
   type NetworkConfig,
 } from '@goton/shared-types';
 import { walletProvider, walletChainId, STORAGE_PROVIDER_ID_KEY } from './wallet-store';
@@ -23,29 +24,8 @@ import { assertTermsAccepted } from './consent';
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-function toViemChain(cfg: NetworkConfig) {
-  const rpcList = cfg.rpcUrls && cfg.rpcUrls.length > 0 ? cfg.rpcUrls : [cfg.rpcUrl];
-  return defineChain({
-    id: cfg.chainId,
-    name: cfg.name,
-    nativeCurrency: cfg.nativeCurrency,
-    rpcUrls: {
-      default: { http: rpcList },
-    },
-    blockExplorers: {
-      default: {
-        name: 'Blockscout',
-        url: cfg.blockExplorer,
-      },
-    },
-  });
-}
-
-const mainnetChain = toViemChain(ROBINHOOD_CHAIN);
-const arcMainnetChain = toViemChain(ARC_CHAIN);
-
 function createPublicTransport(cfg: NetworkConfig) {
-  const urls = cfg.rpcUrls && cfg.rpcUrls.length > 0 ? cfg.rpcUrls : [cfg.rpcUrl];
+  const urls = rpcUrlsFor(cfg);
   if (urls.length === 1) {
     return http(urls[0], { retryCount: 3, retryDelay: 500, timeout: 10_000 });
   }
@@ -59,33 +39,26 @@ function createPublicTransport(cfg: NetworkConfig) {
 // Public clients - one instance per supported chain (fix MED-03)
 // ---------------------------------------------------------------------------
 
-const publicClientMainnet: PublicClient = createPublicClient({
-  chain: mainnetChain,
-  transport: createPublicTransport(ROBINHOOD_CHAIN),
-});
-
-const publicClientArcMainnet: PublicClient = createPublicClient({
-  chain: arcMainnetChain,
-  transport: createPublicTransport(ARC_CHAIN),
-});
+const publicClients = new Map<number, PublicClient>(
+  CHAINS.map((cfg) => [
+    cfg.chainId,
+    createPublicClient({ chain: toViemChain(cfg), transport: createPublicTransport(cfg) }),
+  ]),
+);
 
 /**
  * Return the PublicClient matching the wallet's active chain.
- * Falls back to mainnet when the chain is unknown or the wallet is disconnected.
+ * Falls back to the default network when the chain is unknown or the wallet is disconnected.
  * All readContract and waitForTransactionReceipt calls should use this
  * so they follow the connected chain (fix MED-01 and MED-03).
  */
 export function getPublicClient(explicitChainId?: number): PublicClient {
   const chainId = explicitChainId ?? walletChainId.value;
-  if (chainId === ARC_CHAIN.chainId) return publicClientArcMainnet;
-  return publicClientMainnet;
+  return (
+    (chainId ? publicClients.get(chainId) : undefined) ??
+    publicClients.get(DEFAULT_NETWORK.chainId)!
+  );
 }
-
-/**
- * Static alias kept for backward compatibility in places that always target mainnet.
- * Prefer getPublicClient() for any chain-sensitive call.
- */
-export const publicClient: PublicClient = publicClientMainnet;
 
 // ---------------------------------------------------------------------------
 // Wallet clients
@@ -123,10 +96,8 @@ export function guardWalletWrites<T extends object>(client: T): T {
 }
 
 export function createWalletClientFromProvider(provider: unknown, chainId?: number): WalletClient {
-  const cfg = chainId ? SUPPORTED_CHAINS[chainId] : undefined;
-  const chain = cfg ? toViemChain(cfg) : mainnetChain;
   return createWalletClient({
-    chain,
+    chain: toViemChain((chainId ? SUPPORTED_CHAINS[chainId] : undefined) ?? DEFAULT_NETWORK),
     transport: custom(provider as never),
   });
 }

@@ -10,8 +10,7 @@ import {
   CandlestickEntity,
   TokenCommentEntity,
   getUserIdentity,
-  ARC_CHAIN,
-  ROBINHOOD_CHAIN,
+  CHAINS,
   type CreatorProfile,
 } from '@goton/shared-types';
 import type { TokenRepositoryPort, TradeFlow } from '../../domain/ports/token.repository.port';
@@ -23,10 +22,9 @@ import {
 } from '../../domain/services/token-aggregation.service';
 
 /** Contracts that hold v4 pool liquidity for every pool on their chain. */
-const POOL_HOLDERS = [
-  ROBINHOOD_CHAIN.contracts.poolManagerV4,
-  ARC_CHAIN.contracts.poolManagerV4,
-].filter((a): a is `0x${string}` => Boolean(a));
+const POOL_HOLDERS = CHAINS.map((net) => net.contracts.poolManagerV4).filter(
+  (a): a is `0x${string}` => Boolean(a),
+);
 
 interface TokenRow {
   address: string;

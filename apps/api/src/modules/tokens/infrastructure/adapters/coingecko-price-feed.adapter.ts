@@ -1,4 +1,4 @@
-import { getNetworkConfig } from '@goton/shared-types';
+import { getNetworkConfig, stableQuoteUsd } from '@goton/shared-types';
 import { PriceFeedPort } from '../../domain/ports/price-feed.port';
 
 export interface CoinGeckoConfig {
@@ -97,11 +97,6 @@ export class CoinGeckoPriceFeedAdapter implements PriceFeedPort {
   }
 
   async getQuoteAssetPriceUsd(chainId: number): Promise<number> {
-    const net = getNetworkConfig(chainId);
-    const sym = net.nativeCurrency.symbol.toUpperCase();
-    if (sym === 'USDC' || sym === 'USDT' || sym === 'USDG' || sym === 'DAI') {
-      return 1.0;
-    }
-    return this.getEthPriceUsd();
+    return stableQuoteUsd(getNetworkConfig(chainId)) ?? this.getEthPriceUsd();
   }
 }
