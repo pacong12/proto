@@ -38,6 +38,11 @@ export interface TokenRepositoryPort {
   findStaleMarketData?(olderThanMs: number, limit: number): Promise<`0x${string}`[]>;
   /** Buy vs sell activity since `sinceMs`: quote volume, trade counts and distinct traders. */
   getTradeFlow?(tokenAddress: `0x${string}`, sinceMs: number): Promise<TradeFlow>;
+  /**
+   * The newest trade at or before `cutoffMs`, or the token's first trade if it is younger: the
+   * reference price for a 24h change, found without loading the trades in between.
+   */
+  getPriceAnchor?(tokenAddress: `0x${string}`, cutoffMs: number): Promise<TradeEventEntity | null>;
   /** Escrowed limit orders (GotonLimitOrders), keyed by `${chainId}-${orderId}`. */
   saveLimitOrder?(order: LimitOrderEntity): Promise<void>;
   updateLimitOrder?(
@@ -66,14 +71,26 @@ export interface TokenRepositoryPort {
     tokenAddress: string,
     limit?: number,
   ): Promise<Array<{ address: string; balance: string; percent: number }>>;
+  /** Stores on-chain balances; a zero balance removes the holder. */
+  saveBalances?(
+    tokenAddress: `0x${string}`,
+    balances: Array<{ holder: `0x${string}`; balance: bigint }>,
+  ): Promise<void>;
+  /** Marks a token whose Transfer history since launch is indexed: getHolders then uses balances. */
+  markHoldersIndexed?(tokenAddress: `0x${string}`): Promise<void>;
+  getHolderIndexedTokens?(): Promise<Set<string>>;
   getRecentTrades?(limit?: number): Promise<TradeEventEntity[]>;
   getTradesByTrader?(trader: string, limit?: number): Promise<TradeEventEntity[]>;
   getTradesSince?(sinceMs: number): Promise<TradeEventEntity[]>;
-  /** Trades with fromBlock <= block <= toBlock (toBlock 0 = no upper bound), oldest first. */
+  /**
+   * Trades with fromBlock <= block <= toBlock (toBlock 0 = no upper bound), oldest first,
+   * optionally of one token.
+   */
   getTradesInBlockRange?(
     fromBlock: bigint,
     toBlock: bigint,
     limit: number,
+    tokenAddress?: `0x${string}`,
   ): Promise<TradeEventEntity[]>;
   findTradeByHash?(txHash: string): Promise<TradeEventEntity | null>;
   findAddressByIdentity?(nameOrSlug: string): Promise<string | null>;

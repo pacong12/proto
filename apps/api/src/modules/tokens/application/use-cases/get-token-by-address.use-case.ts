@@ -87,7 +87,16 @@ export class GetTokenByAddressUseCase {
     // Trade timestamps are in milliseconds (the previous seconds cutoff never matched, so the
     // change was always 0).
     const cutoff = this.now() - 86_400_000;
-    // Fetch enough trades to reach 24h back; 500 is sufficient for active tokens
+    // Queried directly where the repository can: the newest 500 trades of an active token do not
+    // reach 24h back, which compared the price against a trade only hours old.
+    const repo = this.tokenRepository;
+    if (repo.getPriceAnchor && repo.getTradeFlow) {
+      const flow = await repo.getTradeFlow(address, cutoff + 1);
+      if (flow.buys + flow.sells === 0) return 0;
+      const anchor = await repo.getPriceAnchor(address, cutoff);
+      if (!anchor || anchor.priceUsd <= 0) return 0;
+      return ((currentPriceUsd - anchor.priceUsd) / anchor.priceUsd) * 100;
+    }
     const trades = await this.tokenRepository.getTrades(address, 500, 0);
     // The newest trade at or before the cutoff or, for a token younger than 24h, its first trade
     // (change since launch). Order-independent: repositories differ in sort order.
@@ -104,13 +113,17 @@ export class GetTokenByAddressUseCase {
    * Compute total trading volume in USD for the last 24 hours.
    * Sums wethAmount (native quote) for all trades in the 24h window and multiplies
    * by quoteAssetPriceUsd (1.0 for Arc/USDC, live ETH price for Robinhood).
-   * Uses the same 500-trade fetch as computePriceChange24h; trades are stored DESC.
+   * Summed in the repository where it can; the newest 500 trades undercount an active token.
    */
   private async computeVolume24h(
     address: `0x${string}`,
     quoteAssetPriceUsd: number,
   ): Promise<number> {
-    const cutoff = Date.now() - 86_400_000; // ms
+    const cutoff = this.now() - 86_400_000; // ms
+    if (this.tokenRepository.getTradeFlow) {
+      const flow = await this.tokenRepository.getTradeFlow(address, cutoff);
+      return (flow.buyQuote + flow.sellQuote) * quoteAssetPriceUsd;
+    }
     const trades = await this.tokenRepository.getTrades(address, 500, 0);
     return trades
       .filter((t) => (t.timestamp ?? 0) >= cutoff)

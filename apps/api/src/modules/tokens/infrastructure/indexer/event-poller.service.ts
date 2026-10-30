@@ -2,6 +2,7 @@ import { PublicClient, erc20Abi, parseAbiItem, type Address } from 'viem';
 import {
   ROBINHOOD_CHAIN,
   bondingCurveAbi,
+  resolveTokenNetwork,
   type LaunchedTokenEntity,
   type NetworkConfig,
   type TradeEventEntity,
@@ -32,6 +33,13 @@ const LIMIT_ORDER_EVENTS = [
   parseAbiItem('event OrderCancelled(uint256 indexed id)'),
 ] as const;
 const FILL_LEGS = ['takeProfit', 'stopLoss', 'buy'] as const;
+const TRANSFER_EVENT = parseAbiItem(
+  'event Transfer(address indexed from, address indexed to, uint256 value)',
+);
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const LAUNCH_BLOCK_ABI = [parseAbiItem('function launchBlock() view returns (uint256)')] as const;
+/** Wait before retrying a token whose holder backfill failed. */
+const HOLDER_RETRY_MS = 10 * 60_000;
 
 const TRADE_EVENT = parseAbiItem(
   'event Trade(address indexed trader, bool indexed isBuy, uint256 ethAmount, uint256 tokenAmount, uint256 feeEth)',
@@ -88,6 +96,8 @@ export class EventPollerService {
   private failedRangeStart: bigint | null = null;
   private rangeFailures = 0;
   private quoteDecimals: number | null = null;
+  /** When a token whose holder backfill failed may be tried again (ms). */
+  private readonly holderRetryAt = new Map<string, number>();
 
   constructor(
     private readonly client: PublicClient,
@@ -188,6 +198,7 @@ export class EventPollerService {
     count += await this.pollV1Swaps(from, to);
     count += await this.pollV4Swaps(from, to);
     count += await this.pollLimitOrders(from, to);
+    count += await this.pollTransfers(from, to);
     return count;
   }
 
@@ -558,9 +569,7 @@ export class EventPollerService {
       const tokenByPoolId = new Map(allTokens.map((t) => [t.poolAddress.toLowerCase(), t]));
       const quotePriceUsd = await this.priceFeed.getQuoteAssetPriceUsd(this.network.chainId);
       const blockTimestamps = new Map<bigint, number>();
-      // A v4 Swap's `sender` is the contract that called the PoolManager (GotonV4Router), not the
-      // wallet; the trader is whoever sent the transaction.
-      const traders = new Map<string, Address>();
+      const txSenders = new Map<string, Address | null>();
 
       let count = 0;
       for (const log of logs) {
@@ -602,21 +611,14 @@ export class EventPollerService {
           blockTimestamps.set(blockNumber, timestamp);
         }
 
-        let trader = log.transactionHash ? traders.get(log.transactionHash) : undefined;
-        if (!trader && log.transactionHash) {
-          try {
-            trader = (await this.client.getTransaction({ hash: log.transactionHash })).from;
-          } catch {
-            trader = sender;
-          }
-          if (trader) traders.set(log.transactionHash, trader);
-        }
-
+        // The Swap event's sender is whatever called PoolManager.swap: the router, the limit-order
+        // contract or the buyback, never the trader. The transaction's signer is the trader.
+        const signer = await this.txSender(log.transactionHash, txSenders);
         const trade: TradeEventEntity = {
           id: `${log.transactionHash}-${log.logIndex}`,
           tokenAddress: token.address,
           poolAddress: token.poolAddress,
-          trader: (trader ?? sender ?? '0x0000000000000000000000000000000000000000') as Address,
+          trader: (signer ?? sender ?? '0x0000000000000000000000000000000000000000') as Address,
           isBuy,
           tokenAmount: tokenAmountNum.toFixed(4),
           wethAmount: usdcAmountNum.toFixed(6),
@@ -699,6 +701,158 @@ export class EventPollerService {
     }
   }
 
+  // -------------------------------------------------------------------------
+  // Holders: Transfer logs, then balanceOf for each holder they touch
+  // -------------------------------------------------------------------------
+
+  /**
+   * Keeps token_balances current. Balances are read with balanceOf rather than summed from
+   * Transfer values, so re-indexing a range (a retried cycle, a backfill) never double counts.
+   * A token seen for the first time has its whole history read once, from its launch block.
+   */
+  private async pollTransfers(from: bigint, to: bigint): Promise<number> {
+    const repo = this.tokenRepository;
+    if (!repo.saveBalances || !repo.markHoldersIndexed || !repo.getHolderIndexedTokens) return 0;
+    const tokens = (await findAllTokens(repo)).filter(
+      (t) => resolveTokenNetwork(t).chainId === this.network.chainId,
+    );
+    const indexed = await repo.getHolderIndexedTokens();
+    // One history per cycle, so a backlog of unindexed tokens never holds up trade indexing; a
+    // token whose backfill failed waits, so it cannot block the others.
+    const now = Date.now();
+    const pending = tokens.find(
+      (t) =>
+        !indexed.has(t.address.toLowerCase()) &&
+        (this.holderRetryAt.get(t.address.toLowerCase()) ?? 0) <= now,
+    );
+    if (pending) await this.backfillHolders(pending, to);
+    const live = tokens.filter((t) => indexed.has(t.address.toLowerCase())).map((t) => t.address);
+    let count = 0;
+    for (let i = 0; i < live.length; i += LOG_ADDRESS_BATCH) {
+      const batch = live.slice(i, i + LOG_ADDRESS_BATCH);
+      const logs = await this.client.getLogs({
+        address: batch.length === 1 ? batch[0] : batch,
+        event: TRANSFER_EVENT,
+        fromBlock: from,
+        toBlock: to,
+      });
+      count += logs.length;
+      await this.refreshBalances(this.holdersTouched(logs), to);
+    }
+    return count;
+  }
+
+  /** Reads a token's Transfer history from its launch block and records every holder's balance. */
+  async backfillHolders(token: LaunchedTokenEntity, to: bigint): Promise<void> {
+    let launchBlock: bigint;
+    try {
+      launchBlock = await this.client.readContract({
+        address: token.address,
+        abi: LAUNCH_BLOCK_ABI,
+        functionName: 'launchBlock',
+      });
+    } catch {
+      let code: `0x${string}` | undefined;
+      try {
+        code = await this.client.getCode({ address: token.address });
+      } catch {
+        code = '0x1'; // unknown: treat as a transient failure
+      }
+      if (!code || code === '0x') {
+        // No contract at this address on this chain (e.g. a testnet leftover): it has no holders.
+        await this.tokenRepository.markHoldersIndexed!(token.address);
+      } else {
+        this.holderRetryAt.set(token.address.toLowerCase(), Date.now() + HOLDER_RETRY_MS);
+      }
+      return;
+    }
+    const fromBlock = await this.firstBlockOfParentBlock(launchBlock, to);
+    const touched = new Map<string, Set<`0x${string}`>>();
+    for (let start = fromBlock; start <= to; start += BACKFILL_CHUNK) {
+      const end = start + BACKFILL_CHUNK - 1n > to ? to : start + BACKFILL_CHUNK - 1n;
+      const logs = await this.client.getLogs({
+        address: token.address,
+        event: TRANSFER_EVENT,
+        fromBlock: start,
+        toBlock: end,
+      });
+      for (const [t, holders] of this.holdersTouched(logs)) {
+        const set = touched.get(t) ?? new Set();
+        holders.forEach((h) => set.add(h));
+        touched.set(t, set);
+      }
+    }
+    await this.refreshBalances(touched, to);
+    await this.tokenRepository.markHoldersIndexed!(token.address);
+  }
+
+  /**
+   * The first block of this chain at or after parent-chain block `parentBlock`. On an
+   * Arbitrum-style chain (Robinhood Chain) block.number inside contracts is Ethereum's block
+   * number, so a token's launchBlock is not one of this chain's blocks; block headers carry
+   * l1BlockNumber, which a binary search maps back. Chains without it get `parentBlock` as is.
+   */
+  private async firstBlockOfParentBlock(parentBlock: bigint, head: bigint): Promise<bigint> {
+    const parentOf = async (n: bigint): Promise<bigint | null> => {
+      const block = (await this.client.getBlock({ blockNumber: n })) as unknown as {
+        l1BlockNumber?: string | bigint;
+      };
+      return block.l1BlockNumber === undefined ? null : BigInt(block.l1BlockNumber);
+    };
+    if ((await parentOf(head)) === null) return parentBlock;
+    let lo = 0n;
+    let hi = head;
+    while (lo < hi) {
+      const mid = (lo + hi) / 2n;
+      const parent = await parentOf(mid);
+      if (parent !== null && parent >= parentBlock) hi = mid;
+      else lo = mid + 1n;
+    }
+    return lo;
+  }
+
+  private holdersTouched(
+    logs: Array<{ address: Address; args: { from?: Address; to?: Address } }>,
+  ): Map<string, Set<`0x${string}`>> {
+    const touched = new Map<string, Set<`0x${string}`>>();
+    for (const log of logs) {
+      const set = touched.get(log.address.toLowerCase()) ?? new Set<`0x${string}`>();
+      for (const holder of [log.args.from, log.args.to]) {
+        if (holder && holder.toLowerCase() !== ZERO_ADDRESS)
+          set.add(holder.toLowerCase() as Address);
+      }
+      touched.set(log.address.toLowerCase(), set);
+    }
+    return touched;
+  }
+
+  /** balanceOf at `blockNumber` (latest if the RPC no longer has that state) for each holder. */
+  private async refreshBalances(
+    touched: Map<string, Set<`0x${string}`>>,
+    blockNumber: bigint,
+  ): Promise<void> {
+    for (const [tokenAddress, holders] of touched) {
+      const list = [...holders];
+      const balances: Array<{ holder: `0x${string}`; balance: bigint }> = [];
+      for (let i = 0; i < list.length; i += 20) {
+        const chunk = list.slice(i, i + 20);
+        const read = async (holder: `0x${string}`, at?: bigint) =>
+          this.client.readContract({
+            address: tokenAddress as Address,
+            abi: erc20Abi,
+            functionName: 'balanceOf',
+            args: [holder],
+            ...(at === undefined ? {} : { blockNumber: at }),
+          });
+        const values = await Promise.all(
+          chunk.map((h) => read(h, blockNumber).catch(() => read(h))),
+        );
+        chunk.forEach((holder, j) => balances.push({ holder, balance: values[j] }));
+      }
+      await this.tokenRepository.saveBalances!(tokenAddress as Address, balances);
+    }
+  }
+
   /** Saves decoded curve Trade logs (idempotent: trade ids are txHash-logIndex). */
   private async saveTradeLogs(
     logs: Awaited<ReturnType<EventPollerService['fetchTradeLogs']>>,
@@ -706,6 +860,7 @@ export class EventPollerService {
     quotePriceUsd: number,
   ): Promise<number> {
     const blockTimestamps = new Map<bigint, number>();
+    const spotAtBlock = new Map<string, number | null>();
 
     let count = 0;
     for (const log of logs) {
@@ -725,32 +880,16 @@ export class EventPollerService {
       const ethAmountNum = Number(ethAmount) / 1e18;
       const tokenAmountNum = Number(tokenAmount) / 1e18;
 
+      // The curve's spot price after the trade's block. The trade's own ratio is not a price:
+      // in the first seconds the anti-snipe tax (up to 99%) shrinks tokenAmount and made a buy
+      // look up to 100x dearer, and the fee and price impact skew it too.
+      const spotNative = await this.curveSpotAtBlock(log.address, log.blockNumber, spotAtBlock);
       let priceUsd = 0;
-      if (tokenAmountNum > 0) {
-        const priceNative = ethAmountNum / tokenAmountNum;
-        priceUsd = priceNative * quotePriceUsd;
-      }
-
-      if (priceUsd <= 0) {
-        try {
-          const [vEth, vToken] = await Promise.all([
-            this.client.readContract({
-              address: log.address,
-              abi: bondingCurveAbi,
-              functionName: 'virtualEthReserve',
-            }) as Promise<bigint>,
-            this.client.readContract({
-              address: log.address,
-              abi: bondingCurveAbi,
-              functionName: 'virtualTokenReserve',
-            }) as Promise<bigint>,
-          ]);
-          if (vToken > 0n) {
-            priceUsd = (Number(vEth) / Number(vToken)) * quotePriceUsd;
-          }
-        } catch {
-          // fallback
-        }
+      if (spotNative !== null) {
+        priceUsd = spotNative * quotePriceUsd;
+      } else if (tokenAmountNum > 0) {
+        // Older than the RPC's state history (a deep backfill): the trade ratio is all there is.
+        priceUsd = (ethAmountNum / tokenAmountNum) * quotePriceUsd;
       }
 
       const blockNumber = log.blockNumber ?? 0n;
@@ -788,12 +927,20 @@ export class EventPollerService {
             ? Number(BigInt(token.totalSupply)) / 1e18
             : 1_000_000_000;
           // Recompute 24h volume from stored trades so the value is always accurate
-          // and never lost when saveMarketData overwrites the DB row.
+          // and never lost when saveMarketData overwrites the DB row. Summed in SQL: the newest
+          // 500 trades undercount any token that trades more often than that in a day.
           const cutoff24h = Date.now() - 86_400_000;
-          const recentTrades = await this.tokenRepository.getTrades(token.address, 500, 0);
-          const volume24hUsd = recentTrades
-            .filter((t) => (t.timestamp ?? 0) >= cutoff24h)
-            .reduce((sum, t) => sum + parseFloat(t.wethAmount || '0') * quotePriceUsd, 0);
+          let volume24hQuote: number;
+          if (this.tokenRepository.getTradeFlow) {
+            const flow = await this.tokenRepository.getTradeFlow(token.address, cutoff24h);
+            volume24hQuote = flow.buyQuote + flow.sellQuote;
+          } else {
+            const recentTrades = await this.tokenRepository.getTrades(token.address, 500, 0);
+            volume24hQuote = recentTrades
+              .filter((t) => (t.timestamp ?? 0) >= cutoff24h)
+              .reduce((sum, t) => sum + parseFloat(t.wethAmount || '0'), 0);
+          }
+          const volume24hUsd = volume24hQuote * quotePriceUsd;
           await this.tokenRepository.saveMarketData({
             ...mkt,
             priceUsd,
@@ -807,6 +954,58 @@ export class EventPollerService {
       count++;
     }
     return count;
+  }
+
+  /** The address that signed `hash`, or null if the transaction cannot be read. */
+  private async txSender(
+    hash: `0x${string}` | null,
+    cache: Map<string, Address | null>,
+  ): Promise<Address | null> {
+    if (!hash) return null;
+    const cached = cache.get(hash);
+    if (cached !== undefined) return cached;
+    let from: Address | null = null;
+    try {
+      from = (await this.client.getTransaction({ hash })).from;
+    } catch {
+      // Unreadable transaction: the caller falls back to the Swap event's sender.
+    }
+    cache.set(hash, from);
+    return from;
+  }
+
+  /** Curve spot price (quote per token) at the end of `blockNumber`, or null if unreadable. */
+  private async curveSpotAtBlock(
+    curve: Address,
+    blockNumber: bigint | null,
+    cache: Map<string, number | null>,
+  ): Promise<number | null> {
+    if (blockNumber === null) return null;
+    const key = `${curve.toLowerCase()}-${blockNumber}`;
+    const cached = cache.get(key);
+    if (cached !== undefined) return cached;
+    let spot: number | null = null;
+    try {
+      const [vEth, vToken] = await Promise.all([
+        this.client.readContract({
+          address: curve,
+          abi: bondingCurveAbi,
+          functionName: 'virtualEthReserve',
+          blockNumber,
+        }) as Promise<bigint>,
+        this.client.readContract({
+          address: curve,
+          abi: bondingCurveAbi,
+          functionName: 'virtualTokenReserve',
+          blockNumber,
+        }) as Promise<bigint>,
+      ]);
+      if (vToken > 0n) spot = Number(vEth) / Number(vToken);
+    } catch {
+      // The RPC keeps a limited state history (about 2,000 blocks on Robinhood Chain).
+    }
+    cache.set(key, spot);
+    return spot;
   }
 
   private fetchTradeLogs(address: Address | Address[], fromBlock: bigint, toBlock: bigint) {
