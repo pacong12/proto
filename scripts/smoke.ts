@@ -169,7 +169,8 @@ async function rpc<T>(url: string, method: string, params: unknown[]): Promise<T
 for (const chain of CHAINS) {
   check(`api: ${chain.slug} indexer is current`, async () => {
     const res = await expectStatus(`${target.api}/dex/latest-block?chain=${chain.slug}`, 200);
-    const indexed = ((await res.json()) as { block: number }).block;
+    // DEX Screener's shape: { block: { blockNumber, blockTimestamp } }.
+    const indexed = ((await res.json()) as { block: { blockNumber: number } }).block.blockNumber;
     const head = Number(BigInt(await rpc<string>(chain.rpc, 'eth_blockNumber', [])));
     expect(head - indexed <= chain.maxLagBlocks, `indexer ${head - indexed} blocks behind head`);
   });
