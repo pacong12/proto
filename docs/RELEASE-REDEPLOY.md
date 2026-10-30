@@ -34,7 +34,10 @@ Dry-run each script on a fork first (`--fork-url … --sender <deployer>`), then
 - [ ] Team splitter factory per chain: `script/DeployTeamSplitterFactory.s.sol`.
 - [ ] The Safe calls `acceptOwnership()` on the Robinhood factory, graduator and buyback, and on
       the Arc factory and buyback. Until then the deployer is still the owner.
-- [ ] Verify the contracts on the explorers.
+- [ ] Verify the contracts on the explorers. Both chains use Blockscout, which imports Sourcify:
+      run `bash scripts/verify-sourcify.sh <chainId> <address> <path:Contract>` in `contracts/`
+      from the deploy commit for each contract (constructor arguments are read from the creation
+      transaction).
 
 ## 3. Addresses in the apps
 
@@ -67,6 +70,10 @@ can fall back to the previous stack. Env vars override them (`ROBINHOOD_FACTORY_
    frontend's type fix before the API's content check.
 4. Smoke checks: `bun scripts/smoke.ts` (18 checks), one launch with tax and split on each chain,
    a curve buy, sell and graduation on Robinhood Chain.
+5. Verify the first launch of each new factory: its token (`src/core/LaunchpadToken.sol:LaunchpadToken`)
+   and, on Robinhood Chain, its curve (`src/core/BondingCurve.sol:BondingCurve`), with
+   `contracts/scripts/verify-sourcify.sh`. Every later token and curve has the same bytecode and
+   shows as verified on Blockscout without another submission; check that the second launch does.
 
 ## 6. Retire the testing stack
 
