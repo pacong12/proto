@@ -9,7 +9,7 @@ import {
 } from '@goton/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import { findAllTokens } from '../../application/all-tokens';
-import { ViemChainIndexerAdapter } from '../adapters/viem-chain-indexer.adapter';
+import type { ChainIndexerPort } from '../../domain/ports/chain.indexer.port';
 import { PriceFeedPort } from '../../domain/ports/price-feed.port';
 import { CalculatePricingUseCase } from '../../application/use-cases/calculate-pricing.use-case';
 
@@ -110,7 +110,7 @@ export class EventPollerService {
   constructor(
     private readonly client: PublicClient,
     private readonly tokenRepository: TokenRepositoryPort,
-    private readonly chainIndexer: ViemChainIndexerAdapter,
+    private readonly chainIndexer: ChainIndexerPort,
     private readonly calculatePricing: CalculatePricingUseCase,
     private readonly priceFeed: PriceFeedPort,
     private readonly network: NetworkConfig = DEFAULT_NETWORK,

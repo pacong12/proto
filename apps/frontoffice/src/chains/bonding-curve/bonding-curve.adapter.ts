@@ -5,17 +5,11 @@ import {
   type PublicClient,
   type WalletClient,
 } from 'viem';
-import {
-  launchpadTokenAbi,
-  launchpadV2FactoryAbi,
-  gotonV4GraduatorAbi,
-  type NetworkConfig,
-} from '@goton/shared-types';
+import { launchpadTokenAbi, launchpadV2FactoryAbi, gotonV4GraduatorAbi } from '@goton/shared-types';
 import { revenueSplitToBps, taxPercentToBps } from '@goton/math-sdk';
-import type { ChainAdapter, ChainLaunchParams, ChainLaunchResult, ChainSwapParams } from '../types';
+import type { ChainLaunchParams, ChainLaunchResult, ChainSwapParams } from '../types';
 import { waitForReceiptWithFallback } from '../../lib/viem-client';
-import { executeCurveSwap, isCurveTrade } from '../shared/curve-swap';
-import { executeV4RouterSwap } from '../shared/v4-swap';
+import { LaunchpadChainAdapter } from '../shared/base.adapter';
 import { isDeployed, parseInitialBuyWei } from '../shared/utils';
 
 const NATIVE_ETH = '0x0000000000000000000000000000000000000000' as const;
@@ -52,12 +46,9 @@ async function factoryTakesLaunchConfig(
  * Bonding-curve chains (Robinhood Chain): a curve, then permissionless graduation into a locked
  * native-quote Uniswap v4 pool (GotonV4Graduator). Post-graduation trades go through GotonV4Router.
  */
-export class BondingCurveChainAdapter implements ChainAdapter {
-  readonly chainId: number;
-
-  constructor(readonly network: NetworkConfig) {
-    this.chainId = network.chainId;
-  }
+export class BondingCurveChainAdapter extends LaunchpadChainAdapter {
+  /** Graduated pools pair the token with native ETH. */
+  protected readonly poolQuote = { quote: NATIVE_ETH, nativeScale: 1n };
 
   async launchToken(
     params: ChainLaunchParams,
@@ -66,11 +57,7 @@ export class BondingCurveChainAdapter implements ChainAdapter {
     account: `0x${string}`,
     onHashEmitted?: (hash: `0x${string}`) => void,
   ): Promise<ChainLaunchResult | null> {
-    const factory = this.network.contracts.factoryV2 ?? this.network.contracts.factory;
-    if (!isDeployed(factory)) {
-      throw new Error(`Factory contract not deployed on ${this.network.name}`);
-    }
-
+    const factory = this.requireFactory();
     const initialBuyWei = parseInitialBuyWei(params.initialBuyAmountEth);
     const launchArgs = [
       params.name,
@@ -118,14 +105,8 @@ export class BondingCurveChainAdapter implements ChainAdapter {
           chain: walletClient.chain,
         });
 
-    onHashEmitted?.(hash);
-    const receipt = await waitForReceiptWithFallback(publicClient, hash, walletClient);
+    const receipt = await this.confirmLaunch(hash, walletClient, publicClient, onHashEmitted);
     if (!receipt) return null;
-    if (receipt.status === 'reverted') {
-      throw new Error(
-        `Transaction reverted on-chain. Hash: ${hash}. Block: ${receipt.blockNumber}.`,
-      );
-    }
 
     const [launch] = parseEventLogs({
       abi: launchpadV2FactoryAbi,
@@ -204,14 +185,14 @@ export class BondingCurveChainAdapter implements ChainAdapter {
    * Graduation is permissionless: if the curve finished but nobody has moved its liquidity into
    * the v4 pool yet, the first post-graduation trader does it (factory.graduate) before swapping.
    */
-  private async ensureGraduated(
+  protected override async beforePoolSwap(
     params: ChainSwapParams,
     walletClient: WalletClient,
     publicClient: PublicClient,
     account: `0x${string}`,
   ): Promise<void> {
     const { graduator } = this.network.contracts;
-    const factory = this.network.contracts.factoryV2 ?? this.network.contracts.factory;
+    const { factory } = this;
     if (!isDeployed(graduator) || !isDeployed(factory)) return;
     const [splitter] = await publicClient.readContract({
       address: graduator,
@@ -234,25 +215,5 @@ export class BondingCurveChainAdapter implements ChainAdapter {
     if (receipt?.status !== 'success') {
       throw new Error(`Graduating the token into its Uniswap v4 pool failed. Hash: ${hash}`);
     }
-  }
-
-  async executeSwap(
-    params: ChainSwapParams,
-    walletClient: WalletClient,
-    publicClient: PublicClient,
-    account: `0x${string}`,
-  ): Promise<string | null> {
-    if (isCurveTrade(params)) {
-      return executeCurveSwap(params, walletClient, publicClient, account);
-    }
-    await this.ensureGraduated(params, walletClient, publicClient, account);
-    return executeV4RouterSwap(
-      this.network,
-      { quote: NATIVE_ETH, nativeScale: 1n },
-      params,
-      walletClient,
-      publicClient,
-      account,
-    );
   }
 }

@@ -5,25 +5,25 @@ import {
   type NetworkConfig,
 } from '@goton/shared-types';
 import { revenueSplitToBps, taxPercentToBps } from '@goton/math-sdk';
-import type { ChainAdapter, ChainLaunchParams, ChainLaunchResult, ChainSwapParams } from '../types';
-import { waitForReceiptWithFallback } from '../../lib/viem-client';
-import { executeCurveSwap, isCurveTrade } from '../shared/curve-swap';
-import { executeV4RouterSwap } from '../shared/v4-swap';
-import { isDeployed, parseInitialBuyWei } from '../shared/utils';
+import type { ChainLaunchParams, ChainLaunchResult } from '../types';
+import { LaunchpadChainAdapter } from '../shared/base.adapter';
+import type { V4QuoteConfig } from '../shared/v4-swap';
+import { parseInitialBuyWei } from '../shared/utils';
 
 /**
  * In-pool v4 chains (Arc Network): tokens launch straight into a Uniswap v4 pool (Argus portal
  * model). Taxes and the revenue split are fixed at launch by LaunchpadV2FactoryArc; trading goes
  * through GotonV4Router. Tokens from a legacy bonding-curve factory still trade on their curve.
  */
-export class InPoolV4ChainAdapter implements ChainAdapter {
-  readonly chainId: number;
+export class InPoolV4ChainAdapter extends LaunchpadChainAdapter {
   /** Native wei per unit of the quote ERC-20 (10^12 for 6-decimal USDC). */
   private readonly quoteUnit: bigint;
+  protected readonly poolQuote: V4QuoteConfig;
 
-  constructor(readonly network: NetworkConfig) {
-    this.chainId = network.chainId;
+  constructor(network: NetworkConfig) {
+    super(network);
     this.quoteUnit = nativeWeiPerQuoteUnit(network);
+    this.poolQuote = { quote: network.contracts.weth, nativeScale: this.quoteUnit };
   }
 
   async launchToken(
@@ -33,11 +33,7 @@ export class InPoolV4ChainAdapter implements ChainAdapter {
     account: `0x${string}`,
     onHashEmitted?: (hash: `0x${string}`) => void,
   ): Promise<ChainLaunchResult | null> {
-    const factory = this.network.contracts.factoryV2 ?? this.network.contracts.factory;
-    if (!isDeployed(factory)) {
-      throw new Error(`Factory contract not deployed on ${this.network.name}`);
-    }
-
+    const factory = this.requireFactory();
     const prebuyWei = parseInitialBuyWei(params.initialBuyAmountEth);
     const minPrebuyWei = this.network.launchConfigV2?.minPrebuyWei ?? 0n;
     if (prebuyWei < minPrebuyWei) {
@@ -76,14 +72,8 @@ export class InPoolV4ChainAdapter implements ChainAdapter {
       chain: walletClient.chain,
     });
 
-    onHashEmitted?.(hash);
-    const receipt = await waitForReceiptWithFallback(publicClient, hash, walletClient);
+    const receipt = await this.confirmLaunch(hash, walletClient, publicClient, onHashEmitted);
     if (!receipt) return null;
-    if (receipt.status === 'reverted') {
-      throw new Error(
-        `Transaction reverted on-chain. Hash: ${hash}. Block: ${receipt.blockNumber}.`,
-      );
-    }
 
     const [launch] = parseEventLogs({
       abi: launchpadV2FactoryArcAbi,
@@ -98,24 +88,5 @@ export class InPoolV4ChainAdapter implements ChainAdapter {
       taxApplied: true,
       splitApplied: true,
     };
-  }
-
-  async executeSwap(
-    params: ChainSwapParams,
-    walletClient: WalletClient,
-    publicClient: PublicClient,
-    account: `0x${string}`,
-  ): Promise<string | null> {
-    if (isCurveTrade(params)) {
-      return executeCurveSwap(params, walletClient, publicClient, account);
-    }
-    return executeV4RouterSwap(
-      this.network,
-      { quote: this.network.contracts.weth, nativeScale: this.quoteUnit },
-      params,
-      walletClient,
-      publicClient,
-      account,
-    );
   }
 }
