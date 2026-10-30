@@ -22,6 +22,8 @@ export interface NetworkConfig {
   };
   rpcUrl: string;
   rpcUrls?: string[];
+  /** Widest eth_getLogs block span every RPC in `rpcUrls` accepts; history backfills stay within it. */
+  maxLogBlockRange?: number;
   blockExplorer: string;
   contracts: {
     factory: `0x${string}`;

@@ -86,7 +86,8 @@ const CONFIRMATIONS = BigInt(process.env.INDEXER_CONFIRMATIONS ?? '2');
 const LOG_ADDRESS_BATCH = 50;
 // Attempts at one block range before it is skipped (and logged as an error).
 const MAX_RANGE_ATTEMPTS = 5;
-// eth_getLogs block span per request when backfilling one curve's history.
+// eth_getLogs block span per request when backfilling one curve's history, capped per chain by
+// NetworkConfig.maxLogBlockRange.
 const BACKFILL_CHUNK = BigInt(process.env.INDEXER_BACKFILL_CHUNK || '200000');
 
 export class EventPollerService {
@@ -107,6 +108,11 @@ export class EventPollerService {
     private readonly priceFeed: PriceFeedPort,
     private readonly network: NetworkConfig = ROBINHOOD_CHAIN,
   ) {}
+
+  private get backfillChunk(): bigint {
+    const cap = this.network.maxLogBlockRange;
+    return cap && BigInt(cap) < BACKFILL_CHUNK ? BigInt(cap) : BACKFILL_CHUNK;
+  }
 
   // -------------------------------------------------------------------------
   // Main polling loop
@@ -768,8 +774,8 @@ export class EventPollerService {
     }
     const fromBlock = await this.firstBlockOfParentBlock(launchBlock, to);
     const touched = new Map<string, Set<`0x${string}`>>();
-    for (let start = fromBlock; start <= to; start += BACKFILL_CHUNK) {
-      const end = start + BACKFILL_CHUNK - 1n > to ? to : start + BACKFILL_CHUNK - 1n;
+    for (let start = fromBlock; start <= to; start += this.backfillChunk) {
+      const end = start + this.backfillChunk - 1n > to ? to : start + this.backfillChunk - 1n;
       const logs = await this.client.getLogs({
         address: token.address,
         event: TRANSFER_EVENT,
@@ -1032,8 +1038,9 @@ export class EventPollerService {
     const quotePriceUsd = await this.priceFeed.getQuoteAssetPriceUsd(this.network.chainId);
     const tokenByCurve = new Map([[curve.toLowerCase(), token]]);
     let count = 0;
-    for (let start = from < 0n ? 0n : from; start <= end; start += BACKFILL_CHUNK) {
-      const chunkEnd = start + BACKFILL_CHUNK - 1n > end ? end : start + BACKFILL_CHUNK - 1n;
+    for (let start = from < 0n ? 0n : from; start <= end; start += this.backfillChunk) {
+      const chunkEnd =
+        start + this.backfillChunk - 1n > end ? end : start + this.backfillChunk - 1n;
       const logs = await this.fetchTradeLogs(curve, start, chunkEnd);
       if (logs.length) count += await this.saveTradeLogs(logs, tokenByCurve, quotePriceUsd);
     }

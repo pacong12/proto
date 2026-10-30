@@ -54,6 +54,8 @@ export const ARC_NETWORK: NetworkConfig = {
     'https://rpc.drpc.mainnet.arc.io',
     'https://arc.drpc.org',
   ],
+  // dRPC's free plan rejects eth_getLogs over more than 10,000 blocks.
+  maxLogBlockRange: 10_000,
   blockExplorer: getEnv('ARC_BLOCK_EXPLORER_URL', 'https://explorer.arc.io'),
   contracts: {
     factory: getEnv('ARC_V4_FACTORY_ADDRESS', ARC_V4_FACTORY) as `0x${string}`,
