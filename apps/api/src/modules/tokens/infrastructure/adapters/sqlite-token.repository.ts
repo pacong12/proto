@@ -109,7 +109,11 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     this.db = openCheckedDatabase(resolvedPath);
     try {
       this.db.run('PRAGMA journal_mode = WAL;');
+      this.db.run('PRAGMA synchronous = NORMAL;');
       this.db.run('PRAGMA busy_timeout = 10000;');
+      this.db.run('PRAGMA cache_size = -16000;');
+      this.db.run('PRAGMA temp_store = MEMORY;');
+      this.db.run('PRAGMA mmap_size = 67108864;');
     } catch {
       // Ignore if in-memory
     }
