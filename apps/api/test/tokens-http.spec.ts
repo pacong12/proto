@@ -277,13 +277,11 @@ describe('Tokens HTTP Endpoints Integration', () => {
     }
   }, 10_000);
 
-  it('GET /dex/latest-block returns latest indexed block', async () => {
+  it('GET /dex/latest-block reports no block before the indexer has stored one', async () => {
+    // DEX Screener must not be told about a block /events cannot serve yet (adapter spec v1.1).
     const req = new Request('http://localhost:3001/dex/latest-block?chain=robinhood');
     const res = await server.fetch(req);
-    expect(res.status).toBe(200);
-    const json = await res.json();
-    expect(json).toHaveProperty('block');
-    expect(json).toHaveProperty('chainId');
+    expect(res.status).toBe(503);
   });
 
   it('GET /dex/events handles zero tokenAmount safely without NaN or Infinity', async () => {
