@@ -7,6 +7,7 @@ import { GraduationKeeperService } from './modules/tokens/infrastructure/keeper/
 import { isMemestock, memestockSignals } from './modules/tokens/application/memestock';
 import { SPARKLINE_POINTS, sparklineSince } from './modules/tokens/application/sparkline';
 import { findAllTokens } from './modules/tokens/application/all-tokens';
+import * as dexAdapter from './modules/dex/dex-screener.adapter';
 import {
   SqliteTokenRepository,
   ViemChainIndexerAdapter,
@@ -57,7 +58,6 @@ import {
   buildCommentSignMessage,
   buildSessionSignMessage,
   sanitizeCreatorProfile,
-  resolveSiteUrls,
   type CreatorProfile,
   ok,
   err,
@@ -2264,202 +2264,112 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   }
 
   // ---------------------------------------------------------------------------
-  // DEX Screener Partner API (https://docs.dexscreener.com/api/partner)
-  // Required endpoints for chain listing & token indexing
-  // GET /dex/latest-block  — most recent indexed block
-  if (url.pathname === '/dex/latest-block' && req.method === 'GET') {
-    const chainParam = url.searchParams.get('chain') || url.searchParams.get('chainId');
-    const chain = chainRegistry.getChainByParam(chainParam);
-    const targetNetwork = chain.network;
-    const targetClient = chain.client;
-    const cacheKey = `dex:latest-block:${targetNetwork.chainId}`;
-    const cached = await cache.get<unknown>(cacheKey);
-    if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
-
-    // DEX Screener asks for the latest block whose events are available, i.e. the indexer's
-    // cursor, not the chain head (requesting events up to the head would return partial data).
-    let block: bigint;
-    try {
-      block = (await repository.getLastIndexedBlock?.(targetNetwork.name)) ?? 0n;
-      if (block <= 0n) block = (await targetClient.getBlockNumber()) - 2n;
-    } catch {
-      block = 0n;
+  // DEX Screener Adapter (spec v1.1, see modules/dex/dex-screener.adapter.ts). One adapter per
+  // chain: /dex/{robinhood|arc|chainId}/{latest-block|asset|pair|events}. The older
+  // /dex/{endpoint}?chain= form is kept and defaults to Robinhood Chain.
+  // ---------------------------------------------------------------------------
+  const dexMatch = url.pathname.match(
+    /^\/dex\/(?:([a-z0-9-]+)\/)?(latest-block|asset|pair|events)$/,
+  );
+  if (dexMatch && req.method === 'GET') {
+    const chainKey =
+      dexMatch[1] ?? url.searchParams.get('chain') ?? url.searchParams.get('chainId');
+    const resolved = resolveNetworkByParam(chainKey);
+    if (
+      dexMatch[1] &&
+      ![String(resolved.chainId), resolved.slug, ...(resolved.aliases ?? [])].includes(dexMatch[1])
+    ) {
+      return replyError('NOT_FOUND', `Unknown chain ${dexMatch[1]}`, 404);
     }
-    const payload = { block: Number(block), chainId: targetNetwork.chainId };
-    await cache.set(cacheKey, payload, 5);
-    return replyJson(payload, 200, { 'x-cache': 'MISS' });
-  }
-
-  // GET /dex/asset — token metadata for a given address
-  if (url.pathname === '/dex/asset' && req.method === 'GET') {
-    const id = url.searchParams.get('id') ?? '';
-    const addrMatch = id.match(/(0x[a-fA-F0-9]{40})/);
-    if (!addrMatch) return replyError('BAD_REQUEST', 'Missing or invalid id param', 400);
-
-    const address = addrMatch[1].toLowerCase() as `0x${string}`;
-    const cacheKey = `dex:asset:${address}`;
-    const cached = await cache.get<unknown>(cacheKey);
-    if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
-
-    const res = await tokenController.getToken(address);
-    if (!res.success || !res.data) return replyError('NOT_FOUND', 'Asset not found', 404);
-
-    const td = res.data as {
-      token: import('@goton/shared-types').LaunchedTokenEntity;
-      marketData: import('@goton/shared-types').TokenMarketData;
-    };
-    const t = td.token;
-    const network = resolveTokenNetwork(t);
-    const payload = {
-      id: `${network.chainId}_${t.address}`,
-      caip19: `eip155:${network.chainId}/erc20:${t.address}`,
-      name: t.name,
-      symbol: t.symbol,
-      totalSupply: t.totalSupply,
-      circulatingSupply: t.totalSupply,
-      coinGeckoId: null,
-      coinMarketCapId: null,
-      decimals: t.decimals,
-      metadata: {
-        description: t.description || null,
-        image: t.logo || null,
-        twitter: t.socials?.twitter || null,
-        telegram: t.socials?.telegram || null,
-        discord: t.socials?.discord || null,
-        website: t.socials?.website || null,
-      },
-    };
-    await cache.set(cacheKey, payload, 60);
-    return replyJson(payload, 200, { 'x-cache': 'MISS' });
-  }
-
-  // GET /dex/pair — pool/pair metadata
-  if (url.pathname === '/dex/pair' && req.method === 'GET') {
-    const id = url.searchParams.get('id') ?? '';
-    const addrMatch = id.match(/(0x[a-fA-F0-9]{40})/);
-    if (!addrMatch) return replyError('BAD_REQUEST', 'Missing or invalid id param', 400);
-
-    const address = addrMatch[1].toLowerCase() as `0x${string}`;
-    const cacheKey = `dex:pair:${address}`;
-    const cached = await cache.get<unknown>(cacheKey);
-    if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
-
-    // Use findByPoolAddress to avoid loading all 200 tokens then discarding all but one.
-    const byPool = repository.findByPoolAddress
-      ? await repository.findByPoolAddress(address)
-      : null;
-    // Fallback: caller may also pass the token address directly in the id param.
-    const token = byPool ?? (await repository.findByAddress(address));
-
-    if (!token) return replyError('NOT_FOUND', 'Pair not found', 404);
-
-    const chain = chainRegistry.resolveForToken(token);
+    const chain = chainRegistry.getChainById(resolved.chainId);
     const network = chain.network;
-    const isToken0 = token.isToken0;
-    const payload = {
-      id: `${network.chainId}_${token.poolAddress}`,
-      dexId: 'goton',
-      url: `${resolveSiteUrls({ appUrl: process.env.APP_URL }).appUrl}/trade/${token.address}`,
-      pairAddress: token.poolAddress,
-      labels: ['goton-v2'],
-      baseToken: {
-        address: token.address,
-        name: token.name,
-        symbol: token.symbol,
-      },
-      quoteToken: {
-        address: network.contracts.weth,
-        name: network.nativeCurrency.name,
-        symbol: network.nativeCurrency.symbol,
-      },
-      quoteTokenOrder: isToken0 ? 'token0' : 'token1',
-      fee: token.poolFee / 1_000_000,
-      tickSpacing: 200,
-      hooks: '0x0000000000000000000000000000000000000000',
-    };
-    await cache.set(cacheKey, payload, 30);
-    return replyJson(payload, 200, { 'x-cache': 'MISS' });
-  }
+    const onThisChain = (token: LaunchedTokenEntity) =>
+      chainRegistry.resolveForToken(token).network.chainId === network.chainId;
+    const endpoint = dexMatch[2];
 
-  // GET /dex/events — swap events for DEX Screener live price feed
-  if (url.pathname === '/dex/events' && req.method === 'GET') {
-    // Validate block params before passing to BigInt to prevent SyntaxError crash on bad input.
-    const rawFromBlock = url.searchParams.get('fromBlock');
-    const rawToBlock = url.searchParams.get('toBlock');
-    if (rawFromBlock && !/^\d+$/.test(rawFromBlock)) {
-      return replyError('INVALID_PARAM', 'fromBlock must be a non-negative integer', 400);
+    if (endpoint === 'latest-block') {
+      // The indexer's persisted cursor, not the chain head: /events must already hold every
+      // event up to the block reported here.
+      const cacheKey = `dex:v1.1:latest-block:${network.chainId}`;
+      const cached = await cache.get<unknown>(cacheKey);
+      if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
+      const blockNumber = (await repository.getLastIndexedBlock?.(network.name)) ?? 0n;
+      if (blockNumber <= 0n) {
+        return replyError('NOT_READY', 'The indexer has not stored a block yet', 503);
+      }
+      let timestamp: number;
+      try {
+        timestamp = Number((await chain.client.getBlock({ blockNumber })).timestamp);
+      } catch {
+        return replyError('UPSTREAM_ERROR', 'Could not read the block timestamp', 502);
+      }
+      const payload = dexAdapter.latestBlockResponse(blockNumber, timestamp);
+      await cache.set(cacheKey, payload, 2);
+      return replyJson(payload, 200, { 'x-cache': 'MISS' });
     }
-    if (rawToBlock && !/^\d+$/.test(rawToBlock)) {
-      return replyError('INVALID_PARAM', 'toBlock must be a non-negative integer', 400);
+
+    if (endpoint === 'asset') {
+      const assetId = dexAdapter.parseAssetId(url.searchParams.get('id') ?? '');
+      if (!assetId) return replyError('BAD_REQUEST', 'id must be a 0x contract address', 400);
+      if (assetId.toLowerCase() === network.contracts.weth.toLowerCase()) {
+        return replyJson(dexAdapter.quoteAssetResponse(network));
+      }
+      const token = await repository.findByAddress(assetId);
+      if (!token || !onThisChain(token)) return replyError('NOT_FOUND', 'Asset not found', 404);
+      return replyJson(dexAdapter.tokenAssetResponse(token));
     }
-    const fromBlock = BigInt(rawFromBlock ?? '0');
-    const toBlock = BigInt(rawToBlock ?? '0');
-    const pairId = url.searchParams.get('id') ?? '';
-    const poolMatch = pairId.match(/(0x[a-fA-F0-9]{40})/);
-    const poolAddress = poolMatch ? (poolMatch[1].toLowerCase() as `0x${string}`) : null;
 
-    const cacheKey = `dex:events:${poolAddress ?? 'all'}:${fromBlock}:${toBlock}`;
-    const cached = await cache.get<unknown>(cacheKey);
-    if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
-
-    // API-07: one indexed block-range query instead of a per-token query loop.
-    const eventsToken = poolAddress
-      ? ((repository.findByPoolAddress ? await repository.findByPoolAddress(poolAddress) : null) ??
-        (await repository.findByAddress(poolAddress)))
-      : null;
-    if (poolAddress && !eventsToken) {
-      const empty = { events: [] };
-      await cache.set(cacheKey, empty, 5);
-      return replyJson(empty, 200, { 'x-cache': 'MISS' });
+    if (endpoint === 'pair') {
+      const pairId = dexAdapter.parsePairId(url.searchParams.get('id') ?? '');
+      if (!pairId) {
+        return replyError(
+          'BAD_REQUEST',
+          'id must be a bonding curve address (0x + 40 hex) or a v4 poolId (0x + 64 hex)',
+          400,
+        );
+      }
+      // The current pair (curve, or v4 pool once graduated), else a graduated token's old curve.
+      const token =
+        (await repository.findByPoolAddress?.(pairId as `0x${string}`)) ??
+        (dexAdapter.parseAssetId(pairId)
+          ? ((await findAllTokens(repository)).find((t) => dexAdapter.isCurvePair(t, pairId)) ??
+            null)
+          : null);
+      if (!token || !onThisChain(token)) return replyError('NOT_FOUND', 'Pair not found', 404);
+      return replyJson(dexAdapter.pairResponse(token, pairId, network));
     }
-    const trades = eventsToken
-      ? (await repository.getTrades(eventsToken.address, 1000, 0)).filter((t) => {
-          const bn = BigInt(t.blockNumber ?? 0);
-          return bn >= fromBlock && (toBlock === 0n || bn <= toBlock);
-        })
-      : ((await repository.getTradesInBlockRange?.(fromBlock, toBlock, 1000)) ?? []);
 
+    // endpoint === 'events': both bounds required and inclusive.
+    const rawFrom = url.searchParams.get('fromBlock') ?? '';
+    const rawTo = url.searchParams.get('toBlock') ?? '';
+    if (!/^\d+$/.test(rawFrom) || !/^\d+$/.test(rawTo) || BigInt(rawFrom) > BigInt(rawTo)) {
+      return replyError(
+        'INVALID_PARAM',
+        'fromBlock and toBlock are required integers, fromBlock <= toBlock',
+        400,
+      );
+    }
+    const pairFilter = url.searchParams.get('id');
+    const pairId = pairFilter ? dexAdapter.parsePairId(pairFilter) : null;
+    if (pairFilter && !pairId) return replyError('BAD_REQUEST', 'Invalid pair id', 400);
+    const limit = 5000;
+    const trades =
+      (await repository.getTradesInBlockRange?.(BigInt(rawFrom), BigInt(rawTo), limit + 1)) ?? [];
+    // Each block is indexed once: a truncated range would lose events, so ask for a smaller one.
+    if (trades.length > limit) {
+      return replyError('RANGE_TOO_LARGE', `More than ${limit} events; use a smaller range`, 413);
+    }
     const tokens = new Map<string, LaunchedTokenEntity | null>();
-    const swaps: unknown[] = [];
+    const kept: TradeEventEntity[] = [];
     for (const trade of trades) {
       const key = trade.tokenAddress.toLowerCase();
-      if (!tokens.has(key)) {
-        tokens.set(key, eventsToken ?? (await repository.findByAddress(trade.tokenAddress)));
-      }
+      if (!tokens.has(key)) tokens.set(key, await repository.findByAddress(trade.tokenAddress));
       const token = tokens.get(key);
-      if (!token) continue;
-      const network = chainRegistry.resolveForToken(token).network;
-      const bn =
-        typeof trade.blockNumber === 'bigint' ? trade.blockNumber : BigInt(trade.blockNumber ?? 0);
-      // wethAmount is already denominated in the quote asset (ETH / USDC), not USD.
-      const quoteAmount = parseFloat(trade.wethAmount).toFixed(8);
-
-      swaps.push({
-        block: {
-          blockNumber: Number(bn),
-          blockTimestamp: trade.timestamp,
-        },
-        eventType: trade.isBuy ? 'buy' : 'sell',
-        txnId: trade.transactionHash,
-        txnIndex: 0,
-        eventIndex: 0,
-        maker: trade.trader,
-        pairId: `${network.chainId}_${token.poolAddress}`,
-        asset0In: trade.isBuy ? quoteAmount : '0',
-        asset1In: trade.isBuy ? '0' : trade.tokenAmount,
-        asset0Out: trade.isBuy ? '0' : quoteAmount,
-        asset1Out: trade.isBuy ? trade.tokenAmount : '0',
-        priceNative: (parseFloat(trade.tokenAmount) > 0
-          ? parseFloat(trade.wethAmount) / parseFloat(trade.tokenAmount)
-          : 0
-        ).toFixed(18),
-        priceUsd: trade.priceUsd.toFixed(8),
-      });
+      if (!token || !onThisChain(token)) continue;
+      if (pairId && dexAdapter.parsePairId(trade.poolAddress) !== pairId) continue;
+      kept.push(trade);
     }
-
-    const payload = { events: swaps };
-    await cache.set(cacheKey, payload, 5);
-    return replyJson(payload, 200, { 'x-cache': 'MISS' });
+    return replyJson(dexAdapter.eventsResponse(kept));
   }
 
   // ---------------------------------------------------------------------------

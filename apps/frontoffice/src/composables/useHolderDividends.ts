@@ -152,6 +152,9 @@ export function useHolderDividends() {
       if (!walletClient) throw new Error('No wallet connected');
       const [account] = await walletClient.getAddresses();
       if (!account) throw new Error('Please connect your wallet');
+      if ((await walletClient.getChainId()) !== network.chainId) {
+        throw new Error(`Switch your wallet to ${network.name} and retry.`);
+      }
 
       const splitter = await resolveFeeSplitter(
         getPublicClient(network.chainId),
