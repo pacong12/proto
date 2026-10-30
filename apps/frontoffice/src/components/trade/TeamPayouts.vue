@@ -64,7 +64,8 @@ import { useI18n } from '@/lib/i18n';
 import { formatRawAmount } from '@/lib/limit-orders';
 import { shortenAddress } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
-import { getPublicClient, getWalletClient, waitForReceiptWithFallback } from '@/lib/viem-client';
+import { getPublicClient } from '@/lib/viem-client';
+import { sendWalletTransaction } from '@/lib/wallet-tx';
 
 const props = defineProps<{
   token: `0x${string}`;
@@ -178,26 +179,17 @@ async function releaseAll(asset: `0x${string}`) {
   busy.value = true;
   error.value = null;
   try {
-    const wallet = await getWalletClient();
-    if (!wallet) throw new Error('Connect your wallet first');
-    const [account] = await wallet.getAddresses();
-    if ((await wallet.getChainId()) !== props.network.chainId) {
-      throw new Error(`Switch your wallet to ${props.network.name} and retry.`);
-    }
-    const hash = await wallet.writeContract({
-      address: team.value.address,
-      abi: gotonTeamSplitterAbi,
-      functionName: 'releaseAll',
-      args: [asset],
-      account,
-      chain: wallet.chain,
-    });
-    const receipt = await waitForReceiptWithFallback(
-      getPublicClient(props.network.chainId),
-      hash,
-      wallet,
+    const teamAddress = team.value.address;
+    await sendWalletTransaction(props.network, ({ walletClient, account }) =>
+      walletClient.writeContract({
+        address: teamAddress,
+        abi: gotonTeamSplitterAbi,
+        functionName: 'releaseAll',
+        args: [asset],
+        account,
+        chain: walletClient.chain,
+      }),
     );
-    if (receipt?.status !== 'success') throw new Error(`Release failed: ${hash}`);
     toast.success(t('teamPaid'));
     await load();
   } catch (e) {

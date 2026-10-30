@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import { erc20Abi, parseUnits } from 'viem';
-import { getPublicClient, getWalletClient } from '../lib/viem-client';
+import { getPublicClient } from '../lib/viem-client';
+import { isUserRejection, requireConnectedWallet } from '../lib/wallet-tx';
 import { walletChainId } from '../lib/wallet-store';
 import { getChainAdapter } from '../chains';
 
@@ -34,23 +35,6 @@ export function parseAmountToWei(rawAmount: unknown, decimals = 18): bigint {
 export const SLIPPAGE_WARN_THRESHOLD = 5.0; // percent
 export const SLIPPAGE_MAX = 49.0; // percent
 
-function isUserRejection(err: unknown): boolean {
-  const msg = ((err as Error)?.message ?? '').toLowerCase();
-  const code = (err as { code?: number })?.code;
-  return (
-    code === 4001 ||
-    msg.includes('user reject') ||
-    msg.includes('user denied') ||
-    msg.includes('user cancelled') ||
-    msg.includes('user canceled') ||
-    msg.includes('action_rejected') ||
-    msg.includes('rejected the request') ||
-    msg.includes('rejected by user') ||
-    msg.includes('transaction was rejected') ||
-    msg.includes('request rejected')
-  );
-}
-
 export function useSwap() {
   const isSwapping = ref(false);
   const swapError = ref<string | null>(null);
@@ -75,11 +59,7 @@ export function useSwap() {
 
     try {
       const publicClient = getPublicClient(params.chainId);
-      const walletClient = await getWalletClient();
-      if (!walletClient) throw new Error('Wallet not connected');
-
-      const [account] = await walletClient.getAddresses();
-      if (!account) throw new Error('No active account selected');
+      const { walletClient, account } = await requireConnectedWallet();
 
       const slippagePercent = params.slippagePercent ?? slippage.value ?? 1.0;
 

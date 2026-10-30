@@ -1,8 +1,9 @@
-import { ref, computed, type Ref, type ComputedRef } from 'vue';
+import { ref, computed } from 'vue';
 import { type FeedCalloutItem, buildCommentSignMessage } from '@goton/shared-types';
 import { getSessionHeaders } from '../lib/session';
 import { apiFetch } from '@/lib/api-client';
 import { getWalletClient } from '@/lib/viem-client';
+import { isUserRejection } from '../lib/wallet-tx';
 
 export type FeedFilterType = 'all' | 'following' | 'target' | 'whale' | 'profit' | 'media';
 
@@ -14,46 +15,7 @@ export function isWhaleCaller(call: { positionUsd?: number; supplyPercent?: numb
   return (call.supplyPercent ?? 0) >= 1.0 || (call.positionUsd ?? 0) >= 500;
 }
 
-export function useFeed(): {
-  callouts: Ref<FeedCalloutItem[]>;
-  loading: Ref<boolean>;
-  error: Ref<string | null>;
-  activeFilter: Ref<FeedFilterType>;
-  followedAuthors: Ref<Set<string>>;
-  searchQuery: Ref<string>;
-  currentPage: Ref<number>;
-  pageSize: number;
-  filteredCallouts: ComputedRef<FeedCalloutItem[]>;
-  paginatedCallouts: ComputedRef<FeedCalloutItem[]>;
-  fetchFeed: (viewerAddress?: string, authorAddress?: string) => Promise<void>;
-  fetchUserPosts: (userAddress: string, viewerAddress?: string) => Promise<FeedCalloutItem[]>;
-  postCallout: (params: {
-    tokenAddress: string;
-    authorAddress: string;
-    content: string;
-    imageUrl?: string;
-    targetMcap?: string;
-    positionUsd?: number;
-    profitUsd?: number;
-    parentId?: string;
-    quotedCalloutId?: string;
-    callType?: 'call' | 'comment';
-  }) => Promise<FeedCalloutItem | null>;
-  toggleLike: (
-    commentId: string,
-    userAddress: string,
-  ) => Promise<{ liked: boolean; likesCount: number } | null>;
-  toggleRepost: (
-    commentId: string,
-    userAddress: string,
-  ) => Promise<{ reposted: boolean; repostsCount: number } | null>;
-  recordView: (commentId: string) => Promise<number | null>;
-  fetchCalloutThread: (
-    calloutId: string,
-    viewerAddress?: string,
-  ) => Promise<FeedCalloutItem | null>;
-  fetchCallerBalance: (tokenAddress: string, accountAddress: string) => Promise<number>;
-} {
+export function useFeed() {
   const callouts = ref<FeedCalloutItem[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -142,16 +104,7 @@ export function useFeed(): {
             message,
           });
         } catch (signErr) {
-          const msg = ((signErr as Error)?.message ?? '').toLowerCase();
-          if (
-            msg.includes('user reject') ||
-            msg.includes('user denied') ||
-            msg.includes('user cancelled') ||
-            msg.includes('user canceled') ||
-            msg.includes('action_rejected')
-          ) {
-            return null;
-          }
+          if (isUserRejection(signErr)) return null;
           throw signErr;
         }
       }
@@ -185,63 +138,58 @@ export function useFeed(): {
     }
   }
 
-  async function toggleLike(
+  /** Likes or reposts a callout (or undoes it) and mirrors the new count on the loaded item. */
+  async function toggleReaction<R>(
     commentId: string,
     userAddress: string,
-  ): Promise<{ liked: boolean; likesCount: number } | null> {
+    action: 'like' | 'repost',
+    apply: (item: FeedCalloutItem, result: R) => void,
+  ): Promise<R | null> {
     try {
-      const res = await apiFetch<{
-        success: boolean;
-        data: { liked: boolean; likesCount: number };
-      }>(`/api/comments/${commentId}/like`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(await getSessionHeaders(userAddress)) },
-        body: JSON.stringify({ userAddress }),
-      });
-
+      const res = await apiFetch<{ success: boolean; data: R }>(
+        `/api/comments/${commentId}/${action}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(await getSessionHeaders(userAddress)),
+          },
+          body: JSON.stringify({ userAddress }),
+        },
+      );
       if (res && typeof res === 'object' && 'data' in res) {
         const item = callouts.value.find((c) => c.id === commentId);
-        if (item) {
-          item.likesCount = res.data.likesCount;
-          item.isLikedByViewer = res.data.liked;
-        }
+        if (item) apply(item, res.data);
         return res.data;
       }
       return null;
     } catch (e) {
-      console.warn('[useFeed] toggleLike failed:', (e as Error).message);
+      console.warn(`[useFeed] ${action} failed:`, (e as Error).message);
       return null;
     }
   }
 
-  async function toggleRepost(
-    commentId: string,
-    userAddress: string,
-  ): Promise<{ reposted: boolean; repostsCount: number } | null> {
-    try {
-      const res = await apiFetch<{
-        success: boolean;
-        data: { reposted: boolean; repostsCount: number };
-      }>(`/api/comments/${commentId}/repost`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(await getSessionHeaders(userAddress)) },
-        body: JSON.stringify({ userAddress }),
-      });
+  const toggleLike = (commentId: string, userAddress: string) =>
+    toggleReaction<{ liked: boolean; likesCount: number }>(
+      commentId,
+      userAddress,
+      'like',
+      (item, r) => {
+        item.likesCount = r.likesCount;
+        item.isLikedByViewer = r.liked;
+      },
+    );
 
-      if (res && typeof res === 'object' && 'data' in res) {
-        const item = callouts.value.find((c) => c.id === commentId);
-        if (item) {
-          item.repostsCount = res.data.repostsCount;
-          item.isRepostedByViewer = res.data.reposted;
-        }
-        return res.data;
-      }
-      return null;
-    } catch (e) {
-      console.warn('[useFeed] toggleRepost failed:', (e as Error).message);
-      return null;
-    }
-  }
+  const toggleRepost = (commentId: string, userAddress: string) =>
+    toggleReaction<{ reposted: boolean; repostsCount: number }>(
+      commentId,
+      userAddress,
+      'repost',
+      (item, r) => {
+        item.repostsCount = r.repostsCount;
+        item.isRepostedByViewer = r.reposted;
+      },
+    );
 
   async function fetchCalloutThread(
     calloutId: string,

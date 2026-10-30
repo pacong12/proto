@@ -300,13 +300,18 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
   async getComments(tokenAddress: string, viewerAddress?: string): Promise<TokenCommentEntity[]> {
     const key = tokenAddress.toLowerCase();
     const list = this.comments.get(key) ?? [];
+    return list.map((c) => this.withViewerState(c, viewerAddress));
+  }
+
+  /** A comment with the viewer's like/repost flags and its current view count. */
+  private withViewerState<C extends TokenCommentEntity>(c: C, viewerAddress?: string): C {
     const viewer = viewerAddress?.toLowerCase();
-    return list.map((c) => ({
+    return {
       ...c,
       isLikedByViewer: viewer ? (this.commentLikes.get(c.id)?.has(viewer) ?? false) : false,
       isRepostedByViewer: viewer ? (this.commentReposts.get(c.id)?.has(viewer) ?? false) : false,
       viewsCount: this.commentViews.get(c.id) ?? c.viewsCount ?? 0,
-    }));
+    };
   }
 
   async getFeedCallouts(
@@ -316,7 +321,6 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
     authorAddress?: string,
   ): Promise<import('@goton/shared-types').FeedCalloutItem[]> {
     const allComments: import('@goton/shared-types').FeedCalloutItem[] = [];
-    const viewer = viewerAddress?.toLowerCase();
 
     for (const [tokenAddr, list] of this.comments.entries()) {
       const token = this.tokens.get(tokenAddr);
@@ -326,12 +330,7 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
           continue;
         }
         allComments.push({
-          ...c,
-          isLikedByViewer: viewer ? (this.commentLikes.get(c.id)?.has(viewer) ?? false) : false,
-          isRepostedByViewer: viewer
-            ? (this.commentReposts.get(c.id)?.has(viewer) ?? false)
-            : false,
-          viewsCount: this.commentViews.get(c.id) ?? c.viewsCount ?? 0,
+          ...this.withViewerState(c, viewerAddress),
           tokenName: token?.name,
           tokenSymbol: token?.symbol,
           tokenLogo: token?.logo,
