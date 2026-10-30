@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@goton/contracts-abi": "*",
+    "@goton/math-sdk": "*",
     "viem": "^2.57.10"
   },
   "devDependencies": {

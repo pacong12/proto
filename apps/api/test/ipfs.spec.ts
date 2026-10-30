@@ -66,54 +66,6 @@ describe('IPFS Service & Controller', () => {
     });
   });
 
-  describe('IpfsController Unit Tests', () => {
-    const controller = new IpfsController();
-
-    it('handles base64 JSON payload successfully', async () => {
-      const base64Data = Buffer.from('my-token-icon-png').toString('base64');
-      const dataUrl = `data:image/png;base64,${base64Data}`;
-
-      const res = await controller.upload({
-        dataUrl,
-        fileName: 'icon.png',
-      });
-
-      expect(res.success).toBe(true);
-      if (res.success && res.data) {
-        expect(res.data.cid).toBeDefined();
-        expect(res.data.cid.startsWith('bafkrei')).toBe(true);
-        expect(res.data.url).toContain(res.data.cid);
-        expect(res.data.uri).toBe(`ipfs://${res.data.cid}`);
-      }
-    });
-
-    it('returns error when base64 payload is missing dataUrl', async () => {
-      const res = await controller.upload({
-        fileName: 'empty.png',
-      });
-
-      expect(res.success).toBe(false);
-      if (!res.success) {
-        expect(res.error?.code).toBe('INVALID_BASE64_PAYLOAD');
-      }
-    });
-
-    it('handles multipart/form-data via file buffer', async () => {
-      const buffer = new TextEncoder().encode('binary-multipart-image').buffer;
-      const res = await controller.upload({
-        fileBuffer: buffer,
-        fileName: 'token.png',
-        mimeType: 'image/png',
-      });
-
-      expect(res.success).toBe(true);
-      if (res.success && res.data) {
-        expect(res.data.cid).toBeDefined();
-        expect(res.data.cid.startsWith('bafkrei')).toBe(true);
-      }
-    });
-  });
-
   describe('POST /api/ipfs/upload HTTP Integration', () => {
     const controller = new IpfsController();
     const JPEG = Buffer.concat([
@@ -181,6 +133,18 @@ describe('IPFS Service & Controller', () => {
         }),
       );
       expect(json.error?.code).toBe('CONTENT_TYPE_MISMATCH');
+    });
+
+    it('returns error on a JSON upload without data', async () => {
+      const response = await controller.handleUpload(
+        new Request('http://localhost:3001/api/ipfs/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName: 'empty.png' }),
+        }),
+      );
+      expect(response.success).toBe(false);
+      expect(response.error?.code).toBe('MISSING_DATA');
     });
 
     it('returns error on empty multipart upload without file', async () => {

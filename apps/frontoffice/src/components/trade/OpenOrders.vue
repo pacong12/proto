@@ -67,7 +67,7 @@
             </div>
             <div class="text-muted-foreground tabular-nums">
               <template v-if="o.status === 'filled'">
-                {{ t('orderReceived') }} {{ orderPayout(o, symbol, quoteSymbol()) }}
+                {{ t('orderReceived') }} {{ orderPayout(o, symbol, network) }}
               </template>
               <template v-else>{{ t('orderCancelledLabel') }}</template>
               · {{ when(o.updatedAt) }}

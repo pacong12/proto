@@ -1,4 +1,9 @@
-import { LoggerPort, LogContext, LogLevel, StructuredLogEntry } from '../domain/ports/logger.port';
+import {
+  LoggerPort,
+  LogContext,
+  LogLevel,
+  StructuredLogEntry,
+} from '../../../core/ports/logger.port';
 
 export class StructuredLoggerService implements LoggerPort {
   private readonly serviceName: string;

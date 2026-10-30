@@ -73,6 +73,7 @@
 </template>
 
 <script setup lang="ts">
+import { isAddress } from '@goton/shared-types';
 import { ref } from 'vue';
 import { ShieldAlert, AlertCircle, Loader2 } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
@@ -105,7 +106,7 @@ const emit = defineEmits<{
 const newRecipientAddress = ref('');
 
 function isAddressValid(addr: string): boolean {
-  return /^0x[a-fA-F0-9]{40}$/.test(addr.trim());
+  return isAddress(addr.trim());
 }
 
 function handleConfirm() {

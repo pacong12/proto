@@ -265,7 +265,6 @@ import { useTokenStore } from '@/composables/useTokenStore';
 import { useHolderDividends } from '@/composables/useHolderDividends';
 import { useUserProfile } from '@/composables/useUserProfile';
 import { walletAddress } from '@/lib/wallet-store';
-import { getPublicClient } from '@/lib/viem-client';
 import { getSessionHeaders } from '@/lib/session';
 import { resolveSafeUrl } from '@/lib/safe-url';
 import { resolveUserAddress, getUserIdentity, registerUserIdentity } from '@/lib/username';
@@ -274,30 +273,17 @@ import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ShareModal, ThreadModal, QuoteModal } from '@/components/feed';
-import {
-  ProfileHero,
-  ProfileStats,
-  ProfilePostsTab,
-  ProfileCreatedTab,
-  ProfilePortfolioTab,
-  ProfileDividendsTab,
-  ProfileActivityTab,
-  EditProfileModal,
-  CtoRedirectModal,
-  type ProfileStorageData,
-  type MyLaunchItem,
-  type PortfolioPosition,
-  type UserActivity,
-} from './index';
-import { erc20Abi } from 'viem';
-import {
-  liquidityLockerAbi,
-  UNDEPLOYED,
-  type FeedCalloutItem,
-  type LaunchedTokenEntity,
-  type TokenMarketData,
-  type TradeEventEntity,
-} from '@goton/shared-types';
+import ProfileHero from './ProfileHero.vue';
+import ProfileStats from './ProfileStats.vue';
+import ProfilePostsTab from './ProfilePostsTab.vue';
+import ProfileCreatedTab from './ProfileCreatedTab.vue';
+import ProfilePortfolioTab from './ProfilePortfolioTab.vue';
+import ProfileDividendsTab from './ProfileDividendsTab.vue';
+import ProfileActivityTab from './ProfileActivityTab.vue';
+import EditProfileModal from './EditProfileModal.vue';
+import CtoRedirectModal from './CtoRedirectModal.vue';
+import type { ProfileStorageData, PortfolioPosition } from './types';
+import { isAddress, type FeedCalloutItem } from '@goton/shared-types';
 import { apiFetch } from '@/lib/api-client';
 
 const props = defineProps<{
@@ -318,7 +304,7 @@ const { fetchUserPosts, toggleLike, toggleRepost } = useFeed();
 const { tokens: allTokens, fetchTokens, getTokenNetwork } = useTokenStore();
 
 function isAddressValid(addr: string): boolean {
-  return /^0x[a-fA-F0-9]{40}$/.test(addr.trim());
+  return isAddress(addr.trim());
 }
 
 // Connected wallet account

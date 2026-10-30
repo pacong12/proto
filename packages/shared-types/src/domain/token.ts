@@ -1,3 +1,5 @@
+import type { MarketData } from '@goton/math-sdk';
+
 export interface TokenSocials {
   twitter?: string;
   telegram?: string;
@@ -56,17 +58,8 @@ export interface LaunchedTokenEntity {
   graduationTarget?: string; // wei as string
 }
 
-export interface TokenMarketData {
-  address: `0x${string}`;
-  priceInWeth: number;
-  priceUsd: number;
-  marketCapUsd: number;
-  fdvUsd: number;
-  pairedPrincipalWeth: string;
-  graduationThresholdWeth: string;
-  graduationProgress: number; // 0.0 - 1.0
-  isGraduated: boolean;
-  volume24hUsd: number;
+/** A token's market snapshot, as `calculateMarketData` (@goton/math-sdk) prices it. */
+export interface TokenMarketData extends MarketData {
   priceChange24h?: number; // Percentage change over last 24h (optional, computed externally)
 }
 

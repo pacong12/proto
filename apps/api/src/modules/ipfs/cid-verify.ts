@@ -77,7 +77,7 @@ function varint(value: number): number[] {
 }
 
 /** Parses a sha2-256 CID into its codec and digest; null for anything else. */
-export function parseCid(cid: string): { codec: number; digest: Uint8Array } | null {
+function parseCid(cid: string): { codec: number; digest: Uint8Array } | null {
   let codec: number;
   let multihash: Uint8Array;
   if (cid.startsWith('Qm') && cid.length === 46) {

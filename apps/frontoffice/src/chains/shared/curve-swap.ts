@@ -1,7 +1,8 @@
-import { erc20Abi, type PublicClient, type WalletClient } from 'viem';
+import type { PublicClient, WalletClient } from 'viem';
 import { bondingCurveAbi } from '@goton/shared-types';
 import type { ChainSwapParams } from '../types';
 import { waitForReceiptWithFallback } from '../../lib/viem-client';
+import { ensureAllowance } from '../../lib/wallet-tx';
 import { resolveMinAmountOut } from './utils';
 
 /** True when the token still trades on its bonding curve (not graduated, curve known). */
@@ -93,31 +94,15 @@ export async function executeCurveSwap(
       // fallback
     }
 
-    let currentAllowance: bigint;
-    try {
-      currentAllowance = await publicClient.readContract({
-        address: params.tokenAddress,
-        abi: erc20Abi,
-        functionName: 'allowance',
-        args: [account, params.curveAddress!],
-      });
-    } catch {
-      currentAllowance = 0n;
-    }
-
-    if (currentAllowance < sellTokenAmount) {
-      const approveHash = await walletClient.writeContract({
-        address: params.tokenAddress,
-        abi: erc20Abi,
-        functionName: 'approve',
-        args: [params.curveAddress!, sellTokenAmount],
-        account,
-        chain: walletClient.chain,
-      });
-      params.onApproveSubmitted?.(approveHash);
-      // The sell's gas estimate reads the allowance, so it must be mined first (as in v4-swap).
-      await waitForReceiptWithFallback(publicClient, approveHash, walletClient);
-    }
+    await ensureAllowance({
+      publicClient,
+      walletClient,
+      account,
+      token: params.tokenAddress,
+      spender: params.curveAddress!,
+      amount: sellTokenAmount,
+      onSubmitted: params.onApproveSubmitted,
+    });
 
     let expectedOut = params.expectedAmountOut;
     try {

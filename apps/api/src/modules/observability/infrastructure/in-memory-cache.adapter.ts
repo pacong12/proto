@@ -1,4 +1,4 @@
-import { CachePort } from '../domain/ports/cache.port';
+import { CachePort } from '../../../core/ports/cache.port';
 
 export class InMemoryCacheAdapter implements CachePort {
   private store = new Map<string, { value: string; expiresAt: number }>();

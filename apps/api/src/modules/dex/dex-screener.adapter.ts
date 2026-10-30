@@ -13,7 +13,7 @@ import type { LaunchedTokenEntity, NetworkConfig, TradeEventEntity } from '@goto
  * priceNative is the token's price in the quote and the order never changes for a pair.
  */
 
-export const DEX_KEY = 'goton';
+const DEX_KEY = 'goton';
 
 const ADDRESS = /^0x[a-fA-F0-9]{40}$/;
 const POOL_ID = /^0x[a-fA-F0-9]{64}$/;
@@ -103,7 +103,7 @@ export function pairResponse(token: LaunchedTokenEntity, pairId: string, network
 }
 
 /** The log index from a trade id (`<txHash>-<logIndex>`), or null when the id has none. */
-export function logIndexOf(trade: TradeEventEntity): number | null {
+function logIndexOf(trade: TradeEventEntity): number | null {
   const tail = trade.id.slice(trade.id.lastIndexOf('-') + 1);
   return /^\d+$/.test(tail) ? Number(tail) : null;
 }

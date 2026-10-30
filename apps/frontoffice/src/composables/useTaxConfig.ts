@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue';
-import { launchpadTokenAbi } from '@goton/shared-types';
-import { getPublicClient, getWalletClient } from '../lib/viem-client';
+import { getNetworkConfig, launchpadTokenAbi } from '@goton/shared-types';
+import { getPublicClient } from '../lib/viem-client';
+import { runWalletAction, sendWalletTransaction } from '../lib/wallet-tx';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -26,21 +27,6 @@ export interface PendingTaxConfig {
  * This composable is intentionally stateless between mounts; the caller
  * refreshes by re-calling loadPendingTax().
  */
-/**
- * FO-07: tax transactions must be sent on the token's chain; the wallet's current chain is not
- * necessarily the token's (Arc vs Robinhood), so refuse instead of broadcasting to the wrong one.
- */
-async function assertWalletOnChain(
-  walletClient: { getChainId(): Promise<number> },
-  chainId?: number,
-): Promise<void> {
-  if (!chainId) return;
-  const walletChainId = await walletClient.getChainId();
-  if (walletChainId !== chainId) {
-    throw new Error(`Switch your wallet to chain ${chainId} (the token's network) and retry.`);
-  }
-}
-
 export function useTaxConfig() {
   const pending = ref<PendingTaxConfig | null>(null);
   const loading = ref(false);
@@ -91,111 +77,34 @@ export function useTaxConfig() {
     }
   }
 
-  async function proposeTaxConfig(
+  /** Sends a timelock action (accept or cancel) on the token's chain; the proposal then clears. */
+  async function timelockAction(
     tokenAddress: `0x${string}`,
-    buyTaxBps: number,
-    sellTaxBps: number,
-    taxRecipient?: `0x${string}`,
-    chainId?: number,
+    functionName: 'acceptTaxConfig' | 'cancelTaxConfig',
+    chainId: number,
   ): Promise<`0x${string}` | null> {
-    actionLoading.value = true;
-    error.value = null;
-    try {
-      const walletClient = await getWalletClient();
-      if (!walletClient) throw new Error('No wallet connected');
-      const [account] = await walletClient.getAddresses();
-      if (!account) throw new Error('Please connect your wallet');
-      await assertWalletOnChain(walletClient, chainId);
-
-      const recipient = taxRecipient || account;
-      const hash = await walletClient.writeContract({
-        address: tokenAddress,
-        abi: launchpadTokenAbi,
-        functionName: 'proposeTaxConfig',
-        args: [buyTaxBps, sellTaxBps, recipient],
-        account,
-        chain: walletClient.chain,
-      });
-
-      const client = getPublicClient(chainId);
-      await client.waitForTransactionReceipt({ hash });
-      await loadPendingTax(tokenAddress, chainId);
-      return hash;
-    } catch (err) {
-      error.value = (err as Error).message;
-      return null;
-    } finally {
-      actionLoading.value = false;
-    }
+    const hash = await runWalletAction({ busy: actionLoading, error }, () =>
+      sendWalletTransaction(getNetworkConfig(chainId), ({ walletClient, account }) =>
+        walletClient.writeContract({
+          address: tokenAddress,
+          abi: launchpadTokenAbi,
+          functionName,
+          account,
+          chain: walletClient.chain,
+        }),
+      ),
+    );
+    if (hash) pending.value = null;
+    return hash;
   }
 
-  async function acceptTaxConfig(
-    tokenAddress: `0x${string}`,
-    chainId?: number,
-  ): Promise<`0x${string}` | null> {
-    actionLoading.value = true;
-    error.value = null;
-    try {
-      const walletClient = await getWalletClient();
-      if (!walletClient) throw new Error('No wallet connected');
-      const [account] = await walletClient.getAddresses();
-      if (!account) throw new Error('Please connect your wallet');
-      await assertWalletOnChain(walletClient, chainId);
+  /** Finalises the pending proposal after its 24h timelock (deployer only). */
+  const acceptTaxConfig = (tokenAddress: `0x${string}`, chainId: number) =>
+    timelockAction(tokenAddress, 'acceptTaxConfig', chainId);
 
-      const hash = await walletClient.writeContract({
-        address: tokenAddress,
-        abi: launchpadTokenAbi,
-        functionName: 'acceptTaxConfig',
-        args: [],
-        account,
-        chain: walletClient.chain,
-      });
-
-      const client = getPublicClient(chainId);
-      await client.waitForTransactionReceipt({ hash });
-      pending.value = null;
-      return hash;
-    } catch (err) {
-      error.value = (err as Error).message;
-      return null;
-    } finally {
-      actionLoading.value = false;
-    }
-  }
-
-  async function cancelTaxConfig(
-    tokenAddress: `0x${string}`,
-    chainId?: number,
-  ): Promise<`0x${string}` | null> {
-    actionLoading.value = true;
-    error.value = null;
-    try {
-      const walletClient = await getWalletClient();
-      if (!walletClient) throw new Error('No wallet connected');
-      const [account] = await walletClient.getAddresses();
-      if (!account) throw new Error('Please connect your wallet');
-      await assertWalletOnChain(walletClient, chainId);
-
-      const hash = await walletClient.writeContract({
-        address: tokenAddress,
-        abi: launchpadTokenAbi,
-        functionName: 'cancelTaxConfig',
-        args: [],
-        account,
-        chain: walletClient.chain,
-      });
-
-      const client = getPublicClient(chainId);
-      await client.waitForTransactionReceipt({ hash });
-      pending.value = null;
-      return hash;
-    } catch (err) {
-      error.value = (err as Error).message;
-      return null;
-    } finally {
-      actionLoading.value = false;
-    }
-  }
+  /** Aborts the pending proposal (deployer only). */
+  const cancelTaxConfig = (tokenAddress: `0x${string}`, chainId: number) =>
+    timelockAction(tokenAddress, 'cancelTaxConfig', chainId);
 
   return {
     pending,
@@ -206,7 +115,6 @@ export function useTaxConfig() {
     isReady,
     secondsUntilReady,
     loadPendingTax,
-    proposeTaxConfig,
     acceptTaxConfig,
     cancelTaxConfig,
   };

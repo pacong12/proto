@@ -7,6 +7,7 @@ import {
   type NetworkConfig,
 } from '@goton/shared-types';
 import type { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
+import { sendAndWait, sentResult } from './keeper-tx';
 
 const EXECUTOR_FEE_BPS = 10n;
 const LEG_TAKE_PROFIT = 0;
@@ -137,13 +138,8 @@ export class LimitOrderKeeperService {
           unprofitable = { key: order.key, executed: false, reason: 'Fee does not cover gas' };
           continue;
         }
-        const txHash = await this.walletClient!.writeContract(request);
-        try {
-          await this.publicClient.waitForTransactionReceipt({ hash: txHash, timeout: 120_000 });
-        } catch {
-          return { key: order.key, executed: true, txHash, reason: 'Receipt pending' };
-        }
-        return { key: order.key, executed: true, txHash };
+        const sent = await sendAndWait(this.publicClient, this.walletClient!, request);
+        return { key: order.key, ...sentResult(sent) };
       } catch {
         // Not fillable on this leg yet (limit not reached, stop not triggered, oracle not ready).
       }

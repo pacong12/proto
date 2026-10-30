@@ -83,7 +83,8 @@ export function broadcastWalletEvent(message: WalletSyncMessage) {
   }
 }
 
-function normalizeChainId(raw: unknown): number | null {
+/** A chain ID from a wallet or storage: a number, a hex string or a decimal string. */
+export function parseChainId(raw: unknown): number | null {
   if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
   if (typeof raw === 'string') {
     const parsed = raw.startsWith('0x') ? Number.parseInt(raw, 16) : Number.parseInt(raw, 10);
@@ -131,7 +132,7 @@ export function bindProviderListeners(
   };
 
   const handleChainChanged = (rawChainId: unknown) => {
-    const parsed = normalizeChainId(rawChainId);
+    const parsed = parseChainId(rawChainId);
     if (parsed !== null) {
       walletChainId.value = parsed;
       if (typeof window !== 'undefined' && 'localStorage' in window) {

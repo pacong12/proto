@@ -6,4 +6,5 @@ export * from './registry';
 export * from './resolver';
 export * from './viem';
 export * from './quote';
+export * from './onchain';
 export * from './fee-splitter';

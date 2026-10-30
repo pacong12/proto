@@ -7,15 +7,6 @@ export interface IpfsUploadResult {
   uri: string;
 }
 
-export interface IpfsDirectUploadPayload {
-  dataUrl?: string;
-  file?: string;
-  image?: string;
-  data?: string;
-  fileName?: string;
-  mimeType?: string;
-  fileBuffer?: ArrayBuffer | Buffer;
-}
 export class IpfsController {
   constructor(private readonly ipfsService: IpfsService = new IpfsService()) {}
 
@@ -97,27 +88,7 @@ export class IpfsController {
         const fileName = (file as File).name || 'upload.bin';
         const mimeType = (file as File).type || 'application/octet-stream';
 
-        if (!IpfsController.ALLOWED_MIME_TYPES.has(mimeType)) {
-          return err(
-            'UNSUPPORTED_MIME_TYPE',
-            `Only image uploads are accepted. Received: ${mimeType}`,
-          );
-        }
-        if (arrayBuffer.byteLength > IpfsController.MAX_UPLOAD_BYTES) {
-          return err('FILE_TOO_LARGE', 'Upload exceeds 5 MiB limit');
-        }
-        if (mimeType === 'image/svg+xml' && IpfsController.isMaliciousSvg(arrayBuffer)) {
-          return err(
-            'MALICIOUS_PAYLOAD',
-            'SVG contains disallowed executable scripts or event handlers',
-          );
-        }
-        if (!IpfsController.contentMatchesType(mimeType, arrayBuffer)) {
-          return err('CONTENT_TYPE_MISMATCH', `File content is not a valid ${mimeType}`);
-        }
-
-        const result = await this.ipfsService.uploadFile(arrayBuffer, fileName, mimeType);
-        return ok(result);
+        return this.validateAndUpload(arrayBuffer, fileName, mimeType);
       }
 
       if (contentType.includes('application/json')) {
@@ -147,59 +118,22 @@ export class IpfsController {
           base64Data = dataUrlMatch[2];
         }
 
+        // Checked before decoding, so an unsupported type never costs a base64 decode.
         if (!IpfsController.ALLOWED_MIME_TYPES.has(mimeType)) {
-          return err(
-            'UNSUPPORTED_MIME_TYPE',
-            `Only image uploads are accepted. Received: ${mimeType}`,
-          );
+          return IpfsController.unsupportedType(mimeType);
         }
-
-        const buffer = Buffer.from(base64Data, 'base64');
-        if (buffer.byteLength > IpfsController.MAX_UPLOAD_BYTES) {
-          return err('FILE_TOO_LARGE', 'Upload exceeds 5 MiB limit');
-        }
-        if (mimeType === 'image/svg+xml' && IpfsController.isMaliciousSvg(buffer)) {
-          return err(
-            'MALICIOUS_PAYLOAD',
-            'SVG contains disallowed executable scripts or event handlers',
-          );
-        }
-        if (!IpfsController.contentMatchesType(mimeType, buffer)) {
-          return err('CONTENT_TYPE_MISMATCH', `File content is not a valid ${mimeType}`);
-        }
-
         const fileName =
           body.fileName ||
           (mimeType.includes('image/') ? `image.${mimeType.split('/')[1]}` : 'upload.bin');
-        const result = await this.ipfsService.uploadFile(buffer, fileName, mimeType);
-        return ok(result);
+        return this.validateAndUpload(Buffer.from(base64Data, 'base64'), fileName, mimeType);
       }
 
       // Raw binary body fallback
       const arrayBuffer = await req.arrayBuffer();
       if (arrayBuffer.byteLength > 0) {
         const mimeType = contentType.split(';')[0].trim() || 'application/octet-stream';
-        if (!IpfsController.ALLOWED_MIME_TYPES.has(mimeType)) {
-          return err(
-            'UNSUPPORTED_MIME_TYPE',
-            `Only image uploads are accepted. Received: ${mimeType}`,
-          );
-        }
-        if (arrayBuffer.byteLength > IpfsController.MAX_UPLOAD_BYTES) {
-          return err('FILE_TOO_LARGE', 'Upload exceeds 5 MiB limit');
-        }
-        if (mimeType === 'image/svg+xml' && IpfsController.isMaliciousSvg(arrayBuffer)) {
-          return err(
-            'MALICIOUS_PAYLOAD',
-            'SVG contains disallowed executable scripts or event handlers',
-          );
-        }
-        if (!IpfsController.contentMatchesType(mimeType, arrayBuffer)) {
-          return err('CONTENT_TYPE_MISMATCH', `File content is not a valid ${mimeType}`);
-        }
         const fileName = req.headers.get('x-file-name') || 'upload.bin';
-        const result = await this.ipfsService.uploadFile(arrayBuffer, fileName, mimeType);
-        return ok(result);
+        return this.validateAndUpload(arrayBuffer, fileName, mimeType);
       }
 
       return err(
@@ -211,55 +145,31 @@ export class IpfsController {
     }
   }
 
-  async upload(input: Request | IpfsDirectUploadPayload): Promise<ApiEnvelope<IpfsUploadResult>> {
-    if ('headers' in input && typeof input.headers?.get === 'function') {
-      return this.handleUpload(input as Request);
-    }
+  private static unsupportedType(mimeType: string): ApiEnvelope<IpfsUploadResult> {
+    return err('UNSUPPORTED_MIME_TYPE', `Only image uploads are accepted. Received: ${mimeType}`);
+  }
 
-    const payload = input as IpfsDirectUploadPayload;
-    if (payload.fileBuffer) {
-      return this.uploadBuffer(
-        payload.fileBuffer,
-        payload.fileName || 'upload.bin',
-        payload.mimeType || 'application/octet-stream',
+  /** Every upload path ends here: an allowed image type, within the size limit, whose bytes match. */
+  private async validateAndUpload(
+    data: ArrayBuffer | Buffer,
+    fileName: string,
+    mimeType: string,
+  ): Promise<ApiEnvelope<IpfsUploadResult>> {
+    if (!IpfsController.ALLOWED_MIME_TYPES.has(mimeType)) {
+      return IpfsController.unsupportedType(mimeType);
+    }
+    if (data.byteLength > IpfsController.MAX_UPLOAD_BYTES) {
+      return err('FILE_TOO_LARGE', 'Upload exceeds 5 MiB limit');
+    }
+    if (mimeType === 'image/svg+xml' && IpfsController.isMaliciousSvg(data)) {
+      return err(
+        'MALICIOUS_PAYLOAD',
+        'SVG contains disallowed executable scripts or event handlers',
       );
     }
-
-    const rawContent = payload.dataUrl || payload.file || payload.image || payload.data;
-    if (!rawContent) {
-      return err('INVALID_BASE64_PAYLOAD', 'Payload missing dataUrl');
+    if (!IpfsController.contentMatchesType(mimeType, data)) {
+      return err('CONTENT_TYPE_MISMATCH', `File content is not a valid ${mimeType}`);
     }
-
-    let mimeType = payload.mimeType || 'application/octet-stream';
-    let base64Data = rawContent;
-    const dataUrlMatch = rawContent.match(/^data:([^;]+);base64,(.+)$/);
-    if (dataUrlMatch) {
-      mimeType = dataUrlMatch[1];
-      base64Data = dataUrlMatch[2];
-    }
-
-    const buffer = Buffer.from(base64Data, 'base64');
-    const fileName =
-      payload.fileName ||
-      (mimeType.includes('image/') ? `image.${mimeType.split('/')[1]}` : 'upload.bin');
-    return this.uploadBuffer(buffer, fileName, mimeType);
-  }
-  async uploadBuffer(
-    fileBuffer: Buffer | ArrayBuffer,
-    fileName = 'upload.bin',
-    mimeType = 'application/octet-stream',
-  ): Promise<ApiEnvelope<IpfsUploadResult>> {
-    try {
-      if (mimeType === 'image/svg+xml' && IpfsController.isMaliciousSvg(fileBuffer)) {
-        return err(
-          'MALICIOUS_PAYLOAD',
-          'SVG contains disallowed executable scripts or event handlers',
-        );
-      }
-      const result = await this.ipfsService.uploadFile(fileBuffer, fileName, mimeType);
-      return ok(result);
-    } catch (error) {
-      return err('UPLOAD_FAILED', (error as Error).message);
-    }
+    return ok(await this.ipfsService.uploadFile(data, fileName, mimeType));
   }
 }

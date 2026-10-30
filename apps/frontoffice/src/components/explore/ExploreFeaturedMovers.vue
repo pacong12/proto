@@ -82,7 +82,6 @@
 
 <script setup lang="ts">
 import { Star, ArrowRight } from 'lucide-vue-next';
-import { useI18n } from '@/lib/i18n';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import TaxTooltip from '@/components/ui/TaxTooltip.vue';
 import { useTokenStore } from '@/composables/useTokenStore';
@@ -107,5 +106,4 @@ defineEmits<{
 }>();
 
 const tokenStore = useTokenStore();
-const { t } = useI18n();
 </script>

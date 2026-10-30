@@ -90,7 +90,6 @@
 
 <script setup lang="ts">
 import { Search, TrendingUp } from 'lucide-vue-next';
-import { useI18n } from '@/lib/i18n';
 import { Empty } from '@/components/ui/empty';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import {
@@ -98,7 +97,6 @@ import {
   getTokenChainName as getChainName,
   formatMarketCap,
 } from '@/lib/utils';
-import { useTokenStore } from '@/composables/useTokenStore';
 import type { LaunchedTokenEntity, TokenMarketData } from '@goton/shared-types';
 
 interface TokenItem {
@@ -112,8 +110,6 @@ interface Props {
 }
 
 defineProps<Props>();
-
-const { t } = useI18n();
 
 defineEmits<{
   (e: 'update:searchQuery', val: string): void;

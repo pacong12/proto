@@ -235,3 +235,36 @@ describe('DEX Screener adapter endpoints across graduation and chains', () => {
     expect((await get(`/dex/pair?chain=arc&id=${ARC_POOL_ID}`)).body.pair.id).toBe(ARC_POOL_ID);
   });
 });
+
+describe('GeckoTerminal OHLCV timeframes', () => {
+  const repository = new SqliteTokenRepository();
+  afterAll(() => repository.close());
+
+  it('buckets minute, hour and day candles by their own width', async () => {
+    const address = hex(20);
+    const pool = hex(20);
+    await repository.save(token({ address, poolAddress: pool, curveAddress: pool }));
+    // 10:00:10 and 10:40:00 on one day: two minutes, one hour, one day.
+    const day = 1_793_008_800_000 - (1_793_008_800_000 % 86_400_000);
+    for (const [i, offset] of [36_010_000, 38_400_000].entries()) {
+      await repository.saveTrade(
+        trade({
+          id: `${hex(32)}-${i}`,
+          tokenAddress: address,
+          poolAddress: pool,
+          timestamp: day + offset,
+        }),
+      );
+    }
+
+    const candles = async (timeframe: string) =>
+      (await get(`/api/v1/networks/robinhood/pools/${pool}/ohlcv/${timeframe}`)).body.data
+        .attributes.ohlcv_list as number[][];
+    const width = { minute: 60_000, hour: 3_600_000, day: 86_400_000 };
+    for (const [timeframe, ms] of Object.entries(width)) {
+      const list = await candles(timeframe);
+      expect(list.length, timeframe).toBe(timeframe === 'minute' ? 2 : 1);
+      for (const [timestamp] of list) expect(timestamp % ms, timeframe).toBe(0);
+    }
+  });
+});

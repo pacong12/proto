@@ -7,7 +7,6 @@
 import {
   canonicalPath,
   clipText,
-  isAddress,
   isIndexableToken,
   SEO_DEFAULT_DESCRIPTION,
   SEO_DEFAULT_TITLE,
@@ -15,6 +14,7 @@ import {
   tokenSeoDescription,
   trimTrailingSlashes,
 } from './packages/shared-types/src/constants/seo';
+import { isAddress } from './packages/shared-types/src/domain/address';
 
 export interface PageMeta {
   title: string;

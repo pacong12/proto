@@ -325,7 +325,7 @@ import { Empty } from '@/components/ui/empty';
 import { Pagination } from '@/components/ui/pagination';
 import TaxTooltip from '@/components/ui/TaxTooltip.vue';
 import type { LaunchedTokenEntity, TokenMarketData } from '@goton/shared-types';
-import { formatCompactUsd, formatRelativeTime, shortenAddress, getChainIcon } from '@/lib/utils';
+import { formatCompactUsd, formatRelativeTime, getChainIcon } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { useWallet } from '@/composables/useWallet';
 import { useTokenStore } from '@/composables/useTokenStore';
