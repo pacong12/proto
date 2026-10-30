@@ -51,6 +51,13 @@ All code follows the Clean Architecture dependency rule: **Dependencies point st
 - Each module registers its HTTP routes in `presentation/<module>.routes.ts`
   (`register<Module>Routes(router, deps)`), on the `Router` from `core/http`. Routes receive their
   services from the container instead of importing them.
+- Frontoffice components only render and react: chain reads and wallet transactions live in
+  composables (`useTeamFees`, `composables/trade/*`, `lib/wallet-tx.ts`), never in
+  `components/` or `pages/`.
+- The token page (`TradeView.vue`) keeps the page state and composes one composable per concern:
+  `useTradeMarket` (price, chart, trades, holders, live updates), `useTradeTax`,
+  `useTradeDividends`, `useTradeOrderRoutes`, `useTradeForm` (the swap form) and
+  `useTradeCallouts`. `fetchTradeToken` loads the token from the API and falls back to the chain.
 
 ### Composition (`apps/api/src`)
 
