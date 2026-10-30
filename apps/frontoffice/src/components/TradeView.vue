@@ -508,8 +508,7 @@ import {
 import {
   calculateCurveBuyOutput,
   calculateCurveSellOutput,
-  calculateMarketData,
-  calculateSpotPrice,
+  calculateCurveMarketData,
   getChainMathConfig,
 } from '@goton/math-sdk';
 
@@ -519,17 +518,15 @@ const props = defineProps<{
 
 /** Market data of a token still on its bonding curve, priced from the curve's reserves. */
 function curveMarketData(token: LaunchedTokenEntity, network: NetworkConfig): TokenMarketData {
-  const decimals = token.decimals || 18;
-  return calculateMarketData({
+  return calculateCurveMarketData({
     address: token.address,
-    spotPriceNative: calculateSpotPrice(
-      Number(token.virtualEthReserve ?? 0) / 1e18,
-      Number(token.virtualTokenReserve ?? 0) / 10 ** decimals,
-    ),
-    pairedPrincipalWei: BigInt(token.initialBuyAmount ?? 0),
-    quotePriceUsd: stableQuoteUsd(network) ?? FALLBACK_ETH_PRICE_USD,
-    thresholdWei: BigInt(token.graduationTarget ?? 0),
+    virtualEthReserve: BigInt(token.virtualEthReserve ?? 0),
+    virtualTokenReserve: BigInt(token.virtualTokenReserve ?? 0),
+    totalEthRaised: BigInt(token.initialBuyAmount ?? 0),
+    graduationTarget: BigInt(token.graduationTarget ?? 0),
     totalSupply: BigInt(token.totalSupply),
+    tokenDecimals: token.decimals || 18,
+    quotePriceUsd: stableQuoteUsd(network) ?? FALLBACK_ETH_PRICE_USD,
   });
 }
 

@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { GetHoldersUseCase } from '../src/modules/tokens/application/use-cases/get-holders.use-case';
+import { GetDevActivityUseCase } from '../src/modules/tokens/application/use-cases/get-dev-activity.use-case';
 import { TokenController } from '../src/modules/tokens/presentation/token.controller';
 import { InMemoryTokenRepository } from '../src/modules/tokens/infrastructure/adapters/in-memory-token.repository';
 import { GetTokensUseCase } from '../src/modules/tokens/application/use-cases/get-tokens.use-case';
@@ -68,7 +70,12 @@ describe('TokenController Unit Tests', () => {
       calculatePricing,
       priceFeed,
     );
-    controller = new TokenController(getTokensUseCase, getTokenByAddressUseCase, repository);
+    controller = new TokenController(
+      getTokensUseCase,
+      getTokenByAddressUseCase,
+      new GetHoldersUseCase(repository),
+      new GetDevActivityUseCase(repository),
+    );
   });
 
   it('rejects invalid address format for token detail and holders', async () => {
@@ -100,7 +107,8 @@ describe('TokenController Unit Tests', () => {
     const nullController = new TokenController(
       new GetTokensUseCase(repository),
       nullUseCase,
-      repository,
+      new GetHoldersUseCase(repository),
+      new GetDevActivityUseCase(repository),
     );
 
     const res = await nullController.getToken(testAddress);

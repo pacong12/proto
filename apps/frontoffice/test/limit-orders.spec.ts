@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ARC_CHAIN, ROBINHOOD_CHAIN } from '@goton/shared-types';
 import {
   buyMinOut,
   priceAtMarketCap,
@@ -58,15 +59,15 @@ describe('order payout', () => {
       orderPayout(
         { isBuy: true, status: 'filled', amountOut: String(2n * 10n ** 18n) },
         'PROT',
-        'ETH',
+        ROBINHOOD_CHAIN,
       ),
     ).toBe('2 PROT');
     // Arc pays out the 6-decimal USDC ERC-20.
     expect(
-      orderPayout({ isBuy: false, status: 'filled', amountOut: '12500000' }, 'X', 'USDC'),
+      orderPayout({ isBuy: false, status: 'filled', amountOut: '12500000' }, 'X', ARC_CHAIN),
     ).toBe(`${(12.5).toLocaleString()} USDC`);
     expect(
-      orderPayout({ isBuy: false, status: 'cancelled', amountOut: '1' }, 'X', 'ETH'),
+      orderPayout({ isBuy: false, status: 'cancelled', amountOut: '1' }, 'X', ROBINHOOD_CHAIN),
     ).toBeNull();
   });
 });

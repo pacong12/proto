@@ -1,7 +1,7 @@
 import type { Address } from 'viem';
 import type { CandlestickEntity } from '@goton/shared-types';
 import type { TokenRepositoryPort } from '../../../tokens/domain/ports/token.repository.port';
-import { ValidationError } from '../../../../core/errors/app-error';
+import { ValidationError, assertAddress } from '../../../../core/errors/app-error';
 
 /** Candle widths the API serves, in seconds. */
 export const VALID_RESOLUTIONS = [1, 60, 300, 900, 3600, 14400, 86400];
@@ -14,12 +14,7 @@ export class GetCandlesticksUseCase {
     resolutionSeconds = 1,
     fillGaps = false,
   ): Promise<CandlestickEntity[]> {
-    if (!address.startsWith('0x') || address.length !== 42) {
-      throw new ValidationError(
-        'Token address must be a valid 42-character hex string',
-        'INVALID_ADDRESS',
-      );
-    }
+    assertAddress(address);
 
     if (!VALID_RESOLUTIONS.includes(resolutionSeconds)) {
       throw new ValidationError(

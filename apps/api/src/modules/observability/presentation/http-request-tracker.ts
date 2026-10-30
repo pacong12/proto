@@ -1,6 +1,6 @@
 import crypto from 'crypto';
-import { LoggerPort } from '../domain/ports/logger.port';
-import { CachePort } from '../domain/ports/cache.port';
+import { LoggerPort } from '../../../core/ports/logger.port';
+import { CachePort } from '../../../core/ports/cache.port';
 import {
   ErrorMetricEntry,
   RequestMetricEntry,

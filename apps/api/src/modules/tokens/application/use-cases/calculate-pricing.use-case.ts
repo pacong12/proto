@@ -1,5 +1,9 @@
-import { TokenMarketData } from '@goton/shared-types';
-import { calculateMarketData, type MarketDataParams } from '@goton/math-sdk';
+import type { CurveState, LaunchedTokenEntity, TokenMarketData } from '@goton/shared-types';
+import {
+  calculateCurveMarketData,
+  calculateMarketData,
+  type MarketDataParams,
+} from '@goton/math-sdk';
 
 export class CalculatePricingUseCase {
   /**
@@ -14,5 +18,15 @@ export class CalculatePricingUseCase {
   ): TokenMarketData {
     const { ethPriceUsd, ...rest } = params;
     return calculateMarketData({ ...rest, quotePriceUsd: ethPriceUsd });
+  }
+
+  /** Market data of a token on its bonding curve, from the curve's live on-chain state. */
+  fromCurve(token: LaunchedTokenEntity, curve: CurveState, quotePriceUsd: number): TokenMarketData {
+    return calculateCurveMarketData({
+      address: token.address,
+      ...curve,
+      totalSupply: BigInt(token.totalSupply || '1000000000000000000000000000'),
+      quotePriceUsd,
+    });
   }
 }

@@ -1,4 +1,5 @@
 import { TOTAL_SUPPLY_WEI } from './constants';
+import { calculateSpotPrice } from './bonding-curve';
 
 export interface MarketDataParams {
   address: `0x${string}`;
@@ -79,4 +80,31 @@ export function calculateMarketData(params: MarketDataParams): MarketData {
     isGraduated: progress >= 1.0,
     volume24hUsd: params.volume24hUsd ?? 0,
   };
+}
+
+export interface CurveMarketParams {
+  address: `0x${string}`;
+  /** The curve's reserves and progress, in wei / token base units. */
+  virtualEthReserve: bigint;
+  virtualTokenReserve: bigint;
+  totalEthRaised: bigint;
+  graduationTarget: bigint;
+  totalSupply?: bigint;
+  tokenDecimals?: number;
+  quotePriceUsd: number;
+}
+
+/** Market data of a token still on its bonding curve, priced from the curve's reserves. */
+export function calculateCurveMarketData(params: CurveMarketParams): MarketData {
+  return calculateMarketData({
+    address: params.address,
+    spotPriceNative: calculateSpotPrice(
+      Number(params.virtualEthReserve) / 1e18,
+      Number(params.virtualTokenReserve) / 10 ** (params.tokenDecimals ?? 18),
+    ),
+    pairedPrincipalWei: params.totalEthRaised,
+    quotePriceUsd: params.quotePriceUsd,
+    thresholdWei: params.graduationTarget,
+    totalSupply: params.totalSupply,
+  });
 }

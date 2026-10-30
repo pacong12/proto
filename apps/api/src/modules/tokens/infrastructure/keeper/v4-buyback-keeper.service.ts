@@ -10,6 +10,7 @@ import {
 } from '@goton/shared-types';
 import type { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import { findAllTokens } from '../../application/all-tokens';
+import { sendAndWait, sentResult } from './keeper-tx';
 
 /** A pending keeper transaction older than this is replaced (DR-03). */
 const STUCK_AFTER_MS = 5 * 60_000;
@@ -118,13 +119,8 @@ export class V4BuybackKeeperService {
         functionName: release.action,
         account,
       });
-      const txHash = await this.walletClient!.writeContract(request);
-      try {
-        await this.publicClient.waitForTransactionReceipt({ hash: txHash, timeout: 120_000 });
-      } catch {
-        return { token, action: release.action, executed: true, txHash, reason: 'Receipt pending' };
-      }
-      return { token, action: release.action, executed: true, txHash };
+      const sent = await sendAndWait(this.publicClient, this.walletClient!, request);
+      return { token, action: release.action, ...sentResult(sent) };
     } catch (e) {
       // A recipient that rejects payment (e.g. USDC-blocklisted) fails here, never in a swap.
       return {
@@ -210,15 +206,8 @@ export class V4BuybackKeeperService {
       if (result[0] === 0n) {
         return { token, executed: false, reason: 'Spot price outside the TWAP guard' };
       }
-      const txHash = await this.walletClient!.writeContract(request);
-      // Wait for inclusion so the next token's transaction never stacks behind this one.
-      try {
-        await this.publicClient.waitForTransactionReceipt({ hash: txHash, timeout: 120_000 });
-      } catch {
-        // Still pending: the next cycle's nonce check waits for it (or replaces it).
-        return { token, executed: true, txHash, reason: 'Receipt pending' };
-      }
-      return { token, executed: true, txHash };
+      const sent = await sendAndWait(this.publicClient, this.walletClient!, request);
+      return { token, ...sentResult(sent) };
     } catch (e) {
       // OracleNotReady and transient RPC errors land here; the next cycle retries.
       return { token, executed: false, reason: (e as Error).message.split('\n')[0] };

@@ -34,22 +34,11 @@ export class GetTokensUseCase {
           const network = resolveTokenNetwork(token, token.chainId);
 
           if (token.version === 'v2' && token.curveAddress) {
-            const curveAddr = token.curveAddress as `0x${string}`;
-            const curveState = await this.chainIndexer.fetchV2CurveState(curveAddr, network);
-            const quoteUsd = await this.priceFeed.getQuoteAssetPriceUsd(network.chainId);
-            const vEthNum = Number(curveState.virtualEthReserve) / 1e18;
-            const virtualTokensNum = Number(curveState.virtualTokenReserve) / 1e18;
-            const spotPriceNative = virtualTokensNum > 0 ? vEthNum / virtualTokensNum : 0;
-
-            marketData = this.calculatePricing.execute({
-              address: token.address,
-              spotPriceNative,
-              isToken0: token.isToken0,
-              pairedPrincipalWei: curveState.totalEthRaised,
-              ethPriceUsd: quoteUsd,
-              thresholdWei: curveState.graduationTarget,
-              totalSupply: BigInt(token.totalSupply || '1000000000000000000000000000'),
-            });
+            const [curveState, quoteUsd] = await Promise.all([
+              this.chainIndexer.fetchV2CurveState(token.curveAddress, network),
+              this.priceFeed.getQuoteAssetPriceUsd(network.chainId),
+            ]);
+            marketData = this.calculatePricing.fromCurve(token, curveState, quoteUsd);
 
             await this.tokenRepository.saveMarketData(marketData);
           }

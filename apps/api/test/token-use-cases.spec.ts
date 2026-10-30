@@ -4,6 +4,8 @@ import { CalculatePricingUseCase } from '../src/modules/tokens/application/use-c
 import { GetTokensUseCase } from '../src/modules/tokens/application/use-cases/get-tokens.use-case';
 import { GetTokenByAddressUseCase } from '../src/modules/tokens/application/use-cases/get-token-by-address.use-case';
 import { GetTradesUseCase } from '../src/modules/trades/application/use-cases/get-trades.use-case';
+import { GetHoldersUseCase } from '../src/modules/tokens/application/use-cases/get-holders.use-case';
+import { GetDevActivityUseCase } from '../src/modules/tokens/application/use-cases/get-dev-activity.use-case';
 import { TokenController } from '../src/modules/tokens/presentation/token.controller';
 import { CoinGeckoPriceFeedAdapter } from '../src/modules/tokens/infrastructure/adapters/coingecko-price-feed.adapter';
 import type { ViemChainIndexerAdapter } from '../src/modules/tokens/infrastructure/adapters/viem-chain-indexer.adapter';
@@ -81,7 +83,12 @@ describe('Token Use Cases & Controller', () => {
       calculatePricing,
       priceFeed,
     );
-    controller = new TokenController(getTokensUseCase, getTokenByAddressUseCase, repository);
+    controller = new TokenController(
+      getTokensUseCase,
+      getTokenByAddressUseCase,
+      new GetHoldersUseCase(repository),
+      new GetDevActivityUseCase(repository),
+    );
   });
 
   it('fetches and indexes token from chain indexer when not in cache', async () => {

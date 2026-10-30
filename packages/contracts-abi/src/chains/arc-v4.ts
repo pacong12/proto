@@ -27,9 +27,6 @@ export function protoV4PoolKey(token: Address, quote: Address, hook: Address): V
   };
 }
 
-/** Arc alias of {@link protoV4PoolKey}. */
-export const arcPoolKey = protoV4PoolKey;
-
 /** Universal Router command / v4-periphery action codes. */
 const V4_SWAP = 0x10;
 const SWAP_EXACT_IN_SINGLE = 0x06;

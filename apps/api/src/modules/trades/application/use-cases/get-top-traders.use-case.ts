@@ -4,7 +4,7 @@ import type { TradeRepositoryPort } from '../../domain/ports/trade-repository.po
 import type { TokenRepositoryPort } from '../../../tokens/domain/ports/token.repository.port';
 import type { PriceFeedPort } from '../../../tokens/domain/ports/price-feed.port';
 import type { TopTraderItem } from '../../domain/entities/trade.entity';
-import { ValidationError } from '../../../../core/errors/app-error';
+import { assertAddress } from '../../../../core/errors/app-error';
 
 interface CacheEntry {
   data: TopTraderItem[];
@@ -22,12 +22,7 @@ export class GetTopTradersUseCase {
   ) {}
 
   async execute(address: string, limit = 20): Promise<TopTraderItem[]> {
-    if (!address.startsWith('0x') || address.length !== 42) {
-      throw new ValidationError(
-        'Token address must be a valid 42-character hex string',
-        'INVALID_ADDRESS',
-      );
-    }
+    assertAddress(address);
 
     const cleanAddress = address.toLowerCase();
     const token = await this.tokenRepository.findByAddress(address as Address);

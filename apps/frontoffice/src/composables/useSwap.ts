@@ -33,7 +33,6 @@ export function parseAmountToWei(rawAmount: unknown, decimals = 18): bigint {
 }
 
 export const SLIPPAGE_WARN_THRESHOLD = 5.0; // percent
-export const SLIPPAGE_MAX = 49.0; // percent
 
 export function useSwap() {
   const isSwapping = ref(false);

@@ -8,6 +8,7 @@ import {
 } from '@goton/shared-types';
 import type { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
 import { findAllTokens } from '../../application/all-tokens';
+import { sendAndWait, sentResult } from './keeper-tx';
 
 export interface GraduationResult {
   token: string;
@@ -68,14 +69,10 @@ export class GraduationKeeperService {
           args: [token.address],
           account,
         });
-        const txHash = await this.walletClient.writeContract(request);
-        try {
-          await this.publicClient.waitForTransactionReceipt({ hash: txHash, timeout: 120_000 });
-        } catch {
-          results.push({ token: token.address, executed: true, txHash, reason: 'Receipt pending' });
-          return results;
-        }
-        results.push({ token: token.address, executed: true, txHash });
+        const sent = await sendAndWait(this.publicClient, this.walletClient, request);
+        results.push({ token: token.address, ...sentResult(sent) });
+        // A pending transaction holds the nonce: stop until the next cycle.
+        if (sent.pending) return results;
       } catch (e) {
         // Already graduated by a trader, or a curve from an older factory.
         results.push({

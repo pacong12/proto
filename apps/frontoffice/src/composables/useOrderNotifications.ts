@@ -1,6 +1,6 @@
 import { watch, type Ref } from 'vue';
 import type { Router } from 'vue-router';
-import { CHAINS, type LimitOrderEntity } from '@goton/shared-types';
+import { getNetworkConfig, type LimitOrderEntity } from '@goton/shared-types';
 import { toast } from '@/components/ui/sonner';
 import { orderPayout } from '@/lib/limit-orders';
 import { apiFetch } from '@/lib/api-client';
@@ -46,8 +46,7 @@ export function useOrderNotifications(
       (x) => x.token.address.toLowerCase() === o.token.toLowerCase(),
     )?.token;
     const symbol = token?.symbol ?? 'token';
-    const native = CHAINS.find((c) => c.chainId === o.chainId)?.nativeCurrency.symbol ?? '';
-    const payout = orderPayout(o, symbol, native);
+    const payout = orderPayout(o, symbol, getNetworkConfig(o.chainId));
     toast.success(`${legLabel(o)} ${t('orderFilledToast')}: $${symbol}`, {
       description: payout ? `${t('orderReceived')} ${payout}` : undefined,
       action: { label: t('viewToken'), onClick: () => router.push(`/token/${o.token}`) },

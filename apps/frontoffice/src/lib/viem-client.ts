@@ -95,7 +95,7 @@ export function guardWalletWrites<T extends object>(client: T): T {
   });
 }
 
-export function createWalletClientFromProvider(provider: unknown, chainId?: number): WalletClient {
+function createWalletClientFromProvider(provider: unknown, chainId?: number): WalletClient {
   return createWalletClient({
     chain: toViemChain((chainId ? SUPPORTED_CHAINS[chainId] : undefined) ?? DEFAULT_NETWORK),
     transport: custom(provider as never),
