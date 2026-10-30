@@ -1,19 +1,8 @@
 import { ref, computed } from 'vue';
 import { formatUnits } from 'viem';
 import { gotonFeeSplitterAbi, resolveFeeSplitter, type NetworkConfig } from '@goton/shared-types';
-import { getPublicClient, getWalletClient } from '../lib/viem-client';
-
-function isUserRejection(err: unknown): boolean {
-  if (!err || typeof err !== 'object') return false;
-  const msg = 'message' in err && typeof err.message === 'string' ? err.message.toLowerCase() : '';
-  const code = 'code' in err && typeof err.code === 'number' ? err.code : null;
-  return (
-    msg.includes('user rejected') ||
-    msg.includes('user denied') ||
-    msg.includes('rejected') ||
-    code === 4001
-  );
-}
+import { getPublicClient } from '../lib/viem-client';
+import { isUserRejection, sendWalletTransaction } from '../lib/wallet-tx';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -148,14 +137,6 @@ export function useHolderDividends() {
     error.value = null;
 
     try {
-      const walletClient = await getWalletClient();
-      if (!walletClient) throw new Error('No wallet connected');
-      const [account] = await walletClient.getAddresses();
-      if (!account) throw new Error('Please connect your wallet');
-      if ((await walletClient.getChainId()) !== network.chainId) {
-        throw new Error(`Switch your wallet to ${network.name} and retry.`);
-      }
-
       const splitter = await resolveFeeSplitter(
         getPublicClient(network.chainId),
         network,
@@ -163,16 +144,16 @@ export function useHolderDividends() {
       );
       if (!splitter) throw new Error('This token has no dividend splitter yet');
 
-      const hash = await walletClient.writeContract({
-        address: splitter.address,
-        abi: gotonFeeSplitterAbi,
-        functionName: 'claim',
-        args: [account],
-        account,
-        chain: walletClient.chain,
-      });
-
-      await getPublicClient(network.chainId).waitForTransactionReceipt({ hash });
+      const hash = await sendWalletTransaction(network, ({ walletClient, account }) =>
+        walletClient.writeContract({
+          address: splitter.address,
+          abi: gotonFeeSplitterAbi,
+          functionName: 'claim',
+          args: [account],
+          account,
+          chain: walletClient.chain,
+        }),
+      );
 
       // Remove claimed entry from list
       entries.value = entries.value.filter((e) => e.tokenAddress !== tokenAddress);

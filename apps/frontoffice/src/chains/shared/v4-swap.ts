@@ -1,7 +1,8 @@
-import { erc20Abi, type PublicClient, type WalletClient } from 'viem';
+import type { PublicClient, WalletClient } from 'viem';
 import { protoV4PoolKey, gotonV4RouterAbi, type NetworkConfig } from '@goton/shared-types';
 import type { ChainSwapParams } from '../types';
 import { waitForReceiptWithFallback } from '../../lib/viem-client';
+import { ensureAllowance } from '../../lib/wallet-tx';
 import { isDeployed, resolveMinAmountOut } from './utils';
 
 export interface V4QuoteConfig {
@@ -44,26 +45,15 @@ export async function executeV4RouterSwap(
   const minOut = params.isBuy ? minOutNative : minOutNative / quote.nativeScale;
 
   if (!params.isBuy) {
-    const allowance = await publicClient
-      .readContract({
-        address: params.tokenAddress,
-        abi: erc20Abi,
-        functionName: 'allowance',
-        args: [account, router],
-      })
-      .catch(() => 0n);
-    if (allowance < amountIn) {
-      const approveHash = await walletClient.writeContract({
-        address: params.tokenAddress,
-        abi: erc20Abi,
-        functionName: 'approve',
-        args: [router, amountIn],
-        account,
-        chain: walletClient.chain,
-      });
-      params.onApproveSubmitted?.(approveHash);
-      await waitForReceiptWithFallback(publicClient, approveHash, walletClient);
-    }
+    await ensureAllowance({
+      publicClient,
+      walletClient,
+      account,
+      token: params.tokenAddress,
+      spender: router,
+      amount: amountIn,
+      onSubmitted: params.onApproveSubmitted,
+    });
   }
 
   const hash = await walletClient.writeContract({

@@ -1,29 +1,7 @@
 import { ref } from 'vue';
 import { decodeEventLog, parseEventLogs, type TransactionReceipt } from 'viem';
 import { apiFetch } from '@/lib/api-client';
-import { getChainMathConfig, taxPercentToBps } from '@goton/math-sdk';
-
-/**
- * Return true when the error originates from the user explicitly rejecting
- * the transaction in their wallet (EIP-1193 code 4001 or equivalent messages
- * from MetaMask, WalletConnect, OKX, Bitget, Coinbase Wallet).
- */
-function isUserRejection(err: unknown): boolean {
-  const msg = ((err as Error)?.message ?? '').toLowerCase();
-  const code = (err as { code?: number })?.code;
-  return (
-    code === 4001 ||
-    msg.includes('user reject') ||
-    msg.includes('user denied') ||
-    msg.includes('user cancelled') ||
-    msg.includes('user canceled') ||
-    msg.includes('action_rejected') ||
-    msg.includes('rejected the request') ||
-    msg.includes('rejected by user') ||
-    msg.includes('transaction was rejected') ||
-    msg.includes('request rejected')
-  );
-}
+import { getLaunchModel, taxPercentToBps } from '@goton/math-sdk';
 
 import {
   getNetworkConfig,
@@ -36,6 +14,12 @@ import {
   type TokenSocials,
 } from '@goton/shared-types';
 import { getPublicClient, getWalletClient } from '../lib/viem-client';
+import {
+  isUserRejection,
+  requireConnectedWallet,
+  runWalletAction,
+  sendWalletTransaction,
+} from '../lib/wallet-tx';
 import { getChainAdapter } from '../chains';
 import { walletChainId } from '../lib/wallet-store';
 
@@ -102,11 +86,7 @@ export function useLaunchpad() {
     launchTokenAddress.value = null;
 
     try {
-      const walletClient = await getWalletClient();
-      if (!walletClient) throw new Error('No Web3 wallet detected');
-
-      const [account] = await walletClient.getAddresses();
-      if (!account) throw new Error('Please connect your wallet');
+      const { walletClient, account } = await requireConnectedWallet();
 
       let activeChainId = walletChainId.value ?? undefined;
       try {
@@ -207,42 +187,30 @@ export function useLaunchpad() {
   // Write: claim creator fees from the token's GotonFeeSplitter
   // ---------------------------------------------------------------------------
 
-  async function resolveCreatorSplitter(tokenAddress: `0x${string}`) {
-    const walletClient = await getWalletClient();
-    if (!walletClient) throw new Error('No Web3 wallet detected');
-    const [account] = await walletClient.getAddresses();
-    if (!account) throw new Error('Please connect your wallet');
+  /** The token's creator fee splitter on the wallet's network, with that network. */
+  async function creatorSplitter(tokenAddress: `0x${string}`) {
     const network = getNetworkConfig(walletChainId.value ?? undefined);
     const publicClient = getPublicClient(network.chainId);
     const splitter = await resolveFeeSplitter(publicClient, network, tokenAddress);
     if (!splitter) throw new Error(`No fee splitter for this token on ${network.name} yet`);
-    return { walletClient, account, publicClient, splitter: splitter.address };
+    return { network, publicClient, splitter: splitter.address };
   }
 
-  async function claimFees(tokenAddress: `0x${string}`): Promise<string | null> {
-    loading.value = true;
-    error.value = null;
+  const actionState = { busy: loading, error };
 
-    try {
-      const { walletClient, account, publicClient, splitter } =
-        await resolveCreatorSplitter(tokenAddress);
-      const hash = await walletClient.writeContract({
-        address: splitter,
-        abi: gotonFeeSplitterAbi,
-        functionName: 'claimCreatorFees',
-        account,
-        chain: walletClient.chain,
-      });
-      await publicClient.waitForTransactionReceipt({ hash });
-      return hash;
-    } catch (err) {
-      if (!isUserRejection(err)) {
-        error.value = (err as Error).message;
-      }
-      return null;
-    } finally {
-      loading.value = false;
-    }
+  function claimFees(tokenAddress: `0x${string}`): Promise<string | null> {
+    return runWalletAction(actionState, async () => {
+      const { network, splitter } = await creatorSplitter(tokenAddress);
+      return sendWalletTransaction(network, ({ walletClient, account }) =>
+        walletClient.writeContract({
+          address: splitter,
+          abi: gotonFeeSplitterAbi,
+          functionName: 'claimCreatorFees',
+          account,
+          chain: walletClient.chain,
+        }),
+      );
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -253,16 +221,12 @@ export function useLaunchpad() {
    * First call proposes `redirectAddress`; calling again with the same address once the 48h
    * timelock has passed accepts it (FO-04: the redirect previously never became active).
    */
-  async function setFeeRedirect(
+  function setFeeRedirect(
     tokenAddress: `0x${string}`,
     redirectAddress: `0x${string}`,
   ): Promise<string | null> {
-    loading.value = true;
-    error.value = null;
-
-    try {
-      const { walletClient, account, publicClient, splitter } =
-        await resolveCreatorSplitter(tokenAddress);
+    return runWalletAction(actionState, async () => {
+      const { network, publicClient, splitter } = await creatorSplitter(tokenAddress);
       const [pending, validAfter] = await Promise.all([
         publicClient.readContract({
           address: splitter,
@@ -281,33 +245,25 @@ export function useLaunchpad() {
         const hours = Math.ceil(Number(validAfter - now) / 3600);
         throw new Error(`Redirect already proposed; it can be accepted in about ${hours}h.`);
       }
-
-      const hash = accept
-        ? await walletClient.writeContract({
-            address: splitter,
-            abi: gotonFeeSplitterAbi,
-            functionName: 'acceptCreatorRecipient',
-            account,
-            chain: walletClient.chain,
-          })
-        : await walletClient.writeContract({
-            address: splitter,
-            abi: gotonFeeSplitterAbi,
-            functionName: 'proposeCreatorRecipient',
-            args: [redirectAddress],
-            account,
-            chain: walletClient.chain,
-          });
-      await publicClient.waitForTransactionReceipt({ hash });
-      return hash;
-    } catch (err) {
-      if (!isUserRejection(err)) {
-        error.value = (err as Error).message;
-      }
-      return null;
-    } finally {
-      loading.value = false;
-    }
+      return sendWalletTransaction(network, ({ walletClient, account }) =>
+        accept
+          ? walletClient.writeContract({
+              address: splitter,
+              abi: gotonFeeSplitterAbi,
+              functionName: 'acceptCreatorRecipient',
+              account,
+              chain: walletClient.chain,
+            })
+          : walletClient.writeContract({
+              address: splitter,
+              abi: gotonFeeSplitterAbi,
+              functionName: 'proposeCreatorRecipient',
+              args: [redirectAddress],
+              account,
+              chain: walletClient.chain,
+            }),
+      );
+    });
   }
 
   function extractLaunchData(receipt: TransactionReceipt): {
@@ -419,84 +375,51 @@ export function useLaunchpad() {
     revenueSplit: { creator: number; buyback: number; holders: number; growth: number },
     chainId: number,
   ): Promise<boolean> {
-    loading.value = true;
-    error.value = null;
-    try {
-      const walletClient = await getWalletClient();
-      if (!walletClient) throw new Error('No Web3 wallet detected');
-      const [account] = await walletClient.getAddresses();
-      if (!account) throw new Error('Please connect your wallet');
+    const applied = await runWalletAction(actionState, async () => {
       const network = getNetworkConfig(chainId);
-      if ((await walletClient.getChainId()) !== network.chainId) {
-        throw new Error(`Switch your wallet to ${network.name} and retry.`);
-      }
+      const { walletClient, account } = await requireConnectedWallet(network);
       const adapter = getChainAdapter(network.chainId);
       if (!adapter.applyRevenueSplit) return true;
-      return await adapter.applyRevenueSplit(
+      return adapter.applyRevenueSplit(
         tokenAddress,
         revenueSplit,
         walletClient,
         getPublicClient(network.chainId),
         account,
       );
-    } catch (err) {
-      if (!isUserRejection(err)) error.value = (err as Error).message;
-      return false;
-    } finally {
-      loading.value = false;
-    }
+    });
+    return applied ?? false;
   }
 
-  async function setTokenTax(
+  function setTokenTax(
     tokenAddress: `0x${string}`,
     buyTaxPercent: number,
     sellTaxPercent: number,
     taxRecipient?: `0x${string}`,
     chainId?: number,
   ): Promise<`0x${string}` | null> {
-    loading.value = true;
-    error.value = null;
-    try {
-      const walletClient = await getWalletClient();
-      if (!walletClient) throw new Error('No Web3 wallet detected');
-      const [account] = await walletClient.getAddresses();
-      if (!account) throw new Error('Please connect your wallet');
-
+    return runWalletAction(actionState, () => {
       const network = getNetworkConfig(chainId ?? walletChainId.value ?? undefined);
-      if (getChainMathConfig(network.chainId)?.model === 'v4-in-pool') {
+      if (getLaunchModel(network.chainId) === 'v4-in-pool') {
         throw new Error(
           `Taxes on ${network.name} are fixed forever at launch and cannot be changed.`,
         );
       }
-      // FO-07: send and confirm on the token's chain, never on whatever chain the wallet is on.
-      if ((await walletClient.getChainId()) !== network.chainId) {
-        throw new Error(`Switch your wallet to ${network.name} and retry.`);
-      }
-
-      const buyTaxBps = Math.min(1000, Math.max(0, Math.round(buyTaxPercent * 100)));
-      const sellTaxBps = Math.min(1000, Math.max(0, Math.round(sellTaxPercent * 100)));
-      const recipient = taxRecipient || account;
-
-      const hash = await walletClient.writeContract({
-        address: tokenAddress,
-        abi: launchpadTokenAbi,
-        functionName: 'proposeTaxConfig',
-        args: [buyTaxBps, sellTaxBps, recipient],
-        account,
-        chain: walletClient.chain,
-      });
-
-      const client = getPublicClient(network.chainId);
-      await client.waitForTransactionReceipt({ hash });
-      return hash;
-    } catch (err) {
-      if (!isUserRejection(err)) {
-        error.value = (err as Error).message;
-      }
-      return null;
-    } finally {
-      loading.value = false;
-    }
+      return sendWalletTransaction(network, ({ walletClient, account }) =>
+        walletClient.writeContract({
+          address: tokenAddress,
+          abi: launchpadTokenAbi,
+          functionName: 'proposeTaxConfig',
+          args: [
+            taxPercentToBps(buyTaxPercent),
+            taxPercentToBps(sellTaxPercent),
+            taxRecipient || account,
+          ],
+          account,
+          chain: walletClient.chain,
+        }),
+      );
+    });
   }
 
   return {

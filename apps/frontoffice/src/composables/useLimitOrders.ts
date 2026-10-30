@@ -1,12 +1,13 @@
 import { ref } from 'vue';
-import { erc20Abi } from 'viem';
+import type { WalletClient } from 'viem';
 import {
   gotonLimitOrdersAbi,
   type LimitOrderEntity,
   type NetworkConfig,
 } from '@goton/shared-types';
 import { apiFetch } from '@/lib/api-client';
-import { getPublicClient, getWalletClient, waitForReceiptWithFallback } from '@/lib/viem-client';
+import { getPublicClient } from '@/lib/viem-client';
+import { ensureAllowance, runWalletAction, sendWalletTransaction } from '@/lib/wallet-tx';
 import { isDeployed } from '@/chains/shared/utils';
 
 /** Contract address of GotonLimitOrders on a network, or null where it is not deployed. */
@@ -23,38 +24,13 @@ export function useLimitOrders() {
   const busy = ref(false);
   const error = ref<string | null>(null);
 
-  async function send(
+  function send(
     network: NetworkConfig,
-    write: (
-      wallet: NonNullable<Awaited<ReturnType<typeof getWalletClient>>>,
-      account: `0x${string}`,
-    ) => Promise<`0x${string}`>,
+    write: (wallet: WalletClient, account: `0x${string}`) => Promise<`0x${string}`>,
   ): Promise<`0x${string}` | null> {
-    busy.value = true;
-    error.value = null;
-    try {
-      const wallet = await getWalletClient();
-      if (!wallet) throw new Error('Connect your wallet first');
-      const [account] = await wallet.getAddresses();
-      if (!account) throw new Error('Connect your wallet first');
-      if ((await wallet.getChainId()) !== network.chainId) {
-        throw new Error(`Switch your wallet to ${network.name} and retry.`);
-      }
-      const hash = await write(wallet, account);
-      const receipt = await waitForReceiptWithFallback(
-        getPublicClient(network.chainId),
-        hash,
-        wallet,
-      );
-      if (receipt?.status === 'reverted') throw new Error(`Transaction reverted: ${hash}`);
-      return hash;
-    } catch (e) {
-      const msg = (e as Error).message ?? String(e);
-      if (!/user rejected|denied/i.test(msg)) error.value = msg.split('\n')[0];
-      return null;
-    } finally {
-      busy.value = false;
-    }
+    return runWalletAction({ busy, error }, () =>
+      sendWalletTransaction(network, ({ walletClient, account }) => write(walletClient, account)),
+    );
   }
 
   /** Limit buy: escrow `valueWei` of native quote; fill when at least `minTokensOut` arrives. */
@@ -93,24 +69,14 @@ export function useLimitOrders() {
     const contract = limitOrdersAddress(network);
     if (!contract) return Promise.resolve(null);
     return send(network, async (wallet, account) => {
-      const publicClient = getPublicClient(network.chainId);
-      const allowance = await publicClient.readContract({
-        address: token,
-        abi: erc20Abi,
-        functionName: 'allowance',
-        args: [account, contract],
+      await ensureAllowance({
+        publicClient: getPublicClient(network.chainId),
+        walletClient: wallet,
+        account,
+        token,
+        spender: contract,
+        amount,
       });
-      if (allowance < amount) {
-        const approveHash = await wallet.writeContract({
-          address: token,
-          abi: erc20Abi,
-          functionName: 'approve',
-          args: [contract, amount],
-          account,
-          chain: wallet.chain,
-        });
-        await waitForReceiptWithFallback(publicClient, approveHash, wallet);
-      }
       return wallet.writeContract({
         address: contract,
         abi: gotonLimitOrdersAbi,
