@@ -110,6 +110,16 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
     return all.slice(offset, offset + limit);
   }
 
+  async getPriceAnchor(
+    tokenAddress: `0x${string}`,
+    cutoffMs: number,
+  ): Promise<TradeEventEntity | null> {
+    const byTime = [...(this.trades.get(tokenAddress.toLowerCase()) ?? [])].sort(
+      (x, y) => x.timestamp - y.timestamp,
+    );
+    return byTime.filter((t) => t.timestamp <= cutoffMs).pop() ?? byTime[0] ?? null;
+  }
+
   async getCandlesticks(
     tokenAddress: `0x${string}`,
     resolutionSeconds = 60,

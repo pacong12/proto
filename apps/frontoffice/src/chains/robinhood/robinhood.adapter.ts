@@ -41,9 +41,9 @@ export class RobinhoodChainAdapter implements ChainAdapter {
       params.socials.website ?? '',
       params.minInitialTokensOut ?? 0n,
     ] as const;
-    // The tax and the LP-fee split go into the launch transaction itself: the token accepts an
-    // initial tax only within two blocks of launch (~0.2 s here) and the split locks at the first
-    // third-party buy, so follow-up transactions the creator still has to sign lose both races.
+    // The tax and the LP-fee split go into the launch transaction itself: both lock at the first
+    // third-party buy (and the tax also once the token's short launch window ends), so follow-up
+    // transactions the creator still has to sign race every early buyer.
     const buyTaxBps = taxPercentToBps(params.buyTaxPercent ?? 0);
     const sellTaxBps = taxPercentToBps(params.sellTaxPercent ?? 0);
     const withSplit = Boolean(params.revenueSplit) && isDeployed(this.network.contracts.graduator);

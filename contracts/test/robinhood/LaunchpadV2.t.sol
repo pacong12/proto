@@ -441,8 +441,8 @@ contract LaunchpadV2Test is Test {
         assertEq(token.balanceOf(recovery), curveTokens, "every curve token recovered");
     }
 
-    /// @dev The creator tax lands in the launch transaction: a follow-up one would miss the
-    ///      two-block window (about 0.2 s on Robinhood Chain).
+    /// @dev The creator tax lands in the launch transaction, so no early buyer can lock it out
+    ///      before a follow-up transaction is signed and mined.
     function test_LaunchWithTaxSetsItAtomically() public {
         address taxWallet = address(0x7A7);
         vm.prank(creator);

@@ -10,6 +10,8 @@ import {
   CandlestickEntity,
   TokenCommentEntity,
   getUserIdentity,
+  ARC_CHAIN,
+  ROBINHOOD_CHAIN,
   type CreatorProfile,
 } from '@goton/shared-types';
 import type { TokenRepositoryPort, TradeFlow } from '../../domain/ports/token.repository.port';
@@ -17,7 +19,14 @@ import { backupDatabase, openCheckedDatabase } from './sqlite-maintenance';
 import {
   aggregateCandlesticks,
   computeHoldersDistribution,
+  holdersFromBalances,
 } from '../../domain/services/token-aggregation.service';
+
+/** Contracts that hold v4 pool liquidity for every pool on their chain. */
+const POOL_HOLDERS = [
+  ROBINHOOD_CHAIN.contracts.poolManagerV4,
+  ARC_CHAIN.contracts.poolManagerV4,
+].filter((a): a is `0x${string}` => Boolean(a));
 
 interface TokenRow {
   address: string;
@@ -251,7 +260,8 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     );
     this.db.run(`CREATE INDEX IF NOT EXISTS idx_trades_trader ON trades(trader COLLATE NOCASE);`);
     // Composite index covering the most common query: all trades for a token ordered by time.
-    // COLLATE NOCASE on the leading column lets LOWER(tokenAddress) = LOWER(?) use the index.
+    // Query it as `tokenAddress = ? COLLATE NOCASE`: LOWER(tokenAddress) = LOWER(?) cannot use it
+    // and scans every trade.
     this.db.run(
       `CREATE INDEX IF NOT EXISTS idx_trades_token_ts ON trades(tokenAddress COLLATE NOCASE, timestamp DESC);`,
     );
@@ -384,6 +394,23 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
         network TEXT PRIMARY KEY,
         last_block TEXT NOT NULL,
         updated_at INTEGER NOT NULL
+      );
+    `);
+
+    // On-chain token balances, refreshed with balanceOf for every holder a Transfer touches.
+    // holder_index marks tokens whose whole Transfer history has been read since launch.
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS token_balances (
+        token_address TEXT NOT NULL COLLATE NOCASE,
+        holder TEXT NOT NULL COLLATE NOCASE,
+        balance TEXT NOT NULL,
+        PRIMARY KEY (token_address, holder)
+      );
+    `);
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS holder_index (
+        token_address TEXT PRIMARY KEY COLLATE NOCASE,
+        indexed_at INTEGER NOT NULL
       );
     `);
 
@@ -775,12 +802,32 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
   ): Promise<TradeEventEntity[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM trades
-      WHERE LOWER(tokenAddress) = LOWER(?)
+      WHERE tokenAddress = ? COLLATE NOCASE
       ORDER BY timestamp DESC, rowid DESC
       LIMIT ? OFFSET ?
     `);
     const rows = stmt.all(tokenAddress, limit, offset) as TradeRow[];
     return rows.map((row) => this.mapRowToTrade(row));
+  }
+
+  async getPriceAnchor(
+    tokenAddress: `0x${string}`,
+    cutoffMs: number,
+  ): Promise<TradeEventEntity | null> {
+    const row =
+      (this.db
+        .prepare(
+          `SELECT * FROM trades WHERE tokenAddress = ? COLLATE NOCASE AND timestamp <= ?
+           ORDER BY timestamp DESC, rowid DESC LIMIT 1`,
+        )
+        .get(tokenAddress, cutoffMs) as TradeRow | null) ??
+      (this.db
+        .prepare(
+          `SELECT * FROM trades WHERE tokenAddress = ? COLLATE NOCASE
+           ORDER BY timestamp ASC, rowid ASC LIMIT 1`,
+        )
+        .get(tokenAddress) as TradeRow | null);
+    return row ? this.mapRowToTrade(row) : null;
   }
 
   async getCandlesticks(
@@ -792,7 +839,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     const mkt = await this.getMarketData(tokenAddress);
     const stmt = this.db.prepare(`
       SELECT * FROM trades
-      WHERE LOWER(tokenAddress) = LOWER(?)
+      WHERE tokenAddress = ? COLLATE NOCASE
       ORDER BY timestamp ASC, rowid ASC
     `);
     const rows = stmt.all(tokenAddress) as TradeRow[];
@@ -810,8 +857,58 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     limit = 50,
   ): Promise<Array<{ address: string; balance: string; percent: number }>> {
     const token = await this.findByAddress(tokenAddress as `0x${string}`);
+    const indexed = this.db
+      .prepare(`SELECT 1 FROM holder_index WHERE token_address = ? COLLATE NOCASE`)
+      .get(tokenAddress);
+    if (indexed) {
+      const balances = this.db
+        .prepare(
+          `SELECT holder, balance FROM token_balances WHERE token_address = ? COLLATE NOCASE`,
+        )
+        .all(tokenAddress) as Array<{ holder: string; balance: string }>;
+      return holdersFromBalances(token, balances, limit, POOL_HOLDERS);
+    }
+    // Not indexed yet: an estimate from the newest trades (misses transfers and older trades).
     const trades = await this.getTrades(tokenAddress as `0x${string}`, 1000, 0);
     return computeHoldersDistribution(token, trades, limit);
+  }
+
+  async saveBalances(
+    tokenAddress: `0x${string}`,
+    balances: Array<{ holder: `0x${string}`; balance: bigint }>,
+  ): Promise<void> {
+    const upsert = this.db.prepare(
+      `INSERT INTO token_balances (token_address, holder, balance) VALUES (?, ?, ?)
+       ON CONFLICT(token_address, holder) DO UPDATE SET balance = excluded.balance`,
+    );
+    const remove = this.db.prepare(
+      `DELETE FROM token_balances WHERE token_address = ? COLLATE NOCASE AND holder = ? COLLATE NOCASE`,
+    );
+    this.db.run('BEGIN');
+    try {
+      for (const b of balances) {
+        if (b.balance > 0n)
+          upsert.run(tokenAddress.toLowerCase(), b.holder.toLowerCase(), b.balance.toString());
+        else remove.run(tokenAddress, b.holder);
+      }
+      this.db.run('COMMIT');
+    } catch (err) {
+      this.db.run('ROLLBACK');
+      throw err;
+    }
+  }
+
+  async markHoldersIndexed(tokenAddress: `0x${string}`): Promise<void> {
+    this.db
+      .prepare(`INSERT OR REPLACE INTO holder_index (token_address, indexed_at) VALUES (?, ?)`)
+      .run(tokenAddress.toLowerCase(), Date.now());
+  }
+
+  async getHolderIndexedTokens(): Promise<Set<string>> {
+    const rows = this.db.prepare(`SELECT token_address FROM holder_index`).all() as Array<{
+      token_address: string;
+    }>;
+    return new Set(rows.map((r) => r.token_address.toLowerCase()));
   }
 
   async getRecentTrades(limit = 50): Promise<TradeEventEntity[]> {
@@ -839,15 +936,25 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     fromBlock: bigint,
     toBlock: bigint,
     limit: number,
+    tokenAddress?: `0x${string}`,
   ): Promise<TradeEventEntity[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM trades
       WHERE CAST(blockNumber AS INTEGER) >= ?
         AND (? = 0 OR CAST(blockNumber AS INTEGER) <= ?)
+        AND (? IS NULL OR tokenAddress = ? COLLATE NOCASE)
       ORDER BY CAST(blockNumber AS INTEGER) ASC, rowid ASC
       LIMIT ?
     `);
-    const rows = stmt.all(Number(fromBlock), Number(toBlock), Number(toBlock), limit) as TradeRow[];
+    const token = tokenAddress ?? null;
+    const rows = stmt.all(
+      Number(fromBlock),
+      Number(toBlock),
+      Number(toBlock),
+      token,
+      token,
+      limit,
+    ) as TradeRow[];
     return rows.map((row) => this.mapRowToTrade(row));
   }
 

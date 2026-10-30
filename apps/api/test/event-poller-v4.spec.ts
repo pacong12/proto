@@ -94,6 +94,26 @@ describe('EventPollerService — Uniswap v4', () => {
     expect(trade.tokenAmount).toBe('204857030.2081');
   });
 
+  it('records the transaction signer as the trader, not the router that called swap', async () => {
+    const repo = new InMemoryTokenRepository();
+    await repo.save(token({}));
+    const ROUTER = '0xd8ec94f07f590f8ceb620a8d17bb555fbde366f1';
+    const USER = '0x00000000000000000000000000000000000000f1';
+    const swap = {
+      args: { id: IDEA_POOL, sender: ROUTER, amount0: -1_000_000n, amount1: 10n ** 21n },
+      blockNumber: 1n,
+      transactionHash: '0x02',
+      logIndex: 0,
+    };
+    const client = {
+      ...stubClient({ Swap: [swap] }, 6),
+      getTransaction: async () => ({ from: USER }),
+    } as unknown as PublicClient;
+    await poller(ARC_CHAIN, client, repo).pollEvents(1n, 1n);
+    const [trade] = await repo.getRecentTrades(10);
+    expect(trade.trader).toBe(USER);
+  });
+
   it('handles pools where the token sorts before the quote', async () => {
     const repo = new InMemoryTokenRepository();
     await repo.save(token({ isToken0: true }));

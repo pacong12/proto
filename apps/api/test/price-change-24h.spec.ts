@@ -90,4 +90,16 @@ describe('priceChange24h', () => {
     ]);
     expect(change).toBeCloseTo(50, 6); // 4e-6 -> 6e-6
   });
+
+  it('reaches back 24h for a token with more than 500 trades in the window', async () => {
+    // The newest 500 trades of a busy token are all hours old at most: the change was measured
+    // against one of them (here 0%) instead of the price 24h ago.
+    const busy = Array.from({ length: 600 }, (_, i) => ({
+      priceUsd: 6e-6,
+      agoMs: 60_000 * (i + 1),
+    }));
+    // Saved oldest first, as the indexer does.
+    const change = await changeWith([{ priceUsd: 3e-6, agoMs: 25 * 3_600_000 }, ...busy.reverse()]);
+    expect(change).toBeCloseTo(100, 6); // 3e-6 -> 6e-6
+  });
 });

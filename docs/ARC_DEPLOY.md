@@ -112,16 +112,15 @@ address, so always mine and broadcast with the same key.
 ## Source Verification
 
 ```bash
+# explorer.arc.io (the explorer the app links to) is Blockscout; its verifier needs no API key.
 forge verify-contract <HOOK_ADDRESS> \
   src/core/GotonV4Hook.sol:GotonV4Hook \
-  --chain-id 5042 --verifier-url "https://api.etherscan.io/v2/api?chainid=5042" \
-  --etherscan-api-key "$ETHERSCAN_API_KEY" \
+  --chain-id 5042 --verifier blockscout --verifier-url https://explorer.arc.io/api/ \
   --constructor-args $(cast abi-encode "constructor(address,address)" <POOL_MANAGER> <DEPLOYER>)
 
 forge verify-contract <FACTORY_ADDRESS> \
   src/chains/arc/LaunchpadV2FactoryArc.sol:LaunchpadV2FactoryArc \
-  --chain-id 5042 --verifier-url "https://api.etherscan.io/v2/api?chainid=5042" \
-  --etherscan-api-key "$ETHERSCAN_API_KEY" \
+  --chain-id 5042 --verifier blockscout --verifier-url https://explorer.arc.io/api/ \
   --constructor-args $(cast abi-encode "constructor(address,address,address,address,address)" \
     <POOL_MANAGER> <USDC> <HOOK_ADDRESS> <SPLITTER_DEPLOYER> <FEE_RECIPIENT>)
 ```
