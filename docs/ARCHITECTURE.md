@@ -40,3 +40,15 @@ All code follows the Clean Architecture dependency rule: **Dependencies point st
 
 - Controllers, DTOs, and API envelopes (`ApiEnvelope<T>`).
 - Validates HTTP input, delegates to application use cases, and maps results to standard response shapes.
+- Each module registers its HTTP routes in `presentation/<module>.routes.ts`
+  (`register<Module>Routes(router, deps)`), on the `Router` from `core/http`. Routes receive their
+  services from the container instead of importing them.
+
+### Composition (`apps/api/src`)
+
+- `app/container.ts` is the composition root: it builds every adapter, use case, controller and
+  the chain registry once.
+- `app/jobs.ts` starts the background work: event pollers, keepers, source verification, market
+  data refresh and database backups (none under tests).
+- `server.ts` only runs the request pipeline (CORS and security headers, rate limiting), hands the
+  request to the router, and serves it with `Bun.serve`.
