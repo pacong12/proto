@@ -42,13 +42,15 @@ Posting calls, likes and follows needs a wallet-signed session and is meant for 
 
 ## DEX Screener Adapter
 
-Goton implements the DEX Screener adapter (`dexId: goton`):
+Goton implements the [DEX Screener Adapter](https://dexscreener.notion.site/DEX-Screener-Adapter-Specs-cc1223cdf6e74a7799599106b65dcd0e) (v1.1, `dexKey: goton`), one adapter per chain: `https://goton.fun/dex/robinhood` and `https://goton.fun/dex/arc`.
 
-| Endpoint                                     | Returns                                |
-| :------------------------------------------- | :------------------------------------- |
-| `GET /dex/latest-block?chain=robinhood\|arc` | Latest block the indexer has processed |
-| `GET /dex/asset?id={address}`                | Token metadata and supply              |
-| `GET /dex/pair?id={pair}`                    | Pair metadata                          |
-| `GET /dex/events?fromBlock=&toBlock=`        | Swap events in a block range           |
+| Endpoint                                      | Returns                                                      |
+| :-------------------------------------------- | :----------------------------------------------------------- |
+| `GET /dex/{chain}/latest-block`               | Latest block the indexer has stored, with its UNIX timestamp |
+| `GET /dex/{chain}/asset?id={address}`         | A token, or the quote (WETH on Robinhood Chain, USDC on Arc) |
+| `GET /dex/{chain}/pair?id={pairId}`           | A pair: the token is `asset0`, the quote `asset1`            |
+| `GET /dex/{chain}/events?fromBlock=&toBlock=` | Swap events in an inclusive block range, oldest first        |
+
+A token trades in two pairs over its life. Before graduation the pair id is its **bonding curve address** (`0x` + 40 hex); its Uniswap v4 pool, after graduation on Robinhood Chain or from launch on Arc, is identified by its **v4 poolId** (`0x` + 64 hex), since v4 pools live inside the PoolManager. Amounts are decimalized, `priceNative` is the token's price in the quote, and `blockTimestamp` is in seconds.
 
 See [DEX & Aggregator Listing](/integration/listing-submission) for the on-chain events behind these endpoints.
