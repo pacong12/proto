@@ -26,10 +26,10 @@
 
         <!-- Launch Button -->
         <Button
-          @click="$emit('selectTab', 'create')"
           variant="default"
           size="default"
           class="h-9 px-4 gap-1.5 font-semibold text-sm rounded-xl shadow-sm transition active:scale-[0.98] cursor-pointer shrink-0"
+          @click="$emit('selectTab', 'create')"
         >
           <Plus class="w-4 h-4 stroke-[2.5]" />
           {{ t('createToken') }}
@@ -102,10 +102,10 @@
         <div class="flex flex-wrap items-center justify-center gap-2">
           <Button
             v-if="!searchQuery"
-            @click="$emit('selectTab', 'create')"
             variant="default"
             size="default"
             class="font-bold gap-2 shadow-md cursor-pointer"
+            @click="$emit('selectTab', 'create')"
           >
             <Plus class="w-4 h-4" />
             {{ t('launchNow') }}
@@ -121,10 +121,10 @@
           </Button>
           <Button
             v-else
-            @click="searchQuery = ''"
             variant="outline"
             size="sm"
             class="cursor-pointer"
+            @click="searchQuery = ''"
           >
             Clear search
           </Button>
@@ -138,8 +138,8 @@
         <Card
           v-for="item in paginatedItems"
           :key="item.token.address"
-          @click="$emit('selectToken', item.token.address)"
           class="group hover:border-primary/50 cursor-pointer transition-all flex flex-col justify-between p-5 sm:p-6 rounded-2xl border border-border bg-card shadow-xs space-y-4"
+          @click="$emit('selectToken', item.token.address)"
         >
           <div class="space-y-3.5">
             <div class="flex items-start justify-between gap-3">

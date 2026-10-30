@@ -117,11 +117,11 @@
           </Button>
           <template v-if="isOwnProfile">
             <Button
-              @click="emit('claim', token.address)"
               :disabled="loadingAction || claimingToken === token.address"
               variant="default"
               size="sm"
               class="cursor-pointer"
+              @click="emit('claim', token.address)"
             >
               <Loader2
                 v-if="claimingToken === token.address"
@@ -131,10 +131,10 @@
               Claim Fees
             </Button>
             <Button
-              @click="emit('cto', token.address)"
               variant="outline"
               size="sm"
               class="cursor-pointer"
+              @click="emit('cto', token.address)"
             >
               <Share2 class="w-3.5 h-3.5 mr-1" />
               CTO Redirect

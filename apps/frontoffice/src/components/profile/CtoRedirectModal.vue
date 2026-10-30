@@ -91,7 +91,7 @@ import { Label } from '@/components/ui/label';
 
 const { t } = useI18n();
 
-const props = defineProps<{
+defineProps<{
   open: boolean;
   tokenAddress: string;
   loading: boolean;

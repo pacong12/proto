@@ -13,6 +13,9 @@ import {
   TickMarkType,
   type IChartApi,
   type ISeriesApi,
+  type ISeriesMarkersPluginApi,
+  type ITextWatermarkPluginApi,
+  type SeriesMarker,
   type Time,
   type AutoscaleInfo,
 } from 'lightweight-charts';
@@ -89,11 +92,11 @@ const root = ref<HTMLElement | null>(null);
 const chartContainer = ref<HTMLDivElement | null>(null);
 
 let chart: IChartApi | null = null;
-let mainSeries: ISeriesApi<'Candlestick'> | ISeriesApi<'Area'> | null = null;
+let mainSeries: ISeriesApi<'Candlestick' | 'Area'> | null = null;
 let volumeSeries: ISeriesApi<'Histogram'> | null = null;
 let themeObserver: MutationObserver | null = null;
-let watermarkPlugin: any = null;
-let markersPlugin: any = null;
+let watermarkPlugin: ITextWatermarkPluginApi<Time> | null = null;
+let markersPlugin: ISeriesMarkersPluginApi<Time> | null = null;
 
 // Bars currently drawn (already scaled for the active mode). Read by autoscale.
 let shownBars: Bar[] = [];
@@ -255,7 +258,7 @@ function updateMarkers() {
   try {
     const raw = props.markers || [];
     if (raw.length > 0) {
-      const formattedMarkers = raw.map((m) => {
+      const formattedMarkers = raw.map((m): SeriesMarker<Time> => {
         let t = typeof m.time === 'string' ? new Date(m.time).getTime() / 1000 : Number(m.time);
         if (t > 2_000_000_000) t = t / 1000;
         t = Math.floor(t);
@@ -270,7 +273,7 @@ function updateMarkers() {
       });
 
       if (!markersPlugin) {
-        markersPlugin = createSeriesMarkers(mainSeries as any, formattedMarkers as any);
+        markersPlugin = createSeriesMarkers(mainSeries, formattedMarkers);
       } else {
         markersPlugin.setMarkers(formattedMarkers);
       }
@@ -524,19 +527,17 @@ function initChart() {
       hoveredBar.value = null;
       return;
     }
-    const d = param.seriesData.get(mainSeries) as any;
-    const v = volumeSeries ? (param.seriesData.get(volumeSeries) as any) : null;
-    if (!d) {
+    const d = param.seriesData.get(mainSeries);
+    const v = volumeSeries ? param.seriesData.get(volumeSeries) : undefined;
+    if (!d || !('open' in d || 'value' in d)) {
       hoveredBar.value = null;
       return;
     }
-    const isOhlc = 'open' in d;
     hoveredBar.value = {
       time: param.time,
-      open: isOhlc ? d.open : d.value,
-      high: isOhlc ? d.high : d.value,
-      low: isOhlc ? d.low : d.value,
-      close: isOhlc ? d.close : d.value,
+      ...('open' in d
+        ? { open: d.open, high: d.high, low: d.low, close: d.close }
+        : { open: d.value, high: d.value, low: d.value, close: d.value }),
       volume: v && 'value' in v ? Number(v.value) : 0,
     };
   });
@@ -621,18 +622,18 @@ function sync(base: Bar[], forceFull = false) {
   if (canAppend) {
     // Only update the last candle(s) in-place — scroll position untouched
     for (let i = lastLen - 1; i < bars.length; i++) {
-      (mainSeries as ISeriesApi<'Candlestick'>).update(toMain(bars[i]) as any);
+      mainSeries.update(toMain(bars[i]));
       volumeSeries.update(toVol(bars[i]));
     }
   } else if (keyChanged || forceFull || lastLen === 0) {
     // Full replace only when token/resolution/mode changed, or first load
-    (mainSeries as ISeriesApi<'Candlestick'>).setData(bars.map(toMain) as any);
+    mainSeries.setData(bars.map(toMain));
     volumeSeries.setData(bars.map(toVol));
     showLatest(bars.length);
   } else {
     // Same context, non-append delta (shouldn't normally happen with silent merge) — still update last bar
     for (let i = Math.max(0, lastLen - 1); i < bars.length; i++) {
-      (mainSeries as ISeriesApi<'Candlestick'>).update(toMain(bars[i]) as any);
+      mainSeries.update(toMain(bars[i]));
       volumeSeries.update(toVol(bars[i]));
     }
   }
@@ -747,7 +748,7 @@ function setMode(mode: 'price' | 'mcap') {
   hoveredBar.value = null;
   mainSeries?.applyOptions({
     priceFormat: { type: 'custom', formatter: formatY, minMove: 1e-11 },
-  } as any);
+  });
   sync(formatted.value, true);
   savePrefs();
 }
@@ -762,7 +763,7 @@ function toggleLog() {
 
 function toggleClip() {
   clipWicks.value = !clipWicks.value;
-  mainSeries?.applyOptions({ autoscaleInfoProvider: autoscale } as any); // forces a rescale
+  mainSeries?.applyOptions({ autoscaleInfoProvider: autoscale }); // forces a rescale
   savePrefs();
 }
 

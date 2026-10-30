@@ -314,7 +314,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Jazzicon } from '@/components/ui/avatar';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
-import CashtagText from './CashtagText.vue';
+import CashtagText, { type CashtagToken } from './CashtagText.vue';
 import { isWhaleCaller } from '@/composables/useFeed';
 import {
   formatRelativeTime,
@@ -329,11 +329,11 @@ import type { FeedCalloutItem } from '@goton/shared-types';
 
 interface Props {
   call: FeedCalloutItem;
-  allTokens?: readonly any[] | any[];
+  allTokens?: ReadonlyArray<CashtagToken>;
   isPinned: (address: string) => boolean;
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   allTokens: () => [],
 });
 

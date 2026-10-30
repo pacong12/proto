@@ -234,10 +234,10 @@ function copyAddress() {
         <Button
           variant="outline"
           size="sm"
-          @click="$emit('openSearch')"
           class="h-9 w-9 p-0 md:w-auto md:px-3 lg:w-9 lg:px-0 xl:w-auto xl:px-3 text-xs text-muted-foreground gap-2 font-normal border-border bg-card hover:bg-muted hover:text-foreground rounded-xl shrink-0"
           title="Search (⌘K)"
           aria-label="Search"
+          @click="$emit('openSearch')"
         >
           <Search class="w-3.5 h-3.5" />
           <!-- Labels show at md and xl only; below md and at lg (nav links visible) the bar would overflow. -->
@@ -397,8 +397,8 @@ function copyAddress() {
               </DropdownMenuItem>
 
               <DropdownMenuItem
-                @click="copyAddress"
                 class="cursor-pointer text-foreground px-3.5 py-3 text-sm font-medium rounded-xl hover:bg-muted transition flex items-center gap-3"
+                @click="copyAddress"
               >
                 <Copy v-if="!copied" class="w-4.5 h-4.5" />
                 <Check v-else class="w-4.5 h-4.5 text-primary" />
@@ -406,8 +406,8 @@ function copyAddress() {
               </DropdownMenuItem>
 
               <DropdownMenuItem
-                @click="switchWallet"
                 class="cursor-pointer text-foreground px-3.5 py-3 text-sm font-medium rounded-xl hover:bg-muted transition flex items-center gap-3"
+                @click="switchWallet"
               >
                 <Wallet class="w-4.5 h-4.5" />
                 <span>{{ t('switchManageWallet') }}</span>
@@ -471,8 +471,8 @@ function copyAddress() {
               <DropdownMenuSeparator class="my-1.5 border-border" />
 
               <DropdownMenuItem
-                @click="disconnectWallet"
                 class="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer px-3.5 py-3 text-sm font-semibold rounded-xl transition flex items-center gap-3 hover:bg-destructive/10"
+                @click="disconnectWallet"
               >
                 <LogOut class="w-4.5 h-4.5 text-destructive" />
                 <span>{{ t('disconnect') }}</span>
@@ -486,8 +486,8 @@ function copyAddress() {
           variant="ghost"
           size="sm"
           class="lg:hidden h-9 w-9 p-0 text-foreground hover:bg-muted shrink-0 cursor-pointer"
-          @click="mobileMenuOpen = !mobileMenuOpen"
           aria-label="Toggle navigation menu"
+          @click="mobileMenuOpen = !mobileMenuOpen"
         >
           <X v-if="mobileMenuOpen" class="w-5 h-5" />
           <Menu v-else class="w-5 h-5" />
@@ -504,78 +504,78 @@ function copyAddress() {
       <div class="space-y-1">
         <RouterLink
           to="/launchpad"
-          @click="mobileMenuOpen = false"
           :class="[
             'flex items-center gap-2.5 py-2.5 px-3 rounded-xl text-sm font-semibold transition',
             isRouteActive('/launchpad')
               ? 'bg-muted text-foreground font-bold'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
           ]"
+          @click="mobileMenuOpen = false"
         >
           {{ t('explore') }}
         </RouterLink>
 
         <RouterLink
           to="/launchpad/create"
-          @click="mobileMenuOpen = false"
           :class="[
             'flex items-center gap-2.5 py-2.5 px-3 rounded-xl text-sm font-semibold transition',
             isRouteActive('/launchpad/create')
               ? 'bg-muted text-foreground font-bold'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
           ]"
+          @click="mobileMenuOpen = false"
         >
           {{ t('create') }}
         </RouterLink>
 
         <RouterLink
           to="/memestock"
-          @click="mobileMenuOpen = false"
           :class="[
             'flex items-center gap-2.5 py-2.5 px-3 rounded-xl text-sm font-semibold transition',
             isRouteActive('/memestock')
               ? 'bg-muted text-foreground font-bold'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
           ]"
+          @click="mobileMenuOpen = false"
         >
           {{ t('memestock') }}
         </RouterLink>
 
         <RouterLink
           to="/feed"
-          @click="mobileMenuOpen = false"
           :class="[
             'flex items-center gap-2.5 py-2.5 px-3 rounded-xl text-sm font-semibold transition',
             isRouteActive('/feed')
               ? 'bg-muted text-foreground font-bold'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
           ]"
+          @click="mobileMenuOpen = false"
         >
           {{ t('feed') }}
         </RouterLink>
 
         <RouterLink
           to="/analytics"
-          @click="mobileMenuOpen = false"
           :class="[
             'flex items-center gap-2.5 py-2.5 px-3 rounded-xl text-sm font-semibold transition',
             isRouteActive('/analytics')
               ? 'bg-muted text-foreground font-bold'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
           ]"
+          @click="mobileMenuOpen = false"
         >
           {{ t('analytics') }}
         </RouterLink>
 
         <RouterLink
           :to="userProfileUrl"
-          @click="mobileMenuOpen = false"
           :class="[
             'flex items-center gap-2.5 py-2.5 px-3 rounded-xl text-sm font-semibold transition',
             isRouteActive('/profile')
               ? 'bg-muted text-foreground font-bold'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/60',
           ]"
+          @click="mobileMenuOpen = false"
         >
           <User class="w-4 h-4" />
           {{ t('profile') }}
@@ -689,13 +689,13 @@ function copyAddress() {
                 v-for="l in locales"
                 :key="l.code"
                 type="button"
-                @click="setLocale(l.code)"
                 class="h-8 px-2.5 text-xs font-semibold rounded-xl border transition cursor-pointer flex items-center gap-1.5 shrink-0"
                 :class="
                   locale === l.code
                     ? 'border-primary bg-primary text-primary-foreground shadow-xs font-bold'
                     : 'border-border bg-card text-muted-foreground hover:bg-muted'
                 "
+                @click="setLocale(l.code)"
               >
                 <span>{{ l.flag }}</span>
                 <span class="text-xs">{{ l.name }}</span>

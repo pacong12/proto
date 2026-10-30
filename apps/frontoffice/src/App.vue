@@ -3,7 +3,7 @@
     class="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-foreground selection:text-background"
   >
     <MaintenanceBanner />
-    <Navbar @open-search="searchOpen = true" />
+    <AppNavbar @open-search="searchOpen = true" />
 
     <main
       :class="
@@ -210,7 +210,7 @@ import { ExternalLink, BookOpen } from 'lucide-vue-next';
 import { getLaunchModel } from '@goton/math-sdk';
 import { useI18n } from '@/lib/i18n';
 import { legalUrl, resolveDocsUrl } from '@/lib/site';
-import Navbar from './components/Navbar.vue';
+import AppNavbar from './components/AppNavbar.vue';
 import MaintenanceBanner from './components/MaintenanceBanner.vue';
 import { Toaster } from '@/components/ui/sonner';
 import { walletAddress, walletModalOpen } from './lib/wallet-store';
