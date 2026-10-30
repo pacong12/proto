@@ -36,8 +36,22 @@ Rather than hardcoding conditional branches (`if (chainId === 5042)`), the codeb
 | **Domain Definitions**     | `packages/shared-types/src/chains/robinhood.ts`  | `packages/shared-types/src/chains/arc.ts`  |
 | **Math SDK**               | `packages/math-sdk/src/chains/robinhood.ts`      | `packages/math-sdk/src/chains/arc.ts`      |
 | **Contract ABIs**          | `packages/contracts-abi/src/chains/robinhood.ts` | `packages/contracts-abi/src/chains/arc.ts` |
-| **Backend API**            | `apps/api/src/modules/chains/robinhood/`         | `apps/api/src/modules/chains/arc/`         |
-| **Frontend Adapters**      | `apps/frontoffice/src/chains/robinhood/`         | `apps/frontoffice/src/chains/arc/`         |
+| **Frontend Adapter**       | `apps/frontoffice/src/chains/bonding-curve/`     | `apps/frontoffice/src/chains/v4-in-pool/`  |
+
+The apps hold no per-chain code. The API's `ChainRegistry` (`apps/api/src/modules/chains/`) builds one
+`ChainService` (RPC client, quote price) and one event poller per entry in `CHAINS`; keepers, analytics and
+token lookups iterate it. The frontend picks a chain's adapter by its launch model (`getLaunchModel`), and
+builds its viem clients, AppKit networks and wallet chain metadata from `CHAINS`. Behaviour that differs
+between chains is read from the config, never from a chain ID:
+
+| Difference                   | Source                                                         |
+| :--------------------------- | :------------------------------------------------------------- |
+| Launch flow, UI copy         | `getLaunchModel(chainId)` (`bonding-curve` / `v4-in-pool`)     |
+| Quote USD price              | `stableQuoteUsd(net)` (stablecoin quote = $1), else ETH price  |
+| Native wei per quote unit    | `nativeWeiPerQuoteUnit(net)` (`quoteTokenDecimals`)            |
+| Keeper thresholds            | `net.keeper` (`KEEPER_MIN_QUOTE_<SLUG>` overrides `minQuote`)  |
+| Indexer lag, backfill limits | `blockTimeMs`, `maxLogBlockRange`, `backfillRequestIntervalMs` |
+| Viem / wallet chain          | `toViemChain(net)`, `rpcUrlsFor(net)`, `blockExplorerName`     |
 
 Chain-agnostic contracts used by every chain live in `contracts/src/core/`: `LaunchpadToken`, `BondingCurve`,
 `GotonV4Hook` (singleton v4 hook with TWAP oracle), `GotonFeeSplitter` (per-token fees and streamed dividends),
@@ -64,8 +78,10 @@ Use the chain slug (lowercase, e.g. `base`) consistently for every folder and fi
    and `SupportedChainId` in `src/chains/registry.ts`.
 5. **Verify** — `packages/shared-types/test/chain-registry.spec.ts` fails if the chain is missing from any registry or
    its math parameters disagree with its `NetworkConfig`.
-6. **Apps** — add the API chain service (`apps/api/src/modules/chains/<slug>/`) and frontend adapter
-   (`apps/frontoffice/src/chains/<slug>/`).
+6. **Apps** — nothing to add for a chain that uses an existing launch model: the API, the frontend and the
+   scripts (`smoke.ts`, `backfill-tokens.ts`) pick it up from `CHAINS`. A new launch model needs its adapter in
+   `apps/frontoffice/src/chains/<model>/`, registered in `ADAPTER_FOR_MODEL` (`src/chains/index.ts`). Add
+   `public/chains/<slug>.svg` for the icon.
 
 Resolvers (`resolveTokenNetwork`, `resolveNetworkByParam`, `getFactoryV2Abi`, `getChainMathConfig`) iterate the
 registries, so they pick up the new chain without code changes.

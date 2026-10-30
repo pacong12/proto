@@ -123,7 +123,7 @@ const messages: Record<string, string> = {
   addressCopied: 'Address Copied!',
   switchManageWallet: 'Switch Wallet',
   disconnect: 'Disconnect',
-  switchToRobinhood: 'Switch to Robinhood',
+  switchToNetwork: 'Switch to {name}',
   noMatchingTokens: 'No matching tokens for',
   typeSearchHint: 'Type token name, ticker, or 0x address...',
   navigateHint: 'Navigate',
@@ -344,7 +344,7 @@ const messages: Record<string, string> = {
   maintenanceBanner:
     'Scheduled maintenance is in progress. Some features may be unavailable for a short time.',
   maintenanceDismiss: 'Dismiss notice',
-  v2SubtitleArc:
+  v2SubtitleInPool:
     'Launch a token straight into a locked Uniswap v4 pool. Your tax is paid in USDC on every trade.',
   buySellPressure: 'Buy / sell pressure',
   timeWindow: 'Time window',
@@ -388,9 +388,9 @@ const messages: Record<string, string> = {
   footerCurveToV4: 'Bonding curve, then Uniswap v4',
   footerPoolFromLaunch: 'Uniswap v4 pool from launch',
   footerLiquidityLocked: 'Liquidity locked permanently',
-  footerSplitRobinhood: 'LP fees: 70% creator / 30% protocol',
-  footerSplitArc: 'Tax: 20% protocol, rest to your split',
-  arcPoolLiveHint:
+  footerSplitCurve: 'LP fees: 70% creator / 30% protocol',
+  footerSplitInPool: 'Tax: 20% protocol, rest to your split',
+  inPoolLiveHint:
     'Trades in its locked Uniswap v4 pool from the first block. There is no curve to fill.',
   memestockMomentum: 'Momentum',
   creatorHolds: 'Creator holds',
@@ -420,9 +420,9 @@ const messages: Record<string, string> = {
   addTeamWallet: 'Add team wallet',
   removeTeamWallet: 'Remove wallet',
   feeRecipientDefault: 'All creator fees and tax go to',
-  teamFeesRobinhood:
+  teamFeesCurve:
     'A team wallet contract is created before launch. The token tax goes to it from launch; after graduation, route the pool fees to it from your profile (48-hour timelock). Each member withdraws their own share.',
-  teamFeesArc:
+  teamFeesInPool:
     'A team wallet contract is created before launch. Fees and tax go to you until the payout redirect proposed at launch becomes active after 48 hours (accept it from your profile). Each member withdraws their own share.',
   teamFeesUnavailable:
     'Team payouts are not available on this chain yet. All creator fees and tax go to your wallet.',

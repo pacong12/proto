@@ -72,7 +72,7 @@ const messages: Record<string, string> = {
   addressCopied: '주소가 복사되었습니다!',
   switchManageWallet: '지갑 변경',
   disconnect: '연결 해제',
-  switchToRobinhood: 'Robinhood 네트워크로 전환',
+  switchToNetwork: '{name} 네트워크로 전환',
   noMatchingTokens: '일치하는 가상자산이 없습니다:',
   typeSearchHint: '토큰 이름, 티커 또는 0x 주소를 입력하세요...',
   navigateHint: '이동',
@@ -341,7 +341,8 @@ const messages: Record<string, string> = {
   notFoundDocs: '문서 보기',
   maintenanceBanner: '정기 점검이 진행 중입니다. 일부 기능을 잠시 사용할 수 없을 수 있습니다.',
   maintenanceDismiss: '알림 닫기',
-  v2SubtitleArc: '잠긴 Uniswap v4 풀에 바로 토큰을 발행합니다. 거래마다 세금이 USDC로 지급됩니다.',
+  v2SubtitleInPool:
+    '잠긴 Uniswap v4 풀에 바로 토큰을 발행합니다. 거래마다 세금이 USDC로 지급됩니다.',
   buySellPressure: '매수 / 매도 압력',
   timeWindow: '기간',
   noTradesInWindow: '이 기간에는 아직 거래가 없습니다.',
@@ -382,9 +383,9 @@ const messages: Record<string, string> = {
   footerCurveToV4: '본딩 커브 이후 Uniswap v4',
   footerPoolFromLaunch: '출시부터 Uniswap v4 풀',
   footerLiquidityLocked: '유동성 영구 잠금',
-  footerSplitRobinhood: 'LP 수수료: 생성자 70% / 프로토콜 30%',
-  footerSplitArc: '세금: 프로토콜 20%, 나머지는 설정한 분배',
-  arcPoolLiveHint: '첫 블록부터 잠긴 Uniswap v4 풀에서 거래됩니다. 채울 커브가 없습니다.',
+  footerSplitCurve: 'LP 수수료: 생성자 70% / 프로토콜 30%',
+  footerSplitInPool: '세금: 프로토콜 20%, 나머지는 설정한 분배',
+  inPoolLiveHint: '첫 블록부터 잠긴 Uniswap v4 풀에서 거래됩니다. 채울 커브가 없습니다.',
   memestockMomentum: '모멘텀',
   creatorHolds: '생성자 보유',
   creatorHoldsHint: '생성자가 매수해 여전히 보유한 공급 비율',
@@ -413,9 +414,9 @@ const messages: Record<string, string> = {
   addTeamWallet: '팀 지갑 추가',
   removeTeamWallet: '지갑 삭제',
   feeRecipientDefault: '모든 생성자 수수료와 세금은 다음으로 갑니다:',
-  teamFeesRobinhood:
+  teamFeesCurve:
     '출시 전에 팀 지갑 컨트랙트가 생성됩니다. 토큰 세금은 출시부터 그곳으로 가며, 졸업 후에는 프로필에서 풀 수수료를 그곳으로 돌릴 수 있습니다(48시간 타임락). 각 멤버가 자신의 몫을 인출합니다.',
-  teamFeesArc:
+  teamFeesInPool:
     '출시 전에 팀 지갑 컨트랙트가 생성됩니다. 출시 때 제안한 지급처 변경이 48시간 후 활성화될 때까지(프로필에서 승인) 수수료와 세금은 본인에게 갑니다. 각 멤버가 자신의 몫을 인출합니다.',
   teamFeesUnavailable:
     '이 체인에서는 아직 팀 분배를 사용할 수 없습니다. 모든 생성자 수수료와 세금은 본인 지갑으로 갑니다.',

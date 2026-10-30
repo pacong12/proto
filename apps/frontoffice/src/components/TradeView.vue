@@ -327,7 +327,7 @@
                   :holders="holders"
                   :loading="holdersLoading"
                   :deployer="currentToken.deployer"
-                  :locker-address="ROBINHOOD_CHAIN.contracts.locker"
+                  :locker-address="tokenNetwork.contracts.locker"
                   :pool-address="currentToken.poolAddress"
                   :curve-address="currentToken.curveAddress"
                   :decimals="currentToken.decimals ?? 18"
@@ -539,11 +539,9 @@ import {
 import { getUserIdentity } from '@/lib/username';
 import { setPageSeo } from '@/lib/seo';
 import {
-  ROBINHOOD_CHAIN,
-  ARC_CHAIN,
   SUPPORTED_CHAINS,
-  ARC_PROTO_CURVE_ADDRESS,
   resolveTokenNetwork,
+  stableQuoteUsd,
   supportsFeeSplitters,
   launchpadTokenAbi,
   launchpadV2FactoryAbi,
@@ -1032,8 +1030,6 @@ const limitOrdersEnabled = computed(() => {
   return protoV4PoolKeyFor(tokenNetwork.value, t.address) !== null;
 });
 
-const isArcToken = computed(() => tokenNetwork.value.chainId === ARC_CHAIN.chainId);
-
 // SEO: name the page after the token once its metadata has loaded, and keep thin pages out of
 // search the way the edge worker does (isIndexableToken).
 watch(
@@ -1128,7 +1124,8 @@ const burnedInfo = computed(() => {
 });
 
 const quoteAssetPriceUsd = computed(() => {
-  if (isArcToken.value) return 1;
+  const peg = stableQuoteUsd(tokenNetwork.value);
+  if (peg !== null) return peg;
   if (currentMarketData.value.priceInWeth > 0) {
     return currentMarketData.value.priceUsd / currentMarketData.value.priceInWeth;
   }

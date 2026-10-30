@@ -6,10 +6,10 @@ import {
   type WalletClient,
 } from 'viem';
 import {
-  ROBINHOOD_CHAIN,
   launchpadTokenAbi,
   launchpadV2FactoryAbi,
   gotonV4GraduatorAbi,
+  type NetworkConfig,
 } from '@goton/shared-types';
 import { revenueSplitToBps, taxPercentToBps } from '@goton/math-sdk';
 import type { ChainAdapter, ChainLaunchParams, ChainLaunchResult, ChainSwapParams } from '../types';
@@ -49,13 +49,15 @@ async function factoryTakesLaunchConfig(
 }
 
 /**
- * Robinhood Chain: bonding curve, then permissionless graduation into a locked native-ETH
- * Uniswap v4 pool (GotonV4Graduator). Post-graduation trades go through GotonV4Router.
+ * Bonding-curve chains (Robinhood Chain): a curve, then permissionless graduation into a locked
+ * native-quote Uniswap v4 pool (GotonV4Graduator). Post-graduation trades go through GotonV4Router.
  */
-export class RobinhoodChainAdapter implements ChainAdapter {
-  readonly network = ROBINHOOD_CHAIN;
-  readonly chainId = ROBINHOOD_CHAIN.chainId;
-  readonly isArc = false;
+export class BondingCurveChainAdapter implements ChainAdapter {
+  readonly chainId: number;
+
+  constructor(readonly network: NetworkConfig) {
+    this.chainId = network.chainId;
+  }
 
   async launchToken(
     params: ChainLaunchParams,
@@ -155,7 +157,7 @@ export class RobinhoodChainAdapter implements ChainAdapter {
         const taxReceipt = await waitForReceiptWithFallback(publicClient, taxHash, walletClient);
         result.taxApplied = taxReceipt?.status === 'success';
       } catch (err) {
-        console.warn('[RobinhoodChainAdapter] Initial tax was not applied:', err);
+        console.warn('[BondingCurveChainAdapter] Initial tax was not applied:', err);
         result.taxApplied = false;
       }
     }
@@ -193,7 +195,7 @@ export class RobinhoodChainAdapter implements ChainAdapter {
       const receipt = await waitForReceiptWithFallback(publicClient, splitHash, walletClient);
       return receipt?.status === 'success';
     } catch (err) {
-      console.warn('[RobinhoodChainAdapter] Revenue split was not applied:', err);
+      console.warn('[BondingCurveChainAdapter] Revenue split was not applied:', err);
       return false;
     }
   }
@@ -254,5 +256,3 @@ export class RobinhoodChainAdapter implements ChainAdapter {
     );
   }
 }
-
-export const robinhoodChainAdapter = new RobinhoodChainAdapter();

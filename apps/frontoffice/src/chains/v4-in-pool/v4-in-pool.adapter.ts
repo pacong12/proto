@@ -1,5 +1,9 @@
 import { formatEther, parseEventLogs, type PublicClient, type WalletClient } from 'viem';
-import { ARC_CHAIN, launchpadV2FactoryArcAbi } from '@goton/shared-types';
+import {
+  launchpadV2FactoryArcAbi,
+  nativeWeiPerQuoteUnit,
+  type NetworkConfig,
+} from '@goton/shared-types';
 import { revenueSplitToBps, taxPercentToBps } from '@goton/math-sdk';
 import type { ChainAdapter, ChainLaunchParams, ChainLaunchResult, ChainSwapParams } from '../types';
 import { waitForReceiptWithFallback } from '../../lib/viem-client';
@@ -7,18 +11,20 @@ import { executeCurveSwap, isCurveTrade } from '../shared/curve-swap';
 import { executeV4RouterSwap } from '../shared/v4-swap';
 import { isDeployed, parseInitialBuyWei } from '../shared/utils';
 
-/** Native USDC wei (18 dp) per unit of the 6-dp USDC ERC-20. */
-const USDC_WEI_PER_UNIT = 10n ** 12n;
-
 /**
- * Arc Network: tokens launch straight into a Uniswap v4 pool (Argus portal model). Taxes and
- * the revenue split are fixed at launch by LaunchpadV2FactoryArc; trading goes through
- * GotonV4Router. Tokens from the legacy bonding-curve factory still trade on their curve.
+ * In-pool v4 chains (Arc Network): tokens launch straight into a Uniswap v4 pool (Argus portal
+ * model). Taxes and the revenue split are fixed at launch by LaunchpadV2FactoryArc; trading goes
+ * through GotonV4Router. Tokens from a legacy bonding-curve factory still trade on their curve.
  */
-export class ArcChainAdapter implements ChainAdapter {
-  readonly network = ARC_CHAIN;
-  readonly chainId = ARC_CHAIN.chainId;
-  readonly isArc = true;
+export class InPoolV4ChainAdapter implements ChainAdapter {
+  readonly chainId: number;
+  /** Native wei per unit of the quote ERC-20 (10^12 for 6-decimal USDC). */
+  private readonly quoteUnit: bigint;
+
+  constructor(readonly network: NetworkConfig) {
+    this.chainId = network.chainId;
+    this.quoteUnit = nativeWeiPerQuoteUnit(network);
+  }
 
   async launchToken(
     params: ChainLaunchParams,
@@ -36,13 +42,15 @@ export class ArcChainAdapter implements ChainAdapter {
     const minPrebuyWei = this.network.launchConfigV2?.minPrebuyWei ?? 0n;
     if (prebuyWei < minPrebuyWei) {
       throw new Error(
-        `Arc launches require a prebuy of at least ${formatEther(minPrebuyWei)} USDC.`,
+        `${this.network.name} launches require a prebuy of at least ${formatEther(minPrebuyWei)} ${this.network.nativeCurrency.symbol}.`,
       );
     }
     const buyTaxBps = taxPercentToBps(params.buyTaxPercent ?? 0);
     const sellTaxBps = taxPercentToBps(params.sellTaxPercent ?? 0);
     if (buyTaxBps === 0 && sellTaxBps === 0) {
-      throw new Error('Arc tokens need a buy or sell tax above 0% (it is fixed forever).');
+      throw new Error(
+        `${this.network.name} tokens need a buy or sell tax above 0% (it is fixed forever).`,
+      );
     }
     const split = revenueSplitToBps(params.revenueSplit);
 
@@ -63,9 +71,7 @@ export class ArcChainAdapter implements ChainAdapter {
         { buyTaxBps, sellTaxBps, ...split },
         params.minInitialTokensOut ?? 0n,
       ],
-      value:
-        this.network.launchConfig.launchFeeWei +
-        (prebuyWei / USDC_WEI_PER_UNIT) * USDC_WEI_PER_UNIT,
+      value: this.network.launchConfig.launchFeeWei + (prebuyWei / this.quoteUnit) * this.quoteUnit,
       account,
       chain: walletClient.chain,
     });
@@ -105,7 +111,7 @@ export class ArcChainAdapter implements ChainAdapter {
     }
     return executeV4RouterSwap(
       this.network,
-      { quote: this.network.contracts.weth, nativeScale: USDC_WEI_PER_UNIT },
+      { quote: this.network.contracts.weth, nativeScale: this.quoteUnit },
       params,
       walletClient,
       publicClient,
@@ -113,5 +119,3 @@ export class ArcChainAdapter implements ChainAdapter {
     );
   }
 }
-
-export const arcChainAdapter = new ArcChainAdapter();

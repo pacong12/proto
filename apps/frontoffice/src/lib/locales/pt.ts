@@ -73,7 +73,7 @@ const messages: Record<string, string> = {
   addressCopied: 'Endereço Copiado!',
   switchManageWallet: 'Trocar Carteira',
   disconnect: 'Desconectar',
-  switchToRobinhood: 'Alternar para Robinhood',
+  switchToNetwork: 'Alternar para {name}',
   noMatchingTokens: 'Nenhum token encontrado para',
   typeSearchHint: 'Digite o nome do token, símbolo ou endereço 0x...',
   navigateHint: 'Navegar',
@@ -346,7 +346,7 @@ const messages: Record<string, string> = {
   maintenanceBanner:
     'Manutenção programada em andamento. Alguns recursos podem ficar indisponíveis por um curto período.',
   maintenanceDismiss: 'Fechar aviso',
-  v2SubtitleArc:
+  v2SubtitleInPool:
     'Lance um token direto em um pool Uniswap v4 bloqueado. Seu imposto é pago em USDC a cada negociação.',
   buySellPressure: 'Pressão de compra / venda',
   timeWindow: 'Período',
@@ -390,9 +390,9 @@ const messages: Record<string, string> = {
   footerCurveToV4: 'Curva de bonding, depois Uniswap v4',
   footerPoolFromLaunch: 'Pool Uniswap v4 desde o lançamento',
   footerLiquidityLocked: 'Liquidez travada para sempre',
-  footerSplitRobinhood: 'Taxas de LP: 70% criador / 30% protocolo',
-  footerSplitArc: 'Imposto: 20% protocolo, o resto conforme sua divisão',
-  arcPoolLiveHint:
+  footerSplitCurve: 'Taxas de LP: 70% criador / 30% protocolo',
+  footerSplitInPool: 'Imposto: 20% protocolo, o resto conforme sua divisão',
+  inPoolLiveHint:
     'Negociado no pool Uniswap v4 travado desde o primeiro bloco. Não há curva para preencher.',
   memestockMomentum: 'Momentum',
   creatorHolds: 'Criador detém',
@@ -422,9 +422,9 @@ const messages: Record<string, string> = {
   addTeamWallet: 'Adicionar carteira da equipe',
   removeTeamWallet: 'Remover carteira',
   feeRecipientDefault: 'Todas as taxas e impostos do criador vão para',
-  teamFeesRobinhood:
+  teamFeesCurve:
     'Um contrato de carteira da equipe é criado antes do lançamento. O imposto do token vai para ele desde o lançamento; após a graduação, direcione as taxas do pool para ele no seu perfil (timelock de 48 horas). Cada membro saca a própria parte.',
-  teamFeesArc:
+  teamFeesInPool:
     'Um contrato de carteira da equipe é criado antes do lançamento. Taxas e impostos vão para você até que o redirecionamento proposto no lançamento fique ativo após 48 horas (aceite no seu perfil). Cada membro saca a própria parte.',
   teamFeesUnavailable:
     'Pagamentos de equipe ainda não estão disponíveis nesta rede. Todas as taxas e impostos vão para a sua carteira.',

@@ -1,8 +1,7 @@
 import {
   LaunchedTokenEntity,
   TokenMarketData,
-  ARC_CHAIN,
-  ROBINHOOD_CHAIN,
+  CHAINS,
   resolveTokenNetwork,
 } from '@goton/shared-types';
 import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
@@ -51,13 +50,12 @@ export class GetTokenByAddressUseCase {
 
     const idx = this.chainIndexer;
     const attempts: Array<Promise<LaunchedTokenEntity | null>> = [];
+    // V2 factories first, then V1, each over every chain.
     if (typeof idx.fetchV2LaunchedTokenFromFactory === 'function') {
-      attempts.push(idx.fetchV2LaunchedTokenFromFactory(address, ARC_CHAIN));
-      attempts.push(idx.fetchV2LaunchedTokenFromFactory(address, ROBINHOOD_CHAIN));
+      attempts.push(...CHAINS.map((net) => idx.fetchV2LaunchedTokenFromFactory!(address, net)));
     }
     if (typeof idx.fetchLaunchedTokenFromChain === 'function') {
-      attempts.push(idx.fetchLaunchedTokenFromChain(address, ROBINHOOD_CHAIN));
-      attempts.push(idx.fetchLaunchedTokenFromChain(address, ARC_CHAIN));
+      attempts.push(...CHAINS.map((net) => idx.fetchLaunchedTokenFromChain!(address, net)));
     }
     const lookup = Promise.all(attempts.map((a) => a.catch(() => null)))
       .then(async (results) => {

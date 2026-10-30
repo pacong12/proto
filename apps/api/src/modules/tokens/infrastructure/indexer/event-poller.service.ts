@@ -1,6 +1,6 @@
 import { PublicClient, erc20Abi, parseAbiItem, type Address } from 'viem';
 import {
-  ROBINHOOD_CHAIN,
+  DEFAULT_NETWORK,
   bondingCurveAbi,
   resolveTokenNetwork,
   type LaunchedTokenEntity,
@@ -113,7 +113,7 @@ export class EventPollerService {
     private readonly chainIndexer: ViemChainIndexerAdapter,
     private readonly calculatePricing: CalculatePricingUseCase,
     private readonly priceFeed: PriceFeedPort,
-    private readonly network: NetworkConfig = ROBINHOOD_CHAIN,
+    private readonly network: NetworkConfig = DEFAULT_NETWORK,
   ) {}
 
   /** Waits between backfill requests and retries; tests replace it. */

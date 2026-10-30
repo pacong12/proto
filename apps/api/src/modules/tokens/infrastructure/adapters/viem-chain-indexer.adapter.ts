@@ -1,9 +1,8 @@
-import { createPublicClient, http, PublicClient, type Address, type Chain } from 'viem';
+import { createPublicClient, http, PublicClient, type Address } from 'viem';
 import {
   LaunchedTokenEntity,
   GraduationStatus,
-  ROBINHOOD_CHAIN,
-  ARC_CHAIN,
+  CHAINS,
   DEFAULT_NETWORK,
   launchpadFactoryAbi,
   launchpadV2FactoryAbi,
@@ -11,45 +10,24 @@ import {
   bondingCurveAbi,
   uniswapV3PoolAbi,
   resolveTokenNetwork,
+  toViemChain,
   type NetworkConfig,
 } from '@goton/shared-types';
 import { ChainIndexerPort } from '../../domain/ports/chain.indexer.port';
 
-function makeViemChain(cfg: NetworkConfig): Chain {
-  return {
-    id: cfg.chainId,
-    name: cfg.name,
-    nativeCurrency: cfg.nativeCurrency,
-    rpcUrls: { default: { http: [cfg.rpcUrl] } },
-  };
-}
-
 export class ViemChainIndexerAdapter implements ChainIndexerPort {
   private readonly clients = new Map<number, PublicClient>();
-
-  constructor() {
-    this.getClient(ROBINHOOD_CHAIN);
-    this.getClient(ARC_CHAIN);
-  }
 
   getClient(cfg: NetworkConfig): PublicClient {
     let client = this.clients.get(cfg.chainId);
     if (!client) {
       client = createPublicClient({
-        chain: makeViemChain(cfg),
+        chain: toViemChain(cfg),
         transport: http(cfg.rpcUrl, { retryCount: 0, timeout: 10_000 }),
       });
       this.clients.set(cfg.chainId, client);
     }
     return client;
-  }
-
-  get robinhoodClient(): PublicClient {
-    return this.getClient(ROBINHOOD_CHAIN);
-  }
-
-  get arcClient(): PublicClient {
-    return this.getClient(ARC_CHAIN);
   }
 
   /**
@@ -506,14 +484,9 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
       };
     } catch {
       // RPC unavailable: return safe defaults matching network launchConfigV2 parameters.
-      const vEthFallback =
-        networkConfig.launchConfigV2?.virtualReserveWei ??
-        (networkConfig.chainId === ARC_CHAIN.chainId
-          ? 24_420n * 10n ** 18n
-          : 1_680_000_000_000_000_000n);
       return {
         totalEthRaised: 0n,
-        virtualEthReserve: vEthFallback,
+        virtualEthReserve: networkConfig.launchConfigV2?.virtualReserveWei ?? 0n,
         virtualTokenReserve: 1_000_000_000n * 10n ** 18n,
         graduationTarget: networkConfig.launchConfig.graduationThresholdWei,
         graduated: false,
@@ -556,8 +529,8 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
   }
 
   async fetchPoolSlot0(poolAddress: Address): Promise<{ sqrtPriceX96: bigint; tick: number }> {
-    // Try Robinhood first, then Arc
-    for (const client of [this.robinhoodClient, this.arcClient]) {
+    // The pool can be on any chain: try each in registry order.
+    for (const client of CHAINS.map((net) => this.getClient(net))) {
       try {
         const result = (await client.readContract({
           address: poolAddress,
@@ -576,7 +549,7 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
 
   async fetchWethBalance(account: Address): Promise<bigint> {
     try {
-      return await this.robinhoodClient.getBalance({ address: account });
+      return await this.getClient(DEFAULT_NETWORK).getBalance({ address: account });
     } catch {
       return 0n;
     }
