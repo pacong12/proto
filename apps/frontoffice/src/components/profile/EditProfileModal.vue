@@ -18,7 +18,7 @@
         address.
       </div>
 
-      <form @submit.prevent="handleSave" class="space-y-4 py-2 font-sans">
+      <form class="space-y-4 py-2 font-sans" @submit.prevent="handleSave">
         <!-- 1. Header Cover Banner Upload Zone -->
         <div class="space-y-1.5">
           <div class="flex items-center justify-between">
@@ -27,15 +27,15 @@
           </div>
 
           <div
-            @dragover.prevent="dragOverBanner = true"
-            @dragleave.prevent="dragOverBanner = false"
-            @drop.prevent="handleBannerDrop"
             :class="[
               'relative border-2 border-dashed rounded-2xl h-28 sm:h-32 transition-all flex flex-col items-center justify-center text-center cursor-pointer overflow-hidden group',
               dragOverBanner
                 ? 'border-primary bg-primary/10'
                 : 'border-border hover:border-foreground/50 bg-muted/20',
             ]"
+            @dragover.prevent="dragOverBanner = true"
+            @dragleave.prevent="dragOverBanner = false"
+            @drop.prevent="handleBannerDrop"
             @click="triggerBannerUpload"
           >
             <input
@@ -102,15 +102,15 @@
         <div class="space-y-1.5">
           <Label class="text-xs font-medium">{{ t('profilePhoto') }}</Label>
           <div
-            @dragover.prevent="dragOverAvatar = true"
-            @dragleave.prevent="dragOverAvatar = false"
-            @drop.prevent="handleAvatarDrop"
             :class="[
               'relative border-2 border-dashed rounded-2xl p-3.5 transition-all flex items-center gap-3.5 text-left cursor-pointer min-w-0 overflow-hidden',
               dragOverAvatar
                 ? 'border-primary bg-primary/10'
                 : 'border-border hover:border-foreground/50 bg-muted/20',
             ]"
+            @dragover.prevent="dragOverAvatar = true"
+            @dragleave.prevent="dragOverAvatar = false"
+            @drop.prevent="handleAvatarDrop"
             @click="triggerAvatarUpload"
           >
             <input

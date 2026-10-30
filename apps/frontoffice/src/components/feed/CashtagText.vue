@@ -19,7 +19,8 @@
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 
-interface TokenItem {
+/** A token a $cashtag can link to. */
+export interface CashtagToken {
   token: {
     address: string;
     symbol: string;
@@ -36,7 +37,7 @@ interface Part {
 
 const props = defineProps<{
   text: string;
-  tokens?: ReadonlyArray<TokenItem>;
+  tokens?: ReadonlyArray<CashtagToken>;
 }>();
 
 const emit = defineEmits<{

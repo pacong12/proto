@@ -488,7 +488,7 @@ interface Props {
   hasDividends?: boolean;
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   currencySymbol: 'ETH',
   slippageWarnThreshold: 5.0,
 });

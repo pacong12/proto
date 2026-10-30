@@ -18,9 +18,9 @@
           variant="ghost"
           size="sm"
           class="h-7 w-7 p-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
-          @click="close"
           title="Close"
           aria-label="Close modal"
+          @click="close"
         >
           <X class="w-4 h-4" />
         </Button>
@@ -81,8 +81,8 @@
               variant="outline"
               size="sm"
               class="h-7 px-2 text-xs gap-1 border-border shrink-0 cursor-pointer"
-              @click="copyAddress"
               :title="copied ? t('addressCopied') : t('copyAddress')"
+              @click="copyAddress"
             >
               <Check v-if="copied" class="w-3 h-3 text-foreground" />
               <Copy v-else class="w-3 h-3" />

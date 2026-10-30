@@ -43,9 +43,9 @@ function dismissBanner() {
           type="button"
           variant="ghost"
           size="sm"
-          @click="dismissBanner"
           class="h-6 w-6 p-0 text-muted-foreground hover:text-foreground rounded-lg transition cursor-pointer"
           aria-label="Dismiss cookie notice"
+          @click="dismissBanner"
         >
           <X class="w-3.5 h-3.5" />
         </Button>

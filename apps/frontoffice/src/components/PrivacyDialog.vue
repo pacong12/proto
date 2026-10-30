@@ -107,7 +107,7 @@ function handleDecline() {
       </div>
 
       <DialogFooter class="pt-2 flex-col gap-2 sm:flex-col sm:space-x-0">
-        <Button :disabled="!agreed" @click="handleAccept" class="w-full">
+        <Button :disabled="!agreed" class="w-full" @click="handleAccept">
           {{ t('acceptAndContinue') }}
         </Button>
         <Button variant="ghost" class="w-full text-muted-foreground" @click="handleDecline">
