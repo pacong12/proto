@@ -42,13 +42,15 @@ goton.fun 应用的所有数据都来自 `https://goton.fun` 上的公开只读 
 
 ## DEX Screener 适配器
 
-Goton 实现了 DEX Screener 适配器（`dexId: goton`）：
+Goton 实现了 [DEX Screener 适配器](https://dexscreener.notion.site/DEX-Screener-Adapter-Specs-cc1223cdf6e74a7799599106b65dcd0e)（v1.1，`dexKey: goton`），每条链一个适配器：`https://goton.fun/dex/robinhood` 和 `https://goton.fun/dex/arc`。
 
-| 接口                                         | 返回内容               |
-| :------------------------------------------- | :--------------------- |
-| `GET /dex/latest-block?chain=robinhood\|arc` | 索引器已处理的最新区块 |
-| `GET /dex/asset?id={address}`                | 代币元数据和供应量     |
-| `GET /dex/pair?id={pair}`                    | 交易对元数据           |
-| `GET /dex/events?fromBlock=&toBlock=`        | 区块范围内的兑换事件   |
+| 接口                                          | 返回内容                                                 |
+| :-------------------------------------------- | :------------------------------------------------------- |
+| `GET /dex/{chain}/latest-block`               | 索引器已存储的最新区块及其 UNIX 时间戳                   |
+| `GET /dex/{chain}/asset?id={address}`         | 代币，或报价资产（Robinhood Chain 为 WETH，Arc 为 USDC） |
+| `GET /dex/{chain}/pair?id={pairId}`           | 交易对：代币为 `asset0`，报价资产为 `asset1`             |
+| `GET /dex/{chain}/events?fromBlock=&toBlock=` | 区块范围内（含两端）的兑换事件，按时间从早到晚排列       |
+
+一个代币在生命周期中有两个交易对。毕业前，交易对 id 是其**联合曲线地址**（`0x` + 40 位十六进制）；其 Uniswap v4 池（Robinhood Chain 毕业后，或 Arc 上自发行起）以 **v4 poolId**（`0x` + 64 位十六进制）标识，因为 v4 池位于 PoolManager 内部。数量已按小数位换算，`priceNative` 为代币以报价资产计的价格，`blockTimestamp` 以秒为单位。
 
 这些接口背后的链上事件见 [DEX 与聚合器上架](/zh/integration/listing-submission)。

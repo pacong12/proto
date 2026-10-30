@@ -42,13 +42,15 @@ Memposting call, like dan follow membutuhkan sesi yang ditandatangani dompet dan
 
 ## Adapter DEX Screener
 
-Goton mengimplementasikan adapter DEX Screener (`dexId: goton`):
+Goton mengimplementasikan [Adapter DEX Screener](https://dexscreener.notion.site/DEX-Screener-Adapter-Specs-cc1223cdf6e74a7799599106b65dcd0e) (v1.1, `dexKey: goton`), satu adapter per chain: `https://goton.fun/dex/robinhood` dan `https://goton.fun/dex/arc`.
 
-| Endpoint                                     | Hasil                                     |
-| :------------------------------------------- | :---------------------------------------- |
-| `GET /dex/latest-block?chain=robinhood\|arc` | Blok terakhir yang sudah diproses indexer |
-| `GET /dex/asset?id={address}`                | Metadata dan suplai token                 |
-| `GET /dex/pair?id={pair}`                    | Metadata pair                             |
-| `GET /dex/events?fromBlock=&toBlock=`        | Event swap dalam rentang blok             |
+| Endpoint                                      | Hasil                                                            |
+| :-------------------------------------------- | :--------------------------------------------------------------- |
+| `GET /dex/{chain}/latest-block`               | Blok terakhir yang sudah disimpan indexer, dengan timestamp UNIX |
+| `GET /dex/{chain}/asset?id={address}`         | Token, atau aset quote (WETH di Robinhood Chain, USDC di Arc)    |
+| `GET /dex/{chain}/pair?id={pairId}`           | Pair: token sebagai `asset0`, quote sebagai `asset1`             |
+| `GET /dex/{chain}/events?fromBlock=&toBlock=` | Event swap dalam rentang blok (inklusif), dari yang paling lama  |
+
+Sebuah token diperdagangkan di dua pair selama hidupnya. Sebelum graduate, id pair-nya adalah **alamat bonding curve** (`0x` + 40 hex); pool Uniswap v4-nya, setelah graduate di Robinhood Chain atau sejak peluncuran di Arc, dikenali dengan **poolId v4** (`0x` + 64 hex), karena pool v4 berada di dalam PoolManager. Jumlah sudah dalam satuan desimal, `priceNative` adalah harga token dalam aset quote, dan `blockTimestamp` dalam detik.
 
 Lihat [Listing DEX & Agregator](/id/integration/listing-submission) untuk event on-chain di balik endpoint ini.

@@ -104,7 +104,10 @@ Goton (https://goton.fun) is a fixed-supply token launchpad.
   Factory 0xd7Bf86061CC5637b2b854d61007f8fD7CD6f0980 (TokenLaunchedV4).
 - Uniswap v4 PoolManager on both chains: 0x8366a39CC670B4001A1121B8F6A443A643e40951,
   Goton hook 0xb5C88A6101e6b979Ad63Bf5e6302dF8F031360Cc, fee 10000, tickSpacing 200.
-- DEX Screener adapter: https://goton.fun/dex/{latest-block,asset,pair,events}, dexId "goton".
+- DEX Screener adapter (spec v1.1), dexKey "goton", one per chain:
+  https://goton.fun/dex/robinhood and https://goton.fun/dex/arc
+  ({latest-block,asset,pair,events}). Pair ids: the bonding curve address before
+  graduation, the Uniswap v4 poolId (bytes32) after.
 - Docs: https://docs.goton.fun
 
 Thank you!
