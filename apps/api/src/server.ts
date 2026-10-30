@@ -4,6 +4,7 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { V4BuybackKeeperService } from './modules/tokens/infrastructure/keeper/v4-buyback-keeper.service';
 import { LimitOrderKeeperService } from './modules/tokens/infrastructure/keeper/limit-order-keeper.service';
 import { GraduationKeeperService } from './modules/tokens/infrastructure/keeper/graduation-keeper.service';
+import { SourceVerifyKeeperService } from './modules/tokens/infrastructure/keeper/source-verify-keeper.service';
 import { isMemestock, memestockSignals } from './modules/tokens/application/memestock';
 import { SPARKLINE_POINTS, sparklineSince } from './modules/tokens/application/sparkline';
 import { findAllTokens } from './modules/tokens/application/all-tokens';
@@ -396,6 +397,42 @@ function startBuybackKeepers(): void {
   }
 }
 startBuybackKeepers();
+
+// Source verification: publishes each launched token and curve on Sourcify, which the Blockscout
+// explorers import. Needs no key; SOURCE_VERIFY_INTERVAL_MS=0 disables it.
+const SOURCE_VERIFY_INTERVAL_MS = Number(envOr('SOURCE_VERIFY_INTERVAL_MS', String(5 * 60_000)));
+if (SOURCE_VERIFY_INTERVAL_MS > 0 && process.env.NODE_ENV !== 'test') {
+  const sourceVerifier = new SourceVerifyKeeperService(
+    repository,
+    fetch,
+    envOr('SOURCIFY_URL', 'https://sourcify.dev/server'),
+  );
+  const sourceVerifyTick = (): void => {
+    setTimeout(async () => {
+      try {
+        const results = await sourceVerifier.runOnce();
+        const submitted = results.filter((r) => r.status === 'submitted');
+        const failed = results.filter((r) => r.status === 'failed');
+        if (submitted.length > 0) {
+          logger.info(`[SourceVerify] submitted ${submitted.length} contract(s) to Sourcify`, {
+            contracts: submitted.map((r) => `${r.chainId}:${r.address}`),
+          });
+        }
+        if (failed.length > 0) {
+          logger.warn(`[SourceVerify] ${failed.length} contract(s) not verified`, {
+            contracts: failed.map((r) => `${r.chainId}:${r.address} ${r.reason ?? ''}`),
+          });
+        }
+      } catch (e) {
+        logger.warn('[SourceVerify] cycle failed', {
+          error: { name: (e as Error).name, message: (e as Error).message },
+        });
+      }
+      sourceVerifyTick();
+    }, SOURCE_VERIFY_INTERVAL_MS);
+  };
+  sourceVerifyTick();
+}
 
 // Market data refresh: list endpoints read stored rows, which otherwise change only on a trade or
 // a token page visit. USD values follow the quote price and 24h volume ages out, so rows older than
