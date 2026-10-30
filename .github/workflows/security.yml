@@ -56,7 +56,7 @@ jobs:
       - name: Setup Foundry dependencies
         run: |
           mkdir -p contracts/lib
-          git clone --depth 1 https://github.com/foundry-rs/forge-std.git contracts/lib/forge-std
+          git clone --depth 1 --branch v1.16.2 https://github.com/foundry-rs/forge-std.git contracts/lib/forge-std
 
       - name: Run Slither Analysis
         run: |
