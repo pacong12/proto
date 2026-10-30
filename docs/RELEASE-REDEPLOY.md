@@ -72,8 +72,10 @@ can fall back to the previous stack. Env vars override them (`ROBINHOOD_FACTORY_
    a curve buy, sell and graduation on Robinhood Chain.
 5. Verify the first launch of each new factory: its token (`src/core/LaunchpadToken.sol:LaunchpadToken`)
    and, on Robinhood Chain, its curve (`src/core/BondingCurve.sol:BondingCurve`), with
-   `contracts/scripts/verify-sourcify.sh`. Every later token and curve has the same bytecode and
-   shows as verified on Blockscout without another submission; check that the second launch does.
+   `contracts/scripts/verify-sourcify.sh`. Blockscout only borrows the ABI of a contract with the
+   same bytecode, so every later launch must be submitted too: the API does that within minutes
+   through Sourcify's similarity search (`[SourceVerify]` in its log, `SOURCE_VERIFY_INTERVAL_MS`).
+   Check that the second launch shows as verified.
 
 ## 6. Retire the testing stack
 
