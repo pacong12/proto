@@ -115,7 +115,7 @@ export class HttpRequestTracker {
       this.logger.error(message, logContext);
     } else if (status >= 400) {
       this.logger.warn(message, logContext);
-    } else {
+    } else if (url.pathname !== '/health') {
       this.logger.info(message, logContext);
     }
 
