@@ -265,7 +265,6 @@ import { useTokenStore } from '@/composables/useTokenStore';
 import { useHolderDividends } from '@/composables/useHolderDividends';
 import { useUserProfile } from '@/composables/useUserProfile';
 import { walletAddress } from '@/lib/wallet-store';
-import { getPublicClient } from '@/lib/viem-client';
 import { getSessionHeaders } from '@/lib/session';
 import { resolveSafeUrl } from '@/lib/safe-url';
 import { resolveUserAddress, getUserIdentity, registerUserIdentity } from '@/lib/username';
@@ -285,19 +284,9 @@ import {
   EditProfileModal,
   CtoRedirectModal,
   type ProfileStorageData,
-  type MyLaunchItem,
   type PortfolioPosition,
-  type UserActivity,
 } from './index';
-import { erc20Abi } from 'viem';
-import {
-  liquidityLockerAbi,
-  UNDEPLOYED,
-  type FeedCalloutItem,
-  type LaunchedTokenEntity,
-  type TokenMarketData,
-  type TradeEventEntity,
-} from '@goton/shared-types';
+import { type FeedCalloutItem } from '@goton/shared-types';
 import { apiFetch } from '@/lib/api-client';
 
 const props = defineProps<{

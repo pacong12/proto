@@ -5,12 +5,14 @@ import {
   CHAINS,
   DEFAULT_NETWORK,
   launchpadFactoryAbi,
-  launchpadV2FactoryAbi,
   launchpadTokenAbi,
-  bondingCurveAbi,
   uniswapV3PoolAbi,
-  resolveTokenNetwork,
   toViemChain,
+  findFactoryLaunch,
+  readCurveState,
+  readTokenMetadata,
+  readV2LaunchedToken,
+  type CurveState,
   type NetworkConfig,
 } from '@goton/shared-types';
 import { ChainIndexerPort } from '../../domain/ports/chain.indexer.port';
@@ -30,23 +32,6 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
     return client;
   }
 
-  /**
-   * Resolve the correct viem client and network config for a given token.
-   * Scalable: leverages resolveTokenNetwork across all registered chains.
-   */
-  private resolveNetwork(
-    pairedToken?: string,
-    poolAddress?: string,
-    curveAddress?: string,
-    chainId?: number,
-  ): { client: PublicClient; network: NetworkConfig } {
-    const network = resolveTokenNetwork(
-      { pairedToken, poolAddress, curveAddress, chainId },
-      chainId,
-    );
-    return { client: this.getClient(network), network };
-  }
-
   // -------------------------------------------------------------------------
   // V2 bonding-curve token indexer
   // Called when EventPoller receives a TokenLaunchedV2 event.
@@ -56,153 +41,13 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
     curveAddress: Address,
     networkConfig: NetworkConfig,
   ): Promise<LaunchedTokenEntity | null> {
-    const client = this.getClient(networkConfig);
-
     try {
-      const [
-        name,
-        symbol,
-        decimals,
-        totalSupply,
-        logo,
-        description,
-        socialsRaw,
-        totalEthRaised,
-        virtualEthReserve,
-        virtualTokenReserve,
-        graduationTarget,
-        graduated,
-        creator,
-        taxRaw,
-        pendingRaw,
-      ] = await Promise.all([
-        client.readContract({
-          address: tokenAddress,
-          abi: launchpadTokenAbi,
-          functionName: 'name',
-        }),
-        client.readContract({
-          address: tokenAddress,
-          abi: launchpadTokenAbi,
-          functionName: 'symbol',
-        }),
-        client.readContract({
-          address: tokenAddress,
-          abi: launchpadTokenAbi,
-          functionName: 'decimals',
-        }),
-        client.readContract({
-          address: tokenAddress,
-          abi: launchpadTokenAbi,
-          functionName: 'totalSupply',
-        }),
-        client
-          .readContract({ address: tokenAddress, abi: launchpadTokenAbi, functionName: 'logo' })
-          .catch(() => ''),
-        client
-          .readContract({
-            address: tokenAddress,
-            abi: launchpadTokenAbi,
-            functionName: 'description',
-          })
-          .catch(() => ''),
-        client
-          .readContract({
-            address: tokenAddress,
-            abi: launchpadTokenAbi,
-            functionName: 'socials',
-          })
-          .catch(() => ['', '', '', '', '']),
-        client.readContract({
-          address: curveAddress,
-          abi: bondingCurveAbi,
-          functionName: 'totalEthRaised',
-        }),
-        client.readContract({
-          address: curveAddress,
-          abi: bondingCurveAbi,
-          functionName: 'virtualEthReserve',
-        }),
-        client.readContract({
-          address: curveAddress,
-          abi: bondingCurveAbi,
-          functionName: 'virtualTokenReserve',
-        }),
-        client.readContract({
-          address: curveAddress,
-          abi: bondingCurveAbi,
-          functionName: 'graduationTarget',
-        }),
-        client.readContract({
-          address: curveAddress,
-          abi: bondingCurveAbi,
-          functionName: 'graduated',
-        }),
-        client.readContract({
-          address: curveAddress,
-          abi: bondingCurveAbi,
-          functionName: 'creator',
-        }),
-        client
-          .readContract({
-            address: tokenAddress,
-            abi: launchpadTokenAbi,
-            functionName: 'taxConfig',
-          })
-          .catch(() => [0, 0, '0x0000000000000000000000000000000000000000'] as const),
-        client
-          .readContract({
-            address: tokenAddress,
-            abi: launchpadTokenAbi,
-            functionName: 'pendingTaxConfig',
-          })
-          .catch(() => [0, 0, '0x0000000000000000000000000000000000000000', 0n] as const),
-      ]);
-
-      const [twitter, telegram, discord, website, farcaster] = socialsRaw as string[];
-
-      const buyTaxBps = Number(taxRaw[0]) || Number(pendingRaw[0]) || undefined;
-      const sellTaxBps = Number(taxRaw[1]) || Number(pendingRaw[1]) || undefined;
-      const taxRecipient =
-        taxRaw[2] !== '0x0000000000000000000000000000000000000000'
-          ? (taxRaw[2] as `0x${string}`)
-          : pendingRaw[2] !== '0x0000000000000000000000000000000000000000'
-            ? (pendingRaw[2] as `0x${string}`)
-            : undefined;
-
-      const taxConfig =
-        buyTaxBps !== undefined || sellTaxBps !== undefined || taxRecipient
-          ? { buyTaxBps, sellTaxBps, taxRecipient }
-          : undefined;
-
-      return {
-        address: tokenAddress,
-        name: name as string,
-        symbol: symbol as string,
-        decimals: decimals as number,
-        totalSupply: (totalSupply as bigint).toString(),
-        logo: (logo as string) || '',
-        description: (description as string) || '',
-        socials: { twitter, telegram, discord, website, farcaster },
-        taxConfig,
-        deployer: creator as `0x${string}`,
-        pairedToken: networkConfig.contracts.weth as `0x${string}`,
-        poolAddress: curveAddress as `0x${string}`,
-        isToken0: false, // V2 bonding curve: N/A
-        poolFee: networkConfig.launchConfig.poolFee,
-        positionId: 0n,
-        restrictionsEndBlock: 0n,
-        launchBlock: 0n,
-        createdAt: Date.now(),
-        initialBuyAmount: totalEthRaised.toString(),
-        version: 'v2',
+      return await readV2LaunchedToken(
+        this.getClient(networkConfig),
+        networkConfig,
+        tokenAddress,
         curveAddress,
-        // V2 on-chain parameters — stored for pricing without additional RPC calls
-        virtualEthReserve: virtualEthReserve.toString(),
-        virtualTokenReserve: virtualTokenReserve.toString(),
-        graduationTarget: graduationTarget.toString(),
-        isGraduated: graduated as boolean,
-      };
+      );
     } catch {
       return null;
     }
@@ -219,60 +64,14 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
     prebuyQuote: bigint,
     networkConfig: NetworkConfig,
   ): Promise<LaunchedTokenEntity | null> {
-    const client = this.getClient(networkConfig);
     try {
-      const [name, symbol, decimals, totalSupply, logo, description, socialsRaw] =
-        await Promise.all([
-          client.readContract({
-            address: tokenAddress,
-            abi: launchpadTokenAbi,
-            functionName: 'name',
-          }),
-          client.readContract({
-            address: tokenAddress,
-            abi: launchpadTokenAbi,
-            functionName: 'symbol',
-          }),
-          client.readContract({
-            address: tokenAddress,
-            abi: launchpadTokenAbi,
-            functionName: 'decimals',
-          }),
-          client.readContract({
-            address: tokenAddress,
-            abi: launchpadTokenAbi,
-            functionName: 'totalSupply',
-          }),
-          client
-            .readContract({ address: tokenAddress, abi: launchpadTokenAbi, functionName: 'logo' })
-            .catch(() => ''),
-          client
-            .readContract({
-              address: tokenAddress,
-              abi: launchpadTokenAbi,
-              functionName: 'description',
-            })
-            .catch(() => ''),
-          client
-            .readContract({
-              address: tokenAddress,
-              abi: launchpadTokenAbi,
-              functionName: 'socials',
-            })
-            .catch(() => ['', '', '', '', ''] as const),
-        ]);
-      const [twitter, telegram, discord, website, farcaster] = socialsRaw as readonly string[];
+      const metadata = await readTokenMetadata(this.getClient(networkConfig), tokenAddress);
       const quote = networkConfig.contracts.weth;
 
       return {
         address: tokenAddress,
-        name: name as string,
-        symbol: symbol as string,
-        decimals: decimals as number,
-        totalSupply: (totalSupply as bigint).toString(),
-        logo: (logo as string) || '',
-        description: (description as string) || '',
-        socials: { twitter, telegram, discord, website, farcaster },
+        ...metadata,
+        totalSupply: metadata.totalSupply.toString(),
         deployer: creator,
         pairedToken: quote,
         poolAddress: poolId,
@@ -300,34 +99,8 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
     networkConfig?: NetworkConfig,
   ): Promise<LaunchedTokenEntity | null> {
     const cfg = networkConfig ?? DEFAULT_NETWORK;
-    const client = this.getClient(cfg);
-    const factories = Array.from(
-      new Set(
-        [cfg.contracts.factoryV2, cfg.contracts.factory].filter((f): f is Address =>
-          Boolean(f && f !== '0x0000000000000000000000000000000000000000'),
-        ),
-      ),
-    );
-
-    for (const factory of factories) {
-      try {
-        const launch = (await client.readContract({
-          address: factory,
-          abi: launchpadV2FactoryAbi,
-          functionName: 'launches',
-          args: [tokenAddress],
-        })) as [Address, Address, Address, bigint, boolean];
-
-        const curveAddress = launch[1];
-        if (curveAddress && curveAddress !== '0x0000000000000000000000000000000000000000') {
-          const entity = await this.fetchV2LaunchedToken(tokenAddress, curveAddress, cfg);
-          if (entity) return entity;
-        }
-      } catch {
-        // continue to next factory
-      }
-    }
-    return null;
+    const launch = await findFactoryLaunch(this.getClient(cfg), cfg, tokenAddress);
+    return launch ? this.fetchV2LaunchedToken(tokenAddress, launch.curve, cfg) : null;
   }
 
   // -------------------------------------------------------------------------
@@ -341,54 +114,22 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
     const client = this.getClient(cfg);
 
     try {
-      const [tokenLaunchedData, name, symbol, decimals, logo, description, poolAddress, socials] =
-        await Promise.all([
-          client.readContract({
-            address: cfg.contracts.factory as Address,
-            abi: launchpadFactoryAbi,
-            functionName: 'getLaunchedToken',
-            args: [tokenAddress],
-          }),
-          client.readContract({
+      const [tokenLaunchedData, metadata, poolAddress] = await Promise.all([
+        client.readContract({
+          address: cfg.contracts.factory as Address,
+          abi: launchpadFactoryAbi,
+          functionName: 'getLaunchedToken',
+          args: [tokenAddress],
+        }),
+        readTokenMetadata(client, tokenAddress),
+        client
+          .readContract({
             address: tokenAddress,
             abi: launchpadTokenAbi,
-            functionName: 'name',
-          }),
-          client.readContract({
-            address: tokenAddress,
-            abi: launchpadTokenAbi,
-            functionName: 'symbol',
-          }),
-          client.readContract({
-            address: tokenAddress,
-            abi: launchpadTokenAbi,
-            functionName: 'decimals',
-          }),
-          client
-            .readContract({ address: tokenAddress, abi: launchpadTokenAbi, functionName: 'logo' })
-            .catch(() => ''),
-          client
-            .readContract({
-              address: tokenAddress,
-              abi: launchpadTokenAbi,
-              functionName: 'description',
-            })
-            .catch(() => ''),
-          client
-            .readContract({
-              address: tokenAddress,
-              abi: launchpadTokenAbi,
-              functionName: 'liquidityPool',
-            })
-            .catch(() => '0x0000000000000000000000000000000000000000'),
-          client
-            .readContract({
-              address: tokenAddress,
-              abi: launchpadTokenAbi,
-              functionName: 'socials',
-            })
-            .catch(() => ['', '', '', '', '']),
-        ]);
+            functionName: 'liquidityPool',
+          })
+          .catch(() => '0x0000000000000000000000000000000000000000'),
+      ]);
 
       if (!tokenLaunchedData || !(tokenLaunchedData as { exists?: boolean }).exists) return null;
 
@@ -404,17 +145,10 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
         exists: boolean;
       };
 
-      const [twitter, telegram, discord, website, farcaster] = socials as string[];
-
       return {
         address: tokenAddress,
-        name: name as string,
-        symbol: symbol as string,
-        decimals: decimals as number,
+        ...metadata,
         totalSupply: td.supply.toString(),
-        logo: (logo as string) || '',
-        description: (description as string) || '',
-        socials: { twitter, telegram, discord, website, farcaster },
         deployer: td.deployer,
         pairedToken: td.pairedToken,
         poolAddress: poolAddress as `0x${string}`,
@@ -438,50 +172,9 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
   async fetchV2CurveState(
     curveAddress: Address,
     networkConfig: NetworkConfig,
-  ): Promise<{
-    totalEthRaised: bigint;
-    virtualEthReserve: bigint;
-    virtualTokenReserve: bigint;
-    graduationTarget: bigint;
-    graduated: boolean;
-  }> {
-    const client = this.getClient(networkConfig);
+  ): Promise<CurveState> {
     try {
-      const [totalEthRaised, virtualEthReserve, virtualTokenReserve, graduationTarget, graduated] =
-        await Promise.all([
-          client.readContract({
-            address: curveAddress,
-            abi: bondingCurveAbi,
-            functionName: 'totalEthRaised',
-          }),
-          client.readContract({
-            address: curveAddress,
-            abi: bondingCurveAbi,
-            functionName: 'virtualEthReserve',
-          }),
-          client.readContract({
-            address: curveAddress,
-            abi: bondingCurveAbi,
-            functionName: 'virtualTokenReserve',
-          }),
-          client.readContract({
-            address: curveAddress,
-            abi: bondingCurveAbi,
-            functionName: 'graduationTarget',
-          }),
-          client.readContract({
-            address: curveAddress,
-            abi: bondingCurveAbi,
-            functionName: 'graduated',
-          }),
-        ]);
-      return {
-        totalEthRaised: totalEthRaised as bigint,
-        virtualEthReserve: virtualEthReserve as bigint,
-        virtualTokenReserve: virtualTokenReserve as bigint,
-        graduationTarget: graduationTarget as bigint,
-        graduated: graduated as boolean,
-      };
+      return await readCurveState(this.getClient(networkConfig), curveAddress);
     } catch {
       // RPC unavailable: return safe defaults matching network launchConfigV2 parameters.
       return {

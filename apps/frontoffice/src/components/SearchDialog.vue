@@ -211,7 +211,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { Empty } from '@/components/ui/empty';
-import type { LaunchedTokenEntity, TokenMarketData, TradeEventEntity } from '@goton/shared-types';
+import type { TradeEventEntity } from '@goton/shared-types';
 
 const { t } = useI18n();
 const { activeNetwork } = useWallet();

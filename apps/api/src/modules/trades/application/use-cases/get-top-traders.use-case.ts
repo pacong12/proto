@@ -1,5 +1,5 @@
 import type { Address } from 'viem';
-import { resolveTokenNetwork } from '@goton/shared-types';
+import { FALLBACK_ETH_PRICE_USD, resolveTokenNetwork } from '@goton/shared-types';
 import type { TradeRepositoryPort } from '../../domain/ports/trade-repository.port';
 import type { TokenRepositoryPort } from '../../../tokens/domain/ports/token.repository.port';
 import type { PriceFeedPort } from '../../../tokens/domain/ports/price-feed.port';
@@ -58,7 +58,7 @@ export class GetTopTradersUseCase {
     try {
       quotePrice = await this.priceFeed.getQuoteAssetPriceUsd(resolveTokenNetwork(token).chainId);
     } catch {
-      quotePrice = 2500; // Resilient fallback: only the floating ETH quote can fail
+      quotePrice = FALLBACK_ETH_PRICE_USD; // Resilient fallback: only the floating ETH quote can fail
     }
 
     // Trades are sorted newest first, sort chronological to determine first buy

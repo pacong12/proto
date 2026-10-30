@@ -219,7 +219,7 @@ import { Jazzicon } from '@/components/ui/avatar';
 import { TraderTagBadge } from '@/components/ui/badge';
 import { formatRelativeTime, formatTokenNumber, formatSubscriptPrice } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
-import type { TradeEventEntity } from '@goton/shared-types';
+import { FALLBACK_ETH_PRICE_USD } from '@goton/shared-types';
 
 const { t } = useI18n();
 
@@ -250,7 +250,7 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
   currencySymbol: 'ETH',
   deployer: '',
-  quoteAssetPriceUsd: 2500,
+  quoteAssetPriceUsd: FALLBACK_ETH_PRICE_USD,
   explorerUrl: '',
 });
 
@@ -298,7 +298,7 @@ const orderFlowStats = computed(() => {
     }
   }
 
-  const quoteRate = props.quoteAssetPriceUsd || 2500;
+  const quoteRate = props.quoteAssetPriceUsd || FALLBACK_ETH_PRICE_USD;
   const netVolumeUsd = (buyVolume - sellVolume) * quoteRate;
 
   return {
@@ -327,7 +327,7 @@ watch(filteredTrades, (list) => {
 function getTradeVolumeUsd(trade: TradeItem): number {
   const byTokens = parseFloat(trade.tokenAmount || '0') * (trade.priceUsd || 0);
   if (byTokens > 0) return byTokens;
-  const ethRate = props.quoteAssetPriceUsd || 2500;
+  const ethRate = props.quoteAssetPriceUsd || FALLBACK_ETH_PRICE_USD;
   return parseFloat(trade.wethAmount || '0') * ethRate;
 }
 </script>

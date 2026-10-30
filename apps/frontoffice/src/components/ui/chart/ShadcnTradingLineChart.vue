@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { formatPriceUsd, formatCompactUsd, formatRelativeTime } from '@/lib/utils';
+import { formatPriceUsd, formatCompactUsd } from '@/lib/utils';
 import type { CandlePoint } from './TradingChart.vue';
 
 interface Props {

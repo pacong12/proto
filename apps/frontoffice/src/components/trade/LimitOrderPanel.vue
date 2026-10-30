@@ -159,8 +159,8 @@ const slSlippageInput = ref('3');
 const expiryDays = ref(7);
 
 const quoteSymbol = computed(() => props.network.nativeCurrency.symbol);
-// Raw quote units: Arc pools quote in the 6-decimal USDC ERC-20; ETH pools in 18-decimal wei.
-const quoteDecimals = computed(() => (props.network.nativeCurrency.symbol === 'USDC' ? 6 : 18));
+// Raw quote units: the pool's quote token (6-decimal USDC ERC-20 on Arc, 18-decimal wei for ETH).
+const quoteDecimals = computed(() => props.network.quoteTokenDecimals);
 const marketCapUsd = computed(() => props.marketData.marketCapUsd);
 const ctx = computed<PriceContext>(() => ({
   priceInQuote: props.marketData.priceInWeth,

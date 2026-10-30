@@ -5,6 +5,11 @@
  */
 export const UNDEPLOYED = '0x0000000000000000000000000000000000000000' as const;
 
+/** Whether an address is set: present and not UNDEPLOYED (address(0)). */
+export function isDeployed(address?: string | null): address is `0x${string}` {
+  return Boolean(address) && address!.toLowerCase() !== UNDEPLOYED;
+}
+
 export interface NetworkConfig {
   chainId: number;
   /** Stable lowercase identifier used in routes, env prefixes and folder names (e.g. 'arc'). */

@@ -58,7 +58,6 @@ const barStep = computed(() => {
 });
 
 const bars = computed(() => {
-  const n = props.data.length;
   const h = chartHeight.value;
   const max = maxValue.value;
   const step = barStep.value;
