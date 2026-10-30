@@ -554,6 +554,7 @@ import {
   type TokenCommentEntity,
   type FeedCalloutItem,
   type TradeEventEntity,
+  isIndexableToken,
   seoChainName,
   tokenSeoDescription,
 } from '@goton/shared-types';
@@ -1033,10 +1034,18 @@ const limitOrdersEnabled = computed(() => {
 
 const isArcToken = computed(() => tokenNetwork.value.chainId === ARC_CHAIN.chainId);
 
-// SEO: name the page after the token once its metadata has loaded.
+// SEO: name the page after the token once its metadata has loaded, and keep thin pages out of
+// search the way the edge worker does (isIndexableToken).
 watch(
-  () => [currentToken.value.name, currentToken.value.symbol, currentToken.value.address] as const,
-  ([name, symbol, address]) => {
+  () =>
+    [
+      currentToken.value.name,
+      currentToken.value.symbol,
+      currentToken.value.address,
+      currentMarketData.value.volume24hUsd,
+      currentMarketData.value.isGraduated,
+    ] as const,
+  ([name, symbol, address, volume24hUsd, isGraduated]) => {
     if (!name || !symbol) return;
     setPageSeo(`/token/${address}`, {
       title: `${name} ($${symbol})`,
@@ -1046,6 +1055,11 @@ watch(
         seoChainName(tokenNetwork.value.chainId),
         currentToken.value.description,
       ),
+      noindex: !isIndexableToken({
+        description: currentToken.value.description,
+        volume24hUsd,
+        isGraduated,
+      }),
     });
   },
   { immediate: true },

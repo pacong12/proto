@@ -93,3 +93,24 @@ export function tokenSeoDescription(
   if (own) return clipText(own, 155);
   return `Trade ${name} ($${symbol}) on ${chainName} on goton: price, chart, holders and live trades.`;
 }
+
+/** Shortest creator description that gives a token page content of its own. */
+const SUBSTANTIAL_DESCRIPTION = 80;
+
+/**
+ * Whether a token page has enough for search to index: a real description, trading in the last
+ * 24 hours, or a graduated pool. Fresh launches with none of these (most are tests) get noindex
+ * and stay out of the sitemap, so a crowd of thin pages does not weigh on how search engines
+ * rate the whole site; a token becomes indexable as soon as it has any of them.
+ */
+export function isIndexableToken(token: {
+  description?: string;
+  volume24hUsd?: number;
+  isGraduated?: boolean;
+}): boolean {
+  return (
+    (token.description?.trim().length ?? 0) >= SUBSTANTIAL_DESCRIPTION ||
+    (token.volume24hUsd ?? 0) > 0 ||
+    token.isGraduated === true
+  );
+}

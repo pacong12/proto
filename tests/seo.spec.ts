@@ -286,9 +286,11 @@ describe('seo buildSitemap', () => {
     const xml = buildSitemap(
       ORIGIN,
       [
-        { address: TOKEN, name: 'a', symbol: 'A', createdAt: 1_700_000_000 },
-        { address: TOKEN.toLowerCase(), name: 'a', symbol: 'A' },
-        { address: 'not-an-address', name: 'b', symbol: 'B' },
+        { address: TOKEN, name: 'a', symbol: 'A', createdAt: 1_700_000_000, volume24hUsd: 5 },
+        { address: TOKEN.toLowerCase(), name: 'a', symbol: 'A', volume24hUsd: 5 },
+        { address: 'not-an-address', name: 'b', symbol: 'B', volume24hUsd: 5 },
+        // A fresh launch with no description, no trading and no pool: thin, so left out.
+        { address: `0x${'1'.repeat(40)}`, name: 'Thin', symbol: 'THIN' },
       ],
       new Date('2026-10-23T00:00:00Z'),
     );
@@ -298,6 +300,33 @@ describe('seo buildSitemap', () => {
     expect(xml.match(/\/token\//g)).toHaveLength(1);
     expect(xml).toContain('<lastmod>2023-11-14T22:13:20.000Z</lastmod>');
     expect(xml).not.toContain('not-an-address');
+    expect(xml).not.toContain('1111111111');
+  });
+});
+
+describe('seo thin token pages', () => {
+  const thin = { address: TOKEN, name: 'Thin', symbol: 'THIN' };
+
+  it('indexes a token page once it has a description, trading or a pool', () => {
+    expect(pageMeta(ORIGIN, `/token/${TOKEN}`, thin).noindex).toBe(true);
+    for (const signal of [
+      { description: 'x'.repeat(80) },
+      { volume24hUsd: 12 },
+      { isGraduated: true },
+    ]) {
+      expect(pageMeta(ORIGIN, `/token/${TOKEN}`, { ...thin, ...signal }).noindex).toBe(false);
+    }
+    expect(pageMeta(ORIGIN, '/launchpad').noindex).toBeUndefined();
+  });
+
+  it('writes noindex, follow into a thin page and nothing into others', () => {
+    const shell = '<html><head><title>goton</title></head><body></body></html>';
+    expect(applyMeta(shell, pageMeta(ORIGIN, `/token/${TOKEN}`, thin))).toContain(
+      '<meta name="robots" content="noindex, follow" />',
+    );
+    expect(
+      applyMeta(shell, pageMeta(ORIGIN, `/token/${TOKEN}`, { ...thin, volume24hUsd: 1 })),
+    ).not.toContain('name="robots"');
   });
 });
 
@@ -407,11 +436,30 @@ describe('edge worker SEO', () => {
   it('builds the sitemap from the token list', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => Response.json({ success: true, data: [{ token: apiToken }] })),
+      vi.fn(async () =>
+        Response.json({
+          success: true,
+          data: [{ token: apiToken, marketData: { volume24hUsd: 120 } }],
+        }),
+      ),
     );
     const res = await worker.fetch(new Request(`${ORIGIN}/sitemap.xml`), env());
     expect(res.headers.get('content-type')).toContain('application/xml');
+    // Read by search engines, but not itself a search result.
+    expect(res.headers.get('x-robots-tag')).toBe('noindex');
     expect(await res.text()).toContain(`<loc>${ORIGIN}/token/${TOKEN.toLowerCase()}</loc>`);
+  });
+
+  it('keeps llms.txt out of search results and pages in', async () => {
+    const files = (path: string) =>
+      worker.fetch(new Request(`${ORIGIN}${path}`), {
+        ...env(),
+        ASSETS: {
+          fetch: async () => new Response('text', { headers: { 'content-type': 'text/plain' } }),
+        },
+      });
+    expect((await files('/llms.txt')).headers.get('x-robots-tag')).toBe('noindex');
+    expect((await files('/robots.txt')).headers.get('x-robots-tag')).toBeNull();
   });
 
   it('falls back to the static sitemap when the API fails', async () => {
