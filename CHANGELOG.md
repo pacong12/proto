@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/pacong12/proto/compare/v0.8.0...v0.8.1) (2026-10-30)
+
+
+### Bug Fixes
+
+* **api:** stop Arc holder backfills from skipping indexer ranges ([#217](https://github.com/pacong12/proto/issues/217)) ([499e7df](https://github.com/pacong12/proto/commit/499e7df2976c19d68b5831bba820b91df163bbca))
+
 ## [0.8.0](https://github.com/pacong12/proto/compare/v0.7.3...v0.8.0) (2026-10-30)
 
 
