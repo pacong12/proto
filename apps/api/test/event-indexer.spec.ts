@@ -3,7 +3,9 @@ import { InMemoryTokenRepository } from '../src/modules/tokens/infrastructure/ad
 import { CalculatePricingUseCase } from '../src/modules/tokens/application/use-cases/calculate-pricing.use-case';
 import { GetTokensUseCase } from '../src/modules/tokens/application/use-cases/get-tokens.use-case';
 import { GetTokenByAddressUseCase } from '../src/modules/tokens/application/use-cases/get-token-by-address.use-case';
+import { GetTradesUseCase } from '../src/modules/trades/application/use-cases/get-trades.use-case';
 import { TokenController } from '../src/modules/tokens/presentation/token.controller';
+import { GetCandlesticksUseCase } from '../src/modules/trades/application/use-cases/get-candlesticks.use-case';
 import { CoinGeckoPriceFeedAdapter } from '../src/modules/tokens/infrastructure/adapters/coingecko-price-feed.adapter';
 import type { ViemChainIndexerAdapter } from '../src/modules/tokens/infrastructure/adapters/viem-chain-indexer.adapter';
 import { TradeEventEntity } from '@goton/shared-types';
@@ -55,12 +57,7 @@ describe('Event Indexer, Trades & Candlestick Aggregation', () => {
       calculatePricing,
       priceFeed,
     );
-    controller = new TokenController(
-      getTokensUseCase,
-      getTokenByAddressUseCase,
-      repository,
-      priceFeed,
-    );
+    controller = new TokenController(getTokensUseCase, getTokenByAddressUseCase, repository);
   });
 
   it('records and retrieves trade events in reverse chronological order', async () => {
@@ -95,11 +92,10 @@ describe('Event Indexer, Trades & Candlestick Aggregation', () => {
     await repository.saveTrade(trade1);
     await repository.saveTrade(trade2);
 
-    const envelope = await controller.getTrades(sampleToken);
-    expect(envelope.success).toBe(true);
-    expect(envelope.data).toHaveLength(2);
-    expect(envelope.data?.[0].id).toBe('tx-2-0');
-    expect(envelope.data?.[1].id).toBe('tx-1-0');
+    const trades = await new GetTradesUseCase(repository).execute(sampleToken);
+    expect(trades).toHaveLength(2);
+    expect(trades[0].id).toBe('tx-2-0');
+    expect(trades[1].id).toBe('tx-1-0');
   });
 
   it('aggregates trades into OHLCV candlesticks correctly', async () => {
@@ -150,11 +146,10 @@ describe('Event Indexer, Trades & Candlestick Aggregation', () => {
       await repository.saveTrade(t);
     }
 
-    const envelope = await controller.getCandlesticks(sampleToken, 60);
-    expect(envelope.success).toBe(true);
-    expect(envelope.data).toHaveLength(1);
+    const candles = await new GetCandlesticksUseCase(repository).execute(sampleToken, 60);
+    expect(candles).toHaveLength(1);
 
-    const candle = envelope.data?.[0];
+    const candle = candles[0];
     expect(candle?.open).toBe(0.00001);
     expect(candle?.high).toBe(0.000015);
     expect(candle?.low).toBe(0.000008);

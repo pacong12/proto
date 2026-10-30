@@ -112,17 +112,12 @@ const getTokenByAddressUseCase = new GetTokenByAddressUseCase(
   Date.now,
   (token) => scheduleTradeBackfill(token),
 );
-const tokenController = new TokenController(
-  getTokensUseCase,
-  getTokenByAddressUseCase,
-  repository,
-  priceFeed,
-);
+const tokenController = new TokenController(getTokensUseCase, getTokenByAddressUseCase, repository);
 
 const getTradesUseCase = new GetTradesUseCase(repository);
 const getRecentTradesUseCase = new GetRecentTradesUseCase(repository);
 const getTopTradersUseCase = new GetTopTradersUseCase(repository, repository, priceFeed);
-const getCandlesticksUseCase = new GetCandlesticksUseCase(repository, repository);
+const getCandlesticksUseCase = new GetCandlesticksUseCase(repository);
 
 export const tradeController = new TradeController(
   getTradesUseCase,
@@ -565,6 +560,9 @@ async function indexTradeFromReceipt(
     }
   }
 }
+
+/** GeckoTerminal OHLCV timeframes as candle widths in seconds (VALID_RESOLUTIONS). */
+const GECKO_TIMEFRAME_SECONDS = { minute: 60, hour: 3600, day: 86400 } as const;
 
 async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   const url = new URL(req.url);
@@ -2517,8 +2515,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         null);
     if (!token) return replyError('NOT_FOUND', 'Pool not found', 404);
 
-    const resolution = timeframe === 'minute' ? 1 : timeframe === 'hour' ? 60 : 1440;
-    const ohlcvRes = await tokenController.getCandlesticks(token.address, resolution);
+    const resolution = GECKO_TIMEFRAME_SECONDS[timeframe as keyof typeof GECKO_TIMEFRAME_SECONDS];
+    const ohlcvRes = await tradeController.getCandlesticks(token.address, resolution);
     const candles = (ohlcvRes.data ?? []) as import('@goton/shared-types').CandlestickEntity[];
     const sliced = candles.slice(-limit);
 
