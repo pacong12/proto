@@ -35,6 +35,10 @@ All code follows the Clean Architecture dependency rule: **Dependencies point st
 
 - Implements port interfaces: RPC clients, Viem contract callers, event indexers, and storage adapters.
 - Interacts with external systems (Robinhood Chain RPC, Uniswap V3 contracts).
+- Storage follows the aggregates: the tokens module's ports are `TokenStorePort`, `TradeStorePort`,
+  `SocialStorePort` and `LimitOrderStorePort` (`TokenRepositoryPort` combines them). The SQLite
+  adapter has one layer per aggregate on a shared connection and schema: `SqliteDatabase` →
+  `SqliteTokenStore` → `SqliteTradeStore` → `SqliteSocialStore` → `SqliteOrderStore`.
 
 ### 4. Presentation Layer (`apps/api/src/*/presentation` & `apps/frontoffice`)
 
