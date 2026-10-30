@@ -55,6 +55,9 @@ export function legalRedirect(pathname: string, env: Env): Response | null {
   return Response.redirect(`${docs}${target}`, 301);
 }
 
+/** Files served on goton.fun that are for crawlers and agents rather than search results. */
+const NOT_SEARCH_PAGES = new Set(['/sitemap.xml', '/llms.txt']);
+
 type MaintenanceMode = 'off' | 'banner' | 'full';
 
 const BYPASS_COOKIE = 'maintenance_bypass';
@@ -347,6 +350,8 @@ export default {
       newHeaders.set('Cache-Control', 'no-cache');
     }
     if (env.NOINDEX === 'true') newHeaders.set('X-Robots-Tag', 'noindex, nofollow');
+    // Files for crawlers and agents, not pages: keep them out of search results.
+    else if (NOT_SEARCH_PAGES.has(url.pathname)) newHeaders.set('X-Robots-Tag', 'noindex');
     // Content-Security-Policy: use Report-Only mode in staging (CSP_REPORT_ONLY=true)
     // to catch violations before enforcing. Switch to enforcing in production.
     const cspValue = buildCsp(env.CSP_REPORT_URI);
@@ -475,7 +480,7 @@ export async function withPageMeta(response: Response, url: URL, env: Env): Prom
 export async function dynamicSitemap(origin: string, env: Env): Promise<Response | null> {
   const tokens: SeoToken[] = [];
   for (let offset = 0; offset < 1_000; offset += 100) {
-    const page = await backendJson<Array<{ token: ApiToken }>>(
+    const page = await backendJson<Array<{ token: ApiToken; marketData?: ApiMarketData }>>(
       env,
       `/api/tokens?limit=100&offset=${offset}`,
     );
@@ -483,13 +488,15 @@ export async function dynamicSitemap(origin: string, env: Env): Promise<Response
       if (offset === 0) return null;
       break;
     }
-    tokens.push(...page.map((item) => toSeoToken(item.token)));
+    tokens.push(...page.map((item) => toSeoToken(item.token, item.marketData)));
     if (page.length < 100) break;
   }
   return new Response(buildSitemap(origin, tokens), {
     headers: {
       'content-type': 'application/xml; charset=utf-8',
       'cache-control': 'public, max-age=3600',
+      // Search engines still read the sitemap; this only keeps the file out of results.
+      'x-robots-tag': 'noindex',
     },
   });
 }

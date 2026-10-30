@@ -8,6 +8,7 @@ import {
   canonicalPath,
   clipText,
   isAddress,
+  isIndexableToken,
   SEO_DEFAULT_DESCRIPTION,
   SEO_DEFAULT_TITLE,
   SEO_PAGES,
@@ -24,6 +25,8 @@ export interface PageMeta {
   image: string;
   /** Large summary card for the default artwork, small card for a square token logo. */
   card: 'summary_large_image' | 'summary';
+  /** Keep the page out of search results (thin token pages; see isIndexableToken). */
+  noindex?: boolean;
 }
 
 export interface SeoToken {
@@ -129,6 +132,7 @@ export function pageMeta(origin: string, pathname: string, token?: SeoToken | nu
       description: about,
       image,
       card: image === defaultImage ? 'summary_large_image' : 'summary',
+      noindex: !isIndexableToken(token),
     };
   }
 
@@ -174,6 +178,10 @@ export function applyMeta(html: string, meta: PageMeta): string {
     ['name', 'twitter:card', meta.card],
   ];
   for (const [attr, key, value] of pairs) out = setMeta(out, attr, key, value);
+  if (meta.noindex) {
+    // Crawlers still follow the links; the app keeps the same value after it renders.
+    out = out.replace(/<\/head>/i, '<meta name="robots" content="noindex, follow" />\n</head>');
+  }
   // Token logos are not 1200x630 PNGs; drop the default image's type and size hints for them.
   if (meta.card === 'summary') {
     out = out.replace(
@@ -187,7 +195,7 @@ export function applyMeta(html: string, meta: PageMeta): string {
 const xmlEscape = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-/** Sitemap with the static pages and one entry per token page. */
+/** Sitemap with the static pages and one entry per indexable token page. */
 export function buildSitemap(origin: string, tokens: SeoToken[], now = new Date()): string {
   const today = now.toISOString();
   const urls = STATIC_PAGES.map(
@@ -197,7 +205,7 @@ export function buildSitemap(origin: string, tokens: SeoToken[], now = new Date(
   const seen = new Set<string>();
   for (const t of tokens) {
     const address = t.address.toLowerCase();
-    if (!/^0x[a-f0-9]{40}$/.test(address) || seen.has(address)) continue;
+    if (!/^0x[a-f0-9]{40}$/.test(address) || seen.has(address) || !isIndexableToken(t)) continue;
     seen.add(address);
     const lastmod =
       t.createdAt && t.createdAt > 0
