@@ -54,8 +54,11 @@ export const ARC_NETWORK: NetworkConfig = {
     'https://rpc.drpc.mainnet.arc.io',
     'https://arc.drpc.org',
   ],
-  // dRPC's free plan rejects eth_getLogs over more than 10,000 blocks.
+  // rpc.mainnet.arc.io answers eth_getLogs over 10,000 blocks but not 20,000, and rate-limits it
+  // (about 70 a minute). The other endpoints cannot serve history: Blockdaemon prunes it and the
+  // dRPC free plan takes about 100 blocks per request.
   maxLogBlockRange: 10_000,
+  backfillRequestIntervalMs: 1_000,
   blockExplorer: getEnv('ARC_BLOCK_EXPLORER_URL', 'https://explorer.arc.io'),
   contracts: {
     factory: getEnv('ARC_V4_FACTORY_ADDRESS', ARC_V4_FACTORY) as `0x${string}`,

@@ -67,6 +67,7 @@ function poller(
     { getQuoteAssetPriceUsd: async () => 2400 } as never,
     network,
   );
+  Object.assign(p, { sleep: async () => undefined });
   return { p, repo };
 }
 
@@ -119,6 +120,32 @@ describe('curve trade backfill', () => {
       [10_000n, 19_999n],
       [20_000n, 25_000n],
     ]);
+  });
+
+  it('retries a rate-limited chunk instead of failing the backfill', async () => {
+    const ranges: bigint[] = [];
+    let calls = 0;
+    const { p, repo } = poller({
+      getLogs: (async ({ fromBlock }: { fromBlock: bigint }) => {
+        calls += 1;
+        if (calls % 2 === 1) throw new Error('rate limit exceeded');
+        ranges.push(fromBlock);
+        return [];
+      }) as never,
+    });
+    await repo.save(token);
+    await p.backfillCurveTrades(token, 0n, 450_000n);
+    expect(ranges).toEqual([0n, 200_000n, 400_000n]);
+  });
+
+  it('gives up on a chunk that keeps failing', async () => {
+    const { p, repo } = poller({
+      getLogs: (async () => {
+        throw new Error('RPC down');
+      }) as never,
+    });
+    await repo.save(token);
+    await expect(p.backfillCurveTrades(token, 0n, 100n)).rejects.toThrow('RPC down');
   });
 
   it('prices a curve trade at the spot after its block, not at its taxed token ratio', async () => {
