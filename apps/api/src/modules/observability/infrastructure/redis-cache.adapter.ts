@@ -1,6 +1,6 @@
 import Redis, { RedisOptions } from 'ioredis';
-import { CachePort } from '../domain/ports/cache.port';
-import { LoggerPort } from '../domain/ports/logger.port';
+import { CachePort } from '../../../core/ports/cache.port';
+import { LoggerPort } from '../../../core/ports/logger.port';
 
 export class RedisCacheAdapter implements CachePort {
   private client: Redis | null = null;

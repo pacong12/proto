@@ -2,6 +2,7 @@ import { computed, getCurrentInstance, onMounted, onUnmounted, ref, watch } from
 import {
   DEFAULT_NETWORK,
   SUPPORTED_CHAINS,
+  isAddress,
   getNetworkConfig,
   type NetworkConfig,
 } from '@goton/shared-types';
@@ -51,7 +52,7 @@ export function useWallet() {
       // AppKit reports the wallet as disconnected, it is not connected, whatever storage says.
       if (appKitConfigured && appKitAccount.value?.status === 'disconnected') return null;
       const stored = localStorage.getItem(STORAGE_ADDRESS_KEY);
-      if (stored && stored.startsWith('0x') && stored.length === 42) {
+      if (isAddress(stored)) {
         return stored as `0x${string}`;
       }
     }

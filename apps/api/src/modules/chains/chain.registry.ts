@@ -12,8 +12,6 @@ import type { PriceFeedPort } from '../tokens/domain/ports/price-feed.port';
 import { ChainService } from './chain.service';
 import { createChainClient } from '../../core/rpc';
 
-export { ChainService } from './chain.service';
-
 /** One ChainService per network in the shared chain registry (CHAINS). */
 export class ChainRegistry {
   private readonly services = new Map<number, IChainService>();

@@ -15,6 +15,8 @@ import {
   CalculatePricingUseCase,
   GetTokensUseCase,
   GetTokenByAddressUseCase,
+  GetHoldersUseCase,
+  GetDevActivityUseCase,
   TokenController,
   SecurityGateService,
   SecurityController,
@@ -52,6 +54,7 @@ import {
   resolveTokenNetwork,
   resolveNetworkByParam,
   nativeWeiPerQuoteUnit,
+  isAddress,
   buildCommentSignMessage,
   buildSessionSignMessage,
   sanitizeCreatorProfile,
@@ -68,7 +71,8 @@ import {
   resolveCorsOrigin,
   buildSecurityHeaders,
   resolveRateLimitTier,
-  deriveEnvelopeStatus,
+  RateLimiter,
+  createReplies,
   rpcTransport,
   anonymizeIp,
 } from './core';
@@ -112,7 +116,12 @@ const getTokenByAddressUseCase = new GetTokenByAddressUseCase(
   Date.now,
   (token) => scheduleTradeBackfill(token),
 );
-const tokenController = new TokenController(getTokensUseCase, getTokenByAddressUseCase, repository);
+const tokenController = new TokenController(
+  getTokensUseCase,
+  getTokenByAddressUseCase,
+  new GetHoldersUseCase(repository),
+  new GetDevActivityUseCase(repository),
+);
 
 const getTradesUseCase = new GetTradesUseCase(repository);
 const getRecentTradesUseCase = new GetRecentTradesUseCase(repository);
@@ -158,26 +167,7 @@ const requestTracker = new HttpRequestTracker(logger, cache);
 const devopsController = new DevopsController(requestTracker);
 
 // Rate limiting: namespaced by tier so crawler and API buckets do not collide.
-// Falls back to in-memory when Redis throws (Redis down should not open-pass the server).
-async function checkRateLimit(
-  ip: string,
-  limit = 120,
-  windowMs = 60_000,
-  tier: 'api' | 'crawler' | 'upload' | 'terminal' = 'api',
-): Promise<boolean> {
-  const key = `ratelimit:${tier}:${ip}`;
-  try {
-    const count = await cache.increment(key, windowMs);
-    return count <= limit;
-  } catch {
-    // Redis unavailable: fall through to in-memory counter so rate limiting still applies.
-    logger.warn('Rate limit Redis unavailable, using in-memory fallback', {
-      ip: anonymizeIp(ip),
-    });
-    const count = await memoryCache.increment(key, windowMs);
-    return count <= limit;
-  }
-}
+const rateLimiter = new RateLimiter(cache, memoryCache, logger);
 
 // Constant-time bearer token comparison to prevent timing side-channel attacks.
 function safeTokenCompare(a: string, b: string): boolean {
@@ -579,44 +569,11 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     return new Response(null, { headers });
   }
 
-  const replyJson = (data: unknown, status = 200, extraHeaders: Record<string, string> = {}) =>
-    new Response(safeStringify(data), {
-      status,
-      headers: { ...headers, ...extraHeaders },
-    });
-
-  const replyError = (
-    code: string,
-    message: string,
-    status = 400,
-    extraHeaders: Record<string, string> = {},
-  ) =>
-    new Response(
-      safeStringify({
-        success: false,
-        data: null,
-        error: { code, message },
-        timestamp: Date.now(),
-      }),
-      { status, headers: { ...headers, ...extraHeaders } },
-    );
-
-  const envelopeStatus = (env: { success: boolean; error?: { code?: string } | null }): number => {
-    return deriveEnvelopeStatus(env);
-  };
-
-  const replyEnvelope = (
-    env: { success: boolean; error?: { code?: string } | null },
-    extraHeaders: Record<string, string> = {},
-  ) =>
-    new Response(safeStringify(env), {
-      status: envelopeStatus(env),
-      headers: { ...headers, ...extraHeaders },
-    });
+  const { replyJson, replyError, replyEnvelope } = createReplies(headers);
 
   const isHealthProbe = url.pathname === '/health' || url.pathname === '/';
   const { tier: rateTier, maxRequests } = resolveRateLimitTier(url.pathname, req.method);
-  if (!isHealthProbe && !(await checkRateLimit(clientIp, maxRequests, 60_000, rateTier))) {
+  if (!isHealthProbe && !(await rateLimiter.allow(clientIp, maxRequests, 60_000, rateTier))) {
     return replyError('RATE_LIMIT_EXCEEDED', 'Too many requests, please slow down.', 429);
   }
 
@@ -722,7 +679,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   }
 
   if (url.pathname === '/api/devops/telemetry' && req.method === 'GET') {
-    return new Response(safeStringify(devopsController.getTelemetry()), { headers });
+    return replyJson(devopsController.getTelemetry());
   }
 
   if (url.pathname === '/api/devops/metrics' && req.method === 'GET') {
@@ -761,7 +718,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const rawDeployer = url.searchParams.get('deployer') ?? undefined;
     // Validate deployer is a proper Ethereum address before use — prevents arbitrary strings
     // from polluting cache keys or being passed downstream.
-    if (rawDeployer && !/^0x[a-fA-F0-9]{40}$/.test(rawDeployer)) {
+    if (rawDeployer && !isAddress(rawDeployer)) {
       return replyError(
         'INVALID_PARAM',
         'deployer must be a valid Ethereum address (0x + 40 hex chars)',
@@ -865,7 +822,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   if (followMatch) {
     const [, identifier, action] = followMatch;
     let address = identifier;
-    if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+    if (!isAddress(address)) {
       const resolved = repository.findAddressByIdentity
         ? await repository.findAddressByIdentity(address)
         : null;
@@ -882,7 +839,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       try {
         const body = await parseJsonBody<{ userAddress?: string }>(req, 2048);
         const userAddress = String(body.userAddress || '').trim();
-        if (!/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
+        if (!isAddress(userAddress)) {
           return replyError('INVALID_ADDRESS', 'Valid Ethereum address required to follow', 400);
         }
         if (userAddress.toLowerCase() === address.toLowerCase()) {
@@ -903,7 +860,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
 
     if (req.method === 'GET' && action === 'follows') {
       const viewer = url.searchParams.get('viewer') ?? undefined;
-      const validViewer = viewer && /^0x[a-fA-F0-9]{40}$/.test(viewer) ? viewer : undefined;
+      const validViewer = viewer && isAddress(viewer) ? viewer : undefined;
       return replyJson(ok(await repository.getFollowStats(address, validViewer)), 200);
     }
 
@@ -921,7 +878,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   if (userPortfolioMatch && req.method === 'GET') {
     const identifier = userPortfolioMatch[1];
     let address = identifier;
-    if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+    if (!isAddress(address)) {
       const resolved = repository.findAddressByIdentity
         ? await repository.findAddressByIdentity(address)
         : null;
@@ -940,7 +897,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   if (userMatch && req.method === 'GET') {
     const identifier = userMatch[1];
     let address = identifier;
-    if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+    if (!isAddress(address)) {
       const resolved = repository.findAddressByIdentity
         ? await repository.findAddressByIdentity(address)
         : null;
@@ -1173,7 +1130,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   if (balanceMatch && req.method === 'GET') {
     const tokenAddress = balanceMatch[1] as `0x${string}`;
     const accountParam = url.searchParams.get('account') as `0x${string}` | null;
-    if (!accountParam || !accountParam.startsWith('0x') || accountParam.length !== 42) {
+    if (!isAddress(accountParam)) {
       return replyEnvelope(err('INVALID_ACCOUNT', 'A valid 0x account address is required'));
     }
 
@@ -1225,7 +1182,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   if (rewardsMatch && req.method === 'GET') {
     const tokenAddress = rewardsMatch[1] as `0x${string}`;
     const accountParam = url.searchParams.get('account') as `0x${string}` | null;
-    if (!accountParam || !/^0x[a-fA-F0-9]{40}$/.test(accountParam)) {
+    if (!isAddress(accountParam)) {
       return replyEnvelope(
         err('INVALID_ACCOUNT', 'A valid 42-char hex account address is required'),
       );
@@ -1352,9 +1309,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const viewer = url.searchParams.get('viewer') || undefined;
     const author = url.searchParams.get('author') || undefined;
     const callouts = (await repository.getFeedCallouts?.(limit, offset, viewer, author)) || [];
-    return new Response(safeStringify({ success: true, data: callouts, timestamp: Date.now() }), {
-      headers,
-    });
+    return replyJson(ok(callouts));
   }
 
   // GET & POST /api/tokens/:address/comments
@@ -1363,9 +1318,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const address = commentsMatch[1];
     const viewer = url.searchParams.get('viewer') || undefined;
     const comments = (await repository.getComments?.(address, viewer)) || [];
-    return new Response(safeStringify({ success: true, data: comments, timestamp: Date.now() }), {
-      headers,
-    });
+    return replyJson(ok(comments));
   }
 
   if (commentsMatch && req.method === 'POST') {
@@ -1406,7 +1359,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
           400,
         );
       }
-      if (!authorAddress || !/^0x[a-fA-F0-9]{40}$/.test(authorAddress)) {
+      if (!isAddress(authorAddress)) {
         return replyError(
           'INVALID_AUTHOR',
           'Valid Ethereum wallet address is required to comment',
@@ -1605,10 +1558,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       };
 
       await repository.saveComment?.(comment);
-      return new Response(safeStringify({ success: true, data: comment, timestamp: Date.now() }), {
-        status: 201,
-        headers,
-      });
+      return replyJson(ok(comment), 201);
     } catch (e) {
       if (e instanceof PayloadTooLargeError) {
         return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
@@ -1664,7 +1614,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       );
       const address = String(body.address || '').trim();
       const issuedAt = Number(body.issuedAt);
-      if (!/^0x[a-fA-F0-9]{40}$/.test(address) || !body.signature || !Number.isFinite(issuedAt)) {
+      if (!isAddress(address) || !body.signature || !Number.isFinite(issuedAt)) {
         return replyError(
           'INVALID_SESSION_REQUEST',
           'address, issuedAt and signature are required',
@@ -1701,7 +1651,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     try {
       const body = await parseJsonBody<{ userAddress?: string }>(req, 2048);
       const userAddress = String(body.userAddress || '').trim();
-      if (!userAddress || !/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
+      if (!isAddress(userAddress)) {
         return replyError('INVALID_ADDRESS', 'Valid Ethereum address required to like', 400);
       }
       const sessionError = requireSocialSession(req, userAddress, 'like');
@@ -1711,9 +1661,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         liked: false,
         likesCount: 0,
       };
-      return new Response(safeStringify({ success: true, data: result, timestamp: Date.now() }), {
-        headers,
-      });
+      return replyJson(ok(result));
     } catch (e) {
       if (e instanceof PayloadTooLargeError) {
         return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
@@ -1729,7 +1677,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     try {
       const body = await parseJsonBody<{ userAddress?: string }>(req, 2048);
       const userAddress = String(body.userAddress || '').trim();
-      if (!userAddress || !/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
+      if (!isAddress(userAddress)) {
         return replyError('INVALID_ADDRESS', 'Valid Ethereum address required to repost', 400);
       }
       const sessionError = requireSocialSession(req, userAddress, 'repost');
@@ -1739,9 +1687,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         reposted: false,
         repostsCount: 0,
       };
-      return new Response(safeStringify({ success: true, data: result, timestamp: Date.now() }), {
-        headers,
-      });
+      return replyJson(ok(result));
     } catch (e) {
       if (e instanceof PayloadTooLargeError) {
         return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
@@ -1772,9 +1718,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     if (!item) {
       return replyError('NOT_FOUND', 'Callout not found', 404);
     }
-    return new Response(safeStringify({ success: true, data: item, timestamp: Date.now() }), {
-      headers,
-    });
+    return replyJson(ok(item));
   }
 
   // GET /api/orders?owner=0x..&token=0x..&status=open|filled|cancelled — limit orders (GotonLimitOrders)
@@ -1782,7 +1726,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const owner = url.searchParams.get('owner') ?? undefined;
     const token = url.searchParams.get('token') ?? undefined;
     const status = url.searchParams.get('status') ?? undefined;
-    const isAddr = (v?: string) => v === undefined || /^0x[a-fA-F0-9]{40}$/.test(v);
+    const isAddr = (v?: string) => v === undefined || isAddress(v);
     if (!isAddr(owner) || !isAddr(token))
       return replyError('INVALID_PARAM', 'owner and token must be addresses', 400);
     if (!owner && !token) return replyError('INVALID_PARAM', 'owner or token is required', 400);
@@ -1849,9 +1793,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       totalTokensBurned: '0',
       recentBurns: [],
     };
-    return new Response(safeStringify({ success: true, data: stats, timestamp: Date.now() }), {
-      headers,
-    });
+    return replyJson(ok(stats));
   }
 
   if (url.pathname === '/api/buyback/stats' && req.method === 'GET') {
@@ -1860,9 +1802,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       totalTokensBurned: '0',
       recentBurns: [],
     };
-    return new Response(safeStringify({ success: true, data: stats, timestamp: Date.now() }), {
-      headers,
-    });
+    return replyJson(ok(stats));
   }
 
   // GET /api/tokens/:address/stream — Server-Sent Events for realtime market data push.
@@ -1951,9 +1891,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const cacheKey = `token:detail:${address.toLowerCase()}`;
     const cached = await cache.get<unknown>(cacheKey);
     if (cached) {
-      return new Response(safeStringify(cached), {
-        headers: { ...headers, 'x-cache': 'HIT' },
-      });
+      return replyJson(cached, 200, { 'x-cache': 'HIT' });
     }
 
     const res = await tokenController.getToken(address);
@@ -1988,9 +1926,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     const cacheKey = `protocol:analytics:${scopedNetwork?.chainId ?? 'all'}`;
     const cached = await cache.get<unknown>(cacheKey);
     if (cached) {
-      return new Response(safeStringify(cached), {
-        headers: { ...headers, 'x-cache': 'HIT' },
-      });
+      return replyJson(cached, 200, { 'x-cache': 'HIT' });
     }
 
     // Fetch tokens (metadata only — no trades loop) and aggregate volume via a single SQL query.
@@ -2096,9 +2032,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     };
 
     await cache.set(cacheKey, payload, 30); // Cache for 30s
-    return new Response(safeStringify(payload), {
-      headers: { ...headers, 'x-cache': 'MISS' },
-    });
+    return replyJson(payload, 200, { 'x-cache': 'MISS' });
   }
 
   if (url.pathname === '/api/security/evaluate' && req.method === 'POST') {

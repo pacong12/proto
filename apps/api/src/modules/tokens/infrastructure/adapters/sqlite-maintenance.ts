@@ -5,7 +5,7 @@ import fs from 'node:fs';
 const BACKUP_PREFIX = 'proto-';
 const BACKUP_SUFFIX = '.sqlite';
 
-export function backupDirFor(dbPath: string): string {
+function backupDirFor(dbPath: string): string {
   return path.join(path.dirname(dbPath), 'backups');
 }
 
@@ -25,7 +25,7 @@ function isCorruptionError(e: unknown): boolean {
  * Any other failure (e.g. SQLITE_BUSY while another process holds a lock) is rethrown: a locked
  * database is not a damaged one and must not be moved aside.
  */
-export function isHealthy(db: Database, busyTimeoutMs = BUSY_TIMEOUT_MS): boolean {
+function isHealthy(db: Database, busyTimeoutMs = BUSY_TIMEOUT_MS): boolean {
   try {
     db.run(`PRAGMA busy_timeout = ${busyTimeoutMs}`);
     const row = db.query('PRAGMA quick_check').get() as Record<string, unknown> | null;

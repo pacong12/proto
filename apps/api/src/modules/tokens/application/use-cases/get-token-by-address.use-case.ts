@@ -145,25 +145,10 @@ export class GetTokenByAddressUseCase {
     // V2 Bonding Curve pricing path
     // ------------------------------------------------------------------
     if (token.version === 'v2' && token.curveAddress) {
-      const curveAddr = token.curveAddress as `0x${string}`;
-
-      // Fetch live on-chain curve state — never use DB snapshot for pricing
-      const curveState = await this.chainIndexer.fetchV2CurveState(curveAddr, network);
-
-      // On-chain virtualEthReserve already includes all net ETH raised on the curve
-      const vEthNum = Number(curveState.virtualEthReserve) / 1e18;
-      const virtualTokensNum = Number(curveState.virtualTokenReserve) / 1e18;
-      const spotPriceNative = virtualTokensNum > 0 ? vEthNum / virtualTokensNum : 0;
-
-      const marketData = this.calculatePricing.execute({
-        address: token.address,
-        spotPriceNative,
-        isToken0: token.isToken0,
-        pairedPrincipalWei: curveState.totalEthRaised,
-        ethPriceUsd: quoteAssetPriceUsd,
-        thresholdWei: curveState.graduationTarget,
-        totalSupply: BigInt(token.totalSupply || '1000000000000000000000000000'),
-      });
+      // Live on-chain curve state, never the stored snapshot: its virtualEthReserve already
+      // includes all net ETH raised on the curve.
+      const curveState = await this.chainIndexer.fetchV2CurveState(token.curveAddress, network);
+      const marketData = this.calculatePricing.fromCurve(token, curveState, quoteAssetPriceUsd);
 
       const priceChange24h = await this.computePriceChange24h(token.address, marketData.priceUsd);
       // Recompute volume24hUsd from trades — calculatePricing does not have access to trades,

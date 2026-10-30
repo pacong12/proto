@@ -1,13 +1,7 @@
 import type { ChainAdapter } from './types';
 import { BondingCurveChainAdapter } from './bonding-curve/bonding-curve.adapter';
 import { InPoolV4ChainAdapter } from './v4-in-pool/v4-in-pool.adapter';
-import {
-  CHAINS,
-  DEFAULT_NETWORK,
-  type NetworkConfig,
-  type TokenAddressPair,
-  resolveTokenNetwork,
-} from '@goton/shared-types';
+import { CHAINS, DEFAULT_NETWORK, type NetworkConfig } from '@goton/shared-types';
 import { getLaunchModel, type LaunchModel } from '@goton/math-sdk';
 
 export * from './types';
@@ -35,16 +29,4 @@ export function getChainAdapter(chainId?: number): ChainAdapter {
     (chainId !== undefined ? chainAdapters.get(chainId) : undefined) ??
     chainAdapters.get(DEFAULT_NETWORK.chainId)!
   );
-}
-
-/**
- * Resolves the appropriate ChainAdapter for a given token entity and active wallet chain.
- * Scalable: determines the token network first, then retrieves its registered adapter.
- */
-export function resolveTokenChainAdapter(
-  token?: TokenAddressPair | null,
-  activeChainId?: number,
-): ChainAdapter {
-  const network = resolveTokenNetwork(token, activeChainId);
-  return getChainAdapter(network.chainId);
 }

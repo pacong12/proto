@@ -4,6 +4,7 @@ import {
   SecurityPolicyCheck,
   CHAINS,
   SUPPORTED_CHAINS,
+  isAddress,
   LaunchTokenIntentPayload,
   SwapIntentPayload,
 } from '@goton/shared-types';
@@ -30,7 +31,7 @@ export class SecurityPolicy {
     }
 
     // 2. Sender Address Format
-    if (!intent.sender || !intent.sender.startsWith('0x') || intent.sender.length !== 42) {
+    if (!isAddress(intent.sender)) {
       checks.push({
         code: 'INVALID_SENDER',
         description: 'Sender address must be a valid 42-character hex string',
@@ -97,10 +98,7 @@ export class SecurityPolicy {
             severity: 'CRITICAL',
           });
         }
-        if (
-          payload.creatorTaxWallet &&
-          (!payload.creatorTaxWallet.startsWith('0x') || payload.creatorTaxWallet.length !== 42)
-        ) {
+        if (payload.creatorTaxWallet && !isAddress(payload.creatorTaxWallet)) {
           checks.push({
             code: 'INVALID_TAX_WALLET',
             description: 'Creator tax recipient wallet must be a valid 42-character hex address',
@@ -118,11 +116,7 @@ export class SecurityPolicy {
             severity: 'HIGH',
           });
         }
-        if (
-          !payload.tokenAddress ||
-          !payload.tokenAddress.startsWith('0x') ||
-          payload.tokenAddress.length !== 42
-        ) {
+        if (!isAddress(payload.tokenAddress)) {
           checks.push({
             code: 'INVALID_TARGET_TOKEN',
             description: 'Swap target token address is invalid',

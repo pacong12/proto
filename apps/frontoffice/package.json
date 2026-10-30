@@ -12,16 +12,12 @@
     "e2e": "playwright test --config ../../playwright.config.ts"
   },
   "dependencies": {
-    "@headlessui/vue": "^1.7.23",
-    "@lucide/vue": "^1.61.0",
     "@goton/shared-types": "*",
     "@goton/math-sdk": "*",
     "@reown/appkit": "^1.8.24",
     "@reown/appkit-adapter-wagmi": "^1.8.24",
-    "@tanstack/vue-query": "^5.104.5",
     "@vueuse/core": "^15.0.0",
     "@wagmi/core": "^3.6.7",
-    "@wagmi/vue": "^0.5.32",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lightweight-charts": "^5.2.1",

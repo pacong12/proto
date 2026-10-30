@@ -11,7 +11,6 @@ import {
   resolveFeeSplitter,
   type LaunchedTokenEntity,
   type TokenMarketData,
-  type TokenSocials,
 } from '@goton/shared-types';
 import { getPublicClient, getWalletClient } from '../lib/viem-client';
 import {
@@ -20,7 +19,7 @@ import {
   runWalletAction,
   sendWalletTransaction,
 } from '../lib/wallet-tx';
-import { getChainAdapter } from '../chains';
+import { getChainAdapter, type ChainLaunchParams, type ChainLaunchResult } from '../chains';
 import { walletChainId } from '../lib/wallet-store';
 
 export type LaunchStep =
@@ -54,31 +53,9 @@ export function useLaunchpad() {
   // Uses launchpadV2FactoryAbi from shared-types as the single source of truth (fix HIGH-03).
   // ---------------------------------------------------------------------------
 
-  async function launchToken(params: {
-    name: string;
-    symbol: string;
-    logo: string;
-    description: string;
-    socials: TokenSocials;
-    initialBuyAmountEth?: string;
-    minInitialTokensOut?: bigint;
-    buyTaxPercent?: number;
-    sellTaxPercent?: number;
-    creatorTaxWallet?: string;
-    revenueSplit?: {
-      creator: number;
-      buyback: number;
-      holders: number;
-      growth: number;
-    };
-  }): Promise<{
-    tokenAddress: `0x${string}`;
-    curveAddress?: `0x${string}`;
-    poolAddress?: `0x${string}`;
-    /** False when the creator tax or revenue split did not land on-chain. */
-    taxApplied: boolean;
-    splitApplied: boolean;
-  } | null> {
+  async function launchToken(
+    params: ChainLaunchParams,
+  ): Promise<(ChainLaunchResult & { taxApplied: boolean; splitApplied: boolean }) | null> {
     loading.value = true;
     error.value = null;
     launchStep.value = 'validating';
@@ -107,19 +84,7 @@ export function useLaunchpad() {
 
       launchStep.value = 'awaiting_signature';
       const result = await adapter.launchToken(
-        {
-          name: params.name,
-          symbol: params.symbol,
-          logo: params.logo,
-          description: params.description,
-          socials: params.socials,
-          initialBuyAmountEth: params.initialBuyAmountEth,
-          minInitialTokensOut: params.minInitialTokensOut,
-          buyTaxPercent: params.buyTaxPercent,
-          sellTaxPercent: params.sellTaxPercent,
-          creatorTaxWallet: (params.creatorTaxWallet as `0x${string}` | undefined) || undefined,
-          revenueSplit: params.revenueSplit,
-        },
+        params,
         walletClient,
         publicClient,
         account,
@@ -150,7 +115,7 @@ export function useLaunchpad() {
                   taxConfig: {
                     buyTaxBps: taxPercentToBps(params.buyTaxPercent || 0),
                     sellTaxBps: taxPercentToBps(params.sellTaxPercent || 0),
-                    taxRecipient: (params.creatorTaxWallet as `0x${string}`) || account,
+                    taxRecipient: params.creatorTaxWallet || account,
                     revenueSplit: params.revenueSplit,
                   },
                 }

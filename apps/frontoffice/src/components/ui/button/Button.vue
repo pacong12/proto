@@ -2,7 +2,7 @@
 import type { HTMLAttributes } from 'vue';
 import { Primitive, type PrimitiveProps } from 'radix-vue';
 import { cn } from '@/lib/utils';
-import { buttonVariants, type ButtonVariants } from './index';
+import { buttonVariants, type ButtonVariants } from './variants';
 
 interface Props extends PrimitiveProps {
   variant?: ButtonVariants['variant'];

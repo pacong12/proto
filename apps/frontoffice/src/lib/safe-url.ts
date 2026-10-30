@@ -5,7 +5,7 @@
  */
 const SAFE_PREFIXES = ['https://', 'http://', 'data:image/', 'blob:', '/api/ipfs/'];
 
-export function isSafeUrl(url?: string | null): boolean {
+function isSafeUrl(url?: string | null): boolean {
   if (!url) return false;
   const trimmed = url.trim().toLowerCase();
   return (
