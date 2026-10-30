@@ -1,8 +1,10 @@
 import crypto from 'crypto';
 
 /**
- * TKT-10: checks that bytes served by a public gateway really are the content addressed by a CID.
- * Supports sha2-256 CIDs for:
+ * IPFS content ids (sha2-256 only): the CID of an upload, and whether bytes match a CID.
+ *
+ * TKT-10: verifyCidContent checks that bytes served by a public gateway really are the content
+ * addressed by a CID. Supports sha2-256 CIDs for:
  *   - raw leaves (CIDv1 codec 0x55): digest = sha256(content);
  *   - single-block UnixFS files (CIDv0 / CIDv1 dag-pb 0x70, content ≤ one 256 KiB chunk):
  *     digest = sha256(PBNode{ Data: UnixFS{ Type: File, Data: content, filesize } }).
@@ -36,6 +38,24 @@ function base58Decode(input: string): Uint8Array | null {
     bytes.unshift(0);
   }
   return Uint8Array.from(bytes);
+}
+
+function base32Encode(bytes: Uint8Array): string {
+  let bits = 0;
+  let value = 0;
+  let output = '';
+  for (let i = 0; i < bytes.length; i++) {
+    value = (value << 8) | bytes[i];
+    bits += 8;
+    while (bits >= 5) {
+      output += BASE32[(value >>> (bits - 5)) & 31];
+      bits -= 5;
+    }
+  }
+  if (bits > 0) {
+    output += BASE32[(value << (5 - bits)) & 31];
+  }
+  return output;
 }
 
 function base32Decode(input: string): Uint8Array | null {
@@ -106,6 +126,16 @@ function unixfsFileBlock(content: Uint8Array): Buffer {
   if (content.length > 0) unixfs.push(0x12, ...varint(content.length), ...content); // Data
   unixfs.push(0x18, ...varint(content.length)); // filesize
   return Buffer.from([0x0a, ...varint(unixfs.length), ...unixfs]); // PBNode.Data
+}
+
+/**
+ * The CIDv1 of `content` as a raw leaf (codec 0x55, sha2-256), e.g. bafkrei…: the digest is of
+ * the raw bytes, so the codec must be raw (labelling it dag-pb gives a CID no IPFS node serves).
+ */
+export function generateDeterministicCid(content: Uint8Array | ArrayBuffer): string {
+  const bytes = content instanceof Uint8Array ? content : new Uint8Array(content);
+  const digest = crypto.createHash('sha256').update(bytes).digest();
+  return 'b' + base32Encode(Buffer.concat([Buffer.from([0x01, CODEC_RAW, SHA2_256, 32]), digest]));
 }
 
 export function verifyCidContent(cid: string, content: Uint8Array): CidCheck {

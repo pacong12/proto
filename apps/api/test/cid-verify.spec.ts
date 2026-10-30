@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { verifyCidContent, SINGLE_BLOCK_MAX_BYTES } from '../src/modules/ipfs/cid-verify';
-import { generateDeterministicCid } from '../src/modules/ipfs/ipfs.service';
+import {
+  generateDeterministicCid,
+  verifyCidContent,
+  SINGLE_BLOCK_MAX_BYTES,
+} from '../src/modules/ipfs/domain/cid';
 
 const enc = (s: string) => new TextEncoder().encode(s);
 // `echo "hello world" | ipfs add` (confirmed against public gateways).

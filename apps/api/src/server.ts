@@ -17,8 +17,8 @@ import { registerTokensRoutes } from './modules/tokens/presentation/tokens.route
 import { registerTradesRoutes } from './modules/trades/presentation/trades.routes';
 import { registerSocialRoutes } from './modules/social/presentation/social.routes';
 import { registerSecurityRoutes } from './modules/security/presentation/security.routes';
-import { registerIpfsRoutes } from './modules/ipfs/ipfs.routes';
-import { registerDexRoutes } from './modules/dex/dex.routes';
+import { registerIpfsRoutes } from './modules/ipfs/presentation/ipfs.routes';
+import { registerDexRoutes } from './modules/dex/presentation/dex.routes';
 
 const { rateLimiter, requestTracker } = container;
 
