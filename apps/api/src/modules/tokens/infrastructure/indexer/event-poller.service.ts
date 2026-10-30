@@ -558,6 +558,9 @@ export class EventPollerService {
       const tokenByPoolId = new Map(allTokens.map((t) => [t.poolAddress.toLowerCase(), t]));
       const quotePriceUsd = await this.priceFeed.getQuoteAssetPriceUsd(this.network.chainId);
       const blockTimestamps = new Map<bigint, number>();
+      // A v4 Swap's `sender` is the contract that called the PoolManager (GotonV4Router), not the
+      // wallet; the trader is whoever sent the transaction.
+      const traders = new Map<string, Address>();
 
       let count = 0;
       for (const log of logs) {
@@ -599,11 +602,21 @@ export class EventPollerService {
           blockTimestamps.set(blockNumber, timestamp);
         }
 
+        let trader = log.transactionHash ? traders.get(log.transactionHash) : undefined;
+        if (!trader && log.transactionHash) {
+          try {
+            trader = (await this.client.getTransaction({ hash: log.transactionHash })).from;
+          } catch {
+            trader = sender;
+          }
+          if (trader) traders.set(log.transactionHash, trader);
+        }
+
         const trade: TradeEventEntity = {
           id: `${log.transactionHash}-${log.logIndex}`,
           tokenAddress: token.address,
           poolAddress: token.poolAddress,
-          trader: (sender ?? '0x0000000000000000000000000000000000000000') as Address,
+          trader: (trader ?? sender ?? '0x0000000000000000000000000000000000000000') as Address,
           isBuy,
           tokenAmount: tokenAmountNum.toFixed(4),
           wethAmount: usdcAmountNum.toFixed(6),
