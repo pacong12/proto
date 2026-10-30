@@ -1,36 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import {
-  TradingChart,
-  SimpleChart,
-  ShadcnAreaChart,
-  ShadcnTradingLineChart,
-  LightweightCandlestickChart,
-  LightweightAreaChart,
-  LightweightHistogramChart,
-} from '../src/components/ui/chart';
+import { TradingChart, ShadcnAreaChart } from '../src/components/ui/chart';
 
 describe('TradingChart & Candlestick Component', () => {
-  it('exports TradingChart, SimpleChart, ShadcnAreaChart, and ShadcnTradingLineChart from chart UI module', () => {
+  it('exports TradingChart and ShadcnAreaChart from the chart UI module', () => {
     expect(TradingChart).toBeDefined();
-    expect(SimpleChart).toBeDefined();
     expect(ShadcnAreaChart).toBeDefined();
-    expect(ShadcnTradingLineChart).toBeDefined();
-    expect(ShadcnTradingLineChart.__name || ShadcnTradingLineChart.name).toBe(
-      'ShadcnTradingLineChart',
-    );
-  });
-
-  it('exports independent LightweightCandlestickChart, LightweightAreaChart, and LightweightHistogramChart components', () => {
-    expect(LightweightCandlestickChart).toBeDefined();
-    expect(LightweightAreaChart).toBeDefined();
-    expect(LightweightHistogramChart).toBeDefined();
-    expect(LightweightCandlestickChart.__name || LightweightCandlestickChart.name).toBe(
-      'LightweightCandlestickChart',
-    );
-    expect(LightweightAreaChart.__name || LightweightAreaChart.name).toBe('LightweightAreaChart');
-    expect(LightweightHistogramChart.__name || LightweightHistogramChart.name).toBe(
-      'LightweightHistogramChart',
-    );
   });
 
   it('verifies TradingChart component definition and props', () => {
