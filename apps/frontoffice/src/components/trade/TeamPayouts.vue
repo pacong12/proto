@@ -51,21 +51,14 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import {
-  gotonFeeSplitterAbi,
-  gotonTeamSplitterAbi,
-  launchpadTokenAbi,
-  resolveFeeSplitter,
-  type NetworkConfig,
-} from '@goton/shared-types';
+import { type NetworkConfig } from '@goton/shared-types';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { useI18n } from '@/lib/i18n';
 import { formatRawAmount } from '@/lib/limit-orders';
 import { shortenAddress } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
-import { getPublicClient } from '@/lib/viem-client';
-import { sendWalletTransaction } from '@/lib/wallet-tx';
+import { readTeamPayouts, releaseTeamAsset, type TeamPayouts } from '@/composables/useTeamFees';
 
 const props = defineProps<{
   token: `0x${string}`;
@@ -74,104 +67,12 @@ const props = defineProps<{
 }>();
 const { t } = useI18n();
 
-interface Asset {
-  address: `0x${string}`;
-  symbol: string;
-  decimals: number;
-}
-interface Team {
-  address: `0x${string}`;
-  assets: Asset[];
-  members: Array<{ address: `0x${string}`; shareBps: number; due: bigint[] }>;
-}
-const NATIVE = '0x0000000000000000000000000000000000000000' as const;
-const team = ref<Team | null>(null);
+const team = ref<TeamPayouts | null>(null);
 const busy = ref(false);
 const error = ref<string | null>(null);
 
-/**
- * The token's tax recipient and its fee splitter's creator payout are where a team splitter can
- * sit; the first of them that answers `payees()` is the team.
- */
 async function load() {
-  team.value = null;
-  const client = getPublicClient(props.network.chainId);
-  const candidates = new Set<`0x${string}`>();
-  let quote: `0x${string}` = NATIVE;
-  try {
-    const [, , recipient] = await client.readContract({
-      address: props.token,
-      abi: launchpadTokenAbi,
-      functionName: 'taxConfig',
-    });
-    candidates.add(recipient);
-  } catch {
-    // Tokens without a tax config.
-  }
-  try {
-    const splitter = await resolveFeeSplitter(client, props.network, props.token);
-    if (splitter) {
-      quote = (await client.readContract({
-        address: splitter.address,
-        abi: gotonFeeSplitterAbi,
-        functionName: 'quoteAsset',
-      })) as `0x${string}`;
-      candidates.add(
-        (await client.readContract({
-          address: splitter.address,
-          abi: gotonFeeSplitterAbi,
-          functionName: 'creatorRecipient',
-        })) as `0x${string}`,
-      );
-    }
-  } catch {
-    // No fee splitter yet (Robinhood before graduation).
-  }
-
-  for (const candidate of candidates) {
-    try {
-      const payees = (await client.readContract({
-        address: candidate,
-        abi: gotonTeamSplitterAbi,
-        functionName: 'payees',
-      })) as `0x${string}`[];
-      const native = props.network.nativeCurrency.symbol;
-      const assets: Asset[] = [
-        { address: props.token, symbol: props.symbol, decimals: 18 },
-        quote === NATIVE
-          ? { address: NATIVE, symbol: native, decimals: 18 }
-          : { address: quote, symbol: native, decimals: 6 },
-      ];
-      const members = await Promise.all(
-        payees.map(async (address) => {
-          const shareBps = Number(
-            await client.readContract({
-              address: candidate,
-              abi: gotonTeamSplitterAbi,
-              functionName: 'shareBps',
-              args: [address],
-            }),
-          );
-          const due = await Promise.all(
-            assets.map(
-              (a) =>
-                client.readContract({
-                  address: candidate,
-                  abi: gotonTeamSplitterAbi,
-                  functionName: 'releasable',
-                  args: [a.address, address],
-                }) as Promise<bigint>,
-            ),
-          );
-          return { address, shareBps, due };
-        }),
-      );
-      team.value = { address: candidate, assets, members };
-      return;
-    } catch {
-      // Not a team splitter.
-    }
-  }
+  team.value = await readTeamPayouts(props.network, props.token, props.symbol);
 }
 
 async function releaseAll(asset: `0x${string}`) {
@@ -179,17 +80,7 @@ async function releaseAll(asset: `0x${string}`) {
   busy.value = true;
   error.value = null;
   try {
-    const teamAddress = team.value.address;
-    await sendWalletTransaction(props.network, ({ walletClient, account }) =>
-      walletClient.writeContract({
-        address: teamAddress,
-        abi: gotonTeamSplitterAbi,
-        functionName: 'releaseAll',
-        args: [asset],
-        account,
-        chain: walletClient.chain,
-      }),
-    );
+    await releaseTeamAsset(props.network, team.value.address, asset);
     toast.success(t('teamPaid'));
     await load();
   } catch (e) {
