@@ -39,6 +39,10 @@ All code follows the Clean Architecture dependency rule: **Dependencies point st
   `SocialStorePort` and `LimitOrderStorePort` (`TokenRepositoryPort` combines them). The SQLite
   adapter has one layer per aggregate on a shared connection and schema: `SqliteDatabase` →
   `SqliteTokenStore` → `SqliteTradeStore` → `SqliteSocialStore` → `SqliteOrderStore`.
+- Indexing: `EventPollerService` advances a persisted block cursor per chain and hands each range
+  to `LaunchIndexer`, `TradeIndexer`, `HolderIndexer` and `LimitOrderIndexer`, which share an
+  `IndexerContext` (clients, stores, backfill pacing, the cursor). Event signatures live in
+  `indexer-events.ts`.
 
 ### 4. Presentation Layer (`apps/api/src/*/presentation` & `apps/frontoffice`)
 
