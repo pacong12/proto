@@ -105,6 +105,8 @@ describe('PnlService', () => {
     await service([trade(true, 10, 1)]).card(WALLET, TOKEN, 'https://goton.fun/pnl/x');
     const card = rendered.at(-1)!;
     expect(card.trades).toEqual([{ t: clock * 1000, marketCapUsd: 1000, isBuy: true }]);
+    // Candles close at the last trade; the line ends at the live market cap ($2 × 1,000).
+    expect(card.chart.at(-1)?.marketCapUsd).toBe(2000);
     expect(card.pageUrl).toBe('https://goton.fun/pnl/x');
   });
 });
