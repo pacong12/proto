@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import type { PublicClient, WalletClient } from 'viem';
-import { ARC_CHAIN, type LaunchedTokenEntity } from '@goton/shared-types';
+import {
+  ARC_CHAIN,
+  ROBINHOOD_CHAIN,
+  UNDEPLOYED,
+  type LaunchedTokenEntity,
+} from '@goton/shared-types';
 import { V4BuybackKeeperService } from '../src/modules/tokens/infrastructure/keeper/v4-buyback-keeper.service';
 import { InMemoryTokenRepository } from '../src/modules/tokens/infrastructure/adapters/in-memory-token.repository';
 
@@ -48,7 +53,10 @@ function setup(opts: {
   protocolAccrued?: bigint;
   liquidityAccrued?: bigint;
   releaseReverts?: boolean;
+  /** Quote-side LP fees collectFees would collect (default 0). */
+  lpFees?: bigint;
 }) {
+  const simulated: Array<{ address: string; functionName: string }> = [];
   const writes: unknown[] = [];
   const sent: Array<{ nonce: number; maxFeePerGas: bigint }> = [];
   const nonces = opts.nonces ?? { latest: 3, pending: 3 };
@@ -68,7 +76,17 @@ function setup(opts: {
       }
       return reads[functionName];
     },
-    simulateContract: async ({ functionName }: { functionName: string }) => {
+    simulateContract: async ({
+      address,
+      functionName,
+    }: {
+      address: string;
+      functionName: string;
+    }) => {
+      simulated.push({ address, functionName });
+      if (functionName === 'collectFees') {
+        return { result: [opts.lpFees ?? 0n, 0n], request: { functionName: 'collectFees' } };
+      }
       if (functionName === 'buyback') {
         return { result: [opts.simulatedSpent, 1n], request: { functionName: 'buyback' } };
       }
@@ -91,7 +109,7 @@ function setup(opts: {
       return '0xcancel';
     },
   } as unknown as WalletClient;
-  return { publicClient, walletClient, writes, sent };
+  return { publicClient, walletClient, writes, sent, simulated };
 }
 
 describe('V4BuybackKeeperService', () => {
@@ -260,5 +278,85 @@ describe('V4BuybackKeeperService', () => {
     } as typeof network;
     await new V4BuybackKeeperService(publicClient, walletClient, repo, noBuyback).runOnce();
     expect(writes).toEqual([{ functionName: 'releaseProtocolFees' }]);
+  });
+
+  it('collects LP fees into the splitter before buying back', async () => {
+    const repo = new InMemoryTokenRepository();
+    await repo.save(token());
+    const { publicClient, walletClient, writes, simulated } = setup({
+      accrued: 5_000_000n,
+      simulatedSpent: 5_000_000n,
+      lpFees: 2_000_000n,
+    });
+    const results = await new V4BuybackKeeperService(
+      publicClient,
+      walletClient,
+      repo,
+      network,
+      1_000_000n,
+    ).runOnce();
+    expect(results.map((r) => [r.action ?? 'buyback', r.executed])).toEqual([
+      ['collectFees', true],
+      ['buyback', true],
+    ]);
+    expect(writes[0]).toEqual({ functionName: 'collectFees' });
+    // On Arc the factory holds the locked positions of in-pool launches.
+    expect(simulated[0]).toEqual({
+      address: network.contracts.factoryV2,
+      functionName: 'collectFees',
+    });
+  });
+
+  it('leaves LP fees that are not worth a transaction', async () => {
+    const repo = new InMemoryTokenRepository();
+    await repo.save(token());
+    const { publicClient, walletClient, writes } = setup({
+      accrued: 0n,
+      simulatedSpent: 0n,
+      lpFees: 500_000n,
+    });
+    const results = await new V4BuybackKeeperService(
+      publicClient,
+      walletClient,
+      repo,
+      network,
+      1_000_000n,
+    ).runOnce();
+    expect(results.some((r) => r.action === 'collectFees')).toBe(false);
+    expect(writes).toHaveLength(0);
+  });
+
+  it('collects through the graduator on chains whose tokens graduate from a curve', async () => {
+    const repo = new InMemoryTokenRepository();
+    await repo.save({
+      ...token(),
+      version: 'v2',
+      isGraduated: true,
+      chainId: ROBINHOOD_CHAIN.chainId,
+    });
+    const robinhood = {
+      ...ROBINHOOD_CHAIN,
+      contracts: {
+        ...ROBINHOOD_CHAIN.contracts,
+        graduator: '0x00000000000000000000000000000000000000c7',
+        buyback: UNDEPLOYED,
+      },
+    } as typeof ROBINHOOD_CHAIN;
+    const { publicClient, walletClient, simulated } = setup({
+      accrued: 0n,
+      simulatedSpent: 0n,
+      lpFees: 3n * 10n ** 15n,
+    });
+    const results = await new V4BuybackKeeperService(
+      publicClient,
+      walletClient,
+      repo,
+      robinhood,
+    ).runOnce();
+    expect(simulated[0]).toEqual({
+      address: robinhood.contracts.graduator,
+      functionName: 'collectFees',
+    });
+    expect(results[0]).toMatchObject({ action: 'collectFees', executed: true });
   });
 });

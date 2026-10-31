@@ -1,7 +1,10 @@
 import type { PublicClient, WalletClient } from 'viem';
 import {
   UNDEPLOYED,
+  getChainAbis,
   gotonFeeSplitterAbi,
+  gotonV4GraduatorAbi,
+  launchpadV2FactoryArcAbi,
   gotonV4BuybackAbi,
   protoV4PoolKeyFor,
   resolveFeeSplitter,
@@ -20,7 +23,7 @@ const REPLACEMENT_FEE_BUMP = 150n;
 export interface V4BuybackResult {
   token: `0x${string}`;
   /** Defaults to 'buyback'. */
-  action?: 'buyback' | 'releaseProtocolFees' | 'releaseLiquidityFees';
+  action?: 'buyback' | 'collectFees' | 'releaseProtocolFees' | 'releaseLiquidityFees';
   executed: boolean;
   reason?: string;
   txHash?: `0x${string}`;
@@ -33,8 +36,10 @@ const FEE_RELEASES = [
 ] as const;
 
 /**
- * Triggers GotonV4Buyback for every v4 pool on a chain whose burn share is waiting, and pays the
- * splitters' accrued protocol and liquidity shares to the treasury and liquidity vault.
+ * Collects each v4 pool's LP fees into its splitter (holder dividends, creator, burn and protocol
+ * shares only exist once they are collected), triggers GotonV4Buyback for every pool whose burn
+ * share is waiting, and pays the splitters' accrued protocol and liquidity shares to the treasury
+ * and liquidity vault.
  * The contract enforces the TWAP price guard itself, so the keeper only decides *when* to call;
  * it never supplies a price or minimum (red-team "Echo"). Each call is simulated first so tokens
  * whose oracle is not ready, or whose spot price is outside the guard, cost no gas.
@@ -77,6 +82,11 @@ export class V4BuybackKeeperService {
     const tokens = (await findAllTokens(this.repository)).filter((t) => this.isV4Token(t));
     const results: V4BuybackResult[] = [];
     for (const token of tokens) {
+      const collected = await this.tryCollectFees(account, token.address);
+      if (collected) {
+        results.push(collected);
+        if (collected.reason === 'Receipt pending') return results;
+      }
       if (buyback) {
         const result = await this.tryBuyback(buyback, account, token.address);
         results.push(result);
@@ -90,6 +100,44 @@ export class V4BuybackKeeperService {
       }
     }
     return results;
+  }
+
+  /**
+   * Collects a pool's LP fees: the quote side goes to the token's splitter, the token side is
+   * burned. The locked positions are held by the graduator (curve launches) or the factory
+   * (in-pool launches on Arc); both expose a permissionless collectFees. Returns null when the
+   * quote fees are not worth a transaction (KEEPER_MIN_QUOTE_<SLUG>).
+   */
+  private async tryCollectFees(
+    account: `0x${string}`,
+    token: `0x${string}`,
+  ): Promise<V4BuybackResult | null> {
+    const graduated = Boolean(getChainAbis(this.network.chainId).graduator);
+    const holder = graduated
+      ? this.network.contracts.graduator
+      : (this.network.contracts.factoryV2 ?? this.network.contracts.factory);
+    if (!holder || holder === UNDEPLOYED) return null;
+    try {
+      const { result, request } = await this.publicClient.simulateContract({
+        address: holder,
+        abi: graduated ? gotonV4GraduatorAbi : launchpadV2FactoryArcAbi,
+        functionName: 'collectFees',
+        args: [token],
+        account,
+      });
+      const [quoteFees] = result as readonly [bigint, bigint];
+      if (quoteFees <= this.minQuote) return null;
+      const sent = await sendAndWait(this.publicClient, this.walletClient!, request);
+      return { token, action: 'collectFees', ...sentResult(sent) };
+    } catch (e) {
+      // UnknownToken for pools the holder does not own, and transient RPC errors.
+      return {
+        token,
+        action: 'collectFees',
+        executed: false,
+        reason: (e as Error).message.split('\n')[0],
+      };
+    }
   }
 
   /**
