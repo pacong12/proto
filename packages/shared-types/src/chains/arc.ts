@@ -60,6 +60,8 @@ export const ARC_NETWORK: NetworkConfig = {
   maxLogBlockRange: 10_000,
   backfillRequestIntervalMs: 1_000,
   blockTimeMs: 500,
+  // The RPC takes about 70 eth_getLogs a minute, and a cycle makes several.
+  indexerPollMs: { active: 3_000, idle: 10_000 },
   blockExplorer: getEnv('ARC_BLOCK_EXPLORER_URL', 'https://explorer.arc.io'),
   blockExplorerName: 'ArcScan',
   quoteTokenDecimals: 6, // USDC ERC-20

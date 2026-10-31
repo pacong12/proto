@@ -85,7 +85,11 @@ export class EventPollerService {
     let currentBlock = 0n;
     try {
       // API-10: stay CONFIRMATIONS blocks behind the head so short reorgs never index dropped logs.
-      currentBlock = toBlock ?? (await this.context.deps.client.getBlockNumber()) - CONFIRMATIONS;
+      // cacheTime 0: viem otherwise reuses the head it read up to its polling interval (4s) ago,
+      // which delayed every trade on the chart by up to that much.
+      currentBlock =
+        toBlock ??
+        (await this.context.deps.client.getBlockNumber({ cacheTime: 0 })) - CONFIRMATIONS;
 
       if (
         this.context.lastPolledBlock === 0n &&

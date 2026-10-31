@@ -573,7 +573,7 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
           } catch {
             // Non-fatal — SSE connection will be cleaned up on close
           }
-        }, 2000);
+        }, 1000); // a DB read: the stream passes a trade on within a second of indexing it
       }
 
       const sseStream = new ReadableStream<Uint8Array>({

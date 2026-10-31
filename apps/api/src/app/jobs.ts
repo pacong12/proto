@@ -22,9 +22,10 @@ export function startBackgroundJobs(): void {
   //   - getLogs polling is reliable, idempotent, and retries the same block range
   //     on failure without permanently skipping data.
   //
-  // Adaptive interval:
-  //   - Base: 10s when idle (no events found last cycle) → low RPC load
-  //   - Active: 3s when events were found last cycle → fast catch-up
+  // Adaptive interval, per chain (NetworkConfig.indexerPollMs; INDEXER_POLL_ACTIVE_MS and
+  // INDEXER_POLL_IDLE_MS override every chain):
+  //   - Idle (no events found last cycle) → low RPC load
+  //   - Active (events found last cycle) → trades show up within about a second on Robinhood
   //   - Catch-up: while the cursor is behind the head (after a restart or an RPC outage), poll
   //     again after POLL_INTERVAL_CATCH_UP_MS until it is current.
   //   - Block times are 250ms to 500ms. One cycle covers up to INDEXER_MAX_BLOCK_RANGE (2,000)
@@ -32,12 +33,22 @@ export function startBackgroundJobs(): void {
   //
   // Chains are staggered by 30s to avoid simultaneous RPC bursts.
   // Recursive setTimeout (not setInterval) ensures a slow RPC cycle never overlaps the next.
-  const POLL_INTERVAL_IDLE_MS = 10_000; // no events found → back off
-  const POLL_INTERVAL_ACTIVE_MS = 3_000; // events found    → stay responsive
   const POLL_INTERVAL_CATCH_UP_MS = 250; // behind the head → keep going
   const POLL_STAGGER_MS = 30_000;
 
-  function schedulePoll(poller: EventPollerService, delayMs: number): void {
+  const intervalsOf = (chainId: number) => {
+    const { indexerPollMs } = chainRegistry.getChainById(chainId).network;
+    return {
+      active: Number(process.env.INDEXER_POLL_ACTIVE_MS?.trim() || indexerPollMs.active),
+      idle: Number(process.env.INDEXER_POLL_IDLE_MS?.trim() || indexerPollMs.idle),
+    };
+  };
+
+  function schedulePoll(
+    poller: EventPollerService,
+    interval: { active: number; idle: number },
+    delayMs: number,
+  ): void {
     setTimeout(async () => {
       let next = delayMs;
       try {
@@ -46,17 +57,18 @@ export function startBackgroundJobs(): void {
         next = poller.isBehind
           ? POLL_INTERVAL_CATCH_UP_MS
           : found > 0
-            ? POLL_INTERVAL_ACTIVE_MS
-            : POLL_INTERVAL_IDLE_MS;
+            ? interval.active
+            : interval.idle;
       } catch {
         /* non-fatal — lastPolledBlock not advanced, next cycle retries */
       }
-      schedulePoll(poller, next);
+      schedulePoll(poller, interval, next);
     }, delayMs);
   }
-  [...pollers.values()].forEach((poller, i) =>
-    schedulePoll(poller, POLL_INTERVAL_IDLE_MS + i * POLL_STAGGER_MS),
-  );
+  [...pollers.entries()].forEach(([chainId, poller], i) => {
+    const interval = intervalsOf(chainId);
+    schedulePoll(poller, interval, interval.idle + i * POLL_STAGGER_MS);
+  });
 
   // ---------------------------------------------------------------------------
   // TWAP-guarded buyback keeper (AUD-HIGH-05 / TKT-06). Enabled with KEEPER_PRIVATE_KEY; the
