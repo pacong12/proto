@@ -455,6 +455,8 @@ const messages: Record<string, string> = {
   feedWhales: 'الحيتان',
   feedInProfit: 'في الربح',
   feedMedia: 'الوسائط',
+  orderTooSmallForKeeper:
+    'صغير جدًا على المنفّذين: يدفع نحو {fee} {symbol} للتنفيذ بينما يكلّف الغاز نحو {gas} {symbol}، لذا قد لا يُنفَّذ أبدًا. استخدم مبلغًا أكبر.',
 };
 
 export default messages;

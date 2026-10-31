@@ -463,6 +463,8 @@ const messages: Record<string, string> = {
   feedWhales: 'Whales',
   feedInProfit: 'In Profit',
   feedMedia: 'Media',
+  orderTooSmallForKeeper:
+    'Too small for keepers: it pays about {fee} {symbol} to fill but the fill costs about {gas} {symbol} in gas, so it may never fill. Use a larger amount.',
 };
 
 export default messages;

@@ -461,6 +461,8 @@ const messages: Record<string, string> = {
   feedWhales: 'クジラ',
   feedInProfit: '含み益',
   feedMedia: 'メディア',
+  orderTooSmallForKeeper:
+    'キーパーには小さすぎます：約定報酬は約{fee} {symbol}ですが、ガス代は約{gas} {symbol}かかるため、約定しない可能性があります。より大きな金額にしてください。',
 };
 
 export default messages;

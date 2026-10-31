@@ -467,6 +467,8 @@ const messages: Record<string, string> = {
   feedWhales: 'Baleines',
   feedInProfit: 'En profit',
   feedMedia: 'Médias',
+  orderTooSmallForKeeper:
+    "Trop petit pour les keepers : l'exécution rapporte environ {fee} {symbol} mais coûte environ {gas} {symbol} de gas, l'ordre risque de ne jamais s'exécuter. Utilisez un montant plus élevé.",
 };
 
 export default messages;

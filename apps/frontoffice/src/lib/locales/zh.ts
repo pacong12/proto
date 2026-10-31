@@ -447,6 +447,8 @@ const messages: Record<string, string> = {
   feedWhales: '巨鲸',
   feedInProfit: '盈利中',
   feedMedia: '媒体',
+  orderTooSmallForKeeper:
+    '金额太小，执行者可能不会成交：执行奖励约 {fee} {symbol}，而成交的 Gas 约 {gas} {symbol}。请使用更大的金额。',
 };
 
 export default messages;

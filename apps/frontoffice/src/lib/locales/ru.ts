@@ -468,6 +468,8 @@ const messages: Record<string, string> = {
   feedWhales: 'Киты',
   feedInProfit: 'В прибыли',
   feedMedia: 'Медиа',
+  orderTooSmallForKeeper:
+    'Слишком мало для кипера: за исполнение платится около {fee} {symbol}, а газ стоит около {gas} {symbol}, поэтому ордер может так и не исполниться. Укажите большую сумму.',
 };
 
 export default messages;

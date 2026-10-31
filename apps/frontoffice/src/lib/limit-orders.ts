@@ -137,3 +137,26 @@ export function orderPayout(
     ? `${formatRawAmount(order.amountOut, 18)} ${tokenSymbol}`
     : `${formatRawAmount(order.amountOut, network.quoteTokenDecimals)} ${network.nativeCurrency.symbol}`;
 }
+
+/** Gas a keeper spends to fill an order (a pool sell with a stop check uses about 400k). */
+export const KEEPER_FILL_GAS = 450_000n;
+
+/**
+ * Whether a keeper can be expected to fill an order: keepers only fill when the executor fee
+ * covers their gas. `quoteRaw` is the quote side of the fill (a buy's deposit, a sell's floor) in
+ * quote units; gas is paid natively, which is the quote scaled to 18 decimals (Arc's USDC: 1e12).
+ */
+export function keeperCoversGas(
+  quoteRaw: bigint,
+  quoteDecimals: number,
+  gasPriceWei: bigint,
+): { ok: boolean; feeNative: bigint; gasNative: bigint } {
+  const scale = 10n ** BigInt(Math.max(0, 18 - quoteDecimals));
+  const feeNative = ((quoteRaw * BigInt(EXECUTOR_FEE_BPS)) / 10_000n) * scale;
+  const gasNative = KEEPER_FILL_GAS * gasPriceWei;
+  return {
+    ok: quoteRaw === 0n || gasPriceWei === 0n || feeNative >= gasNative,
+    feeNative,
+    gasNative,
+  };
+}

@@ -468,6 +468,8 @@ const messages: Record<string, string> = {
   feedWhales: 'Ballenas',
   feedInProfit: 'En ganancia',
   feedMedia: 'Multimedia',
+  orderTooSmallForKeeper:
+    'Demasiado pequeña para los keepers: paga unos {fee} {symbol} por ejecutarla, pero el gas cuesta unos {gas} {symbol}, así que puede que nunca se ejecute. Usa un monto mayor.',
 };
 
 export default messages;

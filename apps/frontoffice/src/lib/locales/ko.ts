@@ -457,6 +457,8 @@ const messages: Record<string, string> = {
   feedWhales: '고래',
   feedInProfit: '수익 중',
   feedMedia: '미디어',
+  orderTooSmallForKeeper:
+    '키퍼에게 너무 작습니다: 체결 보상은 약 {fee} {symbol}인데 가스비는 약 {gas} {symbol}라서 체결되지 않을 수 있습니다. 더 큰 금액을 사용하세요.',
 };
 
 export default messages;
