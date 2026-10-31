@@ -36,7 +36,12 @@ export interface TradeStorePort {
     limit?: number,
   ): Promise<Array<{ address: string; balance: string; percent: number }>>;
   getRecentTrades?(limit?: number): Promise<TradeEventEntity[]>;
-  getTradesByTrader?(trader: string, limit?: number): Promise<TradeEventEntity[]>;
+  /** A wallet's trades, newest first; of one token only when `tokenAddress` is given. */
+  getTradesByTrader?(
+    trader: string,
+    limit?: number,
+    tokenAddress?: string,
+  ): Promise<TradeEventEntity[]>;
   getTradesSince?(sinceMs: number): Promise<TradeEventEntity[]>;
   /**
    * Trades with fromBlock <= block <= toBlock (toBlock 0 = no upper bound), oldest first,

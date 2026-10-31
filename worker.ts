@@ -6,9 +6,11 @@ import {
   buildSitemap,
   pageContent,
   pageMeta,
+  pnlPageMeta,
   type ListedToken,
   type SeoToken,
 } from './seo';
+import type { PnlShare } from './packages/shared-types/src/domain/pnl';
 
 export interface Env {
   ASSETS: {
@@ -443,6 +445,7 @@ export async function withPageMeta(response: Response, url: URL, env: Env): Prom
     // real 404 (the app shows its not-found view in the same HTML). An API outage keeps 200.
     let notFound = route.kind === 'not-found';
     let token: SeoToken | null = null;
+    let pnl: PnlShare | null = null;
     let listed: ListedToken[] = [];
     if (route.kind === 'token') {
       const { status, data } = await backendGet<{ token: ApiToken; marketData?: ApiMarketData }>(
@@ -451,6 +454,13 @@ export async function withPageMeta(response: Response, url: URL, env: Env): Prom
       );
       if (status === 404) notFound = true;
       else if (data?.token) token = toSeoToken(data.token, data.marketData);
+    } else if (route.kind === 'pnl') {
+      const { status, data } = await backendGet<PnlShare>(
+        env,
+        `/api/pnl/${route.wallet}/${route.token}`,
+      );
+      if (status === 404) notFound = true;
+      pnl = data;
     } else if (canonicalPath(url.pathname) === '/launchpad') {
       // Links to the latest launches, so crawlers find token pages from the home page too.
       const page = await backendJson<Array<{ token: ApiToken }>>(env, '/api/tokens?limit=30');
@@ -466,7 +476,9 @@ export async function withPageMeta(response: Response, url: URL, env: Env): Prom
       const out = html.replace(/<\/head>/i, '<meta name="robots" content="noindex" />\n</head>');
       return new Response(out, { status: 404, statusText: 'Not Found', headers });
     }
-    const meta = pageMeta(url.origin, url.pathname, token);
+    const meta = pnl
+      ? pnlPageMeta(url.origin, url.pathname, pnl)
+      : pageMeta(url.origin, url.pathname, token);
     const docsUrl = env.DOCS_URL || 'https://docs.goton.fun';
     const content = pageContent(url.origin, docsUrl, url.pathname, meta, token, listed);
     const out = applyContent(applyMeta(html, meta), content);

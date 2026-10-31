@@ -83,7 +83,17 @@
                 })
               }}
             </TableCell>
-            <TableCell class="py-2.5 px-3 text-right">
+            <TableCell class="py-2.5 px-3 text-right space-x-1.5 whitespace-nowrap">
+              <Button
+                v-if="wallet"
+                variant="outline"
+                size="sm"
+                class="h-7 px-2.5 text-xs font-semibold gap-1 border-border cursor-pointer"
+                @click="sharedToken = pos.tokenAddress"
+              >
+                <Share2 class="w-3 h-3" />
+                {{ t('pnlShare') }}
+              </Button>
               <Button
                 as-child
                 variant="outline"
@@ -100,11 +110,19 @@
         </TableBody>
       </Table>
     </div>
+    <PnlCardModal
+      :is-open="!!sharedToken"
+      :wallet="wallet"
+      :token="sharedToken ?? undefined"
+      @close="sharedToken = null"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ExternalLink, PieChart } from 'lucide-vue-next';
+import { ref } from 'vue';
+import { ExternalLink, PieChart, Share2 } from 'lucide-vue-next';
+import PnlCardModal from '@/components/trade/PnlCardModal.vue';
 import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -126,5 +144,10 @@ const { getTokenNetwork } = useTokenStore();
 
 defineProps<{
   portfolioPositions: PortfolioPosition[];
+  /** The profile's wallet, whose positions can be shared as PnL cards. */
+  wallet?: string;
 }>();
+
+/** The token whose PnL card is open. */
+const sharedToken = ref<string | null>(null);
 </script>

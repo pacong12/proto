@@ -3,6 +3,7 @@ export * from './domain/username';
 export * from './domain/address';
 export * from './domain/intents';
 export * from './domain/envelope';
+export * from './domain/pnl';
 export * from './constants/network';
 export * from './constants/site';
 export * from './constants/seo';

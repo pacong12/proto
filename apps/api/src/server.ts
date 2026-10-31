@@ -19,6 +19,7 @@ import { registerSocialRoutes } from './modules/social/presentation/social.route
 import { registerSecurityRoutes } from './modules/security/presentation/security.routes';
 import { registerIpfsRoutes } from './modules/ipfs/presentation/ipfs.routes';
 import { registerDexRoutes } from './modules/dex/presentation/dex.routes';
+import { registerPnlRoutes } from './modules/pnl/presentation/pnl.routes';
 
 const { rateLimiter, requestTracker } = container;
 
@@ -38,6 +39,7 @@ registerSocialRoutes(router, container);
 registerSecurityRoutes(router, container);
 registerIpfsRoutes(router, container);
 registerDexRoutes(router, container);
+registerPnlRoutes(router, container);
 
 async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   const url = new URL(req.url);
