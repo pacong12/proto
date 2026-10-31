@@ -65,4 +65,19 @@ describe('Math SDK - OHLCV Aggregator', () => {
     expect(candles[1].close).toBe(0.0000079);
     expect(candles[2].close).toBe(0.0000082);
   });
+
+  it('opens a window that starts after the first trades at the last price before it', () => {
+    const now = 2_000_000_000_000;
+    const trades = [
+      { timestamp: now - 5_000_000, priceUsd: 1, wethAmount: '1' }, // launch, long before the window
+      { timestamp: now - 4_000_000, priceUsd: 50, wethAmount: '1' }, // last trade before it
+    ];
+    const bars = aggregateCandlesticks(trades, 1, {
+      endTime: now,
+      fillGaps: true,
+      maxCandles: 1000,
+    });
+    expect(bars).toHaveLength(1001);
+    expect(bars.every((b) => b.open === 50 && b.close === 50)).toBe(true);
+  });
 });

@@ -22,6 +22,14 @@ export function chartStartTime(
   return Number.isFinite(start) ? start : undefined;
 }
 
+/**
+ * Where a token's candles end: now, or its last trade when a block's time runs ahead of this
+ * server's clock, so the newest trades are not cut from short timeframes.
+ */
+export function chartEndTime(lastTradeAt: number | undefined, now = Date.now()): number {
+  return Math.max(now, lastTradeAt ?? 0);
+}
+
 function toBaseUnits(amount: string, decimals: number): bigint {
   try {
     return parseUnits(amount.trim(), decimals);
