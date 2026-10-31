@@ -209,9 +209,11 @@ export function buildSessionSignMessage(params: { address: string; issuedAt: num
 
 /** An escrowed limit / take-profit / stop-loss order of GotonLimitOrders, as indexed by the API. */
 export interface LimitOrderEntity {
-  /** `${chainId}-${orderId}` */
+  /** `${chainId}-${contract}-${orderId}` (limitOrderKey) */
   key: string;
   chainId: number;
+  /** The GotonLimitOrders deployment holding the order (absent on rows from before it was recorded). */
+  contract?: `0x${string}`;
   orderId: string;
   owner: `0x${string}`;
   token: `0x${string}`;

@@ -390,6 +390,12 @@ export class SqliteDatabase {
         updated_at INTEGER NOT NULL
       );
     `);
+    try {
+      // The GotonLimitOrders deployment holding the order; NULL on rows indexed before it was kept.
+      this.db.run('ALTER TABLE limit_orders ADD COLUMN contract TEXT');
+    } catch {
+      // Column already exists
+    }
     this.db.run(
       `CREATE INDEX IF NOT EXISTS idx_limit_orders_owner ON limit_orders(owner, status);`,
     );

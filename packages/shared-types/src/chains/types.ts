@@ -72,6 +72,11 @@ export interface NetworkConfig {
     buyback?: `0x${string}`;
     /** GotonLimitOrders — escrowed limit, take-profit and stop-loss orders. */
     limitOrders?: `0x${string}`;
+    /**
+     * Earlier GotonLimitOrders deployments, oldest first, that may still hold open orders: indexed,
+     * filled by the keeper and cancellable, but no new orders go there.
+     */
+    limitOrdersPrevious?: `0x${string}`[];
     /** GotonTeamSplitterFactory: fixed team payouts for a creator's tax and fees. */
     teamSplitterFactory?: `0x${string}`;
     poolManagerV4?: `0x${string}`;

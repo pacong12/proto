@@ -170,7 +170,7 @@ async function load() {
 }
 
 async function cancelOrder(o: LimitOrderEntity) {
-  if (await cancel(props.network, o.orderId)) {
+  if (await cancel(props.network, o)) {
     toast.success(t('orderCancelled'));
     orders.value = orders.value.map((x) =>
       x.key === o.key ? { ...x, status: 'cancelled', updatedAt: Date.now() } : x,
