@@ -282,6 +282,10 @@ export class SqliteDatabase {
       }
     }
 
+    // Calls from indexed holders were valued in raw token units (18 decimals): positions came out
+    // 1e18 times too large. No real position reaches $1T, so those rows are scaled back once.
+    this.db.run(`UPDATE comments SET position_usd = position_usd / 1e18 WHERE position_usd > 1e12`);
+
     this.db.run(`
       CREATE INDEX IF NOT EXISTS idx_comments_token ON comments (token_address, created_at DESC);
     `);
