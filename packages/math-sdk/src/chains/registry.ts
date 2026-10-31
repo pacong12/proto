@@ -9,6 +9,8 @@ import type { ChainMathConfig, LaunchModel } from './types';
 export const CHAIN_MATH_CONFIGS: readonly ChainMathConfig[] = [
   ROBINHOOD_MATH_CONFIG,
   ARC_MATH_CONFIG,
+  // Arc testnet: Arc's launch model and parameters.
+  { ...ARC_MATH_CONFIG, chainId: 5042002 },
 ];
 
 export function getChainMathConfig(chainId: number): ChainMathConfig | undefined {
