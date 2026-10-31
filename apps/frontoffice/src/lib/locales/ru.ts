@@ -457,6 +457,17 @@ const messages: Record<string, string> = {
     'Этот токен платит долю создателя на командный кошелёк. Любой может выплатить доли участников; деньги всегда идут напрямую участнику.',
   releaseAll: 'Выплатить всё',
   teamPaid: 'Доли команды выплачены',
+  feedProfit: 'Прибыль',
+  topCallers: 'Лучшие коллеры',
+  profitSinceCall: 'Прибыль с момента колла',
+  noPricedCalls: 'Пока нет коллов с ценой.',
+  callsCount: 'коллов: {count}',
+  bestCall: 'лучший',
+  livePool: 'Пул активен',
+  feedAllCalls: 'Все коллы',
+  feedWhales: 'Киты',
+  feedInProfit: 'В прибыли',
+  feedMedia: 'Медиа',
 };
 
 export default messages;

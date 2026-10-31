@@ -456,6 +456,17 @@ const messages: Record<string, string> = {
     "Ce jeton verse la part du créateur à un portefeuille d'équipe. Tout le monde peut verser les parts ; chaque membre est toujours payé directement.",
   releaseAll: 'Tout verser',
   teamPaid: "Parts de l'équipe versées",
+  feedProfit: 'Profit',
+  topCallers: 'Meilleurs callers',
+  profitSinceCall: 'Profit depuis le call',
+  noPricedCalls: "Aucun call avec prix pour l'instant.",
+  callsCount: '{count} calls',
+  bestCall: 'meilleur',
+  livePool: 'Pool actif',
+  feedAllCalls: 'Tous les calls',
+  feedWhales: 'Baleines',
+  feedInProfit: 'En profit',
+  feedMedia: 'Médias',
 };
 
 export default messages;

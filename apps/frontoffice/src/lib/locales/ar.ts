@@ -444,6 +444,17 @@ const messages: Record<string, string> = {
     'يدفع هذا الرمز حصة المنشئ إلى محفظة فريق. يمكن لأي شخص صرف حصص الأعضاء، ويُدفع لكل عضو مباشرة دائمًا.',
   releaseAll: 'صرف الكل',
   teamPaid: 'تم صرف حصص الفريق',
+  feedProfit: 'الربح',
+  topCallers: 'أفضل أصحاب التوصيات',
+  profitSinceCall: 'الربح منذ التوصية',
+  noPricedCalls: 'لا توجد توصيات مسعّرة بعد.',
+  callsCount: '{count} توصيات',
+  bestCall: 'الأفضل',
+  livePool: 'مجمع مباشر',
+  feedAllCalls: 'كل التوصيات',
+  feedWhales: 'الحيتان',
+  feedInProfit: 'في الربح',
+  feedMedia: 'الوسائط',
 };
 
 export default messages;

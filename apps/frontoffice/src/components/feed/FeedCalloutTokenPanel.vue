@@ -42,8 +42,8 @@
 
       <!-- The caller's position and how it has done since the call. -->
       <dl v-if="position" class="grid grid-cols-2 gap-x-4 text-right shrink-0">
-        <dt class="stat-label">Position</dt>
-        <dt class="stat-label">Profit</dt>
+        <dt class="stat-label">{{ t('position') }}</dt>
+        <dt class="stat-label">{{ t('feedProfit') }}</dt>
         <dd class="stat-value text-foreground">{{ position.size }}</dd>
         <dd class="stat-value" :class="position.up ? 'text-emerald-400' : 'text-rose-400'">
           {{ position.profit }}

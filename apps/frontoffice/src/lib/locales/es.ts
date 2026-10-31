@@ -457,6 +457,17 @@ const messages: Record<string, string> = {
     'Este token paga la parte del creador a una billetera de equipo. Cualquiera puede liberar las partes; cada miembro siempre cobra directamente.',
   releaseAll: 'Liberar todo',
   teamPaid: 'Partes del equipo liberadas',
+  feedProfit: 'Ganancia',
+  topCallers: 'Mejores callers',
+  profitSinceCall: 'Ganancia desde el call',
+  noPricedCalls: 'Aún no hay calls con precio.',
+  callsCount: '{count} calls',
+  bestCall: 'mejor',
+  livePool: 'Pool activo',
+  feedAllCalls: 'Todos los calls',
+  feedWhales: 'Ballenas',
+  feedInProfit: 'En ganancia',
+  feedMedia: 'Multimedia',
 };
 
 export default messages;

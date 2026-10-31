@@ -113,7 +113,7 @@
               class="text-xs h-4 px-1.5 border-border uppercase font-semibold"
               :title="t('inPoolLiveHint')"
             >
-              Live Pool
+              {{ t('livePool') }}
             </Badge>
             <Badge
               v-else
