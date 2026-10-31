@@ -343,6 +343,8 @@ const messages: Record<string, string> = {
   pnlOpenPage: 'Buka halaman PnL',
   pnlPageTitle: 'PnL {name} di ${symbol}',
   pnlTradeToken: 'Trade ${symbol}',
+  pnlClosedPosition: 'Posisi ditutup',
+  pnlClosedPositions: 'Posisi ditutup',
   pnlMarketCap: 'Kapitalisasi Pasar',
   eraseDataButton: 'Hapus data sosial saya',
   eraseDataConfirmButton: 'Konfirmasi hapus permanen',

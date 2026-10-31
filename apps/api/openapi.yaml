@@ -117,6 +117,22 @@ paths:
         '200':
           description: Ranked list of token holders.
 
+  /api/pnl/{wallet}:
+    get:
+      summary: Every position of a wallet
+      description: >-
+        The wallet's PnL in each token it traded (the 50 traded most recently), held or sold,
+        newest trade first (WalletPnl).
+      parameters:
+        - name: wallet
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The positions.
+
   /api/pnl/{wallet}/{token}:
     get:
       summary: A wallet's PnL on a token

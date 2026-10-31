@@ -1,5 +1,5 @@
 import { computed, ref, watch, type Ref } from 'vue';
-import type { ApiEnvelope, PnlShare } from '@goton/shared-types';
+import type { ApiEnvelope, PnlPosition, PnlShare, WalletPnl } from '@goton/shared-types';
 import { API_BASE_URL, ApiError, apiFetch } from '@/lib/api-client';
 import { t } from '@/lib/i18n';
 import { SITE } from '@/lib/site';
@@ -116,4 +116,24 @@ export function usePnlShare(wallet: Ref<string | undefined>, token: Ref<string |
     copyLink,
     postOnX,
   };
+}
+
+/** Every position of a wallet (held or sold), newest trade first; empty until loaded. */
+export function useWalletPositions(wallet: Ref<string | undefined>) {
+  const positions = ref<PnlPosition[]>([]);
+  async function load(): Promise<void> {
+    if (!wallet.value) {
+      positions.value = [];
+      return;
+    }
+    try {
+      const res = await apiFetch<ApiEnvelope<WalletPnl>>(`/api/pnl/${wallet.value.toLowerCase()}`);
+      positions.value = res.data?.positions ?? [];
+    } catch {
+      positions.value = [];
+    }
+  }
+  watch(wallet, load, { immediate: true });
+  const closed = computed(() => positions.value.filter((p) => p.pnl.status === 'sold'));
+  return { positions, closed, load };
 }

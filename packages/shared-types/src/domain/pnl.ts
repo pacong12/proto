@@ -25,11 +25,8 @@ export interface PositionPnl {
   status: 'holding' | 'sold';
 }
 
-/** The shared PnL page: the position, its token and who holds it. */
-export interface PnlShare {
-  wallet: `0x${string}`;
-  /** The wallet's profile name, else its generated username. */
-  traderName: string;
+/** A position: the token and the wallet's PnL on it. */
+export interface PnlPosition {
   token: {
     address: `0x${string}`;
     name: string;
@@ -38,4 +35,19 @@ export interface PnlShare {
     chainId: number;
   };
   pnl: PositionPnl;
+}
+
+/** Who holds a position. */
+export interface PnlTrader {
+  wallet: `0x${string}`;
+  /** The wallet's profile name, else its generated username. */
+  traderName: string;
+}
+
+/** The shared PnL page: the position, its token and who holds it. */
+export type PnlShare = PnlTrader & PnlPosition;
+
+/** Every token a wallet traded, newest trade first. */
+export interface WalletPnl extends PnlTrader {
+  positions: PnlPosition[];
 }

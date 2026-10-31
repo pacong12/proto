@@ -337,6 +337,8 @@ const messages: Record<string, string> = {
   pnlOpenPage: 'فتح صفحة الربح والخسارة',
   pnlPageTitle: 'ربح وخسارة {name} على ${symbol}',
   pnlTradeToken: 'تداول ${symbol}',
+  pnlClosedPosition: 'مركز مغلق',
+  pnlClosedPositions: 'المراكز المغلقة',
   pnlMarketCap: 'القيمة السوقية',
   eraseDataButton: 'حذف بياناتي الاجتماعية',
   eraseDataConfirmButton: 'تأكيد الحذف النهائي',

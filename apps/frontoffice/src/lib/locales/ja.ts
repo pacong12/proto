@@ -341,6 +341,8 @@ const messages: Record<string, string> = {
   pnlOpenPage: 'PnLページを開く',
   pnlPageTitle: '${symbol} での {name} のPnL',
   pnlTradeToken: '${symbol} を取引',
+  pnlClosedPosition: '決済済みポジション',
+  pnlClosedPositions: '決済済みポジション',
   pnlMarketCap: '時価総額',
   eraseDataButton: 'ソーシャルデータを削除',
   eraseDataConfirmButton: '完全削除を確認',

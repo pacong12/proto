@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-4">
     <Empty
-      v-if="portfolioPositions.length === 0"
+      v-if="portfolioPositions.length === 0 && closed.length === 0"
       :title="t('noHoldings')"
       :description="t('noHoldingsDesc')"
       class="py-14"
@@ -20,7 +20,10 @@
         </Button>
       </template>
     </Empty>
-    <div v-else class="rounded-2xl border border-border overflow-hidden bg-black">
+    <div
+      v-if="portfolioPositions.length > 0"
+      class="rounded-2xl border border-border overflow-hidden bg-black"
+    >
       <Table class="text-xs bg-black">
         <TableHeader>
           <TableRow class="border-b border-border text-muted-foreground bg-black hover:bg-black">
@@ -110,6 +113,85 @@
         </TableBody>
       </Table>
     </div>
+    <section v-if="closed.length > 0" class="space-y-2">
+      <h3 class="text-xs font-semibold text-muted-foreground px-1">
+        {{ t('pnlClosedPositions') }} ({{ closed.length }})
+      </h3>
+      <div class="rounded-2xl border border-border overflow-hidden bg-black">
+        <Table class="text-xs bg-black">
+          <TableHeader>
+            <TableRow class="border-b border-border bg-black hover:bg-black">
+              <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">{{
+                t('asset')
+              }}</TableHead>
+              <TableHead
+                class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+                >{{ t('pnlInvested') }}</TableHead
+              >
+              <TableHead
+                class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+                >{{ t('pnlTotal') }}</TableHead
+              >
+              <TableHead
+                class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+                >{{ t('pnlAverageExit') }}</TableHead
+              >
+              <TableHead
+                class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
+                >{{ t('action') }}</TableHead
+              >
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow
+              v-for="pos in closed"
+              :key="pos.token.address"
+              class="hover:bg-zinc-900/40 transition-colors bg-black"
+            >
+              <TableCell class="py-2.5 px-3">
+                <span class="font-bold text-foreground">{{ pos.token.name }}</span>
+                <span class="text-muted-foreground ml-2">${{ pos.token.symbol }}</span>
+              </TableCell>
+              <TableCell class="py-2.5 px-3 text-right text-foreground">
+                {{ formatCompactUsd(pos.pnl.investedUsd) }}
+              </TableCell>
+              <TableCell
+                class="py-2.5 px-3 text-right font-bold"
+                :class="pos.pnl.totalUsd < 0 ? 'text-rose-500' : 'text-emerald-500'"
+              >
+                {{ formatSignedUsd(pos.pnl.totalUsd) }}
+                {{ formatSignedPercent(pos.pnl.percent) }}
+              </TableCell>
+              <TableCell class="py-2.5 px-3 text-right text-muted-foreground">
+                {{ formatMarketCap(pos.pnl.avgExitMarketCapUsd) }}
+              </TableCell>
+              <TableCell class="py-2.5 px-3 text-right space-x-1.5 whitespace-nowrap">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="h-7 px-2.5 text-xs font-semibold gap-1 border-border cursor-pointer"
+                  @click="sharedToken = pos.token.address"
+                >
+                  <Share2 class="w-3 h-3" />
+                  {{ t('pnlShare') }}
+                </Button>
+                <Button
+                  as-child
+                  variant="outline"
+                  size="sm"
+                  class="h-7 px-2.5 text-xs font-semibold gap-1 border-border cursor-pointer"
+                >
+                  <RouterLink :to="`/token/${pos.token.address}`">
+                    {{ t('trade') }}
+                    <ExternalLink class="w-3 h-3" />
+                  </RouterLink>
+                </Button>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </div>
+    </section>
     <PnlCardModal
       :is-open="!!sharedToken"
       :wallet="wallet"
@@ -120,13 +202,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, toRef } from 'vue';
 import { ExternalLink, PieChart, Share2 } from 'lucide-vue-next';
 import PnlCardModal from '@/components/trade/PnlCardModal.vue';
 import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { getChainIcon } from '@/lib/utils';
+import { formatCompactUsd, formatMarketCap, getChainIcon } from '@/lib/utils';
+import {
+  formatSignedPercent,
+  formatSignedUsd,
+  useWalletPositions,
+} from '@/composables/usePnlShare';
 import { useTokenStore } from '@/composables/useTokenStore';
 import { Empty } from '@/components/ui/empty';
 import {
@@ -142,11 +229,14 @@ import type { PortfolioPosition } from './types';
 const { t } = useI18n();
 const { getTokenNetwork } = useTokenStore();
 
-defineProps<{
+const props = defineProps<{
   portfolioPositions: PortfolioPosition[];
   /** The profile's wallet, whose positions can be shared as PnL cards. */
   wallet?: string;
 }>();
+
+/** Positions the wallet sold out of, which the holdings above no longer list. */
+const { closed } = useWalletPositions(toRef(props, 'wallet'));
 
 /** The token whose PnL card is open. */
 const sharedToken = ref<string | null>(null);

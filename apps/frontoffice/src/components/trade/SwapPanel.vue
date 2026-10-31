@@ -40,6 +40,32 @@
       </div>
     </div>
 
+    <!-- Closed position: everything sold, its PnL can still be shared -->
+    <div
+      v-else-if="isConnected && closedPosition"
+      class="p-3.5 rounded-2xl bg-card border border-border text-xs font-sans shadow-xs flex items-center justify-between gap-3"
+    >
+      <div class="space-y-0.5 min-w-0">
+        <span class="text-muted-foreground text-xs block">{{ t('pnlClosedPosition') }}</span>
+        <span
+          class="font-bold text-sm"
+          :class="closedPosition.pnl.totalUsd < 0 ? 'text-rose-500' : 'text-emerald-500'"
+        >
+          {{ formatSignedUsd(closedPosition.pnl.totalUsd) }}
+          <span class="text-xs">{{ formatSignedPercent(closedPosition.pnl.percent) }}</span>
+        </span>
+      </div>
+      <Button
+        variant="outline"
+        size="sm"
+        class="h-6 px-2 text-[11px] font-bold gap-1 rounded-lg border-primary/30 text-primary hover:bg-primary/10 cursor-pointer shrink-0"
+        @click="$emit('openPnlCard')"
+      >
+        <Share2 class="w-3 h-3" />
+        <span>{{ t('pnlShare') }}</span>
+      </Button>
+    </div>
+
     <!-- Live Holder Dividends Card (Argus style) -->
     <div
       v-if="isConnected && (hasDividends || isDividendsConfigured)"
@@ -456,7 +482,8 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { useI18n } from '@/lib/i18n';
 import { formatCompactUsd, formatQuoteBalance, formatTokenBalance } from '@/lib/utils';
-import type { LaunchedTokenEntity, NetworkConfig } from '@goton/shared-types';
+import type { LaunchedTokenEntity, NetworkConfig, PnlShare } from '@goton/shared-types';
+import { formatSignedPercent, formatSignedUsd } from '@/composables/usePnlShare';
 
 interface Props {
   currentToken: LaunchedTokenEntity;
@@ -468,6 +495,8 @@ interface Props {
   userHoldingTokensCount: number;
   userTokenBalance: bigint;
   userHoldingUsd: number;
+  /** The wallet's position here once it sold everything, to share its PnL. */
+  closedPosition?: PnlShare | null;
   balanceWei: bigint;
   amountIn: string;
   payInUsd: boolean;

@@ -344,6 +344,8 @@ const messages: Record<string, string> = {
   pnlOpenPage: 'PnL-Seite öffnen',
   pnlPageTitle: 'PnL von {name} bei ${symbol}',
   pnlTradeToken: '${symbol} handeln',
+  pnlClosedPosition: 'Geschlossene Position',
+  pnlClosedPositions: 'Geschlossene Positionen',
   pnlMarketCap: 'Marktkapitalisierung',
   eraseDataButton: 'Meine Social-Daten löschen',
   eraseDataConfirmButton: 'Endgültiges Löschen bestätigen',
