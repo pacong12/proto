@@ -1,4 +1,4 @@
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, type Ref } from 'vue';
 import { apiFetch } from '@/lib/api-client';
 import { useTokenStream } from '@/composables/useTokenStream';
 import { formatPriceUsd, formatMarketCap } from '@/lib/utils';
@@ -9,6 +9,64 @@ import {
   type TokenMarketData,
 } from '@goton/shared-types';
 import type { LiveTrade, TokenHolder, TradePage } from './types';
+
+/** Whether `next` moves anything the page shows from `prev` (price, market cap, volume, progress). */
+function marketChanged(prev: TokenMarketData, next: TokenMarketData): boolean {
+  return (
+    next.priceUsd !== prev.priceUsd ||
+    next.priceInWeth !== prev.priceInWeth ||
+    next.marketCapUsd !== prev.marketCapUsd ||
+    next.volume24hUsd !== prev.volume24hUsd ||
+    next.isGraduated !== prev.isGraduated ||
+    next.graduationProgress !== prev.graduationProgress
+  );
+}
+
+/**
+ * Sets `target` to `rows` when any row differs. A list that keeps its length and first row still
+ * changes (a holder's balance, a trader's volume), so the whole content is compared.
+ */
+export function replaceIfChanged<T>(target: Ref<T[]>, rows: T[]): void {
+  if (JSON.stringify(rows) !== JSON.stringify(target.value)) target.value = rows;
+}
+
+/** A chart bar: time in seconds, prices in USD. */
+interface CandleBar {
+  time: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+/** Most bars the chart keeps. */
+const MAX_BARS = 1000;
+
+/**
+ * `existing` with every bar of `incoming` that is new or differs, in time order and capped at
+ * MAX_BARS; null when nothing changed.
+ */
+export function mergeCandles(existing: CandleBar[], incoming: CandleBar[]): CandleBar[] | null {
+  const byTime = new Map(existing.map((bar) => [bar.time, bar]));
+  let changed = false;
+  for (const bar of incoming) {
+    const old = byTime.get(bar.time);
+    if (
+      !old ||
+      old.open !== bar.open ||
+      old.high !== bar.high ||
+      old.low !== bar.low ||
+      old.close !== bar.close ||
+      old.volume !== bar.volume
+    ) {
+      byTime.set(bar.time, bar);
+      changed = true;
+    }
+  }
+  if (!changed) return null;
+  return [...byTime.values()].sort((a, b) => a.time - b.time).slice(-MAX_BARS);
+}
 
 /** Market data of the token page: price and chart, trades, holders, top traders, the creator's activity, and their live updates (SSE first, polling as fallback). */
 export function useTradeMarket(page: TradePage) {
@@ -83,22 +141,6 @@ export function useTradeMarket(page: TradePage) {
       return currentMarketData.value.priceUsd / currentMarketData.value.priceInWeth;
     }
     return FALLBACK_ETH_PRICE_USD;
-  });
-
-  const chartTradeMarkers = computed(() => {
-    if (!trades.value || trades.value.length === 0) return [];
-    return trades.value.slice(0, 20).map((t) => {
-      let ts = t.timestamp;
-      if (ts > 2_000_000_000) ts = Math.floor(ts / 1000);
-      return {
-        time: ts,
-        position: (t.isBuy ? 'belowBar' : 'aboveBar') as 'belowBar' | 'aboveBar',
-        color: t.isBuy ? '#22c55e' : '#ef4444',
-        shape: (t.isBuy ? 'arrowUp' : 'arrowDown') as 'arrowUp' | 'arrowDown',
-        text: t.isBuy ? 'B' : 'S',
-        size: 1,
-      };
-    });
   });
 
   const primaryFigureMode = ref<'mcap' | 'price'>('mcap');
@@ -192,17 +234,16 @@ export function useTradeMarket(page: TradePage) {
 
   // Merge SSE market data into local reactive state using the same delta-check
   // as refreshLive() to avoid spurious Vue reactivity updates.
+  // The stream reports the market as soon as a trade moves it: take it, and reload the chart and
+  // the open tab then rather than at the next poll (up to 30s on coarse timeframes).
+  let streamRefresh: Promise<void> | null = null;
   watch(streamMarketData, (incoming) => {
-    if (!incoming) return;
-    const curr = currentMarketData.value;
-    const changed =
-      incoming.priceUsd !== curr.priceUsd ||
-      incoming.priceInWeth !== curr.priceInWeth ||
-      incoming.marketCapUsd !== curr.marketCapUsd ||
-      incoming.volume24hUsd !== curr.volume24hUsd ||
-      incoming.isGraduated !== curr.isGraduated ||
-      incoming.graduationProgress !== curr.graduationProgress;
-    if (changed) currentMarketData.value = incoming;
+    if (!incoming || !marketChanged(currentMarketData.value, incoming)) return;
+    currentMarketData.value = incoming;
+    const addr = currentToken.value.address;
+    if (addr && !streamRefresh) {
+      streamRefresh = refreshAfterTrade(addr).finally(() => (streamRefresh = null));
+    }
   });
 
   /** Returns the poll interval in ms based on the currently selected chart resolution.
@@ -231,33 +272,26 @@ export function useTradeMarket(page: TradePage) {
     const { signal } = liveAbort;
 
     try {
-      const env = await apiFetch<{
-        success: boolean;
-        data: { token: LaunchedTokenEntity; marketData: TokenMarketData };
-      }>(`/api/tokens/${addr}`, { signal });
-      if (env.success && env.data && addr === currentToken.value.address) {
-        const incomingMkt = env.data.marketData;
-        if (incomingMkt) {
-          const curr = currentMarketData.value;
-          const changed =
-            incomingMkt.priceUsd !== curr.priceUsd ||
-            incomingMkt.priceInWeth !== curr.priceInWeth ||
-            incomingMkt.marketCapUsd !== curr.marketCapUsd ||
-            incomingMkt.volume24hUsd !== curr.volume24hUsd ||
-            incomingMkt.isGraduated !== curr.isGraduated ||
-            incomingMkt.graduationProgress !== curr.graduationProgress;
-
-          if (changed) {
-            currentMarketData.value = incomingMkt;
-          }
+      try {
+        const env = await apiFetch<{
+          success: boolean;
+          data: { token: LaunchedTokenEntity; marketData: TokenMarketData };
+        }>(`/api/tokens/${addr}`, { signal });
+        const incoming = env.data?.marketData;
+        if (env.success && incoming && addr === currentToken.value.address) {
+          if (marketChanged(currentMarketData.value, incoming)) currentMarketData.value = incoming;
         }
+      } catch (e) {
+        if ((e as Error).name === 'AbortError') return;
       }
-    } catch (e) {
-      if ((e as Error).name === 'AbortError') return;
+      await refreshAfterTrade(addr);
+    } finally {
+      livePollActive = false;
     }
+  }
 
-    // Fire candlestick + active-tab fetches in parallel to halve per-cycle latency.
-    // Each function is already guard-wrapped with silent=true (no spinner, merge-only).
+  /** The chart and the open tab (trades, top traders or holders) again, without spinners. */
+  async function refreshAfterTrade(addr: string) {
     const tabFetch =
       activeBottomTab.value === 'trades'
         ? fetchTrades(addr, true)
@@ -266,10 +300,7 @@ export function useTradeMarket(page: TradePage) {
           : activeBottomTab.value === 'holders'
             ? fetchHolders(addr, true)
             : Promise.resolve();
-
     await Promise.allSettled([fetchCandlesticks(addr, selectedResolution.value, true), tabFetch]);
-
-    livePollActive = false;
   }
 
   function scheduleNextLivePoll() {
@@ -305,15 +336,7 @@ export function useTradeMarket(page: TradePage) {
         `/api/tokens/${address}/trades?limit=50`,
       );
       if (envelope.success && Array.isArray(envelope.data)) {
-        const incoming = envelope.data;
-        const current = trades.value;
-        const isDifferent =
-          incoming.length !== current.length ||
-          (incoming.length > 0 && current.length > 0 && incoming[0].id !== current[0].id);
-
-        if (isDifferent) {
-          trades.value = incoming;
-        }
+        replaceIfChanged(trades, envelope.data);
       } else if (!silent) {
         trades.value = [];
       }
@@ -331,15 +354,7 @@ export function useTradeMarket(page: TradePage) {
         `/api/tokens/${address}/holders?limit=50`,
       );
       if (envelope.success && Array.isArray(envelope.data)) {
-        const incoming = envelope.data;
-        const current = holders.value;
-        const isDifferent =
-          incoming.length !== current.length ||
-          (incoming.length > 0 && current.length > 0 && incoming[0].address !== current[0].address);
-
-        if (isDifferent) {
-          holders.value = incoming;
-        }
+        replaceIfChanged(holders, envelope.data);
       } else if (!silent) {
         holders.value = [];
       }
@@ -357,15 +372,7 @@ export function useTradeMarket(page: TradePage) {
         `/api/tokens/${address}/top-traders?limit=20`,
       );
       if (envelope.success && Array.isArray(envelope.data)) {
-        const incoming = envelope.data;
-        const current = topTraders.value;
-        const isDifferent =
-          incoming.length !== current.length ||
-          (incoming.length > 0 && current.length > 0 && incoming[0].address !== current[0].address);
-
-        if (isDifferent) {
-          topTraders.value = incoming;
-        }
+        replaceIfChanged(topTraders, envelope.data);
       } else if (!silent) {
         topTraders.value = [];
       }
@@ -464,49 +471,10 @@ export function useTradeMarket(page: TradePage) {
         patchLivePrice(incoming, livePrice, resolutionSeconds);
 
         if (silent && candlestickData.value.length > 0) {
-          // Incremental merge: only update/append the last 1-2 bars — no full setData() on chart
-          const existing = candlestickData.value;
-          const lastIncoming = incoming[incoming.length - 1];
-          const secondLastIncoming = incoming.length > 1 ? incoming[incoming.length - 2] : null;
-          let changed = false;
-
-          // Update second-to-last if it closed a new bucket
-          if (secondLastIncoming) {
-            const idx = existing.findIndex((b) => b.time === secondLastIncoming.time);
-            if (idx === -1) {
-              existing.push(secondLastIncoming);
-              changed = true;
-            } else if (
-              existing[idx].close !== secondLastIncoming.close ||
-              existing[idx].volume !== secondLastIncoming.volume
-            ) {
-              existing[idx] = secondLastIncoming;
-              changed = true;
-            }
-          }
-
-          // Update or append the latest (open) bucket
-          const lastIdx = existing.findIndex((b) => b.time === lastIncoming.time);
-          if (lastIdx === -1) {
-            existing.push(lastIncoming);
-            changed = true;
-          } else if (
-            existing[lastIdx].close !== lastIncoming.close ||
-            existing[lastIdx].high !== lastIncoming.high ||
-            existing[lastIdx].low !== lastIncoming.low ||
-            existing[lastIdx].volume !== lastIncoming.volume
-          ) {
-            existing[lastIdx] = lastIncoming;
-            changed = true;
-          }
-
-          // Shallow-copy the array to trigger Vue reactivity only when content changed
-          if (changed) {
-            if (existing.length > 1000) {
-              existing.splice(0, existing.length - 1000);
-            }
-            candlestickData.value = [...existing];
-          }
+          // Live poll: take every bar that is new or changed, not only the last ones. A trade is
+          // indexed a few seconds after its block, when its bar may no longer be among the last.
+          const merged = mergeCandles(candlestickData.value, incoming);
+          if (merged) candlestickData.value = merged;
         } else {
           // Full replace on initial load or timeframe change
           candlestickData.value = incoming;
@@ -593,7 +561,6 @@ export function useTradeMarket(page: TradePage) {
     candlesLoading,
     candlestickData,
     changeResolution,
-    chartTradeMarkers,
     devHoldingPercent,
     fetchCandlesticks,
     fetchDevActivity,
