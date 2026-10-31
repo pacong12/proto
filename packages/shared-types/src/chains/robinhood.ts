@@ -25,6 +25,8 @@ export const ROBINHOOD_NETWORK: NetworkConfig = {
   rpcUrl: getEnv('ROBINHOOD_RPC_URL', 'https://rpc.mainnet.chain.robinhood.com'),
   rpcUrls: [getEnv('ROBINHOOD_RPC_URL', 'https://rpc.mainnet.chain.robinhood.com')],
   blockTimeMs: 250,
+  // A block every 250ms: read new blocks every second while trading, every 2s when quiet.
+  indexerPollMs: { active: 1_000, idle: 2_000 },
   blockExplorer: getEnv(
     'ROBINHOOD_BLOCK_EXPLORER_URL',
     getEnv('BLOCK_EXPLORER_URL', 'https://robinhoodchain.blockscout.com'),
