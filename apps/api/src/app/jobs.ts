@@ -3,6 +3,7 @@ import {
   EventPollerService,
   GraduationKeeperService,
   LimitOrderKeeperService,
+  RATE_LIMITED,
   SourceVerifyKeeperService,
   V4BuybackKeeperService,
 } from '../modules/tokens';
@@ -152,7 +153,11 @@ export function startBackgroundJobs(): void {
       const limitTick = (): void => {
         setTimeout(async () => {
           try {
-            const filled = (await exclusive(() => limitKeeper.runOnce())).filter((r) => r.executed);
+            const results = await exclusive(() => limitKeeper.runOnce());
+            if (results.some((r) => r.reason === RATE_LIMITED)) {
+              logger.warn(`[LimitOrderKeeper:${network.name}] RPC rate-limited; cycle cut short`);
+            }
+            const filled = results.filter((r) => r.executed);
             if (filled.length > 0) {
               logger.info(`[LimitOrderKeeper:${network.name}] filled ${filled.length} order(s)`, {
                 orders: filled.map((r) => r.key),

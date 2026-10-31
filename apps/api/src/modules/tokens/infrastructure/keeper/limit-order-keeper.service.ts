@@ -24,6 +24,21 @@ const POOL_FEE_BPS = 100;
  */
 const POOL_ESTIMATE_MARGIN = 0.9;
 const LEG_TAKE_PROFIT = 0;
+export const RATE_LIMITED = 'Rate limited';
+
+/** An RPC refusing for load (HTTP 429, "rate limit exceeded"), not a contract revert. */
+export function isRateLimited(e: unknown): boolean {
+  type Err = { cause?: unknown; status?: number; message?: string };
+  for (let c = e as Err | undefined; c; c = c.cause as Err | undefined) {
+    if (
+      c.status === 429 ||
+      /rate limit|\b429\b|request exceeds defined limit/i.test(c.message ?? '')
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
 const LEG_STOP_LOSS = 1;
 
 export interface LimitOrderFill {
@@ -76,7 +91,8 @@ export class LimitOrderKeeperService {
       if (!result) continue;
       results.push(result);
       if (result.executed) fills++;
-      if (result.reason === 'Receipt pending') break;
+      // A pending receipt or a rate-limited RPC: stop this cycle, the next one picks up.
+      if (result.reason === 'Receipt pending' || result.reason === RATE_LIMITED) break;
     }
     return results;
   }
@@ -188,8 +204,11 @@ export class LimitOrderKeeperService {
         }
         const sent = await sendAndWait(this.publicClient, this.walletClient!, request);
         return { key: order.key, ...sentResult(sent) };
-      } catch {
-        // Not fillable on this leg yet (limit not reached, stop not triggered, oracle not ready).
+      } catch (e) {
+        // A rate-limited RPC says nothing about the order: report it instead of moving on as if
+        // the order were not fillable, which hid fillable stops behind a busy public RPC.
+        if (isRateLimited(e)) return { key: order.key, executed: false, reason: RATE_LIMITED };
+        // Otherwise not fillable on this leg yet (limit not reached, stop not triggered, oracle not ready).
       }
     }
     return unprofitable;
