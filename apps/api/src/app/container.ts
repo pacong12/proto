@@ -1,6 +1,7 @@
 import { ChainRegistry } from '../modules/chains';
 import {
   SqliteTokenRepository,
+  TradeSyncService,
   ViemChainIndexerAdapter,
   CalculatePricingUseCase,
   GetTokensUseCase,
@@ -8,18 +9,18 @@ import {
   GetHoldersUseCase,
   GetDevActivityUseCase,
   TokenController,
-  SecurityGateService,
-  SecurityController,
   EventPollerService,
-  createIpfsService,
-  IpfsController,
   CoinGeckoPriceFeedAdapter,
+} from '../modules/tokens';
+import { SecurityGateService, SecurityController } from '../modules/security';
+import { createIpfsService, IpfsController } from '../modules/ipfs';
+import {
   logger,
   HttpRequestTracker,
   DevopsController,
   RedisCacheAdapter,
   InMemoryCacheAdapter,
-} from '../index';
+} from '../modules/observability';
 import { RateLimiter } from '../core';
 import {
   GetTradesUseCase,
@@ -31,7 +32,6 @@ import {
 import { DexScreenerService, GeckoTerminalService } from '../modules/dex';
 import { createPnlService } from '../modules/pnl';
 import { resolveSiteUrls } from '@goton/shared-types';
-import { TradeSyncService } from '../modules/tokens/infrastructure/indexer/trade-sync.service';
 
 /** Composition root: every service the routes and the background jobs share. */
 const redisUrl = process.env.REDIS_URL || undefined;

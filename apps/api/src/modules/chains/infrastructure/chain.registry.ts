@@ -8,7 +8,7 @@ import {
 } from '@goton/shared-types';
 import type { PublicClient } from 'viem';
 import type { ChainRegistryPort, IChainService } from '../domain/chain.port';
-import type { PriceFeedPort } from '../../tokens/domain/ports/price-feed.port';
+import type { PriceFeedPort } from '../../tokens';
 import { ChainService } from './chain.service';
 import { createChainClient } from '../../../core/rpc';
 

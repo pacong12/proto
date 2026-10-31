@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { logger } from '../../../index';
+import { logger } from '../../observability';
 import { verifyMessage, type Address, type Hex } from 'viem';
 import {
   type TokenCommentEntity,

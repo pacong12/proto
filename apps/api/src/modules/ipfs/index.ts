@@ -15,3 +15,4 @@ export function createIpfsService(): IpfsService {
     new PublicGatewayFetcher(),
   );
 }
+export * from './presentation/ipfs.routes';

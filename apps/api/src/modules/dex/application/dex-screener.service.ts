@@ -1,9 +1,9 @@
 import type { LaunchedTokenEntity, NetworkConfig, TradeEventEntity } from '@goton/shared-types';
 import { AppError, NotFoundError, ValidationError } from '../../../core/errors/app-error';
 import type { ChainRegistryPort, IChainService } from '../../chains';
-import type { TokenStorePort } from '../../tokens/domain/ports/token-store.port';
-import type { TradeStorePort } from '../../tokens/domain/ports/trade-store.port';
-import { findAllTokens } from '../../tokens/application/all-tokens';
+import type { TokenStorePort } from '../../tokens';
+import type { TradeStorePort } from '../../tokens';
+import { findAllTokens } from '../../tokens';
 import { isCurvePair, parseAssetId, parsePairId } from '../domain/dex-pair';
 
 /** Most swap events one /events request returns; a larger range must be split. */
