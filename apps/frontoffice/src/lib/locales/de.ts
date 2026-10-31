@@ -375,9 +375,17 @@ const messages: Record<string, string> = {
   takeProfitAt: 'Take Profit bei Marktkapitalisierung (USD)',
   optional: 'Optional',
   stopLossAt: 'Stop Loss bei Marktkapitalisierung (USD)',
-  stopSlippage: 'Stop-Slippage (%)',
+  orderSlippage: 'Slippage-Toleranz (%)',
   stopTwapNote:
-    'Ein Stop löst erst aus, wenn der Preis eine Weile darunter bleibt (zeitgewichteter Durchschnitt), ein kurzer Einbruch verkauft also nichts.',
+    'Stops lösen beim Durchschnittspreis der letzten {minutes}–{max} Minuten aus, ein kurzer Einbruch verkauft deine Token also nicht. Bei einem schnellen Absturz kann der Verkauf unter dem Auslöser liegen; der Mindestbetrag schützt dich.',
+  stopNotReady:
+    'Stop-Losses für diesen Token werden gegen {time} aktiv: Sie brauchen {minutes} Minuten Preisverlauf. Du kannst jetzt einen setzen, er aktiviert sich von selbst.',
+  stopNotReadyFirstTrade:
+    'Stop-Losses für diesen Token werden {minutes} Minuten nach seinem nächsten Trade aktiv, wenn sein Preisverlauf beginnt. Du kannst jetzt einen setzen, er aktiviert sich von selbst.',
+  stopNotReadyNextTrade:
+    'Stop-Losses für diesen Token werden mit seinem nächsten Trade aktiv. Du kannst jetzt einen setzen, er aktiviert sich von selbst.',
+  largeOrderImpact:
+    'Alles auf einmal zu verkaufen bewegt den Preis um etwa {pct} %. Die Beträge oben berücksichtigen das bereits; teile ihn ggf. in kleinere Orders zu mehreren Zielen auf.',
   expiresIn: 'Läuft ab in',
   escrowNote: 'Das Guthaben bleibt im Order-Vertrag, bis die Order ausgeführt oder storniert wird.',
   placeOrder: 'Order platzieren',

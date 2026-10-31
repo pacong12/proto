@@ -362,9 +362,16 @@ const messages: Record<string, string> = {
   takeProfitAt: '止盈市值（美元）',
   optional: '可选',
   stopLossAt: '止损市值（美元）',
-  stopSlippage: '止损滑点 (%)',
+  orderSlippage: '滑点容忍度 (%)',
   stopTwapNote:
-    '只有当价格在止损价以下持续一段时间（时间加权平均价）后才会触发，短暂下跌不会卖出您的代币。',
+    '止损按最近 {minutes}–{max} 分钟的平均价格触发，短暂下跌不会卖出你的代币。快速暴跌时成交价可能低于触发价；最低成交金额会保护你。',
+  stopNotReady:
+    '该代币的止损约在 {time} 生效：需要 {minutes} 分钟的价格历史。你现在就可以下单，届时自动生效。',
+  stopNotReadyFirstTrade:
+    '该代币的止损在下一笔交易开始记录价格历史后 {minutes} 分钟生效。你现在就可以下单，届时自动生效。',
+  stopNotReadyNextTrade: '该代币的止损将在下一笔交易时生效。你现在就可以下单，届时自动生效。',
+  largeOrderImpact:
+    '一次性全部卖出会使价格变动约 {pct}%。上面的金额已计入这一点；建议拆分为多个较小的订单、设置多个目标。',
   expiresIn: '有效期',
   escrowNote: '资金存放在订单合约中，直到订单成交或您取消。',
   placeOrder: '下单',

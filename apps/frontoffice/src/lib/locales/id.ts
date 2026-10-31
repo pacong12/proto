@@ -374,9 +374,17 @@ const messages: Record<string, string> = {
   takeProfitAt: 'Take profit pada market cap (USD)',
   optional: 'Opsional',
   stopLossAt: 'Stop loss pada market cap (USD)',
-  stopSlippage: 'Slippage stop (%)',
+  orderSlippage: 'Toleransi slippage (%)',
   stopTwapNote:
-    'Stop loss baru terpicu setelah harga bertahan di bawahnya beberapa saat (rata-rata berbobot waktu), jadi penurunan sesaat tidak menjual token Anda.',
+    'Stop-loss terpicu dari harga rata-rata {minutes}–{max} menit terakhir, jadi penurunan sesaat tidak menjual token Anda. Saat harga anjlok cepat, penjualan bisa di bawah pemicu; jumlah minimum yang dibayar melindungi Anda.',
+  stopNotReady:
+    'Stop-loss untuk token ini aktif sekitar pukul {time}: butuh {minutes} menit riwayat harga. Anda bisa memasangnya sekarang dan akan aktif sendiri.',
+  stopNotReadyFirstTrade:
+    'Stop-loss untuk token ini aktif {minutes} menit setelah trade berikutnya, saat riwayat harganya dimulai. Anda bisa memasangnya sekarang dan akan aktif sendiri.',
+  stopNotReadyNextTrade:
+    'Stop-loss untuk token ini aktif pada trade berikutnya. Anda bisa memasangnya sekarang dan akan aktif sendiri.',
+  largeOrderImpact:
+    'Menjual semua ini sekaligus menggerakkan harga sekitar {pct}%. Jumlah di atas sudah memperhitungkannya; pertimbangkan membagi menjadi beberapa order kecil di beberapa target.',
   expiresIn: 'Berlaku',
   escrowNote: 'Dana tersimpan di kontrak order sampai order terisi atau Anda batalkan.',
   placeOrder: 'Pasang order',
