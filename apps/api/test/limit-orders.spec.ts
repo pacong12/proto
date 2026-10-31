@@ -140,7 +140,10 @@ describe('LimitOrderKeeperService', () => {
   it('fills a buy on the curve when the simulation passes', async () => {
     const { results, writes } = await run(order(), token(), { fillable: ['executeBuyOnCurve:'] });
     expect(results).toEqual([{ key: `${network.chainId}-1`, executed: true, txHash: '0xhash' }]);
-    expect(writes).toEqual([{ functionName: 'executeBuyOnCurve', args: [1n, CURVE] }]);
+    // Sent with 25% over the estimate (300k gas in this stub).
+    expect(writes).toEqual([
+      { functionName: 'executeBuyOnCurve', args: [1n, CURVE], gas: 375_000n },
+    ]);
   });
 
   it('routes graduated tokens to their v4 pool', async () => {
@@ -183,7 +186,9 @@ describe('LimitOrderKeeperService', () => {
     const { results, writes } = await run(sell, token(), {
       fillable: ['executeSellOnCurve:1', 'executeSellOnCurve:0'],
     });
-    expect(writes).toEqual([{ functionName: 'executeSellOnCurve', args: [1n, CURVE, 0] }]);
+    expect(writes).toEqual([
+      { functionName: 'executeSellOnCurve', args: [1n, CURVE, 0], gas: 375_000n },
+    ]);
     expect(results[0]).toMatchObject({ executed: true });
   });
 

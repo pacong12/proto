@@ -1,8 +1,13 @@
 import type { PublicClient, WalletClient } from 'viem';
+import { constantProductSellAt, sqrtPriceX96ToQuotePrice } from '@goton/math-sdk';
 import {
   UNDEPLOYED,
+  bondingCurveAbi,
   gotonLimitOrdersAbi,
+  launchpadTokenAbi,
   protoV4PoolKeyFor,
+  readV4PoolState,
+  v4PoolId,
   type LimitOrderEntity,
   type NetworkConfig,
 } from '@goton/shared-types';
@@ -10,6 +15,13 @@ import type { TokenRepositoryPort } from '../../domain/ports/token.repository.po
 import { sendAndWait, sentResult } from './keeper-tx';
 
 const EXECUTOR_FEE_BPS = 10n;
+/** v4 pool LP fee. */
+const POOL_FEE_BPS = 100;
+/**
+ * Share of a pool sell's estimated proceeds the fee check counts on: the estimate takes only the
+ * in-range liquidity's price impact, so keep a margin for the rest.
+ */
+const POOL_ESTIMATE_MARGIN = 0.9;
 const LEG_TAKE_PROFIT = 0;
 const LEG_STOP_LOSS = 1;
 
@@ -99,12 +111,49 @@ export class LimitOrderKeeperService {
     );
   }
 
-  /** Lower bound of the executor fee, in native units. */
-  private feeFloor(order: LimitOrderEntity, call: Call): bigint {
+  /**
+   * The executor fee a fill pays, in native units. A buy pays a share of its deposit. A sell pays a
+   * share of what it sells for, which is estimated (on the curve exactly) because the order's floor
+   * can sit far below it: a stop-loss with a loose floor was skipped as not covering gas. The floor
+   * still bounds the estimate from below.
+   */
+  private async expectedFee(order: LimitOrderEntity, call: Call): Promise<bigint> {
     if (order.isBuy) return (BigInt(order.amount) * EXECUTOR_FEE_BPS) / 10_000n;
     const leg = Number(call.args[2]);
     const floor = BigInt(leg === LEG_STOP_LOSS ? order.slMinOut : order.minOut);
-    return ((floor * EXECUTOR_FEE_BPS) / 10_000n) * this.nativeScale;
+    const proceeds = await this.sellProceeds(order, call).catch(() => 0n);
+    const quoteOut = proceeds > floor ? proceeds : floor;
+    return ((quoteOut * EXECUTOR_FEE_BPS) / 10_000n) * this.nativeScale;
+  }
+
+  /** What selling the order's tokens would pay now, in quote raw units (0 when unknown). */
+  private async sellProceeds(order: LimitOrderEntity, call: Call): Promise<bigint> {
+    const amount = BigInt(order.amount);
+    if (call.functionName === 'executeSellOnCurve') {
+      const [ethOut] = (await this.publicClient.readContract({
+        address: call.args[1] as `0x${string}`,
+        abi: bondingCurveAbi,
+        functionName: 'getAmountOutSell',
+        args: [amount],
+      })) as readonly [bigint, bigint];
+      return ethOut;
+    }
+    const key = call.args[1] as Parameters<typeof v4PoolId>[0];
+    const [{ sqrtPriceX96, liquidity }, tax] = await Promise.all([
+      readV4PoolState(this.publicClient, this.network.contracts.poolManagerV4!, v4PoolId(key)),
+      this.publicClient.readContract({
+        address: order.token,
+        abi: launchpadTokenAbi,
+        functionName: 'taxConfig',
+      }) as Promise<readonly [number, number, `0x${string}`]>,
+    ]);
+    // Raw quote per raw token (both sides' decimals cancel out when both are passed as equal).
+    const tokenIs0 = key.currency0.toLowerCase() === order.token.toLowerCase();
+    const price = sqrtPriceX96ToQuotePrice(sqrtPriceX96, tokenIs0, 0, 0);
+    const k = Number(liquidity) ** 2;
+    const out =
+      constantProductSellAt(k, price, Number(amount), POOL_FEE_BPS) * (1 - tax[1] / 10_000);
+    return BigInt(Math.floor(out * POOL_ESTIMATE_MARGIN));
   }
 
   private async tryFill(
@@ -134,7 +183,7 @@ export class LimitOrderKeeperService {
           }),
           this.publicClient.getGasPrice(),
         ]);
-        if (gas * gasPrice > this.feeFloor(order, call)) {
+        if (gas * gasPrice > (await this.expectedFee(order, call))) {
           unprofitable = { key: order.key, executed: false, reason: 'Fee does not cover gas' };
           continue;
         }
