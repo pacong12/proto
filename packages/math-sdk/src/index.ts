@@ -4,6 +4,7 @@ export * from './fee-distribution';
 export * from './market-data';
 export * from './ohlcv-aggregator';
 export * from './pnl';
+export * from './pool-price';
 export * from './revenue-split';
 export * from './tax';
 export * from './chains';

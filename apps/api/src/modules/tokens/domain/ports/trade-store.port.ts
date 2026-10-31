@@ -26,10 +26,15 @@ export interface TradeStorePort {
     limit?: number,
     offset?: number,
   ): Promise<TradeEventEntity[]>;
+  /**
+   * OHLC of the token's trades in USD. With `quotePriceUsd` (the quote asset's USD price now),
+   * trades are priced by `chartPriceUsd`: their spot quote price at that USD price.
+   */
   getCandlesticks(
     tokenAddress: `0x${string}`,
     resolutionSeconds?: number,
     fillGaps?: boolean,
+    quotePriceUsd?: number,
   ): Promise<CandlestickEntity[]>;
   getHolders(
     tokenAddress: string,

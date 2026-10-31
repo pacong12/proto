@@ -1,3 +1,4 @@
+import { sqrtPriceX96ToQuotePrice } from '@goton/math-sdk';
 import { erc20Abi, type Address } from 'viem';
 import {
   bondingCurveAbi,
@@ -154,6 +155,7 @@ export class TradeIndexer extends ChainIndexerPart {
           tokenAmount: tokenAmountRaw.toFixed(4),
           wethAmount: wethAmountRaw.toFixed(6),
           priceUsd: marketData.priceUsd,
+          priceQuote: marketData.priceInWeth,
           blockNumber,
           transactionHash: swap.transactionHash ?? '0x0',
           timestamp,
@@ -211,10 +213,11 @@ export class TradeIndexer extends ChainIndexerPart {
         const token = tokenByPoolId.get(poolId);
         if (!token) continue;
 
-        const { sender, amount0, amount1 } = log.args as {
+        const { sender, amount0, amount1, sqrtPriceX96 } = log.args as {
           sender?: Address;
           amount0?: bigint;
           amount1?: bigint;
+          sqrtPriceX96?: bigint;
         };
         if (amount0 === undefined || amount1 === undefined) continue;
 
@@ -227,10 +230,15 @@ export class TradeIndexer extends ChainIndexerPart {
         const tokenAmountNum = Math.abs(Number(tokenDelta)) / 1e18;
         const isBuy = quoteDelta < 0n;
 
-        let priceUsd = 0;
-        if (tokenAmountNum > 0) {
-          priceUsd = (usdcAmountNum / tokenAmountNum) * quotePriceUsd;
-        }
+        // The pool's price after the swap. The swap's own ratio is its average price, which
+        // sits below the price a buy leaves (and above the one a sell leaves), so a buy after a
+        // sell could chart lower than that sell.
+        const spot = sqrtPriceX96
+          ? sqrtPriceX96ToQuotePrice(sqrtPriceX96, token.isToken0, quoteDecimals)
+          : 0;
+        const priceQuote =
+          spot > 0 ? spot : tokenAmountNum > 0 ? usdcAmountNum / tokenAmountNum : 0;
+        const priceUsd = priceQuote * quotePriceUsd;
 
         const blockNumber = log.blockNumber ?? 0n;
         let timestamp = blockTimestamps.get(blockNumber);
@@ -256,6 +264,7 @@ export class TradeIndexer extends ChainIndexerPart {
           tokenAmount: tokenAmountNum.toFixed(4),
           wethAmount: usdcAmountNum.toFixed(6),
           priceUsd,
+          priceQuote,
           blockNumber,
           transactionHash: log.transactionHash ?? '0x0',
           timestamp,
@@ -302,13 +311,9 @@ export class TradeIndexer extends ChainIndexerPart {
       // in the first seconds the anti-snipe tax (up to 99%) shrinks tokenAmount and made a buy
       // look up to 100x dearer, and the fee and price impact skew it too.
       const spotNative = await this.curveSpotAtBlock(log.address, log.blockNumber, spotAtBlock);
-      let priceUsd = 0;
-      if (spotNative !== null) {
-        priceUsd = spotNative * quotePriceUsd;
-      } else if (tokenAmountNum > 0) {
-        // Older than the RPC's state history (a deep backfill): the trade ratio is all there is.
-        priceUsd = (ethAmountNum / tokenAmountNum) * quotePriceUsd;
-      }
+      // Older than the RPC's state history (a deep backfill): the trade ratio is all there is.
+      const priceQuote = spotNative ?? (tokenAmountNum > 0 ? ethAmountNum / tokenAmountNum : 0);
+      const priceUsd = priceQuote * quotePriceUsd;
 
       const blockNumber = log.blockNumber ?? 0n;
       let timestamp = blockTimestamps.get(blockNumber);
@@ -332,6 +337,7 @@ export class TradeIndexer extends ChainIndexerPart {
         tokenAmount: tokenAmountNum.toFixed(4),
         wethAmount: ethAmountNum.toFixed(6),
         priceUsd,
+        priceQuote,
         blockNumber,
         transactionHash: log.transactionHash ?? '0x0',
         timestamp,

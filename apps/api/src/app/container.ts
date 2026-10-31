@@ -71,7 +71,7 @@ export const tokenController = new TokenController(
 export const getTradesUseCase = new GetTradesUseCase(repository);
 export const getRecentTradesUseCase = new GetRecentTradesUseCase(repository);
 export const getTopTradersUseCase = new GetTopTradersUseCase(repository, repository, priceFeed);
-export const getCandlesticksUseCase = new GetCandlesticksUseCase(repository);
+export const getCandlesticksUseCase = new GetCandlesticksUseCase(repository, priceFeed);
 
 export const tradeController = new TradeController(
   getTradesUseCase,

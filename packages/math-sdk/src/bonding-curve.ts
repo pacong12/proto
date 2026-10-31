@@ -137,3 +137,49 @@ export function calculateAntiSnipeTaxBps(elapsedSeconds: number): bigint {
   if (elapsedSeconds <= 1) return 2500n; // 25%
   return 300n; // 3%
 }
+
+/** A curve Trade event's amounts, in wei. */
+export interface CurveTradeAmounts {
+  isBuy: boolean;
+  /** Buy: ETH paid (fee included). Sell: ETH paid out (fee excluded). */
+  ethAmount: bigint;
+  /** Buy: tokens received. Sell: tokens sold. */
+  tokenAmount: bigint;
+  feeEth: bigint;
+}
+
+export interface CurveReserves {
+  virtualEthWei: bigint;
+  virtualTokenWei: bigint;
+}
+
+/**
+ * Walks a curve's Trade events back from its reserves now (`current`, after the last trade),
+ * newest last in `trades`, to give the reserves right after each trade and before the first. The
+ * ETH side is exact: a buy added its ETH net of the fee, a sell removed its ETH plus fee. The
+ * token side follows from the constant product across a buy (within a wei of rounding, whichever
+ * way the deployed curve rounds) and from the tokens the curve received across a sell (net of the
+ * token's sell tax). `launch` should be the curve's launch reserves, which a caller checks.
+ */
+export function replayCurveReserves(
+  current: CurveReserves,
+  trades: readonly CurveTradeAmounts[],
+  sellTaxBps = 0n,
+): { after: CurveReserves[]; launch: CurveReserves } {
+  let eth = current.virtualEthWei;
+  let tokens = current.virtualTokenWei;
+  const after: CurveReserves[] = new Array(trades.length);
+  for (let i = trades.length - 1; i >= 0; i--) {
+    after[i] = { virtualEthWei: eth, virtualTokenWei: tokens };
+    const t = trades[i]!;
+    if (t.isBuy) {
+      const ethBefore = eth - (t.ethAmount - t.feeEth);
+      tokens = (tokens * eth) / ethBefore;
+      eth = ethBefore;
+    } else {
+      eth += t.ethAmount + t.feeEth;
+      tokens -= (t.tokenAmount * (BPS - sellTaxBps)) / BPS;
+    }
+  }
+  return { after, launch: { virtualEthWei: eth, virtualTokenWei: tokens } };
+}

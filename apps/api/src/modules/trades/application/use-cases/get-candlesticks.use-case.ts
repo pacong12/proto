@@ -1,13 +1,21 @@
 import type { Address } from 'viem';
-import type { CandlestickEntity } from '@goton/shared-types';
+import { resolveTokenNetwork, type CandlestickEntity } from '@goton/shared-types';
 import type { TokenRepositoryPort } from '../../../tokens/domain/ports/token.repository.port';
+import type { PriceFeedPort } from '../../../tokens/domain/ports/price-feed.port';
 import { ValidationError, assertAddress } from '../../../../core/errors/app-error';
 
 /** Candle widths the API serves, in seconds. */
 export const VALID_RESOLUTIONS = [1, 60, 300, 900, 3600, 14400, 86400];
 
+/**
+ * A token's candles in USD, at its quote asset's USD price now (see chartPriceUsd): a buy always
+ * draws up and a sell down, and the last candle meets the live price.
+ */
 export class GetCandlesticksUseCase {
-  constructor(private readonly tokenRepository: TokenRepositoryPort) {}
+  constructor(
+    private readonly tokenRepository: TokenRepositoryPort,
+    private readonly priceFeed: Pick<PriceFeedPort, 'getQuoteAssetPriceUsd'>,
+  ) {}
 
   async execute(
     address: string,
@@ -23,6 +31,16 @@ export class GetCandlesticksUseCase {
       );
     }
 
-    return this.tokenRepository.getCandlesticks(address as Address, resolutionSeconds, fillGaps);
+    const token = await this.tokenRepository.findByAddress(address as Address);
+    // Without a quote price, trades keep the USD price they were indexed at.
+    const quotePriceUsd = await this.priceFeed
+      .getQuoteAssetPriceUsd(resolveTokenNetwork(token).chainId)
+      .catch(() => undefined);
+    return this.tokenRepository.getCandlesticks(
+      address as Address,
+      resolutionSeconds,
+      fillGaps,
+      quotePriceUsd,
+    );
   }
 }

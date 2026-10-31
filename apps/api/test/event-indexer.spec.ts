@@ -100,7 +100,12 @@ describe('Event Indexer, Trades & Candlestick Aggregation', () => {
       await repository.saveTrade(t);
     }
 
-    const candles = await new GetCandlesticksUseCase(repository).execute(sampleToken, 60);
+    // Trades without a quote price keep their recorded USD price.
+    const priceFeed = { getQuoteAssetPriceUsd: async () => 3000 };
+    const candles = await new GetCandlesticksUseCase(repository, priceFeed).execute(
+      sampleToken,
+      60,
+    );
     expect(candles).toHaveLength(1);
 
     const candle = candles[0];
@@ -109,5 +114,34 @@ describe('Event Indexer, Trades & Candlestick Aggregation', () => {
     expect(candle?.low).toBe(0.000008);
     expect(candle?.close).toBe(0.000008);
     expect(candle?.volume).toBeCloseTo(0.035, 3);
+  });
+
+  it('prices candles from the spot quote price at the quote asset USD price now', async () => {
+    // A buy at a lower ETH/USD than the trade before it: still a rise, since the spot price in
+    // ETH rose (3e-9 → 4e-9 ETH per token).
+    const start = Math.floor(Date.now() / 60_000) * 60_000 - 600_000;
+    const at = (id: string, isBuy: boolean, priceQuote: number, ethUsd: number, s: number) => ({
+      id,
+      tokenAddress: sampleToken,
+      poolAddress: samplePool,
+      trader: '0x1111111111111111111111111111111111111111' as `0x${string}`,
+      isBuy,
+      tokenAmount: '1000',
+      wethAmount: '0.000003',
+      priceUsd: priceQuote * ethUsd,
+      priceQuote,
+      blockNumber: 1n,
+      transactionHash: `0x${id}` as `0x${string}`,
+      timestamp: start + s * 1000,
+    });
+    await repository.saveTrade(at('q1', true, 3e-9, 2500, 0));
+    await repository.saveTrade(at('q2', true, 4e-9, 1500, 120));
+    const priceFeed = { getQuoteAssetPriceUsd: async () => 2000 };
+    const candles = await new GetCandlesticksUseCase(repository, priceFeed).execute(
+      sampleToken,
+      60,
+    );
+    const closes = candles.filter((c) => c.volume > 0).map((c) => c.close);
+    expect(closes).toEqual([3e-9 * 2000, 4e-9 * 2000]);
   });
 });

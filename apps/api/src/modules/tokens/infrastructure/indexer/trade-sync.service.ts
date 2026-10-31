@@ -79,7 +79,7 @@ export class TradeSyncService {
         const ethAmountNum = Number(ethAmount) / 1e18;
         const tokenAmountNum = Number(tokenAmount) / 1e18;
 
-        let priceUsd = 0;
+        let priceQuote = 0;
         if (token.version === 'v2') {
           const curveTarget = (token.curveAddress || log.address) as Address;
           try {
@@ -96,17 +96,17 @@ export class TradeSyncService {
               }) as Promise<bigint>,
             ]);
             if (vToken > 0n) {
-              priceUsd = (Number(vEth) / Number(vToken)) * quotePriceUsd;
+              priceQuote = Number(vEth) / Number(vToken);
             }
           } catch {
             // fallback
           }
         }
 
-        if (priceUsd <= 0) {
-          const priceNative = tokenAmountNum > 0 ? ethAmountNum / tokenAmountNum : 0;
-          priceUsd = priceNative * quotePriceUsd;
+        if (priceQuote <= 0) {
+          priceQuote = tokenAmountNum > 0 ? ethAmountNum / tokenAmountNum : 0;
         }
+        const priceUsd = priceQuote * quotePriceUsd;
 
         let timestamp = Date.now();
         try {
@@ -125,6 +125,7 @@ export class TradeSyncService {
           tokenAmount: tokenAmountNum.toFixed(4),
           wethAmount: ethAmountNum.toFixed(6),
           priceUsd,
+          priceQuote,
           blockNumber: receipt.blockNumber,
           transactionHash: receipt.transactionHash,
           timestamp,

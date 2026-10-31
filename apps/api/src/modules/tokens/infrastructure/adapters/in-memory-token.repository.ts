@@ -5,6 +5,7 @@ import {
   CandlestickEntity,
   TokenCommentEntity,
   getUserIdentity,
+  chartPriceUsd,
   type CreatorProfile,
 } from '@goton/shared-types';
 import type { TokenRepositoryPort, TradeFlow } from '../../domain/ports/token.repository.port';
@@ -124,10 +125,14 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
     tokenAddress: `0x${string}`,
     resolutionSeconds = 60,
     fillGaps = false,
+    quotePriceUsd?: number,
   ): Promise<CandlestickEntity[]> {
     const token = await this.findByAddress(tokenAddress.toLowerCase() as `0x${string}`);
     const mkt = await this.getMarketData(tokenAddress.toLowerCase() as `0x${string}`);
-    const trades = this.trades.get(tokenAddress.toLowerCase()) ?? [];
+    const trades = (this.trades.get(tokenAddress.toLowerCase()) ?? []).map((t) => ({
+      ...t,
+      priceUsd: chartPriceUsd(t, quotePriceUsd),
+    }));
     return aggregateCandlesticks(trades, resolutionSeconds, {
       startTime: token?.createdAt,
       endTime: Date.now(),
