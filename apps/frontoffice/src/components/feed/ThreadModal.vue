@@ -107,9 +107,6 @@
                 <span class="font-black text-foreground block text-xs">
                   ${{ targetCall.tokenSymbol || 'TOKEN' }}
                 </span>
-                <span v-if="targetCall.targetMcap" class="text-xs text-emerald-500 font-bold">
-                  Target: {{ targetCall.targetMcap }}
-                </span>
               </div>
             </div>
 

@@ -9,7 +9,7 @@
         :value="searchQuery"
         type="text"
         placeholder="Search feed, cashtags..."
-        class="w-full h-9 pl-9 pr-4 text-sm rounded-xl bg-card border border-border/80 focus:border-primary focus:bg-background outline-none transition text-foreground placeholder:text-muted-foreground shadow-2xs"
+        class="w-full h-9 pl-9 pr-4 text-sm rounded-xl bg-card border border-border/80 focus:border-foreground/40 focus:bg-background outline-none transition text-foreground placeholder:text-muted-foreground shadow-2xs"
         @input="$emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
       />
     </div>
@@ -55,7 +55,7 @@
                 :src="getChainIcon(tItem.token.address)"
                 :alt="getChainName(tItem.token.address)"
                 :title="getChainName(tItem.token.address)"
-                class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border border-black bg-black object-contain shadow-xs"
+                class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-card bg-card object-contain shadow-xs"
               />
             </div>
             <div class="min-w-0">

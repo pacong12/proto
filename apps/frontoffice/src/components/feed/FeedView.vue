@@ -1,319 +1,26 @@
 <template>
   <div class="max-w-6xl mx-auto space-y-4 font-sans">
-    <!-- Top Live Dex & Alpha Ticker Ribbon Component -->
-    <FeedAlphaTicker :hot-tokens="radarTokens" @select-token="navigateToToken" />
-
     <!-- Main Two-Column Hybrid Layout -->
     <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-5 items-start">
       <!-- ============================================================
            LEFT: Social Alpha Stream (Hybrid Timeline)
            ============================================================ -->
       <div class="space-y-4 min-w-0">
-        <!-- 1. Feed Filter Tabs Bar + Multi-Chain Filter -->
-        <div
-          class="px-3 pt-2 pb-1 border-b border-border bg-card/60 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-2"
-        >
-          <Tabs v-model="activeFilter" class="w-auto min-w-0 md:flex-1">
-            <TabsList
-              variant="line"
-              class="text-sm overflow-x-auto no-scrollbar gap-4 sm:gap-6 border-b-0"
-            >
-              <TabsTrigger
-                v-for="flt in filterTabs"
-                :key="flt.key"
-                :value="flt.key"
-                @click="handleFilterClick(flt.key)"
-              >
-                {{ flt.label }}
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+        <FeedFilterBar
+          v-model:filter="activeFilter"
+          v-model:chain="selectedChainFilter"
+          :tabs="filterTabs"
+          :chains="chainFilterOptions"
+        />
 
-          <!-- Chain Filter (All Chains default / Robinhood / Arc) -->
-          <div class="flex items-center gap-1 text-sm self-end md:self-auto pb-1 md:pb-0 shrink-0">
-            <button
-              v-for="chainOpt in chainFilterOptions"
-              :key="chainOpt.key"
-              type="button"
-              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition cursor-pointer select-none whitespace-nowrap"
-              :class="
-                selectedChainFilter === chainOpt.key
-                  ? 'bg-foreground text-background border-foreground font-bold shadow-2xs'
-                  : 'bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-muted'
-              "
-              @click="setChainFilter(chainOpt.key)"
-            >
-              <!-- Overlapping chain icons for All Chains, or single icon -->
-              <span
-                v-if="chainOpt.icons.length > 1"
-                class="inline-flex items-center -space-x-1.5 shrink-0"
-              >
-                <img
-                  v-for="(ic, icIdx) in chainOpt.icons"
-                  :key="ic"
-                  :src="ic"
-                  alt=""
-                  class="w-3.5 h-3.5 object-contain rounded-full border border-background bg-black"
-                  :style="{ zIndex: chainOpt.icons.length - icIdx }"
-                />
-              </span>
-              <img
-                v-else
-                :src="chainOpt.icons[0]"
-                alt=""
-                class="w-3.5 h-3.5 object-contain rounded-full shrink-0"
-              />
-              <span>{{ chainOpt.label }}</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- 2. Hybrid Alpha Terminal Composer -->
-        <div
-          class="rounded-2xl border border-border/80 bg-card/90 shadow-2xs p-4 sm:p-5 space-y-3.5"
-        >
-          <div class="flex items-start gap-3">
-            <div class="relative shrink-0">
-              <Jazzicon
-                :address="account || '0x0000000000000000000000000000000000000000'"
-                :size="40"
-                class="rounded-full ring-2 ring-border/80"
-              />
-              <span
-                v-if="account"
-                class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background"
-                title="Wallet Connected"
-              />
-            </div>
-
-            <div class="flex-1 min-w-0 space-y-3 relative">
-              <!-- Textarea with Live $ Cashtag Autocomplete -->
-              <div class="relative">
-                <textarea
-                  ref="composerTextarea"
-                  v-model="composerContent"
-                  rows="3"
-                  maxlength="500"
-                  placeholder="Call a token or share alpha... (type $ to select a token, e.g. $SPIDER!)"
-                  class="w-full text-sm sm:text-base p-3.5 rounded-xl border border-border bg-black text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground focus:border-border resize-none leading-relaxed"
-                  @input="handleComposerInput"
-                  @keydown="handleComposerKeydown"
-                />
-
-                <!-- Floating $ Cashtag Live Autocomplete Popup -->
-                <div
-                  v-if="showCashtagSuggestions && cashtagSuggestions.length > 0"
-                  class="absolute left-0 right-0 top-full mt-1 bg-card border border-border/90 rounded-2xl shadow-2xl p-2 z-50 space-y-1 text-xs max-h-56 overflow-y-auto"
-                >
-                  <div
-                    class="px-2 py-1 text-xs text-muted-foreground uppercase font-bold flex items-center justify-between border-b border-border/50"
-                  >
-                    <span class="flex items-center gap-1">
-                      Select Token for Callout ${{ cashtagQuery || '' }}
-                    </span>
-                    <span class="text-xs">Tab / Enter to pick</span>
-                  </div>
-
-                  <button
-                    v-for="(tItem, sIdx) in cashtagSuggestions"
-                    :key="tItem.token.address"
-                    type="button"
-                    class="w-full flex items-center justify-between p-2 rounded-xl transition cursor-pointer text-left"
-                    :class="
-                      sIdx === selectedSuggestionIndex
-                        ? 'bg-zinc-900 text-foreground font-bold'
-                        : 'hover:bg-zinc-950 text-foreground'
-                    "
-                    @click="selectCashtagToken(tItem.token)"
-                  >
-                    <div class="flex items-center gap-2.5 min-w-0">
-                      <OptimizedImage
-                        :src="tItem.token.logo"
-                        :alt="tItem.token.name"
-                        :fallback-text="tItem.token.symbol"
-                        :width="22"
-                        :height="22"
-                        class="rounded-md shrink-0 border border-border/50"
-                      />
-                      <div class="min-w-0">
-                        <span class="font-black text-foreground block text-xs truncate">
-                          ${{ tItem.token.symbol }}
-                        </span>
-                        <span class="text-xs text-muted-foreground truncate block font-sans">
-                          {{ tItem.token.name }}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div class="text-right shrink-0">
-                      <span class="text-xs font-bold block text-foreground">
-                        {{ formatMarketCap(tItem.marketData?.marketCapUsd) }}
-                      </span>
-                      <span
-                        class="text-xs font-bold"
-                        :class="
-                          (tItem.marketData?.priceChange24h ?? 0) >= 0
-                            ? 'text-emerald-500'
-                            : 'text-rose-500'
-                        "
-                      >
-                        {{ (tItem.marketData?.priceChange24h ?? 0) >= 0 ? '+' : ''
-                        }}{{ (tItem.marketData?.priceChange24h ?? 0).toFixed(1) }}%
-                      </span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Twitter / X Style Attached Image Preview Card -->
-              <div
-                v-if="composerImagePreview"
-                class="relative rounded-2xl overflow-hidden border border-border/80 bg-muted/20 max-h-72 w-full group"
-              >
-                <img
-                  :src="composerImagePreview"
-                  alt="Attached Preview"
-                  class="w-full h-full object-cover max-h-72"
-                />
-
-                <!-- Top-Right Remove (X) Button like Twitter -->
-                <button
-                  type="button"
-                  class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center transition cursor-pointer shadow-md backdrop-blur-xs"
-                  title="Remove image"
-                  @click="removeAttachedImage"
-                >
-                  <X class="w-4 h-4" />
-                </button>
-
-                <!-- Uploading / Pinning Status Banner -->
-                <div
-                  v-if="isUploadingMedia"
-                  class="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center gap-2 text-xs text-white"
-                >
-                  <Loader2 class="w-4 h-4 animate-spin text-primary" />
-                  <span>Uploading to IPFS...</span>
-                </div>
-              </div>
-
-              <!-- Media Attachment Input -->
-              <div v-if="showMediaInput" class="pt-1">
-                <Input
-                  v-model="composerImageUrl"
-                  type="text"
-                  placeholder="Image / Chart URL (https://... or ipfs://...)"
-                  class="h-8 text-xs rounded-xl"
-                />
-              </div>
-
-              <!-- On-Chain Balance Verifier (Holder Badge) -->
-              <div
-                v-if="account && selectedToken && callerPositionUsd >= 1.0"
-                class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-between gap-2 text-xs"
-              >
-                <div class="flex items-center gap-1.5 min-w-0">
-                  <ShieldCheck class="w-4 h-4 shrink-0 text-emerald-400" />
-                  <span class="truncate">
-                    Verified Holder (${{ callerPositionUsd.toFixed(2) }}):
-                    <strong
-                      >{{ callerTokenBalance.toLocaleString() }} ${{ selectedToken.symbol }}</strong
-                    >
-                  </span>
-                </div>
-              </div>
-
-              <div
-                v-else-if="account && selectedToken && callerPositionUsd < 1.0 && !checkingBalance"
-                class="p-2 rounded-xl bg-black border border-border text-muted-foreground flex items-center justify-between gap-2 text-xs font-sans"
-              >
-                <div class="flex items-center gap-1.5 min-w-0">
-                  <span class="text-xs">
-                    Mentioning ${{ selectedToken.symbol }} &middot; Hold $1+ to earn a Verified
-                    Holder badge.
-                  </span>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  class="h-6 px-2 text-xs shrink-0 rounded-lg cursor-pointer border-border hover:bg-zinc-900"
-                  @click="navigateToToken(selectedToken.address)"
-                >
-                  Buy ${{ selectedToken.symbol }}
-                </Button>
-              </div>
-
-              <!-- Composer Footer Toolbar -->
-              <div class="flex items-center justify-between pt-1 border-t border-border/50">
-                <div class="flex items-center gap-2">
-                  <!-- Hidden File Input for Device Photo Upload like Twitter -->
-                  <input
-                    ref="mediaFileInputRef"
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp,image/gif"
-                    class="hidden"
-                    @change="handleMediaFileChange"
-                  />
-
-                  <button
-                    type="button"
-                    class="p-1.5 rounded-lg border border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground transition cursor-pointer flex items-center gap-1.5"
-                    :class="
-                      composerImagePreview ? 'border-primary/40 bg-primary/10 text-primary' : ''
-                    "
-                    title="Upload photo from device (like Twitter)"
-                    @click="triggerMediaUpload"
-                  >
-                    <ImageIcon class="w-4 h-4" />
-                    <span class="text-xs hidden sm:inline">Photo</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    class="p-1.5 rounded-lg border border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground transition cursor-pointer"
-                    :class="showMediaInput ? 'border-primary/40 bg-primary/10 text-primary' : ''"
-                    title="Paste Image or Chart URL"
-                    @click="showMediaInput = !showMediaInput"
-                  >
-                    <Link2 class="w-4 h-4" />
-                  </button>
-
-                  <span class="text-xs text-muted-foreground">
-                    {{ composerContent.length }}/500
-                  </span>
-                </div>
-
-                <Button
-                  size="sm"
-                  class="rounded-xl px-5 h-9 font-bold text-sm cursor-pointer shadow-xs gap-1.5"
-                  :disabled="
-                    isPostingCall ||
-                    !composerContent.trim() ||
-                    (selectedToken !== null && callerTokenBalance <= 0)
-                  "
-                  @click="submitCallout"
-                >
-                  <Loader2 v-if="isPostingCall" class="w-3.5 h-3.5 animate-spin" />
-                  <Megaphone v-else class="w-3.5 h-3.5" />
-                  <span>Post Call</span>
-                </Button>
-              </div>
-
-              <div
-                v-if="composerError"
-                class="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-2.5 mt-2"
-              >
-                {{ composerError }}
-              </div>
-            </div>
-          </div>
-        </div>
+        <FeedComposer @posted="onCalloutPosted" @navigate-to-token="navigateToToken" />
 
         <!-- 3. Hybrid Timeline Cards (Card-based with X / Twitter conversation mechanics) -->
         <div
           v-if="loading && callouts.length === 0"
           class="py-20 text-center text-muted-foreground"
         >
-          <Loader2 class="w-7 h-7 animate-spin mx-auto mb-3 text-primary" />
+          <Loader2 class="w-7 h-7 animate-spin mx-auto mb-3 text-muted-foreground" />
           <p class="text-xs">Loading community alpha...</p>
         </div>
 
@@ -360,11 +67,14 @@
       </div>
 
       <!-- RIGHT: Hybrid Alpha Radar & Trending Movers Component -->
-      <FeedSidebar
-        v-model:search-query="searchQuery"
-        :hot-tokens="hotTokens"
-        @select-token="navigateToToken"
-      />
+      <div class="space-y-4 lg:sticky lg:top-20">
+        <FeedSidebar
+          v-model:search-query="searchQuery"
+          :hot-tokens="hotTokens"
+          @select-token="navigateToToken"
+        />
+        <FeedTopCallers :callers="topCallers" @select-caller="navigateToCaller" />
+      </div>
     </div>
 
     <!-- Modals & Sheets -->
@@ -405,28 +115,24 @@ import { useTokenStore } from '@/composables/useTokenStore';
 import { usePinnedTokens } from '@/composables/usePinnedTokens';
 import { useFeed, type FeedFilterType } from '@/composables/useFeed';
 import { useFollows } from '@/composables/useFollows';
-import { uploadFile } from '@/lib/api-client';
-import { Loader2, Image as ImageIcon, Megaphone, ShieldCheck, X, Link2 } from 'lucide-vue-next';
-import { Button } from '@/components/ui/button';
+import { Loader2, Megaphone } from 'lucide-vue-next';
 import { Empty } from '@/components/ui/empty';
-import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import OptimizedImage from '@/components/ui/OptimizedImage.vue';
-import { Jazzicon } from '@/components/ui/avatar';
 import ShareModal from './ShareModal.vue';
 import ThreadModal from './ThreadModal.vue';
 import QuoteModal from './QuoteModal.vue';
-import FeedAlphaTicker from './FeedAlphaTicker.vue';
 import FeedSidebar from './FeedSidebar.vue';
 import FeedCalloutCard from './FeedCalloutCard.vue';
-import { getChainIcon, getChainShortName, formatMarketCap } from '@/lib/utils';
+import FeedComposer from './FeedComposer.vue';
+import FeedFilterBar from './FeedFilterBar.vue';
+import FeedTopCallers from './FeedTopCallers.vue';
+import { rankCallers } from '@/lib/top-callers';
+import { getChainIcon, getChainShortName } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';
 import { SUPPORTED_CHAINS } from '@goton/shared-types';
 import { getUserIdentity } from '@/lib/username';
-import { compressAndConvertToWebp } from '@/lib/image-optimizer';
 import { toast } from '@/components/ui/sonner';
-import type { FeedCalloutItem, LaunchedTokenEntity } from '@goton/shared-types';
+import type { FeedCalloutItem } from '@goton/shared-types';
 
 const emit = defineEmits<{
   (e: 'select-token', address: string): void;
@@ -446,10 +152,8 @@ const {
   pageSize,
   filteredCallouts,
   fetchFeed,
-  postCallout,
   toggleLike,
   toggleRepost,
-  fetchCallerBalance,
 } = useFeed();
 
 type ChainFilterType = string;
@@ -471,10 +175,10 @@ const chainFilterOptions = computed(() => {
   ];
 });
 
-function setChainFilter(key: ChainFilterType) {
-  selectedChainFilter.value = key;
+// Another tab, chain or network starts the list from its first page.
+watch([activeFilter, selectedChainFilter, activeNetwork], () => {
   currentPage.value = 1;
-}
+});
 
 // Multi-chain smart feed stream (shows all chains by default with instant filter)
 const networkCallouts = computed(() => {
@@ -489,16 +193,6 @@ const networkCallouts = computed(() => {
 const paginatedCallouts = computed(() => {
   const start = (currentPage.value - 1) * pageSize;
   return networkCallouts.value.slice(start, start + pageSize);
-});
-
-watch(activeNetwork, () => {
-  currentPage.value = 1;
-  if (networkTokens.value.length > 0) {
-    selectedToken.value = networkTokens.value[0].token;
-    checkCallerPosition(selectedToken.value.address);
-  } else {
-    selectedToken.value = null;
-  }
 });
 
 // Watchlist Pin Feature — shared singleton composable (FE-02)
@@ -554,186 +248,17 @@ async function onQuotePosted(): Promise<void> {
   await fetchFeed(account.value || undefined);
 }
 
-// Composer state
-const composerContent = ref('');
-const composerTargetMcap = ref('$100K MC');
-const composerImageUrl = ref('');
-const composerImagePreview = ref('');
-const pendingMediaFile = ref<File | null>(null);
-const mediaFileInputRef = ref<HTMLInputElement | null>(null);
-const isUploadingMedia = ref(false);
-const showMediaInput = ref(false);
-const isPostingCall = ref(false);
-const composerError = ref<string | null>(null);
-const selectedToken = ref<LaunchedTokenEntity | null>(null);
-const callerTokenBalance = ref<number>(0);
-const checkingBalance = ref(false);
-
-function triggerMediaUpload(): void {
-  mediaFileInputRef.value?.click();
-}
-
-async function handleMediaFileChange(e: Event): Promise<void> {
-  const input = e.target as HTMLInputElement;
-  if (input.files && input.files[0]) {
-    await processMediaFile(input.files[0]);
-  }
-}
-
-async function processMediaFile(file: File): Promise<void> {
-  composerError.value = null;
-  if (!file.type.startsWith('image/')) {
-    composerError.value = 'Please select a valid image file (PNG, JPG, WEBP, GIF).';
-    return;
-  }
-  if (file.size > 8 * 1024 * 1024) {
-    composerError.value = 'Image size must be less than 8MB.';
-    return;
-  }
-
-  try {
-    // Generate instant local preview immediately (zero delay / no immediate network upload)
-    const processed = await compressAndConvertToWebp(file, 1200, 0.85);
-    composerImagePreview.value = processed.dataUrl;
-    pendingMediaFile.value = processed.file;
-  } catch (err) {
-    console.warn('[Feed] Local compression failed, using direct object URL preview:', err);
-    composerImagePreview.value = URL.createObjectURL(file);
-    pendingMediaFile.value = file;
-  }
-}
-
-function removeAttachedImage(): void {
-  composerImagePreview.value = '';
-  composerImageUrl.value = '';
-  pendingMediaFile.value = null;
-  if (mediaFileInputRef.value) mediaFileInputRef.value.value = '';
-}
-
-// Live Cashtag ($) Autocomplete State
-const composerTextarea = ref<HTMLTextAreaElement | null>(null);
-const showCashtagSuggestions = ref(false);
-const cashtagQuery = ref('');
-const selectedSuggestionIndex = ref(0);
-
-const cashtagSuggestions = computed(() => {
-  if (!showCashtagSuggestions.value) return [];
-  const q = cashtagQuery.value.trim().toLowerCase();
-  const pool = networkTokens.value;
-  if (!q) return pool.slice(0, 8);
-  return pool
-    .filter(
-      (t) =>
-        t.token.symbol.toLowerCase().includes(q) ||
-        t.token.name.toLowerCase().includes(q) ||
-        t.token.address.toLowerCase().includes(q),
-    )
-    .slice(0, 8);
-});
-
-function handleComposerInput(): void {
-  const textarea = composerTextarea.value;
-  const cursor = textarea ? textarea.selectionStart : composerContent.value.length;
-  const textBeforeCursor = composerContent.value.slice(0, cursor);
-
-  // Match the latest $ trigger (e.g. "$", "$SP", etc.)
-  const match = textBeforeCursor.match(/(?:^|\s)\$([a-zA-Z0-9_]*)$/);
-
-  if (match) {
-    showCashtagSuggestions.value = true;
-    cashtagQuery.value = match[1];
-    selectedSuggestionIndex.value = 0;
-  } else {
-    showCashtagSuggestions.value = false;
-  }
-
-  // Auto-detect if user typed full cashtag, e.g. $SPIDER
-  const symbols = networkTokens.value;
-  for (const item of symbols) {
-    const regex = new RegExp(`\\$${item.token.symbol}\\b`, 'i');
-    if (regex.test(composerContent.value)) {
-      selectedToken.value = item.token;
-      checkCallerPosition(item.token.address);
-      break;
-    }
-  }
-}
-
-function handleComposerKeydown(e: KeyboardEvent): void {
-  if (!showCashtagSuggestions.value || cashtagSuggestions.value.length === 0) return;
-
-  if (e.key === 'ArrowDown') {
-    e.preventDefault();
-    selectedSuggestionIndex.value =
-      (selectedSuggestionIndex.value + 1) % cashtagSuggestions.value.length;
-  } else if (e.key === 'ArrowUp') {
-    e.preventDefault();
-    selectedSuggestionIndex.value =
-      (selectedSuggestionIndex.value - 1 + cashtagSuggestions.value.length) %
-      cashtagSuggestions.value.length;
-  } else if (e.key === 'Enter' || e.key === 'Tab') {
-    e.preventDefault();
-    const token = cashtagSuggestions.value[selectedSuggestionIndex.value]?.token;
-    if (token) {
-      selectCashtagToken(token);
-    }
-  } else if (e.key === 'Escape') {
-    showCashtagSuggestions.value = false;
-  }
-}
-
-function selectCashtagToken(token: LaunchedTokenEntity): void {
-  const textarea = composerTextarea.value;
-  const cursor = textarea ? textarea.selectionStart : composerContent.value.length;
-  const textBeforeCursor = composerContent.value.slice(0, cursor);
-  const textAfterCursor = composerContent.value.slice(cursor);
-
-  // Replace the latest $... trigger with the full $SYMBOL
-  const replacedBefore = textBeforeCursor.replace(/(?:^|\s)\$([a-zA-Z0-9_]*)$/, (m) => {
-    const leadingSpace = m.startsWith(' ') || m.startsWith('\n') ? m[0] : '';
-    return `${leadingSpace}$${token.symbol} `;
-  });
-
-  composerContent.value = `${replacedBefore}${textAfterCursor}`;
-  selectedToken.value = token;
-  showCashtagSuggestions.value = false;
-  checkCallerPosition(token.address);
-
-  setTimeout(() => {
-    if (textarea) {
-      textarea.focus();
-      const nextPos = replacedBefore.length;
-      textarea.setSelectionRange(nextPos, nextPos);
-    }
-  }, 10);
-}
-
-async function checkCallerPosition(tokenAddress: string): Promise<void> {
-  if (!account.value || !tokenAddress) {
-    callerTokenBalance.value = 0;
-    return;
-  }
-  checkingBalance.value = true;
-  try {
-    callerTokenBalance.value = await fetchCallerBalance(tokenAddress, account.value);
-  } finally {
-    checkingBalance.value = false;
-  }
+async function onCalloutPosted(): Promise<void> {
+  await fetchFeed(account.value || undefined);
 }
 
 const filterTabs = computed<Array<{ key: FeedFilterType; label: string }>>(() => [
   { key: 'all', label: 'All Calls' },
   ...(account.value ? [{ key: 'following' as const, label: t('followingTab') }] : []),
-  { key: 'target', label: 'Targets' },
   { key: 'whale', label: 'Whales' },
   { key: 'profit', label: 'In Profit' },
   { key: 'media', label: 'Media' },
 ]);
-
-function handleFilterClick(key: FeedFilterType): void {
-  activeFilter.value = key;
-  currentPage.value = 1;
-}
 
 // Following tab: the authors the connected wallet follows.
 const { list: listFollows } = useFollows();
@@ -763,125 +288,8 @@ const hotTokens = computed(() => {
     .slice(0, 5);
 });
 
-// Alpha Radar: the most-called tokens of the last 24h, with how many calls each has.
-const radarTokens = computed(() => {
-  const since = Date.now() - 86_400_000;
-  const counts = new Map<string, number>();
-  for (const c of callouts.value) {
-    const at = c.createdAt < 1e12 ? c.createdAt * 1000 : c.createdAt;
-    if (c.parentId || at < since) continue;
-    const key = c.tokenAddress.toLowerCase();
-    counts.set(key, (counts.get(key) ?? 0) + 1);
-  }
-  return [...counts]
-    .map(([address, calls]) => ({
-      item: networkTokens.value.find((t) => t.token.address.toLowerCase() === address),
-      calls,
-    }))
-    .filter((x): x is { item: (typeof networkTokens.value)[number]; calls: number } => !!x.item)
-    .sort((a, b) => b.calls - a.calls)
-    .slice(0, 8)
-    .map(({ item, calls }) => ({ ...item, calls }));
-});
-
-function detectTokenFromContent(text: string): LaunchedTokenEntity | null {
-  const match = text.match(/\$([a-zA-Z0-9_]+)/);
-  if (!match) return null;
-  const symbol = match[1].toLowerCase();
-  const pool = networkTokens.value;
-  const found = pool.find(
-    (t) => t.token.symbol.toLowerCase() === symbol || t.token.name.toLowerCase() === symbol,
-  );
-  return found ? found.token : null;
-}
-
-watch(composerContent, (newVal) => {
-  const detected = detectTokenFromContent(newVal);
-  if (detected && (!selectedToken.value || selectedToken.value.address !== detected.address)) {
-    selectedToken.value = detected;
-    checkCallerPosition(detected.address);
-  } else if (!detected && !newVal.includes('$')) {
-    selectedToken.value = null;
-    callerTokenBalance.value = 0;
-  }
-});
-
-const callerPositionUsd = computed(() => {
-  if (!selectedToken.value || callerTokenBalance.value <= 0) return 0;
-  const item = networkTokens.value.find((t) => t.token.address === selectedToken.value?.address);
-  const price = item?.marketData?.priceUsd || 0;
-  return callerTokenBalance.value * price;
-});
-
-async function submitCallout(): Promise<void> {
-  if (!account.value) {
-    openWallet();
-    return;
-  }
-  const content = composerContent.value.trim();
-  if (!content) return;
-
-  const targetToken =
-    selectedToken.value ||
-    detectTokenFromContent(content) ||
-    (networkTokens.value?.[0]?.token ?? null);
-  if (!targetToken) {
-    composerError.value = 'Please mention a token (e.g. $TOKEN) or launch one first.';
-    return;
-  }
-
-  isPostingCall.value = true;
-  composerError.value = null;
-
-  try {
-    let finalImageUrl = composerImageUrl.value.trim() || undefined;
-
-    // Upload pending media in background on submit
-    if (pendingMediaFile.value) {
-      isUploadingMedia.value = true;
-      try {
-        const data = await uploadFile<{
-          success: boolean;
-          data?: { cid?: string; uri?: string; url?: string };
-        }>('/api/ipfs/upload', pendingMediaFile.value);
-        const ipfsUri = data.data?.cid
-          ? `ipfs://${data.data.cid}`
-          : data.data?.uri || data.data?.url || '';
-        if (ipfsUri) {
-          finalImageUrl = ipfsUri;
-        }
-      } catch (uploadErr) {
-        console.warn('[Feed] IPFS upload on submit fallback:', uploadErr);
-        if (!finalImageUrl && composerImagePreview.value) {
-          finalImageUrl = composerImagePreview.value;
-        }
-      } finally {
-        isUploadingMedia.value = false;
-      }
-    }
-
-    const created = await postCallout({
-      tokenAddress: targetToken.address,
-      authorAddress: account.value,
-      content,
-      imageUrl: finalImageUrl,
-      targetMcap: composerTargetMcap.value,
-    });
-    if (created) {
-      toast.success(`Posted call on $${targetToken.symbol}!`);
-      composerContent.value = '';
-      composerImageUrl.value = '';
-      composerImagePreview.value = '';
-      pendingMediaFile.value = null;
-      showMediaInput.value = false;
-      await fetchFeed(account.value);
-    }
-  } catch (err) {
-    composerError.value = (err as Error).message || 'Failed to post callout.';
-  } finally {
-    isPostingCall.value = false;
-  }
-}
+// Leaderboard of the loaded calls, ranked by profit since each call.
+const topCallers = computed(() => rankCallers(callouts.value));
 
 async function handleLike(commentId: string): Promise<void> {
   if (!account.value) {
@@ -912,8 +320,5 @@ function openImage(url?: string): void {
 
 onMounted(async () => {
   await Promise.allSettled([fetchFeed(account.value || undefined), fetchTokens()]);
-  if (networkTokens.value?.length > 0 && !selectedToken.value) {
-    selectedToken.value = networkTokens.value[0].token;
-  }
 });
 </script>

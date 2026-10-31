@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { logger } from '../../observability';
+import { holderPosition } from '../application/holder-position';
 import { verifyMessage, type Address, type Hex } from 'viem';
 import {
   type TokenCommentEntity,
@@ -295,16 +296,20 @@ export function registerSocialRoutes(router: Router, deps: AppContainer): void {
           try {
             const holders = await repository.getHolders(address);
             const inHolders = holders.find(
-              (h) =>
-                h.address.toLowerCase() === authorAddress.toLowerCase() &&
-                parseFloat(h.balance) > 0,
+              (h) => h.address.toLowerCase() === authorAddress.toLowerCase(),
             );
             if (inHolders) {
-              hasPosition = true;
-              const tokenCount = parseFloat(inHolders.balance);
-              const mkt = await repository.getMarketData(address as `0x${string}`);
-              const price = mkt?.priceUsd ?? 0;
-              verifiedPositionUsd = tokenCount * price;
+              const [token, mkt] = await Promise.all([
+                repository.findByAddress(address as `0x${string}`),
+                repository.getMarketData(address as `0x${string}`),
+              ]);
+              // Indexed balances are raw units: scale by the token's decimals before pricing.
+              const position = holderPosition(inHolders, token?.decimals ?? 18, mkt?.priceUsd ?? 0);
+              if (position) {
+                hasPosition = true;
+                verifiedPositionUsd = position.usd;
+                supplyPercent = position.supplyPercent;
+              }
             }
           } catch {
             // Non-blocking

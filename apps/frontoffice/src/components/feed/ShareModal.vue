@@ -173,11 +173,9 @@
               </div>
 
               <div class="text-right">
-                <span class="text-xs text-muted-foreground block uppercase font-bold">{{
-                  t('targetMc')
-                }}</span>
+                <span class="text-xs text-muted-foreground block uppercase font-bold">MC</span>
                 <span class="text-xs font-black text-primary">
-                  {{ call.targetMcap || 'Moon' }}
+                  {{ formatMarketCap(call.tokenMarketCapUsd) }}
                 </span>
               </div>
             </div>
@@ -264,7 +262,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { Jazzicon } from '@/components/ui/avatar';
-import { shortenAddress, formatRelativeTime } from '@/lib/utils';
+import { shortenAddress, formatRelativeTime, formatMarketCap } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';
 import { toast } from '@/components/ui/sonner';
 import { SITE } from '@/lib/site';
@@ -313,11 +311,10 @@ function shareOnX(): void {
   if (typeof window === 'undefined' || !props.call) return;
   const call = props.call;
   const symbolStr = call.tokenSymbol ? `$${call.tokenSymbol} ` : '';
-  const targetStr = call.targetMcap ? `Target: ${call.targetMcap} ` : '';
   const posStr = call.positionUsd ? `Position: $${call.positionUsd.toFixed(1)} ` : '';
   const url = getPostUrl();
   const text = encodeURIComponent(
-    `Verified Call on ${symbolStr}\n${targetStr}${posStr}\n\n"${call.content.slice(0, 100)}"\n\n${url} via @gotondotfun`,
+    `Verified Call on ${symbolStr}\n${posStr}\n\n"${call.content.slice(0, 100)}"\n\n${url} via @gotondotfun`,
   );
   window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank', 'noopener,noreferrer');
 }
@@ -386,13 +383,6 @@ async function exportPnlCardCanvas(): Promise<string | null> {
   ctx.fillStyle = isProfit ? '#10b981' : '#f43f5e';
   ctx.font = 'bold 20px monospace';
   ctx.fillText(`${isProfit ? '+' : ''}$${(call.profitUsd ?? 0).toFixed(1)}`, 325, 210);
-
-  // Target Mcap
-  if (call.targetMcap) {
-    ctx.fillStyle = '#38bdf8';
-    ctx.font = 'bold 14px monospace';
-    ctx.fillText(`Target: ${call.targetMcap}`, 30, 260);
-  }
 
   // Footer
   ctx.fillStyle = '#52525b';
