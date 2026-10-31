@@ -6,16 +6,13 @@ import {
   HistogramSeries,
   AreaSeries,
   createTextWatermark,
-  createSeriesMarkers,
   PriceScaleMode,
   CrosshairMode,
   ColorType,
   TickMarkType,
   type IChartApi,
   type ISeriesApi,
-  type ISeriesMarkersPluginApi,
   type ITextWatermarkPluginApi,
-  type SeriesMarker,
   type Time,
   type AutoscaleInfo,
 } from 'lightweight-charts';
@@ -43,15 +40,6 @@ export interface CandlePoint {
   volume?: number;
 }
 
-export interface ChartMarker {
-  time: number | string;
-  position?: 'aboveBar' | 'belowBar' | 'inBar';
-  color?: string;
-  shape?: 'arrowUp' | 'arrowDown' | 'circle' | 'square';
-  text?: string;
-  size?: number;
-}
-
 interface Bar {
   time: Time;
   open: number;
@@ -70,7 +58,6 @@ interface Props {
   loading?: boolean; // parent sets true while fetching a new timeframe
   totalSupply?: number; // used for the Market Cap mode (price x supply)
   isGraduated?: boolean; // true if already graduated to DEX
-  markers?: ChartMarker[]; // optional trade buy/sell markers
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -81,7 +68,6 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
   totalSupply: 1_000_000_000,
   isGraduated: false,
-  markers: () => [],
 });
 
 // ---------------------------------------------------------------------------
@@ -96,13 +82,10 @@ let mainSeries: ISeriesApi<'Candlestick' | 'Area'> | null = null;
 let volumeSeries: ISeriesApi<'Histogram'> | null = null;
 let themeObserver: MutationObserver | null = null;
 let watermarkPlugin: ITextWatermarkPluginApi<Time> | null = null;
-let markersPlugin: ISeriesMarkersPluginApi<Time> | null = null;
 
 // Bars currently drawn (already scaled for the active mode). Read by autoscale.
 let shownBars: Bar[] = [];
 let lastKey = '';
-let lastLen = 0;
-let lastLastTime: number | null = null;
 
 const PREF_KEY = 'trading-chart:prefs';
 function loadPrefs(): {
@@ -246,42 +229,6 @@ function updateWatermark() {
     }
   } catch {
     // Graceful fallback if pane watermark is unsupported
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Series Markers (Trade Execution & Alpha Indicators)
-// ---------------------------------------------------------------------------
-
-function updateMarkers() {
-  if (!mainSeries) return;
-  try {
-    const raw = props.markers || [];
-    if (raw.length > 0) {
-      const formattedMarkers = raw.map((m): SeriesMarker<Time> => {
-        let t = typeof m.time === 'string' ? new Date(m.time).getTime() / 1000 : Number(m.time);
-        if (t > 2_000_000_000) t = t / 1000;
-        t = Math.floor(t);
-        return {
-          time: t as Time,
-          position: m.position || (m.shape === 'arrowDown' ? 'aboveBar' : 'belowBar'),
-          color: m.color || (m.shape === 'arrowDown' ? BEAR : BULL),
-          shape: m.shape || (m.position === 'aboveBar' ? 'arrowDown' : 'arrowUp'),
-          text: m.text,
-          size: m.size ?? 1,
-        };
-      });
-
-      if (!markersPlugin) {
-        markersPlugin = createSeriesMarkers(mainSeries, formattedMarkers);
-      } else {
-        markersPlugin.setMarkers(formattedMarkers);
-      }
-    } else if (markersPlugin) {
-      markersPlugin.setMarkers([]);
-    }
-  } catch {
-    // Graceful fallback
   }
 }
 
@@ -520,7 +467,6 @@ function initChart() {
 
   createMainSeries();
   updateWatermark();
-  updateMarkers();
 
   chart.subscribeCrosshairMove((param) => {
     if (!param?.time || !mainSeries) {
@@ -561,14 +507,6 @@ function destroyChart() {
   chartReady = false;
   themeObserver?.disconnect();
   themeObserver = null;
-  if (markersPlugin) {
-    try {
-      markersPlugin.detach();
-    } catch {
-      // ignore
-    }
-    markersPlugin = null;
-  }
   if (watermarkPlugin) {
     try {
       watermarkPlugin.detach();
@@ -602,47 +540,58 @@ const toVol = (b: Bar) => ({
   color: b.volume === 0 ? 'transparent' : b.close >= b.open ? BULL_VOL : BEAR_VOL,
 });
 
+/** Index of the first bar of `next` that `prev` does not show as is (prev.length when none). */
+function firstChangedBar(prev: Bar[], next: Bar[]): number {
+  const n = Math.min(prev.length, next.length);
+  for (let i = 0; i < n; i++) {
+    const a = prev[i]!;
+    const b = next[i]!;
+    if (
+      a.time !== b.time ||
+      a.open !== b.open ||
+      a.high !== b.high ||
+      a.low !== b.low ||
+      a.close !== b.close ||
+      a.volume !== b.volume
+    ) {
+      return i;
+    }
+  }
+  return n;
+}
+
 function sync(base: Bar[], forceFull = false) {
   if (!chartReady || !chart || !mainSeries || !volumeSeries) return;
   const bars = scaleBars(base);
+  const prev = shownBars;
   shownBars = bars;
 
   const key = `${props.tokenAddress}|${props.resolution}|${valueMode.value}|${chartType.value}|${props.totalSupply}`;
   const keyChanged = key !== lastKey;
+  lastKey = key;
 
-  // canAppend: same context, same or +1/+2 bars, last bar time matches
-  const canAppend =
-    !forceFull &&
-    !keyChanged &&
-    lastLen > 0 &&
-    bars.length >= lastLen &&
-    bars.length - lastLen <= 2 &&
-    Number(bars[lastLen - 1]?.time) === lastLastTime;
-
-  if (canAppend) {
-    // Only update the last candle(s) in-place — scroll position untouched
-    for (let i = lastLen - 1; i < bars.length; i++) {
-      mainSeries.update(toMain(bars[i]));
-      volumeSeries.update(toVol(bars[i]));
-    }
-  } else if (keyChanged || forceFull || lastLen === 0) {
-    // Full replace only when token/resolution/mode changed, or first load
+  if (keyChanged || forceFull || prev.length === 0) {
+    // Full replace when the token, resolution or mode changed, or on first load.
     mainSeries.setData(bars.map(toMain));
     volumeSeries.setData(bars.map(toVol));
     showLatest(bars.length);
   } else {
-    // Same context, non-append delta (shouldn't normally happen with silent merge) — still update last bar
-    for (let i = Math.max(0, lastLen - 1); i < bars.length; i++) {
-      mainSeries.update(toMain(bars[i]));
-      volumeSeries.update(toVol(bars[i]));
+    const from = firstChangedBar(prev, bars);
+    if (from >= prev.length - 1 && bars.length >= prev.length) {
+      // Only the last bar changed or bars were added: update them in place, scroll untouched.
+      for (let i = from; i < bars.length; i++) {
+        mainSeries.update(toMain(bars[i]!));
+        volumeSeries.update(toVol(bars[i]!));
+      }
+    } else if (from < bars.length || bars.length !== prev.length) {
+      // An older bar changed (a trade indexed after its bar had passed): series.update cannot
+      // rewrite it, so replace the data and keep the range the viewer is looking at.
+      const range = chart.timeScale().getVisibleLogicalRange();
+      mainSeries.setData(bars.map(toMain));
+      volumeSeries.setData(bars.map(toVol));
+      if (range) chart.timeScale().setVisibleLogicalRange(range);
     }
   }
-
-  updateMarkers();
-
-  lastKey = key;
-  lastLen = bars.length;
-  lastLastTime = bars.length ? Number(bars[bars.length - 1].time) : null;
 }
 
 function showLatest(total: number) {
@@ -674,14 +623,6 @@ watch(formatted, (bars) => {
 });
 
 watch(
-  () => props.markers,
-  () => {
-    updateMarkers();
-  },
-  { deep: true },
-);
-
-watch(
   () => props.tokenSymbol,
   () => {
     updateWatermark();
@@ -693,8 +634,6 @@ watch(
   () => {
     if (!chartReady) return;
     lastKey = '';
-    lastLen = 0;
-    lastLastTime = null;
     sync(formatted.value, true);
   },
 );
@@ -714,8 +653,6 @@ watch(
     });
     // Reset lastKey so the next sync() treats it as a new context unconditionally
     lastKey = '';
-    lastLen = 0;
-    lastLastTime = null;
     sync(formatted.value, true);
   },
 );
@@ -727,18 +664,9 @@ watch(
 function setChartType(type: 'candles' | 'area') {
   if (chartType.value === type || !chart || !mainSeries) return;
   chartType.value = type;
-  if (markersPlugin) {
-    try {
-      markersPlugin.detach();
-    } catch {
-      // ignore
-    }
-    markersPlugin = null;
-  }
   chart.removeSeries(mainSeries); // keep zoom, only swap the series
   createMainSeries();
   sync(formatted.value, true);
-  updateMarkers();
   savePrefs();
 }
 
