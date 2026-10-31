@@ -4,6 +4,7 @@
  * the owner actually receives, so the curve/pool fee, the token's tax and the 0.1% executor fee
  * are taken out first: an order fills when the market reaches the target, not later.
  */
+import { constantProductSellAt } from '@goton/math-sdk';
 import type { NetworkConfig } from '@goton/shared-types';
 
 export const EXECUTOR_FEE_BPS = 10;
@@ -70,6 +71,42 @@ export function sellMinOut(
   const quote = tokens * price * keep(VENUE_FEE_BPS) * keep(sellTaxBps) * keep(slippageBps);
   // The executor fee is taken from the output after the floor check, so it is not deducted here.
   return toScaled(quote, ctx.quoteDecimals);
+}
+
+/**
+ * Sell leg floor with price impact: what selling all `tokens` (whole) pays once the spot price is
+ * `price`, moving along a constant-product market with invariant `k` (raw units: curve reserves,
+ * or a v4 pool's in-range liquidity squared), after the venue fee, the sell tax and
+ * `toleranceBps`. Floors of tokens × price never filled for positions large against the market:
+ * selling them moves the price, so the sale pays less. Without `k` that is the floor used.
+ * `impact` is the share of tokens × price lost to it (0 to 1).
+ */
+export function sellFloor(
+  tokens: number,
+  price: number,
+  sellTaxBps: number,
+  ctx: PriceContext,
+  k: number | null,
+  toleranceBps = 0,
+): { floor: bigint; impact: number } {
+  if (!k || !(price > 0) || !(tokens > 0)) {
+    return {
+      floor: price > 0 ? sellMinOut(tokens, price, sellTaxBps, ctx, toleranceBps) : 0n,
+      impact: 0,
+    };
+  }
+  const atSpot = tokens * price * keep(VENUE_FEE_BPS) * keep(sellTaxBps);
+  const raw = constantProductSellAt(
+    k,
+    price * 10 ** (ctx.quoteDecimals - ctx.tokenDecimals),
+    tokens * 10 ** ctx.tokenDecimals,
+    VENUE_FEE_BPS,
+  );
+  const quote = (raw / 10 ** ctx.quoteDecimals) * keep(sellTaxBps);
+  return {
+    floor: toScaled(quote * keep(toleranceBps), ctx.quoteDecimals),
+    impact: atSpot > 0 ? Math.max(0, 1 - quote / atSpot) : 0,
+  };
 }
 
 /** Stop-loss trigger in the contract's unit: quote raw per token raw, times 1e36. */

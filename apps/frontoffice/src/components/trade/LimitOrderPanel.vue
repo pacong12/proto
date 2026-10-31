@@ -71,17 +71,19 @@
         <span class="text-xs text-muted-foreground">{{ t('stopLossAt') }}</span>
         <Input id="lo-sl" v-model="slInput" inputmode="decimal" :placeholder="t('optional')" />
       </label>
-      <label v-if="slTarget > 0" class="flex items-center justify-between gap-2 text-xs">
-        <span class="text-muted-foreground">{{ t('stopSlippage') }}</span>
-        <Input
-          id="lo-sl-slip"
-          v-model="slSlippageInput"
-          inputmode="decimal"
-          class="w-20 text-right"
-        />
-      </label>
-      <p v-if="slTarget > 0" class="text-xs text-muted-foreground">{{ t('stopTwapNote') }}</p>
+      <p
+        v-if="stopNote"
+        class="text-xs"
+        :class="stopReady ? 'text-muted-foreground' : 'text-amber-500'"
+      >
+        {{ stopNote }}
+      </p>
     </template>
+
+    <label v-if="selling" class="flex items-center justify-between gap-2 text-xs">
+      <span class="text-muted-foreground">{{ t('orderSlippage') }}</span>
+      <Input id="lo-slip" v-model="toleranceInput" inputmode="decimal" class="w-20 text-right" />
+    </label>
 
     <label class="flex items-center justify-between gap-2 text-xs">
       <span class="text-muted-foreground">{{ t('expiresIn') }}</span>
@@ -117,7 +119,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, toRef } from 'vue';
 import { parseUnits } from 'viem';
 import type { LaunchedTokenEntity, NetworkConfig, TokenMarketData } from '@goton/shared-types';
 import { Button } from '@/components/ui/button';
@@ -128,11 +130,12 @@ import { formatMarketCap } from '@/lib/utils';
 import {
   buyMinOut,
   priceAtMarketCap,
-  sellMinOut,
+  sellFloor,
   stopPriceX36,
   type PriceContext,
 } from '@/lib/limit-orders';
 import { useLimitOrders } from '@/composables/useLimitOrders';
+import { useOrderMarket } from '@/composables/useOrderMarket';
 
 const props = defineProps<{
   mode: 'limit' | 'tpsl';
@@ -155,7 +158,8 @@ const targetInput = ref('');
 const holdingsPct = ref(100);
 const tpInput = ref('');
 const slInput = ref('');
-const slSlippageInput = ref('3');
+/** Slippage tolerance of every sell leg (TP, SL, limit sell), in percent. */
+const toleranceInput = ref('3');
 const expiryDays = ref(7);
 
 const quoteSymbol = computed(() => props.network.nativeCurrency.symbol);
@@ -178,7 +182,15 @@ const amount = computed(() => num(amountInput.value));
 const target = computed(() => num(targetInput.value));
 const tpTarget = computed(() => num(tpInput.value));
 const slTarget = computed(() => num(slInput.value));
-const slSlippageBps = computed(() => Math.min(5_000, Math.round(num(slSlippageInput.value) * 100)));
+const toleranceBps = computed(() => Math.min(5_000, Math.round(num(toleranceInput.value) * 100)));
+const { invariant, stopOracle } = useOrderMarket(
+  toRef(props, 'network'),
+  toRef(props, 'token'),
+  toRef(props, 'marketData'),
+);
+const selling = computed(() =>
+  props.mode === 'limit' ? side.value === 'sell' : tpTarget.value > 0 || slTarget.value > 0,
+);
 
 const sellTokens = computed(() => {
   const raw = (props.userTokenBalance * BigInt(holdingsPct.value)) / 100n;
@@ -198,32 +210,43 @@ const plan = computed(() => {
       };
     }
     const raw = amount.value > 0 ? parseUnits(String(amount.value), ctx.value.tokenDecimals) : 0n;
+    const leg = sellFloor(
+      amount.value,
+      price,
+      props.sellTaxBps,
+      ctx.value,
+      invariant.value,
+      toleranceBps.value,
+    );
     return {
       kind: 'sell' as const,
       tokens: raw,
-      tpMinOut: sellMinOut(amount.value, price, props.sellTaxBps, ctx.value),
+      tpMinOut: leg.floor,
       slPriceX36: 0n,
       slMinOut: 0n,
+      impact: leg.impact,
     };
   }
   const tpPrice = priceAtMarketCap(tpTarget.value, ctx.value);
   const slPrice = priceAtMarketCap(slTarget.value, ctx.value);
+  const leg = (price: number) =>
+    sellFloor(
+      sellTokens.value.whole,
+      price,
+      props.sellTaxBps,
+      ctx.value,
+      invariant.value,
+      toleranceBps.value,
+    );
+  const tp = tpPrice > 0 ? leg(tpPrice) : { floor: 0n, impact: 0 };
+  const sl = slPrice > 0 ? leg(slPrice) : { floor: 0n, impact: 0 };
   return {
     kind: 'sell' as const,
     tokens: sellTokens.value.raw,
-    tpMinOut:
-      tpPrice > 0 ? sellMinOut(sellTokens.value.whole, tpPrice, props.sellTaxBps, ctx.value) : 0n,
+    tpMinOut: tp.floor,
     slPriceX36: slPrice > 0 ? stopPriceX36(slPrice, ctx.value) : 0n,
-    slMinOut:
-      slPrice > 0
-        ? sellMinOut(
-            sellTokens.value.whole,
-            slPrice,
-            props.sellTaxBps,
-            ctx.value,
-            slSlippageBps.value,
-          )
-        : 0n,
+    slMinOut: sl.floor,
+    impact: Math.max(tp.impact, sl.impact),
   };
 });
 
@@ -236,6 +259,7 @@ const summary = computed(() => {
     lines.push({ label: t('takeProfitReceives'), value: `≥ ${fmtQuote(p.tpMinOut)}` });
   if (p.slMinOut > 0n)
     lines.push({ label: t('stopLossReceives'), value: `≥ ${fmtQuote(p.slMinOut)}` });
+  if (p.impact >= 0.005) lines.push({ label: t('priceImpact'), value: `~${pct(p.impact)}%` });
   return lines;
 });
 
@@ -250,7 +274,28 @@ const warning = computed(() => {
     if (tpTarget.value > 0 && tpTarget.value <= mc) return t('limitSellBelowMarket');
     if (slTarget.value > 0 && slTarget.value >= mc) return t('stopAboveMarket');
   }
+  const p = plan.value;
+  if (p.kind === 'sell' && p.impact > 0.1) return t('largeOrderImpact', { pct: pct(p.impact) });
   return '';
+});
+
+const pct = (share: number) => (share * 100).toFixed(share < 0.1 ? 1 : 0);
+
+/** Whether stops can fire yet, and when they will: they trigger on a time-weighted price. */
+const stopReady = computed(() => stopOracle.value?.ready !== false);
+const stopNote = computed(() => {
+  if (!(slTarget.value > 0)) return '';
+  const o = stopOracle.value;
+  const minutes = String((o?.periodSeconds ?? 600) / 60);
+  if (!o || o.ready) return t('stopTwapNote', { minutes, max: String(Number(minutes) * 2) });
+  if (o.readyAt === null) return t('stopNotReadyFirstTrade', { minutes });
+  // Past its time, the history only rolls over on the next trade.
+  if (o.readyAt <= Date.now()) return t('stopNotReadyNextTrade');
+  const time = new Date(o.readyAt).toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return t('stopNotReady', { minutes, time });
 });
 
 const canSubmit = computed(() => {
