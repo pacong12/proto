@@ -3,7 +3,7 @@ import { protoV4PoolKey, gotonV4RouterAbi, type NetworkConfig } from '@goton/sha
 import type { ChainSwapParams } from '../types';
 import { waitForReceiptWithFallback } from '../../lib/viem-client';
 import { ensureAllowance } from '../../lib/wallet-tx';
-import { isDeployed, resolveMinAmountOut } from './utils';
+import { isDeployed, resolveMinAmountOut, swapGasLimit } from './utils';
 
 export interface V4QuoteConfig {
   /** Pool quote currency: address(0) for native ETH, or an ERC-20 (Arc USDC). */
@@ -56,7 +56,7 @@ export async function executeV4RouterSwap(
     });
   }
 
-  const hash = await walletClient.writeContract({
+  const swap = {
     address: router,
     abi: gotonV4RouterAbi,
     functionName: 'swapExactIn',
@@ -70,6 +70,10 @@ export async function executeV4RouterSwap(
     ],
     value: params.isBuy ? amountIn * quote.nativeScale : 0n,
     account,
+  } as const;
+  const hash = await walletClient.writeContract({
+    ...swap,
+    gas: await swapGasLimit(publicClient, swap),
     chain: walletClient.chain,
   });
   params.onSubmitted?.(hash);
