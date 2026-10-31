@@ -1,7 +1,7 @@
 import type { NetworkConfig } from '@goton/shared-types';
 import type { PublicClient } from 'viem';
 import type { IChainService } from '../domain/chain.port';
-import type { PriceFeedPort } from '../../tokens/domain/ports/price-feed.port';
+import type { PriceFeedPort } from '../../tokens';
 
 /** A network's chain backed by its viem client and the price feed. */
 export class ChainService implements IChainService {

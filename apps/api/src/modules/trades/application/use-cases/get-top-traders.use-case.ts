@@ -1,8 +1,8 @@
 import type { Address } from 'viem';
 import { FALLBACK_ETH_PRICE_USD, resolveTokenNetwork } from '@goton/shared-types';
 import type { TradeRepositoryPort } from '../../domain/ports/trade-repository.port';
-import type { TokenRepositoryPort } from '../../../tokens/domain/ports/token.repository.port';
-import type { PriceFeedPort } from '../../../tokens/domain/ports/price-feed.port';
+import type { TokenRepositoryPort } from '../../../tokens';
+import type { PriceFeedPort } from '../../../tokens';
 import type { TopTraderItem } from '../../domain/entities/trade.entity';
 import { assertAddress } from '../../../../core/errors/app-error';
 

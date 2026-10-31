@@ -1,7 +1,8 @@
-import { isMemestock, memestockSignals } from '../../../modules/tokens/application/memestock';
-import { SPARKLINE_POINTS, sparklineSince } from '../../../modules/tokens/application/sparkline';
-import { findAllTokens } from '../../../modules/tokens/application/all-tokens';
-import { logger, TOKEN_LAUNCHED_V2_EVENT } from '../../../index';
+import { isMemestock, memestockSignals } from '../application/memestock';
+import { SPARKLINE_POINTS, sparklineSince } from '../application/sparkline';
+import { findAllTokens } from '../application/all-tokens';
+import { logger } from '../../observability';
+import { TOKEN_LAUNCHED_V2_EVENT } from '../infrastructure/indexer/indexer-events';
 import { type Address } from 'viem';
 import {
   gotonFeeSplitterAbi,

@@ -9,13 +9,13 @@ import {
   type WalletPnl,
 } from '@goton/shared-types';
 import { assertAddress, NotFoundError } from '../../../core/errors/app-error';
-import type { SocialStorePort } from '../../tokens/domain/ports/social-store.port';
-import type { TradeStorePort } from '../../tokens/domain/ports/trade-store.port';
+import type { SocialStorePort } from '../../tokens';
+import type { TradeStorePort } from '../../tokens';
 import type {
   GetTokenByAddressUseCase,
   TokenDetailResult,
-} from '../../tokens/application/use-cases/get-token-by-address.use-case';
-import type { GetCandlesticksUseCase } from '../../trades/application/use-cases/get-candlesticks.use-case';
+} from '../../tokens';
+import type { GetCandlesticksUseCase } from '../../trades';
 import { positionPnl } from '../domain/position-pnl';
 import type { ChartPoint, ImageLoaderPort, PnlCard, PnlCardRendererPort } from './pnl-card';
 

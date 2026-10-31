@@ -20,3 +20,4 @@ export function createPnlService(
     images: new IpfsImageLoader(ipfs),
   });
 }
+export * from './presentation/pnl.routes';
