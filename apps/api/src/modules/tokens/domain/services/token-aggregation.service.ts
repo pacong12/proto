@@ -10,6 +10,18 @@ export interface HolderItem {
 /** OHLCV aggregation lives in @goton/math-sdk, shared with the app. */
 export { aggregateCandlesticks } from '@goton/math-sdk';
 
+/**
+ * Where a token's candles start: its launch time, or its first trade when that is earlier (tokens
+ * indexed before createdAt was the launch block's time have a later one). Undefined with neither.
+ */
+export function chartStartTime(
+  createdAt: number | undefined,
+  firstTradeAt: number | undefined,
+): number | undefined {
+  const start = Math.min(createdAt ?? Infinity, firstTradeAt ?? Infinity);
+  return Number.isFinite(start) ? start : undefined;
+}
+
 function toBaseUnits(amount: string, decimals: number): bigint {
   try {
     return parseUnits(amount.trim(), decimals);

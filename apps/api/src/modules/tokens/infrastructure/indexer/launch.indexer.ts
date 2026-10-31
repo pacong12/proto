@@ -85,10 +85,20 @@ export class LaunchIndexer extends ChainIndexerPart {
           this.network,
         );
         if (entity) {
+          // The launch block's time, not the time it was indexed: charts start at createdAt, and
+          // the launch buy and the first trades after it would fall before a later one.
+          const launchedAt = log.blockNumber
+            ? await this.client
+                .getBlock({ blockNumber: log.blockNumber })
+                .then((b) => Number(b.timestamp) * 1000)
+                .catch(() => entity.createdAt)
+            : entity.createdAt;
           await this.tokenRepository.save({
             ...entity,
             version: 'v2',
             curveAddress,
+            launchBlock: log.blockNumber ?? entity.launchBlock,
+            createdAt: launchedAt,
           });
         }
       }
