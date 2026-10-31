@@ -125,15 +125,27 @@ contract LORouter {
     }
 }
 
+/// @dev Hook oracle (TWAP tick) and, through extsload, the PoolManager's slot0 (spot tick).
 contract LOHook {
     int24 public tick;
+    int24 public spotTick;
 
+    /// Spot and TWAP at the same tick: a price that has held.
     function setTick(int24 t) external {
         tick = t;
+        spotTick = t;
+    }
+
+    function setSpotTick(int24 t) external {
+        spotTick = t;
     }
 
     function consultTick(bytes32) external view returns (int24, uint32) {
         return (tick, 1800);
+    }
+
+    function extsload(bytes32) external view returns (bytes32) {
+        return bytes32(uint256(uint24(spotTick)) << 160 | 1);
     }
 }
 
@@ -165,7 +177,7 @@ contract GotonLimitOrdersTest is Test {
         lo = new GotonLimitOrders(
             address(factory),
             IGotonV4RouterLO(address(router)),
-            IPoolManagerV4(address(0x1)),
+            IPoolManagerV4(address(hook)),
             address(hook),
             address(0),
             1
@@ -327,6 +339,38 @@ contract GotonLimitOrdersTest is Test {
         hook.setTick(1001);
         lo.executeSellOnPool(id, key, GotonLimitOrders.Leg.StopLoss);
         assertEq(token.allowance(address(lo), address(router)), 0, "allowance cleared");
+    }
+
+    function test_PoolStopLossWaitsWhileSpotHasRecovered() public {
+        uint256 trigger = lo.priceX36AtTick(1000, true);
+        uint256 id = _sellOrder(1_000_000 ether, 0, trigger, 0.1 ether);
+
+        // The TWAP still remembers a crash, but the price is back above the trigger.
+        hook.setTick(1001);
+        hook.setSpotTick(999);
+        vm.expectRevert(GotonLimitOrders.NotTriggered.selector);
+        lo.executeSellOnPool(id, key, GotonLimitOrders.Leg.StopLoss);
+
+        hook.setSpotTick(1001);
+        lo.executeSellOnPool(id, key, GotonLimitOrders.Leg.StopLoss);
+    }
+
+    function test_PoolStopLossIgnoresAOneBlockPush() public {
+        uint256 trigger = lo.priceX36AtTick(1000, true);
+        uint256 id = _sellOrder(1_000_000 ether, 0, trigger, 0.1 ether);
+
+        // Spot pushed far below the trigger; the TWAP has not moved.
+        hook.setTick(999);
+        hook.setSpotTick(5000);
+        vm.expectRevert(GotonLimitOrders.NotTriggered.selector);
+        lo.executeSellOnPool(id, key, GotonLimitOrders.Leg.StopLoss);
+    }
+
+    function test_PoolStopLossFiresAtTheTrigger() public {
+        uint256 trigger = lo.priceX36AtTick(1000, true);
+        uint256 id = _sellOrder(1_000_000 ether, 0, trigger, 0.1 ether);
+        hook.setTick(1000);
+        lo.executeSellOnPool(id, key, GotonLimitOrders.Leg.StopLoss);
     }
 
     function test_PartialSellReturnsUnsoldTokens() public {

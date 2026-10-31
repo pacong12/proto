@@ -57,8 +57,9 @@ interface IGotonV4HookLO {
  *         restricted to a bonding curve of the trusted factory or a Goton v4 pool via the trusted
  *         router, and every fill is checked against the owner's balance change, not router output.
  *
- *         Stop-loss triggers when the bonding curve's spot price and its TWAP are both at or below the
- *         trigger, or on a v4 pool's TWAP (hook oracle), so a one-block price push cannot trigger stops.
+ *         Stop-loss triggers when the spot price and the TWAP (the bonding curve's, or the v4 hook's
+ *         oracle) are both at or below the trigger: a one-block price push cannot trigger stops, and a
+ *         stop does not fire after the price has recovered while the TWAP still lags.
  */
 contract GotonLimitOrders {
     using PoolIdLibrary for PoolKey;
@@ -337,11 +338,18 @@ contract GotonLimitOrders {
         spend = amount - fee;
     }
 
-    // slither-disable-next-line unused-return,incorrect-equality (only the TWAP tick is needed; zero check; see docs/audit/AUDIT-VERIFICATION.md)
+    /// @dev Like the curve: the spot price and the TWAP must both be at or below the trigger. The TWAP
+    ///      alone lags, so it would still fire stops after the price has recovered; spot alone can be
+    ///      pushed below the trigger and back within one transaction.
+    // slither-disable-next-line unused-return,incorrect-equality (only the ticks are needed; zero check; see docs/audit/AUDIT-VERIFICATION.md)
     function _checkPoolStop(PoolKey calldata key, bool quoteIs0, uint256 slPriceX36) private view {
         if (slPriceX36 == 0) revert NotTriggered();
-        (int24 twapTick,) = IGotonV4HookLO(hook).consultTick(key.toId());
-        if (priceX36AtTick(twapTick, quoteIs0) > slPriceX36) revert NotTriggered();
+        bytes32 poolId = key.toId();
+        (, int24 spotTick) = V4Lib.getSlot0(poolManager, poolId);
+        (int24 twapTick,) = IGotonV4HookLO(hook).consultTick(poolId);
+        if (priceX36AtTick(spotTick, quoteIs0) > slPriceX36 || priceX36AtTick(twapTick, quoteIs0) > slPriceX36) {
+            revert NotTriggered();
+        }
     }
 
     /**
