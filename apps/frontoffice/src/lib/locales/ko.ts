@@ -339,6 +339,8 @@ const messages: Record<string, string> = {
   pnlOpenPage: 'PnL 페이지 열기',
   pnlPageTitle: '${symbol}에서의 {name} PnL',
   pnlTradeToken: '${symbol} 거래',
+  pnlClosedPosition: '종료된 포지션',
+  pnlClosedPositions: '종료된 포지션',
   pnlMarketCap: '시가총액',
   eraseDataButton: '내 소셜 데이터 삭제',
   eraseDataConfirmButton: '영구 삭제 확인',

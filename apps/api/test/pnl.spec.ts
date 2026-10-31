@@ -111,6 +111,46 @@ describe('PnlService', () => {
   });
 });
 
+describe('PnlService.positions', () => {
+  const HELD = '0x2000000000000000000000000000000000000002';
+  const SOLD = '0x3000000000000000000000000000000000000003';
+  const GONE = '0x4000000000000000000000000000000000000004';
+  const at = (token: string, isBuy: boolean, amount: number, timestamp: number) =>
+    ({ tokenAddress: token, isBuy, tokenAmount: String(amount), priceUsd: 1, timestamp }) as never;
+
+  it('lists every token the wallet traded, newest trade first, and skips unknown tokens', async () => {
+    // Newest first, as the store returns them.
+    const trades = [
+      at(SOLD, false, 10, 5),
+      at(GONE, true, 1, 4),
+      at(HELD, true, 10, 3),
+      at(SOLD, true, 10, 1),
+    ];
+    const service = new PnlService({
+      trades: { getTradesByTrader: async () => trades },
+      profiles: { getProfile: async () => ({ displayName: 'Alice' }) as never },
+      getTokenByAddress: {
+        execute: async (address) =>
+          address === GONE
+            ? null
+            : ({
+                token: { address, name: 'T', symbol: 'T', logo: '', chainId: 4663 },
+                marketData: { priceUsd: 1, marketCapUsd: 1000 },
+              } as never),
+      },
+      getCandlesticks: { execute: async () => [] },
+      renderer: { render: async () => new Uint8Array() },
+      images: { pngDataUrl: async () => null },
+    });
+    const result = await service.positions(WALLET);
+    expect(result.traderName).toBe('Alice');
+    expect(result.positions.map((p) => [p.token.address, p.pnl.status])).toEqual([
+      [SOLD, 'sold'],
+      [HELD, 'holding'],
+    ]);
+  });
+});
+
 describe('PnL card', () => {
   const card = (name: string): PnlCard => ({
     share: {

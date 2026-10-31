@@ -343,6 +343,8 @@ const messages: Record<string, string> = {
   pnlOpenPage: 'Abrir a página de PnL',
   pnlPageTitle: 'PnL de {name} em ${symbol}',
   pnlTradeToken: 'Negociar ${symbol}',
+  pnlClosedPosition: 'Posição encerrada',
+  pnlClosedPositions: 'Posições encerradas',
   pnlMarketCap: 'Capitalização',
   eraseDataButton: 'Excluir meus dados sociais',
   eraseDataConfirmButton: 'Confirmar exclusão permanente',

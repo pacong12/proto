@@ -333,6 +333,8 @@ const messages: Record<string, string> = {
   pnlOpenPage: '打开盈亏页面',
   pnlPageTitle: '{name} 在 ${symbol} 上的盈亏',
   pnlTradeToken: '交易 ${symbol}',
+  pnlClosedPosition: '已平仓',
+  pnlClosedPositions: '已平仓仓位',
   pnlMarketCap: '市值',
   eraseDataButton: '删除我的社交数据',
   eraseDataConfirmButton: '确认永久删除',

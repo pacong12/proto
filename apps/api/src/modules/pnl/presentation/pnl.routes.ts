@@ -9,6 +9,22 @@ const POSITION = '(0x[a-fA-F0-9]{40})\\/(0x[a-fA-F0-9]{40})';
 export function registerPnlRoutes(router: Router, deps: AppContainer): void {
   const { cache, pnlService, siteUrls } = deps;
 
+  // GET /api/pnl/:wallet — every position of the wallet, held or sold.
+  router.on(
+    'GET',
+    /^\/api\/pnl\/(0x[a-fA-F0-9]{40})$/,
+    ({ replyEnvelope, replyCatching }, [, wallet]) =>
+      replyCatching(() =>
+        replyCachedEnvelope(
+          cache,
+          replyEnvelope,
+          `pnl:wallet:${wallet.toLowerCase()}`,
+          30,
+          async () => ok(await pnlService.positions(wallet)),
+        ),
+      ),
+  );
+
   // GET /api/pnl/:wallet/:token
   router.on(
     'GET',
