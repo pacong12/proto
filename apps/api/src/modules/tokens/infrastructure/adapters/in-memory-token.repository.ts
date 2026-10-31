@@ -152,11 +152,17 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
     return all.slice(0, limit);
   }
 
-  async getTradesByTrader(trader: string, limit = 50): Promise<TradeEventEntity[]> {
+  async getTradesByTrader(
+    trader: string,
+    limit = 50,
+    tokenAddress?: string,
+  ): Promise<TradeEventEntity[]> {
     const target = trader.toLowerCase();
+    const token = tokenAddress?.toLowerCase();
     const all = Array.from(this.trades.values()).flat();
     return all
       .filter((t) => t.trader.toLowerCase() === target)
+      .filter((t) => !token || t.tokenAddress.toLowerCase() === token)
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, limit);
   }

@@ -117,6 +117,52 @@ paths:
         '200':
           description: Ranked list of token holders.
 
+  /api/pnl/{wallet}/{token}:
+    get:
+      summary: A wallet's PnL on a token
+      description: >-
+        Profit and loss from the wallet's indexed trades, by average cost (USD at each trade's
+        price), with the token and the trader's name.
+      parameters:
+        - name: wallet
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The position (PnlShare).
+        '404':
+          description: Unknown token (TOKEN_NOT_FOUND) or no trades of it (NO_POSITION).
+
+  /api/pnl/{wallet}/{token}/card.png:
+    get:
+      summary: Shareable PnL card
+      description: 1200×630 PNG of the position with its market cap chart; the PnL page's preview image.
+      parameters:
+        - name: wallet
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The card.
+          content:
+            image/png: {}
+        '404':
+          description: Unknown token or no trades of it.
+
   /api/tokens/{address}/ohlcv:
     get:
       summary: Candlestick chart data

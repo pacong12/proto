@@ -27,7 +27,7 @@
 
       <!-- Quick Action: Share PnL Card -->
       <div class="pt-1.5 border-t border-border/60 flex items-center justify-between">
-        <span class="text-[11px] text-muted-foreground font-mono">Unrealized position</span>
+        <span class="text-[11px] text-muted-foreground">{{ t('pnlShareHint') }}</span>
         <Button
           variant="outline"
           size="sm"
@@ -35,7 +35,7 @@
           @click="$emit('openPnlCard')"
         >
           <Share2 class="w-3 h-3" />
-          <span>Share PnL</span>
+          <span>{{ t('pnlShare') }}</span>
         </Button>
       </div>
     </div>

@@ -29,6 +29,8 @@ import {
   TradeController,
 } from '../modules/trades';
 import { DexScreenerService, GeckoTerminalService } from '../modules/dex';
+import { createPnlService } from '../modules/pnl';
+import { resolveSiteUrls } from '@goton/shared-types';
 import { TradeSyncService } from '../modules/tokens/infrastructure/indexer/trade-sync.service';
 
 /** Composition root: every service the routes and the background jobs share. */
@@ -91,6 +93,20 @@ export const geckoTerminalService = new GeckoTerminalService(
   repository,
   getTokenByAddressUseCase,
   getCandlesticksUseCase,
+);
+
+/** The frontoffice's public URLs (VITE_APP_URL, else goton.fun), for links the API builds. */
+export const siteUrls = resolveSiteUrls({ appUrl: process.env.VITE_APP_URL });
+
+export const pnlService = createPnlService(
+  {
+    trades: repository,
+    profiles: repository,
+    getTokenByAddress: getTokenByAddressUseCase,
+    getCandlesticks: getCandlesticksUseCase,
+  },
+  ipfsService,
+  siteUrls,
 );
 
 /** One event poller per supported chain, keyed by chain ID. */

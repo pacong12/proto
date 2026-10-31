@@ -421,12 +421,8 @@
       <!-- PnL Card Share Modal -->
       <PnlCardModal
         :is-open="isPnlModalOpen"
-        :current-token="currentToken"
-        :current-market-data="currentMarketData"
-        :user-holding-usd="userHoldingUsd"
-        :user-token-balance="userTokenBalance"
-        :account="account || undefined"
-        :token-network="tokenNetwork"
+        :wallet="account || undefined"
+        :token="currentToken.address"
         @close="isPnlModalOpen = false"
       />
 

@@ -15,6 +15,7 @@ import {
   trimTrailingSlashes,
 } from './packages/shared-types/src/constants/seo';
 import { isAddress } from './packages/shared-types/src/domain/address';
+import type { PnlShare } from './packages/shared-types/src/domain/pnl';
 
 export interface PageMeta {
   title: string;
@@ -76,6 +77,7 @@ export function previewImage(logo: string | undefined, fallback: string): string
 export type AppRoute =
   | { kind: 'redirect'; to: string }
   | { kind: 'token'; address: string }
+  | { kind: 'pnl'; wallet: string; token: string }
   | { kind: 'page' }
   | { kind: 'not-found' };
 
@@ -100,6 +102,12 @@ export function appRoute(pathname: string): AppRoute {
   if (token && path !== '/launchpad/create') {
     return isAddress(token[1]) ? { kind: 'token', address: token[1] } : { kind: 'not-found' };
   }
+  const pnl = /^\/pnl\/([^/]+)\/([^/]+)$/.exec(path);
+  if (pnl) {
+    return isAddress(pnl[1]) && isAddress(pnl[2])
+      ? { kind: 'pnl', wallet: pnl[1], token: pnl[2] }
+      : { kind: 'not-found' };
+  }
   return APP_PAGES.some((re) => re.test(path)) ? { kind: 'page' } : { kind: 'not-found' };
 }
 
@@ -107,14 +115,7 @@ export function appRoute(pathname: string): AppRoute {
 export function pageMeta(origin: string, pathname: string, token?: SeoToken | null): PageMeta {
   // The app sets the same canonical after it renders (src/lib/seo.ts); both use canonicalPath.
   const path = canonicalPath(pathname);
-  const defaultImage = `${origin}/opengraph-image.png`;
-  const base: PageMeta = {
-    title: SEO_DEFAULT_TITLE,
-    description: SEO_DEFAULT_DESCRIPTION,
-    canonical: `${origin}${path === '/' ? '' : path}`,
-    image: defaultImage,
-    card: 'summary_large_image',
-  };
+  const base = defaultMeta(origin, path);
 
   if (token && /^\/token\/0x[a-fA-F0-9]{40}$/.test(path)) {
     const mc = usd(token.marketCapUsd ?? 0);
@@ -124,14 +125,14 @@ export function pageMeta(origin: string, pathname: string, token?: SeoToken | nu
       token.chainName ?? 'Robinhood Chain',
       token.description,
     );
-    const image = previewImage(token.logo, defaultImage);
+    const image = previewImage(token.logo, base.image);
     return {
       ...base,
       canonical: `${origin}${path}`,
       title: `${token.name} ($${token.symbol})${mc ? ` · ${mc} market cap` : ''} · goton`,
       description: about,
       image,
-      card: image === defaultImage ? 'summary_large_image' : 'summary',
+      card: image === base.image ? 'summary_large_image' : 'summary',
       noindex: !isIndexableToken(token),
     };
   }
@@ -139,6 +140,48 @@ export function pageMeta(origin: string, pathname: string, token?: SeoToken | nu
   const known = SEO_PAGES[path];
   if (known) return { ...base, title: `${known.title} · goton`, description: known.description };
   return base;
+}
+
+/** The homepage title, description and artwork, at the canonical URL of `path`. */
+function defaultMeta(origin: string, path: string): PageMeta {
+  return {
+    title: SEO_DEFAULT_TITLE,
+    description: SEO_DEFAULT_DESCRIPTION,
+    canonical: `${origin}${path === '/' ? '' : path}`,
+    image: `${origin}/opengraph-image.png`,
+    card: 'summary_large_image',
+  };
+}
+
+/** +$35,229 / -$12.40: whole dollars from $10K. */
+function signedUsd(value: number): string {
+  const abs = Math.abs(value);
+  const amount =
+    abs >= 1e4
+      ? Math.round(abs).toLocaleString('en-US')
+      : abs.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return `${value < 0 ? '-' : '+'}$${amount}`;
+}
+
+/**
+ * Meta of a shared PnL page (/pnl/:wallet/:token): its card is the preview image, served by the
+ * API through this origin. Kept out of search: it is one wallet's position.
+ */
+export function pnlPageMeta(origin: string, pathname: string, share: PnlShare): PageMeta {
+  const path = canonicalPath(pathname);
+  const { pnl, token, traderName } = share;
+  const percent =
+    pnl.percent === null
+      ? ''
+      : ` (${pnl.percent < 0 ? '-' : '+'}${Math.abs(pnl.percent).toLocaleString('en-US', { maximumFractionDigits: 1 })}%)`;
+  const trades = `${pnl.buys} buy${pnl.buys === 1 ? '' : 's'}, ${pnl.sells} sell${pnl.sells === 1 ? '' : 's'}`;
+  return {
+    ...defaultMeta(origin, path),
+    title: `${traderName}'s PnL on $${token.symbol} · goton`,
+    description: `${signedUsd(pnl.totalUsd)}${percent} on ${token.name} ($${token.symbol}). Invested ${signedUsd(pnl.investedUsd).slice(1)} · ${trades}.`,
+    image: `${origin}/api${path}/card.png`,
+    noindex: true,
+  };
 }
 
 const escapeAttr = (s: string) =>
