@@ -11,6 +11,7 @@ import {
 import type { TokenRepositoryPort, TradeFlow } from '../../domain/ports/token.repository.port';
 import {
   aggregateCandlesticks,
+  chartEndTime,
   chartStartTime,
   computeHoldersDistribution,
 } from '../../domain/services/token-aggregation.service';
@@ -139,7 +140,9 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
         token?.createdAt,
         trades.length ? Math.min(...trades.map((t) => t.timestamp)) : undefined,
       ),
-      endTime: Date.now(),
+      endTime: chartEndTime(
+        trades.length ? Math.max(...trades.map((t) => t.timestamp)) : undefined,
+      ),
       fillGaps,
       maxCandles: 1000,
       fallbackPrice: mkt?.priceUsd || 0,
