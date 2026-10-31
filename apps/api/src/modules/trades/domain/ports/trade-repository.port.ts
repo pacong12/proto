@@ -1,4 +1,4 @@
-import type { TradeStorePort } from '../../../tokens/domain/ports/trade-store.port';
+import type { TradeStorePort } from '../../../tokens';
 
 /** The trade reads and writes the trades module needs; every store must provide them. */
 export type TradeRepositoryPort = Required<

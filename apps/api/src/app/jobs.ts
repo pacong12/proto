@@ -1,9 +1,12 @@
 import { privateKeyToAccount } from 'viem/accounts';
-import { V4BuybackKeeperService } from '../modules/tokens/infrastructure/keeper/v4-buyback-keeper.service';
-import { LimitOrderKeeperService } from '../modules/tokens/infrastructure/keeper/limit-order-keeper.service';
-import { GraduationKeeperService } from '../modules/tokens/infrastructure/keeper/graduation-keeper.service';
-import { SourceVerifyKeeperService } from '../modules/tokens/infrastructure/keeper/source-verify-keeper.service';
-import { EventPollerService, logger } from '../index';
+import {
+  EventPollerService,
+  GraduationKeeperService,
+  LimitOrderKeeperService,
+  SourceVerifyKeeperService,
+  V4BuybackKeeperService,
+} from '../modules/tokens';
+import { logger } from '../modules/observability';
 import { createWalletClient, type Hex } from 'viem';
 import { nativeWeiPerQuoteUnit } from '@goton/shared-types';
 import { rpcTransport } from '../core';

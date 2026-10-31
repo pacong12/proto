@@ -5,3 +5,4 @@ export * from './application/use-cases/get-recent-trades.use-case';
 export * from './application/use-cases/get-top-traders.use-case';
 export * from './application/use-cases/get-candlesticks.use-case';
 export * from './presentation/trade.controller';
+export * from './presentation/trades.routes';

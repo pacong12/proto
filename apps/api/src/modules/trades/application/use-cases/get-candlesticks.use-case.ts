@@ -1,7 +1,7 @@
 import type { Address } from 'viem';
 import { resolveTokenNetwork, type CandlestickEntity } from '@goton/shared-types';
-import type { TokenRepositoryPort } from '../../../tokens/domain/ports/token.repository.port';
-import type { PriceFeedPort } from '../../../tokens/domain/ports/price-feed.port';
+import type { TokenRepositoryPort } from '../../../tokens';
+import type { PriceFeedPort } from '../../../tokens';
 import { ValidationError, assertAddress } from '../../../../core/errors/app-error';
 
 /** Candle widths the API serves, in seconds. */
