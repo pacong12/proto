@@ -369,9 +369,17 @@ const messages: Record<string, string> = {
   takeProfitAt: '익절 시가총액 (USD)',
   optional: '선택',
   stopLossAt: '손절 시가총액 (USD)',
-  stopSlippage: '손절 슬리피지 (%)',
+  orderSlippage: '슬리피지 허용치 (%)',
   stopTwapNote:
-    '스톱은 가격이 일정 시간 그 아래에 머물 때(시간 가중 평균)만 발동하므로, 잠깐의 하락으로는 토큰이 팔리지 않습니다.',
+    '스탑은 최근 {minutes}–{max}분 평균 가격으로 발동하므로 짧은 하락에는 토큰이 팔리지 않습니다. 급락 시 발동가보다 낮게 팔릴 수 있으며, 최소 수령액이 보호해 줍니다.',
+  stopNotReady:
+    '이 토큰의 스탑로스는 {time}경 활성화됩니다({minutes}분의 가격 기록 필요). 지금 주문해 두면 자동으로 활성화됩니다.',
+  stopNotReadyFirstTrade:
+    '이 토큰의 스탑로스는 다음 거래로 가격 기록이 시작된 뒤 {minutes}분 후 활성화됩니다. 지금 주문해 두면 자동으로 활성화됩니다.',
+  stopNotReadyNextTrade:
+    '이 토큰의 스탑로스는 다음 거래 때 활성화됩니다. 지금 주문해 두면 자동으로 활성화됩니다.',
+  largeOrderImpact:
+    '한 번에 모두 팔면 가격이 약 {pct}% 움직입니다. 위 금액에는 이미 반영되어 있습니다. 여러 목표가로 작은 주문으로 나누는 것을 고려하세요.',
   expiresIn: '만료',
   escrowNote: '주문이 체결되거나 취소할 때까지 자금은 주문 컨트랙트에 보관됩니다.',
   placeOrder: '주문하기',

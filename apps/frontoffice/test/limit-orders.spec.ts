@@ -3,6 +3,7 @@ import { ARC_CHAIN, ROBINHOOD_CHAIN } from '@goton/shared-types';
 import {
   buyMinOut,
   priceAtMarketCap,
+  sellFloor,
   sellMinOut,
   stopPriceX36,
   toScaled,
@@ -69,5 +70,32 @@ describe('order payout', () => {
     expect(
       orderPayout({ isBuy: false, status: 'cancelled', amountOut: '1' }, 'X', ROBINHOOD_CHAIN),
     ).toBeNull();
+  });
+});
+
+describe('sellFloor', () => {
+  // A pool at 3e-9 ETH per token holding 4 ETH: in raw units k = quote raw × token raw.
+  const ethReserve = 4e18;
+  const tokenReserve = (4 / 3e-9) * 1e18;
+  const k = ethReserve * tokenReserve;
+
+  it('pays about tokens × price for a small sell, and much less for one large against the pool', () => {
+    const small = sellFloor(1e6, 3e-9, 0, ctx, k);
+    expect(Number(small.floor) / 1e18 / (1e6 * 3e-9 * 0.99)).toBeCloseTo(0.999, 3);
+    expect(small.impact).toBeLessThan(0.001);
+    // Selling as many tokens as the pool holds pays about half its ETH.
+    const large = sellFloor(4 / 3e-9, 3e-9, 0, ctx, k);
+    expect(large.impact).toBeGreaterThan(0.45);
+    expect(Number(large.floor) / 1e18).toBeCloseTo((4 * 0.99) / (1 + 0.99), 2);
+  });
+
+  it('applies the tax and the tolerance, and falls back to tokens × price without the pool', () => {
+    const base = Number(sellFloor(1e7, 3e-9, 0, ctx, k).floor);
+    const taxed = Number(sellFloor(1e7, 3e-9, 500, ctx, k, 300).floor);
+    expect(taxed / base).toBeCloseTo(0.95 * 0.97, 9);
+    expect(sellFloor(1e7, 3e-9, 0, ctx, null)).toEqual({
+      floor: sellMinOut(1e7, 3e-9, 0, ctx),
+      impact: 0,
+    });
   });
 });
