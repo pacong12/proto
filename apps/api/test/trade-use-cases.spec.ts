@@ -29,7 +29,7 @@ describe('Trades Module Clean Architecture Tests', () => {
     getTradesUseCase = new GetTradesUseCase(repository);
     getRecentTradesUseCase = new GetRecentTradesUseCase(repository);
     getTopTradersUseCase = new GetTopTradersUseCase(repository, repository, priceFeed);
-    getCandlesticksUseCase = new GetCandlesticksUseCase(repository);
+    getCandlesticksUseCase = new GetCandlesticksUseCase(repository, priceFeed);
 
     controller = new TradeController(
       getTradesUseCase,

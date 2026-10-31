@@ -1,5 +1,5 @@
 import type { TradeStorePort } from '../../domain/ports/trade-store.port';
-import { TradeEventEntity, CandlestickEntity } from '@goton/shared-types';
+import { TradeEventEntity, CandlestickEntity, chartPriceUsd } from '@goton/shared-types';
 import type { TradeFlow } from '../../domain/ports/token.repository.port';
 import {
   aggregateCandlesticks,
@@ -42,8 +42,8 @@ export class SqliteTradeStore extends SqliteTokenStore implements TradeStorePort
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO trades (
         id, tokenAddress, poolAddress, trader, isBuy, tokenAmount,
-        wethAmount, priceUsd, blockNumber, transactionHash, timestamp
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        wethAmount, priceUsd, blockNumber, transactionHash, timestamp, priceQuote
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
@@ -58,6 +58,7 @@ export class SqliteTradeStore extends SqliteTokenStore implements TradeStorePort
       trade.blockNumber.toString(),
       trade.transactionHash,
       trade.timestamp,
+      trade.priceQuote ?? null,
     );
   }
 
@@ -100,6 +101,7 @@ export class SqliteTradeStore extends SqliteTokenStore implements TradeStorePort
     tokenAddress: `0x${string}`,
     resolutionSeconds = 60,
     fillGaps = false,
+    quotePriceUsd?: number,
   ): Promise<CandlestickEntity[]> {
     const token = await this.findByAddress(tokenAddress);
     const mkt = await this.getMarketData(tokenAddress);
@@ -108,7 +110,13 @@ export class SqliteTradeStore extends SqliteTokenStore implements TradeStorePort
       WHERE tokenAddress = ? COLLATE NOCASE
       ORDER BY timestamp ASC, rowid ASC
     `);
-    const rows = stmt.all(tokenAddress) as TradeRow[];
+    const rows = (stmt.all(tokenAddress) as TradeRow[]).map((row) => ({
+      ...row,
+      priceUsd: chartPriceUsd(
+        { priceUsd: row.priceUsd, priceQuote: row.priceQuote ?? undefined },
+        quotePriceUsd,
+      ),
+    }));
     return aggregateCandlesticks(rows, resolutionSeconds, {
       startTime: token?.createdAt,
       endTime: Date.now(),

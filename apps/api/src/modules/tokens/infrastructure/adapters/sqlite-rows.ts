@@ -43,6 +43,7 @@ export interface TradeRow {
   blockNumber: string;
   transactionHash: string;
   timestamp: number;
+  priceQuote: number | null;
 }
 
 export interface MarketDataRow {

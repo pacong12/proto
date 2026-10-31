@@ -36,6 +36,7 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
     chainRegistry,
     pollers,
     tradeSync,
+    getCandlesticksUseCase,
   } = deps;
   router.use(async ({ req, url, replyError, replyEnvelope }) => {
     if (url.pathname === '/api/tokens') {
@@ -89,7 +90,11 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
           // Hourly candles cover up to 1,000 h (about 41 days); older tokens use daily ones.
           const ageMs = now - (item.token.createdAt || now);
           const resolution = ageMs > 900 * 3_600_000 ? 86_400 : 3_600;
-          const candles = await repository.getCandlesticks(item.token.address, resolution, true);
+          const candles = await getCandlesticksUseCase.execute(
+            item.token.address,
+            resolution,
+            true,
+          );
           lines[item.token.address.toLowerCase()] = sparklineSince(candles, SPARKLINE_POINTS);
         }
         return ok(lines);
