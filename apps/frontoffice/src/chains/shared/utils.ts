@@ -1,4 +1,4 @@
-import { parseEther } from 'viem';
+import { parseEther, type Abi, type Address, type PublicClient } from 'viem';
 export { isDeployed } from '@goton/shared-types';
 
 /**
@@ -27,4 +27,35 @@ export function resolveMinAmountOut(
     return (expectedOut * factor) / 10_000n;
   }
   throw new Error('Swap output estimate unavailable. Please retry in a few seconds.');
+}
+
+/** Headroom on a swap's gas estimate, in percent. */
+const SWAP_GAS_HEADROOM = 25n;
+
+/**
+ * The gas limit for a swap: its estimate plus 25%. Trades that land before it in the same block
+ * move the pool (more ticks crossed, larger transfers) and can make it cost more than estimated;
+ * without headroom it then runs out of gas and reverts, and the trader still pays for the gas.
+ * Only the gas used is charged. Undefined when the estimate fails, so the wallet estimates (and
+ * reports the revert) itself.
+ */
+export async function swapGasLimit(
+  publicClient: PublicClient,
+  request: {
+    address: Address;
+    abi: Abi;
+    functionName: string;
+    args: readonly unknown[];
+    value?: bigint;
+    account: Address;
+  },
+): Promise<bigint | undefined> {
+  try {
+    const estimate = await publicClient.estimateContractGas(
+      request as Parameters<PublicClient['estimateContractGas']>[0],
+    );
+    return (estimate * (100n + SWAP_GAS_HEADROOM)) / 100n;
+  } catch {
+    return undefined;
+  }
 }
