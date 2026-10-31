@@ -128,6 +128,7 @@
           :user-holding-tokens-count="userHoldingTokensCount"
           :user-token-balance="userTokenBalance"
           :user-holding-usd="userHoldingUsd"
+          :closed-position="closedPosition"
           :balance-wei="balanceWei"
           :amount-in="amountIn"
           :pay-in-usd="payInUsd"
@@ -421,12 +422,8 @@
       <!-- PnL Card Share Modal -->
       <PnlCardModal
         :is-open="isPnlModalOpen"
-        :current-token="currentToken"
-        :current-market-data="currentMarketData"
-        :user-holding-usd="userHoldingUsd"
-        :user-token-balance="userTokenBalance"
-        :account="account || undefined"
-        :token-network="tokenNetwork"
+        :wallet="account || undefined"
+        :token="currentToken.address"
         @close="isPnlModalOpen = false"
       />
 
@@ -447,6 +444,7 @@ import { useI18n } from '@/lib/i18n';
 import { AlertCircle, Loader2, RefreshCw } from 'lucide-vue-next';
 import { SLIPPAGE_WARN_THRESHOLD } from '@/composables/useSwap';
 import { useWallet } from '@/composables/useWallet';
+import { usePnlShare } from '@/composables/usePnlShare';
 import { usePinnedTokens } from '@/composables/usePinnedTokens';
 import { toast } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
@@ -729,6 +727,17 @@ const {
   userHoldingTokensCount,
   userHoldingUsd,
 } = tradeCallouts;
+
+// The connected wallet's position in this token, so a sold one can still be shared (a held one
+// shows in the swap panel's holdings card). Reloaded when the holdings change after a swap.
+const { share: myPosition, load: reloadMyPosition } = usePnlShare(
+  computed(() => account.value || undefined),
+  computed(() => currentToken.value.address || undefined),
+);
+const closedPosition = computed(() =>
+  myPosition.value?.pnl.status === 'sold' ? myPosition.value : null,
+);
+watch(userHoldingTokensCount, () => reloadMyPosition());
 
 // SEO: name the page after the token once its metadata has loaded, and keep thin pages out of
 // search the way the edge worker does (isIndexableToken).

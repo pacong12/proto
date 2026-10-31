@@ -13,6 +13,7 @@ import worker, { type Env } from '../worker';
 
 const ORIGIN = 'https://goton.fun';
 const TOKEN = '0xA5127018cc8c111b5138d5efbc9f5b14596fdf5b';
+const WALLET = '0xdF84362f450500a0218bc0149e6242b306bD75b8';
 
 const INDEX = `<!doctype html><html><head>
 <title>goton</title>
@@ -166,7 +167,17 @@ describe('seo appRoute', () => {
     ]) {
       expect(appRoute(page).kind, page).toBe('page');
     }
-    for (const missing of ['/no/such/page', '/assets/missing.js/x', '/token/0x12/extra']) {
+    expect(appRoute(`/pnl/${WALLET}/${TOKEN}/`)).toEqual({
+      kind: 'pnl',
+      wallet: WALLET,
+      token: TOKEN,
+    });
+    for (const missing of [
+      '/no/such/page',
+      '/assets/missing.js/x',
+      '/token/0x12/extra',
+      `/pnl/alice/${TOKEN}`,
+    ]) {
       expect(appRoute(missing).kind, missing).toBe('not-found');
     }
   });
@@ -380,6 +391,42 @@ describe('edge worker SEO', () => {
     expect(html).toContain('<h1>Moon ($MOON)</h1>');
     expect(html).toContain('<dd>Trading in a locked Uniswap v4 pool</dd>');
     expect(jsonLdOf(html)['@graph'][1]['@id']).toBe(`${ORIGIN}/token/${TOKEN.toLowerCase()}#token`);
+  });
+
+  it('previews a shared PnL page with its card, out of search', async () => {
+    const share = {
+      wallet: WALLET.toLowerCase(),
+      traderName: 'UpperMarbleBeaver',
+      token: { address: TOKEN, name: 'Moon', symbol: 'MOON', logo: '', chainId: 4663 },
+      pnl: { totalUsd: 35_229.4, percent: 5725.2, investedUsd: 615.32, buys: 1, sells: 0 },
+    };
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL) =>
+      Response.json({ success: true, data: share }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const res = await worker.fetch(new Request(`${ORIGIN}/pnl/${WALLET}/${TOKEN}`), env());
+    const html = await res.text();
+    const path = `/pnl/${WALLET.toLowerCase()}/${TOKEN.toLowerCase()}`;
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      `https://api.test/api/pnl/${WALLET}/${TOKEN}`,
+    );
+    expect(html).toContain("<title>UpperMarbleBeaver's PnL on $MOON · goton</title>");
+    expect(html).toContain(
+      'content="+$35,229 (+5,725.2%) on Moon ($MOON). Invested $615.32 · 1 buy, 0 sells."',
+    );
+    expect(html).toContain(`<meta property="og:image" content="${ORIGIN}/api${path}/card.png" />`);
+    expect(html).toContain('<meta name="twitter:card" content="summary_large_image" />');
+    expect(html).toContain(`href="${ORIGIN}${path}"`);
+    expect(html).toContain('content="noindex, follow"');
+  });
+
+  it('answers a PnL page without a position with a 404', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => Response.json({ success: false }, { status: 404 })),
+    );
+    const res = await worker.fetch(new Request(`${ORIGIN}/pnl/${WALLET}/${TOKEN}`), env());
+    expect(res.status).toBe(404);
   });
 
   it('links the latest launches from Explore', async () => {

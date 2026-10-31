@@ -149,14 +149,20 @@ export class SqliteTradeStore extends SqliteTokenStore implements TradeStorePort
     return rows.map((row) => this.mapRowToTrade(row));
   }
 
-  async getTradesByTrader(trader: string, limit = 50): Promise<TradeEventEntity[]> {
+  async getTradesByTrader(
+    trader: string,
+    limit = 50,
+    tokenAddress?: string,
+  ): Promise<TradeEventEntity[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM trades
       WHERE LOWER(trader) = LOWER(?)
+        AND (? IS NULL OR tokenAddress = ? COLLATE NOCASE)
       ORDER BY timestamp DESC, rowid DESC
       LIMIT ?
     `);
-    const rows = stmt.all(trader, limit) as TradeRow[];
+    const token = tokenAddress ?? null;
+    const rows = stmt.all(trader, token, token, limit) as TradeRow[];
     return rows.map((row) => this.mapRowToTrade(row));
   }
 
