@@ -111,6 +111,37 @@ describe('PnlService', () => {
   });
 });
 
+describe('PnlService card chart', () => {
+  it('keeps candles stamped ahead of the server clock', async () => {
+    const rendered: PnlCard[] = [];
+    // The wallet's trade and the token's candles are an hour ahead of this server's clock.
+    clock = Date.now() / 1000 + 3600;
+    const ahead = clock * 1000;
+    const svc = new PnlService({
+      trades: { getTradesByTrader: async () => [trade(true, 10, 1)] },
+      profiles: { getProfile: async () => null },
+      getTokenByAddress: {
+        execute: async () =>
+          ({
+            token: { address: TOKEN, name: 'Cat', symbol: 'CAT', logo: '', chainId: 4663 },
+            marketData: { priceUsd: 2, marketCapUsd: 2000 },
+          }) as never,
+      },
+      getCandlesticks: {
+        execute: async () =>
+          [-120_000, -60_000, 0].map((d, i) => ({ timestamp: ahead + d, close: i + 1 }) as never),
+      },
+      renderer: { render: async (card) => (rendered.push(card), new Uint8Array([1])) },
+      images: { pngDataUrl: async () => 'data:image/png;base64,' },
+    });
+    await svc.card(WALLET, TOKEN, 'https://goton.fun/pnl/x');
+    const chart = rendered.at(-1)!.chart;
+    // Was only the live point: every candle was filtered out as being in the future.
+    expect(chart.length).toBeGreaterThan(1);
+    expect(chart.some((p) => p.t === ahead)).toBe(true);
+  });
+});
+
 describe('PnlService.positions', () => {
   const HELD = '0x2000000000000000000000000000000000000002';
   const SOLD = '0x3000000000000000000000000000000000000003';

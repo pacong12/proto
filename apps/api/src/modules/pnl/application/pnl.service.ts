@@ -123,7 +123,9 @@ export class PnlService {
    * the live one.
    */
   private async chart(share: PnlShare, supply: number): Promise<ChartPoint[]> {
-    const now = Date.now();
+    // Block times, not this server's clock, bound the chart: a trade stamped ahead of the clock
+    // would otherwise fall outside the window and leave the chart empty.
+    const now = Math.max(Date.now(), (share.pnl.lastTradeAt ?? 0) + 1);
     const first = share.pnl.firstTradeAt ?? now;
     const span = Math.max(now - first, 3_600_000);
     const start = first - span * 0.1;
