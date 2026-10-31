@@ -5,11 +5,14 @@ import {
   CandlestickEntity,
   TokenCommentEntity,
   getUserIdentity,
+  chartPriceUsd,
   type CreatorProfile,
 } from '@goton/shared-types';
 import type { TokenRepositoryPort, TradeFlow } from '../../domain/ports/token.repository.port';
 import {
   aggregateCandlesticks,
+  chartEndTime,
+  chartStartTime,
   computeHoldersDistribution,
 } from '../../domain/services/token-aggregation.service';
 
@@ -124,13 +127,22 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
     tokenAddress: `0x${string}`,
     resolutionSeconds = 60,
     fillGaps = false,
+    quotePriceUsd?: number,
   ): Promise<CandlestickEntity[]> {
     const token = await this.findByAddress(tokenAddress.toLowerCase() as `0x${string}`);
     const mkt = await this.getMarketData(tokenAddress.toLowerCase() as `0x${string}`);
-    const trades = this.trades.get(tokenAddress.toLowerCase()) ?? [];
+    const trades = (this.trades.get(tokenAddress.toLowerCase()) ?? []).map((t) => ({
+      ...t,
+      priceUsd: chartPriceUsd(t, quotePriceUsd),
+    }));
     return aggregateCandlesticks(trades, resolutionSeconds, {
-      startTime: token?.createdAt,
-      endTime: Date.now(),
+      startTime: chartStartTime(
+        token?.createdAt,
+        trades.length ? Math.min(...trades.map((t) => t.timestamp)) : undefined,
+      ),
+      endTime: chartEndTime(
+        trades.length ? Math.max(...trades.map((t) => t.timestamp)) : undefined,
+      ),
       fillGaps,
       maxCandles: 1000,
       fallbackPrice: mkt?.priceUsd || 0,

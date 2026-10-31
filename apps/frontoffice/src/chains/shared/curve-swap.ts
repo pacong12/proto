@@ -3,7 +3,7 @@ import { bondingCurveAbi } from '@goton/shared-types';
 import type { ChainSwapParams } from '../types';
 import { waitForReceiptWithFallback } from '../../lib/viem-client';
 import { ensureAllowance } from '../../lib/wallet-tx';
-import { resolveMinAmountOut } from './utils';
+import { resolveMinAmountOut, swapGasLimit } from './utils';
 
 /** True when the token still trades on its bonding curve (not graduated, curve known). */
 export function isCurveTrade(params: ChainSwapParams): boolean {
@@ -48,13 +48,17 @@ export async function executeCurveSwap(
       params.slippagePercent,
     );
 
-    const txHash = await walletClient.writeContract({
+    const buy = {
       address: params.curveAddress!,
       abi: bondingCurveAbi,
       functionName: 'buy',
       args: [minTokensOut],
       value: params.amountInWei,
       account,
+    } as const;
+    const txHash = await walletClient.writeContract({
+      ...buy,
+      gas: await swapGasLimit(publicClient, buy),
       chain: walletClient.chain,
     });
 
@@ -123,12 +127,16 @@ export async function executeCurveSwap(
       params.slippagePercent,
     );
 
-    const txHash = await walletClient.writeContract({
+    const sell = {
       address: params.curveAddress!,
       abi: bondingCurveAbi,
       functionName: 'sell',
       args: [sellTokenAmount, minEthOut],
       account,
+    } as const;
+    const txHash = await walletClient.writeContract({
+      ...sell,
+      gas: await swapGasLimit(publicClient, sell),
       chain: walletClient.chain,
     });
 

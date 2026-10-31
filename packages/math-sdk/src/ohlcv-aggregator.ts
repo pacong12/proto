@@ -85,11 +85,14 @@ export function aggregateCandlesticks(
     startBucket = endBucket - maxBars * bucketDurationMs;
   }
 
-  // Determine baseline price
+  // The price the first bar opens at: the last trade before it. A window that starts after the
+  // token's first trades (only the newest maxBars are kept) must not open at the launch price,
+  // which drew a jump from it to the real price.
   let currentPrice = options.fallbackPrice ?? 0;
   if (trades.length > 0) {
     const sortedAll = [...trades].sort((a, b) => a.timestamp - b.timestamp);
-    currentPrice = Number(sortedAll[0].priceUsd);
+    const before = sortedAll.filter((t) => t.timestamp < startBucket);
+    currentPrice = Number((before[before.length - 1] ?? sortedAll[0]).priceUsd);
   }
 
   if (currentPrice <= 0 && buckets.size === 0) {

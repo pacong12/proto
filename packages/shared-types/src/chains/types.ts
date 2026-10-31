@@ -33,6 +33,11 @@ export interface NetworkConfig {
   maxLogBlockRange?: number;
   /** Pause between the requests of a history backfill, for RPCs that rate-limit eth_getLogs. */
   backfillRequestIntervalMs?: number;
+  /**
+   * How often the indexer reads new blocks: `active` while trades keep coming, `idle` after a
+   * quiet cycle. Shorter shows trades sooner and costs more eth_getLogs calls per minute.
+   */
+  indexerPollMs: { active: number; idle: number };
   blockExplorer: string;
   /** Display name of `blockExplorer` (wallet chain metadata). */
   blockExplorerName: string;

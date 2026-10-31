@@ -167,9 +167,16 @@ export class SqliteDatabase {
         priceUsd REAL NOT NULL,
         blockNumber TEXT NOT NULL,
         transactionHash TEXT NOT NULL,
-        timestamp INTEGER NOT NULL
+        timestamp INTEGER NOT NULL,
+        priceQuote REAL
       );
     `);
+    // Trades indexed before the spot price in the quote asset was recorded keep NULL.
+    try {
+      this.db.run(`ALTER TABLE trades ADD COLUMN priceQuote REAL`);
+    } catch {
+      /* column already exists */
+    }
 
     this.db.run(
       `CREATE INDEX IF NOT EXISTS idx_trades_tokenAddress ON trades(tokenAddress COLLATE NOCASE);`,
@@ -475,6 +482,7 @@ export class SqliteDatabase {
       tokenAmount: row.tokenAmount,
       wethAmount: row.wethAmount,
       priceUsd: Number(row.priceUsd),
+      ...(row.priceQuote ? { priceQuote: Number(row.priceQuote) } : {}),
       blockNumber: BigInt(row.blockNumber),
       transactionHash: row.transactionHash as `0x${string}`,
       timestamp: Number(row.timestamp),

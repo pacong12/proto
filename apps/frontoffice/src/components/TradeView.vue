@@ -111,7 +111,6 @@
                     : 1000000000
                 "
                 :is-graduated="currentMarketData.isGraduated"
-                :markers="chartTradeMarkers"
               />
             </div>
           </div>
@@ -598,7 +597,7 @@ const page: TradePage = {
   currentToken,
   explorerUrl,
   isCreator,
-  loadTokenData,
+  refreshTokenData,
   tokenLoading,
   tokenNetwork,
 };
@@ -609,7 +608,6 @@ const {
   candlesLoading,
   candlestickData,
   changeResolution,
-  chartTradeMarkers,
   devHoldingPercent,
   fetchCandlesticks,
   fetchDevActivity,
@@ -793,6 +791,15 @@ async function loadTokenData(address: `0x${string}`) {
     loadPendingTax(address, tokenNetwork.value.chainId),
   ]);
   tokenLoading.value = false;
+}
+
+/** The token and its market data again, keeping the page as it is (after a swap). */
+async function refreshTokenData(address: `0x${string}`) {
+  const data = await fetchTradeToken(address);
+  if (data && address === currentToken.value.address) {
+    currentToken.value = data.token;
+    currentMarketData.value = data.marketData;
+  }
 }
 
 // Reset amount and success state when switching between buy and sell tabs
