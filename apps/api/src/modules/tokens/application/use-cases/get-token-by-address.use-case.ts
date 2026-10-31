@@ -148,7 +148,17 @@ export class GetTokenByAddressUseCase {
       // Live on-chain curve state, never the stored snapshot: its virtualEthReserve already
       // includes all net ETH raised on the curve.
       const curveState = await this.chainIndexer.fetchV2CurveState(token.curveAddress, network);
-      const marketData = this.calculatePricing.fromCurve(token, curveState, quoteAssetPriceUsd);
+      // After graduation the pool's price: the newest trade's spot price. The pool opens at the
+      // curve's last price and only swaps move it, so this is it as of the last indexed block.
+      const newest = curveState.graduated
+        ? await this.tokenRepository.getPriceAnchor?.(token.address, Date.now())
+        : null;
+      const marketData = this.calculatePricing.fromCurve(
+        token,
+        curveState,
+        quoteAssetPriceUsd,
+        newest?.priceQuote,
+      );
 
       const priceChange24h = await this.computePriceChange24h(token.address, marketData.priceUsd);
       // Recompute volume24hUsd from trades — calculatePricing does not have access to trades,

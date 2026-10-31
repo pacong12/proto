@@ -1,5 +1,5 @@
 import { sqrtPriceX96ToQuotePrice } from '@goton/math-sdk';
-import { erc20Abi, type Address } from 'viem';
+import { erc20Abi, isAddress, type Address } from 'viem';
 import {
   bondingCurveAbi,
   type LaunchedTokenEntity,
@@ -20,19 +20,15 @@ export class TradeIndexer extends ChainIndexerPart {
   private quoteDecimals: number | null = null;
 
   async pollV2Trades(from: bigint, to: bigint): Promise<number> {
-    // Fetch all V2 tokens from repository
+    // Every v2 token's curve, graduated ones included: graduation replaces poolAddress with the v4
+    // pool id, and a range can hold the curve's last trades and the graduation together.
     const allTokens = await findAllTokens(this.tokenRepository);
-    const v2Tokens = allTokens.filter(
-      (t) =>
-        t.version === 'v2' &&
-        typeof t.poolAddress === 'string' &&
-        t.poolAddress.length === 42 &&
-        t.poolAddress.startsWith('0x'),
-    );
+    const curveOf = (t: LaunchedTokenEntity) => t.curveAddress ?? t.poolAddress;
+    const v2Tokens = allTokens.filter((t) => t.version === 'v2' && isAddress(curveOf(t)));
 
     if (v2Tokens.length === 0) return 0;
 
-    const curveAddresses = v2Tokens.map((t) => t.poolAddress as Address);
+    const curveAddresses = v2Tokens.map((t) => curveOf(t) as Address);
     const quotePriceUsd = await this.priceFeed.getQuoteAssetPriceUsd(this.network.chainId);
 
     try {
@@ -52,7 +48,7 @@ export class TradeIndexer extends ChainIndexerPart {
 
       if (logs.length === 0) return 0;
 
-      const tokenByCurve = new Map(v2Tokens.map((t) => [t.poolAddress.toLowerCase(), t]));
+      const tokenByCurve = new Map(v2Tokens.map((t) => [curveOf(t).toLowerCase(), t]));
       return await this.saveTradeLogs(logs, tokenByCurve, quotePriceUsd);
     } catch (e) {
       console.warn(`[EventPoller:${this.network.name}] V2 trade poll error:`, (e as Error).message);

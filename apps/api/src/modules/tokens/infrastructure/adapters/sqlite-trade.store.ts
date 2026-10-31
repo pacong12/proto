@@ -3,6 +3,7 @@ import { TradeEventEntity, CandlestickEntity, chartPriceUsd } from '@goton/share
 import type { TradeFlow } from '../../domain/ports/token.repository.port';
 import {
   aggregateCandlesticks,
+  chartStartTime,
   computeHoldersDistribution,
   holdersFromBalances,
 } from '../../domain/services/token-aggregation.service';
@@ -118,7 +119,7 @@ export class SqliteTradeStore extends SqliteTokenStore implements TradeStorePort
       ),
     }));
     return aggregateCandlesticks(rows, resolutionSeconds, {
-      startTime: token?.createdAt,
+      startTime: chartStartTime(token?.createdAt, rows[0]?.timestamp),
       endTime: Date.now(),
       fillGaps,
       maxCandles: 1000,

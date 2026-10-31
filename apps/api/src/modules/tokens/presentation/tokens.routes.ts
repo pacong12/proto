@@ -454,12 +454,12 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
       const address = holdersMatch[1];
       const rawLimit = parseInt(url.searchParams.get('limit') ?? '50', 10);
       const limit = Math.min(100, Math.max(1, isNaN(rawLimit) ? 50 : rawLimit));
-      // 10s: holders change only on new trades.
+      // 3s, like the token detail: the page reloads holders as soon as a trade moves the price.
       return replyCachedEnvelope(
         cache,
         replyEnvelope,
         `token:holders:${address.toLowerCase()}:${limit}`,
-        10,
+        3,
         () => tokenController.getHolders(address, limit),
       );
     },

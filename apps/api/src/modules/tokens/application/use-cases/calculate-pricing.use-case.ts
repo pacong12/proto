@@ -20,12 +20,33 @@ export class CalculatePricingUseCase {
     return calculateMarketData({ ...rest, quotePriceUsd: ethPriceUsd });
   }
 
-  /** Market data of a token on its bonding curve, from the curve's live on-chain state. */
-  fromCurve(token: LaunchedTokenEntity, curve: CurveState, quotePriceUsd: number): TokenMarketData {
+  /**
+   * Market data of a token from its bonding curve's live on-chain state. Once it graduated the
+   * curve stays frozen at the graduation price while trading moves to its v4 pool: `poolSpot`, the
+   * spot price in the quote asset after the newest trade, prices it then. Raised and target stay
+   * the curve's.
+   */
+  fromCurve(
+    token: LaunchedTokenEntity,
+    curve: CurveState,
+    quotePriceUsd: number,
+    poolSpot?: number,
+  ): TokenMarketData {
+    const totalSupply = BigInt(token.totalSupply || '1000000000000000000000000000');
+    if (curve.graduated && poolSpot && poolSpot > 0) {
+      return calculateMarketData({
+        address: token.address,
+        spotPriceNative: poolSpot,
+        pairedPrincipalWei: curve.totalEthRaised,
+        thresholdWei: curve.graduationTarget,
+        totalSupply,
+        quotePriceUsd,
+      });
+    }
     return calculateCurveMarketData({
       address: token.address,
       ...curve,
-      totalSupply: BigInt(token.totalSupply || '1000000000000000000000000000'),
+      totalSupply,
       quotePriceUsd,
     });
   }
