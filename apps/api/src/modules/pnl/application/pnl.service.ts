@@ -86,7 +86,11 @@ export class PnlService {
     return { share, trades: trades as readonly TradeEventEntity[], supply };
   }
 
-  /** Market caps from a little before the first trade until now, in at most CHART_POINTS. */
+  /**
+   * Market caps from a little before the first trade until now, in at most CHART_POINTS, ending
+   * at the current market cap: candles close at the last trade's price, the card's figures use
+   * the live one.
+   */
   private async chart(share: PnlShare, supply: number): Promise<ChartPoint[]> {
     const now = Date.now();
     const first = share.pnl.firstTradeAt ?? now;
@@ -95,8 +99,10 @@ export class PnlService {
     const resolution =
       CHART_RESOLUTIONS.find((r) => span / (r * 1000) <= CHART_POINTS) ?? CHART_RESOLUTIONS.at(-1)!;
     const candles = await this.deps.getCandlesticks.execute(share.token.address, resolution, true);
-    return candles
-      .filter((c) => c.timestamp >= start)
+    const chart = candles
+      .filter((c) => c.timestamp >= start && c.timestamp < now)
       .map((c) => ({ t: c.timestamp, marketCapUsd: c.close * supply }));
+    if (share.pnl.marketCapUsd > 0) chart.push({ t: now, marketCapUsd: share.pnl.marketCapUsd });
+    return chart;
   }
 }
