@@ -4,7 +4,7 @@
       <button
         v-if="part.isCashtag"
         type="button"
-        class="inline font-bold text-sky-500 hover:text-sky-400 hover:underline transition-colors align-baseline cursor-pointer"
+        class="inline font-bold text-foreground underline decoration-foreground/30 underline-offset-2 hover:decoration-foreground transition-colors align-baseline cursor-pointer"
         :title="part.tokenAddress ? `View $${part.symbol}` : `Search $${part.symbol}`"
         @click.stop="handleCashtagClick(part)"
       >
