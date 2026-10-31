@@ -111,7 +111,7 @@ contract GotonLimitOrdersInvariantTest is Test {
         lo = new GotonLimitOrders(
             address(factory),
             IGotonV4RouterLO(address(router)),
-            IPoolManagerV4(address(0x1)),
+            IPoolManagerV4(address(hook)),
             address(hook),
             address(0),
             1
