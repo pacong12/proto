@@ -2,6 +2,7 @@ import { ref } from 'vue';
 import type { WalletClient } from 'viem';
 import {
   gotonLimitOrdersAbi,
+  limitOrderContractOf,
   type LimitOrderEntity,
   type NetworkConfig,
 } from '@goton/shared-types';
@@ -88,15 +89,16 @@ export function useLimitOrders() {
     });
   }
 
-  function cancel(network: NetworkConfig, orderId: string) {
-    const contract = limitOrdersAddress(network);
+  /** Cancels in the deployment that holds the order, which may be an earlier one. */
+  function cancel(network: NetworkConfig, order: Pick<LimitOrderEntity, 'orderId' | 'contract'>) {
+    const contract = limitOrderContractOf(network, order);
     if (!contract) return Promise.resolve(null);
     return send(network, (wallet, account) =>
       wallet.writeContract({
         address: contract,
         abi: gotonLimitOrdersAbi,
         functionName: 'cancel',
-        args: [BigInt(orderId)],
+        args: [BigInt(order.orderId)],
         account,
         chain: wallet.chain,
       }),

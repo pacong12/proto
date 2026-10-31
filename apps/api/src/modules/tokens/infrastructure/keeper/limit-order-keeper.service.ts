@@ -1,10 +1,11 @@
 import type { PublicClient, WalletClient } from 'viem';
 import { constantProductSellAt, sqrtPriceX96ToQuotePrice } from '@goton/math-sdk';
 import {
-  UNDEPLOYED,
   bondingCurveAbi,
   gotonLimitOrdersAbi,
   launchpadTokenAbi,
+  limitOrderContractOf,
+  limitOrderContracts,
   protoV4PoolKeyFor,
   readV4PoolState,
   v4PoolId,
@@ -51,14 +52,10 @@ export class LimitOrderKeeperService {
     private readonly now: () => number = Date.now,
   ) {}
 
-  private get contract(): `0x${string}` | null {
-    const a = this.network.contracts.limitOrders;
-    return a && a !== UNDEPLOYED ? a : null;
-  }
-
   async runOnce(maxFills = 20): Promise<LimitOrderFill[]> {
-    const contract = this.contract;
-    if (!contract || !this.walletClient || !this.repository.listLimitOrders) return [];
+    // The current deployment and earlier ones that may still hold orders.
+    const contracts = new Set(limitOrderContracts(this.network).map((a) => a.toLowerCase()));
+    if (contracts.size === 0 || !this.walletClient || !this.repository.listLimitOrders) return [];
     const [account] = await this.walletClient.getAddresses();
     if (!account) return [];
 
@@ -73,6 +70,8 @@ export class LimitOrderKeeperService {
     for (const order of open) {
       if (order.deadline < nowSec) continue;
       if (fills >= maxFills) break;
+      const contract = limitOrderContractOf(this.network, order);
+      if (!contract || !contracts.has(contract.toLowerCase())) continue;
       const result = await this.tryFill(contract, account, order);
       if (!result) continue;
       results.push(result);

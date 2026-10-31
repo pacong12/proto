@@ -10,6 +10,7 @@ import { LimitOrderKeeperService } from '../src/modules/tokens/infrastructure/ke
 import { EventPollerService } from '../src/modules/tokens/infrastructure/indexer/event-poller.service';
 
 const CONTRACT = '0x00000000000000000000000000000000000000c0' as const;
+const OLD_CONTRACT = '0x00000000000000000000000000000000000000c1' as const;
 const TOKEN = '0x00000000000000000000000000000000000000aa' as const;
 const CURVE = '0x00000000000000000000000000000000000000cc' as const;
 const OWNER = '0x00000000000000000000000000000000000000ee' as const;
@@ -70,12 +71,22 @@ const token = (over: Partial<LaunchedTokenEntity> = {}) =>
 
 function keeperWith(opts: { fillable: string[]; gas?: bigint; gasPrice?: bigint }) {
   const simulated: string[] = [];
+  const targets: string[] = [];
   const writes: unknown[] = [];
   const publicClient = {
     simulateContract: vi.fn(
-      async ({ functionName, args }: { functionName: string; args: unknown[] }) => {
+      async ({
+        address,
+        functionName,
+        args,
+      }: {
+        address: string;
+        functionName: string;
+        args: unknown[];
+      }) => {
         const tag = `${functionName}:${String(args[2] ?? '')}`;
         simulated.push(tag);
+        targets.push(address);
         if (!opts.fillable.includes(tag)) throw new Error('InsufficientOutput()');
         return { request: { functionName, args } };
       },
@@ -91,7 +102,7 @@ function keeperWith(opts: { fillable: string[]; gas?: bigint; gasPrice?: bigint 
       return '0xhash';
     }),
   } as unknown as WalletClient;
-  return { publicClient, walletClient, simulated, writes };
+  return { publicClient, walletClient, simulated, targets, writes };
 }
 
 describe('limit order repository', () => {
@@ -121,6 +132,7 @@ describe('LimitOrderKeeperService', () => {
     o: LimitOrderEntity,
     t: LaunchedTokenEntity,
     opts: Parameters<typeof keeperWith>[0],
+    net: typeof network = network,
   ) {
     const repo = new SqliteTokenRepository(':memory:');
     await repo.save(t);
@@ -130,7 +142,7 @@ describe('LimitOrderKeeperService', () => {
       k.publicClient,
       k.walletClient,
       repo,
-      network,
+      net,
       1n,
       () => NOW,
     ).runOnce();
@@ -192,6 +204,29 @@ describe('LimitOrderKeeperService', () => {
     expect(results[0]).toMatchObject({ executed: true });
   });
 
+  it('fills each order in the deployment that holds it', async () => {
+    const withPrevious = {
+      ...network,
+      contracts: { ...network.contracts, limitOrdersPrevious: [OLD_CONTRACT] },
+    } as typeof network;
+    const fillable = { fillable: ['executeBuyOnCurve:'] };
+    const inOld = await run(order({ contract: OLD_CONTRACT }), token(), fillable, withPrevious);
+    expect(inOld.targets).toEqual([OLD_CONTRACT]);
+    const inNew = await run(order({ contract: CONTRACT }), token(), fillable, withPrevious);
+    expect(inNew.targets).toEqual([CONTRACT]);
+    // Rows from before orders recorded their contract belong to the first deployment.
+    const legacy = await run(order(), token(), fillable, withPrevious);
+    expect(legacy.targets).toEqual([OLD_CONTRACT]);
+  });
+
+  it('leaves orders of a contract it does not know alone', async () => {
+    const stranger = '0x00000000000000000000000000000000000000c9' as const;
+    const { simulated } = await run(order({ contract: stranger }), token(), {
+      fillable: ['executeBuyOnCurve:'],
+    });
+    expect(simulated).toHaveLength(0);
+  });
+
   it('ignores expired orders', async () => {
     const { simulated } = await run(order({ deadline: NOW / 1000 - 1 }), token(), {
       fillable: ['executeBuyOnCurve:'],
@@ -206,6 +241,7 @@ describe('limit order indexing', () => {
     const logs = [
       {
         eventName: 'OrderCreated',
+        address: CONTRACT,
         blockNumber: 10n,
         transactionHash: '0xc1',
         args: {
@@ -224,6 +260,7 @@ describe('limit order indexing', () => {
       },
       {
         eventName: 'OrderCreated',
+        address: CONTRACT,
         blockNumber: 10n,
         transactionHash: '0xc2',
         args: {
@@ -242,11 +279,18 @@ describe('limit order indexing', () => {
       },
       {
         eventName: 'OrderFilled',
+        address: CONTRACT,
         blockNumber: 11n,
         transactionHash: '0xf1',
         args: { id: 1n, leg: 2, amountOut: 8n },
       },
-      { eventName: 'OrderCancelled', blockNumber: 12n, transactionHash: '0xx2', args: { id: 2n } },
+      {
+        eventName: 'OrderCancelled',
+        address: CONTRACT,
+        blockNumber: 12n,
+        transactionHash: '0xx2',
+        args: { id: 2n },
+      },
     ];
     const client = {
       getLogs: vi.fn(async ({ events }: { events?: unknown }) => (events ? logs : [])),
@@ -276,6 +320,78 @@ describe('limit order indexing', () => {
       isBuy: false,
       slPriceX36: '2',
       closedTx: '0xx2',
+    });
+  });
+  it('keeps orders of two deployments apart and adopts rows indexed before contracts were kept', async () => {
+    const repo = new SqliteTokenRepository(':memory:');
+    // A row indexed by an older API: no contract, the old key format.
+    await repo.saveLimitOrder!(order({ key: `${network.chainId}-1`, orderId: '1' }));
+    const withPrevious = {
+      ...network,
+      contracts: { ...network.contracts, limitOrdersPrevious: [OLD_CONTRACT] },
+    } as typeof network;
+    const created = (address: string, id: bigint, tx: string) => ({
+      eventName: 'OrderCreated',
+      address,
+      blockNumber: 10n,
+      transactionHash: tx,
+      args: {
+        id,
+        order: {
+          owner: OWNER,
+          token: TOKEN,
+          isBuy: true,
+          deadline: 99n,
+          amount: 5n,
+          minOut: 7n,
+          slPriceX36: 0n,
+          slMinOut: 0n,
+        },
+      },
+    });
+    // Order 1 again in the new deployment, then the old deployment's order 1 fills.
+    const logs = [
+      created(CONTRACT, 1n, '0xnew1'),
+      {
+        eventName: 'OrderFilled',
+        address: OLD_CONTRACT,
+        blockNumber: 11n,
+        transactionHash: '0xf1',
+        args: { id: 1n, leg: 2, amountOut: 8n },
+      },
+    ];
+    const client = {
+      getLogs: vi.fn(async ({ events }: { events?: unknown }) => (events ? logs : [])),
+      getBlock: vi.fn(async () => ({ timestamp: 1_800_000_000n })),
+    } as unknown as PublicClient;
+    const poller = new EventPollerService(
+      client,
+      repo,
+      {} as never,
+      {} as never,
+      { getQuoteAssetPriceUsd: async () => 1 } as never,
+      withPrevious,
+    );
+    await poller.indexRange(1n, 20n);
+
+    expect(
+      vi.mocked(client.getLogs).mock.calls.some(([a]) => {
+        const address = (a as { address?: unknown }).address;
+        return Array.isArray(address) && address.length === 2;
+      }),
+    ).toBe(true);
+    const all = await repo.listLimitOrders!({ owner: OWNER });
+    const byContract = Object.fromEntries(all.map((o) => [o.contract, o]));
+    expect(all).toHaveLength(2);
+    expect(byContract[OLD_CONTRACT]).toMatchObject({
+      key: `${network.chainId}-${OLD_CONTRACT}-1`,
+      status: 'filled',
+      closedTx: '0xf1',
+    });
+    expect(byContract[CONTRACT]).toMatchObject({
+      key: `${network.chainId}-${CONTRACT}-1`,
+      status: 'open',
+      createdTx: '0xnew1',
     });
   });
 });
