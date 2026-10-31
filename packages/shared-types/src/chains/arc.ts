@@ -10,6 +10,8 @@ export const ARC_PROTO_CURVE_ADDRESS = getEnv(
 /** Arc mainnet; ARC_CHAIN_ID=5042002 points the Arc network at Arc testnet (local testing). */
 export const ARC_CHAIN_ID = (getEnv('ARC_CHAIN_ID', '5042') === '5042002' ? 5042002 : 5042) as
   5042 | 5042002;
+const ARC_DEFAULT_RPC =
+  ARC_CHAIN_ID === 5042002 ? 'https://rpc.testnet.arc.network' : 'https://rpc.mainnet.arc.io';
 
 /** Native USDC precompile-backed ERC-20 (6 decimals); also the quote currency of every pool. */
 const ARC_USDC = '0x3600000000000000000000000000000000000000' as `0x${string}`;
@@ -49,13 +51,17 @@ export const ARC_NETWORK: NetworkConfig = {
     symbol: 'USDC',
     decimals: 18, // Arc EVM native USDC uses 18 decimals in msg.value (1 ether = 1.00 USDC)
   },
-  rpcUrl: getEnv('ARC_RPC_URL', 'https://rpc.mainnet.arc.io'),
-  rpcUrls: [
-    getEnv('ARC_RPC_URL', 'https://rpc.mainnet.arc.io'),
-    'https://rpc.blockdaemon.mainnet.arc.io',
-    'https://rpc.drpc.mainnet.arc.io',
-    'https://arc.drpc.org',
-  ],
+  rpcUrl: getEnv('ARC_RPC_URL', ARC_DEFAULT_RPC),
+  // Mainnet falls back to other mainnet endpoints; testnet never falls back to mainnet ones.
+  rpcUrls:
+    ARC_CHAIN_ID === 5042002
+      ? [getEnv('ARC_RPC_URL', ARC_DEFAULT_RPC)]
+      : [
+          getEnv('ARC_RPC_URL', ARC_DEFAULT_RPC),
+          'https://rpc.blockdaemon.mainnet.arc.io',
+          'https://rpc.drpc.mainnet.arc.io',
+          'https://arc.drpc.org',
+        ],
   // rpc.mainnet.arc.io answers eth_getLogs over 10,000 blocks but not 20,000, and rate-limits it
   // (about 70 a minute). The other endpoints cannot serve history: Blockdaemon prunes it and the
   // dRPC free plan takes about 100 blocks per request.

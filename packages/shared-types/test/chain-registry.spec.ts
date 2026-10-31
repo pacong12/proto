@@ -153,3 +153,11 @@ describe('Arc testnet', () => {
     expect(getLaunchModel(5042002)).toBe(getLaunchModel(5042));
   });
 });
+
+describe('Arc RPC fallbacks', () => {
+  it('Arc mainnet falls back only to mainnet endpoints', () => {
+    // ARC_CHAIN_ID is unset in tests: the Arc network is mainnet.
+    expect(ARC_NETWORK.rpcUrls.every((u) => !u.includes('testnet'))).toBe(true);
+    expect(ARC_NETWORK.rpcUrls.length).toBeGreaterThan(1);
+  });
+});
