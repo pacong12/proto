@@ -1,5 +1,6 @@
-import type { CachePort } from '../../modules/observability/domain/ports/cache.port';
-import type { LoggerPort } from '../../modules/observability/domain/ports/logger.port';
+import type { CachePort } from '../ports/cache.port';
+import type { LoggerPort } from '../ports/logger.port';
+import { anonymizeIp } from '../privacy';
 
 export type RateLimitTier = 'api' | 'crawler' | 'upload' | 'terminal';
 
@@ -24,36 +25,30 @@ export function resolveRateLimitTier(
 }
 
 /**
- * Tiered Rate Limiter with Redis primary and In-Memory fallback.
+ * Tiered rate limiter: counts per tier and client in the shared cache (Redis), and in memory while
+ * the shared cache is down, so an outage never lifts the limit. IPs are logged anonymised.
  */
-export async function checkRateLimit(
-  ip: string,
-  limit: number,
-  windowMs = 60_000,
-  tier: RateLimitTier = 'api',
-  primaryCache?: CachePort,
-  fallbackCache?: CachePort,
-  logger?: LoggerPort,
-): Promise<boolean> {
-  const key = `ratelimit:${tier}:${ip}`;
-  if (primaryCache) {
+export class RateLimiter {
+  constructor(
+    private readonly cache: CachePort,
+    private readonly fallback: CachePort,
+    private readonly logger: LoggerPort,
+  ) {}
+
+  async allow(
+    ip: string,
+    limit: number,
+    windowMs = 60_000,
+    tier: RateLimitTier = 'api',
+  ): Promise<boolean> {
+    const key = `ratelimit:${tier}:${ip}`;
     try {
-      const count = await primaryCache.increment(key, windowMs);
-      return count <= limit;
+      return (await this.cache.increment(key, windowMs)) <= limit;
     } catch {
-      logger?.warn('Rate limit primary cache unavailable, using in-memory fallback', { ip });
+      this.logger.warn('Rate limit Redis unavailable, using in-memory fallback', {
+        ip: anonymizeIp(ip),
+      });
+      return (await this.fallback.increment(key, windowMs)) <= limit;
     }
   }
-
-  if (fallbackCache) {
-    try {
-      const count = await fallbackCache.increment(key, windowMs);
-      return count <= limit;
-    } catch {
-      // Both caches failed
-      return true;
-    }
-  }
-
-  return true;
 }

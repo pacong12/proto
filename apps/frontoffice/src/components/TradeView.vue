@@ -444,30 +444,10 @@
 import { getSessionHeaders } from '../lib/session';
 import { resolveSafeUrl } from '../lib/safe-url';
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
-import { parseAbi, parseEther, erc20Abi } from 'viem';
+import { parseEther, erc20Abi } from 'viem';
 import { useI18n } from '@/lib/i18n';
 import { apiFetch } from '@/lib/api-client';
-import {
-  ArrowUpDown,
-  Copy,
-  Check,
-  AlertCircle,
-  Loader2,
-  Settings,
-  ExternalLink,
-  Sparkles,
-  Send,
-  Heart,
-  RefreshCw,
-  Globe,
-  ArrowRight,
-  Megaphone,
-  Share2,
-  MessageCircle,
-  BarChart2,
-  Star,
-  ChevronLeft,
-} from 'lucide-vue-next';
+import { AlertCircle, Loader2, RefreshCw } from 'lucide-vue-next';
 import { useSwap, SLIPPAGE_WARN_THRESHOLD, parseAmountToWei } from '../composables/useSwap';
 import { useTokenStream } from '../composables/useTokenStream';
 import { useWallet } from '../composables/useWallet';
@@ -478,38 +458,12 @@ import { usePinnedTokens } from '../composables/usePinnedTokens';
 import { useFeed } from '../composables/useFeed';
 import { getPublicClient, waitForReceiptWithFallback } from '../lib/viem-client';
 import { toast } from '@/components/ui/sonner';
-import { Badge, TraderTagBadge, type TraderTagType } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Jazzicon } from '@/components/ui/avatar';
 import PendingTaxBanner from './tax/PendingTaxBanner.vue';
-import TaxTimelockPanel from './tax/TaxTimelockPanel.vue';
-import { Progress } from '@/components/ui/progress';
-import { Pagination } from '@/components/ui/pagination';
-import { Empty } from '@/components/ui/empty';
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@/components/ui/table';
-import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import TeamPayouts from '@/components/trade/TeamPayouts.vue';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { TradingChart } from '@/components/ui/chart';
-import { CashtagText, ShareModal, ThreadModal } from '@/components/feed';
+import { ShareModal, ThreadModal } from '@/components/feed';
 import {
   TradesTable,
   TopTradersTable,
@@ -528,30 +482,25 @@ import {
   PnlCardModal,
 } from './trade';
 import { useHolderDividends, type HolderDividendEntry } from '../composables/useHolderDividends';
-import {
-  shortenAddress,
-  formatTokenNumber,
-  formatRelativeTime,
-  formatPriceUsd,
-  formatSubscriptPrice,
-  formatMarketCap,
-} from '@/lib/utils';
-import { getUserIdentity } from '@/lib/username';
+import { formatPriceUsd, formatMarketCap } from '@/lib/utils';
 import { setPageSeo } from '@/lib/seo';
 import {
-  SUPPORTED_CHAINS,
+  CHAINS,
+  findFactoryLaunch,
+  readV2LaunchedToken,
   resolveTokenNetwork,
   stableQuoteUsd,
+  isStableSymbol,
+  FALLBACK_ETH_PRICE_USD,
   supportsFeeSplitters,
   launchpadTokenAbi,
   launchpadV2FactoryAbi,
-  bondingCurveAbi,
   protoV4PoolKeyFor,
   type LaunchedTokenEntity,
+  type NetworkConfig,
   type TokenMarketData,
   type TokenCommentEntity,
   type FeedCalloutItem,
-  type TradeEventEntity,
   isIndexableToken,
   seoChainName,
   tokenSeoDescription,
@@ -559,14 +508,27 @@ import {
 import {
   calculateCurveBuyOutput,
   calculateCurveSellOutput,
-  calculateRealizedPnl,
-  calculateTraderTotalPnl,
+  calculateCurveMarketData,
   getChainMathConfig,
 } from '@goton/math-sdk';
 
 const props = defineProps<{
   tokenAddress?: string;
 }>();
+
+/** Market data of a token still on its bonding curve, priced from the curve's reserves. */
+function curveMarketData(token: LaunchedTokenEntity, network: NetworkConfig): TokenMarketData {
+  return calculateCurveMarketData({
+    address: token.address,
+    virtualEthReserve: BigInt(token.virtualEthReserve ?? 0),
+    virtualTokenReserve: BigInt(token.virtualTokenReserve ?? 0),
+    totalEthRaised: BigInt(token.initialBuyAmount ?? 0),
+    graduationTarget: BigInt(token.graduationTarget ?? 0),
+    totalSupply: BigInt(token.totalSupply),
+    tokenDecimals: token.decimals || 18,
+    quotePriceUsd: stableQuoteUsd(network) ?? FALLBACK_ETH_PRICE_USD,
+  });
+}
 
 const { t } = useI18n();
 
@@ -718,7 +680,7 @@ const effectiveTokenPriceUsd = computed(() => {
   const { vEth, vToken } = getVirtualReserves();
   if (vToken > 0 && vEth > 0) {
     const spotEth = vEth / vToken;
-    const ethUsd = quoteAssetPriceUsd.value || 2700;
+    const ethUsd = quoteAssetPriceUsd.value || FALLBACK_ETH_PRICE_USD;
     return spotEth * ethUsd;
   }
   return 0;
@@ -849,16 +811,6 @@ function onReplyPosted(reply: FeedCalloutItem) {
   const rootItem = callouts.value.find((c) => c.id === reply.parentId);
   if (rootItem) {
     rootItem.repliesCount = (rootItem.repliesCount || 0) + 1;
-  }
-}
-
-function shareCalloutToX(cmt: TokenCommentEntity) {
-  if (typeof window !== 'undefined') {
-    const target = cmt.targetMcap ? `(Target: ${cmt.targetMcap}) ` : '';
-    const text = encodeURIComponent(
-      `Check out this call on $${currentToken.value.symbol} ${target}on @gotondotfun!\n\n"${cmt.content.slice(0, 120)}"\n\n${window.location.href}`,
-    );
-    window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank', 'noopener,noreferrer');
   }
 }
 
@@ -1129,17 +1081,7 @@ const quoteAssetPriceUsd = computed(() => {
   if (currentMarketData.value.priceInWeth > 0) {
     return currentMarketData.value.priceUsd / currentMarketData.value.priceInWeth;
   }
-  return 2700;
-});
-
-const remainingToGraduate = computed(() => {
-  const current = Number(currentMarketData.value.pairedPrincipalWeth || 0);
-  const target = Number(
-    currentMarketData.value.graduationThresholdWeth ||
-      (currencySymbol.value === 'USDC' ? 69000 : 4.2),
-  );
-  const diff = Math.max(0, target - current);
-  return currencySymbol.value === 'USDC' ? diff.toFixed(0) : diff.toFixed(3);
+  return FALLBACK_ETH_PRICE_USD;
 });
 
 const chartTradeMarkers = computed(() => {
@@ -1162,8 +1104,6 @@ const chartTradeMarkers = computed(() => {
 const tradeTab = ref<'buy' | 'sell'>('buy');
 const isBuy = computed(() => tradeTab.value === 'buy');
 const payInUsd = ref(false);
-const chartDisplayMode = ref<'price' | 'mcap'>('price');
-const chartCurrencyMode = ref<'usd' | 'native'>('usd');
 
 const primaryFigureMode = ref<'mcap' | 'price'>('mcap');
 function toggleHeaderFigure(): void {
@@ -1182,19 +1122,6 @@ const secondaryFigureValue = computed(() => {
   return formatMarketCap(currentMarketData.value.marketCapUsd) + ' mcap';
 });
 
-const activeChartHeaderPrice = computed(() => {
-  if (chartDisplayMode.value === 'mcap') {
-    return formatMarketCap(currentMarketData.value.marketCapUsd);
-  }
-  if (chartCurrencyMode.value === 'native') {
-    const val = currentMarketData.value.priceInWeth || 0;
-    if (val < 0.00000001) return `${val.toFixed(11)} ${currencySymbol.value}`;
-    if (val < 0.0001) return `${val.toFixed(8)} ${currencySymbol.value}`;
-    return `${val.toFixed(6)} ${currencySymbol.value}`;
-  }
-  return formatPriceUsd(currentMarketData.value.priceUsd);
-});
-
 const amountIn = ref('');
 // Start from the smallest preset of the token's quote currency (10 USDC, 0.01 ETH), and follow
 // the currency when navigating between tokens unless the user typed their own amount.
@@ -1208,7 +1135,6 @@ watch(
 const tokenNotFound = ref(false);
 const swapSuccessTx = ref<string | null>(null);
 const copied = ref(false);
-const copiedId = ref<string | null>(null);
 const tokenLoading = ref(true);
 const activeBottomTab = ref<'callouts' | 'trades' | 'top-traders' | 'holders' | 'about'>('trades');
 
@@ -1496,10 +1422,6 @@ const estimatedOutputAmount = computed(() => {
   }
 });
 
-const estimatedOutput = computed(() => {
-  return `${estimatedOutputAmount.value} ${isBuy.value ? currentToken.value.symbol : currencySymbol.value}`;
-});
-
 const swapButtonText = computed(() => {
   if (isSwapping.value) return 'Executing...';
   if (!isConnected.value) return t('connectWallet');
@@ -1560,10 +1482,7 @@ function applyQuickBuy(val: string) {
 function applyPercentage(percent: number) {
   if (isBuy.value) {
     isMaxSell.value = false;
-    const isUsdQuote =
-      currencySymbol.value === 'USDC' ||
-      currencySymbol.value === 'USDT' ||
-      currencySymbol.value === 'USDG';
+    const isUsdQuote = isStableSymbol(currencySymbol.value);
     const ethBalance = Number(balanceWei.value) / 1e18;
     if (ethBalance <= 0) {
       amountIn.value = '0';
@@ -1600,12 +1519,6 @@ function applyPercentage(percent: number) {
   }
 }
 
-function selectSlippagePreset(val: number) {
-  slippage.value = val;
-  isCustomSlippage.value = false;
-  customSlippageInput.value = '';
-}
-
 function handleCustomSlippageInput() {
   const val = parseFloat(customSlippageInput.value);
   if (!isNaN(val) && val > 0 && val <= 49) {
@@ -1614,36 +1527,6 @@ function handleCustomSlippageInput() {
     slippage.value = 49;
     customSlippageInput.value = '49';
   }
-}
-
-function formatEthBalance(wei: bigint): string {
-  const isUsdQuote =
-    currencySymbol.value === 'USDC' ||
-    currencySymbol.value === 'USDT' ||
-    currencySymbol.value === 'USDG';
-  const val = Number(wei) / 1e18;
-  if (val === 0) return isUsdQuote ? '0.00' : '0.0000';
-  if (isUsdQuote) return val < 0.01 ? val.toFixed(4) : val.toFixed(2);
-  return val < 0.0001 ? val.toFixed(6) : val.toFixed(4);
-}
-
-function formatTokenBalance(wei: bigint): string {
-  const decimals = currentToken.value.decimals || 18;
-  const val = Number(wei) / 10 ** decimals;
-  if (val === 0) return '0.00';
-  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(2)}M`;
-  if (val >= 1_000) return `${(val / 1_000).toFixed(2)}K`;
-  if (val >= 1) return val.toFixed(2);
-  if (val >= 0.0001) return val.toFixed(4);
-  return val.toFixed(6);
-}
-
-function copyText(text: string, id: string) {
-  navigator.clipboard.writeText(text);
-  copiedId.value = id;
-  setTimeout(() => {
-    if (copiedId.value === id) copiedId.value = null;
-  }, 2000);
 }
 
 function copyAddress(addr?: string | Event) {
@@ -2239,122 +2122,25 @@ async function loadTokenData(address: `0x${string}`) {
   // Direct On-Chain Hydration Fallback:
   // If backend is catching up or returns 404, hydrate token & bonding curve directly from chain
   if (!loaded) {
-    try {
-      const chainsToTry = Object.values(SUPPORTED_CHAINS);
-
-      for (const network of chainsToTry) {
-        if (loaded) break;
+    for (const network of CHAINS) {
+      try {
         const client = getPublicClient(network.chainId);
-        const factories = [network.contracts.factoryV2, network.contracts.factory].filter(
-          (f): f is `0x${string}` =>
-            Boolean(f && f !== '0x0000000000000000000000000000000000000000'),
+        const launch = await findFactoryLaunch(client, network, address);
+        if (!launch) continue;
+        const token = await readV2LaunchedToken(
+          client,
+          network,
+          address,
+          launch.curve,
+          Number(launch.createdAt) * 1000,
         );
-
-        for (const factory of factories) {
-          try {
-            const launch = (await client.readContract({
-              address: factory,
-              abi: launchpadV2FactoryAbi,
-              functionName: 'launches',
-              args: [address],
-            })) as [`0x${string}`, `0x${string}`, `0x${string}`, bigint, boolean];
-
-            const curveAddress = launch[1];
-            if (curveAddress && curveAddress !== '0x0000000000000000000000000000000000000000') {
-              const [name, symbol, decimals, totalSupply, vEth, vToken, raised, target, grad] =
-                await Promise.all([
-                  client.readContract({ address, abi: erc20Abi, functionName: 'name' }),
-                  client.readContract({ address, abi: erc20Abi, functionName: 'symbol' }),
-                  client.readContract({ address, abi: erc20Abi, functionName: 'decimals' }),
-                  client.readContract({ address, abi: erc20Abi, functionName: 'totalSupply' }),
-                  client.readContract({
-                    address: curveAddress,
-                    abi: bondingCurveAbi,
-                    functionName: 'virtualEthReserve',
-                  }),
-                  client.readContract({
-                    address: curveAddress,
-                    abi: bondingCurveAbi,
-                    functionName: 'virtualTokenReserve',
-                  }),
-                  client.readContract({
-                    address: curveAddress,
-                    abi: bondingCurveAbi,
-                    functionName: 'totalEthRaised',
-                  }),
-                  client.readContract({
-                    address: curveAddress,
-                    abi: bondingCurveAbi,
-                    functionName: 'graduationTarget',
-                  }),
-                  client.readContract({
-                    address: curveAddress,
-                    abi: bondingCurveAbi,
-                    functionName: 'graduated',
-                  }),
-                ]);
-
-              const vEthNum = Number(vEth) / 1e18;
-              const vTokenNum = Number(vToken) / 10 ** (decimals || 18);
-              const spotPrice = vTokenNum > 0 ? vEthNum / vTokenNum : 0;
-              const isStableQuote =
-                network.nativeCurrency.symbol === 'USDC' ||
-                network.nativeCurrency.symbol === 'USDT';
-              const quoteUsd = isStableQuote ? 1.0 : 2500;
-              const priceUsd = spotPrice * quoteUsd;
-
-              currentToken.value = {
-                address,
-                name: name as string,
-                symbol: symbol as string,
-                decimals: decimals || 18,
-                totalSupply: totalSupply.toString(),
-                logo: '',
-                description: '',
-                socials: {},
-                deployer: launch[2],
-                pairedToken: network.contracts.weth,
-                poolAddress: curveAddress,
-                isToken0: false,
-                poolFee: 10000,
-                positionId: 0n,
-                restrictionsEndBlock: 0n,
-                launchBlock: 0n,
-                createdAt: Number(launch[3]) * 1000,
-                version: 'v2',
-                curveAddress,
-                virtualEthReserve: vEth.toString(),
-                virtualTokenReserve: vToken.toString(),
-                graduationTarget: target.toString(),
-                initialBuyAmount: raised.toString(),
-                isGraduated: grad as boolean,
-              };
-
-              const raisedEth = Number(raised) / 1e18;
-              const targetEth = Number(target) / 1e18;
-              const supplyTokens = Number(totalSupply) / 10 ** (Number(decimals) || 18);
-              currentMarketData.value = {
-                address,
-                priceInWeth: spotPrice,
-                priceUsd,
-                marketCapUsd: priceUsd * supplyTokens,
-                fdvUsd: priceUsd * supplyTokens,
-                pairedPrincipalWeth: raisedEth.toFixed(4),
-                graduationThresholdWeth: targetEth.toFixed(2),
-                graduationProgress: targetEth > 0 ? (raisedEth / targetEth) * 100 : 0,
-                isGraduated: grad as boolean,
-                volume24hUsd: 0,
-              };
-              loaded = true;
-              break;
-            }
-          } catch {
-            // continue checking next factory
-          }
-        }
+        currentToken.value = token;
+        currentMarketData.value = curveMarketData(token, network);
+        loaded = true;
+        break;
+      } catch {
+        // try the next chain
       }
-    } catch {
-      // fallback
     }
 
     if (!loaded) {

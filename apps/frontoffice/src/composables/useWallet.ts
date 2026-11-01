@@ -2,6 +2,7 @@ import { computed, getCurrentInstance, onMounted, onUnmounted, ref, watch } from
 import {
   DEFAULT_NETWORK,
   SUPPORTED_CHAINS,
+  isAddress,
   getNetworkConfig,
   type NetworkConfig,
 } from '@goton/shared-types';
@@ -18,6 +19,7 @@ import {
   clearWalletState,
   getWalletSyncChannel,
   isStoredConnectionActive,
+  parseChainId,
   setConnectedWallet,
   walletAddress,
   walletChainId,
@@ -39,15 +41,6 @@ const error = ref<string | null>(null);
 const isConnecting = ref(false);
 let syncBalancePromise: Promise<void> | null = null;
 let lastSyncTime = 0;
-function parseChainId(raw: unknown): number | null {
-  if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
-  if (typeof raw === 'string') {
-    const parsed = raw.startsWith('0x') ? Number.parseInt(raw, 16) : Number.parseInt(raw, 10);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-}
-
 export function useWallet() {
   const resolvedAddress = computed<`0x${string}` | null>(() => {
     if (walletAddress.value) return walletAddress.value;
@@ -59,7 +52,7 @@ export function useWallet() {
       // AppKit reports the wallet as disconnected, it is not connected, whatever storage says.
       if (appKitConfigured && appKitAccount.value?.status === 'disconnected') return null;
       const stored = localStorage.getItem(STORAGE_ADDRESS_KEY);
-      if (stored && stored.startsWith('0x') && stored.length === 42) {
+      if (isAddress(stored)) {
         return stored as `0x${string}`;
       }
     }

@@ -4,6 +4,7 @@
  * the owner actually receives, so the curve/pool fee, the token's tax and the 0.1% executor fee
  * are taken out first: an order fills when the market reaches the target, not later.
  */
+import type { NetworkConfig } from '@goton/shared-types';
 
 export const EXECUTOR_FEE_BPS = 10;
 /** Bonding-curve trade fee and v4 pool LP fee. */
@@ -76,11 +77,6 @@ export function stopPriceX36(price: number, ctx: PriceContext): bigint {
   return toScaled(price, 36 + ctx.quoteDecimals - ctx.tokenDecimals);
 }
 
-/** Raw quote decimals of a network's pools: 6 for the Arc USDC ERC-20, else 18. */
-export function quoteDecimalsOf(nativeSymbol: string): number {
-  return nativeSymbol === 'USDC' ? 6 : 18;
-}
-
 /** Raw amount to a short decimal string (up to 6 significant digits). */
 export function formatRawAmount(raw: string | bigint | undefined, decimals: number): string {
   if (raw === undefined || raw === null || raw === '') return '0';
@@ -97,10 +93,10 @@ export function formatRawAmount(raw: string | bigint | undefined, decimals: numb
 export function orderPayout(
   order: { isBuy: boolean; status: string; amountOut?: string },
   tokenSymbol: string,
-  nativeSymbol: string,
+  network: NetworkConfig,
 ): string | null {
   if (order.status !== 'filled' || !order.amountOut) return null;
   return order.isBuy
     ? `${formatRawAmount(order.amountOut, 18)} ${tokenSymbol}`
-    : `${formatRawAmount(order.amountOut, quoteDecimalsOf(nativeSymbol))} ${nativeSymbol}`;
+    : `${formatRawAmount(order.amountOut, network.quoteTokenDecimals)} ${network.nativeCurrency.symbol}`;
 }

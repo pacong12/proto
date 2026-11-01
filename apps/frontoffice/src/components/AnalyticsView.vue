@@ -423,6 +423,7 @@ import {
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { ShadcnAreaChart, type ChartDataPoint } from '@/components/ui/chart';
 import { formatCompactUsd, getChainIcon, formatMarketCap } from '@/lib/utils';
+import { FALLBACK_ETH_PRICE_USD, stableQuoteUsd } from '@goton/shared-types';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -432,6 +433,7 @@ const { networkTokens, fetchTokens } = useTokenStore();
 const totalVolume = ref(0);
 const totalTokens = ref(0);
 const totalBuyback = ref<string | number>(0);
+const ethPriceUsd = ref(FALLBACK_ETH_PRICE_USD);
 const loading = ref(false);
 const fetchError = ref<string | null>(null);
 const copiedAddress = ref<string | null>(null);
@@ -459,11 +461,9 @@ const formattedBuyback = computed(() => {
 
 const estimatedProtocolFees = computed(() => {
   const vol = Number(totalVolume.value) || 0;
-  const isStableQuote =
-    activeNetwork.value.nativeCurrency.symbol === 'USDC' ||
-    activeNetwork.value.nativeCurrency.symbol === 'USDT';
-  const divisor = isStableQuote ? 1 : 2500;
-  const feeEstimate = (vol * 0.01) / divisor;
+  // 1% of USD volume, in the network's quote currency.
+  const quoteUsd = stableQuoteUsd(activeNetwork.value) ?? ethPriceUsd.value;
+  const feeEstimate = (vol * 0.01) / quoteUsd;
   return feeEstimate > 0 ? feeEstimate.toFixed(3) : '0.00';
 });
 
@@ -574,6 +574,7 @@ async function fetchAnalytics() {
         totalVolume: number;
         totalTokens: number;
         totalBuyback: string | number;
+        ethPriceUsd?: number;
         volumeHistory?: ChartDataPoint[];
         tokenHistory?: ChartDataPoint[];
       };
@@ -583,6 +584,7 @@ async function fetchAnalytics() {
       totalVolume.value = envelope.data.totalVolume;
       totalTokens.value = envelope.data.totalTokens;
       totalBuyback.value = envelope.data.totalBuyback;
+      if (envelope.data.ethPriceUsd) ethPriceUsd.value = envelope.data.ethPriceUsd;
       if (Array.isArray(envelope.data.volumeHistory) && envelope.data.volumeHistory.length > 0) {
         volumeChartData.value = envelope.data.volumeHistory;
       }

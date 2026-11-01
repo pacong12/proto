@@ -316,7 +316,6 @@ import { Jazzicon } from '@/components/ui/avatar';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import CashtagText from './CashtagText.vue';
 import { isWhaleCaller } from '@/composables/useFeed';
-import { useTokenStore } from '@/composables/useTokenStore';
 import {
   formatRelativeTime,
   formatCompactUsd,

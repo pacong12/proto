@@ -40,13 +40,6 @@ export const SEO_PAGES: Record<string, SeoCopy> = {
   },
 };
 
-const ADDRESS = /^0x[a-fA-F0-9]{40}$/;
-
-/** Whether `value` is a 0x-prefixed 20-byte hex address. */
-export function isAddress(value: string): boolean {
-  return ADDRESS.test(value);
-}
-
 /**
  * `path` without trailing slashes, in linear time (a /\/+$/ regex backtracks on long runs of
  * slashes, and paths come from the request URL).

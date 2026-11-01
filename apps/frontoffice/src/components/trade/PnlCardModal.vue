@@ -192,7 +192,6 @@ const { t } = useI18n();
 const emit = defineEmits<{ (e: 'close'): void }>();
 
 const isGeneratingImage = ref(false);
-const cardContainerRef = ref<HTMLDivElement | null>(null);
 
 const isProfit = computed(() => {
   return props.userHoldingUsd >= 5;

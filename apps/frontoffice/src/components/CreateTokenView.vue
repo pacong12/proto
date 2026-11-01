@@ -471,7 +471,6 @@ const {
   account,
   activeNetwork,
   formattedBalance,
-  balanceWei,
   updateBalance,
   switchOrAddNetwork,
   isCorrectNetwork,
@@ -540,11 +539,6 @@ const tokenExplorerUrl = computed(() => {
   const base = activeNetwork.value.blockExplorer.replace(/\/$/, '');
   return `${base}/token/${launchTokenAddress.value}`;
 });
-
-function formatHash(hash: string | null) {
-  if (!hash) return '';
-  return `${hash.slice(0, 8)}...${hash.slice(-6)}`;
-}
 
 const isCheckingStatus = ref(false);
 

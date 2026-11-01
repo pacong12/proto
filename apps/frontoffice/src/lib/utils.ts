@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { isStableSymbol } from '@goton/shared-types';
 
 export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
@@ -15,21 +16,29 @@ export function shortenAddress(address?: string | null, start = 6, end = 4): str
 }
 
 /**
- * Format an ETH value from wei (bigint) or number with a specified decimal precision.
+ * A native quote balance (18-decimal wei): cents for a stablecoin quote, more digits for ETH.
  */
-export function formatEth(value: bigint | number | string, decimals = 4): string {
-  const num = typeof value === 'bigint' ? Number(value) / 1e18 : Number(value);
-  if (isNaN(num)) return '0';
-  return num.toFixed(decimals);
+export function formatQuoteBalance(wei: bigint, symbol: string): string {
+  const val = Number(wei) / 1e18;
+  if (isStableSymbol(symbol)) {
+    if (val === 0) return '0.00';
+    return val < 0.01 ? val.toFixed(4) : val.toFixed(2);
+  }
+  if (val === 0) return '0.0000';
+  return val < 0.0001 ? val.toFixed(6) : val.toFixed(4);
 }
 
 /**
- * Format a number as a USD currency string.
+ * A token balance in its own decimals, compact from a thousand up.
  */
-export function formatUsd(value: number): string {
-  if (isNaN(value) || value === 0) return '$0.00';
-  if (value < 0.01) return `$${value.toFixed(6)}`;
-  return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+export function formatTokenBalance(raw: bigint, decimals = 18): string {
+  const val = Number(raw) / 10 ** decimals;
+  if (val === 0) return '0.00';
+  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(2)}M`;
+  if (val >= 1_000) return `${(val / 1_000).toFixed(2)}K`;
+  if (val >= 1) return val.toFixed(2);
+  if (val >= 0.0001) return val.toFixed(4);
+  return val.toFixed(6);
 }
 
 /**
@@ -72,7 +81,7 @@ export function formatPriceUsd(price: number | string | undefined | null): strin
 }
 
 const SUB_DIGITS = '₀₁₂₃₄₅₆₇₈₉';
-export function toSubscript(num: number): string {
+function toSubscript(num: number): string {
   return String(num).replace(/\d/g, (d) => SUB_DIGITS[Number(d)]);
 }
 

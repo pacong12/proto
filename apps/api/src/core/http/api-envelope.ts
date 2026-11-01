@@ -1,3 +1,6 @@
+import { ok, err, type ApiEnvelope } from '@goton/shared-types';
+import { AppError } from '../errors/app-error';
+
 /**
  * Safe JSON stringify helper converting BigInt values to string representation.
  */
@@ -83,4 +86,38 @@ export function replyEnvelope(
     status: deriveEnvelopeStatus(env),
     headers: { ...baseHeaders, ...extraHeaders },
   });
+}
+
+/**
+ * Runs a use case for a controller: its result becomes a success envelope, an AppError keeps its
+ * code, and any other error is reported under `failCode`.
+ */
+export async function toEnvelope<T>(
+  failCode: string,
+  run: () => Promise<T>,
+): Promise<ApiEnvelope<T>> {
+  try {
+    return ok(await run());
+  } catch (e) {
+    if (e instanceof AppError) return err(e.code, e.message);
+    return err(failCode, (e as Error).message);
+  }
+}
+
+/** The reply helpers of one request, all carrying its security and CORS headers. */
+export function createReplies(baseHeaders: Record<string, string>) {
+  return {
+    replyJson: (data: unknown, status = 200, extraHeaders: Record<string, string> = {}) =>
+      replyJson(data, status, baseHeaders, extraHeaders),
+    replyError: (
+      code: string,
+      message: string,
+      status = 400,
+      extraHeaders: Record<string, string> = {},
+    ) => replyError(code, message, status, baseHeaders, extraHeaders),
+    replyEnvelope: (
+      env: { success: boolean; error?: { code?: string } | null },
+      extraHeaders: Record<string, string> = {},
+    ) => replyEnvelope(env, baseHeaders, extraHeaders),
+  };
 }

@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { StructuredLoggerService } from '../src/modules/observability/infrastructure/structured-logger.service';
 import { HttpRequestTracker } from '../src/modules/observability/presentation/http-request-tracker';
 import { DevopsController } from '../src/modules/observability/presentation/devops.controller';
-import { LoggerPort } from '../src/modules/observability/domain/ports/logger.port';
+import { LoggerPort } from '../src/core/ports/logger.port';
 import { server } from '../src/server';
 
 describe('Observability & DevOps Tracking', () => {

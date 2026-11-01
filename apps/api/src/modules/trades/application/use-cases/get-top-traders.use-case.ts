@@ -1,10 +1,10 @@
 import type { Address } from 'viem';
-import { resolveTokenNetwork } from '@goton/shared-types';
+import { FALLBACK_ETH_PRICE_USD, resolveTokenNetwork } from '@goton/shared-types';
 import type { TradeRepositoryPort } from '../../domain/ports/trade-repository.port';
 import type { TokenRepositoryPort } from '../../../tokens/domain/ports/token.repository.port';
 import type { PriceFeedPort } from '../../../tokens/domain/ports/price-feed.port';
 import type { TopTraderItem } from '../../domain/entities/trade.entity';
-import { ValidationError } from '../../../../core/errors/app-error';
+import { assertAddress } from '../../../../core/errors/app-error';
 
 interface CacheEntry {
   data: TopTraderItem[];
@@ -22,12 +22,7 @@ export class GetTopTradersUseCase {
   ) {}
 
   async execute(address: string, limit = 20): Promise<TopTraderItem[]> {
-    if (!address.startsWith('0x') || address.length !== 42) {
-      throw new ValidationError(
-        'Token address must be a valid 42-character hex string',
-        'INVALID_ADDRESS',
-      );
-    }
+    assertAddress(address);
 
     const cleanAddress = address.toLowerCase();
     const token = await this.tokenRepository.findByAddress(address as Address);
@@ -58,7 +53,7 @@ export class GetTopTradersUseCase {
     try {
       quotePrice = await this.priceFeed.getQuoteAssetPriceUsd(resolveTokenNetwork(token).chainId);
     } catch {
-      quotePrice = 2500; // Resilient fallback: only the floating ETH quote can fail
+      quotePrice = FALLBACK_ETH_PRICE_USD; // Resilient fallback: only the floating ETH quote can fail
     }
 
     // Trades are sorted newest first, sort chronological to determine first buy

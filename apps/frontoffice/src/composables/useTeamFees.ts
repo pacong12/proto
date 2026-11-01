@@ -1,5 +1,6 @@
 import { gotonTeamSplitterFactoryAbi, type NetworkConfig } from '@goton/shared-types';
-import { getPublicClient, getWalletClient, waitForReceiptWithFallback } from '@/lib/viem-client';
+import { getPublicClient, waitForReceiptWithFallback } from '@/lib/viem-client';
+import { requireConnectedWallet } from '@/lib/wallet-tx';
 import { isDeployed } from '@/chains/shared/utils';
 
 /** GotonTeamSplitterFactory on a network, or null where it is not deployed. */
@@ -19,12 +20,7 @@ export async function createTeamSplitter(
 ): Promise<`0x${string}`> {
   const factory = teamFactoryAddress(network);
   if (!factory) throw new Error(`Team payouts are not available on ${network.name} yet.`);
-  const wallet = await getWalletClient();
-  if (!wallet) throw new Error('Connect your wallet first');
-  const [account] = await wallet.getAddresses();
-  if ((await wallet.getChainId()) !== network.chainId) {
-    throw new Error(`Switch your wallet to ${network.name} and retry.`);
-  }
+  const { walletClient: wallet, account } = await requireConnectedWallet(network);
   const publicClient = getPublicClient(network.chainId);
   // A fresh salt per team, so the same members can form more than one team.
   const salt = `0x${Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) =>

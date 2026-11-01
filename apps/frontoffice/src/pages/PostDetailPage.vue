@@ -422,7 +422,7 @@ import {
   BarChart2,
 } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
-import { Badge, TraderTagBadge } from '@/components/ui/badge';
+import { TraderTagBadge } from '@/components/ui/badge';
 import { Empty } from '@/components/ui/empty';
 import {
   DropdownMenu,
@@ -451,7 +451,7 @@ const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const { account, openWallet } = useWallet();
-const { tokens: allTokens, fetchTokens, getTokenNetwork } = useTokenStore();
+const { tokens: allTokens, fetchTokens } = useTokenStore();
 const { toggleLike, toggleRepost, recordView, postCallout } = useFeed();
 
 const calloutId = computed(() => String(route.params.id || route.params.detail || ''));

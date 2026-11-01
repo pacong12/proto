@@ -1,3 +1,5 @@
+import { isAddress } from '@goton/shared-types';
+
 /** One line of the create page's fee recipient list. A blank first address means the creator. */
 export interface FeeRecipientRow {
   address: string;
@@ -10,8 +12,6 @@ export const MAX_TEAM_PAYEES = 10;
 export type RecipientPlan =
   | { ok: true; payees: `0x${string}`[]; sharesBps: number[]; isTeam: boolean }
   | { ok: false; error: string };
-
-const isAddress = (a: string): a is `0x${string}` => /^0x[a-fA-F0-9]{40}$/.test(a);
 
 /**
  * Turns the recipient rows into GotonTeamSplitter payees and basis-point shares (summing to

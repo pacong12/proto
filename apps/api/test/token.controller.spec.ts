@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { GetHoldersUseCase } from '../src/modules/tokens/application/use-cases/get-holders.use-case';
+import { GetDevActivityUseCase } from '../src/modules/tokens/application/use-cases/get-dev-activity.use-case';
 import { TokenController } from '../src/modules/tokens/presentation/token.controller';
 import { InMemoryTokenRepository } from '../src/modules/tokens/infrastructure/adapters/in-memory-token.repository';
 import { GetTokensUseCase } from '../src/modules/tokens/application/use-cases/get-tokens.use-case';
@@ -71,12 +73,12 @@ describe('TokenController Unit Tests', () => {
     controller = new TokenController(
       getTokensUseCase,
       getTokenByAddressUseCase,
-      repository,
-      priceFeed,
+      new GetHoldersUseCase(repository),
+      new GetDevActivityUseCase(repository),
     );
   });
 
-  it('rejects invalid address format for token detail, holders, and trades', async () => {
+  it('rejects invalid address format for token detail and holders', async () => {
     const invalid = '0x123';
     const resDetail = await controller.getToken(invalid);
     expect(resDetail.success).toBe(false);
@@ -85,10 +87,6 @@ describe('TokenController Unit Tests', () => {
     const resHolders = await controller.getHolders(invalid);
     expect(resHolders.success).toBe(false);
     expect(resHolders.error?.code).toBe('INVALID_ADDRESS');
-
-    const resTrades = await controller.getTrades(invalid);
-    expect(resTrades.success).toBe(false);
-    expect(resTrades.error?.code).toBe('INVALID_ADDRESS');
   });
 
   it('returns TOKEN_NOT_FOUND when token not found in repo or chain', async () => {
@@ -109,8 +107,8 @@ describe('TokenController Unit Tests', () => {
     const nullController = new TokenController(
       new GetTokensUseCase(repository),
       nullUseCase,
-      repository,
-      new CoinGeckoPriceFeedAdapter({ initialPrice: 2500 }),
+      new GetHoldersUseCase(repository),
+      new GetDevActivityUseCase(repository),
     );
 
     const res = await nullController.getToken(testAddress);
@@ -123,33 +121,5 @@ describe('TokenController Unit Tests', () => {
     expect(res.success).toBe(true);
     expect(Array.isArray(res.data)).toBe(true);
     expect(res.data?.length).toBe(0);
-  });
-
-  it('getTopTraders returns structured result for valid address', async () => {
-    const res = await controller.getTopTraders(testAddress);
-    expect(res.success).toBe(true);
-    expect(Array.isArray(res.data)).toBe(true);
-  });
-
-  it('getTrades returns empty list for unknown address', async () => {
-    const res = await controller.getTrades(testAddress);
-    expect(res.success).toBe(true);
-    expect(Array.isArray(res.data)).toBe(true);
-  });
-
-  it('getCandlesticks validates resolution param', async () => {
-    const res = await controller.getCandlesticks(testAddress, 999);
-    expect(res.success).toBe(false);
-    expect(res.error?.code).toBe('INVALID_RESOLUTION');
-  });
-
-  it('getCandlesticks returns array for valid resolution', async () => {
-    const res60 = await controller.getCandlesticks(testAddress, 60);
-    expect(res60.success).toBe(true);
-    expect(Array.isArray(res60.data)).toBe(true);
-
-    const res1 = await controller.getCandlesticks(testAddress, 1);
-    expect(res1.success).toBe(true);
-    expect(Array.isArray(res1.data)).toBe(true);
   });
 });

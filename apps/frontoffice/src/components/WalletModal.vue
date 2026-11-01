@@ -261,7 +261,7 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue';
-import { Loader2, X, Copy, Check, LogOut, ChevronDown, Mail } from 'lucide-vue-next';
+import { Loader2, X, Copy, Check, LogOut, Mail } from 'lucide-vue-next';
 import { DEFAULT_NETWORK, SUPPORTED_CHAINS } from '@goton/shared-types';
 import { getChainIcon } from '@/lib/utils';
 import { appKitConfigured, getAppKit } from '../lib/appkit-loader';

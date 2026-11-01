@@ -61,7 +61,6 @@
 <script setup lang="ts">
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { getTokenChainIcon as getChainIcon, getTokenChainName as getChainName } from '@/lib/utils';
-import { useTokenStore } from '@/composables/useTokenStore';
 import type { LaunchedTokenEntity, TokenMarketData } from '@goton/shared-types';
 
 interface TokenItem {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { arcPoolKey, encodeArcV4ExactInSwap } from '../src';
+import { protoV4PoolKey, encodeArcV4ExactInSwap } from '../src';
 
 const USDC = '0x3600000000000000000000000000000000000000';
 
@@ -30,15 +30,15 @@ describe('Arc v4 swap encoding', () => {
 
   it('sorts pool currencies by address', () => {
     const hook = '0x6c56E2f4febC9ba172Cba2d39CB88B4B5D8e60Cc';
-    const high = arcPoolKey('0xc4354d6b63d07bD04714ea082E362Cd73dCbBFba', USDC, hook);
+    const high = protoV4PoolKey('0xc4354d6b63d07bD04714ea082E362Cd73dCbBFba', USDC, hook);
     expect(high.currency0).toBe(USDC);
-    const low = arcPoolKey('0x1000000000000000000000000000000000000001', USDC, hook);
+    const low = protoV4PoolKey('0x1000000000000000000000000000000000000001', USDC, hook);
     expect(low.currency1).toBe(USDC);
     expect(low).toMatchObject({ fee: 10_000, tickSpacing: 200, hooks: hook });
   });
 
   it('flips direction when selling the token', () => {
-    const poolKey = arcPoolKey('0xc4354d6b63d07bD04714ea082E362Cd73dCbBFba', USDC, USDC);
+    const poolKey = protoV4PoolKey('0xc4354d6b63d07bD04714ea082E362Cd73dCbBFba', USDC, USDC);
     const buy = encodeArcV4ExactInSwap({
       poolKey,
       tokenIn: USDC,

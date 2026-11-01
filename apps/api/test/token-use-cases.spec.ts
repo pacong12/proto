@@ -3,6 +3,9 @@ import { InMemoryTokenRepository } from '../src/modules/tokens/infrastructure/ad
 import { CalculatePricingUseCase } from '../src/modules/tokens/application/use-cases/calculate-pricing.use-case';
 import { GetTokensUseCase } from '../src/modules/tokens/application/use-cases/get-tokens.use-case';
 import { GetTokenByAddressUseCase } from '../src/modules/tokens/application/use-cases/get-token-by-address.use-case';
+import { GetTradesUseCase } from '../src/modules/trades/application/use-cases/get-trades.use-case';
+import { GetHoldersUseCase } from '../src/modules/tokens/application/use-cases/get-holders.use-case';
+import { GetDevActivityUseCase } from '../src/modules/tokens/application/use-cases/get-dev-activity.use-case';
 import { TokenController } from '../src/modules/tokens/presentation/token.controller';
 import { CoinGeckoPriceFeedAdapter } from '../src/modules/tokens/infrastructure/adapters/coingecko-price-feed.adapter';
 import type { ViemChainIndexerAdapter } from '../src/modules/tokens/infrastructure/adapters/viem-chain-indexer.adapter';
@@ -83,8 +86,8 @@ describe('Token Use Cases & Controller', () => {
     controller = new TokenController(
       getTokensUseCase,
       getTokenByAddressUseCase,
-      repository,
-      priceFeed,
+      new GetHoldersUseCase(repository),
+      new GetDevActivityUseCase(repository),
     );
   });
 
@@ -183,15 +186,14 @@ describe('Token Use Cases & Controller', () => {
       timestamp: Date.now(),
     });
 
-    const envelope = await controller.getTrades(sampleAddress, 10, 0);
-    expect(envelope.success).toBe(true);
-    expect(envelope.data).toHaveLength(1);
-    expect(envelope.data?.[0].id).toBe('trade-ctrl-1');
+    const trades = await new GetTradesUseCase(repository).execute(sampleAddress, 10, 0);
+    expect(trades).toHaveLength(1);
+    expect(trades[0].id).toBe('trade-ctrl-1');
   });
 
-  it('returns structured error when invalid address is passed to getTrades', async () => {
-    const envelope = await controller.getTrades('bad-address');
-    expect(envelope.success).toBe(false);
-    expect(envelope.error?.code).toBe('INVALID_ADDRESS');
+  it('rejects an invalid address when listing trades', async () => {
+    await expect(new GetTradesUseCase(repository).execute('bad-address')).rejects.toMatchObject({
+      code: 'INVALID_ADDRESS',
+    });
   });
 });
