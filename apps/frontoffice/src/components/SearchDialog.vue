@@ -24,8 +24,8 @@
         <button
           type="button"
           class="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition cursor-pointer flex items-center justify-center shrink-0"
-          @click="$emit('close')"
           aria-label="Close search"
+          @click="$emit('close')"
         >
           <span
             class="hidden sm:inline-block text-xs px-1.5 py-0.5 rounded border border-border bg-muted/60"
@@ -64,8 +64,8 @@
           </div>
 
           <div
-            @click="selectToken(matchedTrade.tokenAddress)"
             class="flex items-center justify-between cursor-pointer group"
+            @click="selectToken(matchedTrade.tokenAddress)"
           >
             <div class="min-w-0 truncate">
               <span
@@ -110,13 +110,13 @@
           <li v-for="(item, idx) in filteredTokens" :key="item.token.address">
             <Button
               variant="ghost"
-              @click="selectToken(item.token.address)"
               :class="[
                 'w-full h-auto flex items-center justify-between p-3 rounded-xl transition text-left group cursor-pointer border justify-start font-normal',
                 idx === selectedIndex
                   ? 'bg-muted border-border ring-1 ring-border'
                   : 'bg-card border-transparent hover:bg-muted',
               ]"
+              @click="selectToken(item.token.address)"
             >
               <div class="flex items-center gap-3.5 min-w-0">
                 <OptimizedImage

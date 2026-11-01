@@ -93,6 +93,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import TaxTimelockPanel from '../tax/TaxTimelockPanel.vue';
 import type { LaunchedTokenEntity } from '@goton/shared-types';
+import type { PendingTaxConfig } from '@/composables/useTaxConfig';
 
 const { t } = useI18n();
 
@@ -103,7 +104,7 @@ interface Props {
   editSellTax: string;
   editTaxRecipient: string;
   account?: string;
-  pendingTax: any;
+  pendingTax: PendingTaxConfig | null;
   hasPendingTax: boolean;
   taxIsReady: boolean;
   taxSecondsUntilReady: number;

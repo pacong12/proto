@@ -6,7 +6,7 @@ import ProfileView from '../src/components/profile/ProfileView.vue';
 import AnalyticsView from '../src/components/AnalyticsView.vue';
 import MemestockView from '../src/components/MemestockView.vue';
 import FeedView from '../src/components/feed/FeedView.vue';
-import Navbar from '../src/components/Navbar.vue';
+import AppNavbar from '../src/components/AppNavbar.vue';
 import ThemeToggle from '../src/components/ThemeToggle.vue';
 import SearchDialog from '../src/components/SearchDialog.vue';
 import PrivacyDialog from '../src/components/PrivacyDialog.vue';
@@ -34,7 +34,7 @@ describe('Frontoffice UI Components Suite', () => {
 
   it('validates all global layout & dialog components are properly defined SFC modules', () => {
     const dialogs = [
-      { name: 'Navbar', comp: Navbar },
+      { name: 'AppNavbar', comp: AppNavbar },
       { name: 'ThemeToggle', comp: ThemeToggle },
       { name: 'SearchDialog', comp: SearchDialog },
       { name: 'PrivacyDialog', comp: PrivacyDialog },

@@ -13,10 +13,10 @@
         </div>
         <div class="flex items-center gap-2">
           <Button
-            @click="$emit('selectTab', 'create')"
             size="default"
             variant="default"
             class="h-9 px-4 text-sm font-semibold gap-1.5 rounded-xl shadow-sm hover:opacity-90 active:scale-[0.98] transition cursor-pointer"
+            @click="$emit('selectTab', 'create')"
           >
             <Plus class="w-4 h-4 stroke-[2.5]" />
             <span>{{ t('createToken') }}</span>
@@ -100,26 +100,26 @@
           >
             <button
               type="button"
-              @click="viewMode = 'table'"
               class="px-3.5 py-1.5 text-sm font-semibold rounded-full transition cursor-pointer flex items-center gap-1.5"
               :class="
                 viewMode === 'table'
                   ? 'bg-card text-foreground shadow-xs border border-border/80 font-bold'
                   : 'text-muted-foreground hover:text-foreground'
               "
+              @click="viewMode = 'table'"
             >
               <List class="w-3.5 h-3.5" />
               <span>List</span>
             </button>
             <button
               type="button"
-              @click="viewMode = 'grid'"
               class="px-3.5 py-1.5 text-sm font-semibold rounded-full transition cursor-pointer flex items-center gap-1.5"
               :class="
                 viewMode === 'grid'
                   ? 'bg-card text-foreground shadow-xs border border-border/80 font-bold'
                   : 'text-muted-foreground hover:text-foreground'
               "
+              @click="viewMode = 'grid'"
             >
               <LayoutGrid class="w-3.5 h-3.5" />
               <span>Grid</span>
@@ -226,9 +226,9 @@
     >
       <template #action>
         <Button
-          @click="$emit('selectTab', 'create')"
           size="default"
           class="h-9 px-4 text-sm font-semibold gap-1.5 rounded-xl cursor-pointer"
+          @click="$emit('selectTab', 'create')"
         >
           <Plus class="w-4 h-4 stroke-[2.5]" />
           {{ t('createToken') }}

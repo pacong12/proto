@@ -3,8 +3,8 @@
     <div
       v-for="item in latestLaunches"
       :key="item.token.address"
-      @click="$emit('selectToken', item.token.address)"
       class="p-3.5 rounded-2xl bg-card border border-border hover:border-primary/60 transition-all cursor-pointer flex items-center justify-between gap-3 group shadow-xs hover:shadow-md"
+      @click="$emit('selectToken', item.token.address)"
     >
       <div class="flex items-center gap-2.5 min-w-0 flex-1">
         <button
