@@ -16,6 +16,12 @@ import {
   err,
 } from '@goton/shared-types';
 import { parseJsonBody, PayloadTooLargeError, safeTokenCompare } from '../../../core';
+import {
+  cacheHeader,
+  readThrough,
+  replyCached,
+  replyCachedEnvelope,
+} from '../../../core/http/cached-reply';
 import type { Router } from '../../../core/http/router';
 import type { AppContainer } from '../../../app/container';
 
@@ -31,7 +37,7 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
     pollers,
     tradeSync,
   } = deps;
-  router.use(async ({ req, url, replyJson, replyError }) => {
+  router.use(async ({ req, url, replyError, replyEnvelope }) => {
     if (url.pathname === '/api/tokens') {
       if (req.method !== 'GET') {
         return replyError('METHOD_NOT_ALLOWED', 'Method not allowed for /api/tokens', 405, {
@@ -56,75 +62,72 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
       const deployer = rawDeployer;
 
       const cacheKey = `tokens:list:${limit}:${offset}:${version || 'all'}:${deployer || 'all'}`;
-      const cached = await cache.get<unknown>(cacheKey);
-      if (cached) {
-        return replyJson(cached, 200, { 'x-cache': 'HIT' });
-      }
-
-      const res = await tokenController.listTokens(limit, offset, version, deployer);
-      if (res.success) {
-        await cache.set(cacheKey, res, 10); // Cache for 10s
-      }
-      return replyJson(res, 200, { 'x-cache': 'MISS' });
+      return replyCachedEnvelope(cache, replyEnvelope, cacheKey, 10, () =>
+        tokenController.listTokens(limit, offset, version, deployer),
+      );
     }
   });
 
   // GET /api/sparklines?chainId= — per token, its price path from launch to now (about 40 points,
   // USD, from indexed trades) for the list sparklines.
-  router.on('GET', '/api/sparklines', async ({ url, replyJson }) => {
+  router.on('GET', '/api/sparklines', async ({ url, replyEnvelope }) => {
     const network = resolveNetworkByParam(
       url.searchParams.get('chainId') || url.searchParams.get('chain'),
     );
-    const cacheKey = `sparklines:${network.chainId}`;
-    const cached = await cache.get<unknown>(cacheKey);
-    if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
-
-    const res = await tokenController.listTokens(100, 0);
-    if (!res.success || !res.data) return replyJson(res, 500);
-    const now = Date.now();
-    const lines: Record<string, number[]> = {};
-    for (const item of res.data) {
-      if (resolveTokenNetwork(item.token).chainId !== network.chainId) continue;
-      // Hourly candles cover up to 1,000 h (about 41 days); older tokens use daily ones.
-      const ageMs = now - (item.token.createdAt || now);
-      const resolution = ageMs > 900 * 3_600_000 ? 86_400 : 3_600;
-      const candles = await repository.getCandlesticks(item.token.address, resolution, true);
-      lines[item.token.address.toLowerCase()] = sparklineSince(candles, SPARKLINE_POINTS);
-    }
-    const payload = ok(lines);
-    await cache.set(cacheKey, payload, 60);
-    return replyJson(payload, 200, { 'x-cache': 'MISS' });
+    return replyCachedEnvelope(
+      cache,
+      replyEnvelope,
+      `sparklines:${network.chainId}`,
+      60,
+      async () => {
+        const res = await tokenController.listTokens(100, 0);
+        if (!res.success || !res.data) return res;
+        const now = Date.now();
+        const lines: Record<string, number[]> = {};
+        for (const item of res.data) {
+          if (resolveTokenNetwork(item.token).chainId !== network.chainId) continue;
+          // Hourly candles cover up to 1,000 h (about 41 days); older tokens use daily ones.
+          const ageMs = now - (item.token.createdAt || now);
+          const resolution = ageMs > 900 * 3_600_000 ? 86_400 : 3_600;
+          const candles = await repository.getCandlesticks(item.token.address, resolution, true);
+          lines[item.token.address.toLowerCase()] = sparklineSince(candles, SPARKLINE_POINTS);
+        }
+        return ok(lines);
+      },
+    );
   });
 
   // GET /api/memestock?chainId= — launches with a thesis whose creator still holds a bought
   // position, ranked by momentum (see modules/tokens/application/memestock.ts).
-  router.on('GET', '/api/memestock', async ({ url, replyJson }) => {
+  router.on('GET', '/api/memestock', async ({ url, replyEnvelope }) => {
     const network = resolveNetworkByParam(
       url.searchParams.get('chainId') || url.searchParams.get('chain'),
     );
-    const cacheKey = `memestock:${network.chainId}`;
-    const cached = await cache.get<unknown>(cacheKey);
-    if (cached) return replyJson(cached, 200, { 'x-cache': 'HIT' });
-
-    const res = await tokenController.listTokens(100, 0);
-    if (!res.success || !res.data) return replyJson(res, 500);
-    const now = Date.now();
-    const rows = [];
-    for (const item of res.data) {
-      if (resolveTokenNetwork(item.token).chainId !== network.chainId) continue;
-      const trades = await repository.getTrades(item.token.address, 500, 0);
-      const signals = memestockSignals(item.token, trades, now);
-      if (!isMemestock(item.token.description, signals)) continue;
-      rows.push({ ...item, signals });
-    }
-    rows.sort(
-      (a, b) =>
-        b.signals.score - a.signals.score ||
-        (b.marketData?.marketCapUsd ?? 0) - (a.marketData?.marketCapUsd ?? 0),
+    return replyCachedEnvelope(
+      cache,
+      replyEnvelope,
+      `memestock:${network.chainId}`,
+      15,
+      async () => {
+        const res = await tokenController.listTokens(100, 0);
+        if (!res.success || !res.data) return res;
+        const now = Date.now();
+        const rows = [];
+        for (const item of res.data) {
+          if (resolveTokenNetwork(item.token).chainId !== network.chainId) continue;
+          const trades = await repository.getTrades(item.token.address, 500, 0);
+          const signals = memestockSignals(item.token, trades, now);
+          if (!isMemestock(item.token.description, signals)) continue;
+          rows.push({ ...item, signals });
+        }
+        rows.sort(
+          (a, b) =>
+            b.signals.score - a.signals.score ||
+            (b.marketData?.marketCapUsd ?? 0) - (a.marketData?.marketCapUsd ?? 0),
+        );
+        return ok(rows);
+      },
     );
-    const payload = ok(rows);
-    await cache.set(cacheKey, payload, 15);
-    return replyJson(payload, 200, { 'x-cache': 'MISS' });
   });
 
   router.on(
@@ -446,17 +449,14 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
       const address = holdersMatch[1];
       const rawLimit = parseInt(url.searchParams.get('limit') ?? '50', 10);
       const limit = Math.min(100, Math.max(1, isNaN(rawLimit) ? 50 : rawLimit));
-      const holdersCacheKey = `token:holders:${address.toLowerCase()}:${limit}`;
-      const holdersCached = await cache.get<unknown>(holdersCacheKey);
-      if (holdersCached) {
-        return replyEnvelope(
-          holdersCached as { success: boolean; error?: { code?: string } | null },
-          { 'x-cache': 'HIT' },
-        );
-      }
-      const res = await tokenController.getHolders(address, limit);
-      if (res.success) await cache.set(holdersCacheKey, res, 10); // 10s — holders change only on new trades
-      return replyEnvelope(res, { 'x-cache': 'MISS' });
+      // 10s: holders change only on new trades.
+      return replyCachedEnvelope(
+        cache,
+        replyEnvelope,
+        `token:holders:${address.toLowerCase()}:${limit}`,
+        10,
+        () => tokenController.getHolders(address, limit),
+      );
     },
   );
 
@@ -486,30 +486,29 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
       if (!windowMs)
         return replyError('INVALID_PARAM', 'window must be one of 5m, 1h, 6h, 24h', 400);
       const cacheKey = `token:flow:${address.toLowerCase()}:${windowKey}`;
-      const cached = await cache.get<unknown>(cacheKey);
-      if (cached) return replyEnvelope(ok(cached));
-      const flow = (await repository.getTradeFlow?.(address, Date.now() - windowMs)) ?? {
-        buyQuote: 0,
-        sellQuote: 0,
-        buys: 0,
-        sells: 0,
-        buyers: 0,
-        sellers: 0,
-      };
-      const token = await repository.findByAddress(address);
-      const quoteUsd = token ? await chainRegistry.resolveForToken(token).getQuotePriceUsd() : 0;
-      const total = flow.buyQuote + flow.sellQuote;
-      const data = {
-        window: windowKey,
-        ...flow,
-        buyVolumeUsd: flow.buyQuote * quoteUsd,
-        sellVolumeUsd: flow.sellQuote * quoteUsd,
-        // null when there were no trades: no 50/50 placeholder.
-        buyPercent: total > 0 ? (flow.buyQuote / total) * 100 : null,
-        sellPercent: total > 0 ? (flow.sellQuote / total) * 100 : null,
-      };
-      await cache.set(cacheKey, data, 10);
-      return replyEnvelope(ok(data));
+      const { value, hit } = await readThrough(cache, cacheKey, 10, async () => {
+        const flow = (await repository.getTradeFlow?.(address, Date.now() - windowMs)) ?? {
+          buyQuote: 0,
+          sellQuote: 0,
+          buys: 0,
+          sells: 0,
+          buyers: 0,
+          sellers: 0,
+        };
+        const token = await repository.findByAddress(address);
+        const quoteUsd = token ? await chainRegistry.resolveForToken(token).getQuotePriceUsd() : 0;
+        const total = flow.buyQuote + flow.sellQuote;
+        return {
+          window: windowKey,
+          ...flow,
+          buyVolumeUsd: flow.buyQuote * quoteUsd,
+          sellVolumeUsd: flow.sellQuote * quoteUsd,
+          // null when there were no trades: no 50/50 placeholder.
+          buyPercent: total > 0 ? (flow.buyQuote / total) * 100 : null,
+          sellPercent: total > 0 ? (flow.sellQuote / total) * 100 : null,
+        };
+      });
+      return replyEnvelope(ok(value), cacheHeader(hit));
     },
   );
 
@@ -615,19 +614,16 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
   router.on(
     'GET',
     /^\/api\/tokens\/(0x[a-fA-F0-9]{40})$/,
-    async ({ replyJson, replyEnvelope }, tokenMatch) => {
+    async ({ replyEnvelope }, tokenMatch) => {
       const address = tokenMatch[1];
-      const cacheKey = `token:detail:${address.toLowerCase()}`;
-      const cached = await cache.get<unknown>(cacheKey);
-      if (cached) {
-        return replyJson(cached, 200, { 'x-cache': 'HIT' });
-      }
-
-      const res = await tokenController.getToken(address);
-      if (res.success) {
-        await cache.set(cacheKey, res, 3); // Cache for 3s — aligned with 5s EventPoller cycle
-      }
-      return replyEnvelope(res, { 'x-cache': 'MISS' });
+      // 3s: shorter than the 5s EventPoller cycle.
+      return replyCachedEnvelope(
+        cache,
+        replyEnvelope,
+        `token:detail:${address.toLowerCase()}`,
+        3,
+        () => tokenController.getToken(address),
+      );
     },
   );
 
@@ -637,115 +633,110 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
     const chainParam = url.searchParams.get('chainId') || url.searchParams.get('chain');
     const scopedNetwork = chainParam ? resolveNetworkByParam(chainParam) : null;
     const cacheKey = `protocol:analytics:${scopedNetwork?.chainId ?? 'all'}`;
-    const cached = await cache.get<unknown>(cacheKey);
-    if (cached) {
-      return replyJson(cached, 200, { 'x-cache': 'HIT' });
-    }
+    return replyCached(cache, replyJson, cacheKey, 30, async () => {
+      // Fetch tokens (metadata only — no trades loop) and aggregate volume via a single SQL query.
+      // Previous approach: N+1 — one getTrades() call per token. Replaced with getVolumeByToken()
+      // which executes one GROUP BY query returning (tokenAddress, totalWeth) for the 24h window.
+      const tokens = (await findAllTokens(repository)).filter(
+        (t) => !scopedNetwork || resolveTokenNetwork(t).chainId === scopedNetwork.chainId,
+      );
+      const totalTokens = tokens.length;
+      let totalVolumeUsd = 0;
 
-    // Fetch tokens (metadata only — no trades loop) and aggregate volume via a single SQL query.
-    // Previous approach: N+1 — one getTrades() call per token. Replaced with getVolumeByToken()
-    // which executes one GROUP BY query returning (tokenAddress, totalWeth) for the 24h window.
-    const tokens = (await findAllTokens(repository)).filter(
-      (t) => !scopedNetwork || resolveTokenNetwork(t).chainId === scopedNetwork.chainId,
-    );
-    const totalTokens = tokens.length;
-    let totalVolumeUsd = 0;
+      const now = Date.now();
+      const fourHoursMs = 4 * 60 * 60 * 1000;
+      const dayAgoMs = now - 24 * 60 * 60 * 1000;
 
-    const now = Date.now();
-    const fourHoursMs = 4 * 60 * 60 * 1000;
-    const dayAgoMs = now - 24 * 60 * 60 * 1000;
+      const timeSlots = [
+        { label: '00:00', value: 0 },
+        { label: '04:00', value: 0 },
+        { label: '08:00', value: 0 },
+        { label: '12:00', value: 0 },
+        { label: '16:00', value: 0 },
+        { label: '20:00', value: 0 },
+        { label: '24:00', value: 0 },
+      ];
+      const tokenLaunchSlots = [
+        { label: '00:00', value: 0 },
+        { label: '04:00', value: 0 },
+        { label: '08:00', value: 0 },
+        { label: '12:00', value: 0 },
+        { label: '16:00', value: 0 },
+        { label: '20:00', value: 0 },
+        { label: '24:00', value: 0 },
+      ];
 
-    const timeSlots = [
-      { label: '00:00', value: 0 },
-      { label: '04:00', value: 0 },
-      { label: '08:00', value: 0 },
-      { label: '12:00', value: 0 },
-      { label: '16:00', value: 0 },
-      { label: '20:00', value: 0 },
-      { label: '24:00', value: 0 },
-    ];
-    const tokenLaunchSlots = [
-      { label: '00:00', value: 0 },
-      { label: '04:00', value: 0 },
-      { label: '08:00', value: 0 },
-      { label: '12:00', value: 0 },
-      { label: '16:00', value: 0 },
-      { label: '20:00', value: 0 },
-      { label: '24:00', value: 0 },
-    ];
-
-    for (const t of tokens) {
-      if (t.createdAt) {
-        const age = now - t.createdAt;
-        if (age >= 0 && age < 24 * 60 * 60 * 1000) {
-          tokenLaunchSlots[6 - Math.min(6, Math.floor(age / fourHoursMs))].value += 1;
+      for (const t of tokens) {
+        if (t.createdAt) {
+          const age = now - t.createdAt;
+          if (age >= 0 && age < 24 * 60 * 60 * 1000) {
+            tokenLaunchSlots[6 - Math.min(6, Math.floor(age / fourHoursMs))].value += 1;
+          }
         }
       }
-    }
 
-    const ethPriceUsd = await priceFeed.getEthPriceUsd();
-    const quoteUsdByChain = new Map(
-      await Promise.all(
-        chainRegistry
-          .getAllChains()
-          .map(async (chain) => [chain.chainId, await chain.getQuotePriceUsd()] as const),
-      ),
-    );
-    // token address → USD price of its quote asset; also limits the figures to `tokens`.
-    const tokenQuoteUsd = new Map<string, number>();
-    for (const t of tokens) {
-      tokenQuoteUsd.set(
-        t.address.toLowerCase(),
-        quoteUsdByChain.get(resolveTokenNetwork(t).chainId) ?? 0,
+      const ethPriceUsd = await priceFeed.getEthPriceUsd();
+      const quoteUsdByChain = new Map(
+        await Promise.all(
+          chainRegistry
+            .getAllChains()
+            .map(async (chain) => [chain.chainId, await chain.getQuotePriceUsd()] as const),
+        ),
       );
-    }
-
-    // Single aggregate query replaces the N+1 loop.
-    const volumeRows = repository.getVolumeByToken
-      ? await repository.getVolumeByToken(dayAgoMs)
-      : [];
-    for (const row of volumeRows) {
-      const quotePriceUsd = tokenQuoteUsd.get(row.tokenAddress.toLowerCase());
-      if (quotePriceUsd === undefined) continue; // other network
-      const tradeUsd = row.totalWeth * quotePriceUsd;
-      totalVolumeUsd += tradeUsd;
-    }
-
-    // Populate 24h volume history time slots with real trade volume
-    const trades24h = repository.getTradesSince ? await repository.getTradesSince(dayAgoMs) : [];
-    for (const tr of trades24h) {
-      const age = now - tr.timestamp;
-      if (
-        age >= 0 &&
-        age < 24 * 60 * 60 * 1000 &&
-        tokenQuoteUsd.has(tr.tokenAddress.toLowerCase())
-      ) {
-        const slotIdx = 6 - Math.min(6, Math.floor(age / fourHoursMs));
-        const quotePriceUsd = tokenQuoteUsd.get(tr.tokenAddress.toLowerCase())!;
-        const tradeUsd = parseFloat(tr.wethAmount || '0') * quotePriceUsd;
-        timeSlots[slotIdx].value += Math.round(tradeUsd);
+      // token address → USD price of its quote asset; also limits the figures to `tokens`.
+      const tokenQuoteUsd = new Map<string, number>();
+      for (const t of tokens) {
+        tokenQuoteUsd.set(
+          t.address.toLowerCase(),
+          quoteUsdByChain.get(resolveTokenNetwork(t).chainId) ?? 0,
+        );
       }
-    }
 
-    // Buyback estimate: 1% fee * 30% protocol share * 80% allocated to buyback
-    const totalBuybackUsd = (totalVolumeUsd * 0.01 * 0.3 * 0.8).toFixed(2);
+      // Single aggregate query replaces the N+1 loop.
+      const volumeRows = repository.getVolumeByToken
+        ? await repository.getVolumeByToken(dayAgoMs)
+        : [];
+      for (const row of volumeRows) {
+        const quotePriceUsd = tokenQuoteUsd.get(row.tokenAddress.toLowerCase());
+        if (quotePriceUsd === undefined) continue; // other network
+        const tradeUsd = row.totalWeth * quotePriceUsd;
+        totalVolumeUsd += tradeUsd;
+      }
 
-    const payload = {
-      success: true,
-      data: {
-        totalVolume: Math.round(totalVolumeUsd),
-        totalTokens: totalTokens,
-        totalBuyback: totalBuybackUsd,
-        totalVolumeUsd: totalVolumeUsd.toFixed(2),
-        ethPriceUsd,
-        volumeHistory: timeSlots,
-        tokenHistory: tokenLaunchSlots,
-      },
-      timestamp: Date.now(),
-    };
+      // Populate 24h volume history time slots with real trade volume
+      const trades24h = repository.getTradesSince ? await repository.getTradesSince(dayAgoMs) : [];
+      for (const tr of trades24h) {
+        const age = now - tr.timestamp;
+        if (
+          age >= 0 &&
+          age < 24 * 60 * 60 * 1000 &&
+          tokenQuoteUsd.has(tr.tokenAddress.toLowerCase())
+        ) {
+          const slotIdx = 6 - Math.min(6, Math.floor(age / fourHoursMs));
+          const quotePriceUsd = tokenQuoteUsd.get(tr.tokenAddress.toLowerCase())!;
+          const tradeUsd = parseFloat(tr.wethAmount || '0') * quotePriceUsd;
+          timeSlots[slotIdx].value += Math.round(tradeUsd);
+        }
+      }
 
-    await cache.set(cacheKey, payload, 30); // Cache for 30s
-    return replyJson(payload, 200, { 'x-cache': 'MISS' });
+      // Buyback estimate: 1% fee * 30% protocol share * 80% allocated to buyback
+      const totalBuybackUsd = (totalVolumeUsd * 0.01 * 0.3 * 0.8).toFixed(2);
+
+      const payload = {
+        success: true,
+        data: {
+          totalVolume: Math.round(totalVolumeUsd),
+          totalTokens: totalTokens,
+          totalBuyback: totalBuybackUsd,
+          totalVolumeUsd: totalVolumeUsd.toFixed(2),
+          ethPriceUsd,
+          volumeHistory: timeSlots,
+          tokenHistory: tokenLaunchSlots,
+        },
+        timestamp: Date.now(),
+      };
+      return payload;
+    });
   });
 
   // POST /api/admin/backfill — trigger historical token indexing for a chain.
