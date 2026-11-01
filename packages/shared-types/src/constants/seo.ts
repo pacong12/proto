@@ -59,6 +59,8 @@ export function canonicalPath(pathname: string): string {
   if (path === '/explore') return '/launchpad';
   const token = /^\/(?:token|launchpad|trade)\/(0x[a-fA-F0-9]{40})$/.exec(path);
   if (token) return `/token/${token[1].toLowerCase()}`;
+  const pnl = /^\/pnl\/(0x[a-fA-F0-9]{40})\/(0x[a-fA-F0-9]{40})$/.exec(path);
+  if (pnl) return `/pnl/${pnl[1].toLowerCase()}/${pnl[2].toLowerCase()}`;
   return path;
 }
 

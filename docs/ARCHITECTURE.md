@@ -72,6 +72,12 @@ Every module keeps the same layers, so each piece has one place:
 - `ipfs`: `domain/` (CIDs, the image upload policy, storage ports), `infrastructure/` (local disk,
   Pinata, public gateways), `application/ipfs.service.ts` and `presentation/` (the upload
   controller and routes). `createIpfsService()` wires the adapters.
+- `pnl`: `domain/position-pnl.ts` (a wallet's PnL on a token, by average cost),
+  `application/pnl.service.ts` (the shared position and its card, through the `PnlCardRendererPort`
+  and `ImageLoaderPort`), `infrastructure/` (the card as SVG rendered to PNG by resvg with bundled
+  Inter fonts, and logos read from IPFS through the ipfs module and converted by sharp, never from
+  arbitrary URLs) and `presentation/pnl.routes.ts`. The frontoffice shares it from
+  `/pnl/:wallet/:token`, whose link preview is the card (`seo.ts`, `worker.ts`).
 - A route turns an `AppError` thrown by a service into its HTTP error with `replyCatching`.
 
 ### Composition (`apps/api/src`)

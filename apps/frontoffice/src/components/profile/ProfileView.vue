@@ -173,7 +173,10 @@
 
           <!-- TAB 2: PORTFOLIO POSITIONS -->
           <TabsContent value="portfolio" class="mt-4">
-            <ProfilePortfolioTab :portfolio-positions="portfolioPositions" />
+            <ProfilePortfolioTab
+              :portfolio-positions="portfolioPositions"
+              :wallet="targetAccount || undefined"
+            />
           </TabsContent>
 
           <!-- TAB 3: TRADING ACTIVITY -->

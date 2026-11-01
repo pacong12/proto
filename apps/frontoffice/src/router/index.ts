@@ -77,6 +77,13 @@ export const router = createRouter({
       redirect: '/launchpad',
     },
     {
+      path: '/pnl/:wallet(0x[a-fA-F0-9]{40})/:token(0x[a-fA-F0-9]{40})',
+      name: 'pnl',
+      meta: { seo: { title: 'PnL', noindex: true } },
+      component: () => import('@/pages/PnlPage.vue'),
+      props: true,
+    },
+    {
       path: '/analytics',
       name: 'analytics',
       meta: {
