@@ -53,7 +53,9 @@ contract RobinhoodV4GraduationForkTest is Test {
             hook,
             new GotonFeeSplitterDeployer(),
             treasury,
-            GotonFeeSplitter.Split({protocolBps: 3_000, holdersBps: 5_000, burnBps: 0, creatorBps: 5_000, liquidityBps: 0})
+            GotonFeeSplitter.Split({
+                protocolBps: 3_000, holdersBps: 5_000, burnBps: 0, creatorBps: 5_000, liquidityBps: 0
+            })
         );
         factory = new LaunchpadV2Factory(treasury, graduator);
         graduator.setLauncher(address(factory));
@@ -133,6 +135,24 @@ contract RobinhoodV4GraduationForkTest is Test {
             curveTokens / 1e9,
             "every curve token reaches the pool"
         );
+    }
+
+    /// @dev The creator's buy/sell tax carries over to the pool, charged in ETH for the splitter.
+    function test_GraduatedPoolKeepsTheCreatorTax() public {
+        (address token, BondingCurve curve) = _launch();
+        vm.prank(creator);
+        LaunchpadToken(token).setInitialTaxConfig(300, 500, makeAddr("taxWallet"));
+        _fillCurve(curve);
+        (bytes32 poolId, address splitter) = factory.graduate(token);
+        (,,, uint16 buyTaxBps, uint16 sellTaxBps,,,,,) = hook.pools(poolId);
+        assertEq(buyTaxBps, 300, "buy tax registered on the pool");
+        assertEq(sellTaxBps, 500, "sell tax registered on the pool");
+
+        _buy(token, 1 ether);
+        assertEq(hook.pendingTax(poolId), 0.03 ether, "3% of the ETH in");
+        uint256 splitterBefore = splitter.balance;
+        hook.flushTaxes(poolId);
+        assertEq(splitter.balance - splitterBefore, 0.03 ether, "flushed to the token's splitter");
     }
 
     /// @dev A pause stops new money, but never the only exit of a graduated curve.

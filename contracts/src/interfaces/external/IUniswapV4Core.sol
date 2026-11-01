@@ -34,6 +34,9 @@ interface IPoolManagerV4 {
     function sync(address currency) external;
     function settle() external payable returns (uint256 paid);
     function take(address currency, address to, uint256 amount) external;
+    /// @notice ERC-6909 claims on the PoolManager's balance of a currency (id = uint160(currency)).
+    function mint(address to, uint256 id, uint256 amount) external;
+    function burn(address from, uint256 id, uint256 amount) external;
     function extsload(bytes32 slot) external view returns (bytes32 value);
 }
 

@@ -109,7 +109,14 @@ contract ArcV4LaunchForkTest is Test {
 
     function _launch(address who, uint256 prebuyWei) internal returns (address token, bytes32 poolId) {
         vm.prank(who);
-        return factory.launchToken{value: prebuyWei}(_meta(), _tax(), 0);
+        (token, poolId) = factory.launchToken{value: prebuyWei}(_meta(), _tax(), 0);
+        hook.flushTaxes(poolId);
+    }
+
+    /// @dev Pays the pool's collected tax to its splitter, as keepers do after trading.
+    function _flush(address token) internal {
+        (,, bytes32 poolId,,) = factory.launches(token);
+        hook.flushTaxes(poolId);
     }
 
     function _usdc(address a) internal view returns (uint256) {
@@ -124,7 +131,10 @@ contract ArcV4LaunchForkTest is Test {
     function _buyAs(address who, address token, uint256 usdc6) internal returns (uint256) {
         PoolKey memory key = factory.poolKeyOf(token);
         vm.prank(who);
-        return router.swapExactIn{value: usdc6 * 1e12}(key, key.currency0 == USDC, usdc6, 0, who, block.timestamp);
+        uint256 out =
+            router.swapExactIn{value: usdc6 * 1e12}(key, key.currency0 == USDC, usdc6, 0, who, block.timestamp);
+        _flush(token);
+        return out;
     }
 
     /// @dev Sell with an exact token approval to the router.
@@ -138,6 +148,7 @@ contract ArcV4LaunchForkTest is Test {
         LaunchpadToken(token).approve(address(router), amount);
         out = router.swapExactIn(key, key.currency0 != USDC, amount, 0, who, block.timestamp);
         vm.stopPrank();
+        _flush(token);
     }
 
     // ---------------------------------------------------------------------------
@@ -291,6 +302,7 @@ contract ArcV4LaunchForkTest is Test {
         (address token,) = factory.launchToken{value: 4.5 ether}(
             _meta(), LaunchpadV2FactoryArc.TaxConfig(100, 100, 6_000, 2_000, 2_000, 0), 0
         );
+        _flush(token);
         GotonFeeSplitter splitter = GotonFeeSplitter(_splitter(token));
         vm.warp(block.timestamp + 10); // past the anti-snipe tax
 
@@ -489,6 +501,7 @@ contract ArcV4LaunchForkTest is Test {
         (token,) = factory.launchToken{value: 4.5 ether}(
             _meta(), LaunchpadV2FactoryArc.TaxConfig(500, 500, 0, 5_000, 5_000, 0), 0
         );
+        _flush(token);
         key = factory.poolKeyOf(token);
     }
 

@@ -15,6 +15,7 @@ interface IERC20Graduation {
 
 interface IGraduationToken {
     function publicTradingStarted() external view returns (bool);
+    function taxConfig() external view returns (uint16 buyTaxBps, uint16 sellTaxBps, address taxRecipient);
 }
 
 interface ILauncherLaunches {
@@ -94,8 +95,12 @@ contract GotonV4Graduator is IUnlockCallback {
     event FeesCollected(address indexed token, uint256 ethFees, uint256 tokenFeesBurned);
     event LauncherSet(address indexed launcher);
     event RecipientsUpdated(address protocolFeeRecipient, address buybackVault, address liquidityVault);
-    event TokenSplitSet(address indexed token, uint16 holdersBps, uint16 burnBps, uint16 creatorBps, uint16 liquidityBps);
-    event DefaultSplitUpdated(uint16 protocolBps, uint16 holdersBps, uint16 burnBps, uint16 creatorBps, uint16 liquidityBps);
+    event TokenSplitSet(
+        address indexed token, uint16 holdersBps, uint16 burnBps, uint16 creatorBps, uint16 liquidityBps
+    );
+    event DefaultSplitUpdated(
+        uint16 protocolBps, uint16 holdersBps, uint16 burnBps, uint16 creatorBps, uint16 liquidityBps
+    );
     event OwnershipTransferProposed(address indexed proposed);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
@@ -249,13 +254,16 @@ contract GotonV4Graduator is IUnlockCallback {
 
         PoolKey memory key = _poolKey(token);
         poolId = key.toId();
+        // The creator's buy/sell tax carries over to the pool, where the hook charges it in ETH
+        // and the splitter shares it out (holders, burn, creator, protocol), as on Arc. It was 0.
+        (uint16 buyTaxBps, uint16 sellTaxBps,) = IGraduationToken(token).taxConfig();
         hook.registerPool(
             key,
             GotonV4Hook.PoolRegistration({
                 token: token,
                 splitter: splitter,
-                buyTaxBps: 0,
-                sellTaxBps: 0,
+                buyTaxBps: buyTaxBps,
+                sellTaxBps: sellTaxBps,
                 bondTick: 0,
                 bonded: false,
                 antiSnipe: false
@@ -325,8 +333,7 @@ contract GotonV4Graduator is IUnlockCallback {
         int24 floorTick = compressed * TICK_SPACING;
 
         if (tokensLeft > 0 && floorTick > -MAX_USABLE_TICK) {
-            uint128 liquidity =
-                V4Lib.liquidityForAmount1(sqrtMin, TickMath.getSqrtPriceAtTick(floorTick), tokensLeft);
+            uint128 liquidity = V4Lib.liquidityForAmount1(sqrtMin, TickMath.getSqrtPriceAtTick(floorTick), tokensLeft);
             if (liquidity > 0) {
                 (, uint256 used) = _addLiquidity(key, -MAX_USABLE_TICK, floorTick, liquidity, TOKEN_RESERVE_SALT);
                 tokensUsed += used;
@@ -353,10 +360,7 @@ contract GotonV4Graduator is IUnlockCallback {
         (int256 delta,) = poolManager.modifyLiquidity(
             key,
             ModifyLiquidityParams({
-                tickLower: tickLower,
-                tickUpper: tickUpper,
-                liquidityDelta: int256(uint256(liquidity)),
-                salt: salt
+                tickLower: tickLower, tickUpper: tickUpper, liquidityDelta: int256(uint256(liquidity)), salt: salt
             }),
             ""
         );
@@ -412,11 +416,7 @@ contract GotonV4Graduator is IUnlockCallback {
 
     function _poolKey(address token) private view returns (PoolKey memory) {
         return PoolKey({
-            currency0: address(0),
-            currency1: token,
-            fee: POOL_FEE,
-            tickSpacing: TICK_SPACING,
-            hooks: address(hook)
+            currency0: address(0), currency1: token, fee: POOL_FEE, tickSpacing: TICK_SPACING, hooks: address(hook)
         });
     }
 
@@ -447,7 +447,9 @@ contract GotonV4Graduator is IUnlockCallback {
                 || uint256(split.holdersBps) + split.burnBps + split.creatorBps + split.liquidityBps != 10_000
         ) revert InvalidSplit();
         defaultSplit = split;
-        emit DefaultSplitUpdated(split.protocolBps, split.holdersBps, split.burnBps, split.creatorBps, split.liquidityBps);
+        emit DefaultSplitUpdated(
+            split.protocolBps, split.holdersBps, split.burnBps, split.creatorBps, split.liquidityBps
+        );
     }
 
     function transferOwnership(address newOwner) external onlyOwner {
