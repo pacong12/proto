@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { uploadFile, generateDeterministicCid } from '../src/modules/ipfs/ipfs.service';
-import { IpfsController } from '../src/modules/ipfs/ipfs.controller';
+import { createIpfsService, generateDeterministicCid, IpfsController } from '../src/modules/ipfs';
+
+const ipfsService = createIpfsService();
+const uploadFile = ipfsService.uploadFile.bind(ipfsService);
 
 describe('IPFS Service & Controller', () => {
   const originalEnv = process.env;
@@ -67,7 +69,7 @@ describe('IPFS Service & Controller', () => {
   });
 
   describe('POST /api/ipfs/upload HTTP Integration', () => {
-    const controller = new IpfsController();
+    const controller = new IpfsController(ipfsService);
     const JPEG = Buffer.concat([
       Buffer.from([0xff, 0xd8, 0xff, 0xe0]),
       Buffer.from('token-logo-bytes'),

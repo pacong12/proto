@@ -59,6 +59,21 @@ All code follows the Clean Architecture dependency rule: **Dependencies point st
   `useTradeDividends`, `useTradeOrderRoutes`, `useTradeForm` (the swap form) and
   `useTradeCallouts`. `fetchTradeToken` loads the token from the API and falls back to the chain.
 
+### Modules (`apps/api/src/modules`)
+
+Every module keeps the same layers, so each piece has one place:
+
+- `chains`: `domain/chain.port.ts` (`IChainService`, `ChainRegistryPort`) and
+  `infrastructure/` (`ChainService`, `ChainRegistry` over viem clients). Consumers depend on the port.
+- `dex`: `domain/dex-pair.ts` (pair and asset ids), `application/` (`DexScreenerService`,
+  `GeckoTerminalService`: what the listing endpoints read, through use cases and store ports),
+  `presentation/` (response builders per spec, and the routes). Response caching uses
+  `replyCached` from `core/http`.
+- `ipfs`: `domain/` (CIDs, the image upload policy, storage ports), `infrastructure/` (local disk,
+  Pinata, public gateways), `application/ipfs.service.ts` and `presentation/` (the upload
+  controller and routes). `createIpfsService()` wires the adapters.
+- A route turns an `AppError` thrown by a service into its HTTP error with `replyCatching`.
+
 ### Composition (`apps/api/src`)
 
 - `app/container.ts` is the composition root: it builds every adapter, use case, controller and

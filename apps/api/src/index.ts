@@ -17,8 +17,7 @@ export * from './modules/security/domain/security-policy';
 export * from './modules/security/application/security-gate.service';
 export * from './modules/security/presentation/security.controller';
 
-export * from './modules/ipfs/ipfs.service';
-export * from './modules/ipfs/ipfs.controller';
+export * from './modules/ipfs';
 
 export * from './core/ports/logger.port';
 export * from './modules/observability/domain/ports/telemetry.port';

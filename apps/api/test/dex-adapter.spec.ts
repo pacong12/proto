@@ -6,10 +6,9 @@ import { SqliteTokenRepository } from '../src/modules/tokens/infrastructure/adap
 import {
   eventsResponse,
   latestBlockResponse,
-  parsePairId,
   swapEvent,
-  toUnixSeconds,
-} from '../src/modules/dex/dex-screener.adapter';
+} from '../src/modules/dex/presentation/dex-screener.presenter';
+import { parsePairId, toUnixSeconds } from '../src/modules/dex/domain/dex-pair';
 
 // Fresh ids per run, like the other API tests.
 const hex = (bytes: number) =>

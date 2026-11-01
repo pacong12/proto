@@ -1,5 +1,5 @@
-import type { Router } from '../../core/http/router';
-import type { AppContainer } from '../../app/container';
+import type { Router } from '../../../core/http/router';
+import type { AppContainer } from '../../../app/container';
 
 /** HTTP routes of the ipfs module, registered in the order they are matched. */
 export function registerIpfsRoutes(router: Router, deps: AppContainer): void {

@@ -119,5 +119,14 @@ export function createReplies(baseHeaders: Record<string, string>) {
       env: { success: boolean; error?: { code?: string } | null },
       extraHeaders: Record<string, string> = {},
     ) => replyEnvelope(env, baseHeaders, extraHeaders),
+    /** Replies with what `run` returns; an AppError it throws becomes that error's reply. */
+    replyCatching: async (run: () => Promise<Response>): Promise<Response> => {
+      try {
+        return await run();
+      } catch (e) {
+        if (e instanceof AppError) return replyError(e.code, e.message, e.statusCode, baseHeaders);
+        throw e;
+      }
+    },
   };
 }
