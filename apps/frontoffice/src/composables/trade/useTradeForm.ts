@@ -30,7 +30,7 @@ export function useTradeForm(
     currentMarketData,
     currentToken,
     explorerUrl,
-    loadTokenData,
+    refreshTokenData,
     tokenNetwork,
   } = page;
   const {
@@ -479,8 +479,9 @@ export function useTradeForm(
       } catch {
         // non-blocking
       }
-      await loadTokenData(currentToken.value.address);
+      // In place: a full load would swap the page for its loading skeleton and rebuild the chart.
       await Promise.allSettled([
+        refreshTokenData(currentToken.value.address),
         updateBalance(),
         fetchUserTokenBalance(true),
         refreshLiveDividends(),

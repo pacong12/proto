@@ -89,10 +89,30 @@ export interface TradeEventEntity {
   isBuy: boolean;
   tokenAmount: string;
   wethAmount: string;
+  /** USD per token at the trade, at the quote asset's USD price when it was indexed. */
   priceUsd: number;
+  /**
+   * Quote asset (ETH or USDC) per token right after the trade: the spot price, so a buy always
+   * raises it and a sell lowers it. Absent on trades indexed before it was recorded.
+   */
+  priceQuote?: number;
   blockNumber: bigint;
   transactionHash: `0x${string}`;
   timestamp: number;
+}
+
+/**
+ * A trade's price on a chart: its quote price at today's quote USD price, so the chart follows
+ * the buys and sells instead of the quote asset's USD moves between them, and ends at the live
+ * price. Trades without a quote price keep their recorded USD price.
+ */
+export function chartPriceUsd(
+  trade: Pick<TradeEventEntity, 'priceUsd' | 'priceQuote'>,
+  quotePriceUsd: number | undefined,
+): number {
+  return trade.priceQuote && quotePriceUsd && quotePriceUsd > 0
+    ? trade.priceQuote * quotePriceUsd
+    : trade.priceUsd;
 }
 
 export interface CandlestickEntity {

@@ -1,4 +1,5 @@
 import {
+  chartPriceUsd,
   getUserIdentity,
   resolveTokenNetwork,
   type PnlPosition,
@@ -72,7 +73,7 @@ export class PnlService {
 
   /** The PNG card of the position; `pageUrl` is where the card links to. */
   async card(wallet: string, tokenAddress: string, pageUrl: string): Promise<Uint8Array> {
-    const { share, trades, supply } = await this.position(wallet, tokenAddress);
+    const { share, trades, supply, quotePriceUsd } = await this.position(wallet, tokenAddress);
     const [chart, logo] = await Promise.all([
       this.chart(share, supply),
       share.token.logo ? this.deps.images.pngDataUrl(share.token.logo) : null,
@@ -80,9 +81,11 @@ export class PnlService {
     const card: PnlCard = {
       share,
       chart,
-      trades: trades
-        .slice(0, CHART_MARKERS)
-        .map((t) => ({ t: t.timestamp, marketCapUsd: t.priceUsd * supply, isBuy: t.isBuy })),
+      trades: trades.slice(0, CHART_MARKERS).map((t) => ({
+        t: t.timestamp,
+        marketCapUsd: chartPriceUsd(t, quotePriceUsd) * supply,
+        isBuy: t.isBuy,
+      })),
       logo,
       pageUrl,
     };
@@ -103,7 +106,10 @@ export class PnlService {
     }
     const { position, supply } = toPosition(detail, trades);
     const share: PnlShare = { ...trader, ...position };
-    return { share, trades: trades as readonly TradeEventEntity[], supply };
+    // The quote asset's USD price now, which the chart's candles are priced at (chartPriceUsd).
+    const { priceUsd, priceInWeth } = detail.marketData;
+    const quotePriceUsd = priceInWeth > 0 ? priceUsd / priceInWeth : undefined;
+    return { share, trades: trades as readonly TradeEventEntity[], supply, quotePriceUsd };
   }
 
   private async trader(wallet: string): Promise<PnlTrader> {

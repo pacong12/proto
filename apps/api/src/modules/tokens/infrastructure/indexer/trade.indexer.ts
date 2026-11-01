@@ -1,6 +1,8 @@
-import { erc20Abi, type Address } from 'viem';
+import { replayCurveReserves, sqrtPriceX96ToQuotePrice } from '@goton/math-sdk';
+import { erc20Abi, isAddress, type Address } from 'viem';
 import {
   bondingCurveAbi,
+  launchpadTokenAbi,
   type LaunchedTokenEntity,
   type TradeEventEntity,
 } from '@goton/shared-types';
@@ -19,19 +21,15 @@ export class TradeIndexer extends ChainIndexerPart {
   private quoteDecimals: number | null = null;
 
   async pollV2Trades(from: bigint, to: bigint): Promise<number> {
-    // Fetch all V2 tokens from repository
+    // Every v2 token's curve, graduated ones included: graduation replaces poolAddress with the v4
+    // pool id, and a range can hold the curve's last trades and the graduation together.
     const allTokens = await findAllTokens(this.tokenRepository);
-    const v2Tokens = allTokens.filter(
-      (t) =>
-        t.version === 'v2' &&
-        typeof t.poolAddress === 'string' &&
-        t.poolAddress.length === 42 &&
-        t.poolAddress.startsWith('0x'),
-    );
+    const curveOf = (t: LaunchedTokenEntity) => t.curveAddress ?? t.poolAddress;
+    const v2Tokens = allTokens.filter((t) => t.version === 'v2' && isAddress(curveOf(t)));
 
     if (v2Tokens.length === 0) return 0;
 
-    const curveAddresses = v2Tokens.map((t) => t.poolAddress as Address);
+    const curveAddresses = v2Tokens.map((t) => curveOf(t) as Address);
     const quotePriceUsd = await this.priceFeed.getQuoteAssetPriceUsd(this.network.chainId);
 
     try {
@@ -51,7 +49,7 @@ export class TradeIndexer extends ChainIndexerPart {
 
       if (logs.length === 0) return 0;
 
-      const tokenByCurve = new Map(v2Tokens.map((t) => [t.poolAddress.toLowerCase(), t]));
+      const tokenByCurve = new Map(v2Tokens.map((t) => [curveOf(t).toLowerCase(), t]));
       return await this.saveTradeLogs(logs, tokenByCurve, quotePriceUsd);
     } catch (e) {
       console.warn(`[EventPoller:${this.network.name}] V2 trade poll error:`, (e as Error).message);
@@ -154,6 +152,7 @@ export class TradeIndexer extends ChainIndexerPart {
           tokenAmount: tokenAmountRaw.toFixed(4),
           wethAmount: wethAmountRaw.toFixed(6),
           priceUsd: marketData.priceUsd,
+          priceQuote: marketData.priceInWeth,
           blockNumber,
           transactionHash: swap.transactionHash ?? '0x0',
           timestamp,
@@ -211,10 +210,11 @@ export class TradeIndexer extends ChainIndexerPart {
         const token = tokenByPoolId.get(poolId);
         if (!token) continue;
 
-        const { sender, amount0, amount1 } = log.args as {
+        const { sender, amount0, amount1, sqrtPriceX96 } = log.args as {
           sender?: Address;
           amount0?: bigint;
           amount1?: bigint;
+          sqrtPriceX96?: bigint;
         };
         if (amount0 === undefined || amount1 === undefined) continue;
 
@@ -227,10 +227,15 @@ export class TradeIndexer extends ChainIndexerPart {
         const tokenAmountNum = Math.abs(Number(tokenDelta)) / 1e18;
         const isBuy = quoteDelta < 0n;
 
-        let priceUsd = 0;
-        if (tokenAmountNum > 0) {
-          priceUsd = (usdcAmountNum / tokenAmountNum) * quotePriceUsd;
-        }
+        // The pool's price after the swap. The swap's own ratio is its average price, which
+        // sits below the price a buy leaves (and above the one a sell leaves), so a buy after a
+        // sell could chart lower than that sell.
+        const spot = sqrtPriceX96
+          ? sqrtPriceX96ToQuotePrice(sqrtPriceX96, token.isToken0, quoteDecimals)
+          : 0;
+        const priceQuote =
+          spot > 0 ? spot : tokenAmountNum > 0 ? usdcAmountNum / tokenAmountNum : 0;
+        const priceUsd = priceQuote * quotePriceUsd;
 
         const blockNumber = log.blockNumber ?? 0n;
         let timestamp = blockTimestamps.get(blockNumber);
@@ -256,12 +261,14 @@ export class TradeIndexer extends ChainIndexerPart {
           tokenAmount: tokenAmountNum.toFixed(4),
           wethAmount: usdcAmountNum.toFixed(6),
           priceUsd,
+          priceQuote,
           blockNumber,
           transactionHash: log.transactionHash ?? '0x0',
           timestamp,
         };
 
         await this.tokenRepository.saveTrade(trade);
+        await this.refreshMarketAfterTrade(token, priceUsd, quotePriceUsd);
         count++;
       }
       return count;
@@ -278,7 +285,7 @@ export class TradeIndexer extends ChainIndexerPart {
     quotePriceUsd: number,
   ): Promise<number> {
     const blockTimestamps = new Map<bigint, number>();
-    const spotAtBlock = new Map<string, number | null>();
+    const spots = await this.curveTradeSpots(logs, tokenByCurve);
 
     let count = 0;
     for (const log of logs) {
@@ -298,17 +305,13 @@ export class TradeIndexer extends ChainIndexerPart {
       const ethAmountNum = Number(ethAmount) / 1e18;
       const tokenAmountNum = Number(tokenAmount) / 1e18;
 
-      // The curve's spot price after the trade's block. The trade's own ratio is not a price:
-      // in the first seconds the anti-snipe tax (up to 99%) shrinks tokenAmount and made a buy
-      // look up to 100x dearer, and the fee and price impact skew it too.
-      const spotNative = await this.curveSpotAtBlock(log.address, log.blockNumber, spotAtBlock);
-      let priceUsd = 0;
-      if (spotNative !== null) {
-        priceUsd = spotNative * quotePriceUsd;
-      } else if (tokenAmountNum > 0) {
-        // Older than the RPC's state history (a deep backfill): the trade ratio is all there is.
-        priceUsd = (ethAmountNum / tokenAmountNum) * quotePriceUsd;
-      }
+      // The curve's spot price right after the trade. The trade's own ratio is not a price: in
+      // the first seconds the anti-snipe tax (up to 99%) shrinks tokenAmount and made a buy look
+      // up to 100x dearer, and the fee and price impact skew it too.
+      const spotNative = spots.get(`${log.transactionHash}-${log.logIndex}`) ?? null;
+      // Older than the RPC's state history (a deep backfill): the trade ratio is all there is.
+      const priceQuote = spotNative ?? (tokenAmountNum > 0 ? ethAmountNum / tokenAmountNum : 0);
+      const priceUsd = priceQuote * quotePriceUsd;
 
       const blockNumber = log.blockNumber ?? 0n;
       let timestamp = blockTimestamps.get(blockNumber);
@@ -332,43 +335,14 @@ export class TradeIndexer extends ChainIndexerPart {
         tokenAmount: tokenAmountNum.toFixed(4),
         wethAmount: ethAmountNum.toFixed(6),
         priceUsd,
+        priceQuote,
         blockNumber,
         transactionHash: log.transactionHash ?? '0x0',
         timestamp,
       };
 
       await this.tokenRepository.saveTrade(trade);
-      if (priceUsd > 0) {
-        const mkt = await this.tokenRepository.getMarketData(token.address);
-        if (mkt) {
-          const supplyTokens = token.totalSupply
-            ? Number(BigInt(token.totalSupply)) / 1e18
-            : 1_000_000_000;
-          // Recompute 24h volume from stored trades so the value is always accurate
-          // and never lost when saveMarketData overwrites the DB row. Summed in SQL: the newest
-          // 500 trades undercount any token that trades more often than that in a day.
-          const cutoff24h = Date.now() - 86_400_000;
-          let volume24hQuote: number;
-          if (this.tokenRepository.getTradeFlow) {
-            const flow = await this.tokenRepository.getTradeFlow(token.address, cutoff24h);
-            volume24hQuote = flow.buyQuote + flow.sellQuote;
-          } else {
-            const recentTrades = await this.tokenRepository.getTrades(token.address, 500, 0);
-            volume24hQuote = recentTrades
-              .filter((t) => (t.timestamp ?? 0) >= cutoff24h)
-              .reduce((sum, t) => sum + parseFloat(t.wethAmount || '0'), 0);
-          }
-          const volume24hUsd = volume24hQuote * quotePriceUsd;
-          await this.tokenRepository.saveMarketData({
-            ...mkt,
-            priceUsd,
-            priceInWeth: priceUsd / quotePriceUsd,
-            marketCapUsd: priceUsd * supplyTokens,
-            fdvUsd: priceUsd * supplyTokens,
-            volume24hUsd,
-          });
-        }
-      }
+      await this.refreshMarketAfterTrade(token, priceUsd, quotePriceUsd);
       count++;
     }
     return count;
@@ -393,18 +367,106 @@ export class TradeIndexer extends ChainIndexerPart {
   }
 
   /** Curve spot price (quote per token) at the end of `blockNumber`, or null if unreadable. */
-  private async curveSpotAtBlock(
-    curve: Address,
-    blockNumber: bigint | null,
-    cache: Map<string, number | null>,
-  ): Promise<number | null> {
-    if (blockNumber === null) return null;
-    const key = `${curve.toLowerCase()}-${blockNumber}`;
-    const cached = cache.get(key);
-    if (cached !== undefined) return cached;
-    let spot: number | null = null;
+  /**
+   * Moves the token's stored market data to a trade's price (and its 24h volume), so the token's
+   * stream and lists follow trades as they are indexed, on the curve and in its pool.
+   */
+  private async refreshMarketAfterTrade(
+    token: LaunchedTokenEntity,
+    priceUsd: number,
+    quotePriceUsd: number,
+  ): Promise<void> {
+    if (!(priceUsd > 0)) return;
+    const mkt = await this.tokenRepository.getMarketData(token.address);
+    if (mkt) {
+      const supplyTokens = token.totalSupply
+        ? Number(BigInt(token.totalSupply)) / 1e18
+        : 1_000_000_000;
+      // Recompute 24h volume from stored trades so the value is always accurate
+      // and never lost when saveMarketData overwrites the DB row. Summed in SQL: the newest
+      // 500 trades undercount any token that trades more often than that in a day.
+      const cutoff24h = Date.now() - 86_400_000;
+      let volume24hQuote: number;
+      if (this.tokenRepository.getTradeFlow) {
+        const flow = await this.tokenRepository.getTradeFlow(token.address, cutoff24h);
+        volume24hQuote = flow.buyQuote + flow.sellQuote;
+      } else {
+        const recentTrades = await this.tokenRepository.getTrades(token.address, 500, 0);
+        volume24hQuote = recentTrades
+          .filter((t) => (t.timestamp ?? 0) >= cutoff24h)
+          .reduce((sum, t) => sum + parseFloat(t.wethAmount || '0'), 0);
+      }
+      const volume24hUsd = volume24hQuote * quotePriceUsd;
+      await this.tokenRepository.saveMarketData({
+        ...mkt,
+        priceUsd,
+        priceInWeth: priceUsd / quotePriceUsd,
+        marketCapUsd: priceUsd * supplyTokens,
+        fdvUsd: priceUsd * supplyTokens,
+        volume24hUsd,
+      });
+    }
+  }
+
+  /**
+   * The curve's spot price right after each trade (by `txHash-logIndex`), null when its block is
+   * older than the RPC's state history. One trade in a block gets the block's closing spot; several
+   * get it walked back through their amounts (replayCurveReserves), so a buy followed by a sell in
+   * the same block keeps its own, higher, price.
+   */
+  private async curveTradeSpots(
+    logs: Awaited<ReturnType<TradeIndexer['fetchTradeLogs']>>,
+    tokenByCurve: Map<string, LaunchedTokenEntity>,
+  ): Promise<Map<string, number | null>> {
+    const groups = new Map<string, typeof logs>();
+    for (const log of logs) {
+      if (log.blockNumber === null) continue;
+      const key = `${log.address.toLowerCase()}-${log.blockNumber}`;
+      groups.set(key, [...(groups.get(key) ?? []), log]);
+    }
+    const spots = new Map<string, number | null>();
+    for (const group of groups.values()) {
+      group.sort((a, b) => (a.logIndex ?? 0) - (b.logIndex ?? 0));
+      const { address, blockNumber } = group[0]!;
+      const closing = await this.curveReservesAtBlock(address, blockNumber!);
+      const token = tokenByCurve.get(address.toLowerCase());
+      const sellTaxBps =
+        closing && group.length > 1 && token ? await this.sellTaxBps(token.address) : 0n;
+      const after = closing
+        ? replayCurveReserves(
+            closing,
+            group.map((log) => {
+              const a = log.args as {
+                isBuy: boolean;
+                ethAmount: bigint;
+                tokenAmount: bigint;
+                feeEth: bigint;
+              };
+              return {
+                isBuy: a.isBuy,
+                ethAmount: a.ethAmount,
+                tokenAmount: a.tokenAmount,
+                feeEth: a.feeEth ?? 0n,
+              };
+            }),
+            sellTaxBps,
+          ).after
+        : [];
+      group.forEach((log, i) => {
+        const r = after[i];
+        spots.set(
+          `${log.transactionHash}-${log.logIndex}`,
+          r && r.virtualTokenWei > 0n ? Number(r.virtualEthWei) / Number(r.virtualTokenWei) : null,
+        );
+      });
+    }
+    return spots;
+  }
+
+  /** The curve's virtual reserves at the end of a block, or null past the RPC's state history. */
+  private async curveReservesAtBlock(curve: Address, blockNumber: bigint) {
     try {
-      const [vEth, vToken] = await Promise.all([
+      const [virtualEthWei, virtualTokenWei] = await Promise.all([
         this.client.readContract({
           address: curve,
           abi: bondingCurveAbi,
@@ -418,12 +480,25 @@ export class TradeIndexer extends ChainIndexerPart {
           blockNumber,
         }) as Promise<bigint>,
       ]);
-      if (vToken > 0n) spot = Number(vEth) / Number(vToken);
+      return { virtualEthWei, virtualTokenWei };
     } catch {
       // The RPC keeps a limited state history (about 2,000 blocks on Robinhood Chain).
+      return null;
     }
-    cache.set(key, spot);
-    return spot;
+  }
+
+  /** The token's sell tax: a taxed sell leaves the curve fewer tokens than it sold. */
+  private async sellTaxBps(token: Address): Promise<bigint> {
+    try {
+      const [, sellTaxBps] = (await this.client.readContract({
+        address: token,
+        abi: launchpadTokenAbi,
+        functionName: 'taxConfig',
+      })) as readonly [number, number, Address];
+      return BigInt(sellTaxBps);
+    } catch {
+      return 0n;
+    }
   }
 
   private fetchTradeLogs(address: Address | Address[], fromBlock: bigint, toBlock: bigint) {

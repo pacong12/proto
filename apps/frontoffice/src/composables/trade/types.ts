@@ -37,6 +37,6 @@ export interface TradePage {
   isCreator: ComputedRef<boolean>;
   tokenLoading: Ref<boolean>;
   activeBottomTab: Ref<'callouts' | 'trades' | 'top-traders' | 'holders' | 'about'>;
-  /** Reloads the token after a swap changed its state. */
-  loadTokenData: (address: `0x${string}`) => Promise<void>;
+  /** Refreshes the token and its market data in place, without the page's loading state. */
+  refreshTokenData: (address: `0x${string}`) => Promise<void>;
 }
