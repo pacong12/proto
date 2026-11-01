@@ -374,9 +374,17 @@ const messages: Record<string, string> = {
   takeProfitAt: 'Take profit na capitalização (USD)',
   optional: 'Opcional',
   stopLossAt: 'Stop loss na capitalização (USD)',
-  stopSlippage: 'Slippage do stop (%)',
+  orderSlippage: 'Tolerância de slippage (%)',
   stopTwapNote:
-    'O stop só dispara quando o preço fica abaixo dele por um tempo (média ponderada no tempo), então uma queda breve não vende seus tokens.',
+    'Os stops disparam pelo preço médio dos últimos {minutes}–{max} minutos, então uma queda breve não vende seus tokens. Numa queda rápida a venda pode sair abaixo do gatilho; o mínimo pago protege você.',
+  stopNotReady:
+    'Os stop-loss deste token ativam por volta das {time}: precisam de {minutes} minutos de histórico de preço. Você pode criar agora e ele ativa sozinho.',
+  stopNotReadyFirstTrade:
+    'Os stop-loss deste token ativam {minutes} minutos após a próxima negociação, quando começa o histórico de preço. Você pode criar agora e ele ativa sozinho.',
+  stopNotReadyNextTrade:
+    'Os stop-loss deste token ativam na próxima negociação. Você pode criar agora e ele ativa sozinho.',
+  largeOrderImpact:
+    'Vender tudo de uma vez move o preço em cerca de {pct}%. Os valores acima já consideram isso; considere dividir em ordens menores em vários alvos.',
   expiresIn: 'Expira em',
   escrowNote: 'Os fundos ficam no contrato de ordens até a ordem ser executada ou cancelada.',
   placeOrder: 'Enviar ordem',

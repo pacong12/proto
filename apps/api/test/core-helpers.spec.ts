@@ -95,4 +95,21 @@ describe('keeper sendAndWait', () => {
       reason: 'Receipt pending',
     });
   });
+
+  it('sends 25% over the gas estimate and reports a reverted transaction as not executed', async () => {
+    let sentGas: bigint | undefined;
+    const wallet = {
+      writeContract: async (req: { gas?: bigint }) => ((sentGas = req.gas), '0xdef'),
+    } as unknown as WalletClient;
+    const reverted = {
+      estimateContractGas: async () => 200_000n,
+      waitForTransactionReceipt: async () => ({ status: 'reverted' }),
+    } as unknown as PublicClient;
+    expect(sentResult(await sendAndWait(reverted, wallet, {}))).toEqual({
+      executed: false,
+      txHash: '0xdef',
+      reason: 'Reverted',
+    });
+    expect(sentGas).toBe(250_000n);
+  });
 });
