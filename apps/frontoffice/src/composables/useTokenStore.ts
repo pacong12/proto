@@ -10,8 +10,7 @@ import type { LaunchedTokenEntity, TokenMarketData } from '@goton/shared-types';
 import {
   resolveTokenNetwork,
   resolveNetworkByParam,
-  ARC_NETWORK,
-  ROBINHOOD_NETWORK,
+  DEFAULT_NETWORK,
   type NetworkConfig,
 } from '@goton/shared-types';
 import { apiFetch } from '@/lib/api-client';
@@ -22,7 +21,8 @@ export interface TokenListItem {
   marketData: TokenMarketData | null;
 }
 
-export type ChainViewMode = 'all' | 'robinhood' | 'arc' | (string & {});
+/** 'all', or a chain slug from the registry. */
+export type ChainViewMode = 'all' | (string & {});
 
 // Module-level singletons - shared across all composable consumers
 const tokens = ref<TokenListItem[]>([]);
@@ -31,7 +31,7 @@ const error = ref<string | null>(null);
 let lastFetched = 0;
 const STALE_MS = 15_000; // re-fetch if data is older than 15 seconds
 
-const selectedChainView = ref<ChainViewMode>('robinhood');
+const selectedChainView = ref<ChainViewMode>(DEFAULT_NETWORK.slug);
 
 export function useTokenStore() {
   const { activeNetwork, switchOrAddNetwork } = useWallet();
@@ -41,7 +41,7 @@ export function useTokenStore() {
     activeNetwork,
     (net) => {
       if (selectedChainView.value !== 'all') {
-        selectedChainView.value = net.chainId === ARC_NETWORK.chainId ? 'arc' : 'robinhood';
+        selectedChainView.value = net.slug;
       }
     },
     { immediate: true },
@@ -78,24 +78,6 @@ export function useTokenStore() {
   function invalidate(): void {
     lastFetched = 0;
   }
-
-  /**
-   * All Robinhood Chain tokens.
-   */
-  const robinhoodTokens = computed<TokenListItem[]>(() => {
-    return tokens.value.filter(
-      (item) => getTokenNetwork(item.token).chainId === ROBINHOOD_NETWORK.chainId,
-    );
-  });
-
-  /**
-   * All Arc Network tokens.
-   */
-  const arcTokens = computed<TokenListItem[]>(() => {
-    return tokens.value.filter(
-      (item) => getTokenNetwork(item.token).chainId === ARC_NETWORK.chainId,
-    );
-  });
 
   /**
    * Tokens for the currently active chain (wallet-linked).
@@ -170,8 +152,6 @@ export function useTokenStore() {
 
   return {
     tokens: readonly(tokens),
-    robinhoodTokens,
-    arcTokens,
     networkTokens,
     chainTokens,
     networkTokenAddresses,

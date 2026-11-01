@@ -7,6 +7,9 @@
  * Overrides: APP_URL, DOCS_URL, API_URL. Exits 1 when any check fails.
  */
 
+// The registry module only: this script runs without installing dependencies.
+import { CHAINS } from '../packages/shared-types/src/chains/registry';
+
 interface Target {
   app: string;
   docs: string;
@@ -153,10 +156,7 @@ check('api: health', async () => {
 });
 
 // --- Monitoring: indexer freshness and keeper gas ---
-const CHAINS = [
-  { slug: 'robinhood', rpc: 'https://rpc.mainnet.chain.robinhood.com', maxLagBlocks: 2_400 }, // ~10 min
-  { slug: 'arc', rpc: 'https://rpc.mainnet.arc.io', maxLagBlocks: 1_200 }, // ~10 min
-];
+const MAX_INDEXER_LAG_MS = 10 * 60_000;
 async function rpc<T>(url: string, method: string, params: unknown[]): Promise<T> {
   const res = await fetch(url, {
     method: 'POST',
@@ -171,21 +171,22 @@ for (const chain of CHAINS) {
     const res = await expectStatus(`${target.api}/dex/latest-block?chain=${chain.slug}`, 200);
     // DEX Screener's shape: { block: { blockNumber, blockTimestamp } }.
     const indexed = ((await res.json()) as { block: { blockNumber: number } }).block.blockNumber;
-    const head = Number(BigInt(await rpc<string>(chain.rpc, 'eth_blockNumber', [])));
-    expect(head - indexed <= chain.maxLagBlocks, `indexer ${head - indexed} blocks behind head`);
+    const head = Number(BigInt(await rpc<string>(chain.rpcUrl, 'eth_blockNumber', [])));
+    const maxLagBlocks = MAX_INDEXER_LAG_MS / chain.blockTimeMs;
+    expect(head - indexed <= maxLagBlocks, `indexer ${head - indexed} blocks behind head`);
   });
 }
 // SMOKE_KEEPER_ADDRESS: the keeper's public address; it must keep enough gas to run.
 const keeper = process.env.SMOKE_KEEPER_ADDRESS;
 if (keeper) {
-  const minGas = [
-    { slug: 'robinhood', rpc: CHAINS[0].rpc, min: 2n * 10n ** 14n, unit: 'ETH' }, // 0.0002 ETH
-    { slug: 'arc', rpc: CHAINS[1].rpc, min: 2n * 10n ** 17n, unit: 'USDC' }, // 0.2 USDC (18 dp native)
-  ];
-  for (const g of minGas) {
-    check(`keeper: ${g.slug} gas balance`, async () => {
-      const bal = BigInt(await rpc<string>(g.rpc, 'eth_getBalance', [keeper, 'latest']));
-      expect(bal >= g.min, `${Number(bal) / 1e18} ${g.unit} left, top up ${keeper}`);
+  for (const chain of CHAINS) {
+    check(`keeper: ${chain.slug} gas balance`, async () => {
+      const bal = BigInt(await rpc<string>(chain.rpcUrl, 'eth_getBalance', [keeper, 'latest']));
+      const { decimals, symbol } = chain.nativeCurrency;
+      expect(
+        bal >= chain.keeper.minGasWei,
+        `${Number(bal) / 10 ** decimals} ${symbol} left, top up ${keeper}`,
+      );
     });
   }
 }

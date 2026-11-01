@@ -110,9 +110,11 @@ export async function setLocale(locale: SupportedLocale): Promise<void> {
   }
 }
 
-export function t(key: string): string {
+/** The string for `key` in the current locale, with `{name}` placeholders filled from `params`. */
+export function t(key: string, params?: Record<string, string>): string {
   const loc = currentLocale.value;
-  return messages[loc]?.[key] ?? en[key] ?? key;
+  const text = messages[loc]?.[key] ?? en[key] ?? key;
+  return params ? text.replace(/\{(\w+)\}/g, (m, name: string) => params[name] ?? m) : text;
 }
 
 export function useI18n() {

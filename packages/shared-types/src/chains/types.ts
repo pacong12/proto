@@ -22,11 +22,23 @@ export interface NetworkConfig {
   };
   rpcUrl: string;
   rpcUrls?: string[];
+  /** Average block time; turns durations into block counts (indexer lag, backfill windows). */
+  blockTimeMs: number;
   /** Widest eth_getLogs block span every RPC in `rpcUrls` accepts; history backfills stay within it. */
   maxLogBlockRange?: number;
   /** Pause between the requests of a history backfill, for RPCs that rate-limit eth_getLogs. */
   backfillRequestIntervalMs?: number;
   blockExplorer: string;
+  /** Display name of `blockExplorer` (wallet chain metadata). */
+  blockExplorerName: string;
+  /** Decimals of `contracts.weth`, the ERC-20 quote of launch pools (6 for USDC on Arc). */
+  quoteTokenDecimals: number;
+  keeper: {
+    /** Smallest accrued amount, in quote-token units, worth a keeper transaction. */
+    minQuote: bigint;
+    /** Native balance under which the keeper wallet needs a top-up. */
+    minGasWei: bigint;
+  };
   contracts: {
     factory: `0x${string}`;
     factoryV2?: `0x${string}`;

@@ -92,7 +92,7 @@ const messages: Record<string, string> = {
   addressCopied: '地址已复制！',
   switchManageWallet: '切换钱包',
   disconnect: '断开连接',
-  switchToRobinhood: '切换到 Robinhood',
+  switchToNetwork: '切换到 {name}',
   noMatchingTokens: '未找到匹配代币：',
   typeSearchHint: '输入代币名称、符号或 0x 合约地址...',
   navigateHint: '切换',
@@ -335,7 +335,7 @@ const messages: Record<string, string> = {
   notFoundDocs: '查看文档',
   maintenanceBanner: '计划维护正在进行中，部分功能可能暂时无法使用。',
   maintenanceDismiss: '关闭通知',
-  v2SubtitleArc: '直接在锁定的 Uniswap v4 资金池中发射代币，每笔交易的税费以 USDC 支付。',
+  v2SubtitleInPool: '直接在锁定的 Uniswap v4 资金池中发射代币，每笔交易的税费以 USDC 支付。',
   buySellPressure: '买卖压力',
   timeWindow: '时间范围',
   noTradesInWindow: '该时间段内暂无交易。',
@@ -376,9 +376,9 @@ const messages: Record<string, string> = {
   footerCurveToV4: '联合曲线，之后 Uniswap v4',
   footerPoolFromLaunch: '发行即进入 Uniswap v4 池',
   footerLiquidityLocked: '流动性永久锁定',
-  footerSplitRobinhood: 'LP 手续费：70% 创建者 / 30% 协议',
-  footerSplitArc: '税费：20% 协议，其余按您的分配',
-  arcPoolLiveHint: '从第一个区块起即在锁定的 Uniswap v4 池中交易，无需填满曲线。',
+  footerSplitCurve: 'LP 手续费：70% 创建者 / 30% 协议',
+  footerSplitInPool: '税费：20% 协议，其余按您的分配',
+  inPoolLiveHint: '从第一个区块起即在锁定的 Uniswap v4 池中交易，无需填满曲线。',
   memestockMomentum: '动量',
   creatorHolds: '创建者持有',
   creatorHoldsHint: '创建者买入并仍持有的供应占比',
@@ -406,9 +406,9 @@ const messages: Record<string, string> = {
   addTeamWallet: '添加团队钱包',
   removeTeamWallet: '移除钱包',
   feeRecipientDefault: '所有创作者费用和税费将发送至',
-  teamFeesRobinhood:
+  teamFeesCurve:
     '发行前会创建团队钱包合约。代币税从发行起即进入该合约；毕业后可在个人主页将池子费用转向该合约（48 小时时间锁）。每位成员自行提取自己的份额。',
-  teamFeesArc:
+  teamFeesInPool:
     '发行前会创建团队钱包合约。在发行时提交的收款转向于 48 小时后生效之前（在个人主页确认），费用和税费仍归您。每位成员自行提取自己的份额。',
   teamFeesUnavailable: '该链暂不支持团队分账。所有创作者费用和税费将进入您的钱包。',
   teamPayouts: '团队分账',

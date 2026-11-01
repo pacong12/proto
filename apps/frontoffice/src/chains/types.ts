@@ -43,7 +43,6 @@ export interface ChainSwapParams {
 export interface ChainAdapter {
   readonly network: NetworkConfig;
   readonly chainId: number;
-  readonly isArc?: boolean;
 
   launchToken(
     params: ChainLaunchParams,

@@ -72,7 +72,7 @@ const messages: Record<string, string> = {
   addressCopied: 'تم نسخ العنوان!',
   switchManageWallet: 'تبديل المحفظة',
   disconnect: 'قطع الاتصال',
-  switchToRobinhood: 'التبديل إلى Robinhood',
+  switchToNetwork: 'التبديل إلى {name}',
   noMatchingTokens: 'لا توجد عملات مطابقة لـ',
   typeSearchHint: 'اكتب اسم العملة أو الرمز أو عنوان 0x...',
   navigateHint: 'تنقل',
@@ -339,7 +339,8 @@ const messages: Record<string, string> = {
   notFoundDocs: 'قراءة الوثائق',
   maintenanceBanner: 'تجري صيانة مجدولة حاليًا. قد لا تتوفر بعض الميزات لفترة قصيرة.',
   maintenanceDismiss: 'إغلاق الإشعار',
-  v2SubtitleArc: 'أطلق رمزًا مباشرة في مجمع Uniswap v4 مقفل. تُدفع ضريبتك بعملة USDC في كل صفقة.',
+  v2SubtitleInPool:
+    'أطلق رمزًا مباشرة في مجمع Uniswap v4 مقفل. تُدفع ضريبتك بعملة USDC في كل صفقة.',
   buySellPressure: 'ضغط الشراء / البيع',
   timeWindow: 'الفترة الزمنية',
   noTradesInWindow: 'لا توجد صفقات في هذه الفترة بعد.',
@@ -380,9 +381,9 @@ const messages: Record<string, string> = {
   footerCurveToV4: 'منحنى الربط ثم Uniswap v4',
   footerPoolFromLaunch: 'مجمع Uniswap v4 منذ الإطلاق',
   footerLiquidityLocked: 'السيولة مقفلة بشكل دائم',
-  footerSplitRobinhood: 'رسوم LP: ‏70% للمنشئ / 30% للبروتوكول',
-  footerSplitArc: 'الضريبة: 20% للبروتوكول والباقي حسب توزيعك',
-  arcPoolLiveHint: 'يُتداول في مجمع Uniswap v4 المقفل منذ الكتلة الأولى. لا يوجد منحنى لملئه.',
+  footerSplitCurve: 'رسوم LP: ‏70% للمنشئ / 30% للبروتوكول',
+  footerSplitInPool: 'الضريبة: 20% للبروتوكول والباقي حسب توزيعك',
+  inPoolLiveHint: 'يُتداول في مجمع Uniswap v4 المقفل منذ الكتلة الأولى. لا يوجد منحنى لملئه.',
   memestockMomentum: 'الزخم',
   creatorHolds: 'يحتفظ المنشئ بـ',
   creatorHoldsHint: 'نسبة المعروض التي اشتراها المنشئ وما زال يحتفظ بها',
@@ -411,9 +412,9 @@ const messages: Record<string, string> = {
   addTeamWallet: 'إضافة محفظة فريق',
   removeTeamWallet: 'إزالة المحفظة',
   feeRecipientDefault: 'كل رسوم المنشئ والضرائب تذهب إلى',
-  teamFeesRobinhood:
+  teamFeesCurve:
     'يُنشأ عقد محفظة الفريق قبل الإطلاق. تذهب ضريبة الرمز إليه منذ الإطلاق؛ وبعد التخرج وجّه رسوم المجمع إليه من ملفك الشخصي (قفل زمني 48 ساعة). يسحب كل عضو حصته بنفسه.',
-  teamFeesArc:
+  teamFeesInPool:
     'يُنشأ عقد محفظة الفريق قبل الإطلاق. تذهب الرسوم والضرائب إليك حتى يصبح تحويل الدفع المقترح عند الإطلاق نافذًا بعد 48 ساعة (اقبله من ملفك الشخصي). يسحب كل عضو حصته بنفسه.',
   teamFeesUnavailable:
     'مدفوعات الفريق غير متاحة على هذه الشبكة بعد. كل رسوم المنشئ والضرائب تذهب إلى محفظتك.',

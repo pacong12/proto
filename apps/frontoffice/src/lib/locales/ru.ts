@@ -73,7 +73,7 @@ const messages: Record<string, string> = {
   addressCopied: 'Адрес скопирован!',
   switchManageWallet: 'Сменить кошелёк',
   disconnect: 'Отключить',
-  switchToRobinhood: 'Переключить на Robinhood',
+  switchToNetwork: 'Переключить на {name}',
   noMatchingTokens: 'Нет токенов по запросу',
   typeSearchHint: 'Введите имя токена, тикер или адрес 0x...',
   navigateHint: 'Навигация',
@@ -348,7 +348,7 @@ const messages: Record<string, string> = {
   maintenanceBanner:
     'Идут плановые технические работы. Некоторые функции могут быть временно недоступны.',
   maintenanceDismiss: 'Закрыть уведомление',
-  v2SubtitleArc:
+  v2SubtitleInPool:
     'Запустите токен сразу в заблокированный пул Uniswap v4. Ваш налог выплачивается в USDC с каждой сделки.',
   buySellPressure: 'Давление покупок / продаж',
   timeWindow: 'Период',
@@ -393,9 +393,9 @@ const messages: Record<string, string> = {
   footerCurveToV4: 'Бондинг-кривая, затем Uniswap v4',
   footerPoolFromLaunch: 'Пул Uniswap v4 с запуска',
   footerLiquidityLocked: 'Ликвидность заблокирована навсегда',
-  footerSplitRobinhood: 'Комиссии LP: 70% создателю / 30% протоколу',
-  footerSplitArc: 'Налог: 20% протоколу, остальное по вашему распределению',
-  arcPoolLiveHint:
+  footerSplitCurve: 'Комиссии LP: 70% создателю / 30% протоколу',
+  footerSplitInPool: 'Налог: 20% протоколу, остальное по вашему распределению',
+  inPoolLiveHint:
     'Торгуется в заблокированном пуле Uniswap v4 с первого блока. Кривую заполнять не нужно.',
   memestockMomentum: 'Импульс',
   creatorHolds: 'У создателя',
@@ -425,9 +425,9 @@ const messages: Record<string, string> = {
   addTeamWallet: 'Добавить кошелёк команды',
   removeTeamWallet: 'Удалить кошелёк',
   feeRecipientDefault: 'Все комиссии и налоги создателя идут на',
-  teamFeesRobinhood:
+  teamFeesCurve:
     'Перед запуском создаётся контракт командного кошелька. Налог токена идёт в него с момента запуска; после выпуска направьте комиссии пула туда из профиля (таймлок 48 часов). Каждый участник выводит свою долю сам.',
-  teamFeesArc:
+  teamFeesInPool:
     'Перед запуском создаётся контракт командного кошелька. Комиссии и налоги идут вам, пока смена получателя, предложенная при запуске, не вступит в силу через 48 часов (подтвердите в профиле). Каждый участник выводит свою долю сам.',
   teamFeesUnavailable:
     'Командные выплаты пока недоступны в этой сети. Все комиссии и налоги создателя идут на ваш кошелёк.',

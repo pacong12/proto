@@ -4,4 +4,6 @@ export * from './robinhood';
 export * from './arc';
 export * from './registry';
 export * from './resolver';
+export * from './viem';
+export * from './quote';
 export * from './fee-splitter';

@@ -6,18 +6,18 @@ vi.mock('../src/lib/viem-client', () => ({
   waitForReceiptWithFallback: vi.fn(async () => ({ status: 'success' })),
 }));
 
-const { RobinhoodChainAdapter } = await import('../src/chains/robinhood/robinhood.adapter');
+const { BondingCurveChainAdapter } =
+  await import('../src/chains/bonding-curve/bonding-curve.adapter');
 
 const TOKEN = '0x00000000000000000000000000000000000000aa' as const;
 const ACCOUNT = '0x00000000000000000000000000000000000000cc' as const;
 const SPLIT = { creator: 50, buyback: 0, holders: 50, growth: 0 };
 
 function adapterWithGraduator(graduator: `0x${string}`) {
-  const adapter = new RobinhoodChainAdapter();
-  Object.defineProperty(adapter, 'network', {
-    value: { ...ROBINHOOD_CHAIN, contracts: { ...ROBINHOOD_CHAIN.contracts, graduator } },
+  return new BondingCurveChainAdapter({
+    ...ROBINHOOD_CHAIN,
+    contracts: { ...ROBINHOOD_CHAIN.contracts, graduator },
   });
-  return adapter;
 }
 
 function wallet(write: () => Promise<`0x${string}`>) {

@@ -1,6 +1,6 @@
 import { computed, getCurrentInstance, onMounted, onUnmounted, ref, watch } from 'vue';
 import {
-  ROBINHOOD_CHAIN,
+  DEFAULT_NETWORK,
   SUPPORTED_CHAINS,
   getNetworkConfig,
   type NetworkConfig,
@@ -32,6 +32,7 @@ import {
   type WalletSyncMessage,
 } from '../lib/wallet-store';
 import { shortenAddress } from '../lib/utils';
+import { switchProviderNetwork } from '../lib/wallet-network';
 
 const balanceWei = ref<bigint>(0n);
 const error = ref<string | null>(null);
@@ -189,7 +190,7 @@ export function useWallet() {
         const storedChain = parseChainId(localStorage.getItem(STORAGE_CHAIN_ID_KEY));
         if (storedAddr) {
           walletAddress.value = storedAddr;
-          walletChainId.value = storedChain ?? ROBINHOOD_CHAIN.chainId;
+          walletChainId.value = storedChain ?? DEFAULT_NETWORK.chainId;
         }
       }
       return;
@@ -200,7 +201,7 @@ export function useWallet() {
       if (accounts && accounts.length > 0) {
         const address = accounts[0] as `0x${string}`;
         const rawChain = await provider.request({ method: 'eth_chainId' });
-        const chain = parseChainId(rawChain) ?? ROBINHOOD_CHAIN.chainId;
+        const chain = parseChainId(rawChain) ?? DEFAULT_NETWORK.chainId;
 
         setConnectedWallet(provider, address, chain, 'window.ethereum', { broadcast: false });
 
@@ -272,7 +273,7 @@ export function useWallet() {
   }
 
   async function switchOrAddNetwork(
-    targetConfig: NetworkConfig = ROBINHOOD_CHAIN,
+    targetConfig: NetworkConfig = DEFAULT_NETWORK,
   ): Promise<boolean> {
     error.value = null;
     walletChainId.value = targetConfig.chainId;
@@ -305,36 +306,10 @@ export function useWallet() {
       return true;
     }
 
-    const hexChainId = `0x${targetConfig.chainId.toString(16)}`;
-
     try {
-      await provider.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: hexChainId }],
-      });
+      await switchProviderNetwork(provider, targetConfig);
       return true;
     } catch (switchError: unknown) {
-      const err = switchError as { code?: number };
-      if (err.code === 4902 || err.code === -32603) {
-        try {
-          await provider.request({
-            method: 'wallet_addEthereumChain',
-            params: [
-              {
-                chainId: hexChainId,
-                chainName: targetConfig.name,
-                nativeCurrency: targetConfig.nativeCurrency,
-                rpcUrls: [targetConfig.rpcUrl],
-                blockExplorerUrls: [targetConfig.blockExplorer],
-              },
-            ],
-          });
-          return true;
-        } catch (addError) {
-          error.value = (addError as Error).message;
-          return false;
-        }
-      }
       error.value = (switchError as Error).message;
       return false;
     }
@@ -461,7 +436,7 @@ export function useWallet() {
               ? parseChainId(localStorage.getItem(STORAGE_CHAIN_ID_KEY))
               : null;
           const currentChain =
-            storedChain ?? parseChainId(appKitChainId.value) ?? ROBINHOOD_CHAIN.chainId;
+            storedChain ?? parseChainId(appKitChainId.value) ?? DEFAULT_NETWORK.chainId;
 
           if (currentProvider) {
             setConnectedWallet(currentProvider, address, currentChain, 'reown');

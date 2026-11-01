@@ -1,5 +1,5 @@
 import { UNDEPLOYED, type NetworkConfig } from './types';
-import { getEnv } from './env';
+import { getEnv, getEnvBigInt } from './env';
 
 /** Canonical Goton curve address for Arc Network (legacy bonding-curve launches). */
 export const ARC_PROTO_CURVE_ADDRESS = getEnv(
@@ -59,7 +59,14 @@ export const ARC_NETWORK: NetworkConfig = {
   // dRPC free plan takes about 100 blocks per request.
   maxLogBlockRange: 10_000,
   backfillRequestIntervalMs: 1_000,
+  blockTimeMs: 500,
   blockExplorer: getEnv('ARC_BLOCK_EXPLORER_URL', 'https://explorer.arc.io'),
+  blockExplorerName: 'ArcScan',
+  quoteTokenDecimals: 6, // USDC ERC-20
+  keeper: {
+    minQuote: getEnvBigInt('KEEPER_MIN_QUOTE_ARC', 1_000_000n), // 1 USDC
+    minGasWei: 200_000_000_000_000_000n, // 0.2 USDC (18-decimal native)
+  },
   contracts: {
     factory: getEnv('ARC_V4_FACTORY_ADDRESS', ARC_V4_FACTORY) as `0x${string}`,
     factoryV2: getEnv('ARC_V4_FACTORY_ADDRESS', ARC_V4_FACTORY) as `0x${string}`,

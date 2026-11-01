@@ -30,18 +30,14 @@ import {
   TOKEN_LAUNCHED_V2_EVENT,
 } from './index';
 import {
-  createPublicClient,
   createWalletClient,
   decodeEventLog,
   parseAbiItem,
   verifyMessage,
-  type PublicClient,
   type Address,
   type Hex,
 } from 'viem';
 import {
-  ROBINHOOD_CHAIN,
-  ARC_CHAIN,
   bondingCurveAbi,
   gotonFeeSplitterAbi,
   gotonV4GraduatorAbi,
@@ -49,13 +45,13 @@ import {
   resolveFeeSplitter,
   launchpadTokenAbi,
   type LaunchedTokenEntity,
-  type NetworkConfig,
   TransactionIntent,
   type TokenCommentEntity,
   type TradeEventEntity,
   getUserIdentity,
   resolveTokenNetwork,
   resolveNetworkByParam,
+  nativeWeiPerQuoteUnit,
   buildCommentSignMessage,
   buildSessionSignMessage,
   sanitizeCreatorProfile,
@@ -73,7 +69,6 @@ import {
   buildSecurityHeaders,
   resolveRateLimitTier,
   deriveEnvelopeStatus,
-  chainFor,
   rpcTransport,
   anonymizeIp,
 } from './core';
@@ -84,14 +79,6 @@ import {
   GetCandlesticksUseCase,
   TradeController,
 } from './modules/trades';
-
-function createClientForNetwork(cfg: NetworkConfig) {
-  return createPublicClient({ chain: chainFor(cfg), transport: rpcTransport(cfg) });
-}
-
-export const robinhoodClient: PublicClient = createClientForNetwork(ROBINHOOD_CHAIN);
-export const arcClient: PublicClient = createClientForNetwork(ARC_CHAIN);
-export const publicClient: PublicClient = robinhoodClient; // Backward compatibility alias
 
 const PORT =
   process.env.NODE_ENV === 'test'
@@ -150,28 +137,27 @@ const securityController = new SecurityController(securityGateService);
 const ipfsService = new IpfsService();
 const ipfsController = new IpfsController(ipfsService);
 
-export const chainRegistry = new ChainRegistry(robinhoodClient, arcClient, priceFeed);
+export const chainRegistry = new ChainRegistry(priceFeed);
 
-// Dedicated pollers for each supported chain (Robinhood Chain & Arc Network)
-const robinhoodPoller = new EventPollerService(
-  robinhoodClient,
-  repository,
-  chainIndexer,
-  calculatePricing,
-  priceFeed,
-  ROBINHOOD_CHAIN,
+/** One event poller per supported chain, keyed by chain ID. */
+const pollers = new Map(
+  chainRegistry
+    .getAllChains()
+    .map(
+      (chain) =>
+        [
+          chain.chainId,
+          new EventPollerService(
+            chain.client,
+            repository,
+            chainIndexer,
+            calculatePricing,
+            priceFeed,
+            chain.network,
+          ),
+        ] as const,
+    ),
 );
-
-const arcPoller = new EventPollerService(
-  arcClient,
-  repository,
-  chainIndexer,
-  calculatePricing,
-  priceFeed,
-  ARC_CHAIN,
-);
-
-export const eventPoller: EventPollerService = robinhoodPoller; // Backward compatibility alias
 
 const requestTracker = new HttpRequestTracker(logger, cache);
 const devopsController = new DevopsController(requestTracker);
@@ -204,12 +190,12 @@ function safeTokenCompare(a: string, b: string): boolean {
   return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
 }
 
-// Start background event poller worker loop for both Robinhood and Arc chains.
+// Background event poller loop, one per supported chain.
 //
 // Strategy: adaptive polling with getLogs (HTTP-only RPC — no WebSocket available).
 //
 // Why getLogs polling and not watchContractEvent / WebSocket:
-//   - Both RPC endpoints (Robinhood, Arc) expose HTTP only; no wss:// available.
+//   - The chains' RPC endpoints expose HTTP only; no wss:// available.
 //   - viem watchContractEvent over HTTP is identical to getLogs polling internally,
 //     but lacks lastPolledBlock tracking (events lost on restart) and batching.
 //   - getLogs polling is reliable, idempotent, and retries the same block range
@@ -220,63 +206,36 @@ function safeTokenCompare(a: string, b: string): boolean {
 //   - Active: 3s when events were found last cycle → fast catch-up
 //   - Catch-up: while the cursor is behind the head (after a restart or an RPC outage), poll
 //     again after POLL_INTERVAL_CATCH_UP_MS until it is current.
-//   - Robinhood block time ~100ms (L2); Arc ~500ms. One cycle covers up to
-//     INDEXER_MAX_BLOCK_RANGE (2,000) blocks, far more than an idle interval produces.
+//   - Block times are 250ms to 500ms. One cycle covers up to INDEXER_MAX_BLOCK_RANGE (2,000)
+//     blocks, far more than an idle interval produces.
 //
-// Chains are staggered by 5s to avoid simultaneous RPC bursts.
+// Chains are staggered by 30s to avoid simultaneous RPC bursts.
 // Recursive setTimeout (not setInterval) ensures a slow RPC cycle never overlaps the next.
 const POLL_INTERVAL_IDLE_MS = 10_000; // no events found → back off
 const POLL_INTERVAL_ACTIVE_MS = 3_000; // events found    → stay responsive
 const POLL_INTERVAL_CATCH_UP_MS = 250; // behind the head → keep going
+const POLL_STAGGER_MS = 30_000;
 
-let robinhoodPolling = false;
-let robinhoodPollIntervalMs = POLL_INTERVAL_IDLE_MS;
-function scheduleRobinhoodPoll(): void {
+function schedulePoll(poller: EventPollerService, delayMs: number): void {
   setTimeout(async () => {
-    if (!robinhoodPolling) {
-      robinhoodPolling = true;
-      try {
-        const found = await robinhoodPoller.pollEvents();
-        // Tighten interval when there is active trading; relax when idle
-        robinhoodPollIntervalMs = robinhoodPoller.isBehind
-          ? POLL_INTERVAL_CATCH_UP_MS
-          : found > 0
-            ? POLL_INTERVAL_ACTIVE_MS
-            : POLL_INTERVAL_IDLE_MS;
-      } catch {
-        /* non-fatal — lastPolledBlock not advanced, next cycle retries */
-      } finally {
-        robinhoodPolling = false;
-      }
+    let next = delayMs;
+    try {
+      const found = await poller.pollEvents();
+      // Tighten the interval while there is trading or a backlog; relax when idle.
+      next = poller.isBehind
+        ? POLL_INTERVAL_CATCH_UP_MS
+        : found > 0
+          ? POLL_INTERVAL_ACTIVE_MS
+          : POLL_INTERVAL_IDLE_MS;
+    } catch {
+      /* non-fatal — lastPolledBlock not advanced, next cycle retries */
     }
-    scheduleRobinhoodPoll();
-  }, robinhoodPollIntervalMs);
+    schedulePoll(poller, next);
+  }, delayMs);
 }
-let arcPolling = false;
-let arcPollIntervalMs = POLL_INTERVAL_IDLE_MS;
-function scheduleArcPoll(): void {
-  setTimeout(async () => {
-    if (!arcPolling) {
-      arcPolling = true;
-      try {
-        const found = await arcPoller.pollEvents();
-        arcPollIntervalMs = arcPoller.isBehind
-          ? POLL_INTERVAL_CATCH_UP_MS
-          : found > 0
-            ? POLL_INTERVAL_ACTIVE_MS
-            : POLL_INTERVAL_IDLE_MS;
-      } catch {
-        /* non-fatal */
-      } finally {
-        arcPolling = false;
-      }
-    }
-    scheduleArcPoll();
-  }, arcPollIntervalMs);
-}
-scheduleRobinhoodPoll();
-// Stagger Arc chain by 30s to avoid simultaneous RPC bursts
-setTimeout(scheduleArcPoll, 30_000);
+[...pollers.values()].forEach((poller, i) =>
+  schedulePoll(poller, POLL_INTERVAL_IDLE_MS + i * POLL_STAGGER_MS),
+);
 
 // ---------------------------------------------------------------------------
 // TWAP-guarded buyback keeper (AUD-HIGH-05 / TKT-06). Enabled with KEEPER_PRIVATE_KEY; the
@@ -291,23 +250,12 @@ const LIMIT_ORDER_KEEPER_INTERVAL_MS = Number(envOr('LIMIT_ORDER_KEEPER_INTERVAL
 // A finished curve cannot trade until it graduates, so check often; each check is one read per curve.
 const GRADUATION_KEEPER_INTERVAL_MS = Number(envOr('GRADUATION_KEEPER_INTERVAL_MS', '30000'));
 const BUYBACK_KEEPER_INTERVAL_MS = Number(envOr('BUYBACK_KEEPER_INTERVAL_MS', String(10 * 60_000)));
-/**
- * Smallest accrued amount (quote units) worth a keeper transaction, so the keeper never spends
- * more on gas than it moves: 0.001 ETH on Robinhood Chain, 1 USDC (6 decimals) on Arc.
- */
-const KEEPER_MIN_QUOTE: Record<number, bigint> = {
-  [ROBINHOOD_CHAIN.chainId]: BigInt(envOr('KEEPER_MIN_QUOTE_ROBINHOOD', '1000000000000000')),
-  [ARC_CHAIN.chainId]: BigInt(envOr('KEEPER_MIN_QUOTE_ARC', '1000000')),
-};
 
 function startBuybackKeepers(): void {
   const key = process.env.KEEPER_PRIVATE_KEY?.trim();
   if (!key || process.env.NODE_ENV === 'test') return;
   const account = privateKeyToAccount((key.startsWith('0x') ? key : `0x${key}`) as Hex);
-  for (const [network, client] of [
-    [ROBINHOOD_CHAIN, robinhoodClient],
-    [ARC_CHAIN, arcClient],
-  ] as const) {
+  for (const { network, client } of chainRegistry.getAllChains()) {
     const walletClient = createWalletClient({
       account,
       chain: client.chain,
@@ -318,14 +266,15 @@ function startBuybackKeepers(): void {
       walletClient,
       repository,
       network,
-      KEEPER_MIN_QUOTE[network.chainId] ?? 0n,
+      // The keeper never spends more on gas than it moves (KEEPER_MIN_QUOTE_<SLUG>).
+      network.keeper.minQuote,
     );
     const limitKeeper = new LimitOrderKeeperService(
       client,
       walletClient,
       repository,
       network,
-      network.chainId === ARC_CHAIN.chainId ? 10n ** 12n : 1n,
+      nativeWeiPerQuoteUnit(network),
     );
     const graduationKeeper = new GraduationKeeperService(client, walletClient, repository, network);
     // One wallet, several loops: run them one at a time so their transactions never share a nonce.
@@ -491,11 +440,8 @@ const TRADE_EVENT = parseAbiItem(
 const TRADE_BACKFILL_BLOCKS = BigInt(process.env.TRADE_BACKFILL_BLOCKS || '4000000');
 function scheduleTradeBackfill(token: LaunchedTokenEntity, fromBlock?: bigint): void {
   if (token.version !== 'v2' || process.env.NODE_ENV === 'test') return;
-  const poller =
-    chainRegistry.resolveForToken(token).network.chainId === ARC_CHAIN.chainId
-      ? arcPoller
-      : robinhoodPoller;
   const chain = chainRegistry.resolveForToken(token);
+  const poller = pollers.get(chain.chainId)!;
   void (async () => {
     const head = await chain.client.getBlockNumber();
     const from = fromBlock ?? (head > TRADE_BACKFILL_BLOCKS ? head - TRADE_BACKFILL_BLOCKS : 0n);
@@ -1217,7 +1163,7 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       }
       // After the token is saved, so trades in the launch transaction are not dropped.
       if (txHash) await indexTradeFromReceipt(txHash, address);
-      Promise.allSettled([robinhoodPoller.pollEvents(), arcPoller.pollEvents()]);
+      Promise.allSettled([...pollers.values()].map((poller) => poller.pollEvents()));
       return replyEnvelope(ok({ synced: true, address, txHash: body.txHash ?? null }));
     } catch (e) {
       return replyEnvelope(err('SYNC_ERROR', (e as Error).message));
@@ -2091,12 +2037,20 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
     }
 
     const ethPriceUsd = await priceFeed.getEthPriceUsd();
-    const arcWeth = ARC_CHAIN.contracts.weth.toLowerCase();
-
-    // Build a token-address → pairedToken lookup for quote price selection.
-    const tokenPairMap = new Map<string, string>();
+    const quoteUsdByChain = new Map(
+      await Promise.all(
+        chainRegistry
+          .getAllChains()
+          .map(async (chain) => [chain.chainId, await chain.getQuotePriceUsd()] as const),
+      ),
+    );
+    // token address → USD price of its quote asset; also limits the figures to `tokens`.
+    const tokenQuoteUsd = new Map<string, number>();
     for (const t of tokens) {
-      tokenPairMap.set(t.address.toLowerCase(), (t.pairedToken ?? '').toLowerCase());
+      tokenQuoteUsd.set(
+        t.address.toLowerCase(),
+        quoteUsdByChain.get(resolveTokenNetwork(t).chainId) ?? 0,
+      );
     }
 
     // Single aggregate query replaces the N+1 loop.
@@ -2104,9 +2058,8 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       ? await repository.getVolumeByToken(dayAgoMs)
       : [];
     for (const row of volumeRows) {
-      if (!tokenPairMap.has(row.tokenAddress.toLowerCase())) continue; // other network
-      const pairedToken = tokenPairMap.get(row.tokenAddress.toLowerCase()) ?? '';
-      const quotePriceUsd = pairedToken === arcWeth ? 1.0 : ethPriceUsd;
+      const quotePriceUsd = tokenQuoteUsd.get(row.tokenAddress.toLowerCase());
+      if (quotePriceUsd === undefined) continue; // other network
       const tradeUsd = row.totalWeth * quotePriceUsd;
       totalVolumeUsd += tradeUsd;
     }
@@ -2118,11 +2071,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
       if (
         age >= 0 &&
         age < 24 * 60 * 60 * 1000 &&
-        tokenPairMap.has(tr.tokenAddress.toLowerCase())
+        tokenQuoteUsd.has(tr.tokenAddress.toLowerCase())
       ) {
         const slotIdx = 6 - Math.min(6, Math.floor(age / fourHoursMs));
-        const pairedToken = tokenPairMap.get(tr.tokenAddress.toLowerCase()) ?? '';
-        const quotePriceUsd = pairedToken === arcWeth ? 1.0 : ethPriceUsd;
+        const quotePriceUsd = tokenQuoteUsd.get(tr.tokenAddress.toLowerCase())!;
         const tradeUsd = parseFloat(tr.wethAmount || '0') * quotePriceUsd;
         timeSlots[slotIdx].value += Math.round(tradeUsd);
       }
@@ -2183,9 +2135,10 @@ async function routeRequest(req: Request, clientIp: string): Promise<Response> {
         fromBlock?: number | string;
         toBlock?: number | string;
       }>(req, 8192);
-      const chainName = body.chain === 'robinhood' ? 'robinhood' : 'arc';
-      const network = chainName === 'arc' ? ARC_CHAIN : ROBINHOOD_CHAIN;
-      const targetClient = chainName === 'arc' ? arcClient : robinhoodClient;
+      if (!body.chain) {
+        return replyError('INVALID_PARAM', 'chain is required (slug or chain ID)', 400);
+      }
+      const { network, client: targetClient } = chainRegistry.getChainByParam(body.chain);
       const currentBlock = await targetClient.getBlockNumber();
 
       // Validate block params before passing to BigInt to avoid SyntaxError crash.

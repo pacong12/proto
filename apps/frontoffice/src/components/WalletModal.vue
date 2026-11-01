@@ -54,7 +54,11 @@
               {{ t('connectedAccount') }}
             </span>
             <Badge :variant="isCorrectNetwork ? 'default' : 'destructive'" class="text-xs">
-              {{ isCorrectNetwork ? activeNetwork.name : t('switchToRobinhood') }}
+              {{
+                isCorrectNetwork
+                  ? activeNetwork.name
+                  : t('switchToNetwork', { name: DEFAULT_NETWORK.name })
+              }}
             </Badge>
           </div>
 
@@ -258,11 +262,12 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue';
 import { Loader2, X, Copy, Check, LogOut, ChevronDown, Mail } from 'lucide-vue-next';
-import { ROBINHOOD_CHAIN, SUPPORTED_CHAINS } from '@goton/shared-types';
+import { DEFAULT_NETWORK, SUPPORTED_CHAINS } from '@goton/shared-types';
 import { getChainIcon } from '@/lib/utils';
 import { appKitConfigured, getAppKit } from '../lib/appkit-loader';
 import { useI18n } from '@/lib/i18n';
 import { useWallet } from '../composables/useWallet';
+import { switchProviderNetwork } from '../lib/wallet-network';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -473,8 +478,8 @@ async function connect(wallet: WalletCandidate) {
 
     let finalChainId = currentChainId;
     if (!SUPPORTED_CHAINS[currentChainId]) {
-      await ensureRobinhoodChain(wallet.provider);
-      finalChainId = ROBINHOOD_CHAIN.chainId;
+      await switchProviderNetwork(wallet.provider, DEFAULT_NETWORK);
+      finalChainId = DEFAULT_NETWORK.chainId;
     }
 
     setConnectedWallet(wallet.provider, address, finalChainId, wallet.id);
@@ -483,34 +488,6 @@ async function connect(wallet: WalletCandidate) {
     error.value = (err as Error).message;
   } finally {
     connectingId.value = null;
-  }
-}
-
-async function ensureRobinhoodChain(provider: WalletProviderLike) {
-  const hexChainId = `0x${ROBINHOOD_CHAIN.chainId.toString(16)}`;
-  try {
-    await provider.request({
-      method: 'wallet_switchEthereumChain',
-      params: [{ chainId: hexChainId }],
-    });
-  } catch (switchErr) {
-    const code = (switchErr as { code?: number }).code;
-    if (code === 4902 || code === -32603) {
-      await provider.request({
-        method: 'wallet_addEthereumChain',
-        params: [
-          {
-            chainId: hexChainId,
-            chainName: ROBINHOOD_CHAIN.name,
-            nativeCurrency: ROBINHOOD_CHAIN.nativeCurrency,
-            rpcUrls: [ROBINHOOD_CHAIN.rpcUrl],
-            blockExplorerUrls: [ROBINHOOD_CHAIN.blockExplorer],
-          },
-        ],
-      });
-    } else {
-      throw switchErr;
-    }
   }
 }
 

@@ -73,7 +73,7 @@ const messages: Record<string, string> = {
   addressCopied: 'Adresse Kopiert!',
   switchManageWallet: 'Wallet Wechseln',
   disconnect: 'Trennen',
-  switchToRobinhood: 'Zu Robinhood wechseln',
+  switchToNetwork: 'Zu {name} wechseln',
   noMatchingTokens: 'Keine passenden Token für',
   typeSearchHint: 'Token-Name, Kürzel oder 0x-Adresse eingeben...',
   navigateHint: 'Navigieren',
@@ -347,7 +347,7 @@ const messages: Record<string, string> = {
   maintenanceBanner:
     'Geplante Wartung läuft. Einige Funktionen sind vorübergehend nicht verfügbar.',
   maintenanceDismiss: 'Hinweis schließen',
-  v2SubtitleArc:
+  v2SubtitleInPool:
     'Starte einen Token direkt in einem gesperrten Uniswap-v4-Pool. Deine Steuer wird bei jedem Trade in USDC gezahlt.',
   buySellPressure: 'Kauf- / Verkaufsdruck',
   timeWindow: 'Zeitraum',
@@ -391,9 +391,9 @@ const messages: Record<string, string> = {
   footerCurveToV4: 'Bonding-Curve, dann Uniswap v4',
   footerPoolFromLaunch: 'Uniswap-v4-Pool ab dem Launch',
   footerLiquidityLocked: 'Liquidität dauerhaft gesperrt',
-  footerSplitRobinhood: 'LP-Gebühren: 70 % Creator / 30 % Protokoll',
-  footerSplitArc: 'Steuer: 20 % Protokoll, Rest nach deiner Aufteilung',
-  arcPoolLiveHint:
+  footerSplitCurve: 'LP-Gebühren: 70 % Creator / 30 % Protokoll',
+  footerSplitInPool: 'Steuer: 20 % Protokoll, Rest nach deiner Aufteilung',
+  inPoolLiveHint:
     'Wird ab dem ersten Block in seinem gesperrten Uniswap-v4-Pool gehandelt. Es gibt keine Curve zu füllen.',
   memestockMomentum: 'Momentum',
   creatorHolds: 'Creator hält',
@@ -423,9 +423,9 @@ const messages: Record<string, string> = {
   addTeamWallet: 'Team-Wallet hinzufügen',
   removeTeamWallet: 'Wallet entfernen',
   feeRecipientDefault: 'Alle Creator-Gebühren und Steuern gehen an',
-  teamFeesRobinhood:
+  teamFeesCurve:
     'Vor dem Launch wird ein Team-Wallet-Vertrag erstellt. Die Token-Steuer geht ab dem Launch dorthin; nach der Graduierung leitest du die Pool-Gebühren im Profil dorthin um (48 Stunden Timelock). Jedes Mitglied zieht seinen Anteil selbst ab.',
-  teamFeesArc:
+  teamFeesInPool:
     'Vor dem Launch wird ein Team-Wallet-Vertrag erstellt. Gebühren und Steuern gehen an dich, bis die beim Launch vorgeschlagene Umleitung nach 48 Stunden aktiv wird (im Profil bestätigen). Jedes Mitglied zieht seinen Anteil selbst ab.',
   teamFeesUnavailable:
     'Team-Auszahlungen sind auf dieser Chain noch nicht verfügbar. Alle Creator-Gebühren und Steuern gehen an deine Wallet.',

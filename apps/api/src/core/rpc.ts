@@ -1,10 +1,5 @@
-import { defineChain, fallback, http, type Chain, type Transport } from 'viem';
-import type { NetworkConfig } from '@goton/shared-types';
-
-/** The configured RPC endpoints for a network, primary first and without duplicates. */
-export function rpcUrlsFor(cfg: NetworkConfig): string[] {
-  return [...new Set([cfg.rpcUrl, ...(cfg.rpcUrls ?? [])].filter(Boolean))];
-}
+import { createPublicClient, fallback, http, type PublicClient, type Transport } from 'viem';
+import { rpcUrlsFor, toViemChain, type NetworkConfig } from '@goton/shared-types';
 
 /**
  * DR-02: fail over across every configured endpoint instead of binding to one URL.
@@ -17,11 +12,6 @@ export function rpcTransport(cfg: NetworkConfig, timeout = 10_000): Transport {
   return endpoints.length === 1 ? endpoints[0]! : fallback(endpoints);
 }
 
-export function chainFor(cfg: NetworkConfig): Chain {
-  return defineChain({
-    id: cfg.chainId,
-    name: cfg.name,
-    nativeCurrency: cfg.nativeCurrency,
-    rpcUrls: { default: { http: rpcUrlsFor(cfg) } },
-  });
+export function createChainClient(cfg: NetworkConfig): PublicClient {
+  return createPublicClient({ chain: toViemChain(cfg), transport: rpcTransport(cfg) });
 }

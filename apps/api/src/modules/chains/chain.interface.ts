@@ -8,7 +8,6 @@ export interface IChainService {
   readonly network: NetworkConfig;
   readonly quoteSymbol: string;
   readonly quoteDecimals: number;
-  readonly isArc?: boolean;
 
   getQuotePriceUsd(): Promise<number>;
 }

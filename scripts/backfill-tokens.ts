@@ -2,7 +2,7 @@
  * Re-index a block range after data loss (DR-06).
  *
  * Usage:
- *   bun run --env-file=.env scripts/backfill-tokens.ts --chain arc|robinhood --from <block> [--to <block>]
+ *   bun run --env-file=.env scripts/backfill-tokens.ts --chain <slug> --from <block> [--to <block>]
  *   bun run --env-file=.env scripts/backfill-tokens.ts --chain robinhood --from <block> --trades-only
  *
  * --trades-only re-indexes bonding-curve trades of the tokens already in the database, one curve at
@@ -15,11 +15,7 @@
  */
 
 import { createPublicClient } from 'viem';
-import {
-  ARC_CHAIN,
-  ROBINHOOD_CHAIN,
-  resolveTokenNetwork,
-} from '../packages/shared-types/src/index';
+import { CHAINS, resolveTokenNetwork, toViemChain } from '../packages/shared-types/src/index';
 import {
   SqliteTokenRepository,
   ViemChainIndexerAdapter,
@@ -27,7 +23,7 @@ import {
   EventPollerService,
   CoinGeckoPriceFeedAdapter,
 } from '../apps/api/src/index';
-import { chainFor, rpcTransport } from '../apps/api/src/core/rpc';
+import { rpcTransport } from '../apps/api/src/core/rpc';
 
 const STEP = 50n; // same window as the live poller; keeps eth_getLogs within public RPC limits
 
@@ -36,14 +32,14 @@ function arg(name: string): string | undefined {
   return i >= 0 ? process.argv[i + 1] : undefined;
 }
 
-const chainName = arg('chain');
-if (chainName !== 'arc' && chainName !== 'robinhood') {
-  console.error('Usage: backfill-tokens.ts --chain arc|robinhood --from <block> [--to <block>]');
+const network = CHAINS.find((net) => net.slug === arg('chain'));
+if (!network) {
+  const slugs = CHAINS.map((net) => net.slug).join('|');
+  console.error(`Usage: backfill-tokens.ts --chain ${slugs} --from <block> [--to <block>]`);
   process.exit(1);
 }
-const network = chainName === 'arc' ? ARC_CHAIN : ROBINHOOD_CHAIN;
 const client = createPublicClient({
-  chain: chainFor(network),
+  chain: toViemChain(network),
   transport: rpcTransport(network, 20_000),
 });
 

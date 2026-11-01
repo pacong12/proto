@@ -81,7 +81,7 @@
 
         <p class="text-xs text-muted-foreground">
           <template v-if="feeRecipients.length > 1">
-            {{ isArc ? t('teamFeesArc') : t('teamFeesRobinhood') }}
+            {{ inPoolLaunch ? t('teamFeesInPool') : t('teamFeesCurve') }}
           </template>
           <template v-else-if="!teamAvailable">{{ t('teamFeesUnavailable') }}</template>
           <template v-else>
@@ -467,7 +467,8 @@ interface Props {
   feeRecipients: FeeRecipientRow[];
   /** A team splitter factory is deployed on the active chain. */
   teamAvailable?: boolean;
-  isArc?: boolean;
+  /** The active chain launches into its v4 pool (fees and tax use the in-pool flow). */
+  inPoolLaunch?: boolean;
   buyTax: string;
   sellTax: string;
   revenueSplit: RevenueSplit;
@@ -478,7 +479,7 @@ const props = withDefaults(defineProps<Props>(), {
   account: '',
   open: false,
   teamAvailable: false,
-  isArc: false,
+  inPoolLaunch: false,
 });
 
 const emit = defineEmits<{

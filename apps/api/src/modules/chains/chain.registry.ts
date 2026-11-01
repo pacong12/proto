@@ -1,6 +1,7 @@
 import {
-  ROBINHOOD_CHAIN,
-  ARC_CHAIN,
+  CHAINS,
+  DEFAULT_NETWORK,
+  type NetworkConfig,
   type TokenAddressPair,
   resolveTokenNetwork,
   resolveNetworkByParam,
@@ -8,51 +9,45 @@ import {
 import type { PublicClient } from 'viem';
 import type { IChainService } from './chain.interface';
 import type { PriceFeedPort } from '../tokens/domain/ports/price-feed.port';
-import { RobinhoodChainService } from './robinhood/robinhood.chain-service';
-import { ArcChainService } from './arc/arc.chain-service';
+import { ChainService } from './chain.service';
+import { createChainClient } from '../../core/rpc';
 
-export { GenericChainService } from './generic-chain.service';
-export { RobinhoodChainService } from './robinhood/robinhood.chain-service';
-export { ArcChainService } from './arc/arc.chain-service';
+export { ChainService } from './chain.service';
 
+/** One ChainService per network in the shared chain registry (CHAINS). */
 export class ChainRegistry {
   private readonly services = new Map<number, IChainService>();
 
-  constructor(robinhoodClient: PublicClient, arcClient: PublicClient, priceFeed: PriceFeedPort) {
-    this.registerChain(new RobinhoodChainService(robinhoodClient, priceFeed));
-    this.registerChain(new ArcChainService(arcClient, priceFeed));
-  }
-
-  registerChain(service: IChainService): void {
-    this.services.set(service.chainId, service);
+  constructor(
+    priceFeed: PriceFeedPort,
+    createClient: (network: NetworkConfig) => PublicClient = createChainClient,
+    networks: readonly NetworkConfig[] = CHAINS,
+  ) {
+    for (const network of networks) {
+      this.services.set(
+        network.chainId,
+        new ChainService(createClient(network), network, priceFeed),
+      );
+    }
   }
 
   getAllChains(): IChainService[] {
     return Array.from(this.services.values());
   }
 
-  getRobinhoodChain(): IChainService {
-    return this.services.get(ROBINHOOD_CHAIN.chainId)!;
-  }
-
-  getArcChain(): IChainService {
-    return this.services.get(ARC_CHAIN.chainId)!;
-  }
-
+  /** The chain with this ID, or the default network's chain. */
   getChainById(chainId?: number): IChainService {
-    if (chainId && this.services.has(chainId)) {
-      return this.services.get(chainId)!;
-    }
-    return this.getRobinhoodChain();
+    return (
+      (chainId !== undefined ? this.services.get(chainId) : undefined) ??
+      this.services.get(DEFAULT_NETWORK.chainId)!
+    );
   }
 
   getChainByParam(param?: string | null): IChainService {
-    const net = resolveNetworkByParam(param);
-    return this.getChainById(net.chainId);
+    return this.getChainById(resolveNetworkByParam(param).chainId);
   }
 
   resolveForToken(token?: TokenAddressPair | null, activeChainId?: number): IChainService {
-    const net = resolveTokenNetwork(token, activeChainId);
-    return this.getChainById(net.chainId);
+    return this.getChainById(resolveTokenNetwork(token, activeChainId).chainId);
   }
 }

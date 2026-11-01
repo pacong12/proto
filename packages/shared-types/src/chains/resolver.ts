@@ -1,5 +1,4 @@
 import { SUPPORTED_CHAINS, DEFAULT_NETWORK, CHAINS } from './registry';
-import { ARC_CHAIN_ID } from './arc';
 import type { NetworkConfig, TokenAddressPair } from './types';
 
 /**
@@ -54,14 +53,6 @@ export function resolveTokenNetwork(
   }
 
   return DEFAULT_NETWORK;
-}
-
-/**
- * Returns true if the token belongs to Arc Network.
- * @deprecated Compare `resolveTokenNetwork(...).slug` instead; kept for backward compatibility.
- */
-export function isArcToken(token?: TokenAddressPair | null, activeChainId?: number): boolean {
-  return resolveTokenNetwork(token, activeChainId).chainId === ARC_CHAIN_ID;
 }
 
 /**

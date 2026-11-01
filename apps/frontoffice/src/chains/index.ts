@@ -1,32 +1,40 @@
 import type { ChainAdapter } from './types';
-import { arcChainAdapter } from './arc/arc.adapter';
-import { robinhoodChainAdapter } from './robinhood/robinhood.adapter';
-import { type TokenAddressPair, resolveTokenNetwork } from '@goton/shared-types';
+import { BondingCurveChainAdapter } from './bonding-curve/bonding-curve.adapter';
+import { InPoolV4ChainAdapter } from './v4-in-pool/v4-in-pool.adapter';
+import {
+  CHAINS,
+  DEFAULT_NETWORK,
+  type NetworkConfig,
+  type TokenAddressPair,
+  resolveTokenNetwork,
+} from '@goton/shared-types';
+import { getLaunchModel, type LaunchModel } from '@goton/math-sdk';
 
 export * from './types';
-export * from './arc/arc.adapter';
-export * from './robinhood/robinhood.adapter';
+export * from './bonding-curve/bonding-curve.adapter';
+export * from './v4-in-pool/v4-in-pool.adapter';
 
-const chainAdapters = new Map<number, ChainAdapter>([
-  [robinhoodChainAdapter.chainId, robinhoodChainAdapter],
-  [arcChainAdapter.chainId, arcChainAdapter],
-]);
+/** The adapter of each launch model; a chain's model comes from its math config. */
+const ADAPTER_FOR_MODEL: Record<LaunchModel, (network: NetworkConfig) => ChainAdapter> = {
+  'bonding-curve': (network) => new BondingCurveChainAdapter(network),
+  'v4-in-pool': (network) => new InPoolV4ChainAdapter(network),
+};
+
+const chainAdapters = new Map<number, ChainAdapter>(
+  CHAINS.map((network) => [
+    network.chainId,
+    ADAPTER_FOR_MODEL[getLaunchModel(network.chainId)](network),
+  ]),
+);
 
 /**
- * Register a new chain adapter dynamically.
- */
-export function registerChainAdapter(adapter: ChainAdapter): void {
-  chainAdapters.set(adapter.chainId, adapter);
-}
-
-/**
- * Returns the appropriate ChainAdapter for the given chain ID.
+ * Returns the ChainAdapter for the given chain ID, or the default network's.
  */
 export function getChainAdapter(chainId?: number): ChainAdapter {
-  if (chainId && chainAdapters.has(chainId)) {
-    return chainAdapters.get(chainId)!;
-  }
-  return robinhoodChainAdapter;
+  return (
+    (chainId !== undefined ? chainAdapters.get(chainId) : undefined) ??
+    chainAdapters.get(DEFAULT_NETWORK.chainId)!
+  );
 }
 
 /**

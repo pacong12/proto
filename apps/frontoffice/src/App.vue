@@ -91,9 +91,9 @@
           </h2>
           <ul class="space-y-2 text-sm text-muted-foreground">
             <li>{{ activeNetwork.name }} ({{ activeNetwork.chainId }})</li>
-            <li>{{ t(isArcFooter ? 'footerPoolFromLaunch' : 'footerCurveToV4') }}</li>
+            <li>{{ t(isInPoolLaunch ? 'footerPoolFromLaunch' : 'footerCurveToV4') }}</li>
             <li>{{ t('footerLiquidityLocked') }}</li>
-            <li>{{ t(isArcFooter ? 'footerSplitArc' : 'footerSplitRobinhood') }}</li>
+            <li>{{ t(isInPoolLaunch ? 'footerSplitInPool' : 'footerSplitCurve') }}</li>
           </ul>
         </div>
 
@@ -207,7 +207,7 @@
 import { defineAsyncComponent, onMounted, onUnmounted, ref, watch, computed } from 'vue';
 import { useRouter, useRoute, RouterLink, RouterView } from 'vue-router';
 import { ExternalLink, BookOpen } from 'lucide-vue-next';
-import { ARC_CHAIN_ID } from '@goton/shared-types';
+import { getLaunchModel } from '@goton/math-sdk';
 import { useI18n } from '@/lib/i18n';
 import { legalUrl, resolveDocsUrl } from '@/lib/site';
 import Navbar from './components/Navbar.vue';
@@ -228,7 +228,7 @@ const CookieConsentBanner = defineAsyncComponent(
 
 const { t, locale } = useI18n();
 const { activeNetwork, disconnectWallet, account } = useWallet();
-const isArcFooter = computed(() => activeNetwork.value.chainId === ARC_CHAIN_ID);
+const isInPoolLaunch = computed(() => getLaunchModel(activeNetwork.value.chainId) === 'v4-in-pool');
 const router = useRouter();
 // Toast when one of the connected wallet's limit / TP / SL orders fills, on any page.
 useOrderNotifications(account, router, t);

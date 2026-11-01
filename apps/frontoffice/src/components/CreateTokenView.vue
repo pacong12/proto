@@ -5,7 +5,7 @@
         {{ t('launchToken') }}
       </h1>
       <p class="text-sm text-muted-foreground mt-1 leading-relaxed">
-        {{ t(isArcNetwork ? 'v2SubtitleArc' : 'v2Subtitle') }}
+        {{ t(isInPoolLaunch ? 'v2SubtitleInPool' : 'v2Subtitle') }}
       </p>
     </div>
 
@@ -205,8 +205,8 @@
 
           <p class="text-xs text-muted-foreground">
             {{
-              isArcNetwork
-                ? t('arcPoolLiveHint')
+              isInPoolLaunch
+                ? t('inPoolLiveHint')
                 : `Graduates once the curve raises ${graduationTargetFormatted} ${currencySymbol} into Uniswap liquidity.`
             }}
           </p>
@@ -251,7 +251,7 @@
               </span>
             </div>
           </div>
-          <p v-if="isArcNetwork" class="text-xs text-sky-400 font-medium">
+          <p v-if="isInPoolLaunch" class="text-xs text-sky-400 font-medium">
             Arc Network standard: Launch is free (0 USDC fee). Initial pre-buy of at least 4.50 USDC
             is recommended to seed initial liquidity.
           </p>
@@ -297,7 +297,7 @@
           v-model:open="advancedOpen"
           v-model:fee-recipients="feeRecipients"
           :team-available="teamFactoryAddress(activeNetwork) !== null"
-          :is-arc="isArcNetwork"
+          :in-pool-launch="isInPoolLaunch"
           v-model:buy-tax="form.buyTax"
           v-model:sell-tax="form.sellTax"
           v-model:revenue-split="revenueSplit"
@@ -320,7 +320,7 @@
                   class="w-4 h-4 rounded-full object-contain shrink-0"
                 />
                 {{
-                  isArcNetwork && Number(launchFeeFormatted) === 0
+                  isInPoolLaunch && Number(launchFeeFormatted) === 0
                     ? 'Free (0 USDC)'
                     : `${launchFeeFormatted} ${currencySymbol}`
                 }}
@@ -445,7 +445,7 @@ import {
   type RevenueSplit,
   calculateTotalSplit,
   calculateLaunchTotalDue,
-  getChainMathConfig,
+  getLaunchModel,
 } from '@goton/math-sdk';
 import { CreateTokenAdvancedSection, LaunchProgressModal } from './create';
 
@@ -600,9 +600,7 @@ function goToTrade() {
 }
 
 // In-pool v4 chains (Arc) fix the tax at launch and require a creator prebuy.
-const isArcNetwork = computed(
-  () => getChainMathConfig(activeNetwork.value.chainId)?.model === 'v4-in-pool',
-);
+const isInPoolLaunch = computed(() => getLaunchModel(activeNetwork.value.chainId) === 'v4-in-pool');
 const minPrebuy = computed(
   () => Number(activeNetwork.value.launchConfigV2?.minPrebuyWei ?? 0n) / 1e18,
 );
@@ -727,7 +725,7 @@ async function handleLaunch() {
     return;
   }
   if (
-    isArcNetwork.value &&
+    isInPoolLaunch.value &&
     !(parseFloat(form.value.buyTax || '0') > 0) &&
     !(parseFloat(form.value.sellTax || '0') > 0)
   ) {
@@ -826,7 +824,7 @@ async function handleLaunch() {
  * becomes active after its 48-hour timelock (accepted from the profile).
  */
 async function routeCreatorFees(token: `0x${string}`, recipient: `0x${string}`) {
-  if (!isArcNetwork.value) {
+  if (!isInPoolLaunch.value) {
     toast.info('Token tax goes to the team from launch', {
       description: 'After graduation, route the pool fees to the same wallet from your profile.',
       duration: 12_000,

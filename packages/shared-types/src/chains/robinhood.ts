@@ -24,10 +24,17 @@ export const ROBINHOOD_NETWORK: NetworkConfig = {
   },
   rpcUrl: getEnv('ROBINHOOD_RPC_URL', 'https://rpc.mainnet.chain.robinhood.com'),
   rpcUrls: [getEnv('ROBINHOOD_RPC_URL', 'https://rpc.mainnet.chain.robinhood.com')],
+  blockTimeMs: 250,
   blockExplorer: getEnv(
     'ROBINHOOD_BLOCK_EXPLORER_URL',
     getEnv('BLOCK_EXPLORER_URL', 'https://robinhoodchain.blockscout.com'),
   ),
+  blockExplorerName: 'Blockscout',
+  quoteTokenDecimals: 18, // WETH
+  keeper: {
+    minQuote: getEnvBigInt('KEEPER_MIN_QUOTE_ROBINHOOD', 1_000_000_000_000_000n), // 0.001 ETH
+    minGasWei: 200_000_000_000_000n, // 0.0002 ETH
+  },
   contracts: {
     factory: getEnv(
       'ROBINHOOD_FACTORY_V2_ADDRESS',

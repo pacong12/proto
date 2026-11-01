@@ -1,68 +1,31 @@
 import { defineChain, type AppKitNetwork } from '@reown/appkit/networks';
 import { createAppKit } from '@reown/appkit/vue';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
-import { ROBINHOOD_CHAIN, ARC_CHAIN } from '@goton/shared-types';
+import { CHAINS, DEFAULT_NETWORK, toViemChain } from '@goton/shared-types';
 import { SITE } from './site';
 
 const projectId = import.meta.env.VITE_REOWN_PROJECT_ID as string | undefined;
 
 export const appKitConfigured = Boolean(projectId);
 
-export const robinhoodAppKitChain = defineChain({
-  id: ROBINHOOD_CHAIN.chainId,
-  caipNetworkId: `eip155:${ROBINHOOD_CHAIN.chainId}`,
-  chainNamespace: 'eip155',
-  name: ROBINHOOD_CHAIN.name,
-  nativeCurrency: ROBINHOOD_CHAIN.nativeCurrency,
-  rpcUrls: {
-    default: {
-      http:
-        ROBINHOOD_CHAIN.rpcUrls && ROBINHOOD_CHAIN.rpcUrls.length > 0
-          ? ROBINHOOD_CHAIN.rpcUrls
-          : [ROBINHOOD_CHAIN.rpcUrl],
-    },
-  },
-  blockExplorers: {
-    default: {
-      name: 'Blockscout',
-      url: ROBINHOOD_CHAIN.blockExplorer,
-    },
-  },
-}) as AppKitNetwork;
+/** AppKit's network shape: the shared viem chain plus its CAIP-2 identifiers. */
+const appKitNetworks = CHAINS.map(
+  (cfg) =>
+    defineChain({
+      ...toViemChain(cfg),
+      caipNetworkId: `eip155:${cfg.chainId}`,
+      chainNamespace: 'eip155',
+    }) as AppKitNetwork,
+);
 
-export const arcAppKitChain = defineChain({
-  id: ARC_CHAIN.chainId,
-  caipNetworkId: `eip155:${ARC_CHAIN.chainId}`,
-  chainNamespace: 'eip155',
-  name: ARC_CHAIN.name,
-  nativeCurrency: ARC_CHAIN.nativeCurrency,
-  rpcUrls: {
-    default: {
-      http:
-        ARC_CHAIN.rpcUrls && ARC_CHAIN.rpcUrls.length > 0 ? ARC_CHAIN.rpcUrls : [ARC_CHAIN.rpcUrl],
-    },
-  },
-  blockExplorers: {
-    default: {
-      name: 'ArcScan',
-      url: ARC_CHAIN.blockExplorer,
-    },
-  },
-}) as AppKitNetwork;
+const networks = appKitNetworks as [AppKitNetwork, ...AppKitNetwork[]];
 
-const networks = [robinhoodAppKitChain, arcAppKitChain] as [AppKitNetwork, ...AppKitNetwork[]];
-
-const appKitNetworkMap = new Map<number, AppKitNetwork>([
-  [robinhoodAppKitChain.id as number, robinhoodAppKitChain],
-  [arcAppKitChain.id as number, arcAppKitChain],
-]);
-
-export function registerAppKitNetwork(net: AppKitNetwork): void {
-  appKitNetworkMap.set(net.id as number, net);
-}
+const appKitNetworkMap = new Map<number, AppKitNetwork>(
+  appKitNetworks.map((net) => [net.id as number, net]),
+);
 
 export function getAppKitChain(chainId: number): AppKitNetwork {
-  return appKitNetworkMap.get(chainId) ?? robinhoodAppKitChain;
+  return appKitNetworkMap.get(chainId) ?? appKitNetworkMap.get(DEFAULT_NETWORK.chainId)!;
 }
 
 export const wagmiAdapter = projectId
@@ -80,7 +43,7 @@ export const appKit =
         projectId,
         metadata: {
           name: 'goton',
-          description: 'Goton - Multi-chain token launchpad on Robinhood & Arc Chain',
+          description: `Goton - Multi-chain token launchpad on ${CHAINS.map((cfg) => cfg.name).join(' & ')}`,
           // Must match the domain the app runs on (WalletConnect domain verification).
           url: typeof window !== 'undefined' ? window.location.origin : SITE.appUrl,
           icons: ['/favicon.svg'],
@@ -109,10 +72,9 @@ export const appKit =
         enableNetworkSwitch: true,
         enableReconnect: true,
         enableMobileFullScreen: true,
-        chainImages: {
-          [ROBINHOOD_CHAIN.chainId]: '/chains/robinhood.svg',
-          [ARC_CHAIN.chainId]: '/chains/arc.svg',
-        },
+        chainImages: Object.fromEntries(
+          CHAINS.filter((cfg) => cfg.icon).map((cfg) => [cfg.chainId, cfg.icon!]),
+        ),
         connectorImages: {
           injected: '/favicon.png',
           walletConnect: '/favicon.png',

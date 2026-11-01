@@ -1,5 +1,5 @@
 import { shallowRef } from 'vue';
-import { ROBINHOOD_CHAIN, ARC_CHAIN } from '@goton/shared-types';
+import { DEFAULT_NETWORK, SUPPORTED_CHAINS } from '@goton/shared-types';
 
 export interface WalletRequestArgs {
   method: string;
@@ -40,10 +40,7 @@ export function getInitialChainId(): number {
       const stored = localStorage.getItem(STORAGE_CHAIN_ID_KEY);
       if (stored) {
         const parsed = Number.parseInt(stored, 10);
-        if (
-          Number.isFinite(parsed) &&
-          (parsed === ROBINHOOD_CHAIN.chainId || parsed === ARC_CHAIN.chainId)
-        ) {
+        if (SUPPORTED_CHAINS[parsed]) {
           return parsed;
         }
       }
@@ -51,7 +48,7 @@ export function getInitialChainId(): number {
       // Ignore storage errors
     }
   }
-  return ARC_CHAIN.chainId; // Default to Arc Network (where all launchpad tokens live)
+  return DEFAULT_NETWORK.chainId;
 }
 
 export const walletProvider = shallowRef<WalletProviderLike | null>(null);

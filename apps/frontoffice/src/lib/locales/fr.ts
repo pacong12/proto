@@ -73,7 +73,7 @@ const messages: Record<string, string> = {
   addressCopied: 'Adresse Copiée !',
   switchManageWallet: 'Changer de Portefeuille',
   disconnect: 'Déconnecter',
-  switchToRobinhood: 'Passer à Robinhood',
+  switchToNetwork: 'Passer à {name}',
   noMatchingTokens: 'Aucun token correspondant à',
   typeSearchHint: 'Tapez le nom du token, symbole ou adresse 0x...',
   navigateHint: 'Naviguer',
@@ -347,7 +347,7 @@ const messages: Record<string, string> = {
   maintenanceBanner:
     'Maintenance planifiée en cours. Certaines fonctionnalités peuvent être indisponibles pendant un moment.',
   maintenanceDismiss: "Fermer l'avis",
-  v2SubtitleArc:
+  v2SubtitleInPool:
     'Lancez un token directement dans un pool Uniswap v4 verrouillé. Votre taxe est payée en USDC à chaque échange.',
   buySellPressure: 'Pression achat / vente',
   timeWindow: 'Période',
@@ -392,9 +392,9 @@ const messages: Record<string, string> = {
   footerCurveToV4: 'Courbe de bonding, puis Uniswap v4',
   footerPoolFromLaunch: 'Pool Uniswap v4 dès le lancement',
   footerLiquidityLocked: 'Liquidité verrouillée à vie',
-  footerSplitRobinhood: 'Frais LP : 70 % créateur / 30 % protocole',
-  footerSplitArc: 'Taxe : 20 % protocole, le reste selon votre répartition',
-  arcPoolLiveHint:
+  footerSplitCurve: 'Frais LP : 70 % créateur / 30 % protocole',
+  footerSplitInPool: 'Taxe : 20 % protocole, le reste selon votre répartition',
+  inPoolLiveHint:
     'Se négocie dans son pool Uniswap v4 verrouillé dès le premier bloc. Aucune courbe à remplir.',
   memestockMomentum: 'Momentum',
   creatorHolds: 'Le créateur détient',
@@ -424,9 +424,9 @@ const messages: Record<string, string> = {
   addTeamWallet: "Ajouter un portefeuille d'équipe",
   removeTeamWallet: 'Retirer le portefeuille',
   feeRecipientDefault: 'Tous les frais et taxes du créateur vont à',
-  teamFeesRobinhood:
+  teamFeesCurve:
     "Un contrat de portefeuille d'équipe est créé avant le lancement. La taxe du jeton y arrive dès le lancement ; après la graduation, dirigez-y les frais du pool depuis votre profil (délai de 48 heures). Chaque membre retire sa part.",
-  teamFeesArc:
+  teamFeesInPool:
     "Un contrat de portefeuille d'équipe est créé avant le lancement. Les frais et taxes vous reviennent jusqu'à ce que la redirection proposée au lancement s'active après 48 heures (acceptez-la depuis votre profil). Chaque membre retire sa part.",
   teamFeesUnavailable:
     "Les paiements d'équipe ne sont pas encore disponibles sur cette chaîne. Tous les frais et taxes vont à votre portefeuille.",

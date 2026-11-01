@@ -15,7 +15,8 @@ vi.mock('../src/lib/viem-client', () => ({
   waitForReceiptWithFallback: vi.fn(async () => ({ status: 'success', logs: receipt.logs })),
 }));
 
-const { RobinhoodChainAdapter } = await import('../src/chains/robinhood/robinhood.adapter');
+const { BondingCurveChainAdapter } =
+  await import('../src/chains/bonding-curve/bonding-curve.adapter');
 
 const ACCOUNT = '0x00000000000000000000000000000000000000cc' as const;
 const BASE = { name: 'T', symbol: 'T', logo: '', description: '', socials: {} };
@@ -45,17 +46,14 @@ const launchedLog = {
 let factoryAddress = 0;
 async function launch(params: Record<string, unknown>, factoryCode?: `0x${string}`) {
   const writeContract = vi.fn(async () => '0xhash' as const);
-  const adapter = new RobinhoodChainAdapter();
   // A fresh factory address per test, so the cached bytecode check does not carry over.
-  const factoryV2 = `0x${(0xfa00 + ++factoryAddress).toString(16).padStart(40, '0')}`;
-  Object.defineProperty(adapter, 'network', {
-    value: {
-      ...ROBINHOOD_CHAIN,
-      contracts: {
-        ...ROBINHOOD_CHAIN.contracts,
-        factoryV2,
-        graduator: '0x00000000000000000000000000000000000000ab',
-      },
+  const factoryV2 = `0x${(0xfa00 + ++factoryAddress).toString(16).padStart(40, '0')}` as const;
+  const adapter = new BondingCurveChainAdapter({
+    ...ROBINHOOD_CHAIN,
+    contracts: {
+      ...ROBINHOOD_CHAIN.contracts,
+      factoryV2,
+      graduator: '0x00000000000000000000000000000000000000ab',
     },
   });
   const publicClient = factoryCode ? { getCode: vi.fn(async () => factoryCode) } : {};
@@ -74,7 +72,7 @@ function calls(writeContract: ReturnType<typeof vi.fn>) {
   );
 }
 
-describe('RobinhoodChainAdapter.launchToken', () => {
+describe('BondingCurveChainAdapter.launchToken', () => {
   it('sets the creator tax inside the launch transaction', async () => {
     const calls = await launch({ buyTaxPercent: 3, sellTaxPercent: 5 });
     expect(calls).toHaveLength(1);

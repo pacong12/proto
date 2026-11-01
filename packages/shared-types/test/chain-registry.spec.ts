@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getChainMathConfig, CHAIN_MATH_CONFIGS } from '@goton/math-sdk';
+import { getChainMathConfig, getLaunchModel, CHAIN_MATH_CONFIGS } from '@goton/math-sdk';
 import { CHAIN_ABIS, getFactoryV2Abi } from '@goton/contracts-abi';
 import {
   CHAINS,
@@ -10,6 +10,9 @@ import {
   ARC_PROTO_CURVE_ADDRESS,
   resolveNetworkByParam,
   resolveTokenNetwork,
+  nativeWeiPerQuoteUnit,
+  stableQuoteUsd,
+  toViemChain,
 } from '../src';
 
 /**
@@ -106,5 +109,34 @@ describe('resolvers', () => {
     );
     expect(resolveTokenNetwork(null, ARC_NETWORK.chainId)).toBe(ARC_NETWORK);
     expect(resolveTokenNetwork({ poolAddress: '0xdead' })).toBe(DEFAULT_NETWORK);
+  });
+});
+
+describe('network helpers', () => {
+  it('reads the launch model from math-sdk', () => {
+    expect(getLaunchModel(ROBINHOOD_NETWORK.chainId)).toBe('bonding-curve');
+    expect(getLaunchModel(ARC_NETWORK.chainId)).toBe('v4-in-pool');
+    expect(getLaunchModel(1)).toBe('bonding-curve');
+  });
+
+  it('converts native wei to quote-token units', () => {
+    expect(nativeWeiPerQuoteUnit(ROBINHOOD_NETWORK)).toBe(1n);
+    expect(nativeWeiPerQuoteUnit(ARC_NETWORK)).toBe(10n ** 12n);
+  });
+
+  it('pegs stablecoin quotes to $1 and leaves ETH floating', () => {
+    expect(stableQuoteUsd(ARC_NETWORK)).toBe(1);
+    expect(stableQuoteUsd(ROBINHOOD_NETWORK)).toBeNull();
+  });
+
+  it.each(CHAINS.map((c) => [c.slug, c] as const))('%s: builds its viem chain', (_slug, net) => {
+    const chain = toViemChain(net);
+    expect(chain.id).toBe(net.chainId);
+    expect(chain.rpcUrls.default.http[0]).toBe(net.rpcUrl);
+    expect(new Set(chain.rpcUrls.default.http).size).toBe(chain.rpcUrls.default.http.length);
+    expect(chain.blockExplorers?.default).toEqual({
+      name: net.blockExplorerName,
+      url: net.blockExplorer,
+    });
   });
 });

@@ -2,8 +2,8 @@ import {
   TransactionIntent,
   SecurityEvaluationResult,
   SecurityPolicyCheck,
-  ROBINHOOD_CHAIN,
-  ARC_CHAIN,
+  CHAINS,
+  SUPPORTED_CHAINS,
   LaunchTokenIntentPayload,
   SwapIntentPayload,
 } from '@goton/shared-types';
@@ -13,11 +13,10 @@ export class SecurityPolicy {
     const checks: SecurityPolicyCheck[] = [];
 
     // Chain ID Verification — accept all chains that this protocol supports.
-    const SUPPORTED_CHAIN_IDS = new Set([ROBINHOOD_CHAIN.chainId, ARC_CHAIN.chainId]);
-    if (!SUPPORTED_CHAIN_IDS.has(intent.chainId)) {
+    if (!SUPPORTED_CHAINS[intent.chainId]) {
       checks.push({
         code: 'INVALID_CHAIN_ID',
-        description: `Chain ID ${intent.chainId} is not a supported network (Robinhood Chain ${ROBINHOOD_CHAIN.chainId}, Arc ${ARC_CHAIN.chainId})`,
+        description: `Chain ID ${intent.chainId} is not a supported network (${CHAINS.map((c) => `${c.name} ${c.chainId}`).join(', ')})`,
         passed: false,
         severity: 'CRITICAL',
       });
