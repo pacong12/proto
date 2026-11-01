@@ -1,10 +1,9 @@
-import type { Address } from 'viem';
-import type { TradeEventEntity } from '@goton/shared-types';
+import type { TradeStorePort } from '../../../tokens/domain/ports/trade-store.port';
 
-export interface TradeRepositoryPort {
-  saveTrade(trade: TradeEventEntity): Promise<void>;
-  getTrades(tokenAddress: Address, limit?: number, offset?: number): Promise<TradeEventEntity[]>;
-  getRecentTrades(limit?: number): Promise<TradeEventEntity[]>;
-  getTradesByTrader(trader: string, limit?: number): Promise<TradeEventEntity[]>;
-  findTradeByHash(txHash: string): Promise<TradeEventEntity | null>;
-}
+/** The trade reads and writes the trades module needs; every store must provide them. */
+export type TradeRepositoryPort = Required<
+  Pick<
+    TradeStorePort,
+    'saveTrade' | 'getTrades' | 'getRecentTrades' | 'getTradesByTrader' | 'findTradeByHash'
+  >
+>;
