@@ -24,6 +24,8 @@ export function useOrderMarket(
 ) {
   const invariant = ref<number | null>(null);
   const stopOracle = ref<StopOracleStatus | null>(null);
+  /** The chain's gas price, to tell whether a keeper's fee covers filling an order. */
+  const gasPrice = ref<bigint>(0n);
 
   async function load(): Promise<void> {
     const net = network.value;
@@ -31,7 +33,7 @@ export function useOrderMarket(
     if (!t.address) return;
     const client = getPublicClient(net.chainId);
     const onCurve = !marketData.value.isGraduated && !t.isGraduated && t.curveAddress;
-    const [k, oracle] = await Promise.allSettled([
+    const [k, oracle, gas] = await Promise.allSettled([
       onCurve
         ? Promise.all([
             client.readContract({
@@ -60,7 +62,9 @@ export function useOrderMarket(
         curveAddress: t.curveAddress,
         isGraduated: marketData.value.isGraduated || t.isGraduated,
       }),
+      client.getGasPrice(),
     ]);
+    gasPrice.value = gas.status === 'fulfilled' ? gas.value : 0n;
     invariant.value = k.status === 'fulfilled' && k.value ? k.value : null;
     stopOracle.value = oracle.status === 'fulfilled' ? oracle.value : null;
   }
@@ -70,5 +74,5 @@ export function useOrderMarket(
     () => void load(),
     { immediate: true },
   );
-  return { invariant, stopOracle };
+  return { invariant, stopOracle, gasPrice };
 }

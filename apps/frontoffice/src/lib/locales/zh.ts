@@ -436,6 +436,19 @@ const messages: Record<string, string> = {
     '该代币将创作者份额支付到团队钱包。任何人都可以发放成员的份额，资金始终直接支付给成员。',
   releaseAll: '全部发放',
   teamPaid: '团队份额已发放',
+  feedProfit: '盈亏',
+  topCallers: '顶级喊单者',
+  profitSinceCall: '喊单以来盈亏',
+  noPricedCalls: '暂无有价格的喊单。',
+  callsCount: '{count} 次喊单',
+  bestCall: '最佳',
+  livePool: '实时池',
+  feedAllCalls: '全部喊单',
+  feedWhales: '巨鲸',
+  feedInProfit: '盈利中',
+  feedMedia: '媒体',
+  orderTooSmallForKeeper:
+    '金额太小，执行者可能不会成交：执行奖励约 {fee} {symbol}，而成交的 Gas 约 {gas} {symbol}。请使用更大的金额。',
 };
 
 export default messages;

@@ -3,6 +3,7 @@ import {
   EventPollerService,
   GraduationKeeperService,
   LimitOrderKeeperService,
+  RATE_LIMITED,
   SourceVerifyKeeperService,
   V4BuybackKeeperService,
 } from '../modules/tokens';
@@ -10,6 +11,7 @@ import { logger } from '../modules/observability';
 import { createWalletClient, type Hex } from 'viem';
 import { nativeWeiPerQuoteUnit } from '@goton/shared-types';
 import { rpcTransport } from '../core';
+import { nextPollDelay } from './poll-delay';
 import { repository, getTokenByAddressUseCase, chainRegistry, pollers } from './container';
 
 /** Starts the pollers, keepers and maintenance timers (none in tests). */
@@ -53,17 +55,16 @@ export function startBackgroundJobs(): void {
     delayMs: number,
   ): void {
     setTimeout(async () => {
-      let next = delayMs;
+      const base = { previousMs: delayMs, interval, catchUpMs: POLL_INTERVAL_CATCH_UP_MS };
+      let next: number;
       try {
         const found = await poller.pollEvents();
         // Tighten the interval while there is trading or a backlog; relax when idle.
-        next = poller.isBehind
-          ? POLL_INTERVAL_CATCH_UP_MS
-          : found > 0
-            ? interval.active
-            : interval.idle;
+        next = nextPollDelay({ ...base, failed: false, behind: poller.isBehind, found });
       } catch {
-        /* non-fatal — lastPolledBlock not advanced, next cycle retries */
+        // Non-fatal: lastPolledBlock did not advance, so a later cycle retries the same range,
+        // after a growing delay so a rate-limited RPC is not hit again at once.
+        next = nextPollDelay({ ...base, failed: true, behind: false, found: 0 });
       }
       schedulePoll(poller, interval, next);
     }, delayMs);
@@ -152,7 +153,11 @@ export function startBackgroundJobs(): void {
       const limitTick = (): void => {
         setTimeout(async () => {
           try {
-            const filled = (await exclusive(() => limitKeeper.runOnce())).filter((r) => r.executed);
+            const results = await exclusive(() => limitKeeper.runOnce());
+            if (results.some((r) => r.reason === RATE_LIMITED)) {
+              logger.warn(`[LimitOrderKeeper:${network.name}] RPC rate-limited; cycle cut short`);
+            }
+            const filled = results.filter((r) => r.executed);
             if (filled.length > 0) {
               logger.info(`[LimitOrderKeeper:${network.name}] filled ${filled.length} order(s)`, {
                 orders: filled.map((r) => r.key),

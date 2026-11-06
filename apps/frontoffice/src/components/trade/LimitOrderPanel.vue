@@ -133,6 +133,7 @@ import {
   sellFloor,
   stopPriceX36,
   type PriceContext,
+  keeperCoversGas,
 } from '@/lib/limit-orders';
 import { useLimitOrders } from '@/composables/useLimitOrders';
 import { useOrderMarket } from '@/composables/useOrderMarket';
@@ -183,7 +184,7 @@ const target = computed(() => num(targetInput.value));
 const tpTarget = computed(() => num(tpInput.value));
 const slTarget = computed(() => num(slInput.value));
 const toleranceBps = computed(() => Math.min(5_000, Math.round(num(toleranceInput.value) * 100)));
-const { invariant, stopOracle } = useOrderMarket(
+const { invariant, stopOracle, gasPrice } = useOrderMarket(
   toRef(props, 'network'),
   toRef(props, 'token'),
   toRef(props, 'marketData'),
@@ -276,10 +277,29 @@ const warning = computed(() => {
   }
   const p = plan.value;
   if (p.kind === 'sell' && p.impact > 0.1) return t('largeOrderImpact', { pct: pct(p.impact) });
+  // Keepers only fill orders whose 0.1% executor fee covers their gas; the smallest leg decides.
+  const quoteRaw =
+    p.kind === 'buy'
+      ? amount.value > 0
+        ? parseUnits(String(amount.value), quoteDecimals.value)
+        : 0n
+      : [p.tpMinOut, p.slMinOut]
+          .filter((v) => v > 0n)
+          .reduce<bigint>((low, v) => (low === 0n || v < low ? v : low), 0n);
+  const cover = keeperCoversGas(quoteRaw, quoteDecimals.value, gasPrice.value);
+  if (!cover.ok) {
+    return t('orderTooSmallForKeeper', {
+      fee: fmtNative(cover.feeNative),
+      gas: fmtNative(cover.gasNative),
+      symbol: quoteSymbol.value,
+    });
+  }
   return '';
 });
 
 const pct = (share: number) => (share * 100).toFixed(share < 0.1 ? 1 : 0);
+const fmtNative = (wei: bigint) =>
+  (Number(wei) / 1e18).toLocaleString(undefined, { maximumSignificantDigits: 2 });
 
 /** Whether stops can fire yet, and when they will: they trigger on a time-weighted price. */
 const stopReady = computed(() => stopOracle.value?.ready !== false);

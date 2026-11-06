@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ARC_CHAIN, ROBINHOOD_CHAIN } from '@goton/shared-types';
 import {
   buyMinOut,
+  keeperCoversGas,
   priceAtMarketCap,
   sellFloor,
   sellMinOut,
@@ -97,5 +98,28 @@ describe('sellFloor', () => {
       floor: sellMinOut(1e7, 3e-9, 0, ctx),
       impact: 0,
     });
+  });
+});
+
+describe('keeperCoversGas', () => {
+  it('Arc: a 1.9 USDC stop-loss pays less than the gas to fill it at 25 gwei', () => {
+    // The Arc testnet stop-loss that keepers rightly left alone.
+    const r = keeperCoversGas(1_900_000n, 6, 25_000_000_000n);
+    expect(r.ok).toBe(false);
+    expect(r.feeNative).toBe(1_900_000_000_000_000n); // 0.0019 USDC
+    expect(r.gasNative).toBe(11_250_000_000_000_000n); // ~0.011 USDC
+  });
+
+  it('Arc: about 12 USDC and up is worth filling at 25 gwei', () => {
+    expect(keeperCoversGas(12_000_000n, 6, 25_000_000_000n).ok).toBe(true);
+  });
+
+  it('Robinhood: tiny gas prices make even small orders fillable', () => {
+    expect(keeperCoversGas(10n ** 16n, 18, 20_000_000n).ok).toBe(true); // 0.01 ETH at 0.02 gwei
+  });
+
+  it('says nothing until there is an amount and a gas price', () => {
+    expect(keeperCoversGas(0n, 6, 25_000_000_000n).ok).toBe(true);
+    expect(keeperCoversGas(1n, 6, 0n).ok).toBe(true);
   });
 });

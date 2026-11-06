@@ -455,6 +455,19 @@ const messages: Record<string, string> = {
     'Dieser Token zahlt den Creator-Anteil an eine Team-Wallet. Jeder kann die Anteile auszahlen; jedes Mitglied wird immer direkt bezahlt.',
   releaseAll: 'Alles auszahlen',
   teamPaid: 'Team-Anteile ausgezahlt',
+  feedProfit: 'Gewinn',
+  topCallers: 'Top-Caller',
+  profitSinceCall: 'Gewinn seit dem Call',
+  noPricedCalls: 'Noch keine bepreisten Calls.',
+  callsCount: '{count} Calls',
+  bestCall: 'bester',
+  livePool: 'Live-Pool',
+  feedAllCalls: 'Alle Calls',
+  feedWhales: 'Wale',
+  feedInProfit: 'Im Gewinn',
+  feedMedia: 'Medien',
+  orderTooSmallForKeeper:
+    'Zu klein für Keeper: Die Ausführung bringt etwa {fee} {symbol}, kostet aber etwa {gas} {symbol} Gas, daher wird die Order womöglich nie ausgeführt. Nutze einen größeren Betrag.',
 };
 
 export default messages;

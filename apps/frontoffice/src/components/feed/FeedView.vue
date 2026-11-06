@@ -253,11 +253,11 @@ async function onCalloutPosted(): Promise<void> {
 }
 
 const filterTabs = computed<Array<{ key: FeedFilterType; label: string }>>(() => [
-  { key: 'all', label: 'All Calls' },
+  { key: 'all', label: t('feedAllCalls') },
   ...(account.value ? [{ key: 'following' as const, label: t('followingTab') }] : []),
-  { key: 'whale', label: 'Whales' },
-  { key: 'profit', label: 'In Profit' },
-  { key: 'media', label: 'Media' },
+  { key: 'whale', label: t('feedWhales') },
+  { key: 'profit', label: t('feedInProfit') },
+  { key: 'media', label: t('feedMedia') },
 ]);
 
 // Following tab: the authors the connected wallet follows.

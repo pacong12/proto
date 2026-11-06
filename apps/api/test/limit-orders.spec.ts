@@ -395,3 +395,30 @@ describe('limit order indexing', () => {
     });
   });
 });
+
+describe('LimitOrderKeeperService under a rate-limited RPC', () => {
+  it('reports the rate limit and stops the cycle instead of treating orders as not fillable', async () => {
+    const repo = new SqliteTokenRepository(':memory:');
+    await repo.save(token());
+    await repo.saveLimitOrder!(order({ key: 'a', orderId: '1' }));
+    await repo.saveLimitOrder!(order({ key: 'b', orderId: '2' }));
+    let calls = 0;
+    const publicClient = {
+      simulateContract: async () => {
+        calls++;
+        throw Object.assign(new Error('HTTP request failed.\nStatus: 429'), { status: 429 });
+      },
+    } as unknown as PublicClient;
+    const walletClient = { getAddresses: async () => [OWNER] } as unknown as WalletClient;
+    const results = await new LimitOrderKeeperService(
+      publicClient,
+      walletClient,
+      repo,
+      network,
+      1n,
+      () => NOW,
+    ).runOnce();
+    expect(results).toEqual([{ key: expect.any(String), executed: false, reason: 'Rate limited' }]);
+    expect(calls).toBe(1);
+  });
+});

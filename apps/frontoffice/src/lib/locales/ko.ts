@@ -446,6 +446,19 @@ const messages: Record<string, string> = {
     '이 토큰은 생성자 몫을 팀 지갑으로 지급합니다. 누구나 멤버 몫을 지급할 수 있으며 항상 멤버에게 직접 지급됩니다.',
   releaseAll: '모두 지급',
   teamPaid: '팀 몫이 지급되었습니다',
+  feedProfit: '수익',
+  topCallers: '상위 콜러',
+  profitSinceCall: '콜 이후 수익',
+  noPricedCalls: '아직 가격이 기록된 콜이 없습니다.',
+  callsCount: '콜 {count}개',
+  bestCall: '최고',
+  livePool: '라이브 풀',
+  feedAllCalls: '모든 콜',
+  feedWhales: '고래',
+  feedInProfit: '수익 중',
+  feedMedia: '미디어',
+  orderTooSmallForKeeper:
+    '키퍼에게 너무 작습니다: 체결 보상은 약 {fee} {symbol}인데 가스비는 약 {gas} {symbol}라서 체결되지 않을 수 있습니다. 더 큰 금액을 사용하세요.',
 };
 
 export default messages;

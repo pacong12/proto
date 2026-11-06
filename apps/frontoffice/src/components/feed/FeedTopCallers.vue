@@ -3,13 +3,13 @@
     <CardHeader class="flex-row items-center justify-between space-y-0 p-4 pb-2">
       <CardTitle class="text-sm flex items-center gap-1.5">
         <Trophy class="w-4 h-4 text-muted-foreground" />
-        Top Callers
+        {{ t('topCallers') }}
       </CardTitle>
-      <span class="text-xs text-muted-foreground">Profit since call</span>
+      <span class="text-xs text-muted-foreground">{{ t('profitSinceCall') }}</span>
     </CardHeader>
     <CardContent class="p-2 pt-0">
       <p v-if="callers.length === 0" class="text-xs text-muted-foreground py-4 text-center">
-        No priced calls yet.
+        {{ t('noPricedCalls') }}
       </p>
       <ol v-else class="space-y-1">
         <li
@@ -25,9 +25,9 @@
               {{ getUserIdentity(caller.address).displayName }}
             </span>
             <span class="block text-[11px] text-muted-foreground truncate">
-              {{ caller.calls }} {{ caller.calls === 1 ? 'call' : 'calls' }}
+              {{ t('callsCount', { count: String(caller.calls) }) }}
               <template v-if="caller.bestSymbol">
-                · best ${{ caller.bestSymbol }} {{ caller.bestPct >= 0 ? '+' : ''
+                · {{ t('bestCall') }} ${{ caller.bestSymbol }} {{ caller.bestPct >= 0 ? '+' : ''
                 }}{{ caller.bestPct.toFixed(0) }}%
               </template>
             </span>
@@ -47,6 +47,7 @@
 
 <script setup lang="ts">
 import { Trophy } from 'lucide-vue-next';
+import { useI18n } from '@/lib/i18n';
 import { Jazzicon } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getUserIdentity } from '@/lib/username';
@@ -57,6 +58,8 @@ import type { TopCaller } from '@/lib/top-callers';
 defineProps<{ callers: readonly TopCaller[] }>();
 
 const emit = defineEmits<{ (e: 'selectCaller', address: string): void }>();
+
+const { t } = useI18n();
 </script>
 
 <style scoped>

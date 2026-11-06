@@ -450,6 +450,19 @@ const messages: Record<string, string> = {
     'このトークンは作成者分をチームウォレットに支払います。誰でもメンバーの分を送金でき、常にメンバーへ直接支払われます。',
   releaseAll: 'すべて送金',
   teamPaid: 'チームの分を送金しました',
+  feedProfit: '損益',
+  topCallers: 'トップコーラー',
+  profitSinceCall: 'コール以降の損益',
+  noPricedCalls: '価格付きのコールはまだありません。',
+  callsCount: 'コール{count}件',
+  bestCall: '最高',
+  livePool: 'ライブプール',
+  feedAllCalls: 'すべてのコール',
+  feedWhales: 'クジラ',
+  feedInProfit: '含み益',
+  feedMedia: 'メディア',
+  orderTooSmallForKeeper:
+    'キーパーには小さすぎます：約定報酬は約{fee} {symbol}ですが、ガス代は約{gas} {symbol}かかるため、約定しない可能性があります。より大きな金額にしてください。',
 };
 
 export default messages;

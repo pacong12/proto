@@ -454,6 +454,19 @@ const messages: Record<string, string> = {
     'Token ini membayar bagian kreatornya ke dompet tim. Siapa pun bisa merilis bagian anggota; setiap anggota selalu dibayar langsung.',
   releaseAll: 'Rilis semua',
   teamPaid: 'Bagian tim dirilis',
+  feedProfit: 'Profit',
+  topCallers: 'Caller Teratas',
+  profitSinceCall: 'Profit sejak call',
+  noPricedCalls: 'Belum ada call dengan harga.',
+  callsCount: '{count} call',
+  bestCall: 'terbaik',
+  livePool: 'Pool Aktif',
+  feedAllCalls: 'Semua Call',
+  feedWhales: 'Whale',
+  feedInProfit: 'Sedang Profit',
+  feedMedia: 'Media',
+  orderTooSmallForKeeper:
+    'Terlalu kecil untuk keeper: imbalannya sekitar {fee} {symbol}, padahal gas pengisiannya sekitar {gas} {symbol}, jadi order ini mungkin tidak pernah terisi. Gunakan jumlah yang lebih besar.',
 };
 
 export default messages;

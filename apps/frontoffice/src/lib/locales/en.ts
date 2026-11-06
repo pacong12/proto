@@ -452,6 +452,19 @@ const messages: Record<string, string> = {
     "This token pays its creator share to a team wallet. Anyone can release the members' shares; each member is always paid directly.",
   releaseAll: 'Release all',
   teamPaid: 'Team shares released',
+  feedProfit: 'Profit',
+  topCallers: 'Top Callers',
+  profitSinceCall: 'Profit since call',
+  noPricedCalls: 'No priced calls yet.',
+  callsCount: '{count} calls',
+  bestCall: 'best',
+  livePool: 'Live Pool',
+  feedAllCalls: 'All Calls',
+  feedWhales: 'Whales',
+  feedInProfit: 'In Profit',
+  feedMedia: 'Media',
+  orderTooSmallForKeeper:
+    'Too small for keepers: it pays about {fee} {symbol} to fill but the fill costs about {gas} {symbol} in gas, so it may never fill. Use a larger amount.',
 };
 
 export default messages;
