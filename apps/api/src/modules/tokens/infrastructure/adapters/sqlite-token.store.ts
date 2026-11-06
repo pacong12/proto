@@ -1,8 +1,8 @@
 import type { Database } from 'bun:sqlite';
-import type { SqliteDatabase } from './sqlite-database';
-import type { TokenStorePort } from '../../domain/ports/token-store.port';
+import type { SqliteDatabase } from '../../../../core/sqlite/sqlite-database';
+import type { TokenStorePort } from '../../../../core/ports/token-store.port';
 import { LaunchedTokenEntity, TokenMarketData } from '@goton/shared-types';
-import { TokenRow, MarketDataRow, mapRowToToken } from './sqlite-rows';
+import { TokenRow, MarketDataRow, mapRowToToken } from '../../../../core/sqlite/sqlite-rows';
 
 /** Tokens, market data, holders, sentiment, buybacks and the indexer cursor. */
 export class SqliteTokenStore implements TokenStorePort {

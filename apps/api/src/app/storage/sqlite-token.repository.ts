@@ -1,9 +1,9 @@
-import type { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
-import { SqliteDatabase } from './sqlite-database';
-import { SqliteOrderStore } from './sqlite-order.store';
-import { SqliteSocialStore } from './sqlite-social.store';
-import { SqliteTokenStore } from './sqlite-token.store';
-import { SqliteTradeStore } from './sqlite-trade.store';
+import type { TokenRepositoryPort } from '../../core/ports/token.repository.port';
+import { SqliteDatabase } from '../../core/sqlite/sqlite-database';
+import { SqliteOrderStore } from '../../modules/limit-orders';
+import { SqliteSocialStore } from '../../modules/social';
+import { SqliteTokenStore } from '../../modules/tokens';
+import { SqliteTradeStore } from '../../modules/trades';
 
 /**
  * The API's SQLite storage: one connection, one store per aggregate. Consumers that need one

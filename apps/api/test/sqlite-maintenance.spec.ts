@@ -7,7 +7,7 @@ import {
   backupDatabase,
   listBackups,
   openCheckedDatabase,
-} from '../src/modules/tokens/infrastructure/adapters/sqlite-maintenance';
+} from '../src/core/sqlite/sqlite-maintenance';
 
 describe('SQLite maintenance (DR-04)', () => {
   let dir: string;

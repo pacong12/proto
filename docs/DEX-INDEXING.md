@@ -219,9 +219,9 @@ secara otomatis setelah chain terdaftar di sana. Tidak perlu submit terpisah.
 
 ## File Terkait
 
-| File                                                                         | Keterangan                                              |
-| ---------------------------------------------------------------------------- | ------------------------------------------------------- |
-| `apps/api/src/server.ts`                                                     | Semua endpoint DEX Screener + GeckoTerminal ada di sini |
-| `apps/api/src/modules/tokens/infrastructure/indexer/event-poller.service.ts` | Event poller yang mengisi tabel trades                  |
-| `packages/shared-types/src/constants/network.ts`                             | Alamat kontrak per chain                                |
-| `.github/workflows/deploy-vps.yml`                                           | Deploy API ke VPS publik                                |
+| File                                                                  | Keterangan                                              |
+| --------------------------------------------------------------------- | ------------------------------------------------------- |
+| `apps/api/src/server.ts`                                              | Semua endpoint DEX Screener + GeckoTerminal ada di sini |
+| `apps/api/src/modules/indexer/infrastructure/event-poller.service.ts` | Event poller yang mengisi tabel trades                  |
+| `packages/shared-types/src/constants/network.ts`                      | Alamat kontrak per chain                                |
+| `.github/workflows/deploy-vps.yml`                                    | Deploy API ke VPS publik                                |

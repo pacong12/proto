@@ -1,6 +1,6 @@
 import { resolveTokenNetwork, type LaunchedTokenEntity } from '@goton/shared-types';
-import type { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
-import { findAllTokens } from '../../application/all-tokens';
+import type { TokenRepositoryPort } from '../../../core/ports/token.repository.port';
+import { findAllTokens } from '../../tokens';
 
 export interface SourceVerifyResult {
   chainId: number;

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { PublicClient } from 'viem';
 import { CHAINS, DEFAULT_NETWORK, ARC_CHAIN } from '@goton/shared-types';
 import { ChainRegistry } from '../src/modules/chains';
-import type { PriceFeedPort } from '../src/modules/tokens/domain/ports/price-feed.port';
+import type { PriceFeedPort } from '../src/core/ports/price-feed.port';
 
 const priceFeed = {
   getQuoteAssetPriceUsd: async (chainId: number) => (chainId === ARC_CHAIN.chainId ? 1 : 2500),

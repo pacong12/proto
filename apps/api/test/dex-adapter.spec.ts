@@ -2,7 +2,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { getAddress } from 'viem';
 import type { LaunchedTokenEntity, TradeEventEntity } from '@goton/shared-types';
 import { server } from '../src/server';
-import { SqliteTokenRepository } from '../src/modules/tokens/infrastructure/adapters/sqlite-token.repository';
+import { SqliteTokenRepository } from '../src/app/storage/sqlite-token.repository';
 import {
   eventsResponse,
   latestBlockResponse,

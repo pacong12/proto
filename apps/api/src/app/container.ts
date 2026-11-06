@@ -1,7 +1,5 @@
 import { ChainRegistry } from '../modules/chains';
 import {
-  SqliteTokenRepository,
-  TradeSyncService,
   ViemChainIndexerAdapter,
   CalculatePricingUseCase,
   GetTokensUseCase,
@@ -9,9 +7,10 @@ import {
   GetHoldersUseCase,
   GetDevActivityUseCase,
   TokenController,
-  EventPollerService,
   CoinGeckoPriceFeedAdapter,
 } from '../modules/tokens';
+import { SqliteTokenRepository } from './storage/sqlite-token.repository';
+import { TradeSyncService, EventPollerService } from '../modules/indexer';
 import { SecurityGateService, SecurityController } from '../modules/security';
 import { createIpfsService, IpfsController } from '../modules/ipfs';
 import {

@@ -1,8 +1,8 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import type { PublicClient } from 'viem';
 import { ARC_NETWORK, ROBINHOOD_CHAIN, type NetworkConfig } from '@goton/shared-types';
-import { EventPollerService } from '../src/modules/tokens/infrastructure/indexer/event-poller.service';
-import { SqliteTokenRepository } from '../src/modules/tokens/infrastructure/adapters/sqlite-token.repository';
+import { EventPollerService } from '../src/modules/indexer/infrastructure/event-poller.service';
+import { SqliteTokenRepository } from '../src/app/storage/sqlite-token.repository';
 
 const hex = (bytes: number) =>
   `0x${Array.from(crypto.getRandomValues(new Uint8Array(bytes)), (b) => b.toString(16).padStart(2, '0')).join('')}` as `0x${string}`;

@@ -1,6 +1,6 @@
 import type { Database } from 'bun:sqlite';
-import type { SqliteDatabase } from './sqlite-database';
-import type { SocialStorePort } from '../../domain/ports/social-store.port';
+import type { SqliteDatabase } from '../../../core/sqlite/sqlite-database';
+import type { SocialStorePort } from '../../../core/ports/social-store.port';
 import { TokenCommentEntity, getUserIdentity, type CreatorProfile } from '@goton/shared-types';
 
 /** Comments, callouts, follows and profiles. */

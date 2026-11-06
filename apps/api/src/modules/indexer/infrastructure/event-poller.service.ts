@@ -1,9 +1,9 @@
 import { PublicClient } from 'viem';
 import { DEFAULT_NETWORK, type LaunchedTokenEntity, type NetworkConfig } from '@goton/shared-types';
-import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
-import type { ChainIndexerPort } from '../../domain/ports/chain.indexer.port';
-import { PriceFeedPort } from '../../domain/ports/price-feed.port';
-import { CalculatePricingUseCase } from '../../application/use-cases/calculate-pricing.use-case';
+import { TokenRepositoryPort } from '../../../core/ports/token.repository.port';
+import type { ChainIndexerPort } from '../../tokens';
+import { PriceFeedPort } from '../../../core/ports/price-feed.port';
+import { CalculatePricingUseCase } from '../../tokens';
 import { MAX_BLOCK_RANGE, CONFIRMATIONS, MAX_RANGE_ATTEMPTS } from './indexer-events';
 import { IndexerContext } from './indexer-context';
 import { LaunchIndexer } from './launch.indexer';

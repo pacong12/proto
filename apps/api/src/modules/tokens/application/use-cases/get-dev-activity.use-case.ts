@@ -1,6 +1,6 @@
 import { UNDEPLOYED } from '@goton/shared-types';
 import { assertAddress } from '../../../../core/errors/app-error';
-import type { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
+import type { TokenRepositoryPort } from '../../../../core/ports/token.repository.port';
 
 export interface DevActivity {
   creatorAddress: string;

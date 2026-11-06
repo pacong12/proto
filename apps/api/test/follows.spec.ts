@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { InMemoryTokenRepository } from '../src/modules/tokens/infrastructure/adapters/in-memory-token.repository';
-import { SqliteTokenRepository } from '../src/modules/tokens/infrastructure/adapters/sqlite-token.repository';
-import type { TokenRepositoryPort } from '../src/modules/tokens/domain/ports/token.repository.port';
+import { InMemoryTokenRepository } from '../src/app/storage/in-memory-token.repository';
+import { SqliteTokenRepository } from '../src/app/storage/sqlite-token.repository';
+import type { TokenRepositoryPort } from '../src/core/ports/token.repository.port';
 
 const A = '0x00000000000000000000000000000000000000Aa';
 const B = '0x00000000000000000000000000000000000000Bb';

@@ -1,17 +1,17 @@
 import type { Database } from 'bun:sqlite';
-import type { SqliteDatabase } from './sqlite-database';
-import type { TradeStorePort } from '../../domain/ports/trade-store.port';
+import type { SqliteDatabase } from '../../../core/sqlite/sqlite-database';
+import type { TradeStorePort } from '../../../core/ports/trade-store.port';
 import { TradeEventEntity, CandlestickEntity, chartPriceUsd } from '@goton/shared-types';
-import type { TradeFlow } from '../../domain/ports/token.repository.port';
+import type { TradeFlow } from '../../../core/ports/token.repository.port';
 import {
   aggregateCandlesticks,
   chartEndTime,
   chartStartTime,
   computeHoldersDistribution,
   holdersFromBalances,
-} from '../../domain/services/token-aggregation.service';
-import { POOL_HOLDERS, TradeRow, mapRowToTrade } from './sqlite-rows';
-import type { TokenStorePort } from '../../domain/ports/token-store.port';
+} from '../domain/services/token-aggregation.service';
+import { POOL_HOLDERS, TradeRow, mapRowToTrade } from '../../../core/sqlite/sqlite-rows';
+import type { TokenStorePort } from '../../../core/ports/token-store.port';
 
 /** Indexed trades and what is derived from them (candles, flow, holders, positions). */
 export class SqliteTradeStore implements TradeStorePort {

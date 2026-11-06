@@ -1,12 +1,12 @@
 import { privateKeyToAccount } from 'viem/accounts';
+import { EventPollerService } from '../modules/indexer';
 import {
-  EventPollerService,
+  RATE_LIMITED,
   GraduationKeeperService,
   LimitOrderKeeperService,
-  RATE_LIMITED,
   SourceVerifyKeeperService,
   V4BuybackKeeperService,
-} from '../modules/tokens';
+} from '../modules/keepers';
 import { logger } from '../modules/observability';
 import { createWalletClient, type Hex } from 'viem';
 import { nativeWeiPerQuoteUnit } from '@goton/shared-types';

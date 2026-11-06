@@ -1,5 +1,5 @@
 import { assertAddress } from '../../../../core/errors/app-error';
-import type { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
+import type { TokenRepositoryPort } from '../../../../core/ports/token.repository.port';
 
 export class GetHoldersUseCase {
   constructor(private readonly tokenRepository: TokenRepositoryPort) {}

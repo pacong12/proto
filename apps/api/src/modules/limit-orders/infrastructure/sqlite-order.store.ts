@@ -1,6 +1,6 @@
 import type { Database } from 'bun:sqlite';
-import type { SqliteDatabase } from './sqlite-database';
-import type { LimitOrderStorePort } from '../../domain/ports/limit-order-store.port';
+import type { SqliteDatabase } from '../../../core/sqlite/sqlite-database';
+import type { LimitOrderStorePort } from '../../../core/ports/limit-order-store.port';
 import { LimitOrderEntity } from '@goton/shared-types';
 
 /** Limit, take-profit and stop-loss orders. */

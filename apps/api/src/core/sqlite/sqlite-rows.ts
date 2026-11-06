@@ -66,7 +66,7 @@ export const currentDir =
     : path.dirname(fileURLToPath(import.meta.url));
 
 export const defaultDbPath =
-  process.env.DB_PATH || path.resolve(currentDir, '../../../../../proto.sqlite');
+  process.env.DB_PATH || path.resolve(currentDir, '../../../proto.sqlite');
 
 export function mapRowToToken(row: TokenRow): LaunchedTokenEntity {
   return {

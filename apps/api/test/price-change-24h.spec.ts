@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ROBINHOOD_CHAIN, type LaunchedTokenEntity } from '@goton/shared-types';
-import { InMemoryTokenRepository } from '../src/modules/tokens/infrastructure/adapters/in-memory-token.repository';
+import { InMemoryTokenRepository } from '../src/app/storage/in-memory-token.repository';
 import { CalculatePricingUseCase } from '../src/modules/tokens/application/use-cases/calculate-pricing.use-case';
 import { GetTokenByAddressUseCase } from '../src/modules/tokens/application/use-cases/get-token-by-address.use-case';
 

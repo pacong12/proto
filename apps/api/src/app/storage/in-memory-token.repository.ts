@@ -8,13 +8,13 @@ import {
   chartPriceUsd,
   type CreatorProfile,
 } from '@goton/shared-types';
-import type { TokenRepositoryPort, TradeFlow } from '../../domain/ports/token.repository.port';
+import type { TokenRepositoryPort, TradeFlow } from '../../core/ports/token.repository.port';
 import {
   aggregateCandlesticks,
   chartEndTime,
   chartStartTime,
   computeHoldersDistribution,
-} from '../../domain/services/token-aggregation.service';
+} from '../../modules/trades';
 
 export class InMemoryTokenRepository implements TokenRepositoryPort {
   private tokens = new Map<string, LaunchedTokenEntity>();
