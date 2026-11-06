@@ -240,6 +240,25 @@ const messages: Record<string, string> = {
   bioDescription: 'Biografía / Descripción',
   saveProfile: 'Guardar Perfil',
   communityTakeover: 'Toma de Comunidad (CTO)',
+  vestingToggle: 'Bloquear mi compra inicial (vesting)',
+  vestingHint:
+    'Tus tokens se desbloquean gradualmente desde el lanzamiento. Después no se puede cambiar ni cancelar el calendario.',
+  vestingCliffDays: 'Cliff (días)',
+  vestingDurationDays: 'Periodo de desbloqueo (días)',
+  vestingSummary:
+    'No se puede reclamar nada durante {cliff} días. Desbloqueo total tras {duration} días.',
+  vestingErrorDuration: 'El periodo de desbloqueo debe ser un número entero de {min} a {max} días.',
+  vestingErrorCliff:
+    'El cliff debe ser un número entero de días, no mayor que el periodo de desbloqueo.',
+  vestingCardTitle: 'Compras iniciales bloqueadas',
+  vestingClaimable: 'Reclamable',
+  vestingClaimed: 'Reclamado',
+  vestingTotal: 'Bloqueado',
+  vestingCliffEnds: 'Fin del cliff',
+  vestingFullyUnlocked: 'Desbloqueo total',
+  vestingClaimTokens: 'Reclamar tokens',
+  vestingClaimDividends: 'Reclamar dividendos',
+  vestingClaimDone: 'Reclamación confirmada',
   ctoManage: 'Gestionar CTO',
   ctoRedirectLabel: 'Redirección:',
   ctoModalDescription:

@@ -5,6 +5,7 @@ import { waitForReceiptWithFallback } from '../../lib/viem-client';
 import { executeCurveSwap, isCurveTrade } from './curve-swap';
 import { executeV4RouterSwap, type V4QuoteConfig } from './v4-swap';
 import { isDeployed } from './utils';
+import { readFactoryVestingVault } from '../../lib/vesting';
 
 /**
  * What every launch model shares: the network's factory, waiting for the launch transaction,
@@ -27,6 +28,10 @@ export abstract class LaunchpadChainAdapter implements ChainAdapter {
     account: `0x${string}`,
     onHashEmitted?: (hash: `0x${string}`) => void,
   ): Promise<ChainLaunchResult | null>;
+
+  async readVestingVault(publicClient: PublicClient): Promise<`0x${string}` | null> {
+    return isDeployed(this.factory) ? readFactoryVestingVault(publicClient, this.factory) : null;
+  }
 
   async executeSwap(
     params: ChainSwapParams,

@@ -240,6 +240,25 @@ const messages: Record<string, string> = {
   bioDescription: 'Biografie / Beschreibung',
   saveProfile: 'Profil Speichern',
   communityTakeover: 'Community-Übernahme (CTO)',
+  vestingToggle: 'Meinen Erstkauf sperren (Vesting)',
+  vestingHint:
+    'Deine Token werden ab dem Launch schrittweise freigegeben. Der Plan kann danach weder geändert noch abgebrochen werden.',
+  vestingCliffDays: 'Cliff (Tage)',
+  vestingDurationDays: 'Freigabezeitraum (Tage)',
+  vestingSummary:
+    '{cliff} Tage lang kann nichts beansprucht werden. Nach {duration} Tagen vollständig freigegeben.',
+  vestingErrorDuration: 'Der Freigabezeitraum muss eine ganze Zahl von {min} bis {max} Tagen sein.',
+  vestingErrorCliff:
+    'Der Cliff muss eine ganze Zahl von Tagen sein und darf den Freigabezeitraum nicht überschreiten.',
+  vestingCardTitle: 'Gesperrte Erstkäufe',
+  vestingClaimable: 'Beanspruchbar',
+  vestingClaimed: 'Beansprucht',
+  vestingTotal: 'Gesperrt',
+  vestingCliffEnds: 'Cliff endet',
+  vestingFullyUnlocked: 'Vollständig freigegeben',
+  vestingClaimTokens: 'Token beanspruchen',
+  vestingClaimDividends: 'Dividenden beanspruchen',
+  vestingClaimDone: 'Beanspruchung bestätigt',
   ctoManage: 'CTO verwalten',
   ctoRedirectLabel: 'Umleitung:',
   ctoModalDescription:
