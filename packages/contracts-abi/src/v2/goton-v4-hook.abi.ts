@@ -49,6 +49,32 @@ export const gotonV4HookAbi = [
   },
   {
     type: 'function',
+    name: 'PAUSE_MAX',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'SNAPSHOT_SPACING',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'uint32',
+        internalType: 'uint32',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'afterSwap',
     inputs: [
       {
@@ -393,6 +419,38 @@ export const gotonV4HookAbi = [
   },
   {
     type: 'function',
+    name: 'flushTaxes',
+    inputs: [
+      {
+        name: 'poolId',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+    ],
+    outputs: [
+      {
+        name: 'amount',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'guardian',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'oracles',
     inputs: [
       {
@@ -413,24 +471,63 @@ export const gotonV4HookAbi = [
         internalType: 'uint32',
       },
       {
-        name: 'olderCumulative',
-        type: 'int56',
-        internalType: 'int56',
-      },
-      {
-        name: 'olderTimestamp',
+        name: 'startTimestamp',
         type: 'uint32',
         internalType: 'uint32',
       },
       {
-        name: 'newerCumulative',
-        type: 'int56',
-        internalType: 'int56',
-      },
-      {
-        name: 'newerTimestamp',
+        name: 'lastSnapshotTimestamp',
         type: 'uint32',
         internalType: 'uint32',
+      },
+      {
+        name: 'next',
+        type: 'uint8',
+        internalType: 'uint8',
+      },
+      {
+        name: 'count',
+        type: 'uint8',
+        internalType: 'uint8',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'pause',
+    inputs: [],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'pausedUntil',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'pendingTax',
+    inputs: [
+      {
+        name: '',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
       },
     ],
     stateMutability: 'view',
@@ -608,6 +705,45 @@ export const gotonV4HookAbi = [
     stateMutability: 'nonpayable',
   },
   {
+    type: 'function',
+    name: 'setGuardian',
+    inputs: [
+      {
+        name: 'newGuardian',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'unlockCallback',
+    inputs: [
+      {
+        name: 'data',
+        type: 'bytes',
+        internalType: 'bytes',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'bytes',
+        internalType: 'bytes',
+      },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'unpause',
+    inputs: [],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
     type: 'event',
     name: 'BondGraduated',
     inputs: [
@@ -632,6 +768,19 @@ export const gotonV4HookAbi = [
     inputs: [
       {
         name: 'factory',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'GuardianSet',
+    inputs: [
+      {
+        name: 'guardian',
         type: 'address',
         indexed: true,
         internalType: 'address',
@@ -678,6 +827,25 @@ export const gotonV4HookAbi = [
   },
   {
     type: 'event',
+    name: 'SwapsPaused',
+    inputs: [
+      {
+        name: 'until',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'SwapsUnpaused',
+    inputs: [],
+    anonymous: false,
+  },
+  {
+    type: 'event',
     name: 'TaxCollected',
     inputs: [
       {
@@ -702,6 +870,31 @@ export const gotonV4HookAbi = [
     anonymous: false,
   },
   {
+    type: 'event',
+    name: 'TaxesFlushed',
+    inputs: [
+      {
+        name: 'poolId',
+        type: 'bytes32',
+        indexed: true,
+        internalType: 'bytes32',
+      },
+      {
+        name: 'splitter',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+      {
+        name: 'amount',
+        type: 'uint256',
+        indexed: false,
+        internalType: 'uint256',
+      },
+    ],
+    anonymous: false,
+  },
+  {
     type: 'error',
     name: 'FactoryAlreadySet',
     inputs: [],
@@ -714,6 +907,11 @@ export const gotonV4HookAbi = [
   {
     type: 'error',
     name: 'OracleNotReady',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'Paused',
     inputs: [],
   },
   {

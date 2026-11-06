@@ -10,6 +10,7 @@ export * from './v2/vesting-vault.abi';
 export * from './v2/proto-liquidity-locker-v4.abi';
 export * from './v2/proto-meme-hook.abi';
 export * from './v2/goton-v4-hook.abi';
+export * from './v2/goton-v4-hook-v1.abi';
 export * from './v2/goton-fee-splitter.abi';
 export * from './v2/goton-v4-graduator.abi';
 export * from './v2/goton-v4-router.abi';
