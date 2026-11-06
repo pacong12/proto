@@ -19,7 +19,7 @@ All addresses are hex (`0x…`, 40 characters). `chainId` is `4663` for Robinhoo
 | `GET /api/tokens/{address}/flow?window=5m\|1h\|6h\|24h`     | Buy vs sell volume and trader counts                                              |
 | `GET /api/sparklines?chainId=`                              | Per token, its price path from launch to now (about 40 points)                    |
 | `GET /api/memestock?chainId=`                               | Curated launches with their signals (see [Memestock](/protocol/social#memestock)) |
-| `GET /api/analytics?chainId=`                               | Protocol totals for one chain (omit `chainId` for all chains)                     |
+| `GET /api/analytics?chainId=`                               | Protocol totals for one chain (`chainId` is required)                             |
 
 ## Orders
 

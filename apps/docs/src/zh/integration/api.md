@@ -19,7 +19,7 @@ goton.fun 应用的所有数据都来自 `https://goton.fun` 上的公开只读 
 | `GET /api/tokens/{address}/flow?window=5m\|1h\|6h\|24h`     | 买入与卖出成交量及交易者数量                                       |
 | `GET /api/sparklines?chainId=`                              | 每个代币从发行至今的价格走势（约 40 个点）                         |
 | `GET /api/memestock?chainId=`                               | 精选发行及其信号（见 [Memestock](/zh/protocol/social#memestock)）  |
-| `GET /api/analytics?chainId=`                               | 单条链的协议汇总数据（省略 `chainId` 则为所有链）                  |
+| `GET /api/analytics?chainId=`                               | 单条链的协议汇总数据（`chainId` 为必填项）                         |
 
 ## 订单
 
