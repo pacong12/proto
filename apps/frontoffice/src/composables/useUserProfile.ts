@@ -110,7 +110,7 @@ export function useUserProfile({
               unclaimedWeth,
               redirect,
               taxConfig: item.token.taxConfig,
-              isGraduated: Boolean(item.marketData?.isGraduated),
+              onBondingCurve: item.token.version !== 'v4' && !item.marketData?.isGraduated,
             };
           }),
         );

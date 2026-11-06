@@ -221,7 +221,7 @@
             <div class="flex items-center gap-1.5 text-muted-foreground">
               <span>Balance:</span>
               <strong class="text-foreground font-semibold">
-                {{ isConnected ? `${formattedBalance} ${currencySymbol}` : '—' }}
+                {{ isConnected ? formattedBalance : '—' }}
               </strong>
             </div>
           </div>
@@ -265,7 +265,7 @@
 
           <!-- Quick percentage selectors for initial buy -->
           <div
-            v-if="isConnected && Number(formattedBalance) > 0"
+            v-if="isConnected && balanceAmount > 0"
             class="flex items-center gap-1.5 pt-0.5"
           >
             <button
@@ -294,7 +294,7 @@
             <AlertCircle class="w-4 h-4 shrink-0" />
             <span>
               Insufficient balance for launch fee + initial buy (Need ~{{ totalDueDisplay }}
-              {{ currencySymbol }}, Have {{ formattedBalance }} {{ currencySymbol }}).
+              {{ currencySymbol }}, Have {{ formattedBalance }}).
             </span>
           </div>
         </div>
@@ -509,12 +509,15 @@ watch(
   },
 );
 
+// formattedBalance is display text that ends in the currency symbol, e.g. "1.2000 USDC".
+const balanceAmount = computed(() => parseFloat(formattedBalance.value) || 0);
+
 const isInsufficientBalance = computed(() => {
   if (!isConnected.value) return false;
   const launchFeeNum = Number(activeNetwork.value.launchConfig.launchFeeWei) / 1e18;
   const buyNum = parseFloat(form.value.initialBuyEth || '0') || 0;
   const totalNeeded = launchFeeNum + buyNum;
-  const userBal = parseFloat(formattedBalance.value) || 0;
+  const userBal = balanceAmount.value;
   return totalNeeded > userBal;
 });
 
@@ -525,7 +528,7 @@ const totalDueDisplay = computed(() => {
 });
 
 function setInitialBuyPercentage(pct: number) {
-  const userBal = parseFloat(formattedBalance.value) || 0;
+  const userBal = balanceAmount.value;
   const launchFeeNum = Number(activeNetwork.value.launchConfig.launchFeeWei) / 1e18;
   const gasBuffer = currencySymbol.value === 'USDC' ? 0.05 : 0.005;
   const availableForBuy = Math.max(0, userBal - launchFeeNum - gasBuffer);

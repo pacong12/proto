@@ -1,9 +1,10 @@
-import { createPublicClient, http, PublicClient, type Address } from 'viem';
+import { createPublicClient, http, PublicClient, zeroAddress, type Address } from 'viem';
 import {
   LaunchedTokenEntity,
   GraduationStatus,
   CHAINS,
   DEFAULT_NETWORK,
+  gotonV4HookAbi,
   launchpadFactoryAbi,
   launchpadTokenAbi,
   uniswapV3PoolAbi,
@@ -65,8 +66,20 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
     networkConfig: NetworkConfig,
   ): Promise<LaunchedTokenEntity> {
     // A failed read throws: the poller retries the range instead of losing the launch for good.
-    const metadata = await readTokenMetadata(this.getClient(networkConfig), tokenAddress);
+    const client = this.getClient(networkConfig);
+    const metadata = await readTokenMetadata(client, tokenAddress);
     const quote = networkConfig.contracts.weth;
+    // The tax is fixed in the hook at launch, so the token is listed with it from the first index
+    // rather than showing 0% until someone calls /sync.
+    const hook = networkConfig.contracts.memeHook;
+    const pool = hook && hook !== zeroAddress
+      ? await client.readContract({
+          address: hook,
+          abi: gotonV4HookAbi,
+          functionName: 'pools',
+          args: [poolId],
+        })
+      : undefined;
 
     return {
       address: tokenAddress,
@@ -85,6 +98,15 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
       version: 'v4',
       isGraduated: false,
       chainId: networkConfig.chainId,
+      ...(pool && (pool[3] > 0 || pool[4] > 0)
+        ? {
+            taxConfig: {
+              buyTaxBps: Number(pool[3]),
+              sellTaxBps: Number(pool[4]),
+              taxRecipient: creator,
+            },
+          }
+        : {}),
     };
   }
 
