@@ -6,23 +6,81 @@
 
 export const vestingVaultAbi = [
   {
+    type: 'constructor',
+    inputs: [
+      {
+        name: '_owner',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'MAX_DURATION',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'uint64',
+        internalType: 'uint64',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'MIN_DURATION',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'uint64',
+        internalType: 'uint64',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'acceptOwnership',
+    inputs: [],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'claimDividends',
+    inputs: [
+      {
+        name: 'id',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [
+      {
+        name: 'amount',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  {
     type: 'function',
     name: 'claimVested',
     inputs: [
       {
-        name: 'token',
-        type: 'address',
-        internalType: 'address',
-      },
-      {
-        name: 'creator',
-        type: 'address',
-        internalType: 'address',
+        name: 'id',
+        type: 'uint256',
+        internalType: 'uint256',
       },
     ],
     outputs: [
       {
-        name: 'claimable',
+        name: 'amount',
         type: 'uint256',
         internalType: 'uint256',
       },
@@ -31,7 +89,7 @@ export const vestingVaultAbi = [
   },
   {
     type: 'function',
-    name: 'createVestingSchedule',
+    name: 'createSchedule',
     inputs: [
       {
         name: 'token',
@@ -49,30 +107,183 @@ export const vestingVaultAbi = [
         internalType: 'uint256',
       },
       {
+        name: 'cliff',
+        type: 'uint64',
+        internalType: 'uint64',
+      },
+      {
         name: 'duration',
+        type: 'uint64',
+        internalType: 'uint64',
+      },
+    ],
+    outputs: [
+      {
+        name: 'id',
         type: 'uint256',
         internalType: 'uint256',
       },
     ],
-    outputs: [],
     stateMutability: 'nonpayable',
   },
   {
     type: 'function',
-    name: 'getClaimableAmount',
+    name: 'getSchedule',
     inputs: [
       {
-        name: 'token',
+        name: 'id',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'tuple',
+        internalType: 'struct IVestingVault.Schedule',
+        components: [
+          {
+            name: 'token',
+            type: 'address',
+            internalType: 'address',
+          },
+          {
+            name: 'start',
+            type: 'uint64',
+            internalType: 'uint64',
+          },
+          {
+            name: 'beneficiary',
+            type: 'address',
+            internalType: 'address',
+          },
+          {
+            name: 'cliff',
+            type: 'uint64',
+            internalType: 'uint64',
+          },
+          {
+            name: 'duration',
+            type: 'uint64',
+            internalType: 'uint64',
+          },
+          {
+            name: 'total',
+            type: 'uint128',
+            internalType: 'uint128',
+          },
+          {
+            name: 'claimed',
+            type: 'uint128',
+            internalType: 'uint128',
+          },
+        ],
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'isLauncher',
+    inputs: [
+      {
+        name: '',
         type: 'address',
         internalType: 'address',
       },
+    ],
+    outputs: [
       {
-        name: 'creator',
+        name: '',
+        type: 'bool',
+        internalType: 'bool',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'owner',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
         type: 'address',
         internalType: 'address',
       },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'pendingDividends',
+    inputs: [
       {
-        name: 'beneficiary',
+        name: 'id',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'pendingOwner',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'address',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'releasable',
+    inputs: [
+      {
+        name: 'id',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    outputs: [
+      {
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'scheduleCount',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'scheduleIdOf',
+    inputs: [
+      {
+        name: '',
         type: 'address',
         internalType: 'address',
       },
@@ -88,18 +299,8 @@ export const vestingVaultAbi = [
   },
   {
     type: 'function',
-    name: 'getVestedAmount',
+    name: 'schedulesOf',
     inputs: [
-      {
-        name: 'token',
-        type: 'address',
-        internalType: 'address',
-      },
-      {
-        name: 'creator',
-        type: 'address',
-        internalType: 'address',
-      },
       {
         name: 'beneficiary',
         type: 'address',
@@ -109,23 +310,36 @@ export const vestingVaultAbi = [
     outputs: [
       {
         name: '',
-        type: 'uint256',
-        internalType: 'uint256',
+        type: 'uint256[]',
+        internalType: 'uint256[]',
       },
     ],
     stateMutability: 'view',
   },
   {
     type: 'function',
-    name: 'revokeVesting',
+    name: 'setLauncher',
     inputs: [
       {
-        name: 'token',
+        name: 'launcher',
         type: 'address',
         internalType: 'address',
       },
       {
-        name: 'beneficiary',
+        name: 'allowed',
+        type: 'bool',
+        internalType: 'bool',
+      },
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'transferOwnership',
+    inputs: [
+      {
+        name: 'newOwner',
         type: 'address',
         internalType: 'address',
       },
@@ -135,67 +349,33 @@ export const vestingVaultAbi = [
   },
   {
     type: 'function',
-    name: 'vestingSchedules',
+    name: 'vestedAmount',
     inputs: [
       {
-        name: '',
-        type: 'address',
-        internalType: 'address',
-      },
-      {
-        name: '',
-        type: 'address',
-        internalType: 'address',
-      },
-      {
-        name: '',
-        type: 'address',
-        internalType: 'address',
+        name: 'id',
+        type: 'uint256',
+        internalType: 'uint256',
       },
     ],
     outputs: [
       {
-        name: 'creator',
-        type: 'address',
-        internalType: 'address',
-      },
-      {
-        name: 'totalAmount',
+        name: '',
         type: 'uint256',
         internalType: 'uint256',
-      },
-      {
-        name: 'claimedAmount',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-      {
-        name: 'startTime',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-      {
-        name: 'duration',
-        type: 'uint256',
-        internalType: 'uint256',
-      },
-      {
-        name: 'exists',
-        type: 'bool',
-        internalType: 'bool',
-      },
-      {
-        name: 'revoked',
-        type: 'bool',
-        internalType: 'bool',
       },
     ],
     stateMutability: 'view',
   },
   {
     type: 'event',
-    name: 'TokensClaimed',
+    name: 'Claimed',
     inputs: [
+      {
+        name: 'id',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
+      },
       {
         name: 'token',
         type: 'address',
@@ -219,22 +399,16 @@ export const vestingVaultAbi = [
   },
   {
     type: 'event',
-    name: 'VestingCreated',
+    name: 'DividendsClaimed',
     inputs: [
       {
-        name: 'token',
-        type: 'address',
+        name: 'id',
+        type: 'uint256',
         indexed: true,
-        internalType: 'address',
+        internalType: 'uint256',
       },
       {
         name: 'beneficiary',
-        type: 'address',
-        indexed: true,
-        internalType: 'address',
-      },
-      {
-        name: 'creator',
         type: 'address',
         indexed: true,
         internalType: 'address',
@@ -245,24 +419,63 @@ export const vestingVaultAbi = [
         indexed: false,
         internalType: 'uint256',
       },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'LauncherSet',
+    inputs: [
       {
-        name: 'startTime',
-        type: 'uint256',
-        indexed: false,
-        internalType: 'uint256',
+        name: 'launcher',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
       },
       {
-        name: 'duration',
-        type: 'uint256',
+        name: 'allowed',
+        type: 'bool',
         indexed: false,
-        internalType: 'uint256',
+        internalType: 'bool',
       },
     ],
     anonymous: false,
   },
   {
     type: 'event',
-    name: 'VestingRevoked',
+    name: 'OwnershipTransferProposed',
+    inputs: [
+      {
+        name: 'proposed',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'OwnershipTransferred',
+    inputs: [
+      {
+        name: 'previousOwner',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+      {
+        name: 'newOwner',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
+    name: 'ScheduleCreated',
     inputs: [
       {
         name: 'token',
@@ -277,23 +490,51 @@ export const vestingVaultAbi = [
         internalType: 'address',
       },
       {
-        name: 'vestedToHolder',
+        name: 'id',
+        type: 'uint256',
+        indexed: true,
+        internalType: 'uint256',
+      },
+      {
+        name: 'amount',
         type: 'uint256',
         indexed: false,
         internalType: 'uint256',
       },
       {
-        name: 'returnedToCreator',
-        type: 'uint256',
+        name: 'start',
+        type: 'uint64',
         indexed: false,
-        internalType: 'uint256',
+        internalType: 'uint64',
+      },
+      {
+        name: 'cliff',
+        type: 'uint64',
+        indexed: false,
+        internalType: 'uint64',
+      },
+      {
+        name: 'duration',
+        type: 'uint64',
+        indexed: false,
+        internalType: 'uint64',
       },
     ],
     anonymous: false,
   },
   {
     type: 'error',
-    name: 'AlreadyRevoked',
+    name: 'InsufficientDeposit',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'InvalidSchedule',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'NoPendingOwner',
     inputs: [],
   },
   {
@@ -308,17 +549,17 @@ export const vestingVaultAbi = [
   },
   {
     type: 'error',
-    name: 'ScheduleNotFound',
-    inputs: [],
-  },
-  {
-    type: 'error',
     name: 'TransferFailed',
     inputs: [],
   },
   {
     type: 'error',
     name: 'Unauthorized',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'UnknownSchedule',
     inputs: [],
   },
   {

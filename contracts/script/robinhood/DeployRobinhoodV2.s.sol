@@ -7,6 +7,7 @@ import {GotonV4Hook} from "../../src/core/GotonV4Hook.sol";
 import {GotonV4Graduator} from "../../src/core/GotonV4Graduator.sol";
 import {GotonV4Router} from "../../src/core/GotonV4Router.sol";
 import {GotonV4Buyback} from "../../src/core/GotonV4Buyback.sol";
+import {VestingVault} from "../../src/core/VestingVault.sol";
 import {GotonFeeSplitter, GotonFeeSplitterDeployer} from "../../src/core/GotonFeeSplitter.sol";
 import {IPoolManagerV4} from "../../src/interfaces/external/IUniswapV4Core.sol";
 import {HookMiner} from "../lib/HookMiner.sol";
@@ -20,6 +21,8 @@ import {HookMiner} from "../lib/HookMiner.sol";
  *           3. LaunchpadV2Factory, wired as the graduator's launcher; graduator wired as the hook's launcher
  *           4. GotonV4Router for frontend swaps
  *           5. GotonV4Buyback, set as the graduator's buyback vault (TWAP-guarded buyback-and-burn)
+ *           6. VestingVault (deployed before the factory, which then becomes its launcher) for creators
+ *              who vest their initial buy
  *
  * Usage:
  *   PRIVATE_KEY=<hex> forge script script/robinhood/DeployRobinhoodV2.s.sol \
@@ -74,7 +77,9 @@ contract DeployRobinhoodV2 is Script {
             feeRecipient,
             GotonFeeSplitter.Split({protocolBps: 3_000, holdersBps: 0, burnBps: 0, creatorBps: 10_000, liquidityBps: 0})
         );
-        LaunchpadV2Factory factory = new LaunchpadV2Factory(feeRecipient, graduator);
+        VestingVault vestingVault = new VestingVault(deployer);
+        LaunchpadV2Factory factory = new LaunchpadV2Factory(feeRecipient, graduator, vestingVault);
+        vestingVault.setLauncher(address(factory), true);
         graduator.setLauncher(address(factory));
         hook.setFactory(address(graduator));
         GotonV4Router router = new GotonV4Router(poolManager, address(0), 0);
@@ -88,6 +93,7 @@ contract DeployRobinhoodV2 is Script {
             factory.transferOwnership(ownerSafe);
             graduator.transferOwnership(ownerSafe);
             buyback.transferOwnership(ownerSafe);
+            vestingVault.transferOwnership(ownerSafe);
         }
 
         vm.stopBroadcast();
@@ -103,10 +109,11 @@ contract DeployRobinhoodV2 is Script {
         console.log("GotonV4Hook        :", hookAddress);
         console.log("GotonV4Router      :", routerAddress);
         console.log("GotonV4Buyback     :", address(buyback));
+        console.log("VestingVault       :", address(vestingVault));
         console.log("Launch Fee         :", factory.launchFee(), "wei (0.0005 ETH)");
         console.log("Graduation Target  :", factory.GRADUATION_TARGET(), "wei (4.2 ETH)");
         if (ownerSafe != address(0)) {
-            console.log("Pending owner      :", ownerSafe, "(Safe must call acceptOwnership on 3 contracts)");
+            console.log("Pending owner      :", ownerSafe, "(Safe must call acceptOwnership on 4 contracts)");
         }
     }
 }

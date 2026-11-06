@@ -1,5 +1,5 @@
 import { replayCurveReserves, sqrtPriceX96ToQuotePrice } from '@goton/math-sdk';
-import { erc20Abi, isAddress, type Address } from 'viem';
+import { isAddress, type Address } from 'viem';
 import {
   bondingCurveAbi,
   launchpadTokenAbi,
@@ -18,8 +18,6 @@ import { ChainIndexerPart } from './indexer-context';
 
 /** Curve trades, V1 and V4 pool swaps, and curve trade history backfills. */
 export class TradeIndexer extends ChainIndexerPart {
-  private quoteDecimals: number | null = null;
-
   async pollV2Trades(from: bigint, to: bigint): Promise<number> {
     // Every v2 token's curve, graduated ones included: graduation replaces poolAddress with the v4
     // pool id, and a range can hold the curve's last trades and the graduation together.
@@ -170,17 +168,13 @@ export class TradeIndexer extends ChainIndexerPart {
   }
 
   /** Decimals of the pool quote currency (18 for ETH / WETH, 6 for Arc USDC), read once. */
-  private async getQuoteDecimals(): Promise<number> {
-    if (this.quoteDecimals === null) {
-      this.quoteDecimals = await this.client
-        .readContract({
-          address: this.network.contracts.weth,
-          abi: erc20Abi,
-          functionName: 'decimals',
-        })
-        .catch(() => this.network.nativeCurrency.decimals);
-    }
-    return this.quoteDecimals;
+  /**
+   * The quote currency's decimals, from the network config (6 for Arc's USDC, 18 for WETH). Was
+   * read over RPC and, when that read failed (a rate-limited RPC at startup), fell back to 18 and
+   * kept it: every later Arc trade was recorded 1e12 times too small.
+   */
+  private getQuoteDecimals(): number {
+    return this.network.quoteTokenDecimals;
   }
 
   async pollV4Swaps(from: bigint, to: bigint): Promise<number> {
@@ -220,7 +214,7 @@ export class TradeIndexer extends ChainIndexerPart {
 
         // v4 Swap amounts are the swapper's deltas: negative = paid into the pool. The quote
         // side is whichever currency is not the token (token.isToken0 tells the order).
-        const quoteDecimals = await this.getQuoteDecimals();
+        const quoteDecimals = this.getQuoteDecimals();
         const quoteDelta = token.isToken0 ? amount1 : amount0;
         const tokenDelta = token.isToken0 ? amount0 : amount1;
         const usdcAmountNum = Math.abs(Number(quoteDelta)) / 10 ** quoteDecimals;

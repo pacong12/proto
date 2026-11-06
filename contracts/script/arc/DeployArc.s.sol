@@ -7,6 +7,7 @@ import {GotonV4Hook} from "../../src/core/GotonV4Hook.sol";
 import {GotonFeeSplitterDeployer} from "../../src/core/GotonFeeSplitter.sol";
 import {GotonV4Router} from "../../src/core/GotonV4Router.sol";
 import {GotonV4Buyback} from "../../src/core/GotonV4Buyback.sol";
+import {VestingVault} from "../../src/core/VestingVault.sol";
 import {HookMiner} from "../lib/HookMiner.sol";
 import {IPoolManagerV4} from "../../src/interfaces/external/IUniswapV4Core.sol";
 
@@ -20,6 +21,8 @@ import {IPoolManagerV4} from "../../src/interfaces/external/IUniswapV4Core.sol";
  *           3. hook.setFactory(factory).
  *           4. GotonV4Router (frontend swaps; accepts native USDC msg.value for buys).
  *           5. GotonV4Buyback, set as the factory's buyback vault (TWAP-guarded buyback-and-burn).
+ *           6. VestingVault (deployed before the factory, which then becomes its launcher) for creators
+ *              who vest their prebuy.
  *
  * Usage:
  *   forge script contracts/script/arc/DeployArc.s.sol \
@@ -105,9 +108,14 @@ contract DeployArc is Script {
         bytes32 hookSalt
     ) internal returns (address factory, address hook, address router) {
         GotonV4Hook gotonHook = new GotonV4Hook{salt: hookSalt}(poolManager, deployer);
+        VestingVault vestingVault = new VestingVault(deployer);
         factory = address(
-            new LaunchpadV2FactoryArc(poolManager, usdc, gotonHook, new GotonFeeSplitterDeployer(), feeRecipient)
+            new LaunchpadV2FactoryArc(
+                poolManager, usdc, gotonHook, new GotonFeeSplitterDeployer(), feeRecipient, vestingVault
+            )
         );
+        vestingVault.setLauncher(factory, true);
+        console.log("VestingVault          :", address(vestingVault));
         gotonHook.setFactory(factory);
         hook = address(gotonHook);
         router = address(new GotonV4Router(poolManager, usdc, 1e12));
@@ -122,6 +130,7 @@ contract DeployArc is Script {
         if (ownerSafe != address(0)) {
             LaunchpadV2FactoryArc(factory).transferOwnership(ownerSafe);
             buyback.transferOwnership(ownerSafe);
+            vestingVault.transferOwnership(ownerSafe);
         }
     }
 

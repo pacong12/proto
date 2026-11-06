@@ -93,7 +93,7 @@
               <template v-if="token.redirect">
                 <span>•</span>
                 <span>
-                  Redirect:
+                  {{ t('ctoRedirectLabel') }}
                   <strong class="text-foreground">
                     {{ token.redirect.slice(0, 6) }}...{{ token.redirect.slice(-4) }}
                   </strong>
@@ -137,7 +137,7 @@
               @click="emit('cto', token.address)"
             >
               <Share2 class="w-3.5 h-3.5 mr-1" />
-              CTO Redirect
+              {{ t('ctoManage') }}
             </Button>
           </template>
         </div>

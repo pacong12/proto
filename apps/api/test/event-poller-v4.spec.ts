@@ -181,6 +181,66 @@ describe('EventPollerService — Uniswap v4', () => {
   });
 });
 
+describe('EventPollerService — failures do not lose blocks', () => {
+  const launch = {
+    args: { token: IDEA, poolId: IDEA_POOL, creator: '0x00000000000000000000000000000000000000c1' },
+    blockNumber: 5n,
+  };
+
+  it('retries the range when a launched token cannot be read yet', async () => {
+    const repo = new InMemoryTokenRepository();
+    let reads = 0;
+    const indexer = {
+      fetchV4LaunchedToken: async () => {
+        reads += 1;
+        if (reads === 1) throw new Error('Request exceeds defined limit.');
+        return token({});
+      },
+    };
+    const p = poller(ARC_CHAIN, stubClient({ TokenLaunchedV4: [launch] }, 6), repo, indexer);
+    await p.pollEvents();
+    expect(await repo.findByAddress(IDEA)).toBeFalsy();
+    await p.pollEvents();
+    expect(await repo.findByAddress(IDEA)).toBeTruthy();
+  });
+
+  it('never skips a range because the RPC is rate limiting', async () => {
+    const repo = new InMemoryTokenRepository();
+    let limited = true;
+    const client = {
+      ...stubClient({ TokenLaunchedV4: [launch] }, 6),
+      getLogs: async ({ event }: { event: { name: string } }) => {
+        if (limited) throw new Error('Request exceeds defined limit.');
+        return event.name === 'TokenLaunchedV4' ? [launch] : [];
+      },
+    } as unknown as PublicClient;
+    const p = poller(ARC_CHAIN, client, repo, { fetchV4LaunchedToken: async () => token({}) });
+    for (let i = 0; i < 12; i++) await p.pollEvents();
+    limited = false;
+    await p.pollEvents();
+    expect(await repo.findByAddress(IDEA)).toBeTruthy();
+  });
+
+  it('still skips a range that keeps failing for another reason', async () => {
+    const repo = new InMemoryTokenRepository();
+    const client = {
+      ...stubClient({}, 6),
+      getLogs: async () => {
+        throw new Error('malformed log');
+      },
+    } as unknown as PublicClient;
+    const stored: bigint[] = [];
+    Object.assign(repo, {
+      setLastIndexedBlock: async (_name: string, block: bigint) => {
+        stored.push(block);
+      },
+    });
+    const p = poller(ARC_CHAIN, client, repo);
+    for (let i = 0; i < 6; i++) await p.pollEvents();
+    expect(stored.length).toBeGreaterThan(0);
+  });
+});
+
 describe('EventPollerService — catch-up', () => {
   it('indexes up to 2,000 blocks a cycle and reports when it is still behind', async () => {
     let head = 100_002n; // the poller stays 2 blocks behind the head

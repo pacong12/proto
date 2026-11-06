@@ -3,10 +3,12 @@ import {
   UNDEPLOYED,
   getChainAbis,
   gotonFeeSplitterAbi,
+  gotonV4HookAbi,
   gotonV4GraduatorAbi,
   launchpadV2FactoryArcAbi,
   gotonV4BuybackAbi,
   protoV4PoolKeyFor,
+  v4PoolId,
   resolveFeeSplitter,
   type LaunchedTokenEntity,
   type NetworkConfig,
@@ -23,7 +25,8 @@ const REPLACEMENT_FEE_BUMP = 150n;
 export interface V4BuybackResult {
   token: `0x${string}`;
   /** Defaults to 'buyback'. */
-  action?: 'buyback' | 'collectFees' | 'releaseProtocolFees' | 'releaseLiquidityFees';
+  action?:
+    'buyback' | 'collectFees' | 'flushTaxes' | 'releaseProtocolFees' | 'releaseLiquidityFees';
   executed: boolean;
   reason?: string;
   txHash?: `0x${string}`;
@@ -82,6 +85,12 @@ export class V4BuybackKeeperService {
     const tokens = (await findAllTokens(this.repository)).filter((t) => this.isV4Token(t));
     const results: V4BuybackResult[] = [];
     for (const token of tokens) {
+      // Swap tax the v2 hook holds as claims reaches the splitter first, LP fees next.
+      const flushed = await this.tryFlushTaxes(account, token.address);
+      if (flushed) {
+        results.push(flushed);
+        if (flushed.reason === 'Receipt pending') return results;
+      }
       const collected = await this.tryCollectFees(account, token.address);
       if (collected) {
         results.push(collected);
@@ -100,6 +109,40 @@ export class V4BuybackKeeperService {
       }
     }
     return results;
+  }
+
+  /**
+   * Pays the swap tax a v2 hook holds for a pool to the token's splitter. Returns null when there
+   * is not enough to be worth a transaction, and for pools on the first hook, which pays tax
+   * during the swap and has no flushTaxes.
+   */
+  private async tryFlushTaxes(
+    account: `0x${string}`,
+    token: `0x${string}`,
+  ): Promise<V4BuybackResult | null> {
+    const key = protoV4PoolKeyFor(this.network, token);
+    if (!key) return null;
+    const simulated = await this.publicClient
+      .simulateContract({
+        address: key.hooks,
+        abi: gotonV4HookAbi,
+        functionName: 'flushTaxes',
+        args: [v4PoolId(key)],
+        account,
+      })
+      .catch(() => null);
+    if (!simulated || (simulated.result as bigint) <= this.minQuote) return null;
+    try {
+      const sent = await sendAndWait(this.publicClient, this.walletClient!, simulated.request);
+      return { token, action: 'flushTaxes', ...sentResult(sent) };
+    } catch (e) {
+      return {
+        token,
+        action: 'flushTaxes',
+        executed: false,
+        reason: (e as Error).message.split('\n')[0],
+      };
+    }
   }
 
   /**

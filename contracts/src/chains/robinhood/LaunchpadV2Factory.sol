@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {EmergencyPause} from "../../core/EmergencyPause.sol";
 import {LaunchpadToken} from "../../core/LaunchpadToken.sol";
 import {ILaunchpadToken} from "../../interfaces/ILaunchpadToken.sol";
+import {IVestingVault} from "../../interfaces/IVestingVault.sol";
 import {BondingCurve, BondingCurveDeployer} from "../../core/BondingCurve.sol";
 import {GotonV4Graduator} from "../../core/GotonV4Graduator.sol";
 
@@ -35,6 +36,8 @@ contract LaunchpadV2Factory is EmergencyPause {
     GotonV4Graduator public immutable graduator;
     /// @notice Deploys this factory's curves (created here, so its code stays out of our runtime).
     BondingCurveDeployer public immutable curveDeployer;
+    /// @notice Locks creators' initial buys for launchTokenV2WithVesting. This factory must be one of its launchers.
+    IVestingVault public immutable vestingVault;
     bytes32 private immutable _curveInitCodeHash;
 
     address public owner;
@@ -92,12 +95,15 @@ contract LaunchpadV2Factory is EmergencyPause {
         _locked = false;
     }
 
-    constructor(address payable _feeRecipient, GotonV4Graduator _graduator) {
+    constructor(address payable _feeRecipient, GotonV4Graduator _graduator, IVestingVault _vestingVault) {
         // C-03 fix: validate all addresses that receive value or tokens.
-        if (_feeRecipient == address(0) || address(_graduator) == address(0)) revert ZeroAddress();
+        if (_feeRecipient == address(0) || address(_graduator) == address(0) || address(_vestingVault) == address(0)) {
+            revert ZeroAddress();
+        }
 
         protocolFeeRecipient = _feeRecipient;
         graduator = _graduator;
+        vestingVault = _vestingVault;
         curveDeployer = new BondingCurveDeployer();
         _curveInitCodeHash = keccak256(type(BondingCurve).creationCode);
         owner = msg.sender;
@@ -190,7 +196,7 @@ contract LaunchpadV2Factory is EmergencyPause {
         string memory website,
         uint256 minInitialTokensOut
     ) external payable nonReentrant whenNotPaused returns (address tokenAddress, address curveAddress) {
-        return _launch(
+        (tokenAddress, curveAddress,) = _launch(
             name,
             symbol,
             logo,
@@ -200,7 +206,8 @@ contract LaunchpadV2Factory is EmergencyPause {
             website,
             minInitialTokensOut,
             LaunchTax(0, 0, address(0)),
-            LaunchSplit(0, 0, 0, 0)
+            LaunchSplit(0, 0, 0, 0),
+            msg.sender
         );
     }
 
@@ -223,7 +230,48 @@ contract LaunchpadV2Factory is EmergencyPause {
         LaunchTax calldata tax,
         LaunchSplit calldata split
     ) external payable nonReentrant whenNotPaused returns (address tokenAddress, address curveAddress) {
-        return _launch(name, symbol, logo, description, twitter, telegram, website, minInitialTokensOut, tax, split);
+        (tokenAddress, curveAddress,) = _launch(
+            name, symbol, logo, description, twitter, telegram, website, minInitialTokensOut, tax, split, msg.sender
+        );
+    }
+
+    /**
+     * @notice launchTokenV2WithConfig that locks the creator's initial buy in `vestingVault` instead of
+     *         paying it out: linear over `vestingDuration` seconds from now, nothing claimable for the
+     *         first `vestingCliff`. The vault enforces the bounds (cliff <= duration, 7 days to 4 years)
+     *         and reverts without an initial buy to lock. A separate function, so launchTokenV2 and
+     *         launchTokenV2WithConfig keep their selectors and existing callers never reach the vault.
+     */
+    // slither-disable-next-line unused-return (the schedule id is not needed; see docs/audit/AUDIT-VERIFICATION.md)
+    function launchTokenV2WithVesting(
+        string memory name,
+        string memory symbol,
+        string memory logo,
+        string memory description,
+        string memory twitter,
+        string memory telegram,
+        string memory website,
+        uint256 minInitialTokensOut,
+        LaunchTax calldata tax,
+        LaunchSplit calldata split,
+        uint64 vestingCliff,
+        uint64 vestingDuration
+    ) external payable nonReentrant whenNotPaused returns (address tokenAddress, address curveAddress) {
+        uint256 tokensBought;
+        (tokenAddress, curveAddress, tokensBought) = _launch(
+            name,
+            symbol,
+            logo,
+            description,
+            twitter,
+            telegram,
+            website,
+            minInitialTokensOut,
+            tax,
+            split,
+            address(vestingVault)
+        );
+        vestingVault.createSchedule(tokenAddress, msg.sender, tokensBought, vestingCliff, vestingDuration);
     }
 
     function _launch(
@@ -236,8 +284,9 @@ contract LaunchpadV2Factory is EmergencyPause {
         string memory website,
         uint256 minInitialTokensOut,
         LaunchTax memory tax,
-        LaunchSplit memory split
-    ) private returns (address tokenAddress, address curveAddress) {
+        LaunchSplit memory split,
+        address tokenRecipient
+    ) private returns (address tokenAddress, address curveAddress, uint256 tokensBought) {
         if (msg.value < launchFee) revert InvalidFee();
 
         uint256 initialBuyEth = msg.value - launchFee;
@@ -299,7 +348,7 @@ contract LaunchpadV2Factory is EmergencyPause {
         if (!feeOk) revert TransferFailed();
 
         if (initialBuyEth > 0) {
-            uint256 tokensBought = curve.buyFor{value: initialBuyEth}(msg.sender, minInitialTokensOut);
+            tokensBought = curve.buyFor{value: initialBuyEth}(tokenRecipient, minInitialTokensOut);
             require(tokensBought >= minInitialTokensOut, "Slippage");
             // S4: forward any cap-reached refund the curve sent back to this factory.
             uint256 refund = address(this).balance;

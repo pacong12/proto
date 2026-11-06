@@ -1,5 +1,10 @@
 import { encodeAbiParameters, keccak256, parseAbi, toHex, type Hex, type PublicClient } from 'viem';
-import { bondingCurveAbi, gotonV4HookAbi, type V4PoolKey } from '@goton/contracts-abi';
+import {
+  bondingCurveAbi,
+  gotonV4HookAbi,
+  gotonV4HookV1Abi,
+  type V4PoolKey,
+} from '@goton/contracts-abi';
 import { isDeployed, type NetworkConfig } from './types';
 import { protoV4PoolKeyFor } from './fee-splitter';
 
@@ -89,9 +94,15 @@ export async function stopLossOracleStatus(
   } else {
     const key = protoV4PoolKeyFor(network, token.address);
     if (!key) return null;
+    const v2 = await client
+      .readContract({ address: key.hooks, abi: gotonV4HookAbi, functionName: 'SNAPSHOT_SPACING' })
+      .then(() => true)
+      .catch(() => false);
+    if (v2) return hookV2OracleStatus(client, key);
+    // The first hook: two checkpoints, ready once the older one exists.
     const o = (await client.readContract({
       address: key.hooks,
-      abi: gotonV4HookAbi,
+      abi: gotonV4HookV1Abi,
       functionName: 'oracles',
       args: [v4PoolId(key)],
     })) as readonly (bigint | number)[];
@@ -108,4 +119,22 @@ export async function stopLossOracleStatus(
           ? (newerTimestamp + periodSeconds) * 1000
           : null,
   };
+}
+
+/** Hook v2: ready ORACLE_PERIOD after the pool's first swap, whatever happens since. */
+async function hookV2OracleStatus(client: PublicClient, key: V4PoolKey): Promise<StopOracleStatus> {
+  const [o, block] = await Promise.all([
+    client.readContract({
+      address: key.hooks,
+      abi: gotonV4HookAbi,
+      functionName: 'oracles',
+      args: [v4PoolId(key)],
+    }) as Promise<readonly (bigint | number)[]>,
+    client.getBlock(),
+  ]);
+  const [lastSwap, firstSwap] = [Number(o[1]), Number(o[2])];
+  if (lastSwap === 0) return { ready: false, periodSeconds: POOL_ORACLE_PERIOD_S, readyAt: null };
+  const readyAtS = firstSwap + POOL_ORACLE_PERIOD_S;
+  const ready = Number(block.timestamp) >= readyAtS;
+  return { ready, periodSeconds: POOL_ORACLE_PERIOD_S, readyAt: ready ? null : readyAtS * 1000 };
 }

@@ -55,6 +55,8 @@ function setup(opts: {
   releaseReverts?: boolean;
   /** Quote-side LP fees collectFees would collect (default 0). */
   lpFees?: bigint;
+  /** Swap tax a v2 hook holds (undefined: a v1 hook without flushTaxes). */
+  pendingTax?: bigint;
 }) {
   const simulated: Array<{ address: string; functionName: string }> = [];
   const writes: unknown[] = [];
@@ -84,6 +86,10 @@ function setup(opts: {
       functionName: string;
     }) => {
       simulated.push({ address, functionName });
+      if (functionName === 'flushTaxes') {
+        if (opts.pendingTax === undefined) throw new Error('function selector was not recognized');
+        return { result: opts.pendingTax, request: { functionName: 'flushTaxes' } };
+      }
       if (functionName === 'collectFees') {
         return { result: [opts.lpFees ?? 0n, 0n], request: { functionName: 'collectFees' } };
       }
@@ -301,7 +307,7 @@ describe('V4BuybackKeeperService', () => {
     ]);
     expect(writes[0]).toEqual({ functionName: 'collectFees' });
     // On Arc the factory holds the locked positions of in-pool launches.
-    expect(simulated[0]).toEqual({
+    expect(simulated.find((c) => c.functionName === 'collectFees')).toEqual({
       address: network.contracts.factoryV2,
       functionName: 'collectFees',
     });
@@ -353,10 +359,55 @@ describe('V4BuybackKeeperService', () => {
       repo,
       robinhood,
     ).runOnce();
-    expect(simulated[0]).toEqual({
+    expect(simulated.find((c) => c.functionName === 'collectFees')).toEqual({
       address: robinhood.contracts.graduator,
       functionName: 'collectFees',
     });
     expect(results[0]).toMatchObject({ action: 'collectFees', executed: true });
+  });
+
+  it("pays a v2 hook's held swap tax to the splitter before collecting LP fees", async () => {
+    const repo = new InMemoryTokenRepository();
+    await repo.save(token());
+    const { publicClient, walletClient, writes } = setup({
+      accrued: 0n,
+      simulatedSpent: 0n,
+      lpFees: 2_000_000n,
+      pendingTax: 5_000_000n,
+    });
+    const results = await new V4BuybackKeeperService(
+      publicClient,
+      walletClient,
+      repo,
+      network,
+      1_000_000n,
+    ).runOnce();
+    expect(results.slice(0, 2).map((r) => r.action)).toEqual(['flushTaxes', 'collectFees']);
+    expect(writes.slice(0, 2)).toEqual([
+      { functionName: 'flushTaxes' },
+      { functionName: 'collectFees' },
+    ]);
+  });
+
+  it('skips the flush on a v1 hook and when the held tax is not worth a transaction', async () => {
+    for (const pendingTax of [undefined, 500_000n]) {
+      const repo = new InMemoryTokenRepository();
+      await repo.save(token());
+      const { publicClient, walletClient, writes } = setup({
+        accrued: 0n,
+        simulatedSpent: 0n,
+        pendingTax,
+      });
+      await new V4BuybackKeeperService(
+        publicClient,
+        walletClient,
+        repo,
+        network,
+        1_000_000n,
+      ).runOnce();
+      expect(
+        writes.some((w) => (w as { functionName: string }).functionName === 'flushTaxes'),
+      ).toBe(false);
+    }
   });
 });

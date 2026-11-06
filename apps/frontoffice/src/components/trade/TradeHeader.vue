@@ -122,6 +122,30 @@
             >
               {{ currentMarketData.isGraduated ? 'Graduated' : 'Bonding Curve' }}
             </Badge>
+            <!-- Community takeover: the creator share is paid to someone other than the creator. -->
+            <TooltipProvider v-if="isCommunity" :delay-duration="150">
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <Badge
+                    variant="outline"
+                    class="text-xs h-4 px-1.5 border-border uppercase font-semibold gap-1 cursor-help"
+                  >
+                    <Users class="w-3 h-3" />
+                    {{ t('ctoCommunityBadge') }}
+                    <Lock v-if="isRecipientLocked" class="w-3 h-3" />
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" class="max-w-xs text-xs space-y-1">
+                  <p>{{ t('ctoCommunityBadgeHint') }}</p>
+                  <p v-if="communityRecipient" class="font-mono text-muted-foreground">
+                    {{ shortenAddress(communityRecipient) }}
+                  </p>
+                  <p v-if="isRecipientLocked" class="font-semibold">
+                    {{ t('ctoCommunityBadgeLocked') }}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
 
           <!-- 1-2 Line Token Description -->
@@ -298,10 +322,15 @@ import {
   ExternalLink,
   Send,
   Globe,
+  Users,
+  Lock,
 } from 'lucide-vue-next';
+import { toRef } from 'vue';
 import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useCommunityRedirect } from '@/composables/useCommunityRedirect';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { shortenAddress, formatRelativeTime, getChainIcon } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
@@ -322,7 +351,7 @@ interface Props {
   isPinned: (address: string) => boolean;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   currencySymbol: 'ETH',
   explorerUrl: '',
   priceFlash: null,
@@ -331,6 +360,15 @@ withDefaults(defineProps<Props>(), {
 });
 
 const { t } = useI18n();
+
+const {
+  isCommunity,
+  isLocked: isRecipientLocked,
+  recipient: communityRecipient,
+} = useCommunityRedirect(
+  toRef(() => props.currentToken.address),
+  toRef(() => props.tokenNetwork),
+);
 
 defineEmits<{
   (e: 'openCallModal'): void;

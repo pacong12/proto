@@ -109,6 +109,32 @@ const messages: Record<string, string> = {
   totalTradingVolume: 'Gesamthandelsvolumen',
   totalTokensLaunched: 'Gestartete Token insgesamt',
   protocolBuybackAndBurn: 'Protokoll-Rückkauf & Verbrennung',
+  analyticsScopeNote:
+    'Indexierte On-Chain-Zahlen nur für {network}. Andere Netzwerke sind nicht enthalten.',
+  analyticsRefresh: 'Aktualisieren',
+  analyticsRetry: 'Erneut versuchen',
+  analyticsLoadFailed: 'Analysen für {network} konnten nicht geladen werden: {error}',
+  analyticsUnexpectedResponse: 'Unerwartete Antwort des Servers',
+  analyticsLast24h: 'Letzte 24 Std.',
+  analyticsNow: 'jetzt',
+  analyticsUnitTokens: 'Token',
+  analyticsTokensCount: '{count} Token',
+  analyticsMetricVolume: 'Volumen',
+  analyticsMetricLaunches: 'Starts',
+  analyticsMetricFees: 'Token-Steuer',
+  analyticsVolumeSubtitle: 'Indexiertes Handelsvolumen der letzten 24 Stunden',
+  analyticsLaunchesSubtitle: 'In den letzten 24 Stunden gestartete Token',
+  analyticsFeesSubtitle:
+    'Schätzung: Trades der letzten 24 Std. × Kauf- oder Verkaufssteuer des Tokens, Anteile von Ersteller und Protokoll zusammen',
+  analyticsVolumeCaption: 'Indexierte Kurven- und DEX-Swaps (24 Std.)',
+  analyticsTokensCaption: 'Alle auf {network} gestarteten Token',
+  analyticsBuybackCaption:
+    'Echte Verbrennungen, gesamt: {tokens} Token für {quote} {symbol} in {count} Rückkäufen',
+  analyticsBuybackCaptionEmpty: 'Echte, vom Rückkauf-Vertrag indexierte Verbrennungen',
+  analyticsTaxEstimateTitle: 'Geschätzte Token-Steuer (24 Std.)',
+  analyticsTaxEstimateCaption:
+    'Schätzung aus der Kauf- oder Verkaufssteuer jedes Tokens. Kein Treasury-Guthaben und keine Protokolleinnahmen.',
+  analyticsTaxMissing: '{count} Trades nicht berücksichtigt: Ihr Token hat keine Steuerdaten',
   trendingFeed: 'Trends',
   memestockSubtitle:
     'Launches mit einer schriftlichen These, deren Creator eine gekaufte Position noch hält, sortiert nach dem Handel der letzten Stunde.',
@@ -214,6 +240,45 @@ const messages: Record<string, string> = {
   bioDescription: 'Biografie / Beschreibung',
   saveProfile: 'Profil Speichern',
   communityTakeover: 'Community-Übernahme (CTO)',
+  ctoManage: 'CTO verwalten',
+  ctoRedirectLabel: 'Umleitung:',
+  ctoModalDescription:
+    'Übergib deinen Creator-Gebührenanteil an eine Community-Wallet. Nur du als Creator kannst das tun: Empfänger vorschlagen, 48 Stunden warten, dann annehmen.',
+  ctoLoadingState: 'Fee-Splitter wird gelesen…',
+  ctoStateUnavailable:
+    'Der Fee-Splitter dieses Tokens konnte nicht gelesen werden. Vielleicht gibt es noch keinen, oder das Netzwerk ist nicht erreichbar. Versuche es gleich noch einmal.',
+  ctoCurrentRecipient: 'Aktueller Empfänger',
+  ctoStatusCreator: 'An den Creator ausgezahlt',
+  ctoStatusCommunity: 'Umgeleitet',
+  ctoStatusLocked: 'Gesperrt',
+  ctoLockUnsupported:
+    'Der Fee-Splitter dieses Tokens ist älter als die Sperrfunktion, daher kann sein Empfänger nicht gesperrt werden.',
+  ctoLockUnsupportedShort: 'Sperre nicht verfügbar',
+  ctoLockedHint: 'Dieser Empfänger steht für immer fest. Niemand kann ihn ändern.',
+  ctoPendingRecipient: 'Vorgeschlagener Empfänger',
+  ctoAcceptableIn: 'Annahme möglich in {time}',
+  ctoAcceptableNow: 'Annahme jetzt möglich',
+  ctoAccept: 'Annehmen',
+  ctoCancelPending: 'Vorschlag abbrechen',
+  ctoPropose: 'Vorschlagen',
+  ctoProposeHint:
+    'Der Vorschlag kann 48 Stunden nach dem Absenden angenommen werden. Bis zur Annahme kannst du ihn abbrechen.',
+  ctoProposeReplaces:
+    'Ein neuer Vorschlag ersetzt den offenen und startet die 48-Stunden-Frist neu.',
+  ctoOnlyCreator: 'Nur der Creator des Tokens kann den Empfänger ändern.',
+  ctoLockPermanently: 'Dauerhaft sperren',
+  ctoLockConfirmTitle: 'Das kann nicht rückgängig gemacht werden',
+  ctoLockConfirmBody:
+    'Der Creator-Anteil wird für immer an {recipient} ausgezahlt. Niemand, auch nicht du oder das Protokoll, kann das wieder ändern.',
+  ctoLockDropsPending:
+    'Der offene Vorschlag wird verworfen. Um stattdessen den vorgeschlagenen Empfänger zu sperren, nimm ihn zuerst an.',
+  ctoLockConfirm: 'Für immer sperren',
+  ctoBack: 'Zurück',
+  ctoClose: 'Schließen',
+  ctoCommunityBadge: 'Community',
+  ctoCommunityBadgeHint:
+    'Der Creator hat seinen Gebührenanteil an eine andere Wallet umgeleitet, zum Beispiel eine Community-Kasse.',
+  ctoCommunityBadgeLocked: 'Gesperrt: Dieser Empfänger kann sich nie mehr ändern.',
   targetTokenAddress: 'Ziel-Token-Adresse',
   newCommunityRecipient: 'Neuer Community-Empfänger',
   holderDividendsTitle: 'Dividenden für Token-Inhaber',

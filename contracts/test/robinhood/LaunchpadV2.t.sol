@@ -62,7 +62,7 @@ contract LaunchpadV2Test is Test {
 
     function setUp() public {
         // C-03 fix: feeRecipient and locker must be non-zero.
-        factory = new LaunchpadV2Factory(feeRecipient, TestGraduator.deploy(feeRecipient));
+        factory = new LaunchpadV2Factory(feeRecipient, TestGraduator.deploy(feeRecipient), TestGraduator.NO_VAULT);
         vm.deal(creator, 100 ether);
         vm.deal(buyer1, 100 ether);
     }
@@ -271,7 +271,9 @@ contract LaunchpadV2Test is Test {
     function test_LaunchTokenV2_ReentrancyGuardAndCEI() public {
         ReentrantAttackerRecipient attacker = new ReentrantAttackerRecipient();
         LaunchpadV2Factory factoryWithAttacker =
-            new LaunchpadV2Factory(payable(address(attacker)), TestGraduator.deploy(payable(address(attacker))));
+            new LaunchpadV2Factory(
+                payable(address(attacker)), TestGraduator.deploy(payable(address(attacker))), TestGraduator.NO_VAULT
+            );
         attacker.setFactory(factoryWithAttacker);
 
         vm.prank(creator);
@@ -293,7 +295,9 @@ contract LaunchpadV2Test is Test {
     function test_LaunchTokenV2_FeeTransferFailureReverts() public {
         RejectingFeeRecipient rejecter = new RejectingFeeRecipient();
         LaunchpadV2Factory factoryReject =
-            new LaunchpadV2Factory(payable(address(rejecter)), TestGraduator.deploy(payable(address(rejecter))));
+            new LaunchpadV2Factory(
+                payable(address(rejecter)), TestGraduator.deploy(payable(address(rejecter))), TestGraduator.NO_VAULT
+            );
         vm.prank(creator);
         vm.expectRevert(LaunchpadV2Factory.TransferFailed.selector);
         factoryReject.launchTokenV2{value: 0.0005 ether}("Fail", "FAIL", "", "", "", "", "", 0);

@@ -23,8 +23,10 @@ interface IERC20Minimal {
  *         Every share is pulled, never pushed during a swap: the creator claims its share, and
  *         anyone can release the protocol and liquidity shares to their vaults. A recipient that
  *         cannot receive funds (e.g. a USDC-blocklisted address on Arc) can therefore never block
- *         swaps. The creator may redirect its payout (e.g. a community takeover)
- *         through a 48h propose/accept timelock. Splits are fixed at construction.
+ *         swaps. Only the creator may redirect its payout (e.g. to a community wallet for a
+ *         takeover), through a 48h propose/accept timelock, and may then lock it for good so the
+ *         community can rely on it. Nobody else, the protocol included, can move the creator's share.
+ *         Splits are fixed at construction.
  */
 contract GotonFeeSplitter {
     struct Split {
@@ -93,6 +95,8 @@ contract GotonFeeSplitter {
     address public creatorRecipient;
     address public pendingCreatorRecipient;
     uint256 public pendingCreatorRecipientValidAfter;
+    /// @notice Once the creator sets it, the recipient never changes.
+    bool public creatorRecipientLocked;
 
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public userEarned;
@@ -113,6 +117,7 @@ contract GotonFeeSplitter {
     event CreatorRecipientProposed(address indexed recipient, uint256 validAfter);
     event CreatorRecipientUpdated(address indexed recipient);
     event CreatorRecipientProposalCancelled(address indexed recipient);
+    event CreatorRecipientLocked(address indexed recipient);
 
     error Unauthorized();
     error ZeroAddress();
@@ -121,6 +126,7 @@ contract GotonFeeSplitter {
     error Reentrancy();
     error TimelockActive();
     error NoPendingRecipient();
+    error RecipientLocked();
 
     uint256 private _locked;
 
@@ -286,11 +292,11 @@ contract GotonFeeSplitter {
     }
 
     // ---------------------------------------------------------------------------
-    // Creator payout redirect (48h timelock)
+    // Creator payout redirect (48h timelock) and community takeover
     // ---------------------------------------------------------------------------
 
     function proposeCreatorRecipient(address recipient) external {
-        if (msg.sender != creator) revert Unauthorized();
+        _onlyCreator();
         if (recipient == address(0)) revert ZeroAddress();
         pendingCreatorRecipient = recipient;
         pendingCreatorRecipientValidAfter = block.timestamp + RECIPIENT_TIMELOCK;
@@ -303,19 +309,35 @@ contract GotonFeeSplitter {
         if (msg.sender != creator && msg.sender != pending) revert Unauthorized();
         if (block.timestamp < pendingCreatorRecipientValidAfter) revert TimelockActive();
         creatorRecipient = pending;
-        pendingCreatorRecipient = address(0);
-        pendingCreatorRecipientValidAfter = 0;
+        _clearPending();
         emit CreatorRecipientUpdated(pending);
     }
 
     /// @notice Cancels a pending proposal only; an active redirect changes through the timelock.
     function cancelCreatorRecipient() external {
-        if (msg.sender != creator) revert Unauthorized();
+        _onlyCreator();
         address pending = pendingCreatorRecipient;
         if (pending == address(0)) revert NoPendingRecipient();
+        _clearPending();
+        emit CreatorRecipientProposalCancelled(pending);
+    }
+
+    /// @notice Fixes the current recipient for good, e.g. after handing fees to a community.
+    function lockCreatorRecipient() external {
+        _onlyCreator();
+        creatorRecipientLocked = true;
+        _clearPending();
+        emit CreatorRecipientLocked(creatorRecipient);
+    }
+
+    function _onlyCreator() private view {
+        if (msg.sender != creator) revert Unauthorized();
+        if (creatorRecipientLocked) revert RecipientLocked();
+    }
+
+    function _clearPending() private {
         pendingCreatorRecipient = address(0);
         pendingCreatorRecipientValidAfter = 0;
-        emit CreatorRecipientProposalCancelled(pending);
     }
 
     // ---------------------------------------------------------------------------

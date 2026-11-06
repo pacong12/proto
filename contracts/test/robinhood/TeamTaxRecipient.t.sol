@@ -19,7 +19,9 @@ contract TeamTaxRecipientTest is Test {
 
     function setUp() public {
         factory =
-            new LaunchpadV2Factory(payable(makeAddr("treasury")), TestGraduator.deploy(payable(makeAddr("treasury"))));
+            new LaunchpadV2Factory(
+                payable(makeAddr("treasury")), TestGraduator.deploy(payable(makeAddr("treasury"))), TestGraduator.NO_VAULT
+            );
         teams = new GotonTeamSplitterFactory();
         vm.deal(creator, 10 ether);
         vm.deal(buyer, 10 ether);

@@ -157,6 +157,46 @@ contract GotonFeeSplitterTest is Test {
         assertEq(splitter.creatorRecipient(), creator);
     }
 
+    // --- recipient lock ---------------------------------------------------------------
+
+    function test_CreatorCanLockTheRecipient() public {
+        vm.prank(alice);
+        vm.expectRevert(GotonFeeSplitter.Unauthorized.selector);
+        splitter.lockCreatorRecipient();
+
+        vm.prank(creator);
+        splitter.proposeCreatorRecipient(community);
+        vm.prank(creator);
+        splitter.lockCreatorRecipient();
+        assertTrue(splitter.creatorRecipientLocked());
+        assertEq(splitter.creatorRecipient(), creator, "locks the current recipient");
+        assertEq(splitter.pendingCreatorRecipient(), address(0), "and drops the pending one");
+
+        vm.startPrank(creator);
+        vm.expectRevert(GotonFeeSplitter.RecipientLocked.selector);
+        splitter.proposeCreatorRecipient(community);
+        vm.expectRevert(GotonFeeSplitter.RecipientLocked.selector);
+        splitter.lockCreatorRecipient();
+        vm.stopPrank();
+    }
+
+    function test_LockAfterACommunityRedirect() public {
+        _distribute(10 ether);
+        vm.prank(creator);
+        splitter.proposeCreatorRecipient(community);
+        vm.warp(block.timestamp + 48 hours);
+        vm.prank(community);
+        splitter.acceptCreatorRecipient();
+        vm.prank(creator);
+        splitter.lockCreatorRecipient();
+
+        // The creator can still trigger a claim, but it pays the community.
+        vm.prank(creator);
+        splitter.claimCreatorFees();
+        assertEq(community.balance, 2.1 ether);
+        assertEq(creator.balance, 0);
+    }
+
     function test_OnlyHookOrFactoryDistribute() public {
         vm.prank(alice);
         vm.expectRevert(GotonFeeSplitter.Unauthorized.selector);

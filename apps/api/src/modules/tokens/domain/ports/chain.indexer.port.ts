@@ -30,7 +30,7 @@ export interface ChainIndexerPort {
     creator: `0x${string}`,
     prebuyQuote: bigint,
     networkConfig: NetworkConfig,
-  ): Promise<LaunchedTokenEntity | null>;
+  ): Promise<LaunchedTokenEntity>;
 
   fetchV2LaunchedTokenFromFactory?(
     tokenAddress: `0x${string}`,

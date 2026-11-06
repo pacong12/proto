@@ -96,7 +96,7 @@ async function runLoadBenchmark() {
     `${baseUrl}/health`,
     `${baseUrl}/api/tokens?limit=20`,
     `${baseUrl}/api/tokens?limit=20&sort=volume`,
-    `${baseUrl}/api/analytics`,
+    `${baseUrl}/api/analytics?chainId=4663`,
     `${baseUrl}/api/tokens/0xbA42499Cfe59abc05120A100EEc4f859F476034F`,
     `${baseUrl}/api/tokens/0xbA42499Cfe59abc05120A100EEc4f859F476034F/trades?limit=50`,
     `${baseUrl}/api/tokens/0xbA42499Cfe59abc05120A100EEc4f859F476034F/ohlcv?resolution=60`,

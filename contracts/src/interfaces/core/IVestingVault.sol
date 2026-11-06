@@ -3,48 +3,64 @@ pragma solidity ^0.8.24;
 
 /**
  * @title IVestingVault
- * @notice Clean Architecture interface boundary for VestingVault linear grant contract.
+ * @notice Interface boundary for VestingVault, the shared lock for creator launch buys.
+ *         Launchers create schedules; the vault never lets anyone but the beneficiary take tokens.
  */
 interface IVestingVault {
+    /// @dev `cliff` and `duration` are seconds counted from `start` (the launch).
     struct Schedule {
-        address creator;
-        uint256 totalAmount;
-        uint256 claimedAmount;
-        uint256 startTime;
-        uint256 duration;
-        bool exists;
-        bool revoked;
+        address token;
+        uint64 start;
+        address beneficiary;
+        uint64 cliff;
+        uint64 duration;
+        uint128 total;
+        uint128 claimed;
     }
 
-    event VestingCreated(
+    event ScheduleCreated(
         address indexed token,
         address indexed beneficiary,
-        address indexed creator,
+        uint256 indexed id,
         uint256 amount,
-        uint256 startTime,
-        uint256 duration
+        uint64 start,
+        uint64 cliff,
+        uint64 duration
     );
-    event TokensClaimed(address indexed token, address indexed beneficiary, uint256 amount);
-    event VestingRevoked(
-        address indexed token,
-        address indexed beneficiary,
-        uint256 vestedToHolder,
-        uint256 returnedToCreator
-    );
+    event Claimed(uint256 indexed id, address indexed token, address indexed beneficiary, uint256 amount);
+    event DividendsClaimed(uint256 indexed id, address indexed beneficiary, uint256 amount);
+    event LauncherSet(address indexed launcher, bool allowed);
+    event OwnershipTransferProposed(address indexed proposed);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
-    function createVestingSchedule(
-        address token,
-        address beneficiary,
-        uint256 amount,
-        uint256 duration
-    ) external;
+    error ZeroAddress();
+    error ZeroAmount();
+    error InvalidSchedule();
+    error ScheduleExists();
+    error UnknownSchedule();
+    error InsufficientDeposit();
+    error Unauthorized();
+    error NoPendingOwner();
+    error TransferFailed();
+    error Reentrancy();
 
-    function claimVestedTokens(address token) external returns (uint256 claimable);
+    function createSchedule(address token, address beneficiary, uint256 amount, uint64 cliff, uint64 duration)
+        external
+        returns (uint256 id);
 
-    function revokeVesting(address token, address beneficiary) external;
+    function claimVested(uint256 id) external returns (uint256 amount);
 
-    function getClaimableAmount(
-        address token,
-        address beneficiary
-    ) external view returns (uint256);
+    function claimDividends(uint256 id) external returns (uint256 amount);
+
+    function vestedAmount(uint256 id) external view returns (uint256);
+
+    function releasable(uint256 id) external view returns (uint256);
+
+    function pendingDividends(uint256 id) external view returns (uint256);
+
+    function getSchedule(uint256 id) external view returns (Schedule memory);
+
+    function schedulesOf(address beneficiary) external view returns (uint256[] memory);
+
+    function scheduleIdOf(address token) external view returns (uint256);
 }

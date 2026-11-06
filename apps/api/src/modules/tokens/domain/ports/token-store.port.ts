@@ -54,6 +54,8 @@ export interface TokenStorePort {
   }>;
   // Buyback and Burn tracking
   recordBuybackBurn?(burn: {
+    /** Stable ID (chain:tx:logIndex) so re-indexing replaces the row; random when omitted. */
+    id?: string;
     tokenAddress: string;
     network: string;
     wethSpent: string;
@@ -73,5 +75,13 @@ export interface TokenStorePort {
       transactionHash: string;
       timestamp: number;
     }>;
+  }>;
+  /** Totals of every indexed burn on one chain (`network` = chain ID as stored by the indexer). */
+  getBuybackTotals?(network: string): Promise<{
+    totalBurns: number;
+    /** Raw token units (18 decimals), summed across tokens. */
+    totalTokensBurned: string;
+    /** Raw quote units (the chain's quote-token decimals). */
+    totalQuoteSpent: string;
   }>;
 }

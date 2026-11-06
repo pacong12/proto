@@ -3,7 +3,7 @@
 # Verifies the Robinhood Chain (4663) v4 stack deployed by script/robinhood/DeployRobinhoodV2.s.sol.
 #
 # Usage:
-#   bash scripts/verify-robinhood.sh                 # factory, graduator, hook, splitter deployer, router, buyback
+#   bash scripts/verify-robinhood.sh                 # factory, graduator, hook, splitter deployer, vesting vault, router, buyback
 #   TOKEN_ADDRESS=0x... CURVE_ADDRESS=0x... bash scripts/verify-robinhood.sh --token
 #
 # Requires: foundry (forge, cast) and contracts/.env with
@@ -58,6 +58,7 @@ fi
 FACTORY="$ROBINHOOD_FACTORY_V2_ADDRESS"
 GRADUATOR=$(read_addr "$FACTORY" "graduator()(address)")
 FEE_RECIPIENT=$(read_addr "$FACTORY" "protocolFeeRecipient()(address)")
+VESTING_VAULT=$(read_addr "$FACTORY" "vestingVault()(address)")
 POOL_MANAGER=$(read_addr "$GRADUATOR" "poolManager()(address)")
 HOOK=$(read_addr "$GRADUATOR" "hook()(address)")
 SPLITTER_DEPLOYER=$(read_addr "$GRADUATOR" "splitterDeployer()(address)")
@@ -76,8 +77,13 @@ verify "$GRADUATOR" src/core/GotonV4Graduator.sol:GotonV4Graduator \
     "$POOL_MANAGER" "$HOOK" "$SPLITTER_DEPLOYER" "$GRAD_FEE_RECIPIENT" \
     "(${SPLIT[0]},${SPLIT[1]},${SPLIT[2]},${SPLIT[3]},${SPLIT[4]})")"
 
+# The deploy script makes the deployer the vault's first owner, as it does for the hook. Read it from
+# the hook: the vault's own owner() changes once the Safe accepts ownership.
+verify "$VESTING_VAULT" src/core/VestingVault.sol:VestingVault \
+  "$(cast abi-encode "constructor(address)" "$HOOK_DEPLOYER")"
+
 verify "$FACTORY" src/chains/robinhood/LaunchpadV2Factory.sol:LaunchpadV2Factory \
-  "$(cast abi-encode "constructor(address,address)" "$FEE_RECIPIENT" "$GRADUATOR")"
+  "$(cast abi-encode "constructor(address,address,address)" "$FEE_RECIPIENT" "$GRADUATOR" "$VESTING_VAULT")"
 
 if [[ -n "${ROBINHOOD_V4_ROUTER:-}" ]]; then
   verify "$ROBINHOOD_V4_ROUTER" src/core/GotonV4Router.sol:GotonV4Router \

@@ -313,6 +313,7 @@ export class SqliteTokenStore extends SqliteDatabase implements TokenStorePort {
   }
 
   async recordBuybackBurn(burn: {
+    id?: string;
     tokenAddress: string;
     network: string;
     wethSpent: string;
@@ -320,7 +321,7 @@ export class SqliteTokenStore extends SqliteDatabase implements TokenStorePort {
     transactionHash: string;
     timestamp: number;
   }): Promise<void> {
-    const id = `burn_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const id = burn.id ?? `burn_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     this.db
       .prepare(
         `INSERT OR REPLACE INTO buyback_burns (id, token_address, network, weth_spent, tokens_burned, transaction_hash, timestamp)
@@ -335,6 +336,32 @@ export class SqliteTokenStore extends SqliteDatabase implements TokenStorePort {
         burn.transactionHash,
         burn.timestamp,
       );
+  }
+
+  async getBuybackTotals(network: string): Promise<{
+    totalBurns: number;
+    totalTokensBurned: string;
+    totalQuoteSpent: string;
+  }> {
+    // Raw uint256 strings: summed as bigint, since SQLite REAL would lose precision.
+    const rows = this.db
+      .prepare(`SELECT weth_spent, tokens_burned FROM buyback_burns WHERE network = ?`)
+      .all(network) as Array<{ weth_spent: string; tokens_burned: string }>;
+    let tokens = 0n;
+    let quote = 0n;
+    for (const r of rows) {
+      try {
+        tokens += BigInt(r.tokens_burned);
+        quote += BigInt(r.weth_spent);
+      } catch {
+        // skip a malformed row
+      }
+    }
+    return {
+      totalBurns: rows.length,
+      totalTokensBurned: tokens.toString(),
+      totalQuoteSpent: quote.toString(),
+    };
   }
 
   async getBuybackStats(tokenAddress?: string): Promise<{

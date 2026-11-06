@@ -20,7 +20,7 @@ Goton adalah protokol perangkat lunak terdesentralisasi dan non-kustodial. Goton
 
 - **Biaya Peluncuran**: Biaya protokol sebesar `0.0005 ETH` di Robinhood Chain atau `Gratis (0 USDC)` di Arc Network (dengan pre-buy awal minimal 4.50 USDC) diperlukan saat menerapkan token untuk menutup biaya penerapan kontrak dan inisialisasi kunci likuiditas.
 - **Penguncian Likuiditas**: NFT liquidity pool yang dibuat oleh Factory dikunci secara permanen dalam kontrak `LiquidityLocker` non-kustodial. Tidak ada pihak, termasuk Goton Labs, yang memiliki celah pintu belakang (_backdoor_) atau fungsi pembuka kunci.
-- **Pembagian Fee Trading**: Fee perdagangan standar yang dihasilkan dalam pool likuiditas dibagi 70% untuk pembuat token (atau dompet pengambilalihan komunitas yang ditunjuk) dan 30% untuk pemeliharaan protokol serta pembelian kembali (_buyback_) otomatis.
+- **Pembagian Fee Trading**: Fee perdagangan standar yang dihasilkan dalam pool likuiditas dibagi oleh fee splitter on-chain setiap token antara protokol dan bagian kreator, sebagaimana dijelaskan dalam dokumentasi fee. Kreator dapat mengarahkan porsinya ke dompet pengambilalihan komunitas; hanya kreator yang dapat melakukannya.
 
 ## 4. Pembatasan Tanggung Jawab
 

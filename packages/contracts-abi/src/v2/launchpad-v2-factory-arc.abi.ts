@@ -33,6 +33,11 @@ export const launchpadV2FactoryArcAbi = [
         type: 'address',
         internalType: 'address payable',
       },
+      {
+        name: '_vestingVault',
+        type: 'address',
+        internalType: 'contract IVestingVault',
+      },
     ],
     stateMutability: 'nonpayable',
   },
@@ -355,6 +360,119 @@ export const launchpadV2FactoryArcAbi = [
         name: 'minTokensOut',
         type: 'uint256',
         internalType: 'uint256',
+      },
+    ],
+    outputs: [
+      {
+        name: 'tokenAddress',
+        type: 'address',
+        internalType: 'address',
+      },
+      {
+        name: 'poolId',
+        type: 'bytes32',
+        internalType: 'bytes32',
+      },
+    ],
+    stateMutability: 'payable',
+  },
+  {
+    type: 'function',
+    name: 'launchTokenWithVesting',
+    inputs: [
+      {
+        name: 'meta',
+        type: 'tuple',
+        internalType: 'struct LaunchpadV2FactoryArc.TokenMetadata',
+        components: [
+          {
+            name: 'name',
+            type: 'string',
+            internalType: 'string',
+          },
+          {
+            name: 'symbol',
+            type: 'string',
+            internalType: 'string',
+          },
+          {
+            name: 'logo',
+            type: 'string',
+            internalType: 'string',
+          },
+          {
+            name: 'description',
+            type: 'string',
+            internalType: 'string',
+          },
+          {
+            name: 'twitter',
+            type: 'string',
+            internalType: 'string',
+          },
+          {
+            name: 'telegram',
+            type: 'string',
+            internalType: 'string',
+          },
+          {
+            name: 'website',
+            type: 'string',
+            internalType: 'string',
+          },
+        ],
+      },
+      {
+        name: 'tax',
+        type: 'tuple',
+        internalType: 'struct LaunchpadV2FactoryArc.TaxConfig',
+        components: [
+          {
+            name: 'buyTaxBps',
+            type: 'uint16',
+            internalType: 'uint16',
+          },
+          {
+            name: 'sellTaxBps',
+            type: 'uint16',
+            internalType: 'uint16',
+          },
+          {
+            name: 'holdersBps',
+            type: 'uint16',
+            internalType: 'uint16',
+          },
+          {
+            name: 'burnBps',
+            type: 'uint16',
+            internalType: 'uint16',
+          },
+          {
+            name: 'creatorBps',
+            type: 'uint16',
+            internalType: 'uint16',
+          },
+          {
+            name: 'liquidityBps',
+            type: 'uint16',
+            internalType: 'uint16',
+          },
+        ],
+      },
+      {
+        name: 'minTokensOut',
+        type: 'uint256',
+        internalType: 'uint256',
+      },
+      {
+        name: 'vestingCliff',
+        type: 'uint64',
+        internalType: 'uint64',
+      },
+      {
+        name: 'vestingDuration',
+        type: 'uint64',
+        internalType: 'uint64',
       },
     ],
     outputs: [
@@ -763,6 +881,19 @@ export const launchpadV2FactoryArcAbi = [
     inputs: [],
     outputs: [],
     stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'vestingVault',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'address',
+        internalType: 'contract IVestingVault',
+      },
+    ],
+    stateMutability: 'view',
   },
   {
     type: 'event',

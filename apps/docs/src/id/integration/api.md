@@ -19,7 +19,7 @@ Semua alamat berformat hex (`0x…`, 40 karakter). `chainId` bernilai `4663` unt
 | `GET /api/tokens/{address}/flow?window=5m\|1h\|6h\|24h`     | Volume beli vs jual dan jumlah trader                                                     |
 | `GET /api/sparklines?chainId=`                              | Untuk tiap token, pergerakan harganya sejak peluncuran hingga sekarang (sekitar 40 titik) |
 | `GET /api/memestock?chainId=`                               | Peluncuran terkurasi beserta sinyalnya (lihat [Memestock](/id/protocol/social#memestock)) |
-| `GET /api/analytics?chainId=`                               | Total protokol untuk satu chain (kosongkan `chainId` untuk semua chain)                   |
+| `GET /api/analytics?chainId=`                               | Total protokol untuk satu chain (`chainId` wajib diisi)                                   |
 
 ## Order
 

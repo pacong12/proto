@@ -20,7 +20,7 @@ Goton is a decentralized, non-custodial software protocol. Goton Labs does not t
 
 - **Launch Fee**: A fixed protocol fee of `0.0005 ETH` on Robinhood Chain or `0 USDC` on Arc Network (free launch with minimum 4.50 USDC initial pre-buy) is required upon deploying a token to cover contract deployment and liquidity lock initialization.
 - **Liquidity Lock**: Liquidity pool NFTs created by the Factory are permanently locked in the non-custodial `LiquidityLocker` contract. No party, including Goton Labs, possesses backdoors or unlock functions.
-- **Trading Fee Split**: Standard trading fees generated in liquidity pools are split 70% to the token creator (or designated community takeover wallet) and 30% to protocol maintenance and automated buybacks.
+- **Trading Fee Split**: Standard trading fees generated in liquidity pools are split by each token's on-chain fee splitter between the protocol and the creator's share, as described in the fee documentation. The creator may direct their portion to a community takeover wallet; only the creator can do so.
 
 ## 4. Prohibited Uses
 

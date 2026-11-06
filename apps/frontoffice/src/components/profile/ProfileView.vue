@@ -220,9 +220,15 @@
       <CtoRedirectModal
         v-model:open="ctoModalOpen"
         :token-address="selectedCtoToken"
-        :loading="Boolean(loadingLaunchpad)"
+        :account="account"
+        :state="ctoState"
+        :state-loading="ctoStateLoading"
+        :busy="ctoBusy"
         :error="ctoError"
-        @confirm="handleSetRedirect"
+        @propose="handlePropose"
+        @accept="handleAccept"
+        @cancel="handleCancel"
+        @lock="handleLock"
       />
 
       <!-- Modals for Posts & Threads -->
@@ -285,6 +291,7 @@ import ProfileDividendsTab from './ProfileDividendsTab.vue';
 import ProfileActivityTab from './ProfileActivityTab.vue';
 import EditProfileModal from './EditProfileModal.vue';
 import CtoRedirectModal from './CtoRedirectModal.vue';
+import type { RedirectAction, RedirectState } from '@/lib/cto-redirect';
 import type { ProfileStorageData, PortfolioPosition } from './types';
 import { isAddress, type FeedCalloutItem } from '@goton/shared-types';
 import { apiFetch } from '@/lib/api-client';
@@ -299,7 +306,11 @@ const route = useRoute();
 const { account, activeNetwork, openWallet } = useWallet();
 const {
   claimFees,
-  setFeeRedirect,
+  readRedirectState,
+  proposeCreatorRecipient,
+  acceptCreatorRecipient,
+  cancelCreatorRecipient,
+  lockCreatorRecipient,
   loading: loadingLaunchpad,
   error: launchpadError,
 } = useLaunchpad();
@@ -623,7 +634,10 @@ const activeTab = ref('posts');
 const editModalOpen = ref(false);
 const ctoModalOpen = ref(false);
 const selectedCtoToken = ref<string>('');
-const newRecipientAddress = ref<string>('');
+const ctoState = ref<RedirectState | null>(null);
+const ctoStateLoading = ref(false);
+const ctoBusy = ref<RedirectAction | null>(null);
+let ctoRequestId = 0;
 const successTx = ref<string | null>(null);
 const actionError = ref<string | null>(null);
 const ctoError = ref<string | null>(null);
@@ -716,9 +730,70 @@ onMounted(async () => {
 
 function openCtoModal(tokenAddress: string) {
   selectedCtoToken.value = tokenAddress;
-  newRecipientAddress.value = '';
   ctoError.value = null;
+  ctoState.value = null;
+  ctoStateLoading.value = true;
   ctoModalOpen.value = true;
+  void loadCtoState(tokenAddress);
+}
+
+/** Reads the token's redirect state; only the latest request may touch the modal. */
+async function loadCtoState(tokenAddress: string) {
+  const id = ++ctoRequestId;
+  try {
+    const next = await readRedirectState(
+      tokenAddress as `0x${string}`,
+      getTokenNetwork(tokenAddress).chainId,
+    );
+    if (id === ctoRequestId) ctoState.value = next;
+  } catch {
+    if (id === ctoRequestId) ctoError.value = t('ctoStateUnavailable');
+  } finally {
+    if (id === ctoRequestId) ctoStateLoading.value = false;
+  }
+}
+
+/** Sends one redirect transaction, then shows the new on-chain state in the open modal. */
+async function runCtoAction(
+  action: RedirectAction,
+  send: (token: `0x${string}`, chainId: number) => Promise<`0x${string}` | null>,
+) {
+  const token = selectedCtoToken.value;
+  if (!token || ctoBusy.value) return;
+  successTx.value = null;
+  actionError.value = null;
+  ctoError.value = null;
+  ctoBusy.value = action;
+  try {
+    const hash = await send(token as `0x${string}`, getTokenNetwork(token).chainId);
+    if (hash) {
+      successTx.value = hash;
+      if (selectedCtoToken.value === token) await loadCtoState(token);
+      void refreshAllData();
+    } else if (launchpadError.value) {
+      ctoError.value = launchpadError.value;
+    }
+  } finally {
+    ctoBusy.value = null;
+  }
+}
+
+function handlePropose(recipient: `0x${string}`) {
+  return runCtoAction('propose', (token, chainId) =>
+    proposeCreatorRecipient(token, recipient, chainId),
+  );
+}
+
+function handleAccept() {
+  return runCtoAction('accept', acceptCreatorRecipient);
+}
+
+function handleCancel() {
+  return runCtoAction('cancel', cancelCreatorRecipient);
+}
+
+function handleLock() {
+  return runCtoAction('lock', lockCreatorRecipient);
 }
 
 async function handleClaim(tokenAddress: string) {
@@ -737,32 +812,6 @@ async function handleClaim(tokenAddress: string) {
     actionError.value = (err as Error).message || 'Failed to claim fees';
   } finally {
     claimingToken.value = null;
-  }
-}
-
-async function handleSetRedirect(targetRecipient: string) {
-  if (!selectedCtoToken.value || !targetRecipient) return;
-  if (!isAddressValid(targetRecipient)) {
-    ctoError.value = 'Please enter a valid 20-byte address (0x followed by 40 hex characters).';
-    return;
-  }
-  successTx.value = null;
-  actionError.value = null;
-  ctoError.value = null;
-  try {
-    const hash = await setFeeRedirect(
-      selectedCtoToken.value as `0x${string}`,
-      targetRecipient as `0x${string}`,
-    );
-    if (hash) {
-      successTx.value = hash;
-      ctoModalOpen.value = false;
-      await refreshAllData();
-    } else if (launchpadError.value) {
-      ctoError.value = launchpadError.value;
-    }
-  } catch (err) {
-    ctoError.value = (err as Error).message || 'Failed to set fee redirect';
   }
 }
 </script>
