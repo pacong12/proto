@@ -20,7 +20,7 @@
         <div class="text-right space-y-0.5">
           <span class="text-muted-foreground text-xs block">{{ t('currentValue') }}</span>
           <span class="font-bold text-emerald-500 text-sm">
-            ${{ formatCompactUsd(userHoldingUsd) }}
+            {{ formatCompactUsd(userHoldingUsd) }}
           </span>
         </div>
       </div>

@@ -254,6 +254,9 @@ const messages: Record<string, string> = {
   vestingClaimTokens: 'トークンを請求',
   vestingClaimDividends: '配当を請求',
   vestingClaimDone: '請求が完了しました',
+  vestingLoadFailed: 'ベスティングスケジュールを読み込めませんでした。',
+  vestingRetry: '再試行',
+  ctoActionDone: 'トランザクションを確認しました',
   ctoManage: 'CTOを管理',
   ctoRedirectLabel: '転送先:',
   ctoModalDescription:
@@ -296,8 +299,6 @@ const messages: Record<string, string> = {
   holderDividendsTitle: 'ホルダー分配金',
   totalClaimable: '請求可能合計',
   claimAll: 'すべて請求',
-  linearVestingVault: 'リニアベスティング金庫',
-  vestedBalance: '権利確定残高',
   communitySignalDetail: 'コミュニティシグナル詳細',
   views: '閲覧数',
   loadingPostDetails: '投稿を読み込み中...',

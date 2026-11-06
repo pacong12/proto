@@ -252,6 +252,9 @@ const messages: Record<string, string> = {
   vestingClaimTokens: '토큰 청구',
   vestingClaimDividends: '배당 청구',
   vestingClaimDone: '청구가 완료되었습니다',
+  vestingLoadFailed: '베스팅 일정을 불러오지 못했습니다.',
+  vestingRetry: '다시 시도',
+  ctoActionDone: '트랜잭션이 확인되었습니다',
   ctoManage: 'CTO 관리',
   ctoRedirectLabel: '리디렉션:',
   ctoModalDescription:
@@ -293,8 +296,6 @@ const messages: Record<string, string> = {
   holderDividendsTitle: '홀더 수수료 분배금',
   totalClaimable: '수령 가능 총액',
   claimAll: '모두 수령',
-  linearVestingVault: '선형 베스팅 보관함',
-  vestedBalance: '귀속된 잔액',
   communitySignalDetail: '커뮤니티 시그널 상세',
   views: '조회수',
   loadingPostDetails: '게시글 불러오는 중...',

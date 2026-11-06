@@ -243,6 +243,9 @@ const messages: Record<string, string> = {
   vestingClaimTokens: '领取代币',
   vestingClaimDividends: '领取分红',
   vestingClaimDone: '领取成功',
+  vestingLoadFailed: '无法加载你的归属计划。',
+  vestingRetry: '重试',
+  ctoActionDone: '交易已确认',
   ctoManage: '管理 CTO',
   ctoRedirectLabel: '重定向至：',
   ctoModalDescription:
@@ -281,8 +284,6 @@ const messages: Record<string, string> = {
   holderDividendsTitle: '持币者分红',
   totalClaimable: '可领取总额',
   claimAll: '全部领取',
-  linearVestingVault: '线性锁仓金库',
-  vestedBalance: '已归属余额',
   communitySignalDetail: '社区信号详情',
   views: '浏览量',
   loadingPostDetails: '正在加载帖子详情...',

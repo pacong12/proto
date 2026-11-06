@@ -259,6 +259,9 @@ const messages: Record<string, string> = {
   vestingClaimTokens: 'Token beanspruchen',
   vestingClaimDividends: 'Dividenden beanspruchen',
   vestingClaimDone: 'Beanspruchung bestätigt',
+  vestingLoadFailed: 'Deine Vesting-Pläne konnten nicht geladen werden.',
+  vestingRetry: 'Erneut versuchen',
+  ctoActionDone: 'Transaktion bestätigt',
   ctoManage: 'CTO verwalten',
   ctoRedirectLabel: 'Umleitung:',
   ctoModalDescription:
@@ -303,8 +306,6 @@ const messages: Record<string, string> = {
   holderDividendsTitle: 'Dividenden für Token-Inhaber',
   totalClaimable: 'Gesamt Einlösbar',
   claimAll: 'Alle Einfordern',
-  linearVestingVault: 'Linearer Vesting-Tresor',
-  vestedBalance: 'Freigegebener Saldo',
   communitySignalDetail: 'Community-Signal-Details',
   views: 'Aufrufe',
   loadingPostDetails: 'Beitragsdetails werden geladen...',

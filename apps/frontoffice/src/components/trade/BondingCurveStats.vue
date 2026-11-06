@@ -1,7 +1,7 @@
 <template>
   <div class="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 shadow-xs">
-    <!-- Graduation Progress Bar Strip -->
-    <div class="space-y-2.5">
+    <!-- Graduation Progress Bar Strip: a pool token trades in its pool from launch, with no curve. -->
+    <div v-if="currentToken.version !== 'v4'" class="space-y-2.5">
       <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs">
         <div class="flex items-center gap-2 min-w-0">
           <span class="font-bold text-foreground truncate">

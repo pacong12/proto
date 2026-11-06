@@ -254,6 +254,9 @@ const messages: Record<string, string> = {
   vestingClaimTokens: 'Claim tokens',
   vestingClaimDividends: 'Claim dividends',
   vestingClaimDone: 'Claim confirmed',
+  vestingLoadFailed: 'Could not load your vesting schedules.',
+  vestingRetry: 'Retry',
+  ctoActionDone: 'Transaction confirmed',
   ctoManage: 'Manage CTO',
   ctoRedirectLabel: 'Redirect:',
   ctoModalDescription:
@@ -297,8 +300,6 @@ const messages: Record<string, string> = {
   holderDividendsTitle: 'Holder Fee Sharing Dividends',
   totalClaimable: 'Total Claimable',
   claimAll: 'Claim All',
-  linearVestingVault: 'Linear Vesting Vault',
-  vestedBalance: 'Vested Balance',
   communitySignalDetail: 'Community Signal Detail',
   views: 'Views',
   loadingPostDetails: 'Loading post details...',

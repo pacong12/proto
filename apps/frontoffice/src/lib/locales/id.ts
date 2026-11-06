@@ -255,6 +255,9 @@ const messages: Record<string, string> = {
   vestingClaimTokens: 'Klaim token',
   vestingClaimDividends: 'Klaim dividen',
   vestingClaimDone: 'Klaim berhasil',
+  vestingLoadFailed: 'Jadwal vesting kamu gagal dimuat.',
+  vestingRetry: 'Coba lagi',
+  ctoActionDone: 'Transaksi terkonfirmasi',
   ctoManage: 'Kelola CTO',
   ctoRedirectLabel: 'Dialihkan ke:',
   ctoModalDescription:
@@ -299,8 +302,6 @@ const messages: Record<string, string> = {
   holderDividendsTitle: 'Dividen Pembagian Biaya Holder',
   totalClaimable: 'Total Dapat Diklaim',
   claimAll: 'Klaim Semua',
-  linearVestingVault: 'Vault Vesting Linear',
-  vestedBalance: 'Saldo Ter-vesting',
   communitySignalDetail: 'Detail Sinyal Komunitas',
   views: 'Dilihat',
   loadingPostDetails: 'Memuat detail postingan...',

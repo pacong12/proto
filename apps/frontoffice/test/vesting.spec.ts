@@ -1,7 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { PublicClient, WalletClient } from 'viem';
 import { ARC_CHAIN, ROBINHOOD_CHAIN } from '@goton/shared-types';
-import { readFactoryVestingVault, validateVesting, vestingDaysToSeconds } from '../src/lib/vesting';
+import {
+  formatVestingAmount,
+  readFactoryVestingVault,
+  stillLocked,
+  validateVesting,
+  vestingDaysToSeconds,
+  type VestingPosition,
+} from '../src/lib/vesting';
 
 vi.mock('../src/lib/viem-client', () => ({
   waitForReceiptWithFallback: vi.fn(async () => ({ status: 'success', logs: [] })),
@@ -140,5 +147,22 @@ describe('launching with vesting', () => {
     );
     expect(called(plain.writeContract).functionName).toBe('launchToken');
     expect(called(plain.writeContract).args).toHaveLength(3);
+  });
+});
+
+describe('vesting amounts on the card', () => {
+  const position = (total: bigint, claimed: bigint, releasable: bigint) =>
+    ({ total, claimed, releasable }) as VestingPosition;
+
+  it('counts as locked only what has not vested', () => {
+    expect(stillLocked(position(100n, 0n, 0n))).toBe(100n);
+    expect(stillLocked(position(100n, 40n, 10n))).toBe(50n);
+    expect(stillLocked(position(100n, 100n, 0n))).toBe(0n);
+  });
+
+  it('shows a tiny amount rather than 0', () => {
+    expect(formatVestingAmount(23n, 6)).toBe('0.000023');
+    expect(formatVestingAmount(0n, 6)).toBe('0');
+    expect(formatVestingAmount(1_500_000n, 6)).toBe('1.5');
   });
 });
