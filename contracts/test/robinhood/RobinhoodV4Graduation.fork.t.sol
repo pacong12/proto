@@ -5,6 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {LaunchpadV2Factory} from "../../src/chains/robinhood/LaunchpadV2Factory.sol";
 import {BondingCurve} from "../../src/core/BondingCurve.sol";
 import {LaunchpadToken} from "../../src/core/LaunchpadToken.sol";
+import {VestingVault} from "../../src/core/VestingVault.sol";
 import {GotonV4Hook} from "../../src/core/GotonV4Hook.sol";
 import {GotonV4Graduator} from "../../src/core/GotonV4Graduator.sol";
 import {GotonV4Router} from "../../src/core/GotonV4Router.sol";
@@ -30,6 +31,7 @@ contract RobinhoodV4GraduationForkTest is Test {
     GotonV4Graduator graduator;
     GotonV4Hook hook;
     GotonV4Router router;
+    VestingVault vestingVault;
 
     address payable treasury = payable(makeAddr("treasury"));
     address creator = makeAddr("creator");
@@ -57,7 +59,9 @@ contract RobinhoodV4GraduationForkTest is Test {
                 protocolBps: 3_000, holdersBps: 5_000, burnBps: 0, creatorBps: 5_000, liquidityBps: 0
             })
         );
-        factory = new LaunchpadV2Factory(treasury, graduator);
+        vestingVault = new VestingVault(address(this));
+        factory = new LaunchpadV2Factory(treasury, graduator, vestingVault);
+        vestingVault.setLauncher(address(factory), true);
         graduator.setLauncher(address(factory));
         hook.setFactory(address(graduator));
         router = new GotonV4Router(PM, address(0), 0);
@@ -255,6 +259,41 @@ contract RobinhoodV4GraduationForkTest is Test {
         vm.prank(buyer);
         splitter.claim(address(0));
         assertEq(buyer.balance - buyerBefore, owed);
+    }
+
+    /// @dev A vested buy survives graduation and earns holder dividends from the v4 pool's LP fees.
+    function test_VestedBuyEarnsDividendsAfterGraduation() public {
+        LaunchpadV2Factory.LaunchTax memory noTax;
+        LaunchpadV2Factory.LaunchSplit memory split =
+            LaunchpadV2Factory.LaunchSplit({holdersBps: 5_000, burnBps: 0, creatorBps: 5_000, liquidityBps: 0});
+        vm.prank(creator);
+        (address token, address curve) = factory.launchTokenV2WithVesting{value: 0.0005 ether + 0.1 ether}(
+            "Grad", "GRAD", "", "", "", "", "", 0, noTax, split, 30 days, 300 days
+        );
+        uint256 id = vestingVault.scheduleIdOf(token);
+        uint256 locked = LaunchpadToken(token).balanceOf(address(vestingVault));
+        assertGt(locked, 0);
+
+        _fillCurve(BondingCurve(payable(curve)));
+        assertEq(vestingVault.pendingDividends(id), 0, "no tracker before graduation");
+        factory.graduate(token);
+        assertEq(LaunchpadToken(token).balanceOf(address(vestingVault)), locked, "the lock survives graduation");
+
+        _buy(token, 1 ether);
+        graduator.collectFees(token);
+        vm.warp(block.timestamp + 1 days);
+
+        uint256 pending = vestingVault.pendingDividends(id);
+        assertGt(pending, 0, "vault accrues");
+        uint256 before = creator.balance;
+        vm.prank(creator);
+        assertEq(vestingVault.claimDividends(id), pending);
+        assertEq(creator.balance - before, pending);
+
+        vm.warp(block.timestamp + 300 days);
+        vm.prank(creator);
+        assertEq(vestingVault.claimVested(id), locked);
+        assertEq(LaunchpadToken(token).balanceOf(creator), locked);
     }
 
     function test_FlashHolderCannotCaptureCollectedFees() public {

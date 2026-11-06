@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {LaunchpadToken} from "../../core/LaunchpadToken.sol";
 import {EmergencyPause} from "../../core/EmergencyPause.sol";
 import {ILaunchpadToken} from "../../interfaces/ILaunchpadToken.sol";
+import {IVestingVault} from "../../interfaces/IVestingVault.sol";
 import {PoolKey, PoolIdLibrary} from "../../interfaces/IUniswapV4.sol";
 import {
     IPoolManagerV4,
@@ -88,6 +89,8 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
     address public immutable quoteAsset;
     GotonV4Hook public immutable hook;
     GotonFeeSplitterDeployer public immutable splitterDeployer;
+    /// @notice Locks creators' prebuys for launchTokenWithVesting. This factory must be one of its launchers.
+    IVestingVault public immutable vestingVault;
 
     // Owner-tunable launch parameters (Argus portal defaults).
     int24 public initialTick = 405_400;
@@ -163,16 +166,19 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
         address _quoteAsset,
         GotonV4Hook _hook,
         GotonFeeSplitterDeployer _splitterDeployer,
-        address payable _feeRecipient
+        address payable _feeRecipient,
+        IVestingVault _vestingVault
     ) {
         if (
             address(_poolManager) == address(0) || _quoteAsset == address(0) || address(_hook) == address(0)
                 || address(_splitterDeployer) == address(0) || _feeRecipient == address(0)
+                || address(_vestingVault) == address(0)
         ) revert ZeroAddress();
         poolManager = _poolManager;
         quoteAsset = _quoteAsset;
         hook = _hook;
         splitterDeployer = _splitterDeployer;
+        vestingVault = _vestingVault;
         protocolFeeRecipient = _feeRecipient;
         buybackVault = _feeRecipient;
         liquidityVault = _feeRecipient;
@@ -189,13 +195,38 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
      *      whole number of 6-decimal USDC units.
      * @param minTokensOut Slippage floor for the creator prebuy.
      */
-    // slither-disable-next-line unused-return (unused tuple fields; see docs/audit/AUDIT-VERIFICATION.md)
     function launchToken(TokenMetadata calldata meta, TaxConfig calldata tax, uint256 minTokensOut)
         external
         payable
         nonReentrant
         whenNotPaused
         returns (address tokenAddress, bytes32 poolId)
+    {
+        (tokenAddress, poolId,) = _launch(meta, tax, minTokensOut, msg.sender);
+    }
+
+    /**
+     * @notice launchToken that locks the creator's prebuy in `vestingVault` instead of paying it out:
+     *         linear over `vestingDuration` seconds from now, nothing claimable for the first
+     *         `vestingCliff`. The vault enforces the bounds (cliff <= duration, 7 days to 4 years). A
+     *         separate function, so launchToken keeps its selector and never reaches the vault.
+     */
+    function launchTokenWithVesting(
+        TokenMetadata calldata meta,
+        TaxConfig calldata tax,
+        uint256 minTokensOut,
+        uint64 vestingCliff,
+        uint64 vestingDuration
+    ) external payable nonReentrant whenNotPaused returns (address tokenAddress, bytes32 poolId) {
+        uint256 creatorTokens;
+        (tokenAddress, poolId, creatorTokens) = _launch(meta, tax, minTokensOut, address(vestingVault));
+        vestingVault.createSchedule(tokenAddress, msg.sender, creatorTokens, vestingCliff, vestingDuration);
+    }
+
+    // slither-disable-next-line unused-return (unused tuple fields; see docs/audit/AUDIT-VERIFICATION.md)
+    function _launch(TokenMetadata calldata meta, TaxConfig calldata tax, uint256 minTokensOut, address tokenRecipient)
+        private
+        returns (address tokenAddress, bytes32 poolId, uint256 creatorTokens)
     {
         if (msg.value < launchFee) revert InvalidFee();
         uint256 prebuyWei = msg.value - launchFee;
@@ -280,8 +311,10 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
             if (!feeOk) revert TransferFailed();
         }
 
-        uint256 creatorTokens = abi.decode(
-            poolManager.unlock(abi.encode(Action.Launch, abi.encode(key, quoteIsCurrency0, prebuyUsdc6, msg.sender))),
+        creatorTokens = abi.decode(
+            poolManager.unlock(
+                abi.encode(Action.Launch, abi.encode(key, quoteIsCurrency0, prebuyUsdc6, tokenRecipient))
+            ),
             (uint256)
         );
         if (creatorTokens < minTokensOut) revert Slippage();
@@ -325,7 +358,7 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
 
     // slither-disable-next-line unused-return (unused tuple fields; see docs/audit/AUDIT-VERIFICATION.md)
     function _launchCallback(bytes memory payload) private returns (bytes memory) {
-        (PoolKey memory key, bool quoteIsCurrency0, uint256 prebuyUsdc6, address creator) =
+        (PoolKey memory key, bool quoteIsCurrency0, uint256 prebuyUsdc6, address recipient) =
             abi.decode(payload, (PoolKey, bool, uint256, address));
         address token = quoteIsCurrency0 ? key.currency1 : key.currency0;
         (int24 tickLower, int24 tickUpper) = _range(quoteIsCurrency0);
@@ -346,7 +379,7 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
         );
         _settle(token, V4Lib.abs(quoteIsCurrency0 ? V4Lib.amount1(callerDelta) : V4Lib.amount0(callerDelta)));
 
-        // Pay the prebuy up front, then swap it (hook tax included) for the creator's tokens.
+        // Pay the prebuy up front, then swap it (hook tax included) for the creator's tokens (or the vault's).
         _settle(quoteAsset, prebuyUsdc6);
         int256 swapDelta = poolManager.swap(
             key,
@@ -358,7 +391,7 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
             ""
         );
         uint256 tokensOut = V4Lib.abs(quoteIsCurrency0 ? V4Lib.amount1(swapDelta) : V4Lib.amount0(swapDelta));
-        poolManager.take(token, creator, tokensOut);
+        poolManager.take(token, recipient, tokensOut);
         return abi.encode(tokensOut);
     }
 

@@ -64,11 +64,13 @@ contract ComprehensiveLifecycleTest is Test {
         locker = LiquidityLocker(factoryV1.locker());
 
         // 2. Deploy Factory V2 (Bonding Curve)
-        factoryV2 = new LaunchpadV2Factory(protocolTreasury, TestGraduator.deploy(protocolTreasury));
+        factoryV2 =
+            new LaunchpadV2Factory(protocolTreasury, TestGraduator.deploy(protocolTreasury), TestGraduator.NO_VAULT);
 
         // 3. Deploy Holder Fee Distributor & Vesting Vault
         feeDistributor = new HolderFeeDistributor(address(weth), address(locker));
-        vestingVault = new VestingVault();
+        vestingVault = new VestingVault(address(this));
+        vestingVault.setLauncher(address(this), true);
 
         // Fund accounts
         vm.deal(creator, 50 ether);
@@ -240,26 +242,23 @@ contract ComprehensiveLifecycleTest is Test {
         );
 
         uint256 grant = 100_000 * 1e18;
-        uint256 duration = 100 days;
+        uint64 duration = 100 days;
 
-        token.approve(address(vestingVault), grant);
-        vestingVault.createVestingSchedule(address(token), traderAlice, grant, duration);
+        token.transfer(address(vestingVault), grant);
+        uint256 id = vestingVault.createSchedule(address(token), traderAlice, grant, 0, duration);
 
         // At day 0 -> 0 unlocked
-        assertEq(vestingVault.getClaimableAmount(address(token), address(this), traderAlice), 0);
+        assertEq(vestingVault.releasable(id), 0);
 
         // Advance 25 days -> 25% unlocked (25,000 VEST)
         vm.warp(block.timestamp + 25 days);
-        assertEq(
-            vestingVault.getClaimableAmount(address(token), address(this), traderAlice),
-            25_000 * 1e18
-        );
+        assertEq(vestingVault.releasable(id), 25_000 * 1e18);
 
         // Alice claims 25,000 VEST
         vm.prank(traderAlice);
-        vestingVault.claimVested(address(token), address(this));
+        vestingVault.claimVested(id);
         assertEq(token.balanceOf(traderAlice), 25_000 * 1e18);
-        assertEq(vestingVault.getClaimableAmount(address(token), address(this), traderAlice), 0);
+        assertEq(vestingVault.releasable(id), 0);
     }
 
     // ==========================================

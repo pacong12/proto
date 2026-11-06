@@ -8,6 +8,7 @@ import {GotonFeeSplitter, GotonFeeSplitterDeployer} from "../../src/core/GotonFe
 import {GotonV4Router} from "../../src/core/GotonV4Router.sol";
 import {GotonV4Buyback} from "../../src/core/GotonV4Buyback.sol";
 import {LaunchpadToken} from "../../src/core/LaunchpadToken.sol";
+import {VestingVault} from "../../src/core/VestingVault.sol";
 import {PoolKey} from "../../src/interfaces/IUniswapV4.sol";
 import {IPoolManagerV4} from "../../src/interfaces/external/IUniswapV4Core.sol";
 import {TickMath} from "../../src/libraries/v4/TickMath.sol";
@@ -66,6 +67,7 @@ contract ArcV4LaunchForkTest is Test {
     LaunchpadV2FactoryArc factory;
     GotonV4Hook hook;
     GotonV4Router router;
+    VestingVault vestingVault;
     address payable treasury = payable(makeAddr("treasury"));
     address buyback = makeAddr("buyback");
     address liquidityVault = makeAddr("liquidityVault");
@@ -85,7 +87,9 @@ contract ArcV4LaunchForkTest is Test {
 
         deployCodeTo("GotonV4Hook.sol:GotonV4Hook", abi.encode(PM, address(this)), HOOK_ADDRESS);
         hook = GotonV4Hook(HOOK_ADDRESS);
-        factory = new LaunchpadV2FactoryArc(PM, USDC, hook, new GotonFeeSplitterDeployer(), treasury);
+        vestingVault = new VestingVault(address(this));
+        factory = new LaunchpadV2FactoryArc(PM, USDC, hook, new GotonFeeSplitterDeployer(), treasury, vestingVault);
+        vestingVault.setLauncher(address(factory), true);
         hook.setFactory(address(factory));
         factory.setRecipients(treasury, buyback, liquidityVault);
         router = new GotonV4Router(PM, USDC, 1e12);
@@ -200,6 +204,39 @@ contract ArcV4LaunchForkTest is Test {
         assertEq(GotonFeeSplitter(_splitter(token)).totalStreamed(), 45_000 - 13_500 - 3_150 - 3_150, "holders");
         assertTrue(hook.bonded(poolId));
         assertEq(factory.getLaunchCount(), 1);
+    }
+
+    /// @dev The prebuy goes to the vault through the real PoolManager, and the locked tokens earn
+    ///      holder dividends for the creator from real trading tax.
+    function test_LaunchWithVestingLocksPrebuyAndEarnsDividends() public {
+        vm.prank(creator);
+        (address token, bytes32 poolId) =
+            factory.launchTokenWithVesting{value: 10 ether}(_meta(), _tax(), 0, 30 days, 300 days);
+        hook.flushTaxes(poolId);
+        LaunchpadToken t = LaunchpadToken(token);
+
+        uint256 id = vestingVault.scheduleIdOf(token);
+        uint256 locked = t.balanceOf(address(vestingVault));
+        assertGt(locked, 0);
+        assertEq(t.balanceOf(creator), 0, "creator holds nothing yet");
+        assertEq(t.balanceOf(address(factory)), 0, "factory keeps nothing");
+        assertEq(vestingVault.getSchedule(id).total, locked);
+        assertEq(vestingVault.releasable(id), 0);
+
+        vm.warp(block.timestamp + 10);
+        _buy(token, 1_000e6);
+        vm.warp(block.timestamp + 1 days);
+        uint256 pending = vestingVault.pendingDividends(id);
+        assertGt(pending, 0, "vault accrues dividends");
+        uint256 usdcBefore = _usdc(creator);
+        vm.prank(creator);
+        assertEq(vestingVault.claimDividends(id), pending);
+        assertEq(_usdc(creator) - usdcBefore, pending);
+
+        vm.warp(block.timestamp + 300 days);
+        vm.prank(creator);
+        assertEq(vestingVault.claimVested(id), locked);
+        assertEq(t.balanceOf(creator), locked);
     }
 
     function test_LaunchWhenTokenSortsBeforeUsdc() public {

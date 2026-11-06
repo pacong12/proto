@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {Test} from "forge-std/Test.sol";
 import {HolderFeeDistributor} from "../src/legacy/HolderFeeDistributor.sol";
 import {VestingVault} from "../src/core/VestingVault.sol";
+import {IVestingVault} from "../src/interfaces/IVestingVault.sol";
 import {LaunchpadToken} from "../src/core/LaunchpadToken.sol";
 import {ILaunchpadToken} from "../src/interfaces/ILaunchpadToken.sol";
 import {MockWETH} from "./Mocks.sol";
@@ -22,7 +23,9 @@ contract HolderSharingAndVestingTest is Test {
     function setUp() public {
         weth = new MockWETH();
         distributor = new HolderFeeDistributor(address(weth), mockLocker);
-        vault = new VestingVault();
+        vault = new VestingVault(address(this));
+        // Alice stands in for a launcher: she funds and opens the schedules below.
+        vault.setLauncher(alice, true);
 
         ILaunchpadToken.Socials memory s = ILaunchpadToken.Socials("", "", "", "", "");
         token = new LaunchpadToken();
@@ -120,86 +123,94 @@ contract HolderSharingAndVestingTest is Test {
         assertEq(weth.balanceOf(attacker), 0, "attacker receives no WETH");
     }
 
-    function test_VestingVaultLinearRelease() public {
-        uint256 grantAmount = 10_000 * 1e18;
-        uint256 duration = 100 days;
-
+    /// @dev Funds the vault and opens a cliff-less schedule for Bob, as a launcher does at launch.
+    function _grantToBob(uint256 amount, uint64 duration) internal returns (uint256 id) {
         vm.startPrank(alice);
-        token.approve(address(vault), grantAmount);
-        vault.createVestingSchedule(address(token), bob, grantAmount, duration);
+        token.transfer(address(vault), amount);
+        id = vault.createSchedule(address(token), bob, amount, 0, duration);
         vm.stopPrank();
+    }
+
+    function test_VestingVaultLinearRelease() public {
+        // Not block.timestamp: via-IR may re-read it after a warp instead of keeping this value.
+        uint256 start = vm.getBlockTimestamp();
+        uint256 id = _grantToBob(10_000 * 1e18, 100 days);
 
         // At t=0, claimable is 0
-        assertEq(vault.getClaimableAmount(address(token), alice, bob), 0);
-        uint256 start = block.timestamp;
+        assertEq(vault.releasable(id), 0);
 
         // Advance 50 days (halfway) -> 50% unlocked (5,000 DIV)
         vm.warp(start + 50 days);
-        assertEq(vault.getClaimableAmount(address(token), alice, bob), 5_000 * 1e18);
+        assertEq(vault.releasable(id), 5_000 * 1e18);
 
         // Bob claims 5,000 DIV
         vm.prank(bob);
-        vault.claimVested(address(token), alice);
-        assertEq(vault.getClaimableAmount(address(token), alice, bob), 0);
+        vault.claimVested(id);
+        assertEq(vault.releasable(id), 0);
+        assertEq(token.balanceOf(bob), 400_000_000 * 1e18 + 5_000 * 1e18);
 
         // Advance to 100 days (full duration) -> remaining 50% unlocked
         vm.warp(start + 100 days);
-        assertEq(vault.getClaimableAmount(address(token), alice, bob), 5_000 * 1e18);
+        assertEq(vault.releasable(id), 5_000 * 1e18);
         vm.prank(bob);
-        vault.claimVested(address(token), alice);
-        assertEq(vault.getClaimableAmount(address(token), alice, bob), 0);
+        vault.claimVested(id);
+        assertEq(vault.releasable(id), 0);
+        assertEq(token.balanceOf(bob), 400_000_000 * 1e18 + 10_000 * 1e18);
     }
 
-    function test_VestingRevoke() public {
-        uint256 grantAmount = 10_000 * 1e18;
-        uint256 duration = 100 days;
-        uint256 start = block.timestamp;
-
-        vm.startPrank(alice);
-        token.approve(address(vault), grantAmount);
-        vault.createVestingSchedule(address(token), bob, grantAmount, duration);
-        vm.stopPrank();
-
-        // Advance 25 days -> 25% vested
+    /// @dev Revocation was removed on purpose (a creator could otherwise unlock a "locked" buy):
+    ///      neither the funder nor the vault owner can take back tokens, vested or not.
+    function test_VestingCannotBeRevoked() public {
+        // Not block.timestamp: via-IR may re-read it after a warp instead of keeping this value.
+        uint256 start = vm.getBlockTimestamp();
+        uint256 id = _grantToBob(10_000 * 1e18, 100 days);
         vm.warp(start + 25 days);
 
         uint256 aliceBalanceBefore = token.balanceOf(alice);
         uint256 bobBalanceBefore = token.balanceOf(bob);
 
-        // Alice revokes
+        // The old entry point is gone, for the funder and the vault owner alike.
+        bytes memory revoke = abi.encodeWithSignature("revokeVesting(address,address)", address(token), bob);
         vm.prank(alice);
-        vault.revokeVesting(address(token), bob);
+        (bool aliceOk,) = address(vault).call(revoke);
+        assertFalse(aliceOk, "funder cannot revoke");
+        (bool ownerOk,) = address(vault).call(revoke);
+        assertFalse(ownerOk, "owner cannot revoke");
 
-        // Bob receives 2,500 (25% vested), Alice gets back 7,500 (unvested)
+        // Claiming is the beneficiary's alone.
+        vm.prank(alice);
+        vm.expectRevert(IVestingVault.Unauthorized.selector);
+        vault.claimVested(id);
+
+        // Bob keeps the full grant: 2,500 now (25% vested), the rest as it vests; Alice gets nothing back.
+        vm.prank(bob);
+        vault.claimVested(id);
         assertEq(token.balanceOf(bob) - bobBalanceBefore, 2_500 * 1e18);
-        assertEq(token.balanceOf(alice) - aliceBalanceBefore, 7_500 * 1e18);
-
-        // Claimable is now zero (schedule revoked)
-        assertEq(vault.getClaimableAmount(address(token), alice, bob), 0);
-
-        // Cannot revoke twice
-        vm.prank(alice);
-        vm.expectRevert(VestingVault.AlreadyRevoked.selector);
-        vault.revokeVesting(address(token), bob);
+        vm.warp(start + 100 days);
+        vm.prank(bob);
+        vault.claimVested(id);
+        assertEq(token.balanceOf(bob) - bobBalanceBefore, 10_000 * 1e18);
+        assertEq(token.balanceOf(alice), aliceBalanceBefore);
     }
 
-    /// @dev S8: a third party's 1-wei schedule no longer blocks the creator's real grant.
+    /// @dev S8: a third party can neither open a schedule nor block the creator's real grant, even
+    ///      after sending the vault tokens for one.
     function test_VestingSquatterCannotBlockRealGrant() public {
         address squatter = makeAddr("squatter");
         vm.prank(alice);
         token.transfer(squatter, 1);
         vm.startPrank(squatter);
-        token.approve(address(vault), 1);
-        vault.createVestingSchedule(address(token), bob, 1, 36_500 days);
+        token.transfer(address(vault), 1);
+        vm.expectRevert(IVestingVault.Unauthorized.selector);
+        vault.createSchedule(address(token), bob, 1, 0, 36_500 days);
         vm.stopPrank();
 
-        vm.startPrank(alice);
-        token.approve(address(vault), 10_000 * 1e18);
-        vault.createVestingSchedule(address(token), bob, 10_000 * 1e18, 100 days);
-        vm.stopPrank();
+        uint256 bobBalanceBefore = token.balanceOf(bob);
+        uint256 id = _grantToBob(10_000 * 1e18, 100 days);
 
         vm.warp(block.timestamp + 100 days);
         vm.prank(bob);
-        assertEq(vault.claimVested(address(token), alice), 10_000 * 1e18);
+        assertEq(vault.claimVested(id), 10_000 * 1e18);
+        assertEq(token.balanceOf(bob) - bobBalanceBefore, 10_000 * 1e18);
     }
 }

@@ -20,7 +20,7 @@ contract CurveOracleTest is Test {
     address keeper = address(0x6EE);
 
     function setUp() public {
-        factory = new LaunchpadV2Factory(fee, TestGraduator.deploy(fee));
+        factory = new LaunchpadV2Factory(fee, TestGraduator.deploy(fee), TestGraduator.NO_VAULT);
         // No v4 pools here; router and hook only have to be non-zero.
         lo = new GotonLimitOrders(
             address(factory), IGotonV4RouterLO(address(0xdead)), IPoolManagerV4(address(0xdead)), address(0xdead), address(0), 1

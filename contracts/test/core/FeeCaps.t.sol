@@ -7,17 +7,19 @@ import {LaunchpadV2FactoryArc} from "../../src/chains/arc/LaunchpadV2FactoryArc.
 import {GotonV4Graduator} from "../../src/core/GotonV4Graduator.sol";
 import {GotonV4Hook} from "../../src/core/GotonV4Hook.sol";
 import {GotonFeeSplitter, GotonFeeSplitterDeployer} from "../../src/core/GotonFeeSplitter.sol";
+import {IVestingVault} from "../../src/interfaces/IVestingVault.sol";
 
 /// @dev The owner can tune fees only within hard caps that creators can rely on.
 contract FeeCapsTest is Test {
     IPoolManagerV4 constant PM = IPoolManagerV4(address(0x1001));
     GotonV4Hook constant HOOK = GotonV4Hook(address(0x1002));
+    IVestingVault constant VAULT = IVestingVault(address(0x1003));
     address constant USDC = 0x3600000000000000000000000000000000000000;
     address payable treasury = payable(makeAddr("treasury"));
 
     function test_ArcFactory_LaunchFeeCappedAtTenUsdc() public {
         LaunchpadV2FactoryArc factory =
-            new LaunchpadV2FactoryArc(PM, USDC, HOOK, new GotonFeeSplitterDeployer(), treasury);
+            new LaunchpadV2FactoryArc(PM, USDC, HOOK, new GotonFeeSplitterDeployer(), treasury, VAULT);
         assertEq(factory.launchFee(), 0, "no launch fee by default");
 
         factory.setLaunchFee(10 ether);
@@ -29,7 +31,7 @@ contract FeeCapsTest is Test {
 
     function test_ArcFactory_ProtocolCutCappedAtThirtyPercent() public {
         LaunchpadV2FactoryArc factory =
-            new LaunchpadV2FactoryArc(PM, USDC, HOOK, new GotonFeeSplitterDeployer(), treasury);
+            new LaunchpadV2FactoryArc(PM, USDC, HOOK, new GotonFeeSplitterDeployer(), treasury, VAULT);
         int24 initialTick = factory.initialTick();
         int24 bondTick = factory.bondTick();
         uint256 minPrebuy = factory.minPrebuyUsdc6();
@@ -44,7 +46,7 @@ contract FeeCapsTest is Test {
 
     function test_ArcFactory_DevBuyCappedAtTenPercent() public {
         LaunchpadV2FactoryArc factory =
-            new LaunchpadV2FactoryArc(PM, USDC, HOOK, new GotonFeeSplitterDeployer(), treasury);
+            new LaunchpadV2FactoryArc(PM, USDC, HOOK, new GotonFeeSplitterDeployer(), treasury, VAULT);
         int24 initialTick = factory.initialTick();
         int24 bondTick = factory.bondTick();
         uint256 minPrebuy = factory.minPrebuyUsdc6();
