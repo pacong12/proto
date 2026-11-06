@@ -250,6 +250,9 @@ const messages: Record<string, string> = {
   vestingClaimTokens: 'المطالبة بالرموز',
   vestingClaimDividends: 'المطالبة بالأرباح',
   vestingClaimDone: 'تم تأكيد المطالبة',
+  vestingLoadFailed: 'تعذر تحميل جداول الاستحقاق الخاصة بك.',
+  vestingRetry: 'إعادة المحاولة',
+  ctoActionDone: 'تم تأكيد المعاملة',
   ctoManage: 'إدارة CTO',
   ctoRedirectLabel: 'إعادة التوجيه:',
   ctoModalDescription:
@@ -290,8 +293,6 @@ const messages: Record<string, string> = {
   holderDividendsTitle: 'أرباح حاملي التوكن',
   totalClaimable: 'الإجمالي القابل للمطالبة',
   claimAll: 'مطالبة بالكل',
-  linearVestingVault: 'خزينة الاستحقاق الخطي',
-  vestedBalance: 'الرصيد المستحق',
   communitySignalDetail: 'تفاصيل إشارة المجتمع',
   views: 'المشاهدات',
   loadingPostDetails: 'جارٍ تحميل تفاصيل المنشور...',

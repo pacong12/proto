@@ -1,4 +1,4 @@
-import { parseAbi, type PublicClient } from 'viem';
+import { formatUnits, parseAbi, type PublicClient } from 'viem';
 import { launchpadTokenAbi, vestingVaultAbi } from '@goton/shared-types';
 
 /** VestingVault's bounds: cliff <= duration, and 7 days to 4 years of duration. */
@@ -62,6 +62,20 @@ export interface VestingPosition {
   claimed: bigint;
   releasable: bigint;
   pendingDividends: bigint;
+}
+
+/** What has not vested yet: claimed plus claimable plus this is always the schedule's total. */
+export function stillLocked(position: VestingPosition): bigint {
+  const locked = position.total - position.claimed - position.releasable;
+  return locked > 0n ? locked : 0n;
+}
+
+/** Keeps tiny amounts visible: 0.000023 must not read as 0 on a button that costs gas to press. */
+export function formatVestingAmount(amount: bigint, decimals = 18): string {
+  const value = Number(formatUnits(amount, decimals));
+  return value > 0 && value < 0.0001
+    ? value.toLocaleString(undefined, { maximumSignificantDigits: 2 })
+    : value.toLocaleString(undefined, { maximumFractionDigits: 4 });
 }
 
 /** Every schedule `beneficiary` holds in `vault`, with what can be claimed now. */

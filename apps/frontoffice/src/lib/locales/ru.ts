@@ -259,6 +259,9 @@ const messages: Record<string, string> = {
   vestingClaimTokens: 'Получить токены',
   vestingClaimDividends: 'Получить дивиденды',
   vestingClaimDone: 'Получение подтверждено',
+  vestingLoadFailed: 'Не удалось загрузить ваши графики вестинга.',
+  vestingRetry: 'Повторить',
+  ctoActionDone: 'Транзакция подтверждена',
   ctoManage: 'Управление CTO',
   ctoRedirectLabel: 'Перенаправление:',
   ctoModalDescription:
@@ -302,8 +305,6 @@ const messages: Record<string, string> = {
   holderDividendsTitle: 'Дивиденды держателям',
   totalClaimable: 'Доступно к получению',
   claimAll: 'Получить все',
-  linearVestingVault: 'Хранилище линейного вестинга',
-  vestedBalance: 'Разблокированный баланс',
   communitySignalDetail: 'Детали сигнала сообщества',
   views: 'Просмотры',
   loadingPostDetails: 'Загрузка публикации...',

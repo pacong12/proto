@@ -1,4 +1,10 @@
 <template>
+  <p v-if="loadFailed" class="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+    {{ t('vestingLoadFailed') }}
+    <Button variant="outline" size="sm" class="h-7 cursor-pointer" @click="reload">
+      {{ t('vestingRetry') }}
+    </Button>
+  </p>
   <Card
     v-for="position in positions"
     :key="`${position.network.chainId}-${position.id}`"
@@ -37,7 +43,7 @@
         @click="onClaim(position, 'claimDividends')"
       >
         {{ t('vestingClaimDividends') }}:
-        {{ formatAmount(position.pendingDividends, position.network.quoteTokenDecimals) }}
+        {{ formatVestingAmount(position.pendingDividends, position.network.quoteTokenDecimals) }}
         {{ position.network.nativeCurrency.symbol }}
       </Button>
     </div>
@@ -46,12 +52,12 @@
 
 <script setup lang="ts">
 import { toRef } from 'vue';
-import { formatUnits } from 'viem';
 import { Lock } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { toast } from '@/components/ui/sonner';
 import { useI18n } from '@/lib/i18n';
+import { formatVestingAmount, stillLocked } from '@/lib/vesting';
 import {
   useVestingSchedules,
   type NetworkVestingPosition,
@@ -60,15 +66,11 @@ import {
 const props = defineProps<{ account: `0x${string}` }>();
 
 const { t } = useI18n();
-const { positions, busy, error, claim, reload } = useVestingSchedules(toRef(props, 'account'));
+const { positions, busy, error, loadFailed, claim, reload } = useVestingSchedules(
+  toRef(props, 'account'),
+);
 
 defineExpose({ reload });
-
-function formatAmount(wei: bigint, decimals = 18): string {
-  return Number(formatUnits(wei, decimals)).toLocaleString(undefined, {
-    maximumFractionDigits: 4,
-  });
-}
 
 function formatDate(unixSeconds: number): string {
   return new Date(unixSeconds * 1000).toLocaleDateString();
@@ -76,9 +78,9 @@ function formatDate(unixSeconds: number): string {
 
 function rows(position: NetworkVestingPosition) {
   return [
-    { label: t('vestingTotal'), value: formatAmount(position.total) },
-    { label: t('vestingClaimed'), value: formatAmount(position.claimed) },
-    { label: t('vestingClaimable'), value: formatAmount(position.releasable) },
+    { label: t('vestingTotal'), value: formatVestingAmount(stillLocked(position)) },
+    { label: t('vestingClaimed'), value: formatVestingAmount(position.claimed) },
+    { label: t('vestingClaimable'), value: formatVestingAmount(position.releasable) },
     { label: t('vestingCliffEnds'), value: formatDate(position.cliffEndsAt) },
     { label: t('vestingFullyUnlocked'), value: formatDate(position.fullyUnlockedAt) },
   ];

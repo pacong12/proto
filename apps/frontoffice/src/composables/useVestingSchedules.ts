@@ -14,10 +14,12 @@ export function useVestingSchedules(account: Ref<`0x${string}`>) {
   const positions = ref<NetworkVestingPosition[]>([]);
   const busy = ref(false);
   const error = ref<string | null>(null);
+  const loadFailed = ref(false);
   let requestId = 0;
 
   async function load() {
     const id = ++requestId;
+    let failed = false;
     const perNetwork = await Promise.all(
       Object.values(SUPPORTED_CHAINS).map(async (network) => {
         try {
@@ -27,12 +29,16 @@ export function useVestingSchedules(account: Ref<`0x${string}`>) {
           const held = await readVestingPositions(client, vault, account.value);
           return held.map((position) => ({ ...position, network }));
         } catch {
-          // A network that cannot be read must not hide the schedules on the others.
-          return [];
+          // A failed read (a rate-limited RPC, say) says nothing about the schedules, so what was
+          // already known stays on screen. It must not hide the ones on the other networks either.
+          failed = true;
+          return positions.value.filter((known) => known.network.chainId === network.chainId);
         }
       }),
     );
-    if (id === requestId) positions.value = perNetwork.flat();
+    if (id !== requestId) return;
+    positions.value = perNetwork.flat();
+    loadFailed.value = failed;
   }
 
   function claim(position: NetworkVestingPosition, functionName: 'claimVested' | 'claimDividends') {
@@ -54,5 +60,5 @@ export function useVestingSchedules(account: Ref<`0x${string}`>) {
 
   watch(account, () => void load(), { immediate: true });
 
-  return { positions, busy, error, claim, reload: load };
+  return { positions, busy, error, loadFailed, claim, reload: load };
 }

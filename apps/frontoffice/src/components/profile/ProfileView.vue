@@ -159,11 +159,6 @@
 
           <!-- TAB 1: CREATED TOKENS -->
           <TabsContent value="created" class="mt-4 space-y-4">
-            <ProfileVestingCard
-              v-if="isOwnProfile && account"
-              ref="vestingCard"
-              :account="account"
-            />
             <ProfileCreatedTab
               :my-launches="myLaunches"
               :loading="loadingLaunches"
@@ -194,7 +189,12 @@
           </TabsContent>
 
           <!-- TAB 4: DIVIDENDS & VESTING -->
-          <TabsContent value="dividends" class="mt-4">
+          <TabsContent value="dividends" class="mt-4 space-y-4">
+            <ProfileVestingCard
+              v-if="isOwnProfile && account"
+              ref="vestingCard"
+              :account="account"
+            />
             <ProfileDividendsTab
               :is-own-profile="isOwnProfile"
               :dividends-loading="dividendsLoading"
@@ -778,6 +778,7 @@ async function runCtoAction(
     if (hash) {
       successTx.value = hash;
       if (selectedCtoToken.value === token) await loadCtoState(token);
+      toast.success(t('ctoActionDone'));
       void refreshAllData();
     } else if (launchpadError.value) {
       ctoError.value = launchpadError.value;

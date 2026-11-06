@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-4 text-xs">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <!-- 1. Holder Fee Dividends Card -->
+    <div class="grid grid-cols-1 gap-4">
+      <!-- Holder Fee Dividends Card -->
       <Card class="p-5 bg-card/90 border-border/80 space-y-3.5 shadow-2xs rounded-2xl">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
@@ -98,58 +98,14 @@
           {{ dividendsError }}
         </p>
       </Card>
-
-      <!-- 2. Linear Vesting Schedule Card -->
-      <Card class="p-5 bg-card/90 border-border/80 space-y-3.5 shadow-2xs rounded-2xl">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <Lock class="w-4 h-4 text-foreground" />
-            <h3 class="text-sm font-bold text-foreground">{{ t('linearVestingVault') }}</h3>
-          </div>
-          <Badge variant="outline" class="text-xs text-muted-foreground"> Non-Custodial </Badge>
-        </div>
-
-        <p class="text-xs text-muted-foreground font-sans leading-relaxed">
-          Smart contract vault for locked founder, advisor, and team token allocations. Tokens
-          release linearly per second.
-        </p>
-
-        <div class="flex items-end justify-between pt-3 border-t border-border/60">
-          <div>
-            <span class="text-xs text-muted-foreground uppercase block">
-              {{ t('vestedBalance') }}
-            </span>
-            <p class="text-xl font-bold text-foreground">0.00 {{ nativeCurrencySymbol }}</p>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            :disabled="true"
-            class="h-8 px-4 text-xs font-semibold opacity-50 cursor-not-allowed rounded-xl border-border"
-          >
-            Claim Unlocked
-          </Button>
-        </div>
-
-        <Empty
-          title="No active lockup schedules"
-          description="Tokens deployed with vesting schedules will show linear countdowns and claim buttons here."
-          class="py-6 border border-dashed border-border bg-black"
-        >
-          <template #icon>
-            <ShieldCheck class="w-5 h-5 text-muted-foreground" />
-          </template>
-        </Empty>
-      </Card>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Coins, Loader2, RefreshCw, ArrowDownToLine, Lock, ShieldCheck } from 'lucide-vue-next';
+import { Coins, Loader2, RefreshCw, ArrowDownToLine } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
 

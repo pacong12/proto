@@ -259,6 +259,9 @@ const messages: Record<string, string> = {
   vestingClaimTokens: 'Reclamar tokens',
   vestingClaimDividends: 'Reclamar dividendos',
   vestingClaimDone: 'Reclamación confirmada',
+  vestingLoadFailed: 'No se pudieron cargar tus calendarios de vesting.',
+  vestingRetry: 'Reintentar',
+  ctoActionDone: 'Transacción confirmada',
   ctoManage: 'Gestionar CTO',
   ctoRedirectLabel: 'Redirección:',
   ctoModalDescription:
@@ -303,8 +306,6 @@ const messages: Record<string, string> = {
   holderDividendsTitle: 'Dividendos para Tenedores',
   totalClaimable: 'Total Reclamable',
   claimAll: 'Reclamar Todo',
-  linearVestingVault: 'Bóveda de Vesting Lineal',
-  vestedBalance: 'Saldo Consolidado',
   communitySignalDetail: 'Detalle de Señal Comunitaria',
   views: 'Vistas',
   loadingPostDetails: 'Cargando detalles de la publicación...',
