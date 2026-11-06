@@ -301,6 +301,19 @@ export const gotonFeeSplitterAbi = [
   },
   {
     type: 'function',
+    name: 'creatorRecipientLocked',
+    inputs: [],
+    outputs: [
+      {
+        name: '',
+        type: 'bool',
+        internalType: 'bool',
+      },
+    ],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
     name: 'distributeFees',
     inputs: [
       {
@@ -428,6 +441,13 @@ export const gotonFeeSplitterAbi = [
       },
     ],
     stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'lockCreatorRecipient',
+    inputs: [],
+    outputs: [],
+    stateMutability: 'nonpayable',
   },
   {
     type: 'function',
@@ -751,6 +771,19 @@ export const gotonFeeSplitterAbi = [
   },
   {
     type: 'event',
+    name: 'CreatorRecipientLocked',
+    inputs: [
+      {
+        name: 'recipient',
+        type: 'address',
+        indexed: true,
+        internalType: 'address',
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: 'event',
     name: 'CreatorRecipientProposalCancelled',
     inputs: [
       {
@@ -908,6 +941,11 @@ export const gotonFeeSplitterAbi = [
   {
     type: 'error',
     name: 'NoPendingRecipient',
+    inputs: [],
+  },
+  {
+    type: 'error',
+    name: 'RecipientLocked',
     inputs: [],
   },
   {
