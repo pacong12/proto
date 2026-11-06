@@ -4,6 +4,17 @@ import { gotonFeeSplitterAbi, resolveFeeSplitter, type NetworkConfig } from '@go
 import { getPublicClient } from '../lib/viem-client';
 import { isUserRejection, sendWalletTransaction } from '../lib/wallet-tx';
 
+/**
+ * Four decimals, except that a tiny balance stays visible: 0.000023 must not read as 0.0000 and
+ * switch off a claim button. Always a plain decimal, because callers pass it to Number().
+ */
+export function formatDividendAmount(wei: bigint, decimals: number): string {
+  const value = Number(formatUnits(wei, decimals));
+  return value > 0 && value < 0.0001
+    ? value.toLocaleString('en-US', { maximumSignificantDigits: 2, useGrouping: false })
+    : value.toFixed(4);
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -41,10 +52,9 @@ export function useHolderDividends() {
 
   const quoteDecimals = ref(18);
 
-  const totalEarnedFormatted = computed(() => {
-    const n = Number(formatUnits(totalEarnedWei.value, quoteDecimals.value));
-    return isNaN(n) ? '0.0000' : n.toFixed(4);
-  });
+  const totalEarnedFormatted = computed(() =>
+    formatDividendAmount(totalEarnedWei.value, quoteDecimals.value),
+  );
 
   async function readEntry(
     holderAddress: `0x${string}`,
@@ -66,7 +76,7 @@ export function useHolderDividends() {
       tokenSymbol: tok.symbol,
       tokenName: tok.name,
       earnedWei: earned,
-      earnedFormatted: Number(formatUnits(earned, splitter.quoteDecimals)).toFixed(4),
+      earnedFormatted: formatDividendAmount(earned, splitter.quoteDecimals),
       splitterAddress: splitter.address,
     };
   }
