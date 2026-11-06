@@ -5,7 +5,7 @@ import { apiFetch } from '@/lib/api-client';
 import { getWalletClient } from '@/lib/viem-client';
 import { isUserRejection } from '../lib/wallet-tx';
 
-export type FeedFilterType = 'all' | 'following' | 'target' | 'whale' | 'profit' | 'media';
+export type FeedFilterType = 'all' | 'following' | 'whale' | 'profit' | 'media';
 
 /**
  * Global crypto/launchpad whale rule:
@@ -257,8 +257,6 @@ export function useFeed() {
 
     if (activeFilter.value === 'following') {
       list = list.filter((c) => followedAuthors.value.has(c.authorAddress.toLowerCase()));
-    } else if (activeFilter.value === 'target') {
-      list = list.filter((c) => Boolean(c.targetMcap));
     } else if (activeFilter.value === 'whale') {
       list = list.filter((c) => isWhaleCaller(c));
     } else if (activeFilter.value === 'profit') {

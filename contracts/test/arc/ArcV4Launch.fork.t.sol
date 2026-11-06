@@ -118,19 +118,26 @@ contract ArcV4LaunchForkTest is Test {
 
     /// @dev Buy paid with native USDC (msg.value, 18 decimals) through GotonV4Router.
     function _buy(address token, uint256 usdc6) internal returns (uint256) {
+        return _buyAs(trader, token, usdc6);
+    }
+
+    function _buyAs(address who, address token, uint256 usdc6) internal returns (uint256) {
         PoolKey memory key = factory.poolKeyOf(token);
-        vm.prank(trader);
-        return router.swapExactIn{value: usdc6 * 1e12}(key, key.currency0 == USDC, usdc6, 0, trader, block.timestamp);
+        vm.prank(who);
+        return router.swapExactIn{value: usdc6 * 1e12}(key, key.currency0 == USDC, usdc6, 0, who, block.timestamp);
     }
 
     /// @dev Sell with an exact token approval to the router.
     function _sell(address token, uint256 amount) internal returns (uint256) {
+        return _sellAs(trader, token, amount);
+    }
+
+    function _sellAs(address who, address token, uint256 amount) internal returns (uint256 out) {
         PoolKey memory key = factory.poolKeyOf(token);
-        vm.startPrank(trader);
+        vm.startPrank(who);
         LaunchpadToken(token).approve(address(router), amount);
-        uint256 out = router.swapExactIn(key, key.currency0 != USDC, amount, 0, trader, block.timestamp);
+        out = router.swapExactIn(key, key.currency0 != USDC, amount, 0, who, block.timestamp);
         vm.stopPrank();
-        return out;
     }
 
     // ---------------------------------------------------------------------------
@@ -273,6 +280,74 @@ contract ArcV4LaunchForkTest is Test {
         assertEq(splitter.claim(address(0)), owed);
         assertEq(splitter.claimable(creator), 0);
         assertEq(splitter.claimable(address(PM)), 0, "pool liquidity never earns");
+    }
+
+    /// @dev The Robinhood dividend scenario on Arc: holders earn in proportion to their balance,
+    ///      a seller stops earning, a buyer who leaves in the same block earns nothing, and every
+    ///      claim pays exactly what was owed, in USDC.
+    function test_DividendsFollowHoldingsStopAfterSellingAndPayInUsdc() public {
+        // 1% tax; after the protocol cut: holders 60%, burn 20%, creator 20%.
+        vm.prank(creator);
+        (address token,) = factory.launchToken{value: 4.5 ether}(
+            _meta(), LaunchpadV2FactoryArc.TaxConfig(100, 100, 6_000, 2_000, 2_000, 0), 0
+        );
+        GotonFeeSplitter splitter = GotonFeeSplitter(_splitter(token));
+        vm.warp(block.timestamp + 10); // past the anti-snipe tax
+
+        address a = makeAddr("holderA");
+        address b = makeAddr("holderB");
+        address c = makeAddr("holderC");
+        address flash = makeAddr("flashBuyer");
+        for (uint256 i = 0; i < 4; i++) {
+            vm.deal([a, b, c, flash][i], 10_000 ether);
+        }
+        _buyAs(a, token, 200e6);
+        _buyAs(b, token, 100e6);
+        _buyAs(c, token, 50e6);
+
+        // Pool volume: the 1% buy and sell tax streams to holders over a day.
+        for (uint256 i = 0; i < 20; i++) {
+            uint256 got = _buy(token, 50e6);
+            _sell(token, got);
+        }
+
+        vm.warp(block.timestamp + 12 hours);
+        _sellAs(b, token, LaunchpadToken(token).balanceOf(b));
+        uint256 bAtSale = splitter.claimable(b);
+        _sellAs(flash, token, _buyAs(flash, token, 300e6));
+        vm.warp(block.timestamp + 12 hours + 60);
+
+        uint256 owedA = splitter.claimable(a);
+        uint256 owedC = splitter.claimable(c);
+        assertGt(bAtSale, 0, "B earned while holding");
+        assertEq(splitter.claimable(b), bAtSale, "B stops earning once sold out");
+        assertEq(splitter.claimable(flash), 0, "a same-block round trip earns nothing");
+        // A and C held throughout: dividends in the ratio of their balances.
+        uint256 balA = LaunchpadToken(token).balanceOf(a);
+        uint256 balC = LaunchpadToken(token).balanceOf(c);
+        assertApproxEqRel(owedA * balC, owedC * balA, 1e12, "A/C dividends = A/C balances");
+
+        address[3] memory holders = [a, b, c];
+        uint256[3] memory owed = [owedA, bAtSale, owedC];
+        for (uint256 i = 0; i < 3; i++) {
+            uint256 before = _usdc(holders[i]);
+            vm.prank(holders[i]);
+            assertEq(splitter.claim(holders[i]), owed[i]);
+            assertEq(_usdc(holders[i]) - before, owed[i], "paid in USDC");
+            assertEq(splitter.claimable(holders[i]), 0);
+            vm.prank(holders[i]);
+            assertEq(splitter.claim(holders[i]), 0, "a second claim pays nothing");
+        }
+
+        uint256 creatorOwed = splitter.creatorAccrued();
+        assertGt(creatorOwed, 0);
+        vm.prank(a);
+        vm.expectRevert();
+        splitter.claimCreatorFees();
+        uint256 creatorBefore = _usdc(creator);
+        vm.prank(creator);
+        splitter.claimCreatorFees();
+        assertEq(_usdc(creator) - creatorBefore, creatorOwed, "creator paid in USDC");
     }
 
     function test_AntiSnipeTaxAppliesToTradersAtLaunch() public {

@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { SqliteTokenRepository } from '../src/modules/tokens/infrastructure/adapters/sqlite-token.repository';
 import { LaunchedTokenEntity, TradeEventEntity, TokenMarketData } from '@goton/shared-types';
@@ -321,6 +324,40 @@ describe('SqliteTokenRepository', () => {
     expect(feed.length).toBeGreaterThanOrEqual(1);
     expect(feed[0].tokenSymbol).toBe('GOTON');
     expect(feed[0].tokenName).toBe('Goton Token');
+  });
+
+  it('scales back call positions stored in raw token units when it opens the database', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'goton-positions-'));
+    const path = join(dir, 'db.sqlite');
+    try {
+      const first = new SqliteTokenRepository(path);
+      await first.save(sampleToken);
+      for (const [id, positionUsd] of [
+        ['inflated', 209.75e18],
+        ['fine', 1_500_000],
+      ] as const) {
+        await first.saveComment({
+          id,
+          tokenAddress: sampleToken.address,
+          authorAddress: '0x3333333333333333333333333333333333333333',
+          content: id,
+          positionUsd,
+          callType: 'call',
+          likesCount: 0,
+          createdAt: Date.now(),
+        });
+      }
+      first.close();
+      const reopened = new SqliteTokenRepository(path);
+      const byId = Object.fromEntries(
+        (await reopened.getComments(sampleToken.address)).map((c) => [c.id, c.positionUsd]),
+      );
+      reopened.close();
+      expect(byId.inflated).toBeCloseTo(209.75, 6);
+      expect(byId.fine).toBe(1_500_000);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it('supports threaded replies, reposts, quotes, and view tracking', async () => {
