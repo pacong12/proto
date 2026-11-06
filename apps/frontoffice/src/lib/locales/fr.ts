@@ -110,6 +110,32 @@ const messages: Record<string, string> = {
   totalTradingVolume: 'Volume Total des Échanges',
   totalTokensLaunched: 'Total des Tokens Lancés',
   protocolBuybackAndBurn: 'Rachat et Brûlage du Protocole',
+  analyticsScopeNote:
+    'Chiffres on-chain indexés pour {network} uniquement. Les autres réseaux sont exclus.',
+  analyticsRefresh: 'Actualiser',
+  analyticsRetry: 'Réessayer',
+  analyticsLoadFailed: 'Impossible de charger les analyses de {network} : {error}',
+  analyticsUnexpectedResponse: 'Réponse inattendue du serveur',
+  analyticsLast24h: 'Dernières 24 h',
+  analyticsNow: 'maintenant',
+  analyticsUnitTokens: 'tokens',
+  analyticsTokensCount: '{count} tokens',
+  analyticsMetricVolume: 'Volume',
+  analyticsMetricLaunches: 'Lancements',
+  analyticsMetricFees: 'Taxe',
+  analyticsVolumeSubtitle: 'Volume de trading indexé sur les dernières 24 heures',
+  analyticsLaunchesSubtitle: 'Tokens lancés sur les dernières 24 heures',
+  analyticsFeesSubtitle:
+    "Estimation : transactions des dernières 24 h × taxe d'achat ou de vente de chaque token, parts du créateur et du protocole réunies",
+  analyticsVolumeCaption: 'Swaps de courbe et DEX indexés sur 24 h',
+  analyticsTokensCaption: 'Tous les tokens lancés sur {network}',
+  analyticsBuybackCaption:
+    'Brûlages réels, au total : {tokens} tokens pour {quote} {symbol} en {count} rachats',
+  analyticsBuybackCaptionEmpty: 'Brûlages réels indexés depuis le contrat de rachat',
+  analyticsTaxEstimateTitle: 'Taxe de tokens estimée (24 h)',
+  analyticsTaxEstimateCaption:
+    "Estimation d'après la taxe d'achat ou de vente de chaque token. Ni un solde de trésorerie ni un revenu du protocole.",
+  analyticsTaxMissing: '{count} transactions exclues : leur token n’a pas de données de taxe',
   trendingFeed: 'Tendances',
   memestockSubtitle:
     "Les lancements avec une thèse écrite dont le créateur détient encore une position achetée, classés selon l'activité de la dernière heure.",
@@ -214,6 +240,45 @@ const messages: Record<string, string> = {
   bioDescription: 'Bio / Description',
   saveProfile: 'Enregistrer le Profil',
   communityTakeover: 'Reprise Communautaire (CTO)',
+  ctoManage: 'Gérer le CTO',
+  ctoRedirectLabel: 'Redirection :',
+  ctoModalDescription:
+    'Cédez votre part de frais de créateur à un wallet communautaire. Vous seul, le créateur, pouvez le faire : proposez un destinataire, attendez 48 heures, puis acceptez-le.',
+  ctoLoadingState: 'Lecture du fee splitter…',
+  ctoStateUnavailable:
+    "Impossible de lire le fee splitter de ce token. Il n'en a peut-être pas encore, ou le réseau est indisponible. Réessayez sous peu.",
+  ctoCurrentRecipient: 'Destinataire actuel',
+  ctoStatusCreator: 'Versé au créateur',
+  ctoStatusCommunity: 'Redirigé',
+  ctoStatusLocked: 'Verrouillé',
+  ctoLockUnsupported:
+    'Le fee splitter de ce token est antérieur au verrouillage : son destinataire ne peut donc pas être verrouillé.',
+  ctoLockUnsupportedShort: 'Verrouillage indisponible',
+  ctoLockedHint: 'Ce destinataire est fixé pour toujours. Personne ne peut le changer.',
+  ctoPendingRecipient: 'Destinataire proposé',
+  ctoAcceptableIn: 'Acceptable dans {time}',
+  ctoAcceptableNow: 'Acceptable maintenant',
+  ctoAccept: 'Accepter',
+  ctoCancelPending: 'Annuler la proposition',
+  ctoPropose: 'Proposer',
+  ctoProposeHint:
+    "La proposition peut être acceptée 48 heures après son envoi. Vous pouvez l'annuler tant qu'elle n'est pas acceptée.",
+  ctoProposeReplaces:
+    'Une nouvelle proposition remplace celle en attente et relance le délai de 48 heures.',
+  ctoOnlyCreator: 'Seul le créateur du token peut changer le destinataire.',
+  ctoLockPermanently: 'Verrouiller définitivement',
+  ctoLockConfirmTitle: 'Cette action est irréversible',
+  ctoLockConfirmBody:
+    'La part du créateur sera versée à {recipient} pour toujours. Personne, ni vous ni le protocole, ne pourra plus la modifier.',
+  ctoLockDropsPending:
+    "La proposition en attente sera abandonnée. Pour verrouiller le destinataire proposé, acceptez-le d'abord.",
+  ctoLockConfirm: 'Verrouiller pour toujours',
+  ctoBack: 'Retour',
+  ctoClose: 'Fermer',
+  ctoCommunityBadge: 'Communauté',
+  ctoCommunityBadgeHint:
+    'Le créateur a redirigé sa part de frais vers un autre wallet, par exemple une trésorerie communautaire.',
+  ctoCommunityBadgeLocked: 'Verrouillé : ce destinataire ne pourra jamais changer.',
   targetTokenAddress: 'Adresse du Jeton Cible',
   newCommunityRecipient: 'Nouveau Destinataire Communautaire',
   holderDividendsTitle: 'Dividendes de Partage des Frais',
