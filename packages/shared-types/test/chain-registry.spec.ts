@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getChainMathConfig, getLaunchModel, CHAIN_MATH_CONFIGS } from '@goton/math-sdk';
-import { CHAIN_ABIS, getFactoryV2Abi } from '@goton/contracts-abi';
+import { CHAIN_ABIS, getChainAbis, getFactoryV2Abi } from '@goton/contracts-abi';
 import {
   CHAINS,
   DEFAULT_NETWORK,
@@ -28,7 +28,12 @@ describe('chain registry', () => {
   });
 
   it('registers the same chains in shared-types, math-sdk and contracts-abi', () => {
-    const ids = (list: readonly { chainId: number }[]) => list.map((c) => c.chainId).sort();
+    // Arc testnet (5042002) is registered for math and ABIs whether or not ARC_CHAIN_ID selects it.
+    const ids = (list: readonly { chainId: number }[]) =>
+      list
+        .map((c) => c.chainId)
+        .filter((id) => id !== 5042002)
+        .sort();
     expect(ids(CHAIN_MATH_CONFIGS)).toEqual(ids(CHAINS));
     expect(ids(CHAIN_ABIS)).toEqual(ids(CHAINS));
   });
@@ -138,5 +143,13 @@ describe('network helpers', () => {
       name: net.blockExplorerName,
       url: net.blockExplorer,
     });
+  });
+});
+
+describe('Arc testnet', () => {
+  it('shares Arc mainnet ABIs and math', () => {
+    expect(getChainAbis(5042002).factoryV2).toBe(getChainAbis(5042).factoryV2);
+    expect(getChainMathConfig(5042002)?.slug).toBe('arc');
+    expect(getLaunchModel(5042002)).toBe(getLaunchModel(5042));
   });
 });

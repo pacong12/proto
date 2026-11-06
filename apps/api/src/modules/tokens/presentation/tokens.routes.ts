@@ -2,7 +2,6 @@ import { isMemestock, memestockSignals } from '../application/memestock';
 import { SPARKLINE_POINTS, sparklineSince } from '../application/sparkline';
 import { findAllTokens } from '../application/all-tokens';
 import { logger } from '../../observability';
-import { TOKEN_LAUNCHED_V2_EVENT } from '../infrastructure/indexer/indexer-events';
 import { type Address } from 'viem';
 import {
   gotonFeeSplitterAbi,
@@ -795,38 +794,29 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
         );
       }
 
-      // Run backfill in background; return accepted immediately.
+      // Run backfill in background; return accepted immediately. The chain's own poller indexes
+      // the range, so in-pool (v4) launches, curve launches, trades, orders and holders all land.
+      const poller = pollers.get(network.chainId);
+      if (!poller) return replyError('INVALID_PARAM', `No indexer for ${network.name}`, 400);
       (async () => {
         const BATCH = 500n;
         let from = fromBlock;
-        let totalNew = 0;
+        const tokensBefore = (await findAllTokens(repository)).length;
+        let events = 0;
         while (from <= toBlock) {
           const to = from + BATCH - 1n < toBlock ? from + BATCH - 1n : toBlock;
           try {
-            const logs = await targetClient.getLogs({
-              address: (network.contracts.factoryV2 ?? network.contracts.factory) as `0x${string}`,
-              event: TOKEN_LAUNCHED_V2_EVENT,
-              fromBlock: from,
-              toBlock: to,
-            });
-            for (const log of logs) {
-              const tokenAddr = log.args.token as `0x${string}`;
-              const curveAddr = log.args.curve as `0x${string}`;
-              if (!tokenAddr || !curveAddr) continue;
-              const existing = await repository.findByAddress(tokenAddr);
-              if (existing) continue;
-              const entity = await chainIndexer.fetchV2LaunchedToken(tokenAddr, curveAddr, network);
-              if (entity) {
-                await repository.save({ ...entity, version: 'v2', curveAddress: curveAddr });
-                totalNew++;
-              }
-            }
+            events += await poller.indexRange(from, to);
           } catch {
             // non-fatal batch error; continue to next batch
           }
           from = to + 1n;
         }
-        logger.info(`[Admin] Backfill complete: ${totalNew} new tokens indexed on ${network.name}`);
+        const totalNew = (await findAllTokens(repository)).length - tokensBefore;
+        logger.info(
+          `[Admin] Backfill complete: ${totalNew} new tokens indexed on ${network.name}`,
+          { events },
+        );
       })();
 
       return replyJson({

@@ -7,7 +7,9 @@ export const ARC_PROTO_CURVE_ADDRESS = getEnv(
   '0x6c1c1a77771bf8961e27ea5b21f575eb17a7626e',
 ) as `0x${string}`;
 
-export const ARC_CHAIN_ID = 5042 as const;
+/** Arc mainnet; ARC_CHAIN_ID=5042002 points the Arc network at Arc testnet (local testing). */
+export const ARC_CHAIN_ID = (getEnv('ARC_CHAIN_ID', '5042') === '5042002' ? 5042002 : 5042) as
+  5042 | 5042002;
 
 /** Native USDC precompile-backed ERC-20 (6 decimals); also the quote currency of every pool. */
 const ARC_USDC = '0x3600000000000000000000000000000000000000' as `0x${string}`;

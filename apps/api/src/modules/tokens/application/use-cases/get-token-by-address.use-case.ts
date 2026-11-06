@@ -187,6 +187,29 @@ export class GetTokenByAddressUseCase {
     }
 
     // ------------------------------------------------------------------
+    // In-pool v4 launches (Arc): no V3 pool to read, so the newest trade's spot price
+    // ------------------------------------------------------------------
+    if (token.version === 'v4') {
+      const newest = await this.tokenRepository.getPriceAnchor?.(
+        token.address,
+        Number.MAX_SAFE_INTEGER,
+      );
+      const marketData = this.calculatePricing.execute({
+        address: token.address,
+        spotPriceNative: newest?.priceQuote && newest.priceQuote > 0 ? newest.priceQuote : 0,
+        pairedPrincipalWei: 0n,
+        ethPriceUsd: quoteAssetPriceUsd,
+        thresholdWei: network.launchConfig.graduationThresholdWei,
+        totalSupply: BigInt(token.totalSupply || '1000000000000000000000000000'),
+      });
+      const priceChange24h = await this.computePriceChange24h(token.address, marketData.priceUsd);
+      const volume24hUsd = await this.computeVolume24h(token.address, quoteAssetPriceUsd);
+      const marketDataWithChange = { ...marketData, priceChange24h, volume24hUsd };
+      void this.tokenRepository.saveMarketData(marketDataWithChange);
+      return { token, marketData: marketDataWithChange };
+    }
+
+    // ------------------------------------------------------------------
     // V1 Uniswap V3 pricing path
     // ------------------------------------------------------------------
     const [slot0, graduation] = await Promise.all([

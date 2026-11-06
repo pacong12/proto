@@ -106,7 +106,17 @@
                 :class="isPinned(currentToken.address) ? 'fill-amber-400 text-amber-400' : ''"
               />
             </button>
+            <!-- In-pool launches (Arc) trade in their Uniswap v4 pool from the start: no curve. -->
             <Badge
+              v-if="currentToken.version === 'v4'"
+              variant="outline"
+              class="text-xs h-4 px-1.5 border-border uppercase font-semibold"
+              :title="t('inPoolLiveHint')"
+            >
+              Live Pool
+            </Badge>
+            <Badge
+              v-else
               :variant="currentMarketData.isGraduated ? 'default' : 'outline'"
               class="text-xs h-4 px-1.5 border-border uppercase font-semibold"
             >

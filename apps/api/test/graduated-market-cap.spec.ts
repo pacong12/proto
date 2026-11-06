@@ -75,4 +75,63 @@ describe('graduated token market data', () => {
     expect(marketData.priceInWeth).toBeCloseTo(4e-7, 15);
     expect(marketData.marketCapUsd).toBeCloseTo(4e-7 * 2000 * 1e9, 3);
   });
+
+  it('prices an in-pool (v4) launch from its newest trade, not a V3 pool it does not have', async () => {
+    const repo = new InMemoryTokenRepository();
+    await repo.save({
+      address: TOKEN,
+      name: 'T',
+      symbol: 'T',
+      decimals: 18,
+      totalSupply: '1000000000000000000000000000',
+      logo: '',
+      description: '',
+      socials: {},
+      deployer: TOKEN,
+      pairedToken: ROBINHOOD_CHAIN.contracts.weth,
+      poolAddress: `0x${'1'.repeat(64)}`,
+      isToken0: false,
+      poolFee: 10000,
+      positionId: 0n,
+      restrictionsEndBlock: 0n,
+      launchBlock: 0n,
+      createdAt: 0,
+      initialBuyAmount: '0',
+      version: 'v4',
+    } as unknown as LaunchedTokenEntity);
+    await repo.saveTrade({
+      id: 't0',
+      tokenAddress: TOKEN,
+      poolAddress: TOKEN,
+      trader: TOKEN,
+      isBuy: true,
+      tokenAmount: '1',
+      wethAmount: '1',
+      priceUsd: 2.68e-6,
+      priceQuote: 2.68e-6,
+      blockNumber: 1n,
+      transactionHash: '0x0',
+      timestamp: NOW - 1000,
+    } as never);
+    const indexer = {
+      // A V3 slot0 read of a pool id fails; the adapter then falls back to a default price.
+      fetchPoolSlot0: async () => ({ sqrtPriceX96: 2505414483750479299401734n, tick: 0 }),
+      fetchGraduationStatus: async () => ({
+        pairedPrincipal: 0n,
+        threshold: 1n,
+        graduated: false,
+        progress: 0,
+      }),
+    };
+    const useCase = new GetTokenByAddressUseCase(
+      repo,
+      indexer as never,
+      new CalculatePricingUseCase(),
+      { getQuoteAssetPriceUsd: async () => 1 } as never,
+      () => NOW,
+    );
+    const { marketData } = (await useCase.execute(TOKEN))!;
+    expect(marketData.priceUsd).toBeCloseTo(2.68e-6, 12);
+    expect(marketData.marketCapUsd).toBeCloseTo(2680, 3);
+  });
 });

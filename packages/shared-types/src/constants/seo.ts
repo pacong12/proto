@@ -74,7 +74,7 @@ export function clipText(text: string, max: number): string {
 
 /** Chain name used in token page titles, descriptions and text. */
 export function seoChainName(chainId: number): string {
-  return chainId === 5042 ? 'Arc' : 'Robinhood Chain';
+  return chainId === 5042 || chainId === 5042002 ? 'Arc' : 'Robinhood Chain';
 }
 
 /** Meta description of a token page: the creator's description, or a summary. */
