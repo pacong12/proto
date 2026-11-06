@@ -150,8 +150,10 @@ export class GetTokenByAddressUseCase {
       const curveState = await this.chainIndexer.fetchV2CurveState(token.curveAddress, network);
       // After graduation the pool's price: the newest trade's spot price. The pool opens at the
       // curve's last price and only swaps move it, so this is it as of the last indexed block.
+      // Newest by block time, not bounded by this server's clock: a block stamped ahead of it
+      // would otherwise leave the price on an older trade.
       const newest = curveState.graduated
-        ? await this.tokenRepository.getPriceAnchor?.(token.address, Date.now())
+        ? await this.tokenRepository.getPriceAnchor?.(token.address, Number.MAX_SAFE_INTEGER)
         : null;
       const marketData = this.calculatePricing.fromCurve(
         token,

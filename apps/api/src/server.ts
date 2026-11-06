@@ -1,4 +1,4 @@
-import { logger } from './index';
+import { logger } from './modules/observability';
 import {
   resolveCorsOrigin,
   buildSecurityHeaders,
@@ -12,14 +12,14 @@ import {
 
 import * as container from './app/container';
 import { startBackgroundJobs } from './app/jobs';
-import { registerObservabilityRoutes } from './modules/observability/presentation/observability.routes';
-import { registerTokensRoutes } from './modules/tokens/presentation/tokens.routes';
-import { registerTradesRoutes } from './modules/trades/presentation/trades.routes';
-import { registerSocialRoutes } from './modules/social/presentation/social.routes';
-import { registerSecurityRoutes } from './modules/security/presentation/security.routes';
-import { registerIpfsRoutes } from './modules/ipfs/presentation/ipfs.routes';
-import { registerDexRoutes } from './modules/dex/presentation/dex.routes';
-import { registerPnlRoutes } from './modules/pnl/presentation/pnl.routes';
+import { registerObservabilityRoutes } from './modules/observability';
+import { registerTokensRoutes } from './modules/tokens';
+import { registerTradesRoutes } from './modules/trades';
+import { registerSocialRoutes } from './modules/social';
+import { registerSecurityRoutes } from './modules/security';
+import { registerIpfsRoutes } from './modules/ipfs';
+import { registerDexRoutes } from './modules/dex';
+import { registerPnlRoutes } from './modules/pnl';
 
 const { rateLimiter, requestTracker } = container;
 

@@ -6,10 +6,10 @@ import type {
 } from '@goton/shared-types';
 import { NotFoundError } from '../../../core/errors/app-error';
 import type { IChainService } from '../../chains';
-import type { TokenStorePort } from '../../tokens/domain/ports/token-store.port';
-import type { TradeStorePort } from '../../tokens/domain/ports/trade-store.port';
-import type { GetTokenByAddressUseCase } from '../../tokens/application/use-cases/get-token-by-address.use-case';
-import type { GetCandlesticksUseCase } from '../../trades/application/use-cases/get-candlesticks.use-case';
+import type { TokenStorePort } from '../../tokens';
+import type { TradeStorePort } from '../../tokens';
+import type { GetTokenByAddressUseCase } from '../../tokens';
+import type { GetCandlesticksUseCase } from '../../trades';
 
 const DAY_MS = 86_400_000;
 
