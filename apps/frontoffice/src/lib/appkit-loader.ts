@@ -16,6 +16,8 @@ export const appKitAccount = shallowRef<{ address?: string; status?: string } | 
 export const appKitChainId = shallowRef<string | number | undefined>(undefined);
 export const appKitWalletProvider = shallowRef<unknown>(null);
 
+const APPKIT_READY_TIMEOUT_MS = 3000;
+
 let modulePromise: Promise<AppKitModule> | null = null;
 
 /** Loads the AppKit module once and starts mirroring its account, network and provider state. */
@@ -31,6 +33,26 @@ export function loadAppKit(): Promise<AppKitModule> {
 export async function getAppKit(): Promise<AppKitInstance | null> {
   if (!appKitConfigured) return null;
   return (await loadAppKit()).appKit;
+}
+
+/**
+ * Opens the AppKit modal. The modal lists connectors once, so opening it before AppKit registers
+ * the WalletConnect connector leaves the QR row out for good. A stalled init must not block the
+ * wallets that are already there, so the wait is capped.
+ */
+export async function openAppKit(): Promise<boolean> {
+  const kit = await getAppKit();
+  if (!kit) return false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  await Promise.race([
+    kit.ready().catch(() => undefined),
+    new Promise((resolve) => {
+      timer = setTimeout(resolve, APPKIT_READY_TIMEOUT_MS);
+    }),
+  ]);
+  clearTimeout(timer);
+  await kit.open();
+  return true;
 }
 
 function bridgeState(kit: AppKitInstance): void {

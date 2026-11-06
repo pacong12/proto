@@ -264,7 +264,7 @@ import { onMounted, onUnmounted, ref } from 'vue';
 import { Loader2, X, Copy, Check, LogOut, Mail } from 'lucide-vue-next';
 import { DEFAULT_NETWORK, SUPPORTED_CHAINS } from '@goton/shared-types';
 import { getChainIcon } from '@/lib/utils';
-import { appKitConfigured, getAppKit } from '../lib/appkit-loader';
+import { appKitConfigured, openAppKit } from '../lib/appkit-loader';
 import { useI18n } from '@/lib/i18n';
 import { useWallet } from '../composables/useWallet';
 import { switchProviderNetwork } from '../lib/wallet-network';
@@ -319,7 +319,7 @@ async function openAppKitSocial() {
   close();
   if (appKitConfigured) {
     try {
-      await (await getAppKit())?.open();
+      await openAppKit();
     } catch (e) {
       console.warn('[WalletModal] Failed to open AppKit:', e);
     }

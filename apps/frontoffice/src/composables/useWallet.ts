@@ -13,6 +13,7 @@ import {
   appKitWalletProvider,
   getAppKit,
   loadAppKit,
+  openAppKit,
 } from '../lib/appkit-loader';
 import {
   bindProviderListeners,
@@ -247,11 +248,7 @@ export function useWallet() {
     error.value = null;
     if (appKitConfigured) {
       try {
-        const appKit = await getAppKit();
-        if (appKit) {
-          await appKit.open();
-          return;
-        }
+        if (await openAppKit()) return;
       } catch (err) {
         console.warn('[useWallet] AppKit open failed, falling back to local modal:', err);
       }
