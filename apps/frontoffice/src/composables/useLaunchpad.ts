@@ -21,6 +21,7 @@ import {
 } from '../lib/wallet-tx';
 import { getChainAdapter, type ChainLaunchParams, type ChainLaunchResult } from '../chains';
 import { walletChainId } from '../lib/wallet-store';
+import { readSplitterRedirectState, type RedirectState } from '../lib/cto-redirect';
 
 export type LaunchStep =
   | 'idle'
@@ -152,9 +153,9 @@ export function useLaunchpad() {
   // Write: claim creator fees from the token's GotonFeeSplitter
   // ---------------------------------------------------------------------------
 
-  /** The token's creator fee splitter on the wallet's network, with that network. */
-  async function creatorSplitter(tokenAddress: `0x${string}`) {
-    const network = getNetworkConfig(walletChainId.value ?? undefined);
+  /** The token's creator fee splitter on `chainId` (default: the wallet's network). */
+  async function creatorSplitter(tokenAddress: `0x${string}`, chainId?: number) {
+    const network = getNetworkConfig(chainId ?? walletChainId.value ?? undefined);
     const publicClient = getPublicClient(network.chainId);
     const splitter = await resolveFeeSplitter(publicClient, network, tokenAddress);
     if (!splitter) throw new Error(`No fee splitter for this token on ${network.name} yet`);
@@ -179,56 +180,84 @@ export function useLaunchpad() {
   }
 
   // ---------------------------------------------------------------------------
-  // Write: redirect creator fees (community takeover) — 48h propose / accept
+  // Community takeover: the creator redirects their own fee share (48h timelock, optional lock)
   // ---------------------------------------------------------------------------
 
-  /**
-   * First call proposes `redirectAddress`; calling again with the same address once the 48h
-   * timelock has passed accepts it (FO-04: the redirect previously never became active).
-   */
+  /** Current recipient, pending proposal and lock of the token's splitter. */
+  async function readRedirectState(
+    tokenAddress: `0x${string}`,
+    chainId?: number,
+  ): Promise<RedirectState> {
+    const { publicClient, splitter } = await creatorSplitter(tokenAddress, chainId);
+    return readSplitterRedirectState(publicClient, splitter);
+  }
+
+  function writeRedirect(
+    tokenAddress: `0x${string}`,
+    chainId: number | undefined,
+    call:
+      | { functionName: 'proposeCreatorRecipient'; args: readonly [`0x${string}`] }
+      | {
+          functionName:
+            'acceptCreatorRecipient' | 'cancelCreatorRecipient' | 'lockCreatorRecipient';
+        },
+  ): Promise<`0x${string}` | null> {
+    return runWalletAction(actionState, async () => {
+      const { network, splitter } = await creatorSplitter(tokenAddress, chainId);
+      return sendWalletTransaction(network, ({ walletClient, account }) =>
+        walletClient.writeContract({
+          address: splitter,
+          abi: gotonFeeSplitterAbi,
+          ...call,
+          account,
+          chain: walletClient.chain,
+        }),
+      );
+    });
+  }
+
+  /** Creator only: proposes `recipient`; it can be accepted after the 48h timelock. */
+  function proposeCreatorRecipient(
+    tokenAddress: `0x${string}`,
+    recipient: `0x${string}`,
+    chainId?: number,
+  ): Promise<`0x${string}` | null> {
+    return writeRedirect(tokenAddress, chainId, {
+      functionName: 'proposeCreatorRecipient',
+      args: [recipient],
+    });
+  }
+
+  /** Creator or the pending recipient: activates the proposal once its timelock has passed. */
+  function acceptCreatorRecipient(
+    tokenAddress: `0x${string}`,
+    chainId?: number,
+  ): Promise<`0x${string}` | null> {
+    return writeRedirect(tokenAddress, chainId, { functionName: 'acceptCreatorRecipient' });
+  }
+
+  /** Creator only: drops the pending proposal. */
+  function cancelCreatorRecipient(
+    tokenAddress: `0x${string}`,
+    chainId?: number,
+  ): Promise<`0x${string}` | null> {
+    return writeRedirect(tokenAddress, chainId, { functionName: 'cancelCreatorRecipient' });
+  }
+
+  /** Creator only, irreversible: fixes the current recipient forever (v2 splitters). */
+  function lockCreatorRecipient(
+    tokenAddress: `0x${string}`,
+    chainId?: number,
+  ): Promise<`0x${string}` | null> {
+    return writeRedirect(tokenAddress, chainId, { functionName: 'lockCreatorRecipient' });
+  }
+
+  /** @deprecated Use {@link proposeCreatorRecipient}; kept for the create-token flow. */
   function setFeeRedirect(
     tokenAddress: `0x${string}`,
     redirectAddress: `0x${string}`,
   ): Promise<string | null> {
-    return runWalletAction(actionState, async () => {
-      const { network, publicClient, splitter } = await creatorSplitter(tokenAddress);
-      const [pending, validAfter] = await Promise.all([
-        publicClient.readContract({
-          address: splitter,
-          abi: gotonFeeSplitterAbi,
-          functionName: 'pendingCreatorRecipient',
-        }),
-        publicClient.readContract({
-          address: splitter,
-          abi: gotonFeeSplitterAbi,
-          functionName: 'pendingCreatorRecipientValidAfter',
-        }),
-      ]);
-      const now = BigInt(Math.floor(Date.now() / 1000));
-      const accept = pending.toLowerCase() === redirectAddress.toLowerCase();
-      if (accept && now < validAfter) {
-        const hours = Math.ceil(Number(validAfter - now) / 3600);
-        throw new Error(`Redirect already proposed; it can be accepted in about ${hours}h.`);
-      }
-      return sendWalletTransaction(network, ({ walletClient, account }) =>
-        accept
-          ? walletClient.writeContract({
-              address: splitter,
-              abi: gotonFeeSplitterAbi,
-              functionName: 'acceptCreatorRecipient',
-              account,
-              chain: walletClient.chain,
-            })
-          : walletClient.writeContract({
-              address: splitter,
-              abi: gotonFeeSplitterAbi,
-              functionName: 'proposeCreatorRecipient',
-              args: [redirectAddress],
-              account,
-              chain: walletClient.chain,
-            }),
-      );
-    });
+    return proposeCreatorRecipient(tokenAddress, redirectAddress);
   }
 
   function extractLaunchData(receipt: TransactionReceipt): {
@@ -398,6 +427,11 @@ export function useLaunchpad() {
     launchToken,
     claimFees,
     setFeeRedirect,
+    readRedirectState,
+    proposeCreatorRecipient,
+    acceptCreatorRecipient,
+    cancelCreatorRecipient,
+    lockCreatorRecipient,
     setTokenTax,
     retryRevenueSplit,
     checkPendingTransaction,
