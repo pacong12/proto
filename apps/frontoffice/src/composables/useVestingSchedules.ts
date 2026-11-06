@@ -54,5 +54,5 @@ export function useVestingSchedules(account: Ref<`0x${string}`>) {
 
   watch(account, () => void load(), { immediate: true });
 
-  return { positions, busy, error, claim };
+  return { positions, busy, error, claim, reload: load };
 }

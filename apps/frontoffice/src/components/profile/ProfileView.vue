@@ -159,7 +159,11 @@
 
           <!-- TAB 1: CREATED TOKENS -->
           <TabsContent value="created" class="mt-4 space-y-4">
-            <ProfileVestingCard v-if="isOwnProfile && account" :account="account" />
+            <ProfileVestingCard
+              v-if="isOwnProfile && account"
+              ref="vestingCard"
+              :account="account"
+            />
             <ProfileCreatedTab
               :my-launches="myLaunches"
               :loading="loadingLaunches"
@@ -689,7 +693,10 @@ async function handleClaimAll() {
   }
 }
 
+const vestingCard = ref<InstanceType<typeof ProfileVestingCard> | null>(null);
+
 async function refreshAllData() {
+  void vestingCard.value?.reload();
   await Promise.all([fetchMyLaunches(), fetchUserPositionsAndActivity(), loadUserPosts()]);
   await refreshDividends();
 }

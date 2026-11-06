@@ -60,7 +60,9 @@ import {
 const props = defineProps<{ account: `0x${string}` }>();
 
 const { t } = useI18n();
-const { positions, busy, error, claim } = useVestingSchedules(toRef(props, 'account'));
+const { positions, busy, error, claim, reload } = useVestingSchedules(toRef(props, 'account'));
+
+defineExpose({ reload });
 
 function formatAmount(wei: bigint, decimals = 18): string {
   return Number(formatUnits(wei, decimals)).toLocaleString(undefined, {
