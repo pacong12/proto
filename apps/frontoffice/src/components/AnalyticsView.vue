@@ -21,7 +21,7 @@
           </span>
         </div>
         <p class="text-sm text-muted-foreground mt-1 leading-relaxed">
-          Real-time on-chain volume, fair launch token deployments, and protocol revenue metrics.
+          {{ t('analyticsScopeNote', { network: activeNetwork.name }) }}
         </p>
       </div>
 
@@ -33,7 +33,7 @@
         @click="fetchAnalytics"
       >
         <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': loading }" />
-        <span>Refresh</span>
+        <span>{{ t('analyticsRefresh') }}</span>
       </Button>
     </div>
 
@@ -44,7 +44,9 @@
     >
       <div class="flex items-center gap-2">
         <AlertCircle class="w-4 h-4 shrink-0" />
-        <span>Failed to load live protocol analytics: {{ fetchError }}</span>
+        <span>{{
+          t('analyticsLoadFailed', { network: activeNetwork.name, error: fetchError })
+        }}</span>
       </div>
       <Button
         variant="ghost"
@@ -52,7 +54,7 @@
         class="h-7 text-xs font-semibold cursor-pointer"
         @click="fetchAnalytics"
       >
-        Retry
+        {{ t('analyticsRetry') }}
       </Button>
     </div>
 
@@ -65,7 +67,9 @@
             <span class="text-2xl sm:text-4xl font-black tracking-tight text-foreground">
               {{ currentFigureDisplay }}
             </span>
-            <span class="text-xs font-semibold text-muted-foreground">Last 24h</span>
+            <span class="text-xs font-semibold text-muted-foreground">
+              {{ activeNetwork.name }} · {{ t('analyticsLast24h') }}
+            </span>
           </div>
           <p class="text-xs text-muted-foreground">
             {{ currentFigureSubtitle }}
@@ -137,7 +141,7 @@
         "
         :gradient-id="`shadcn-${activeMetric}-gradient`"
         :is-currency="activeMetric !== 'launches'"
-        :unit="activeMetric === 'launches' ? 'tokens' : ''"
+        :unit="activeMetric === 'launches' ? t('analyticsUnitTokens') : ''"
         :mode="chartMode"
       />
     </Card>
@@ -149,8 +153,8 @@
           <Activity class="w-4 h-4 text-emerald-500" />
           {{ t('totalTradingVolume') }}
         </p>
-        <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">${{ formattedVolume }}</p>
-        <p class="text-xs text-muted-foreground mt-1">Indexed 24h DEX & curve swaps</p>
+        <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">{{ formattedVolume }}</p>
+        <p class="text-xs text-muted-foreground mt-1">{{ t('analyticsVolumeCaption') }}</p>
       </Card>
 
       <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
@@ -159,9 +163,11 @@
           {{ t('totalTokensLaunched') }}
         </p>
         <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">
-          {{ totalTokens.toLocaleString() }}
+          {{ analytics ? analytics.totalTokens.toLocaleString() : NO_FIGURE }}
         </p>
-        <p class="text-xs text-muted-foreground mt-1">Fair launch tokens created</p>
+        <p class="text-xs text-muted-foreground mt-1">
+          {{ t('analyticsTokensCaption', { network: activeNetwork.name }) }}
+        </p>
       </Card>
 
       <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
@@ -169,19 +175,24 @@
           <Flame class="w-4 h-4 text-rose-500" />
           {{ t('protocolBuybackAndBurn') }}
         </p>
-        <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">${{ formattedBuyback }}</p>
-        <p class="text-xs text-muted-foreground mt-1">Deflationary buybacks burned</p>
+        <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">{{ formattedBuyback }}</p>
+        <p class="text-xs text-muted-foreground mt-1">{{ buybackCaption }}</p>
       </Card>
 
       <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
         <p class="text-xs uppercase font-semibold flex items-center gap-1.5 text-muted-foreground">
           <Coins class="w-4 h-4 text-amber-500" />
-          Protocol Treasury
+          {{ t('analyticsTaxEstimateTitle') }}
         </p>
-        <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">
-          {{ estimatedProtocolFees }} {{ activeNetwork.nativeCurrency.symbol }}
+        <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">{{ formattedTaxQuote }}</p>
+        <p class="text-xs text-muted-foreground mt-1">{{ t('analyticsTaxEstimateCaption') }}</p>
+        <p v-if="analytics?.taxFees.tradesWithoutTaxData" class="text-xs text-muted-foreground">
+          {{
+            t('analyticsTaxMissing', {
+              count: analytics.taxFees.tradesWithoutTaxData.toLocaleString(),
+            })
+          }}
         </p>
-        <p class="text-xs text-muted-foreground mt-1">100% protocol fee retention</p>
       </Card>
     </div>
 
@@ -423,17 +434,48 @@ import {
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { ShadcnAreaChart, type ChartDataPoint } from '@/components/ui/chart';
 import { formatCompactUsd, getChainIcon, formatMarketCap } from '@/lib/utils';
-import { FALLBACK_ETH_PRICE_USD, stableQuoteUsd } from '@goton/shared-types';
 
 const { t } = useI18n();
 const router = useRouter();
 const { activeNetwork } = useWallet();
 const { networkTokens, fetchTokens } = useTokenStore();
 
-const totalVolume = ref(0);
-const totalTokens = ref(0);
-const totalBuyback = ref<string | number>(0);
-const ethPriceUsd = ref(FALLBACK_ETH_PRICE_USD);
+/** One chart bucket of /api/analytics: `start`/`end` are epoch ms, `label` its end relative to now. */
+interface AnalyticsBucket {
+  label: string;
+  start: number;
+  end: number;
+  value: number;
+}
+
+interface AnalyticsData {
+  chainId: number;
+  quoteSymbol: string;
+  totalTokens: number;
+  tokensLaunched24h: number;
+  totalVolumeUsd: string;
+  /** Real BuybackExecuted events, all time; USD at the current quote price. */
+  buyback: {
+    totalBurns: number;
+    totalBurnedTokens: string;
+    totalBuybackQuote: string;
+    totalBuybackUsd: string;
+  };
+  /** Estimate: last 24h trades x each token's buy/sell tax (creator and protocol shares). */
+  taxFees: { totalQuote: string; totalUsd: string; tradesWithoutTaxData: number };
+  volumeHistory: AnalyticsBucket[];
+  tokenHistory: AnalyticsBucket[];
+  feeHistory: AnalyticsBucket[];
+}
+
+const NO_FIGURE = '\u2014';
+const EMPTY_CHART_LABELS = ['-20h', '-16h', '-12h', '-8h', '-4h', 'now'];
+
+const response = ref<AnalyticsData | null>(null);
+/** The figures, only while they are the active network's: another network's never show. */
+const analytics = computed(() =>
+  response.value?.chainId === activeNetwork.value.chainId ? response.value : null,
+);
 const loading = ref(false);
 const fetchError = ref<string | null>(null);
 const copiedAddress = ref<string | null>(null);
@@ -443,79 +485,80 @@ type AnalyticsMetric = 'volume' | 'launches' | 'fees';
 const activeMetric = ref<AnalyticsMetric>('volume');
 const chartMode = ref<'area' | 'bar'>('area');
 
-const metricOptions = [
-  { label: 'Volume', value: 'volume' as const },
-  { label: 'Launches', value: 'launches' as const },
-  { label: 'Fees', value: 'fees' as const },
-];
-
-const formattedVolume = computed(() => {
-  const val = Number(totalVolume.value) || 0;
-  return val.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-});
-
-const formattedBuyback = computed(() => {
-  const val = Number(totalBuyback.value) || 0;
-  return val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-});
-
-const estimatedProtocolFees = computed(() => {
-  const vol = Number(totalVolume.value) || 0;
-  // 1% of USD volume, in the network's quote currency.
-  const quoteUsd = stableQuoteUsd(activeNetwork.value) ?? ethPriceUsd.value;
-  const feeEstimate = (vol * 0.01) / quoteUsd;
-  return feeEstimate > 0 ? feeEstimate.toFixed(3) : '0.00';
-});
-
-const volumeChartData = ref<ChartDataPoint[]>([
-  { label: '00:00', value: 0 },
-  { label: '04:00', value: 0 },
-  { label: '08:00', value: 0 },
-  { label: '12:00', value: 0 },
-  { label: '16:00', value: 0 },
-  { label: '20:00', value: 0 },
-  { label: '24:00', value: 0 },
+const metricOptions = computed(() => [
+  { label: t('analyticsMetricVolume'), value: 'volume' as const },
+  { label: t('analyticsMetricLaunches'), value: 'launches' as const },
+  { label: t('analyticsMetricFees'), value: 'fees' as const },
 ]);
 
-const tokenChartData = ref<ChartDataPoint[]>([
-  { label: '00:00', value: 0 },
-  { label: '04:00', value: 0 },
-  { label: '08:00', value: 0 },
-  { label: '12:00', value: 0 },
-  { label: '16:00', value: 0 },
-  { label: '20:00', value: 0 },
-  { label: '24:00', value: 0 },
-]);
+function formatUsd(value: string, digits = 0): string {
+  const usd = (Number(value) || 0).toLocaleString(undefined, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
+  return `$${usd}`;
+}
 
-// Fees chart derived from 1% protocol fee on trade volume
-const feesChartData = computed<ChartDataPoint[]>(() => {
-  return volumeChartData.value.map((pt) => ({
-    label: pt.label,
-    value: Math.round(pt.value * 0.01),
+const formattedVolume = computed(() =>
+  analytics.value ? formatUsd(analytics.value.totalVolumeUsd) : NO_FIGURE,
+);
+
+const formattedBuyback = computed(() =>
+  analytics.value ? formatUsd(analytics.value.buyback.totalBuybackUsd, 2) : NO_FIGURE,
+);
+
+const buybackCaption = computed(() => {
+  const buyback = analytics.value?.buyback;
+  if (!buyback) return t('analyticsBuybackCaptionEmpty');
+  return t('analyticsBuybackCaption', {
+    tokens: (Number(buyback.totalBurnedTokens) || 0).toLocaleString(undefined, {
+      maximumFractionDigits: 0,
+    }),
+    quote: (Number(buyback.totalBuybackQuote) || 0).toLocaleString(undefined, {
+      maximumFractionDigits: 4,
+    }),
+    symbol: analytics.value!.quoteSymbol,
+    count: buyback.totalBurns.toLocaleString(),
+  });
+});
+
+const formattedTaxQuote = computed(() => {
+  if (!analytics.value) return NO_FIGURE;
+  const quote = (Number(analytics.value.taxFees.totalQuote) || 0).toLocaleString(undefined, {
+    maximumFractionDigits: 4,
+  });
+  return `\u2248 ${quote} ${analytics.value.quoteSymbol}`;
+});
+
+function toChartData(buckets?: AnalyticsBucket[]): ChartDataPoint[] {
+  const points = buckets ?? EMPTY_CHART_LABELS.map((label) => ({ label, value: 0 }));
+  return points.map(({ label, value }) => ({
+    label: label === 'now' ? t('analyticsNow') : label,
+    value,
   }));
-});
+}
 
 const currentChartData = computed(() => {
-  if (activeMetric.value === 'launches') return tokenChartData.value;
-  if (activeMetric.value === 'fees') return feesChartData.value;
-  return volumeChartData.value;
+  if (activeMetric.value === 'launches') return toChartData(analytics.value?.tokenHistory);
+  if (activeMetric.value === 'fees') return toChartData(analytics.value?.feeHistory);
+  return toChartData(analytics.value?.volumeHistory);
 });
 
 const currentFigureDisplay = computed(() => {
+  if (!analytics.value) return NO_FIGURE;
   if (activeMetric.value === 'launches') {
-    return `${totalTokens.value} Tokens`;
+    return t('analyticsTokensCount', { count: analytics.value.tokensLaunched24h.toLocaleString() });
   }
   if (activeMetric.value === 'fees') {
-    const totalFees = Math.round((Number(totalVolume.value) || 0) * 0.01);
-    return `$${totalFees.toLocaleString()}`;
+    return `\u2248 ${formatUsd(analytics.value.taxFees.totalUsd)}`;
   }
-  return `$${formattedVolume.value}`;
+  return formattedVolume.value;
 });
 
 const currentFigureSubtitle = computed(() => {
-  if (activeMetric.value === 'launches') return 'Token deployments over last 24h';
-  if (activeMetric.value === 'fees') return '1% protocol swap fee revenue over last 24h';
-  return '24-hour aggregate protocol trading volume';
+  if (activeMetric.value === 'launches') return t('analyticsLaunchesSubtitle');
+  if (activeMetric.value === 'fees') return t('analyticsFeesSubtitle');
+  return t('analyticsVolumeSubtitle');
 });
 
 // Top coins on this network
@@ -564,40 +607,30 @@ function copyContractAddress(address: string) {
   }, 2000);
 }
 
+let latestRequest = 0;
+
 async function fetchAnalytics() {
+  // A slower answer for the previous network must not replace the current one's.
+  const request = ++latestRequest;
   loading.value = true;
   fetchError.value = null;
   try {
     const envelope = await apiFetch<{
       success: boolean;
-      data: {
-        totalVolume: number;
-        totalTokens: number;
-        totalBuyback: string | number;
-        ethPriceUsd?: number;
-        volumeHistory?: ChartDataPoint[];
-        tokenHistory?: ChartDataPoint[];
-      };
+      data: AnalyticsData | null;
       error?: { message?: string };
     }>(`/api/analytics?chainId=${activeNetwork.value.chainId}`);
-    if (envelope.success && envelope.data) {
-      totalVolume.value = envelope.data.totalVolume;
-      totalTokens.value = envelope.data.totalTokens;
-      totalBuyback.value = envelope.data.totalBuyback;
-      if (envelope.data.ethPriceUsd) ethPriceUsd.value = envelope.data.ethPriceUsd;
-      if (Array.isArray(envelope.data.volumeHistory) && envelope.data.volumeHistory.length > 0) {
-        volumeChartData.value = envelope.data.volumeHistory;
-      }
-      if (Array.isArray(envelope.data.tokenHistory) && envelope.data.tokenHistory.length > 0) {
-        tokenChartData.value = envelope.data.tokenHistory;
-      }
-    } else {
-      fetchError.value = envelope.error?.message || 'Failed to retrieve analytics data';
+    if (request !== latestRequest) return;
+    response.value = envelope.success ? envelope.data : null;
+    if (!response.value) {
+      fetchError.value = envelope.error?.message || t('analyticsUnexpectedResponse');
     }
   } catch (err) {
-    fetchError.value = (err as Error).message || 'Network error fetching analytics';
+    if (request !== latestRequest) return;
+    response.value = null;
+    fetchError.value = (err as Error).message || t('analyticsUnexpectedResponse');
   } finally {
-    loading.value = false;
+    if (request === latestRequest) loading.value = false;
   }
 }
 
