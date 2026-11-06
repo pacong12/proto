@@ -182,13 +182,13 @@ Checked against docs.arc.io (EVM differences, stablecoin native model, AMM porti
 Escrowed limit buy, take-profit, stop-loss and OCO orders (`src/core/GotonLimitOrders.sol`). No owner
 or admin functions; funds leave escrow only by filling on the owner's terms or by `cancel`.
 
-| Design point                                      | How it is enforced                                                                                                                                                                                      |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Executor cannot pick a bad price                  | Fills are checked against the owner's (buy) or this contract's (sell) balance change against `minOut` / `slMinOut`, never against router return values                                                  |
-| Executor cannot use other orders' funds           | Routes are limited to curves registered in the trusted factory (`curveToToken`, not the curve's own getters, which a fake curve could spoof) and pools with the trusted hook through the trusted router |
+| Design point                                      | How it is enforced                                                                                                                                                                                                      |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Executor cannot pick a bad price                  | Fills are checked against the owner's (buy) or this contract's (sell) balance change against `minOut` / `slMinOut`, never against router return values                                                                  |
+| Executor cannot use other orders' funds           | Routes are limited to curves registered in the trusted factory (`curveToToken`, not the curve's own getters, which a fake curve could spoof) and pools with the trusted hook through the trusted router                 |
 | Stop-loss cannot be triggered by a one-block push | Spot and TWAP must both be at or below the trigger: pools use slot0 and the hook's TWAP (`consultTick`), curves their reserves and `consultPriceX36`; spot also keeps a lagging TWAP from firing stops after a recovery |
-| Partial fills                                     | Native refunds and unsold tokens go back to the owner; allowances are reset to 0                                                                                                                        |
-| Expiry                                            | Expired orders cannot fill; `cancel` always works                                                                                                                                                       |
+| Partial fills                                     | Native refunds and unsold tokens go back to the owner; allowances are reset to 0                                                                                                                                        |
+| Expiry                                            | Expired orders cannot fill; `cancel` always works                                                                                                                                                                       |
 
 Slither: `reentrancy-balance` (High) on `createSellOrder` and `_settleTokens` is a false positive:
 balance deltas are the intended measurement and every entry point is `nonReentrant`.
