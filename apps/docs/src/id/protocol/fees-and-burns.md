@@ -48,5 +48,6 @@ Kontrak tim tidak punya owner, dan anggota serta porsinya tidak pernah bisa diub
 
 Jika kreator ingin memberikan reward kepada komunitas atau menyerahkan kepemimpinan proyek:
 
-- Kreator dapat mengalihkan aliran fee kreator ke perbendaharaan DAO, multisig komunitas, atau kontrak reward. Pengalihan berlaku 48 jam setelah diajukan dan dapat dibatalkan selama jeda tersebut.
-- Fitur ini mendukung pengambilalihan komunitas (CTO) dengan mengubah pendapatan proyek menjadi modal yang dikelola langsung oleh komunitas.
+- Hanya kreator yang dapat mengalihkan porsi Kreator dari fee ke perbendaharaan DAO, multisig komunitas, atau kontrak reward. Pengajuan dapat diterima setelah timelock 48 jam, dan kreator dapat membatalkannya selama belum diterima.
+- Kreator kemudian dapat mengunci penerima secara permanen. Protokol tidak pernah dapat memindahkan fee kreator.
+- Fitur ini mendukung pengambilalihan komunitas (CTO) dengan mengubah pendapatan proyek menjadi modal yang dikelola langsung oleh komunitas. Lihat [Pengambilalihan Komunitas](./community-takeovers.md).

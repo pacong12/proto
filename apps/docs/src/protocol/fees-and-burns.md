@@ -48,5 +48,6 @@ The team contract has no owner and its members and shares can never change. Anyo
 
 If a creator wishes to reward their community or hand over project leadership:
 
-- Creators can redirect their creator fee stream to a DAO treasury, community multisig, or reward contract. A redirect takes effect 48 hours after it is proposed and can be cancelled in that window.
-- This feature empowers community takeovers (CTO) by turning project revenue into community-owned funding.
+- Only the creator can redirect the creator portion of the fees to a DAO treasury, community multisig, or reward contract. A proposal can be accepted after a 48-hour timelock, and the creator can cancel it until it is accepted.
+- The creator can then lock the recipient permanently. The protocol can never move a creator's fees.
+- This feature empowers community takeovers (CTO) by turning project revenue into community-owned funding. See [Community Takeovers](./community-takeovers.md).
