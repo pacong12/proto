@@ -35,12 +35,19 @@ import {
 } from '../lib/wallet-store';
 import { shortenAddress } from '../lib/utils';
 import { switchProviderNetwork } from '../lib/wallet-network';
+import { findAnnouncedProvider } from '../lib/eip6963';
 
 const balanceWei = ref<bigint>(0n);
 const error = ref<string | null>(null);
 const isConnecting = ref(false);
 let syncBalancePromise: Promise<void> | null = null;
 let lastSyncTime = 0;
+
+/** Whether the id names one wallet, rather than "whatever owns window.ethereum" or AppKit's session. */
+function isSpecificWallet(walletId: string): boolean {
+  return walletId !== '' && walletId !== 'window.ethereum' && walletId !== 'reown';
+}
+
 export function useWallet() {
   const resolvedAddress = computed<`0x${string}` | null>(() => {
     if (walletAddress.value) return walletAddress.value;
@@ -110,15 +117,19 @@ export function useWallet() {
     return syncBalancePromise;
   }
 
-  function getInjectedProvider(preferredId?: string | null): WalletProviderLike | null {
-    if (typeof window === 'undefined') return null;
-
-    const id = (
-      preferredId ||
+  function getChosenWalletId(): string {
+    return (
       walletProviderId.value ||
       (typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_PROVIDER_ID_KEY) : '') ||
       ''
-    ).toLowerCase();
+    );
+  }
+
+  function getInjectedProvider(preferredId?: string | null): WalletProviderLike | null {
+    if (typeof window === 'undefined') return null;
+
+    const chosenId = preferredId || getChosenWalletId();
+    const id = chosenId.toLowerCase();
 
     const win = window as unknown as Record<string, unknown>;
 
@@ -165,19 +176,27 @@ export function useWallet() {
       }
     }
 
-    // 4. Fallback to window.ethereum
-    if (eth) {
-      return eth;
-    }
+    // 4. window.ethereum, unless the user chose a specific wallet: it may belong to a different one.
+    return eth && !isSpecificWallet(chosenId) ? eth : null;
+  }
 
-    return null;
+  /** The chosen wallet's own provider; an EIP-6963 wallet has to be asked for it again after a reload. */
+  async function findChosenProvider(walletId: string): Promise<WalletProviderLike | null> {
+    const announced = isSpecificWallet(walletId) ? await findAnnouncedProvider(walletId) : null;
+    return announced ?? getInjectedProvider(walletId);
   }
 
   async function tryAutoReconnectInjected(force = false) {
     if ((walletAddress.value && !force) || !isStoredConnectionActive()) return;
 
-    const provider = getInjectedProvider();
+    const walletId = getChosenWalletId();
+    const provider = await findChosenProvider(walletId);
     if (!provider) {
+      if (isSpecificWallet(walletId)) {
+        // The chosen wallet is gone. Keeping its address would show a connection nothing can sign for.
+        clearWalletState({ broadcast: false });
+        return;
+      }
       if (typeof window !== 'undefined' && 'localStorage' in window) {
         const storedAddr = localStorage.getItem(STORAGE_ADDRESS_KEY) as `0x${string}` | null;
         const storedChain = parseChainId(localStorage.getItem(STORAGE_CHAIN_ID_KEY));
@@ -196,7 +215,9 @@ export function useWallet() {
         const rawChain = await provider.request({ method: 'eth_chainId' });
         const chain = parseChainId(rawChain) ?? DEFAULT_NETWORK.chainId;
 
-        setConnectedWallet(provider, address, chain, 'window.ethereum', { broadcast: false });
+        setConnectedWallet(provider, address, chain, walletId || 'window.ethereum', {
+          broadcast: false,
+        });
 
         // Validate the chain before syncing balance (fix MED-01).
         // getPublicClient() follows the active chain, but we must not query an
