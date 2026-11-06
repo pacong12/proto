@@ -14,7 +14,8 @@ export interface MyLaunchItem {
   logo?: string;
   unclaimedWeth: string;
   redirect: string | null;
-  isGraduated?: boolean;
+  /** Fees accrue to the curve until graduation; a pool token has no curve and accrues from launch. */
+  onBondingCurve?: boolean;
   taxConfig?: {
     buyTaxBps?: number;
     sellTaxBps?: number;

@@ -84,7 +84,7 @@
                 Accrued:
                 <strong class="text-foreground">
                   {{
-                    !token.isGraduated
+                    token.onBondingCurve
                       ? 'Curve'
                       : `${token.unclaimedWeth || '0.0000'} ${nativeCurrencySymbol}`
                   }}
