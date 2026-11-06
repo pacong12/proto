@@ -1,3 +1,5 @@
+import type { Database } from 'bun:sqlite';
+import type { SqliteDatabase } from './sqlite-database';
 import type { TradeStorePort } from '../../domain/ports/trade-store.port';
 import { TradeEventEntity, CandlestickEntity, chartPriceUsd } from '@goton/shared-types';
 import type { TradeFlow } from '../../domain/ports/token.repository.port';
@@ -8,12 +10,20 @@ import {
   computeHoldersDistribution,
   holdersFromBalances,
 } from '../../domain/services/token-aggregation.service';
-import { POOL_HOLDERS, TradeRow } from './sqlite-rows';
-
-import { SqliteTokenStore } from './sqlite-token.store';
+import { POOL_HOLDERS, TradeRow, mapRowToTrade } from './sqlite-rows';
+import type { TokenStorePort } from '../../domain/ports/token-store.port';
 
 /** Indexed trades and what is derived from them (candles, flow, holders, positions). */
-export class SqliteTradeStore extends SqliteTokenStore implements TradeStorePort {
+export class SqliteTradeStore implements TradeStorePort {
+  private readonly db: Database;
+
+  constructor(
+    database: SqliteDatabase,
+    private readonly tokens: TokenStorePort,
+  ) {
+    this.db = database.db;
+  }
+
   async getTradeFlow(tokenAddress: `0x${string}`, sinceMs: number): Promise<TradeFlow> {
     const rows = this.db
       .prepare(
@@ -76,7 +86,7 @@ export class SqliteTradeStore extends SqliteTokenStore implements TradeStorePort
       LIMIT ? OFFSET ?
     `);
     const rows = stmt.all(tokenAddress, limit, offset) as TradeRow[];
-    return rows.map((row) => this.mapRowToTrade(row));
+    return rows.map((row) => mapRowToTrade(row));
   }
 
   async getPriceAnchor(
@@ -96,7 +106,7 @@ export class SqliteTradeStore extends SqliteTokenStore implements TradeStorePort
            ORDER BY timestamp ASC, rowid ASC LIMIT 1`,
         )
         .get(tokenAddress) as TradeRow | null);
-    return row ? this.mapRowToTrade(row) : null;
+    return row ? mapRowToTrade(row) : null;
   }
 
   async getCandlesticks(
@@ -105,8 +115,8 @@ export class SqliteTradeStore extends SqliteTokenStore implements TradeStorePort
     fillGaps = false,
     quotePriceUsd?: number,
   ): Promise<CandlestickEntity[]> {
-    const token = await this.findByAddress(tokenAddress);
-    const mkt = await this.getMarketData(tokenAddress);
+    const token = await this.tokens.findByAddress(tokenAddress);
+    const mkt = await this.tokens.getMarketData(tokenAddress);
     const stmt = this.db.prepare(`
       SELECT * FROM trades
       WHERE tokenAddress = ? COLLATE NOCASE
@@ -132,7 +142,7 @@ export class SqliteTradeStore extends SqliteTokenStore implements TradeStorePort
     tokenAddress: string,
     limit = 50,
   ): Promise<Array<{ address: string; balance: string; percent: number }>> {
-    const token = await this.findByAddress(tokenAddress as `0x${string}`);
+    const token = await this.tokens.findByAddress(tokenAddress as `0x${string}`);
     const indexed = this.db
       .prepare(`SELECT 1 FROM holder_index WHERE token_address = ? COLLATE NOCASE`)
       .get(tokenAddress);
@@ -156,7 +166,7 @@ export class SqliteTradeStore extends SqliteTokenStore implements TradeStorePort
       LIMIT ?
     `);
     const rows = stmt.all(limit) as TradeRow[];
-    return rows.map((row) => this.mapRowToTrade(row));
+    return rows.map((row) => mapRowToTrade(row));
   }
 
   async getTradesByTrader(
@@ -173,7 +183,7 @@ export class SqliteTradeStore extends SqliteTokenStore implements TradeStorePort
     `);
     const token = tokenAddress ?? null;
     const rows = stmt.all(trader, token, token, limit) as TradeRow[];
-    return rows.map((row) => this.mapRowToTrade(row));
+    return rows.map((row) => mapRowToTrade(row));
   }
 
   async getTradesInBlockRange(
@@ -199,7 +209,7 @@ export class SqliteTradeStore extends SqliteTokenStore implements TradeStorePort
       token,
       limit,
     ) as TradeRow[];
-    return rows.map((row) => this.mapRowToTrade(row));
+    return rows.map((row) => mapRowToTrade(row));
   }
 
   async getTradesSince(sinceMs: number): Promise<TradeEventEntity[]> {
@@ -209,7 +219,7 @@ export class SqliteTradeStore extends SqliteTokenStore implements TradeStorePort
       ORDER BY timestamp ASC
     `);
     const rows = stmt.all(sinceMs) as TradeRow[];
-    return rows.map((row) => this.mapRowToTrade(row));
+    return rows.map((row) => mapRowToTrade(row));
   }
 
   async findTradeByHash(txHash: string): Promise<TradeEventEntity | null> {
@@ -219,7 +229,7 @@ export class SqliteTradeStore extends SqliteTokenStore implements TradeStorePort
       LIMIT 1
     `);
     const row = stmt.get(txHash) as TradeRow | null;
-    return row ? this.mapRowToTrade(row) : null;
+    return row ? mapRowToTrade(row) : null;
   }
 
   /**
@@ -270,8 +280,8 @@ export class SqliteTradeStore extends SqliteTokenStore implements TradeStorePort
     for (const [addr, stats] of byToken.entries()) {
       const net = stats.buy - stats.sell;
       if (net > 0) {
-        const token = await this.findByAddress(addr as `0x${string}`);
-        const md = await this.getMarketData(addr as `0x${string}`);
+        const token = await this.tokens.findByAddress(addr as `0x${string}`);
+        const md = await this.tokens.getMarketData(addr as `0x${string}`);
         const price = md?.priceUsd || 0;
         positions.push({
           tokenAddress: addr,

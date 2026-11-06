@@ -1,11 +1,17 @@
+import type { Database } from 'bun:sqlite';
+import type { SqliteDatabase } from './sqlite-database';
 import type { TokenStorePort } from '../../domain/ports/token-store.port';
 import { LaunchedTokenEntity, TokenMarketData } from '@goton/shared-types';
-import { TokenRow, MarketDataRow } from './sqlite-rows';
-
-import { SqliteDatabase } from './sqlite-database';
+import { TokenRow, MarketDataRow, mapRowToToken } from './sqlite-rows';
 
 /** Tokens, market data, holders, sentiment, buybacks and the indexer cursor. */
-export class SqliteTokenStore extends SqliteDatabase implements TokenStorePort {
+export class SqliteTokenStore implements TokenStorePort {
+  private readonly db: Database;
+
+  constructor(database: SqliteDatabase) {
+    this.db = database.db;
+  }
+
   async save(token: LaunchedTokenEntity): Promise<void> {
     let finalTaxConfig = token.taxConfig;
     try {
@@ -71,7 +77,7 @@ export class SqliteTokenStore extends SqliteDatabase implements TokenStorePort {
     `);
     const row = stmt.get(address) as TokenRow | null;
     if (!row) return null;
-    return this.mapRowToToken(row);
+    return mapRowToToken(row);
   }
 
   async findAll(
@@ -98,7 +104,7 @@ export class SqliteTokenStore extends SqliteDatabase implements TokenStorePort {
       `SELECT * FROM tokens ${where}ORDER BY rowid DESC LIMIT ? OFFSET ?`,
     );
     const rows = stmt.all(...params, limit, offset) as TokenRow[];
-    return rows.map((row) => this.mapRowToToken(row));
+    return rows.map((row) => mapRowToToken(row));
   }
 
   async saveMarketData(marketData: TokenMarketData): Promise<void> {
@@ -206,7 +212,7 @@ export class SqliteTokenStore extends SqliteDatabase implements TokenStorePort {
       `SELECT * FROM tokens WHERE LOWER(poolAddress) = LOWER(?) LIMIT 1`,
     );
     const row = stmt.get(poolAddress) as TokenRow | null;
-    return row ? this.mapRowToToken(row) : null;
+    return row ? mapRowToToken(row) : null;
   }
 
   async getLastIndexedBlock(networkName: string): Promise<bigint | null> {
