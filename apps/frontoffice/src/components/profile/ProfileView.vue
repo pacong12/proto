@@ -158,7 +158,8 @@
           </TabsContent>
 
           <!-- TAB 1: CREATED TOKENS -->
-          <TabsContent value="created" class="mt-4">
+          <TabsContent value="created" class="mt-4 space-y-4">
+            <ProfileVestingCard v-if="isOwnProfile && account" :account="account" />
             <ProfileCreatedTab
               :my-launches="myLaunches"
               :loading="loadingLaunches"
@@ -286,6 +287,7 @@ import ProfileHero from './ProfileHero.vue';
 import ProfileStats from './ProfileStats.vue';
 import ProfilePostsTab from './ProfilePostsTab.vue';
 import ProfileCreatedTab from './ProfileCreatedTab.vue';
+import ProfileVestingCard from './ProfileVestingCard.vue';
 import ProfilePortfolioTab from './ProfilePortfolioTab.vue';
 import ProfileDividendsTab from './ProfileDividendsTab.vue';
 import ProfileActivityTab from './ProfileActivityTab.vue';

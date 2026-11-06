@@ -50,27 +50,40 @@ export class InPoolV4ChainAdapter extends LaunchpadChainAdapter {
     }
     const split = revenueSplitToBps(params.revenueSplit);
 
-    const hash = await walletClient.writeContract({
-      address: factory,
-      abi: launchpadV2FactoryArcAbi,
-      functionName: 'launchToken',
-      args: [
-        {
-          name: params.name,
-          symbol: params.symbol,
-          logo: params.logo,
-          description: params.description,
-          twitter: params.socials.twitter ?? '',
-          telegram: params.socials.telegram ?? '',
-          website: params.socials.website ?? '',
-        },
-        { buyTaxBps, sellTaxBps, ...split },
-        params.minInitialTokensOut ?? 0n,
-      ],
-      value: this.network.launchConfig.launchFeeWei + (prebuyWei / this.quoteUnit) * this.quoteUnit,
-      account,
-      chain: walletClient.chain,
-    });
+    const launchArgs = [
+      {
+        name: params.name,
+        symbol: params.symbol,
+        logo: params.logo,
+        description: params.description,
+        twitter: params.socials.twitter ?? '',
+        telegram: params.socials.telegram ?? '',
+        website: params.socials.website ?? '',
+      },
+      { buyTaxBps, sellTaxBps, ...split },
+      params.minInitialTokensOut ?? 0n,
+    ] as const;
+    const value =
+      this.network.launchConfig.launchFeeWei + (prebuyWei / this.quoteUnit) * this.quoteUnit;
+    const hash = params.vesting
+      ? await walletClient.writeContract({
+          address: factory,
+          abi: launchpadV2FactoryArcAbi,
+          functionName: 'launchTokenWithVesting',
+          args: [...launchArgs, params.vesting.cliffSeconds, params.vesting.durationSeconds],
+          value,
+          account,
+          chain: walletClient.chain,
+        })
+      : await walletClient.writeContract({
+          address: factory,
+          abi: launchpadV2FactoryArcAbi,
+          functionName: 'launchToken',
+          args: launchArgs,
+          value,
+          account,
+          chain: walletClient.chain,
+        });
 
     const receipt = await this.confirmLaunch(hash, walletClient, publicClient, onHashEmitted);
     if (!receipt) return null;

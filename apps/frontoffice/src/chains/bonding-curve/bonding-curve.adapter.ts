@@ -79,31 +79,50 @@ export class BondingCurveChainAdapter extends LaunchpadChainAdapter {
       ? revenueSplitToBps(params.revenueSplit)
       : { holdersBps: 0, burnBps: 0, creatorBps: 0, liquidityBps: 0 };
     const configured = buyTaxBps > 0 || sellTaxBps > 0 || withSplit;
-    const inLaunchTx = configured && (await factoryTakesLaunchConfig(publicClient, factory));
+    // Vesting exists only on factories that also take the config in the launch transaction.
+    if (params.vesting && initialBuyWei === 0n) {
+      throw new Error('Vesting locks your initial buy, so it needs an initial buy above 0.');
+    }
+    const inLaunchTx =
+      configured &&
+      (Boolean(params.vesting) || (await factoryTakesLaunchConfig(publicClient, factory)));
     const value = this.network.launchConfig.launchFeeWei + initialBuyWei;
-    const hash = inLaunchTx
+    const taxConfig = { buyTaxBps, sellTaxBps, taxRecipient: params.creatorTaxWallet ?? account };
+    const hash = params.vesting
       ? await walletClient.writeContract({
           address: factory,
           abi: launchpadV2FactoryAbi,
-          functionName: 'launchTokenV2WithConfig',
+          functionName: 'launchTokenV2WithVesting',
           args: [
             ...launchArgs,
-            { buyTaxBps, sellTaxBps, taxRecipient: params.creatorTaxWallet ?? account },
+            taxConfig,
             split,
+            params.vesting.cliffSeconds,
+            params.vesting.durationSeconds,
           ],
           value,
           account,
           chain: walletClient.chain,
         })
-      : await walletClient.writeContract({
-          address: factory,
-          abi: launchpadV2FactoryAbi,
-          functionName: 'launchTokenV2',
-          args: launchArgs,
-          value,
-          account,
-          chain: walletClient.chain,
-        });
+      : inLaunchTx
+        ? await walletClient.writeContract({
+            address: factory,
+            abi: launchpadV2FactoryAbi,
+            functionName: 'launchTokenV2WithConfig',
+            args: [...launchArgs, taxConfig, split],
+            value,
+            account,
+            chain: walletClient.chain,
+          })
+        : await walletClient.writeContract({
+            address: factory,
+            abi: launchpadV2FactoryAbi,
+            functionName: 'launchTokenV2',
+            args: launchArgs,
+            value,
+            account,
+            chain: walletClient.chain,
+          });
 
     const receipt = await this.confirmLaunch(hash, walletClient, publicClient, onHashEmitted);
     if (!receipt) return null;

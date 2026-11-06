@@ -14,6 +14,8 @@ export interface ChainLaunchParams {
   creatorTaxWallet?: `0x${string}`;
   /** UI revenue split percentages (creator / buyback / holders / growth). */
   revenueSplit?: { creator: number; buyback: number; holders: number; growth: number };
+  /** Lock the creator's initial buy in the factory's vesting vault (seconds from the launch). */
+  vesting?: { cliffSeconds: bigint; durationSeconds: bigint };
 }
 
 export interface ChainLaunchResult {
@@ -43,6 +45,9 @@ export interface ChainSwapParams {
 export interface ChainAdapter {
   readonly network: NetworkConfig;
   readonly chainId: number;
+
+  /** The factory's vesting vault; null when this network's factory cannot vest a launch buy. */
+  readVestingVault(publicClient: PublicClient): Promise<`0x${string}` | null>;
 
   launchToken(
     params: ChainLaunchParams,

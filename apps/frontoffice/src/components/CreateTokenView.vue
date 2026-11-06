@@ -256,6 +256,13 @@
             is recommended to seed initial liquidity.
           </p>
 
+          <CreateTokenVesting
+            v-if="vestingVault && initialBuy > 0"
+            v-model:enabled="vestingEnabled"
+            v-model:cliff-days="vestingCliffDays"
+            v-model:duration-days="vestingDurationDays"
+          />
+
           <!-- Quick percentage selectors for initial buy -->
           <div
             v-if="isConnected && Number(formattedBalance) > 0"
@@ -447,7 +454,17 @@ import {
   calculateLaunchTotalDue,
   getLaunchModel,
 } from '@goton/math-sdk';
-import { CreateTokenAdvancedSection, LaunchProgressModal } from './create';
+import { getChainAdapter } from '@/chains';
+import { getPublicClient } from '@/lib/viem-client';
+import {
+  VESTING_DEFAULT_CLIFF_DAYS,
+  VESTING_DEFAULT_DURATION_DAYS,
+  VESTING_MAX_DAYS,
+  VESTING_MIN_DAYS,
+  validateVesting,
+  vestingDaysToSeconds,
+} from '@/lib/vesting';
+import { CreateTokenAdvancedSection, CreateTokenVesting, LaunchProgressModal } from './create';
 
 const { t } = useI18n();
 const emit = defineEmits<{
@@ -634,6 +651,25 @@ const dragOver = ref(false);
 const isUploadingIpfs = ref(false);
 const imageError = ref('');
 const advancedOpen = ref(false);
+
+// Offered only where the deployed factory can vest; other factories would revert the launch.
+const vestingVault = ref<`0x${string}` | null>(null);
+const vestingEnabled = ref(false);
+const vestingCliffDays = ref(String(VESTING_DEFAULT_CLIFF_DAYS));
+const vestingDurationDays = ref(String(VESTING_DEFAULT_DURATION_DAYS));
+const initialBuy = computed(() => parseFloat(String(form.value.initialBuyEth)) || 0);
+const vestingActive = computed(
+  () => Boolean(vestingVault.value) && vestingEnabled.value && initialBuy.value > 0,
+);
+watch(
+  () => activeNetwork.value.chainId,
+  async (chainId) => {
+    vestingVault.value = null;
+    const vault = await getChainAdapter(chainId).readVestingVault(getPublicClient(chainId));
+    if (activeNetwork.value.chainId === chainId) vestingVault.value = vault;
+  },
+  { immediate: true },
+);
 function clearImage() {
   selectedFileName.value = '';
   imagePreview.value = '';
@@ -729,6 +765,23 @@ async function handleLaunch() {
     );
     return;
   }
+  if (vestingActive.value) {
+    const vestingError = validateVesting(
+      Number(vestingCliffDays.value),
+      Number(vestingDurationDays.value),
+    );
+    if (vestingError) {
+      toast.error(
+        vestingError === 'duration'
+          ? t('vestingErrorDuration', {
+              min: String(VESTING_MIN_DAYS),
+              max: String(VESTING_MAX_DAYS),
+            })
+          : t('vestingErrorCliff'),
+      );
+      return;
+    }
+  }
   const recipients = planRecipients(feeRecipients.value, account.value);
   if (!recipients.ok) {
     advancedOpen.value = true;
@@ -802,6 +855,12 @@ async function handleLaunch() {
     sellTaxPercent: parseFloat(form.value.sellTax || '0'),
     creatorTaxWallet: toCreator ? undefined : recipient,
     revenueSplit: { ...revenueSplit.value },
+    vesting: vestingActive.value
+      ? {
+          cliffSeconds: vestingDaysToSeconds(Number(vestingCliffDays.value)),
+          durationSeconds: vestingDaysToSeconds(Number(vestingDurationDays.value)),
+        }
+      : undefined,
   });
 
   if (result) {
