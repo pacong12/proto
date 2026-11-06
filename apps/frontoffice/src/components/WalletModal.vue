@@ -268,6 +268,7 @@ import { appKitConfigured, getAppKit } from '../lib/appkit-loader';
 import { useI18n } from '@/lib/i18n';
 import { useWallet } from '../composables/useWallet';
 import { switchProviderNetwork } from '../lib/wallet-network';
+import type { Eip6963ProviderDetail } from '../lib/eip6963';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -311,11 +312,6 @@ const scanning = ref(true);
 const connectingId = ref<string | null>(null);
 const error = ref<string | null>(null);
 const copied = ref(false);
-
-interface Eip6963ProviderDetail {
-  info: { uuid: string; name: string; icon: string; rdns: string };
-  provider: WalletProviderLike;
-}
 
 const listeners: Array<() => void> = [];
 

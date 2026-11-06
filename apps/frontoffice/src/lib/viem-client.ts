@@ -17,7 +17,7 @@ import {
   toViemChain,
   type NetworkConfig,
 } from '@goton/shared-types';
-import { walletProvider, walletChainId, STORAGE_PROVIDER_ID_KEY } from './wallet-store';
+import { walletProvider, walletChainId } from './wallet-store';
 import { assertTermsAccepted } from './consent';
 
 // ---------------------------------------------------------------------------
@@ -120,42 +120,9 @@ export async function getWalletClient(): Promise<WalletClient | null> {
     }
   }
 
-  // 2. Direct isolated provider fallback
-  let provider = walletProvider.value;
-
-  if (typeof window !== 'undefined') {
-    const win = window as unknown as Record<string, unknown>;
-    const bitget =
-      (win.bitget as { ethereum?: unknown } | undefined)?.ethereum ||
-      (win.bitkeep as { ethereum?: unknown } | undefined)?.ethereum ||
-      (win.bitgetWallet as { ethereum?: unknown } | undefined)?.ethereum ||
-      (
-        win.ethereum as
-          { providers?: Array<{ isBitKeep?: boolean; isBitget?: boolean }> } | undefined
-      )?.providers?.find((p) => p.isBitKeep || p.isBitget);
-
-    const okx = win.okxwallet as unknown | undefined;
-
-    const storedId =
-      (typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_PROVIDER_ID_KEY) : '') ||
-      '';
-
-    const isExplicitOkx = storedId.toLowerCase().includes('okx');
-    const isBitgetPreferred =
-      storedId.toLowerCase().includes('bitget') ||
-      storedId.toLowerCase().includes('bitkeep') ||
-      storedId.toLowerCase().includes('web3');
-
-    // If Bitget is installed in the browser:
-    // When user preferred Bitget, OR when user did not explicitly pick OKX,
-    // ALWAYS route to Bitget directly to bypass OKX's window.ethereum hijacking.
-    if (bitget && (isBitgetPreferred || !isExplicitOkx)) {
-      provider = bitget as typeof walletProvider.value;
-    } else if (okx && isExplicitOkx) {
-      provider = okx as typeof walletProvider.value;
-    }
-  }
-
+  // 2. The wallet the user connected. Being installed is not being chosen, so no other extension
+  // may take over here: a transaction would prompt in a wallet the user did not pick.
+  const provider = walletProvider.value;
   if (!provider) return null;
   return guardWalletWrites(
     createWalletClientFromProvider(provider, walletChainId.value ?? undefined),
