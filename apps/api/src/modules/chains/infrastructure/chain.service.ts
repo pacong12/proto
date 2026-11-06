@@ -18,7 +18,7 @@ export class ChainService implements IChainService {
     this.chainId = network.chainId;
     this.name = network.name;
     this.quoteSymbol = network.nativeCurrency.symbol;
-    this.quoteDecimals = network.nativeCurrency.decimals;
+    this.quoteDecimals = network.quoteTokenDecimals;
   }
 
   async getQuotePriceUsd(): Promise<number> {
