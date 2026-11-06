@@ -76,7 +76,8 @@ export function startBackgroundJobs(): void {
   // ---------------------------------------------------------------------------
   // TWAP-guarded buyback keeper (AUD-HIGH-05 / TKT-06). Enabled with KEEPER_PRIVATE_KEY; the
   // contract enforces the price guard, so the key only pays gas and can never pick a bad price.
-  // The same keeper pays the splitters' accrued protocol and liquidity shares to their vaults.
+  // The same keeper first collects each pool's LP fees into its splitter (holder dividends,
+  // creator, burn and protocol shares), then pays the accrued protocol and liquidity shares.
   // ---------------------------------------------------------------------------
   /** docker-compose passes unset variables as empty strings; treat those as unset. */
   const envOr = (name: string, fallback: string): string => process.env[name]?.trim() || fallback;
