@@ -18,7 +18,6 @@ import { ChainIndexerPart } from './indexer-context';
 
 /** Curve trades, V1 and V4 pool swaps, and curve trade history backfills. */
 export class TradeIndexer extends ChainIndexerPart {
-
   async pollV2Trades(from: bigint, to: bigint): Promise<number> {
     // Every v2 token's curve, graduated ones included: graduation replaces poolAddress with the v4
     // pool id, and a range can hold the curve's last trades and the graduation together.
