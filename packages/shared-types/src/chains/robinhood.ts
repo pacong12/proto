@@ -1,5 +1,5 @@
 import type { NetworkConfig } from './types';
-import { getEnv, getEnvBigInt } from './env';
+import { getEnv, getEnvAddresses, getEnvBigInt } from './env';
 
 /**
  * Robinhood Chain (Chain ID: 4663)
@@ -94,6 +94,7 @@ export const ROBINHOOD_NETWORK: NetworkConfig = {
       'ROBINHOOD_LIMIT_ORDERS',
       '0x2f3212D06104eEbb5bA4FA934B9B55b906dC3F61',
     ) as `0x${string}`,
+    limitOrdersPrevious: getEnvAddresses('ROBINHOOD_LIMIT_ORDERS_PREVIOUS'),
     teamSplitterFactory: getEnv(
       'ROBINHOOD_TEAM_SPLITTER_FACTORY',
       '0xF2187BdcDcdB0999Bf1143b18089dc37c09f7Ef4',

@@ -47,6 +47,9 @@ can fall back to the previous stack. Env vars override them (`ROBINHOOD_FACTORY_
 `ROBINHOOD_LIMIT_ORDERS`, `ROBINHOOD_TEAM_SPLITTER_FACTORY`, and the `ARC_*` equivalents), with a
 `VITE_` prefix for the frontend build.
 
+- [ ] A new `GotonLimitOrders` does not take over the old one's open orders: add the old address
+      to `limitOrdersPrevious` (or `ROBINHOOD_LIMIT_ORDERS_PREVIOUS`, comma-separated, oldest
+      first), so the API keeps indexing and filling those orders and owners can cancel them.
 - [ ] Defaults updated and `bun nx run-many -t test typecheck` passes.
 - [ ] There is no start-block setting: an empty database indexes from the chain head minus
       `INDEXER_MAX_BLOCK_RANGE` (2,000 blocks, about 3.5 minutes on Robinhood Chain). Start the API

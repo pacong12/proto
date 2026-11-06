@@ -1,5 +1,5 @@
 import { UNDEPLOYED, type NetworkConfig } from './types';
-import { getEnv, getEnvBigInt } from './env';
+import { getEnv, getEnvAddresses, getEnvBigInt } from './env';
 
 /** Canonical Goton curve address for Arc Network (legacy bonding-curve launches). */
 export const ARC_PROTO_CURVE_ADDRESS = getEnv(
@@ -90,6 +90,7 @@ export const ARC_NETWORK: NetworkConfig = {
       'ARC_LIMIT_ORDERS',
       '0x3983F223E7Ef0B3c24b3a8F76Db96ed4Bf349Ee6',
     ) as `0x${string}`,
+    limitOrdersPrevious: getEnvAddresses('ARC_LIMIT_ORDERS_PREVIOUS'),
     teamSplitterFactory: getEnv(
       'ARC_TEAM_SPLITTER_FACTORY',
       '0x1F64014D2fA9B8Dd277E2Fbd6581553916175C09',

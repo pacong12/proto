@@ -33,3 +33,11 @@ export function getEnvBigInt(key: string, fallback: bigint): bigint {
     return fallback;
   }
 }
+
+/** A comma-separated list of addresses (empty when unset). */
+export function getEnvAddresses(key: string): `0x${string}`[] {
+  return getEnv(key, '')
+    .split(',')
+    .map((a) => a.trim())
+    .filter((a) => /^0x[0-9a-fA-F]{40}$/.test(a)) as `0x${string}`[];
+}
