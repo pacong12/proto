@@ -242,6 +242,7 @@ contract LaunchpadV2Factory is EmergencyPause {
      *         and reverts without an initial buy to lock. A separate function, so launchTokenV2 and
      *         launchTokenV2WithConfig keep their selectors and existing callers never reach the vault.
      */
+    // slither-disable-next-line unused-return (the schedule id is not needed; see docs/audit/AUDIT-VERIFICATION.md)
     function launchTokenV2WithVesting(
         string memory name,
         string memory symbol,

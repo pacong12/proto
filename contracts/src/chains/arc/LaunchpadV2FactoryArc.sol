@@ -211,6 +211,7 @@ contract LaunchpadV2FactoryArc is IUnlockCallback, EmergencyPause {
      *         `vestingCliff`. The vault enforces the bounds (cliff <= duration, 7 days to 4 years). A
      *         separate function, so launchToken keeps its selector and never reaches the vault.
      */
+    // slither-disable-next-line unused-return (the schedule id is not needed; see docs/audit/AUDIT-VERIFICATION.md)
     function launchTokenWithVesting(
         TokenMetadata calldata meta,
         TaxConfig calldata tax,

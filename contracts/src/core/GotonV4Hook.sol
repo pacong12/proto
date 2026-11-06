@@ -280,6 +280,7 @@ contract GotonV4Hook is IUnlockCallback {
      *         burn, creator, liquidity). Callable by anyone; keepers call it with collectFees.
      * @return amount Quote paid out.
      */
+    // slither-disable-next-line incorrect-equality,unused-return (exact zero check; unlock returns nothing used; see docs/audit/AUDIT-VERIFICATION.md)
     function flushTaxes(bytes32 poolId) external returns (uint256 amount) {
         PoolConfig storage cfg = pools[poolId];
         amount = pendingTax[poolId];
@@ -333,6 +334,7 @@ contract GotonV4Hook is IUnlockCallback {
      * @dev The accumulator at `target`, or at the latest point before it that is known exactly (at
      *      most SNAPSHOT_SPACING earlier). Snapshots are in time order in the ring; binary search.
      */
+    // slither-disable-next-line weak-prng (ring buffer index, not randomness; see docs/audit/AUDIT-VERIFICATION.md)
     function _cumulativeAt(bytes32 poolId, Oracle memory o, uint32 target)
         private
         view
@@ -370,6 +372,7 @@ contract GotonV4Hook is IUnlockCallback {
     /// @dev Accumulates the tick that prevailed since the last swap (read before this swap moves
     ///      it) and, at most once per SNAPSHOT_SPACING, records a snapshot.
     // slither-disable-next-line incorrect-equality,unused-return (exact zero / same-block checks; unused tuple fields; see docs/audit/AUDIT-VERIFICATION.md)
+    // slither-disable-next-line weak-prng,incorrect-equality,unused-return (ring index; one write per block; tuple field; see docs/audit/AUDIT-VERIFICATION.md)
     function _writeOracle(bytes32 id) private {
         Oracle storage o = oracles[id];
         uint32 nowTs = uint32(block.timestamp);
