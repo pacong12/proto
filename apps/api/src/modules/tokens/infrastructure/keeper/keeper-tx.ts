@@ -19,10 +19,19 @@ export async function sendAndWait(
 ): Promise<{ txHash: `0x${string}`; pending: boolean; reverted: boolean }> {
   // Without an estimate the wallet estimates itself, as before.
   const estimate = await publicClient.estimateContractGas?.(request as never).catch(() => null);
-  const txHash = await walletClient.writeContract({
-    ...(request as object),
-    ...(estimate ? { gas: (estimate * (100n + GAS_HEADROOM)) / 100n } : {}),
-  } as never);
+  // The request names the keeper by address, which viem would send as eth_sendTransaction for the
+  // node to sign. Public RPCs refuse that, so sign with the wallet's own account.
+  const txHash = await walletClient
+    .writeContract({
+      ...(request as object),
+      ...(walletClient.account ? { account: walletClient.account } : {}),
+      ...(estimate ? { gas: (estimate * (100n + GAS_HEADROOM)) / 100n } : {}),
+    } as never)
+    .catch((e: Error) => {
+      // Callers treat most errors as "not fillable yet", so a failed send must be visible here.
+      console.error('[Keeper] transaction not sent:', e.message.split('\n')[0]);
+      throw e;
+    });
   try {
     const receipt = await publicClient.waitForTransactionReceipt({
       hash: txHash,
