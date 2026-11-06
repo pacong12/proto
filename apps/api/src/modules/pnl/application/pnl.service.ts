@@ -11,10 +11,7 @@ import {
 import { assertAddress, NotFoundError } from '../../../core/errors/app-error';
 import type { SocialStorePort } from '../../tokens';
 import type { TradeStorePort } from '../../tokens';
-import type {
-  GetTokenByAddressUseCase,
-  TokenDetailResult,
-} from '../../tokens';
+import type { GetTokenByAddressUseCase, TokenDetailResult } from '../../tokens';
 import type { GetCandlesticksUseCase } from '../../trades';
 import { positionPnl } from '../domain/position-pnl';
 import type { ChartPoint, ImageLoaderPort, PnlCard, PnlCardRendererPort } from './pnl-card';
