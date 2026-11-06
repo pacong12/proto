@@ -72,14 +72,15 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
     // The tax is fixed in the hook at launch, so the token is listed with it from the first index
     // rather than showing 0% until someone calls /sync.
     const hook = networkConfig.contracts.memeHook;
-    const pool = hook && hook !== zeroAddress
-      ? await client.readContract({
-          address: hook,
-          abi: gotonV4HookAbi,
-          functionName: 'pools',
-          args: [poolId],
-        })
-      : undefined;
+    const pool =
+      hook && hook !== zeroAddress
+        ? await client.readContract({
+            address: hook,
+            abi: gotonV4HookAbi,
+            functionName: 'pools',
+            args: [poolId],
+          })
+        : undefined;
 
     return {
       address: tokenAddress,

@@ -264,10 +264,7 @@
           />
 
           <!-- Quick percentage selectors for initial buy -->
-          <div
-            v-if="isConnected && balanceAmount > 0"
-            class="flex items-center gap-1.5 pt-0.5"
-          >
+          <div v-if="isConnected && balanceAmount > 0" class="flex items-center gap-1.5 pt-0.5">
             <button
               v-for="pct in [10, 25, 50, 75]"
               :key="pct"
