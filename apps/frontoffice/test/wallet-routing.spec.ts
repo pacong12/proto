@@ -142,10 +142,10 @@ describe('reconnecting after a reload', () => {
     expect(owner.request).not.toHaveBeenCalled();
   });
 
-  it('still uses window.ethereum when that is what the user chose', async () => {
+  it.each(['window.ethereum', 'injected'])('still uses window.ethereum for "%s"', async (id) => {
     const owner = fakeWallet(CHOSEN);
     Object.assign(window, { ethereum: owner });
-    storeChoice('window.ethereum');
+    storeChoice(id);
 
     reconnectFromStorage();
 

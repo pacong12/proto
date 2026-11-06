@@ -43,9 +43,11 @@ const isConnecting = ref(false);
 let syncBalancePromise: Promise<void> | null = null;
 let lastSyncTime = 0;
 
-/** Whether the id names one wallet, rather than "whatever owns window.ethereum" or AppKit's session. */
+/** Ids that mean "whatever owns window.ethereum" or AppKit's session, not one particular wallet. */
+const GENERIC_WALLET_IDS = new Set(['', 'injected', 'window.ethereum', 'reown']);
+
 function isSpecificWallet(walletId: string): boolean {
-  return walletId !== '' && walletId !== 'window.ethereum' && walletId !== 'reown';
+  return !GENERIC_WALLET_IDS.has(walletId);
 }
 
 export function useWallet() {
