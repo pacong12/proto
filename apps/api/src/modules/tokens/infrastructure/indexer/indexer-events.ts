@@ -82,3 +82,8 @@ export const BACKFILL_CHUNK = BigInt(process.env.INDEXER_BACKFILL_CHUNK || '2000
 // rate-limited one is retried after these pauses rather than failing the whole history. The
 // fallback RPCs cannot take over: they keep no old history or only accept a few blocks per request.
 export const BACKFILL_RETRY_DELAYS_MS = [2_000, 5_000, 15_000, 30_000];
+
+/** GotonV4Buyback: one token's burn share was spent buying the token back, and the tokens burned. */
+export const BUYBACK_EXECUTED_EVENT = parseAbiItem(
+  'event BuybackExecuted(address indexed token, uint256 quoteSpent, uint256 tokensBurned, int24 twapTick)',
+);

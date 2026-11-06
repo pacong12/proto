@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import type { PublicClient } from 'viem';
-import { ROBINHOOD_CHAIN, type LaunchedTokenEntity } from '@goton/shared-types';
+import { ARC_NETWORK, ROBINHOOD_CHAIN, type LaunchedTokenEntity } from '@goton/shared-types';
 import { EventPollerService } from '../src/modules/tokens/infrastructure/indexer/event-poller.service';
 import { SqliteTokenRepository } from '../src/modules/tokens/infrastructure/adapters/sqlite-token.repository';
 
@@ -85,5 +85,71 @@ describe('v4 swaps after graduation', () => {
       wethAmount: '0.500000',
       timestamp: 1_793_100_000_000,
     });
+  });
+
+  it('reads an Arc swap with the 6-decimal quote from the config, even when the RPC read fails', async () => {
+    const arcToken = hex(20);
+    const arcPoolId = hex(32);
+    const arcTx = hex(32);
+    await repository.save({
+      address: arcToken,
+      name: 'Arc Graduated',
+      symbol: 'ARCG',
+      decimals: 18,
+      totalSupply: '1000000000000000000000000000',
+      logo: '',
+      description: '',
+      socials: {},
+      deployer: WALLET,
+      pairedToken: ARC_NETWORK.contracts.weth,
+      poolAddress: arcPoolId,
+      curveAddress: hex(20),
+      isGraduated: true,
+      isToken0: false,
+      poolFee: 10000,
+      positionId: 0n,
+      restrictionsEndBlock: 0n,
+      launchBlock: 1n,
+      createdAt: 1_793_000_000_000,
+      initialBuyAmount: '0',
+      version: 'v2',
+    } as LaunchedTokenEntity);
+
+    const client = {
+      // Buy: the swapper pays 2.5 USDC (6 decimals) and receives 1,000 tokens (18 decimals).
+      getLogs: async () => [
+        {
+          args: {
+            id: arcPoolId,
+            sender: ROUTER,
+            amount0: -2_500_000n,
+            amount1: 1_000_000_000_000_000_000_000n,
+          },
+          blockNumber: 600n,
+          logIndex: 3,
+          transactionHash: arcTx,
+        },
+      ],
+      getBlock: async () => ({ timestamp: 1_793_100_000n }),
+      getTransaction: async () => ({ from: WALLET }),
+      readContract: async () => {
+        throw new Error('RPC unavailable');
+      },
+    } as unknown as PublicClient;
+    const poller = new EventPollerService(
+      client,
+      repository,
+      {} as never,
+      {} as never,
+      { getQuoteAssetPriceUsd: async () => 1 } as never,
+      { ...ARC_NETWORK, contracts: { ...ARC_NETWORK.contracts, poolManagerV4: hex(20) } },
+    );
+
+    expect(await poller.trades.pollV4Swaps(600n, 600n)).toBe(1);
+
+    const [trade] = await repository.getTrades(arcToken, 10, 0);
+    expect(trade).toMatchObject({ wethAmount: '2.500000', tokenAmount: '1000.0000' });
+    expect(trade.priceQuote).toBeCloseTo(0.0025, 10);
+    expect(trade.priceUsd).toBeCloseTo(0.0025, 10);
   });
 });

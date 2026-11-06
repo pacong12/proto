@@ -10,6 +10,7 @@ import { LaunchIndexer } from './launch.indexer';
 import { TradeIndexer } from './trade.indexer';
 import { HolderIndexer } from './holder.indexer';
 import { LimitOrderIndexer } from './limit-order.indexer';
+import { BuybackIndexer } from './buyback.indexer';
 
 export {
   TOKEN_LAUNCHED_V2_EVENT,
@@ -28,6 +29,7 @@ export class EventPollerService {
   readonly trades: TradeIndexer;
   readonly holders: HolderIndexer;
   readonly limitOrders: LimitOrderIndexer;
+  readonly buybacks: BuybackIndexer;
 
   constructor(
     client: PublicClient,
@@ -49,6 +51,7 @@ export class EventPollerService {
     this.trades = new TradeIndexer(this.context);
     this.holders = new HolderIndexer(this.context);
     this.limitOrders = new LimitOrderIndexer(this.context);
+    this.buybacks = new BuybackIndexer(this.context);
   }
 
   /** Pause used by backfills; tests replace it. */
@@ -191,6 +194,7 @@ export class EventPollerService {
     count += await this.trades.pollV1Swaps(from, to);
     count += await this.trades.pollV4Swaps(from, to);
     count += await this.limitOrders.pollLimitOrders(from, to);
+    count += await this.buybacks.pollBuybacks(from, to);
     count += await this.holders.pollTransfers(from, to);
     return count;
   }

@@ -2,7 +2,7 @@ import { isMemestock, memestockSignals } from '../application/memestock';
 import { SPARKLINE_POINTS, sparklineSince } from '../application/sparkline';
 import { findAllTokens } from '../application/all-tokens';
 import { logger } from '../../observability';
-import { type Address } from 'viem';
+import { formatUnits, type Address } from 'viem';
 import {
   gotonFeeSplitterAbi,
   gotonV4GraduatorAbi,
@@ -11,6 +11,8 @@ import {
   launchpadTokenAbi,
   resolveTokenNetwork,
   resolveNetworkByParam,
+  CHAINS,
+  type NetworkConfig,
   isAddress,
   ok,
   err,
@@ -24,6 +26,25 @@ import {
 } from '../../../core/http/cached-reply';
 import type { Router } from '../../../core/http/router';
 import type { AppContainer } from '../../../app/container';
+
+/** Width of one /api/analytics chart bucket (six per 24h). */
+const ANALYTICS_BUCKET_MS = 4 * 60 * 60 * 1000;
+
+/**
+ * The configured network a chain param names exactly (chain ID, slug, name or alias), or null.
+ * Unlike resolveNetworkByParam it never falls back to the default network.
+ */
+function findNetworkStrict(param?: string | null): NetworkConfig | null {
+  const p = (param || '').toLowerCase().trim();
+  if (!p) return null;
+  return (
+    CHAINS.find((net) =>
+      [String(net.chainId), net.slug, net.name, ...(net.aliases ?? [])].some(
+        (key) => key.toLowerCase() === p,
+      ),
+    ) ?? null
+  );
+}
 
 /** HTTP routes of the tokens module, registered in the order they are matched. */
 export function registerTokensRoutes(router: Router, deps: AppContainer): void {
@@ -632,115 +653,142 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
     },
   );
 
-  // GET /api/analytics
-  router.on('GET', '/api/analytics', async ({ url, replyJson }) => {
-    // ?chainId= (or ?chain=) scopes every figure to one network; without it, all networks.
+  // GET /api/analytics?chainId= (or ?chain=) — protocol figures of ONE network. The chain is
+  // required and must name a configured network exactly: an unknown one is a 400, never another
+  // network's data, and figures (and USD sums) are never mixed across chains.
+  router.on('GET', '/api/analytics', async ({ url, replyJson, replyError }) => {
     const chainParam = url.searchParams.get('chainId') || url.searchParams.get('chain');
-    const scopedNetwork = chainParam ? resolveNetworkByParam(chainParam) : null;
-    const cacheKey = `protocol:analytics:${scopedNetwork?.chainId ?? 'all'}`;
-    return replyCached(cache, replyJson, cacheKey, 30, async () => {
-      // Fetch tokens (metadata only — no trades loop) and aggregate volume via a single SQL query.
-      // Previous approach: N+1 — one getTrades() call per token. Replaced with getVolumeByToken()
-      // which executes one GROUP BY query returning (tokenAddress, totalWeth) for the 24h window.
-      const tokens = (await findAllTokens(repository)).filter(
-        (t) => !scopedNetwork || resolveTokenNetwork(t).chainId === scopedNetwork.chainId,
+    const network = findNetworkStrict(chainParam);
+    const chain = network
+      ? chainRegistry.getAllChains().find((c) => c.chainId === network.chainId)
+      : undefined;
+    if (!network || !chain) {
+      return replyError(
+        'INVALID_PARAM',
+        chainParam
+          ? `Unknown chain "${chainParam.slice(0, 64)}"; expected one of: ${CHAINS.map((n) => `${n.chainId} (${n.slug})`).join(', ')}`
+          : 'chainId (or chain) is required: analytics are reported per network',
+        400,
       );
-      const totalTokens = tokens.length;
-      let totalVolumeUsd = 0;
-
+    }
+    const cacheKey = `protocol:analytics:v2:${network.chainId}`;
+    return replyCached(cache, replyJson, cacheKey, 30, async () => {
       const now = Date.now();
-      const fourHoursMs = 4 * 60 * 60 * 1000;
-      const dayAgoMs = now - 24 * 60 * 60 * 1000;
+      const dayMs = 24 * 60 * 60 * 1000;
+      const dayAgoMs = now - dayMs;
 
-      const timeSlots = [
-        { label: '00:00', value: 0 },
-        { label: '04:00', value: 0 },
-        { label: '08:00', value: 0 },
-        { label: '12:00', value: 0 },
-        { label: '16:00', value: 0 },
-        { label: '20:00', value: 0 },
-        { label: '24:00', value: 0 },
-      ];
-      const tokenLaunchSlots = [
-        { label: '00:00', value: 0 },
-        { label: '04:00', value: 0 },
-        { label: '08:00', value: 0 },
-        { label: '12:00', value: 0 },
-        { label: '16:00', value: 0 },
-        { label: '20:00', value: 0 },
-        { label: '24:00', value: 0 },
-      ];
+      const tokens = (await findAllTokens(repository)).filter(
+        (t) => resolveTokenNetwork(t).chainId === network.chainId,
+      );
+      const tokenByAddress = new Map(tokens.map((t) => [t.address.toLowerCase(), t]));
 
+      // Six 4-hour buckets, oldest first, ending now. `start`/`end` are epoch ms so the client
+      // can label them in local time; `label` is the bucket's end relative to now.
+      const bucketMs = ANALYTICS_BUCKET_MS;
+      const bucketCount = Math.round(dayMs / bucketMs);
+      const bucketOf = (ts: number): number => {
+        const age = now - ts;
+        if (age < 0 || age >= dayMs) return -1;
+        return bucketCount - 1 - Math.floor(age / bucketMs);
+      };
+      const makeBuckets = () =>
+        Array.from({ length: bucketCount }, (_, i) => {
+          const end = now - (bucketCount - 1 - i) * bucketMs;
+          const hoursAgo = Math.round((now - end) / 3_600_000);
+          return {
+            label: hoursAgo === 0 ? 'now' : `-${hoursAgo}h`,
+            start: end - bucketMs,
+            end,
+            value: 0,
+          };
+        });
+      const volumeHistory = makeBuckets();
+      const tokenHistory = makeBuckets();
+      const feeHistory = makeBuckets();
+
+      let tokensLaunched24h = 0;
       for (const t of tokens) {
-        if (t.createdAt) {
-          const age = now - t.createdAt;
-          if (age >= 0 && age < 24 * 60 * 60 * 1000) {
-            tokenLaunchSlots[6 - Math.min(6, Math.floor(age / fourHoursMs))].value += 1;
-          }
+        const i = t.createdAt ? bucketOf(t.createdAt) : -1;
+        if (i >= 0) {
+          tokenHistory[i].value += 1;
+          tokensLaunched24h += 1;
         }
       }
 
+      const quotePriceUsd = await chain.getQuotePriceUsd();
       const ethPriceUsd = await priceFeed.getEthPriceUsd();
-      const quoteUsdByChain = new Map(
-        await Promise.all(
-          chainRegistry
-            .getAllChains()
-            .map(async (chain) => [chain.chainId, await chain.getQuotePriceUsd()] as const),
-        ),
-      );
-      // token address → USD price of its quote asset; also limits the figures to `tokens`.
-      const tokenQuoteUsd = new Map<string, number>();
-      for (const t of tokens) {
-        tokenQuoteUsd.set(
-          t.address.toLowerCase(),
-          quoteUsdByChain.get(resolveTokenNetwork(t).chainId) ?? 0,
-        );
-      }
 
-      // Single aggregate query replaces the N+1 loop.
-      const volumeRows = repository.getVolumeByToken
-        ? await repository.getVolumeByToken(dayAgoMs)
-        : [];
-      for (const row of volumeRows) {
-        const quotePriceUsd = tokenQuoteUsd.get(row.tokenAddress.toLowerCase());
-        if (quotePriceUsd === undefined) continue; // other network
-        const tradeUsd = row.totalWeth * quotePriceUsd;
-        totalVolumeUsd += tradeUsd;
-      }
-
-      // Populate 24h volume history time slots with real trade volume
+      // Volume and tax: every indexed trade of this network's tokens in the last 24h, in quote.
+      let totalVolumeQuote = 0;
+      let taxFeesQuote = 0;
+      let tradesWithoutTaxData = 0;
       const trades24h = repository.getTradesSince ? await repository.getTradesSince(dayAgoMs) : [];
       for (const tr of trades24h) {
-        const age = now - tr.timestamp;
-        if (
-          age >= 0 &&
-          age < 24 * 60 * 60 * 1000 &&
-          tokenQuoteUsd.has(tr.tokenAddress.toLowerCase())
-        ) {
-          const slotIdx = 6 - Math.min(6, Math.floor(age / fourHoursMs));
-          const quotePriceUsd = tokenQuoteUsd.get(tr.tokenAddress.toLowerCase())!;
-          const tradeUsd = parseFloat(tr.wethAmount || '0') * quotePriceUsd;
-          timeSlots[slotIdx].value += Math.round(tradeUsd);
+        const token = tokenByAddress.get(tr.tokenAddress.toLowerCase());
+        if (!token) continue; // another network's token
+        const i = bucketOf(tr.timestamp);
+        if (i < 0) continue;
+        const quote = parseFloat(tr.wethAmount || '0');
+        if (!Number.isFinite(quote) || quote <= 0) continue;
+        totalVolumeQuote += quote;
+        volumeHistory[i].value += quote * quotePriceUsd;
+        // Each token has its own buy/sell tax; there is no flat protocol swap fee.
+        const taxBps = tr.isBuy ? token.taxConfig?.buyTaxBps : token.taxConfig?.sellTaxBps;
+        if (taxBps === undefined || taxBps === null) {
+          tradesWithoutTaxData += 1;
+          continue;
         }
+        const tax = (quote * taxBps) / 10_000;
+        taxFeesQuote += tax;
+        feeHistory[i].value += tax * quotePriceUsd;
       }
+      for (const b of [...volumeHistory, ...feeHistory]) b.value = Math.round(b.value * 100) / 100;
+      const totalVolumeUsd = totalVolumeQuote * quotePriceUsd;
 
-      // Buyback estimate: 1% fee * 30% protocol share * 80% allocated to buyback
-      const totalBuybackUsd = (totalVolumeUsd * 0.01 * 0.3 * 0.8).toFixed(2);
+      // Buyback & burn: real BuybackExecuted events indexed from this network's GotonV4Buyback.
+      const burns = (await repository.getBuybackTotals?.(String(network.chainId))) ?? {
+        totalBurns: 0,
+        totalTokensBurned: '0',
+        totalQuoteSpent: '0',
+      };
+      const buybackQuote = formatUnits(BigInt(burns.totalQuoteSpent), network.quoteTokenDecimals);
 
-      const payload = {
+      return {
         success: true,
         data: {
-          totalVolume: Math.round(totalVolumeUsd),
-          totalTokens: totalTokens,
-          totalBuyback: totalBuybackUsd,
-          totalVolumeUsd: totalVolumeUsd.toFixed(2),
+          chainId: network.chainId,
+          network: network.name,
+          quoteSymbol: network.nativeCurrency.symbol,
+          quoteDecimals: network.quoteTokenDecimals,
+          quotePriceUsd,
           ethPriceUsd,
-          volumeHistory: timeSlots,
-          tokenHistory: tokenLaunchSlots,
+          windowStart: dayAgoMs,
+          windowEnd: now,
+          bucketMs,
+          totalTokens: tokens.length,
+          tokensLaunched24h,
+          totalVolume: Math.round(totalVolumeUsd),
+          totalVolumeUsd: totalVolumeUsd.toFixed(2),
+          totalVolumeQuote: totalVolumeQuote.toFixed(6),
+          buyback: {
+            source: 'indexed' as const,
+            totalBurns: burns.totalBurns,
+            totalBurnedTokens: formatUnits(BigInt(burns.totalTokensBurned), 18),
+            totalBuybackQuote: buybackQuote,
+            totalBuybackUsd: (Number(buybackQuote) * quotePriceUsd).toFixed(2),
+          },
+          taxFees: {
+            estimated: true,
+            totalQuote: taxFeesQuote.toFixed(6),
+            totalUsd: (taxFeesQuote * quotePriceUsd).toFixed(2),
+            tradesWithoutTaxData,
+          },
+          volumeHistory,
+          tokenHistory,
+          feeHistory,
         },
-        timestamp: Date.now(),
+        timestamp: now,
       };
-      return payload;
     });
   });
 
