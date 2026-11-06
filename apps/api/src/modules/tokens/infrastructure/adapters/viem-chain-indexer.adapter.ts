@@ -63,32 +63,29 @@ export class ViemChainIndexerAdapter implements ChainIndexerPort {
     creator: Address,
     prebuyQuote: bigint,
     networkConfig: NetworkConfig,
-  ): Promise<LaunchedTokenEntity | null> {
-    try {
-      const metadata = await readTokenMetadata(this.getClient(networkConfig), tokenAddress);
-      const quote = networkConfig.contracts.weth;
+  ): Promise<LaunchedTokenEntity> {
+    // A failed read throws: the poller retries the range instead of losing the launch for good.
+    const metadata = await readTokenMetadata(this.getClient(networkConfig), tokenAddress);
+    const quote = networkConfig.contracts.weth;
 
-      return {
-        address: tokenAddress,
-        ...metadata,
-        totalSupply: metadata.totalSupply.toString(),
-        deployer: creator,
-        pairedToken: quote,
-        poolAddress: poolId,
-        isToken0: BigInt(tokenAddress) < BigInt(quote),
-        poolFee: networkConfig.launchConfig.poolFee,
-        positionId: 0n,
-        restrictionsEndBlock: 0n,
-        launchBlock: 0n,
-        createdAt: Date.now(),
-        initialBuyAmount: prebuyQuote.toString(),
-        version: 'v4',
-        isGraduated: false,
-        chainId: networkConfig.chainId,
-      };
-    } catch {
-      return null;
-    }
+    return {
+      address: tokenAddress,
+      ...metadata,
+      totalSupply: metadata.totalSupply.toString(),
+      deployer: creator,
+      pairedToken: quote,
+      poolAddress: poolId,
+      isToken0: BigInt(tokenAddress) < BigInt(quote),
+      poolFee: networkConfig.launchConfig.poolFee,
+      positionId: 0n,
+      restrictionsEndBlock: 0n,
+      launchBlock: 0n,
+      createdAt: Date.now(),
+      initialBuyAmount: prebuyQuote.toString(),
+      version: 'v4',
+      isGraduated: false,
+      chainId: networkConfig.chainId,
+    };
   }
 
   // -------------------------------------------------------------------------

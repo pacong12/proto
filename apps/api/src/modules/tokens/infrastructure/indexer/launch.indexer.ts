@@ -134,7 +134,7 @@ export class LaunchIndexer extends ChainIndexerPart {
           prebuyUsdc6 ?? 0n,
           this.network,
         );
-        if (entity) await this.tokenRepository.save(entity);
+        await this.tokenRepository.save(entity);
       }
       return logs.length;
     } catch (e) {

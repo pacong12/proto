@@ -133,13 +133,20 @@ export class EventPollerService {
       }
       return count;
     } catch (error) {
+      const e = error as { code?: number; message?: string };
+      const rateLimited =
+        e?.code === 429 ||
+        e?.code === -32005 ||
+        /too many requests|exceeds defined limit/i.test(e?.message ?? '');
       // A range that keeps failing (e.g. one malformed log) must not stall indexing forever:
-      // after MAX_RANGE_ATTEMPTS the range is skipped, loudly.
+      // after MAX_RANGE_ATTEMPTS the range is skipped, loudly. A rate-limited RPC says nothing
+      // about the range, and skipping it would lose its launches and trades for good.
       const failedStart =
         fromBlock ?? (this.context.lastPolledBlock > 0n ? this.context.lastPolledBlock + 1n : 0n);
       this.rangeFailures = this.failedRangeStart === failedStart ? this.rangeFailures + 1 : 1;
       this.failedRangeStart = failedStart;
       if (
+        !rateLimited &&
         this.rangeFailures >= MAX_RANGE_ATTEMPTS &&
         fromBlock === undefined &&
         currentBlock > 0n
@@ -158,8 +165,7 @@ export class EventPollerService {
           skipTo,
         );
       }
-      const e = error as { code?: number; message?: string };
-      if (e?.code === 429 || e?.message?.includes('Too Many Requests')) {
+      if (rateLimited) {
         console.warn(`[EventPoller:${this.context.deps.network.name}] RPC 429 — backing off`);
       } else {
         console.error(`[EventPoller:${this.context.deps.network.name}] pollEvents error:`, error);
