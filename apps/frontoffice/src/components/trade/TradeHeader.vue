@@ -272,9 +272,7 @@
         :title="`Click to toggle between Market Cap and Price display`"
         @click="$emit('toggleFigure')"
       >
-        <span
-          class="text-xs text-muted-foreground uppercase tracking-wider font-semibold font-sans"
-        >
+        <span class="text-xs text-muted-foreground font-medium font-sans">
           {{ primaryFigureMode === 'mcap' ? 'Market cap' : 'Token price' }}
         </span>
         <div class="flex items-baseline gap-2">

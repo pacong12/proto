@@ -37,7 +37,12 @@
             <Star class="w-3.5 h-3.5" :class="pinned ? 'fill-foreground' : ''" />
           </Button>
         </div>
-        <span class="block text-xs text-muted-foreground truncate">{{ call.tokenName }}</span>
+        <span class="block text-xs text-muted-foreground truncate">
+          {{ call.tokenName }}
+          <template v-if="call.tokenMarketCapUsd">
+            &middot; MC {{ formatMarketCap(call.tokenMarketCapUsd) }}
+          </template>
+        </span>
       </div>
 
       <!-- The caller's position and how it has done since the call. -->
@@ -45,58 +50,32 @@
         <dt class="stat-label">{{ t('position') }}</dt>
         <dt class="stat-label">{{ t('feedProfit') }}</dt>
         <dd class="stat-value text-foreground">{{ position.size }}</dd>
-        <dd class="stat-value" :class="position.up ? 'text-emerald-400' : 'text-rose-400'">
+        <dd
+          class="stat-value"
+          :class="position.up ? 'text-emerald-400' : 'text-rose-400'"
+          :title="position.title || undefined"
+        >
           {{ position.profit }}
+          <span v-if="position.pct" class="text-xs font-medium">{{ position.pct }}</span>
         </dd>
       </dl>
-    </div>
-
-    <div
-      class="flex items-center justify-between gap-2 px-3 py-2 border-t border-border/60 text-xs"
-    >
-      <div class="flex items-center gap-2 min-w-0">
-        <Badge
-          v-if="position?.pct"
-          variant="secondary"
-          class="tabular-nums"
-          :class="position.up ? 'text-emerald-400' : 'text-rose-400'"
-          :title="position.title"
-        >
-          <TrendingUp v-if="position.up" class="w-3 h-3" />
-          <TrendingDown v-else class="w-3 h-3" />
-          {{ position.pct }}
-        </Badge>
-      </div>
-      <div class="flex items-center gap-2 shrink-0">
-        <span class="text-muted-foreground">
-          MC <strong class="text-foreground">{{ formatMarketCap(call.tokenMarketCapUsd) }}</strong>
-        </span>
-        <Button
-          size="sm"
-          class="h-7 px-3 text-xs font-bold rounded-lg"
-          @click.stop="emit('navigateToToken', call.tokenAddress)"
-        >
-          {{ t('trade') }}
-        </Button>
-      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Star, TrendingUp, TrendingDown } from 'lucide-vue-next';
+import { Star } from 'lucide-vue-next';
 import { calculateUnrealizedPnl } from '@goton/math-sdk';
 import type { FeedCalloutItem } from '@goton/shared-types';
 import { useI18n } from '@/lib/i18n';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { formatCompactUsd, formatMarketCap } from '@/lib/utils';
 import { calloutNetwork } from '@/composables/useFeed';
 import { useTokenStore } from '@/composables/useTokenStore';
 
-/** A callout's token: the caller's position and profit since the call, market cap, trade link. */
+/** A callout's token: the caller's position and profit since the call, and its market cap; it opens the coin. */
 const props = defineProps<{
   call: FeedCalloutItem;
   pinned: boolean;
@@ -142,9 +121,7 @@ const position = computed(() => {
 
 <style scoped>
 .stat-label {
-  font-size: 0.625rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-size: 0.6875rem;
   color: var(--muted-foreground);
 }
 

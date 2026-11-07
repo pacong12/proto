@@ -149,7 +149,7 @@
     <!-- 2. PROTOCOL KPI STATS RIBBON (Pons x Shadcn Metric Cards) -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
       <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
-        <p class="text-xs uppercase font-semibold flex items-center gap-1.5 text-muted-foreground">
+        <p class="text-sm font-medium flex items-center gap-1.5 text-muted-foreground">
           <Activity class="w-4 h-4 text-emerald-500" />
           {{ t('totalTradingVolume') }}
         </p>
@@ -158,7 +158,7 @@
       </Card>
 
       <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
-        <p class="text-xs uppercase font-semibold flex items-center gap-1.5 text-muted-foreground">
+        <p class="text-sm font-medium flex items-center gap-1.5 text-muted-foreground">
           <Rocket class="w-4 h-4 text-sky-500" />
           {{ t('totalTokensLaunched') }}
         </p>
@@ -171,7 +171,7 @@
       </Card>
 
       <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
-        <p class="text-xs uppercase font-semibold flex items-center gap-1.5 text-muted-foreground">
+        <p class="text-sm font-medium flex items-center gap-1.5 text-muted-foreground">
           <Flame class="w-4 h-4 text-rose-500" />
           {{ t('protocolBuybackAndBurn') }}
         </p>
@@ -180,7 +180,7 @@
       </Card>
 
       <Card class="p-5 sm:p-6 bg-card border border-border rounded-2xl shadow-xs space-y-2">
-        <p class="text-xs uppercase font-semibold flex items-center gap-1.5 text-muted-foreground">
+        <p class="text-sm font-medium flex items-center gap-1.5 text-muted-foreground">
           <Coins class="w-4 h-4 text-amber-500" />
           {{ t('analyticsTaxEstimateTitle') }}
         </p>
@@ -225,7 +225,7 @@
         <Table class="text-xs bg-black">
           <TableHeader>
             <TableRow
-              class="border-b border-border/70 text-muted-foreground text-xs uppercase bg-black hover:bg-black [&_th]:whitespace-nowrap"
+              class="border-b border-border/70 text-muted-foreground text-xs bg-black hover:bg-black [&_th]:whitespace-nowrap [&_th]:tracking-normal"
             >
               <TableHead
                 class="py-3 px-2 sm:px-3 font-semibold w-12 text-center text-muted-foreground bg-black"
