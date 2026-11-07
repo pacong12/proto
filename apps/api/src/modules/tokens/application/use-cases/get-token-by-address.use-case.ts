@@ -4,9 +4,9 @@ import {
   CHAINS,
   resolveTokenNetwork,
 } from '@goton/shared-types';
-import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
+import { TokenRepositoryPort } from '../../../../core/ports/token.repository.port';
 import { ChainIndexerPort } from '../../domain/ports/chain.indexer.port';
-import { PriceFeedPort } from '../../domain/ports/price-feed.port';
+import { PriceFeedPort } from '../../../../core/ports/price-feed.port';
 import { CalculatePricingUseCase } from './calculate-pricing.use-case';
 
 export interface TokenDetailResult {

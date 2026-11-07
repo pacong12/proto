@@ -1,10 +1,16 @@
-import type { LimitOrderStorePort } from '../../domain/ports/limit-order-store.port';
+import type { Database } from 'bun:sqlite';
+import type { SqliteDatabase } from '../../../core/sqlite/sqlite-database';
+import type { LimitOrderStorePort } from '../../../core/ports/limit-order-store.port';
 import { LimitOrderEntity } from '@goton/shared-types';
 
-import { SqliteSocialStore } from './sqlite-social.store';
-
 /** Limit, take-profit and stop-loss orders. */
-export class SqliteOrderStore extends SqliteSocialStore implements LimitOrderStorePort {
+export class SqliteOrderStore implements LimitOrderStorePort {
+  private readonly db: Database;
+
+  constructor(database: SqliteDatabase) {
+    this.db = database.db;
+  }
+
   async saveLimitOrder(o: LimitOrderEntity): Promise<void> {
     this.db
       .prepare(

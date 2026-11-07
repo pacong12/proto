@@ -6,8 +6,8 @@ import {
   UNDEPLOYED,
   type LaunchedTokenEntity,
 } from '@goton/shared-types';
-import { V4BuybackKeeperService } from '../src/modules/tokens/infrastructure/keeper/v4-buyback-keeper.service';
-import { InMemoryTokenRepository } from '../src/modules/tokens/infrastructure/adapters/in-memory-token.repository';
+import { V4BuybackKeeperService } from '../src/modules/keepers/infrastructure/v4-buyback-keeper.service';
+import { InMemoryTokenRepository } from '../src/app/storage/in-memory-token.repository';
 
 const TOKEN = '0x00000000000000000000000000000000000000aa' as const;
 const SPLITTER = '0x00000000000000000000000000000000000000bb' as const;

@@ -4,10 +4,10 @@ import {
   type LaunchedTokenEntity,
   type TradeEventEntity,
 } from '@goton/shared-types';
-import type { ChainRegistryPort } from '../../../chains';
-import type { CachePort } from '../../../../core/ports/cache.port';
-import type { LoggerPort } from '../../../../core/ports/logger.port';
-import type { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
+import type { ChainRegistryPort } from '../../chains';
+import type { CachePort } from '../../../core/ports/cache.port';
+import type { LoggerPort } from '../../../core/ports/logger.port';
+import type { TokenRepositoryPort } from '../../../core/ports/token.repository.port';
 import type { EventPollerService } from './event-poller.service';
 
 const TRADE_EVENT = parseAbiItem(

@@ -12,7 +12,7 @@ import {
   type LimitOrderEntity,
   type NetworkConfig,
 } from '@goton/shared-types';
-import type { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
+import type { TokenRepositoryPort } from '../../../core/ports/token.repository.port';
 import { sendAndWait, sentResult } from './keeper-tx';
 
 const EXECUTOR_FEE_BPS = 10n;

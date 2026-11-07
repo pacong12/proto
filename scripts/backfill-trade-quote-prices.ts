@@ -29,7 +29,7 @@ import { rpcTransport } from '../apps/api/src/core/rpc';
 import {
   BACKFILL_CHUNK,
   TRADE_EVENT,
-} from '../apps/api/src/modules/tokens/infrastructure/indexer/indexer-events';
+} from '../apps/api/src/modules/indexer/infrastructure/indexer-events';
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);

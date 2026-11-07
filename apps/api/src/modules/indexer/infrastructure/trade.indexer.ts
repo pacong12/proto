@@ -6,7 +6,7 @@ import {
   type LaunchedTokenEntity,
   type TradeEventEntity,
 } from '@goton/shared-types';
-import { findAllTokens } from '../../application/all-tokens';
+import { findAllTokens } from '../../tokens';
 import {
   SWAP_EVENT,
   TRADE_EVENT,

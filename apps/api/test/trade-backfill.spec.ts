@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { encodeAbiParameters, encodeEventTopics, parseAbiItem, type PublicClient } from 'viem';
 import { ROBINHOOD_CHAIN, type LaunchedTokenEntity, type NetworkConfig } from '@goton/shared-types';
-import { EventPollerService } from '../src/modules/tokens/infrastructure/indexer/event-poller.service';
-import { SqliteTokenRepository } from '../src/modules/tokens/infrastructure/adapters/sqlite-token.repository';
+import { EventPollerService } from '../src/modules/indexer/infrastructure/event-poller.service';
+import { SqliteTokenRepository } from '../src/app/storage/sqlite-token.repository';
 
 const TRADE = parseAbiItem(
   'event Trade(address indexed trader, bool indexed isBuy, uint256 ethAmount, uint256 tokenAmount, uint256 feeEth)',

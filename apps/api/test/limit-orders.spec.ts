@@ -5,9 +5,9 @@ import {
   type LimitOrderEntity,
   type LaunchedTokenEntity,
 } from '@goton/shared-types';
-import { SqliteTokenRepository } from '../src/modules/tokens/infrastructure/adapters/sqlite-token.repository';
-import { LimitOrderKeeperService } from '../src/modules/tokens/infrastructure/keeper/limit-order-keeper.service';
-import { EventPollerService } from '../src/modules/tokens/infrastructure/indexer/event-poller.service';
+import { SqliteTokenRepository } from '../src/app/storage/sqlite-token.repository';
+import { LimitOrderKeeperService } from '../src/modules/keepers/infrastructure/limit-order-keeper.service';
+import { EventPollerService } from '../src/modules/indexer/infrastructure/event-poller.service';
 
 const CONTRACT = '0x00000000000000000000000000000000000000c0' as const;
 const OLD_CONTRACT = '0x00000000000000000000000000000000000000c1' as const;

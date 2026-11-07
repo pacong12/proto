@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   aggregateCandlesticks,
   computeHoldersDistribution,
-} from '../src/modules/tokens/domain/services/token-aggregation.service';
+} from '../src/modules/trades/domain/services/token-aggregation.service';
 import { LaunchedTokenEntity, TradeEventEntity } from '@goton/shared-types';
 
 describe('TokenAggregationService', () => {

@@ -1,5 +1,5 @@
 import type { LaunchedTokenEntity } from '@goton/shared-types';
-import type { TokenRepositoryPort } from '../domain/ports/token.repository.port';
+import type { TokenRepositoryPort } from '../../../core/ports/token.repository.port';
 
 const PAGE_SIZE = 500;
 

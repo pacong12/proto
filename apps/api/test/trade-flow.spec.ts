@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { TradeEventEntity } from '@goton/shared-types';
-import { SqliteTokenRepository } from '../src/modules/tokens/infrastructure/adapters/sqlite-token.repository';
-import { InMemoryTokenRepository } from '../src/modules/tokens/infrastructure/adapters/in-memory-token.repository';
+import { SqliteTokenRepository } from '../src/app/storage/sqlite-token.repository';
+import { InMemoryTokenRepository } from '../src/app/storage/in-memory-token.repository';
 
 const TOKEN = '0x00000000000000000000000000000000000000aa' as const;
 let n = 0;

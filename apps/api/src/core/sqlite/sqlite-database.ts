@@ -1,13 +1,12 @@
 import { Database } from 'bun:sqlite';
 import path from 'node:path';
 import fs from 'node:fs';
-import { LaunchedTokenEntity, TradeEventEntity } from '@goton/shared-types';
 import { backupDatabase, openCheckedDatabase } from './sqlite-maintenance';
-import { TokenRow, TradeRow, defaultDbPath } from './sqlite-rows';
+import { defaultDbPath } from './sqlite-rows';
 
-/** The SQLite connection, schema and row mapping every store shares. */
+/** The SQLite connection and schema every store shares. */
 export class SqliteDatabase {
-  protected db: Database;
+  readonly db: Database;
 
   protected readonly dbPath: string;
 
@@ -415,7 +414,7 @@ export class SqliteDatabase {
     `);
   }
 
-  protected runInTransaction<T>(fn: () => T): T {
+  runInTransaction<T>(fn: () => T): T {
     const bunDb = this.db as unknown as { transaction?: (fn: () => T) => () => T };
     if (typeof bunDb.transaction === 'function') {
       return bunDb.transaction(fn)();
@@ -443,59 +442,5 @@ export class SqliteDatabase {
 
   close(): void {
     this.db.close();
-  }
-
-  protected mapRowToToken(row: TokenRow): LaunchedTokenEntity {
-    return {
-      address: row.address as `0x${string}`,
-      name: row.name,
-      symbol: row.symbol,
-      decimals: Number(row.decimals),
-      totalSupply: row.totalSupply,
-      logo: row.logo ?? '',
-      description: row.description ?? '',
-      socials: row.socials_json ? (JSON.parse(row.socials_json) as Record<string, string>) : {},
-      taxConfig: row.tax_config_json
-        ? (JSON.parse(row.tax_config_json) as LaunchedTokenEntity['taxConfig'])
-        : undefined,
-      deployer: row.deployer as `0x${string}`,
-      pairedToken: row.pairedToken as `0x${string}`,
-      poolAddress: row.poolAddress as `0x${string}`,
-      isToken0: Boolean(row.isToken0),
-      poolFee: Number(row.poolFee),
-      positionId: BigInt(row.positionId),
-      restrictionsEndBlock: BigInt(row.restrictionsEndBlock),
-      launchBlock: BigInt(row.launchBlock),
-      createdAt: Number(row.createdAt),
-      initialBuyAmount: row.initialBuyAmount ?? undefined,
-      version: (row.version as 'v1' | 'v2' | null) ?? undefined,
-      curveAddress: (row.curve_address as `0x${string}` | null) ?? undefined,
-      isGraduated: Boolean((row as TokenRow & { is_graduated?: number }).is_graduated),
-      virtualEthReserve:
-        (row as TokenRow & { virtual_eth_reserve?: string | null }).virtual_eth_reserve ??
-        undefined,
-      virtualTokenReserve:
-        (row as TokenRow & { virtual_token_reserve?: string | null }).virtual_token_reserve ??
-        undefined,
-      graduationTarget:
-        (row as TokenRow & { graduation_target?: string | null }).graduation_target ?? undefined,
-    };
-  }
-
-  protected mapRowToTrade(row: TradeRow): TradeEventEntity {
-    return {
-      id: row.id,
-      tokenAddress: row.tokenAddress as `0x${string}`,
-      poolAddress: row.poolAddress as `0x${string}`,
-      trader: row.trader as `0x${string}`,
-      isBuy: Boolean(row.isBuy),
-      tokenAmount: row.tokenAmount,
-      wethAmount: row.wethAmount,
-      priceUsd: Number(row.priceUsd),
-      ...(row.priceQuote ? { priceQuote: Number(row.priceQuote) } : {}),
-      blockNumber: BigInt(row.blockNumber),
-      transactionHash: row.transactionHash as `0x${string}`,
-      timestamp: Number(row.timestamp),
-    };
   }
 }

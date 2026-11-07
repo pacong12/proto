@@ -1,6 +1,6 @@
 import { erc20Abi, type Address } from 'viem';
 import { resolveTokenNetwork, type LaunchedTokenEntity } from '@goton/shared-types';
-import { findAllTokens } from '../../application/all-tokens';
+import { findAllTokens } from '../../tokens';
 import {
   TRANSFER_EVENT,
   ZERO_ADDRESS,

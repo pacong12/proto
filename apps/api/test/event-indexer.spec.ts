@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { InMemoryTokenRepository } from '../src/modules/tokens/infrastructure/adapters/in-memory-token.repository';
+import { InMemoryTokenRepository } from '../src/app/storage/in-memory-token.repository';
 import { GetTradesUseCase } from '../src/modules/trades/application/use-cases/get-trades.use-case';
 import { GetCandlesticksUseCase } from '../src/modules/trades/application/use-cases/get-candlesticks.use-case';
 import { TradeEventEntity } from '@goton/shared-types';

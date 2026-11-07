@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import type { PublicClient, WalletClient } from 'viem';
 import { ROBINHOOD_CHAIN, type LaunchedTokenEntity } from '@goton/shared-types';
-import { GraduationKeeperService } from '../src/modules/tokens/infrastructure/keeper/graduation-keeper.service';
-import { InMemoryTokenRepository } from '../src/modules/tokens/infrastructure/adapters/in-memory-token.repository';
+import { GraduationKeeperService } from '../src/modules/keepers/infrastructure/graduation-keeper.service';
+import { InMemoryTokenRepository } from '../src/app/storage/in-memory-token.repository';
 
 const FACTORY = '0x00000000000000000000000000000000000000fa' as const;
 const network = {
