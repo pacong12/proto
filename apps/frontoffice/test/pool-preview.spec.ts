@@ -5,6 +5,7 @@ import {
   curveSwapImpact,
   formatPriceImpact,
   poolOutputAtSpot,
+  poolOutputFromLiquidity,
   poolSwapImpact,
   readPoolTaxBps,
 } from '../src/lib/pool-preview';
@@ -24,6 +25,98 @@ describe('poolOutputAtSpot', () => {
 
   it('is zero without a price, not an invented figure', () => {
     expect(poolOutputAtSpot(1, 0, true, 300)).toBe(0);
+  });
+});
+
+describe('poolOutputFromLiquidity', () => {
+  const Q96 = 2 ** 96;
+  // 1 quote raw = 1,000,000 token raw when the quote is currency0 (native ETH sorts first).
+  const sqrtPriceX96 = 1000n * (1n << 96n);
+  const liquidity = 10n ** 24n;
+
+  /** Independent check: the range as virtual reserves x·y = L², in floating point. */
+  function virtualReserves(inputIsCurrency0: boolean, input: number): number {
+    const sqrtP = Number(sqrtPriceX96) / Q96;
+    const L = Number(liquidity);
+    const x = L / sqrtP;
+    const y = L * sqrtP;
+    return inputIsCurrency0 ? y - (L * L) / (x + input) : x - (L * L) / (y + input);
+  }
+
+  const near = (actual: bigint | null, expected: number) => {
+    expect(actual).not.toBeNull();
+    // The float reference subtracts near-equal reserves, so it is the less precise side.
+    expect(Math.abs(Number(actual) / expected - 1)).toBeLessThan(1e-6);
+  };
+
+  it.each([true, false])(
+    'sells along the curve, then takes the tax off the quote (quote is currency0: %s)',
+    (quoteIsCurrency0) => {
+      const amountInRaw = 5n * 10n ** 25n;
+      const out = poolOutputFromLiquidity({
+        isBuy: false,
+        amountInRaw,
+        sqrtPriceX96,
+        liquidity,
+        quoteIsCurrency0,
+        taxBps: 1000,
+      });
+      // The token sold is currency1 when the quote is currency0.
+      near(out, virtualReserves(!quoteIsCurrency0, Number(amountInRaw) * 0.99) * 0.9);
+    },
+  );
+
+  it.each([true, false])(
+    'taxes a buy before it swaps, then takes the LP fee (quote is currency0: %s)',
+    (quoteIsCurrency0) => {
+      const amountInRaw = 3n * 10n ** 19n;
+      const out = poolOutputFromLiquidity({
+        isBuy: true,
+        amountInRaw,
+        sqrtPriceX96,
+        liquidity,
+        quoteIsCurrency0,
+        taxBps: 300,
+      });
+      near(out, virtualReserves(quoteIsCurrency0, Number(amountInRaw) * 0.97 * 0.99));
+    },
+  );
+
+  it('meets spot for a tiny sell and falls below it as the sell grows', () => {
+    const impact = (amountInRaw: bigint) =>
+      poolSwapImpact({
+        isBuy: false,
+        amountInRaw,
+        amountOutRaw: poolOutputFromLiquidity({
+          isBuy: false,
+          amountInRaw,
+          sqrtPriceX96,
+          liquidity,
+          quoteIsCurrency0: true,
+          taxBps: 1000,
+        }) as bigint,
+        sqrtPriceX96,
+        quoteIsCurrency0: true,
+        taxBps: 1000,
+      }) as number;
+    // The token side of the range: L·sqrtP raw.
+    const tokenReserve = liquidity * 1000n;
+
+    expect(impact(10n ** 18n)).toBeLessThan(1e-5);
+    // Selling ~2% of the reserve: the sell the Robinhood fork priced 2.2% high at spot.
+    const twoPercent = tokenReserve / 50n;
+    expect(impact(twoPercent)).toBeGreaterThan(0.019);
+    expect(impact(twoPercent)).toBeLessThan(0.021);
+    expect(impact(twoPercent * 10n)).toBeGreaterThan(impact(twoPercent));
+  });
+
+  it('gives nothing to show for an empty pool or input', () => {
+    const base = { isBuy: true, sqrtPriceX96, quoteIsCurrency0: true, taxBps: 0 };
+    expect(poolOutputFromLiquidity({ ...base, amountInRaw: 1n, liquidity: 0n })).toBeNull();
+    expect(poolOutputFromLiquidity({ ...base, amountInRaw: 0n, liquidity })).toBeNull();
+    expect(
+      poolOutputFromLiquidity({ ...base, amountInRaw: 1n, liquidity, sqrtPriceX96: 0n }),
+    ).toBeNull();
   });
 });
 

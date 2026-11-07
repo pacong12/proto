@@ -20,6 +20,45 @@ export function poolOutputAtSpot(
   return (isBuy ? input / price : input * price) * keep(VENUE_FEE_BPS) * keep(taxBps);
 }
 
+const Q96 = 1n << 96n;
+const keepRaw = (amount: bigint, bps: number) =>
+  (amount * BigInt(10_000 - Math.min(10_000, Math.max(0, Math.round(bps))))) / 10_000n;
+
+/**
+ * Raw output of a pool swap from the pool's live sqrt price and in-range liquidity, after the LP
+ * fee and the hook's tax: for when the router cannot simulate it (a sell not approved yet, no
+ * wallet). It takes that liquidity to hold for the whole swap, so it is exact until the price
+ * leaves the current range; past a graduation reserve's edge it is an estimate, still with the
+ * price impact a spot figure leaves out. Null when the pool has no price or liquidity.
+ */
+export function poolOutputFromLiquidity(swap: {
+  isBuy: boolean;
+  amountInRaw: bigint;
+  sqrtPriceX96: bigint;
+  liquidity: bigint;
+  quoteIsCurrency0: boolean;
+  taxBps: number;
+}): bigint | null {
+  const { sqrtPriceX96: price, liquidity } = swap;
+  if (price <= 0n || liquidity <= 0n || swap.amountInRaw <= 0n) return null;
+  // The hook taxes a buy's quote before the swap, then the pool takes its fee from the input.
+  const input = keepRaw(
+    swap.isBuy ? keepRaw(swap.amountInRaw, swap.taxBps) : swap.amountInRaw,
+    VENUE_FEE_BPS,
+  );
+  // A buy pays in quote, so its input is currency0 exactly when the quote is.
+  let out: bigint;
+  if (swap.isBuy === swap.quoteIsCurrency0) {
+    const next = (liquidity * price * Q96) / (liquidity * Q96 + input * price);
+    out = (liquidity * (price - next)) / Q96;
+  } else {
+    const next = price + (input * Q96) / liquidity;
+    out = (liquidity * Q96 * (next - price)) / next / price;
+  }
+  // A sell's tax comes off the quote it receives.
+  return swap.isBuy ? out : keepRaw(out, swap.taxBps);
+}
+
 /**
  * Share of the spot output a swap loses to moving the price (0 to 1), from its simulated output and
  * the pool's live sqrt price, so a stale indexed price cannot show up as impact. Raw units.
