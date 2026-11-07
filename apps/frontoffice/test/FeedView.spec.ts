@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { FeedView, CashtagText, ShareModal, ThreadModal } from '../src/components/feed';
 import PostDetailPage from '../src/pages/PostDetailPage.vue';
-import { useFeed, isWhaleCaller } from '../src/composables/useFeed';
-import type { FeedCalloutItem } from '@goton/shared-types';
+import { calloutNetwork, useFeed, isWhaleCaller } from '../src/composables/useFeed';
+import { ARC_NETWORK, ROBINHOOD_NETWORK, type FeedCalloutItem } from '@goton/shared-types';
 
 describe('FeedView Component & Callouts Logic', () => {
   it('verifies FeedView component is properly defined', () => {
@@ -90,5 +90,15 @@ describe('FeedView Component & Callouts Logic', () => {
     expect(isWhaleCaller({ supplyPercent: 0.2, positionUsd: 750 })).toBe(true);
     expect(isWhaleCaller({ supplyPercent: 0.1, positionUsd: 45 })).toBe(false);
     expect(isWhaleCaller({})).toBe(false);
+  });
+
+  it('files a callout under its paired token, not the fallback for an unlisted address', () => {
+    const fallback = () => ROBINHOOD_NETWORK;
+    const tokenAddress = '0x00000000000000000000000000000000000000aa';
+    expect(
+      calloutNetwork({ tokenAddress, tokenPairedToken: ARC_NETWORK.contracts.weth }, fallback)
+        .chainId,
+    ).toBe(ARC_NETWORK.chainId);
+    expect(calloutNetwork({ tokenAddress }, fallback).chainId).toBe(ROBINHOOD_NETWORK.chainId);
   });
 });

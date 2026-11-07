@@ -10,7 +10,7 @@ const storeClasses = [SqliteTokenStore, SqliteTradeStore, SqliteSocialStore, Sql
 
 /** Public methods of a store, without the private helpers the facade must not expose. */
 function publicMethods(store: { prototype: object }): string[] {
-  const privateHelpers = new Set(['constructor', 'getSingleCallout']);
+  const privateHelpers = new Set(['constructor', 'getSingleCallout', 'identityAddresses']);
   return Object.getOwnPropertyNames(store.prototype).filter((name) => !privateHelpers.has(name));
 }
 

@@ -1,5 +1,10 @@
 import { ref, computed } from 'vue';
-import { type FeedCalloutItem, buildCommentSignMessage } from '@goton/shared-types';
+import {
+  type FeedCalloutItem,
+  type NetworkConfig,
+  buildCommentSignMessage,
+  resolveTokenNetwork,
+} from '@goton/shared-types';
 import { getSessionHeaders } from '../lib/session';
 import { apiFetch } from '@/lib/api-client';
 import { isCallInProfit } from '@/lib/call-pnl';
@@ -14,6 +19,19 @@ export type FeedFilterType = 'all' | 'following' | 'whale' | 'profit' | 'media';
  */
 export function isWhaleCaller(call: { positionUsd?: number; supplyPercent?: number }): boolean {
   return (call.supplyPercent ?? 0) >= 1.0 || (call.positionUsd ?? 0) >= 500;
+}
+
+/**
+ * The chain of a callout's token. The API's paired token decides it, because the viewer's token
+ * list holds only part of the tokens and an unlisted address would land on the default chain.
+ */
+export function calloutNetwork(
+  callout: Pick<FeedCalloutItem, 'tokenAddress' | 'tokenPairedToken'>,
+  fallback: (tokenAddress: string) => NetworkConfig,
+): NetworkConfig {
+  return callout.tokenPairedToken
+    ? resolveTokenNetwork({ pairedToken: callout.tokenPairedToken })
+    : fallback(callout.tokenAddress);
 }
 
 export function useFeed() {

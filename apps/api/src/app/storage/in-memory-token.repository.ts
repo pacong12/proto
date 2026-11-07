@@ -352,6 +352,7 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
           tokenName: token?.name,
           tokenSymbol: token?.symbol,
           tokenLogo: token?.logo,
+          tokenPairedToken: token?.pairedToken,
           tokenMarketCapUsd: mkt?.marketCapUsd,
           tokenPriceUsd: mkt?.priceUsd,
         });
@@ -387,6 +388,7 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
           tokenName: token?.name,
           tokenSymbol: token?.symbol,
           tokenLogo: token?.logo,
+          tokenPairedToken: token?.pairedToken,
           tokenMarketCapUsd: mkt?.marketCapUsd,
           tokenPriceUsd: mkt?.priceUsd,
           replies: [],

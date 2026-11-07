@@ -1,6 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Database } from 'bun:sqlite';
-import type { LaunchedTokenEntity, TokenMarketData, TradeEventEntity } from '@goton/shared-types';
+import {
+  getUserIdentity,
+  type LaunchedTokenEntity,
+  type TokenMarketData,
+  type TradeEventEntity,
+} from '@goton/shared-types';
 import { SqliteTokenRepository } from '../src/app/storage/sqlite-token.repository';
 
 const TOKEN = '0xAbCdEf0000000000000000000000000000000001' as `0x${string}`;
@@ -255,6 +260,43 @@ describe('SQLite queries at scale', () => {
       expect(await ids(10n, 0n, 10)).toEqual(['b10']);
       expect(await ids(9n, 9n, 2)).toEqual(['b9', 'b9-2']);
       expect(await ids(9n, 0n, 10, upper(TOKEN))).toEqual(['b9', 'b9-2', 'b10']);
+    });
+  });
+
+  describe('profile names', () => {
+    const OTHER = '0x1110000000000000000000000000000000000003';
+    afterEach(() => vi.restoreAllMocks());
+
+    it('resolves every generated name and does not rescan for unknown ones', async () => {
+      await repository.saveTrade?.(trade('named'));
+      const { slug, displayName } = getUserIdentity(WALLET);
+      expect(await repository.findAddressByIdentity?.(slug)).toBe(lower(WALLET));
+      expect(await repository.findAddressByIdentity?.(`@${displayName}`)).toBe(lower(WALLET));
+
+      const prepare = vi.spyOn(db, 'prepare');
+      expect(await repository.findAddressByIdentity?.('nosuchuser')).toBeNull();
+      expect(prepare).not.toHaveBeenCalled();
+    });
+
+    it('picks up a new wallet once the index expires', async () => {
+      const start = Date.now();
+      await repository.saveTrade?.(trade('first'));
+      await repository.findAddressByIdentity?.('nosuchuser');
+      await repository.saveTrade?.(trade('second', { trader: OTHER as `0x${string}` }));
+      const { slug } = getUserIdentity(OTHER);
+      expect(await repository.findAddressByIdentity?.(slug)).toBeNull();
+
+      vi.spyOn(Date, 'now').mockReturnValue(start + 61_000);
+      expect(await repository.findAddressByIdentity?.(slug)).toBe(OTHER);
+    });
+  });
+
+  describe('feed token chain', () => {
+    it('carries the paired token that names the chain', async () => {
+      await repository.save(token);
+      insertComment('c1', TOKEN, WALLET, NOW);
+      const [item] = (await repository.getFeedCallouts?.(10, 0)) ?? [];
+      expect(item.tokenPairedToken).toBe(lower(token.pairedToken));
     });
   });
 

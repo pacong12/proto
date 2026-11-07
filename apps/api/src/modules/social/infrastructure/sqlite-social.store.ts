@@ -4,8 +4,11 @@ import type { SocialStorePort } from '../../../core/ports/social-store.port';
 import { TokenCommentEntity, getUserIdentity, type CreatorProfile } from '@goton/shared-types';
 
 /** Comments, callouts, follows and profiles. */
+const IDENTITY_INDEX_TTL_MS = 60_000;
+
 export class SqliteSocialStore implements SocialStorePort {
   private readonly db: Database;
+  private identityIndex: { builtAt: number; addresses: Map<string, string> } | null = null;
 
   constructor(private readonly database: SqliteDatabase) {
     this.db = database.db;
@@ -31,26 +34,38 @@ export class SqliteSocialStore implements SocialStorePort {
     if (!q) return null;
     if (/^0x[a-f0-9]{40}$/i.test(q)) return q.toLowerCase();
 
-    // Query all distinct addresses in trades and tokens
-    const stmt = this.db.prepare(`
+    return this.identityAddresses().get(q) ?? null;
+  }
+
+  /**
+   * Every known wallet by its generated names. Scanning trades and hashing each wallet took about
+   * 0.3s on 2M trades and bun:sqlite blocks the whole API meanwhile, so a page of unknown profile
+   * URLs must not repeat it. A wallet's first trade can take a minute to resolve by name.
+   */
+  private identityAddresses(): Map<string, string> {
+    const now = Date.now();
+    if (this.identityIndex && now - this.identityIndex.builtAt < IDENTITY_INDEX_TTL_MS) {
+      return this.identityIndex.addresses;
+    }
+    const rows = this.db
+      .prepare(
+        `
       SELECT DISTINCT trader AS addr FROM trades WHERE trader IS NOT NULL AND trader != ''
       UNION
       SELECT DISTINCT deployer AS addr FROM tokens WHERE deployer IS NOT NULL AND deployer != ''
-    `);
-    const rows = stmt.all() as Array<{ addr: string }>;
-    for (const r of rows) {
-      if (!r.addr) continue;
-      const id = getUserIdentity(r.addr);
-      if (
-        id.name.toLowerCase() === q ||
-        id.displayName.toLowerCase() === q ||
-        id.slug.toLowerCase() === q ||
-        id.tag.toLowerCase() === q
-      ) {
-        return r.addr.toLowerCase();
+    `,
+      )
+      .all() as Array<{ addr: string }>;
+    const addresses = new Map<string, string>();
+    for (const { addr } of rows) {
+      const id = getUserIdentity(addr);
+      for (const key of [id.name, id.displayName, id.slug, id.tag]) {
+        const lower = key.toLowerCase();
+        if (!addresses.has(lower)) addresses.set(lower, addr.toLowerCase());
       }
     }
-    return null;
+    this.identityIndex = { builtAt: now, addresses };
+    return addresses;
   }
 
   async saveComment(comment: TokenCommentEntity): Promise<void> {
@@ -186,7 +201,7 @@ export class SqliteSocialStore implements SocialStorePort {
         c.id, c.token_address, c.author_address, c.content, c.image_url, 
         c.likes_count, c.created_at, c.target_mcap, c.position_usd, c.profit_usd, c.call_type,
         c.parent_id, c.quoted_callout_id, c.reposts_count, c.quotes_count, c.replies_count, c.views_count, c.supply_percent, c.price_at_post,
-        t.name as token_name, t.symbol as token_symbol, t.logo as token_logo,
+        t.name as token_name, t.symbol as token_symbol, t.logo as token_logo, t.pairedToken as token_paired_token,
         m.marketCapUsd as token_market_cap, m.priceUsd as token_price_usd
       FROM comments c
       LEFT JOIN tokens t ON t.address = c.token_address COLLATE NOCASE
@@ -225,6 +240,7 @@ export class SqliteSocialStore implements SocialStorePort {
       token_name: string | null;
       token_symbol: string | null;
       token_logo: string | null;
+      token_paired_token: string | null;
       token_market_cap: number | null;
       token_price_usd: number | null;
     }
@@ -274,6 +290,7 @@ export class SqliteSocialStore implements SocialStorePort {
       tokenName: r.token_name ?? undefined,
       tokenSymbol: r.token_symbol ?? undefined,
       tokenLogo: r.token_logo ?? undefined,
+      tokenPairedToken: r.token_paired_token ?? undefined,
       tokenMarketCapUsd: r.token_market_cap != null ? Number(r.token_market_cap) : undefined,
       tokenPriceUsd: r.token_price_usd != null ? Number(r.token_price_usd) : undefined,
     }));
@@ -297,7 +314,7 @@ export class SqliteSocialStore implements SocialStorePort {
         c.id, c.token_address, c.author_address, c.content, c.image_url, 
         c.likes_count, c.created_at, c.target_mcap, c.position_usd, c.profit_usd, c.call_type,
         c.parent_id, c.quoted_callout_id, c.reposts_count, c.quotes_count, c.replies_count, c.views_count, c.supply_percent, c.price_at_post,
-        t.name as token_name, t.symbol as token_symbol, t.logo as token_logo,
+        t.name as token_name, t.symbol as token_symbol, t.logo as token_logo, t.pairedToken as token_paired_token,
         m.marketCapUsd as token_market_cap, m.priceUsd as token_price_usd
       FROM comments c
       LEFT JOIN tokens t ON t.address = c.token_address COLLATE NOCASE
@@ -328,6 +345,7 @@ export class SqliteSocialStore implements SocialStorePort {
       token_name: string | null;
       token_symbol: string | null;
       token_logo: string | null;
+      token_paired_token: string | null;
       token_market_cap: number | null;
       token_price_usd: number | null;
     }
@@ -358,6 +376,7 @@ export class SqliteSocialStore implements SocialStorePort {
       tokenName: r.token_name ?? undefined,
       tokenSymbol: r.token_symbol ?? undefined,
       tokenLogo: r.token_logo ?? undefined,
+      tokenPairedToken: r.token_paired_token ?? undefined,
       tokenMarketCapUsd: r.token_market_cap != null ? Number(r.token_market_cap) : undefined,
       tokenPriceUsd: r.token_price_usd != null ? Number(r.token_price_usd) : undefined,
     };
@@ -424,7 +443,7 @@ export class SqliteSocialStore implements SocialStorePort {
         c.id, c.token_address, c.author_address, c.content, c.image_url, 
         c.likes_count, c.created_at, c.target_mcap, c.position_usd, c.profit_usd, c.call_type,
         c.parent_id, c.quoted_callout_id, c.reposts_count, c.quotes_count, c.replies_count, c.supply_percent,
-        t.name as token_name, t.symbol as token_symbol, t.logo as token_logo,
+        t.name as token_name, t.symbol as token_symbol, t.logo as token_logo, t.pairedToken as token_paired_token,
         m.marketCapUsd as token_market_cap, m.priceUsd as token_price_usd
       FROM comments c
       LEFT JOIN tokens t ON t.address = c.token_address COLLATE NOCASE
@@ -455,6 +474,7 @@ export class SqliteSocialStore implements SocialStorePort {
       token_name: string | null;
       token_symbol: string | null;
       token_logo: string | null;
+      token_paired_token: string | null;
       token_market_cap: number | null;
       token_price_usd: number | null;
     }>;
@@ -481,6 +501,7 @@ export class SqliteSocialStore implements SocialStorePort {
       tokenName: r.token_name ?? undefined,
       tokenSymbol: r.token_symbol ?? undefined,
       tokenLogo: r.token_logo ?? undefined,
+      tokenPairedToken: r.token_paired_token ?? undefined,
       tokenMarketCapUsd: r.token_market_cap != null ? Number(r.token_market_cap) : undefined,
       tokenPriceUsd: r.token_price_usd != null ? Number(r.token_price_usd) : undefined,
     }));
