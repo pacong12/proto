@@ -19,6 +19,7 @@ import {
   DevopsController,
   RedisCacheAdapter,
   InMemoryCacheAdapter,
+  FallbackCacheAdapter,
 } from '../modules/observability';
 import { RateLimiter } from '../core';
 import {
@@ -38,7 +39,7 @@ const redisCache = new RedisCacheAdapter(redisUrl, logger);
 // In-memory fallback for rate limiting when Redis is unavailable.
 export const memoryCache = new InMemoryCacheAdapter();
 // Unified cache: Redis when available, transparent in-memory when not.
-export const cache = redisCache;
+export const cache = new FallbackCacheAdapter(redisCache, new InMemoryCacheAdapter());
 
 export const repository = new SqliteTokenRepository();
 export const chainIndexer = new ViemChainIndexerAdapter();
@@ -128,11 +129,11 @@ export const pollers = new Map(
     ),
 );
 
-export const requestTracker = new HttpRequestTracker(logger, cache);
+export const requestTracker = new HttpRequestTracker(logger, redisCache);
 export const devopsController = new DevopsController(requestTracker);
 
 // Rate limiting: namespaced by tier so crawler and API buckets do not collide.
-export const rateLimiter = new RateLimiter(cache, memoryCache, logger);
+export const rateLimiter = new RateLimiter(redisCache, memoryCache, logger);
 
 /** Indexes trades the live pollers missed (late tokens, the app's own transactions). */
 export const tradeSync = new TradeSyncService(repository, cache, chainRegistry, pollers, logger);
