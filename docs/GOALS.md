@@ -1,5 +1,7 @@
 # Goton Protocol Goals & Technical Requirements
 
+> **Historical.** Written for the earlier Uniswap V3 locker design; its 70/30 fee split is superseded. Creators now keep 70% (Robinhood Chain) or 80% (Arc) of each token's fees and tax: see [Fees & burns](../apps/docs/src/protocol/fees-and-burns.md).
+
 ## 1. High-Level Vision
 
 Goton is a decentralized, non-custodial token launchpad and trading platform deployed on Robinhood Chain (Chain ID: 4663). The protocol simplifies token creation and trading by eliminating artificial bonding curves and deploying directly into permanently locked Uniswap V3 liquidity positions.

@@ -1,5 +1,7 @@
 # Goton Development Roadmap
 
+> **Historical.** Written for the earlier Uniswap V3 locker design; its 70/30 fee split is superseded. Creators now keep 70% (Robinhood Chain) or 80% (Arc) of each token's fees and tax: see [Fees & burns](../apps/docs/src/protocol/fees-and-burns.md).
+
 ## Phase 1: Foundation & Workspace Scaffolding
 
 - [x] Workspace initialization with Nx, TypeScript, Prettier, ESLint flat config.
