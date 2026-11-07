@@ -4,12 +4,13 @@ import { useLaunchpad } from '@/composables/useLaunchpad';
 import { useTaxConfig } from '@/composables/useTaxConfig';
 import { getPublicClient } from '@/lib/viem-client';
 import { toast } from '@/components/ui/sonner';
+import { readPoolTaxBps } from '@/lib/pool-preview';
 import { launchpadTokenAbi } from '@goton/shared-types';
 import type { TradePage } from './types';
 
 /** The token's creator tax: on-chain config, the proposal timelock, and the creator's edits. */
 export function useTradeTax(page: TradePage) {
-  const { currentToken, tokenNetwork } = page;
+  const { currentMarketData, currentToken, tokenNetwork } = page;
   const { account } = useWallet();
 
   const { setTokenTax } = useLaunchpad();
@@ -69,14 +70,21 @@ export function useTradeTax(page: TradePage) {
         abi: launchpadTokenAbi,
         functionName: 'taxConfig',
       })) as [number, number, string];
-      if (cfg && (Number(cfg[0]) > 0 || Number(cfg[1]) > 0)) {
+      // In a pool the hook charges the tax, and it is the only one that does.
+      const onCurve = currentToken.value.curveAddress && !currentMarketData.value.isGraduated;
+      const poolTax = onCurve
+        ? null
+        : await readPoolTaxBps(client, tokenNetwork.value, tokenAddr).catch(() => null);
+      const buyBps = poolTax?.buyTaxBps ?? Number(cfg?.[0] ?? 0);
+      const sellBps = poolTax?.sellTaxBps ?? Number(cfg?.[1] ?? 0);
+      if (buyBps > 0 || sellBps > 0) {
         onchainTaxConfig.value = {
-          buyTaxBps: Number(cfg[0]),
-          sellTaxBps: Number(cfg[1]),
+          buyTaxBps: buyBps,
+          sellTaxBps: sellBps,
           taxRecipient: cfg[2],
         };
-        editBuyTax.value = String(Number(cfg[0]) / 100);
-        editSellTax.value = String(Number(cfg[1]) / 100);
+        editBuyTax.value = String(buyBps / 100);
+        editSellTax.value = String(sellBps / 100);
         editTaxRecipient.value = cfg[2];
       } else if (
         currentToken.value?.taxConfig?.buyTaxBps ||
@@ -93,6 +101,9 @@ export function useTradeTax(page: TradePage) {
         editBuyTax.value = String(fallbackBuy / 100);
         editSellTax.value = String(fallbackSell / 100);
         editTaxRecipient.value = fallbackRecipient;
+      } else {
+        // Untaxed: do not keep the previous token's tax when the page moves on to this one.
+        onchainTaxConfig.value = { buyTaxBps: 0, sellTaxBps: 0, taxRecipient: cfg?.[2] ?? '' };
       }
     } catch {
       // Non-blocking

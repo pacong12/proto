@@ -75,7 +75,7 @@ export async function ensureAllowance(params: {
   spender: `0x${string}`;
   amount: bigint;
   onSubmitted?: (hash: `0x${string}`) => void;
-}): Promise<void> {
+}): Promise<boolean> {
   const { publicClient, walletClient, account, token, spender, amount } = params;
   const allowance = await publicClient
     .readContract({
@@ -85,7 +85,7 @@ export async function ensureAllowance(params: {
       args: [account, spender],
     })
     .catch(() => 0n);
-  if (allowance >= amount) return;
+  if (allowance >= amount) return false;
   const hash = await walletClient.writeContract({
     address: token,
     abi: erc20Abi,
@@ -96,6 +96,7 @@ export async function ensureAllowance(params: {
   });
   params.onSubmitted?.(hash);
   await waitForReceiptWithFallback(publicClient, hash, walletClient);
+  return true;
 }
 
 /**

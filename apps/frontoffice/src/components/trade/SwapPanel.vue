@@ -397,7 +397,14 @@
           <div class="pt-2 border-t border-border/60 space-y-1.5 text-xs font-sans">
             <div class="flex items-center justify-between text-muted-foreground">
               <span>{{ t('priceImpact') }}</span>
-              <span class="font-medium text-foreground">&lt; 0.1%</span>
+              <span
+                class="font-medium"
+                :class="
+                  (priceImpact ?? 0) >= PRICE_IMPACT_WARN ? 'text-amber-500' : 'text-foreground'
+                "
+              >
+                {{ formatPriceImpact(priceImpact) }}
+              </span>
             </div>
             <div class="flex items-center justify-between text-muted-foreground">
               <span>{{ t('slippageTolerance') }}</span>
@@ -481,6 +488,7 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { useI18n } from '@/lib/i18n';
+import { formatPriceImpact } from '@/lib/pool-preview';
 import { formatCompactUsd, formatQuoteBalance, formatTokenBalance } from '@/lib/utils';
 import type { LaunchedTokenEntity, NetworkConfig, PnlShare } from '@goton/shared-types';
 import { formatSignedPercent, formatSignedUsd } from '@/composables/usePnlShare';
@@ -503,6 +511,8 @@ interface Props {
   isTokenBalanceLoading: boolean;
   activeBuyPresets: (string | number)[];
   estimatedOutputAmount: string;
+  /** Share of the output lost to moving the price (0 to 1); null when it could not be measured. */
+  priceImpact?: number | null;
   slippage: number;
   isCustomSlippage: boolean;
   customSlippageInput: string;
@@ -539,6 +549,8 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+
+const PRICE_IMPACT_WARN = 0.05;
 
 function selectSlippage(preset: number) {
   emit('update:slippage', preset);
