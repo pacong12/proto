@@ -1,6 +1,7 @@
 import { ref, computed, type Ref } from 'vue';
-import { erc20Abi, formatUnits } from 'viem';
+import { erc20Abi } from 'viem';
 import { apiFetch } from '@/lib/api-client';
+import { formatDividendAmount, totalsByCurrency } from '@/lib/currency-totals';
 import { getPublicClient } from '@/lib/viem-client';
 import {
   gotonFeeSplitterAbi,
@@ -19,7 +20,7 @@ export interface UseUserProfileOptions {
   allTokens:
     | Ref<readonly { token: LaunchedTokenEntity; marketData?: TokenMarketData | null }[]>
     | Readonly<Ref<readonly { token: LaunchedTokenEntity; marketData?: TokenMarketData | null }[]>>;
-  getTokenNetwork: (address: string) => NetworkConfig;
+  getTokenNetwork: (token: string | LaunchedTokenEntity) => NetworkConfig;
 }
 
 export function useUserProfile({
@@ -34,13 +35,17 @@ export function useUserProfile({
   const loadingLaunches = ref(false);
   const loadingPortfolio = ref(false);
 
-  const totalClaimableWeth = computed(() => {
-    const sum = myLaunches.value.reduce((acc: number, item: MyLaunchItem) => {
-      const val = parseFloat(item.unclaimedWeth);
-      return acc + (isNaN(val) ? 0 : val);
-    }, 0);
-    return isNaN(sum) ? '0.0000' : sum.toFixed(4);
-  });
+  /** A creator's tokens can quote in ETH and USDC, so there is one total per currency. */
+  const claimableTotals = computed(() =>
+    totalsByCurrency(
+      myLaunches.value.map((item) => ({
+        symbol: item.currencySymbol,
+        raw: item.unclaimedRaw,
+        decimals: item.quoteDecimals,
+      })),
+      activeNetwork.value.nativeCurrency.symbol,
+    ),
+  );
 
   // 1. Fetch launches created by the target account
   async function fetchMyLaunches() {
@@ -59,9 +64,10 @@ export function useUserProfile({
         const launches = await Promise.all(
           envelope.data.map(async (item) => {
             let redirect: string | null = null;
-            let unclaimedWeth = '0.0000';
+            let unclaimedRaw = 0n;
 
-            const tokenNetwork = getTokenNetwork(item.token.address);
+            const tokenNetwork = getTokenNetwork(item.token);
+            let quoteDecimals = tokenNetwork.quoteTokenDecimals;
             const tokenClient = getPublicClient(tokenNetwork.chainId);
             // FO-06: read the creator's real accrued fees from the token's splitter instead of
             // simulating the legacy locker (whose fallback reported other tokens' balances).
@@ -89,8 +95,8 @@ export function useUserProfile({
                     functionName: 'creator',
                   }),
                 ]);
-                const amount = Number(formatUnits(accrued, splitter.quoteDecimals));
-                unclaimedWeth = isNaN(amount) ? '0.0000' : amount.toFixed(4);
+                unclaimedRaw = accrued;
+                quoteDecimals = splitter.quoteDecimals;
                 if (
                   recipient.toLowerCase() !== creatorAddr.toLowerCase() &&
                   recipient !== UNDEPLOYED
@@ -107,7 +113,10 @@ export function useUserProfile({
               name: item.token.name,
               symbol: item.token.symbol,
               logo: item.token.logo,
-              unclaimedWeth,
+              unclaimedWeth: formatDividendAmount(unclaimedRaw, quoteDecimals),
+              unclaimedRaw,
+              quoteDecimals,
+              currencySymbol: tokenNetwork.nativeCurrency.symbol,
               redirect,
               taxConfig: item.token.taxConfig,
               onBondingCurve: item.token.version !== 'v4' && !item.marketData?.isGraduated,
@@ -168,6 +177,7 @@ export function useUserProfile({
         for (const tr of tradesJson.data) {
           if (tr.trader && tr.trader.toLowerCase() !== target) continue;
           const tMeta = tokenMap.get(tr.tokenAddress.toLowerCase());
+          const tradeNetwork = getTokenNetwork(tMeta?.token ?? tr.tokenAddress);
           const sym = tMeta
             ? tMeta.token.symbol
             : ((tr as TradeEventEntity & { tokenSymbol?: string }).tokenSymbol ?? 'TOKEN');
@@ -176,6 +186,8 @@ export function useUserProfile({
             isBuy: tr.isBuy,
             tokenSymbol: sym,
             ethAmount: tr.wethAmount,
+            currencySymbol: tradeNetwork.nativeCurrency.symbol,
+            blockExplorer: tradeNetwork.blockExplorer,
             tokenAmount: parseFloat(tr.tokenAmount || '0').toFixed(2),
             timestamp: tr.timestamp,
           });
@@ -210,9 +222,7 @@ export function useUserProfile({
       const candidateList = Array.from(candidateAddresses);
       const balancePromises = candidateList.map(async (addr) => {
         const meta = tokenMap.get(addr);
-        const chainId = meta
-          ? getTokenNetwork(meta.token.address).chainId
-          : activeNetwork.value.chainId;
+        const chainId = meta ? getTokenNetwork(meta.token).chainId : activeNetwork.value.chainId;
         const client = getPublicClient(chainId);
 
         try {
@@ -281,7 +291,7 @@ export function useUserProfile({
     userActivities,
     loadingLaunches,
     loadingPortfolio,
-    totalClaimableWeth,
+    claimableTotals,
     fetchMyLaunches,
     fetchUserPositionsAndActivity,
   };

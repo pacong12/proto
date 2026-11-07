@@ -33,8 +33,12 @@
             <span class="text-xs text-muted-foreground uppercase block">
               {{ t('totalClaimable') }}
             </span>
-            <p class="text-xl font-bold text-foreground">
-              {{ dividendsTotalFormatted }} {{ nativeCurrencySymbol }}
+            <p
+              v-for="total in dividendsTotals"
+              :key="total"
+              class="text-xl font-bold text-foreground"
+            >
+              {{ total }}
             </p>
           </div>
           <Button
@@ -61,7 +65,7 @@
             <div>
               <span class="font-bold text-foreground">${{ entry.tokenSymbol }}</span>
               <span class="text-muted-foreground ml-2">
-                {{ entry.earnedFormatted }} {{ nativeCurrencySymbol }}
+                {{ entry.earnedFormatted }} {{ entry.currencySymbol }}
               </span>
             </div>
             <Button
@@ -115,17 +119,18 @@ interface DividendEntry {
   tokenAddress: string;
   tokenSymbol: string;
   earnedFormatted: string;
+  currencySymbol: string;
 }
 
 defineProps<{
   isOwnProfile: boolean;
   dividendsLoading: boolean;
-  dividendsTotalFormatted: string;
+  /** One formatted amount per currency. */
+  dividendsTotals: string[];
   dividendsHasAny: boolean;
   dividendsActionLoading: string | null | boolean;
   dividendEntries: DividendEntry[];
   dividendsError: string | null;
-  nativeCurrencySymbol: string;
 }>();
 
 const emit = defineEmits<{

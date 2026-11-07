@@ -3,6 +3,14 @@ import { apiFetch } from '@/lib/api-client';
 import { useTokenStream } from '@/composables/useTokenStream';
 import { formatPriceUsd, formatMarketCap } from '@/lib/utils';
 import {
+  burnedPercent,
+  networkProtocolAddresses,
+  top10WalletPercent,
+  walletHolders,
+  walletPercent,
+  type HolderContext,
+} from '@/lib/holders';
+import {
   stableQuoteUsd,
   FALLBACK_ETH_PRICE_USD,
   type LaunchedTokenEntity,
@@ -29,6 +37,9 @@ function marketChanged(prev: TokenMarketData, next: TokenMarketData): boolean {
 export function replaceIfChanged<T>(target: Ref<T[]>, rows: T[]): void {
   if (JSON.stringify(rows) !== JSON.stringify(target.value)) target.value = rows;
 }
+
+/** How many holders the page asks for; a list that reaches it may have more behind it. */
+const HOLDERS_LIMIT = 50;
 
 /** A chart bar: time in seconds, prices in USD. */
 interface CandleBar {
@@ -110,29 +121,30 @@ export function useTradeMarket(page: TradePage) {
     hasRenounced: false,
   });
 
-  const devHoldingPercent = computed(() => {
-    if (!currentToken.value.deployer || holders.value.length === 0) return 0;
-    const dev = holders.value.find(
-      (h) => h.address.toLowerCase() === currentToken.value.deployer.toLowerCase(),
-    );
-    return dev ? dev.percent : 0;
-  });
+  // The curve, the pool, protocol contracts and burn addresses appear in the holder list, but
+  // nobody holds that supply: the holder figures count wallets only.
+  const holderContext = computed<HolderContext>(() => ({
+    tokenAddress: currentToken.value.address,
+    curveAddress: currentToken.value.curveAddress,
+    poolAddress: currentToken.value.poolAddress,
+    poolManagerAddress: tokenNetwork.value.contracts.poolManagerV4,
+    lockerAddress: tokenNetwork.value.contracts.locker,
+    protocolAddresses: networkProtocolAddresses(tokenNetwork.value),
+  }));
 
-  const top10HoldingPercent = computed(() => {
-    if (holders.value.length === 0) return 0;
-    return holders.value.slice(0, 10).reduce((acc, h) => acc + h.percent, 0);
-  });
+  const holdersCount = computed(() => walletHolders(holders.value, holderContext.value).length);
 
-  const burnedInfo = computed(() => {
-    if (holders.value.length === 0) return { amount: 0, percent: 0 };
-    const dead = holders.value.find(
-      (h) =>
-        h.address.toLowerCase() === '0x000000000000000000000000000000000000dead' ||
-        h.address.toLowerCase() === '0x0000000000000000000000000000000000000000',
-    );
-    if (!dead) return { amount: 0, percent: 0 };
-    return { amount: dead.balance, percent: dead.percent };
-  });
+  const holdersCountCapped = computed(() => holders.value.length >= HOLDERS_LIMIT);
+
+  const devHoldingPercent = computed(() =>
+    walletPercent(holders.value, currentToken.value.deployer, holderContext.value),
+  );
+
+  const top10HoldingPercent = computed(() =>
+    top10WalletPercent(holders.value, holderContext.value),
+  );
+
+  const burnedInfo = computed(() => ({ percent: burnedPercent(holders.value) }));
 
   const quoteAssetPriceUsd = computed(() => {
     const peg = stableQuoteUsd(tokenNetwork.value);
@@ -351,7 +363,7 @@ export function useTradeMarket(page: TradePage) {
     if (!silent) holdersLoading.value = true;
     try {
       const envelope = await apiFetch<{ success: boolean; data: TokenHolder[] }>(
-        `/api/tokens/${address}/holders?limit=50`,
+        `/api/tokens/${address}/holders?limit=${HOLDERS_LIMIT}`,
       );
       if (envelope.success && Array.isArray(envelope.data)) {
         replaceIfChanged(holders, envelope.data);
@@ -567,7 +579,10 @@ export function useTradeMarket(page: TradePage) {
     fetchHolders,
     fetchTopTraders,
     fetchTrades,
+    holderContext,
     holders,
+    holdersCount,
+    holdersCountCapped,
     holdersLoading,
     isHolderAddress,
     priceFlash,

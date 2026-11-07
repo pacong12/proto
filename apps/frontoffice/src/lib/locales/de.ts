@@ -358,7 +358,6 @@ const messages: Record<string, string> = {
   top10Supply: 'Top 10 Angebot',
   devHolds: 'Dev-Bestand',
   burned: 'Verbrannt',
-  verifiedContract: 'Verifizierter Vertrag',
   tradingTaxesOptional: 'Handelssteuern (Optional)',
   defaultZeroMaxTen: 'Standard: 0% (Max. 10%)',
   buyTax: 'Kaufsteuer',
@@ -497,8 +496,6 @@ const messages: Record<string, string> = {
   footerCurveToV4: 'Bonding-Curve, dann Uniswap v4',
   footerPoolFromLaunch: 'Uniswap-v4-Pool ab dem Launch',
   footerLiquidityLocked: 'Liquidität dauerhaft gesperrt',
-  footerSplitCurve: 'LP-Gebühren: 70 % Creator / 30 % Protokoll',
-  footerSplitInPool: 'Steuer: 20 % Protokoll, Rest nach deiner Aufteilung',
   inPoolLiveHint:
     'Wird ab dem ersten Block in seinem gesperrten Uniswap-v4-Pool gehandelt. Es gibt keine Curve zu füllen.',
   memestockMomentum: 'Momentum',
@@ -553,6 +550,38 @@ const messages: Record<string, string> = {
   feedMedia: 'Medien',
   orderTooSmallForKeeper:
     'Zu klein für Keeper: Die Ausführung bringt etwa {fee} {symbol}, kostet aber etwa {gas} {symbol} Gas, daher wird die Order womöglich nie ausgeführt. Nutze einen größeren Betrag.',
+  viewContract: 'Vertrag ansehen',
+  viewContractHint: 'Diesen Vertrag im Block-Explorer öffnen',
+  deployedContractsDesc: 'Auf {network} bereitgestellte Smart Contracts des Protokolls',
+  holdersHint:
+    'Wallets, die diesen Token halten. Ohne Bonding Curve, Pools, Protokollverträge und Burn-Adressen.',
+  top10SupplyHint:
+    'Anteil der 10 größten Wallets am Gesamtangebot. Ohne Bonding Curve, Pools, Protokollverträge und verbrannte Token.',
+  devHoldsHint: 'Anteil des Gesamtangebots in der Wallet des Creators.',
+  holderCurve: 'Bonding Curve',
+  holderLocker: 'LP-Locker',
+  holderBurned: 'Burn-Adresse',
+  holderContract: 'Protokollvertrag',
+  holderAtCall: 'Halter beim Call',
+  footerSplitCurve: 'Pool-Gebühren: 30 % Protokoll, der Rest nach der Aufteilung des Tokens',
+  footerSplitInPool:
+    'Pool-Gebühren und Steuer: 20 % Protokoll, der Rest nach der Aufteilung des Tokens',
+  launchPrebuyRequired:
+    '{network}: keine Launch-Gebühr, aber ein Pre-Buy von mindestens {min} {symbol} ist erforderlich.',
+  launchPrebuyTooLow: 'Der Pre-Buy muss mindestens {min} {symbol} betragen',
+  launchTaxRequired: 'Lege eine Kauf- oder Verkaufssteuer über 0 % fest',
+  tradingTaxesRequired: 'Handelssteuern (erforderlich)',
+  tradingTaxesRequiredHint:
+    'Diese Chain verlangt eine Kauf- oder Verkaufssteuer über 0 %. Sie gilt ab dem Launch und bleibt für immer fest.',
+  taxAboveZeroMaxTen: 'Über 0 % (max. 10 %)',
+  profileNotFoundTitle: 'Profil nicht gefunden',
+  profileNotFoundBody: 'Kein Nutzer und keine Wallet passt zu diesem Namen.',
+  postLoadFailed: 'Dieser Beitrag konnte nicht geladen werden',
+  postLoadFailedDesc: 'Prüfe deine Verbindung und versuche es erneut.',
+  tryAgain: 'Erneut versuchen',
+  feedNoCallouts: 'Hier gibt es noch keine Callouts',
+  feedNoCalloutsDesc:
+    'Nichts passt zu diesem Tab und dieser Chain. Versuche einen anderen Filter oder poste oben den ersten Call.',
 };
 
 export default messages;

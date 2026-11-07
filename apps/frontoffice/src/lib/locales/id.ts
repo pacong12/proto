@@ -354,7 +354,6 @@ const messages: Record<string, string> = {
   top10Supply: 'Suplai 10 Teratas',
   devHolds: 'Kepemilikan Dev',
   burned: 'Dibakar',
-  verifiedContract: 'Kontrak Terverifikasi',
   tradingTaxesOptional: 'Pajak Trading (Opsional)',
   defaultZeroMaxTen: 'Default: 0% (Maks 10%)',
   buyTax: 'Pajak Beli',
@@ -493,8 +492,6 @@ const messages: Record<string, string> = {
   footerCurveToV4: 'Bonding curve, lalu Uniswap v4',
   footerPoolFromLaunch: 'Pool Uniswap v4 sejak peluncuran',
   footerLiquidityLocked: 'Likuiditas dikunci permanen',
-  footerSplitCurve: 'Fee LP: 70% kreator / 30% protokol',
-  footerSplitInPool: 'Pajak: 20% protokol, sisanya sesuai split Anda',
   inPoolLiveHint:
     'Diperdagangkan di pool Uniswap v4 terkunci sejak blok pertama. Tidak ada kurva yang perlu diisi.',
   memestockMomentum: 'Momentum',
@@ -549,6 +546,37 @@ const messages: Record<string, string> = {
   feedMedia: 'Media',
   orderTooSmallForKeeper:
     'Terlalu kecil untuk keeper: imbalannya sekitar {fee} {symbol}, padahal gas pengisiannya sekitar {gas} {symbol}, jadi order ini mungkin tidak pernah terisi. Gunakan jumlah yang lebih besar.',
+  viewContract: 'Lihat kontrak',
+  viewContractHint: 'Buka kontrak ini di block explorer',
+  deployedContractsDesc: 'Smart contract protokol yang di-deploy di {network}',
+  holdersHint:
+    'Wallet yang memegang token ini. Tidak termasuk bonding curve, pool, kontrak protokol, dan alamat burn.',
+  top10SupplyHint:
+    'Bagian dari total suplai yang dipegang 10 wallet terbesar. Tidak termasuk bonding curve, pool, kontrak protokol, dan token yang dibakar.',
+  devHoldsHint: 'Bagian dari total suplai di wallet kreator.',
+  holderCurve: 'Bonding curve',
+  holderLocker: 'Locker LP',
+  holderBurned: 'Alamat burn',
+  holderContract: 'Kontrak protokol',
+  holderAtCall: 'Holder saat call',
+  footerSplitCurve: 'Fee pool: 30% protokol, sisanya mengikuti pembagian tiap token',
+  footerSplitInPool: 'Fee pool dan pajak: 20% protokol, sisanya mengikuti pembagian tiap token',
+  launchPrebuyRequired:
+    '{network}: tanpa biaya peluncuran, tetapi pre-buy minimal {min} {symbol} wajib.',
+  launchPrebuyTooLow: 'Pre-buy minimal {min} {symbol}',
+  launchTaxRequired: 'Atur pajak beli atau jual di atas 0%',
+  tradingTaxesRequired: 'Pajak Trading (Wajib)',
+  tradingTaxesRequiredHint:
+    'Chain ini mewajibkan pajak beli atau jual di atas 0%. Pajak berlaku sejak peluncuran dan tidak bisa diubah selamanya.',
+  taxAboveZeroMaxTen: 'Di atas 0% (Maks 10%)',
+  profileNotFoundTitle: 'Profil tidak ditemukan',
+  profileNotFoundBody: 'Tidak ada pengguna atau wallet dengan nama ini.',
+  postLoadFailed: 'Postingan ini gagal dimuat',
+  postLoadFailedDesc: 'Periksa koneksi Anda, lalu coba lagi.',
+  tryAgain: 'Coba lagi',
+  feedNoCallouts: 'Belum ada callout di sini',
+  feedNoCalloutsDesc:
+    'Tidak ada yang cocok dengan tab dan chain ini. Coba filter lain atau posting call pertama di atas.',
 };
 
 export default messages;

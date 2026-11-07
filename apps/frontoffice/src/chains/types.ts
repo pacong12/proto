@@ -42,6 +42,9 @@ export interface ChainSwapParams {
   onApproveSubmitted?: (approveHash: `0x${string}`) => void;
 }
 
+/** What a pool swap needs to be quoted; `amountInWei` uses native 18-dp units on a buy. */
+export type V4SwapInput = Pick<ChainSwapParams, 'tokenAddress' | 'isBuy' | 'amountInWei'>;
+
 export interface ChainAdapter {
   readonly network: NetworkConfig;
   readonly chainId: number;
@@ -75,4 +78,14 @@ export interface ChainAdapter {
     publicClient: PublicClient,
     account: `0x${string}`,
   ): Promise<string | null>;
+
+  /**
+   * What a swap in the token's v4 pool pays right now, in the output's raw units. Throws when it
+   * would revert (not enough balance; a sell without its allowance).
+   */
+  quotePoolSwap(
+    params: V4SwapInput,
+    publicClient: PublicClient,
+    account: `0x${string}`,
+  ): Promise<bigint>;
 }

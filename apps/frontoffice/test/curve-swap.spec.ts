@@ -32,6 +32,36 @@ describe('executeCurveSwap', () => {
     );
   });
 
+  it('sets a taxed sell floor from the quote, which is already net of the sell tax', async () => {
+    const netOfTax = 9n * 10n ** 15n; // getAmountOutSell takes the token's sell tax off first
+    const publicClient = {
+      getBalance: async () => 10n ** 18n,
+      readContract: async ({ functionName }: { functionName: string }) =>
+        functionName === 'allowance' ? 10n ** 30n : [netOfTax, 10n ** 13n],
+      getTransactionReceipt: async () => ({ status: 'success', blockNumber: 1n }),
+    } as unknown as PublicClient;
+    const writeContract = vi.fn(async () => '0xs');
+    await executeCurveSwap(
+      {
+        tokenAddress: TOKEN,
+        curveAddress: CURVE,
+        isBuy: false,
+        amountInWei: 10n ** 21n,
+        slippagePercent: 1,
+        expectedAmountOut: 10n ** 16n, // an untaxed estimate would revert at 1%
+      },
+      { chain: undefined, writeContract } as unknown as WalletClient,
+      publicClient,
+      ACCOUNT,
+    );
+    expect(writeContract).toHaveBeenCalledWith(
+      expect.objectContaining({
+        functionName: 'sell',
+        args: [10n ** 21n, (netOfTax * 9_900n) / 10_000n],
+      }),
+    );
+  });
+
   it('waits for the approval to be mined before sending the sell', async () => {
     const events: string[] = [];
     const publicClient = {

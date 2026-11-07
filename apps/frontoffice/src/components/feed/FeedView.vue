@@ -26,8 +26,8 @@
 
         <Empty
           v-else-if="networkCallouts.length === 0"
-          :title="`No callouts on ${activeNetwork.name}`"
-          :description="`Be the first to post alpha on ${activeNetwork.name} using the box above!`"
+          :title="t('feedNoCallouts')"
+          :description="t('feedNoCalloutsDesc')"
           class="py-14"
         >
           <template #icon>
@@ -175,8 +175,8 @@ const chainFilterOptions = computed(() => {
   ];
 });
 
-// Another tab, chain or network starts the list from its first page.
-watch([activeFilter, selectedChainFilter, activeNetwork], () => {
+// Another tab, chain, network or search starts the list from its first page.
+watch([activeFilter, selectedChainFilter, activeNetwork, searchQuery], () => {
   currentPage.value = 1;
 });
 

@@ -110,12 +110,7 @@
               class="py-2 px-3 whitespace-nowrap text-right font-bold"
               :class="trade.isBuy ? 'text-emerald-400' : 'text-rose-400'"
             >
-              ${{
-                Math.max(0.01, getTradeVolumeUsd(trade)).toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })
-              }}
+              {{ formatTradeUsd(getTradeVolumeUsd(trade)) }}
             </TableCell>
 
             <!-- 4. Native Volume (ETH / USDC) -->
@@ -217,7 +212,12 @@ import {
 import { Pagination } from '@/components/ui/pagination';
 import { Jazzicon } from '@/components/ui/avatar';
 import { TraderTagBadge } from '@/components/ui/badge';
-import { formatRelativeTime, formatTokenNumber, formatSubscriptPrice } from '@/lib/utils';
+import {
+  formatRelativeTime,
+  formatTokenNumber,
+  formatSubscriptPrice,
+  formatTradeUsd,
+} from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { FALLBACK_ETH_PRICE_USD } from '@goton/shared-types';
 

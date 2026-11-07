@@ -23,8 +23,8 @@ features:
     details: Las posiciones de liquidez se acuñan y bloquean para siempre en smart contracts desde el primer bloque.
   - title: Protección Anti-Sniper Integrada
     details: Límites automatizados evitan que los bots acaparen el suministro inicial, asegurando igualdad para la comunidad.
-  - title: 70% Recompensas para Creadores
-    details: Los creadores ganan el 70% de las comisiones de trading acumuladas de forma continua.
+  - title: Recompensas para Creadores
+    details: Los creadores conservan el 70% (Robinhood Chain) o el 80% (Arc) de las comisiones e impuestos de cada token, y pueden compartirlo con los holders o destinarlo a recompras.
   - title: Recompra y Quema
     details: 'Los creadores pueden destinar parte de su cuota de comisiones a recompra y quema: un contrato compra el token en su propio pool, protegido por un TWAP de 30 minutos, y lo envía a la dirección muerta.'
   - title: Rápido y Bajo Costo

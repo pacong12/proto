@@ -2,6 +2,7 @@ import { ref, computed } from 'vue';
 import { type FeedCalloutItem, buildCommentSignMessage } from '@goton/shared-types';
 import { getSessionHeaders } from '../lib/session';
 import { apiFetch } from '@/lib/api-client';
+import { isCallInProfit } from '@/lib/call-pnl';
 import { getWalletClient } from '@/lib/viem-client';
 import { isUserRejection } from '../lib/wallet-tx';
 
@@ -260,7 +261,7 @@ export function useFeed() {
     } else if (activeFilter.value === 'whale') {
       list = list.filter((c) => isWhaleCaller(c));
     } else if (activeFilter.value === 'profit') {
-      list = list.filter((c) => (c.profitUsd ?? 0) > 0);
+      list = list.filter((c) => isCallInProfit(c));
     } else if (activeFilter.value === 'media') {
       list = list.filter((c) => Boolean(c.imageUrl));
     }

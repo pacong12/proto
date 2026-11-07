@@ -351,7 +351,6 @@ const messages: Record<string, string> = {
   top10Supply: '上位10名保有率',
   devHolds: '開発者保有率',
   burned: 'バーン済み',
-  verifiedContract: '検証済みコントラクト',
   tradingTaxesOptional: '取引税 (任意)',
   defaultZeroMaxTen: '初期値: 0% (最大 10%)',
   buyTax: '購入税',
@@ -488,8 +487,6 @@ const messages: Record<string, string> = {
   footerCurveToV4: 'ボンディングカーブ、その後 Uniswap v4',
   footerPoolFromLaunch: 'ローンチ時から Uniswap v4 プール',
   footerLiquidityLocked: '流動性は永久ロック',
-  footerSplitCurve: 'LP 手数料：作成者 70% / プロトコル 30%',
-  footerSplitInPool: '税：プロトコル 20%、残りはあなたの配分',
   inPoolLiveHint:
     '最初のブロックからロックされた Uniswap v4 プールで取引されます。埋めるカーブはありません。',
   memestockMomentum: 'モメンタム',
@@ -544,6 +541,37 @@ const messages: Record<string, string> = {
   feedMedia: 'メディア',
   orderTooSmallForKeeper:
     'キーパーには小さすぎます：約定報酬は約{fee} {symbol}ですが、ガス代は約{gas} {symbol}かかるため、約定しない可能性があります。より大きな金額にしてください。',
+  viewContract: 'コントラクトを見る',
+  viewContractHint: 'ブロックエクスプローラーでこのコントラクトを開く',
+  deployedContractsDesc: '{network} にデプロイされたプロトコルのスマートコントラクト',
+  holdersHint:
+    'このトークンを保有するウォレット。ボンディングカーブ、プール、プロトコルのコントラクト、バーンアドレスは除きます。',
+  top10SupplyHint:
+    '上位10ウォレットが保有する総供給量の割合。ボンディングカーブ、プール、プロトコルのコントラクト、バーン済みトークンは除きます。',
+  devHoldsHint: '作成者のウォレットにある総供給量の割合。',
+  holderCurve: 'ボンディングカーブ',
+  holderLocker: 'LP ロッカー',
+  holderBurned: 'バーンアドレス',
+  holderContract: 'プロトコルのコントラクト',
+  holderAtCall: 'コール時に保有',
+  footerSplitCurve: 'プール手数料：プロトコル 30%、残りは各トークンの配分どおり',
+  footerSplitInPool: 'プール手数料と税：プロトコル 20%、残りは各トークンの配分どおり',
+  launchPrebuyRequired:
+    '{network}：発行手数料は無料ですが、{min} {symbol} 以上のプレバイが必須です。',
+  launchPrebuyTooLow: 'プレバイは {min} {symbol} 以上にしてください',
+  launchTaxRequired: '買いまたは売りの税を 0% より高く設定してください',
+  tradingTaxesRequired: '取引税（必須）',
+  tradingTaxesRequiredHint:
+    'このチェーンでは買いまたは売りの税を 0% より高くする必要があります。発行時から適用され、変更できません。',
+  taxAboveZeroMaxTen: '0% 超（最大 10%）',
+  profileNotFoundTitle: 'プロフィールが見つかりません',
+  profileNotFoundBody: 'この名前に一致するユーザーやウォレットはありません。',
+  postLoadFailed: 'この投稿を読み込めませんでした',
+  postLoadFailedDesc: '接続を確認して、もう一度お試しください。',
+  tryAgain: '再試行',
+  feedNoCallouts: 'ここにはまだコールアウトがありません',
+  feedNoCalloutsDesc:
+    'このタブとチェーンに一致するものはありません。別のフィルターを試すか、上から最初のコールを投稿してください。',
 };
 
 export default messages;

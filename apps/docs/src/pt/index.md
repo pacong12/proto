@@ -23,8 +23,8 @@ features:
     details: As posições de liquidez são bloqueadas para sempre em contratos inteligentes a partir do bloco zero.
   - title: Proteção Anti-Sniper Nativa
     details: Limites automáticos impedem que robôs comprem todo o fornecimento inicial, garantindo igualdade para a comunidade.
-  - title: 70% de Recompensas para Criadores
-    details: Os criadores recebem 70% das taxas de negociação acumuladas de forma contínua.
+  - title: Recompensas para Criadores
+    details: Os criadores ficam com 70% (Robinhood Chain) ou 80% (Arc) das taxas e impostos de cada token, e podem dividir essa parte com os holders ou destiná-la a recompras.
   - title: Recompra e Queima
     details: 'Os criadores podem destinar parte da sua fatia de taxas para recompra e queima: um contrato compra o token no próprio pool, protegido por um TWAP de 30 minutos, e o envia para o endereço morto.'
   - title: Rápido e de Baixo Custo

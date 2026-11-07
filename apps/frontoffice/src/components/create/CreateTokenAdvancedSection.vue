@@ -96,14 +96,23 @@
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-1.5">
             <Label class="text-sm font-semibold text-foreground">{{
-              t('tradingTaxesOptional')
+              t(inPoolLaunch ? 'tradingTaxesRequired' : 'tradingTaxesOptional')
             }}</Label>
             <InfoTooltip
-              text="Initial tax configured here is activated immediately upon token launch. Defaults to 0% for pure meme coins. Post-launch changes will require a 24-hour timelock to protect holders."
+              :text="
+                inPoolLaunch
+                  ? t('tradingTaxesRequiredHint')
+                  : 'Initial tax configured here is activated immediately upon token launch. Defaults to 0% for pure meme coins. Post-launch changes will require a 24-hour timelock to protect holders.'
+              "
             />
           </div>
-          <span class="text-xs text-muted-foreground">{{ t('defaultZeroMaxTen') }}</span>
+          <span class="text-xs text-muted-foreground">{{
+            t(inPoolLaunch ? 'taxAboveZeroMaxTen' : 'defaultZeroMaxTen')
+          }}</span>
         </div>
+        <p v-if="taxMissing" class="text-xs text-destructive font-medium">
+          {{ t('launchTaxRequired') }}
+        </p>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
           <!-- Buy Tax with Slider -->
           <div class="space-y-3.5 p-4 sm:p-5 rounded-2xl border border-border bg-card">
@@ -469,6 +478,8 @@ interface Props {
   teamAvailable?: boolean;
   /** The active chain launches into its v4 pool (fees and tax use the in-pool flow). */
   inPoolLaunch?: boolean;
+  /** The chain requires a tax above 0% and neither is set. */
+  taxMissing?: boolean;
   buyTax: string;
   sellTax: string;
   revenueSplit: RevenueSplit;

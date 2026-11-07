@@ -23,8 +23,8 @@ features:
     details: Liquiditätspositionen werden ab Block 0 für immer in Smart Contracts gesperrt – kein Rug-Pull möglich.
   - title: Integrierter Anti-Snipe-Schutz
     details: Automatisierte Limits verhindern, dass Bots beim Start das Angebot aufkaufen, und sichern faire Chancen für alle.
-  - title: 70% Creator-Belohnungen
-    details: Token-Ersteller erhalten 70% der anfallenden Handelsgebühren fortlaufend gutgeschrieben.
+  - title: Creator-Belohnungen
+    details: Token-Ersteller behalten 70% (Robinhood Chain) bzw. 80% (Arc) der Gebühren und Steuern jedes Tokens und können diesen Anteil mit Haltern teilen oder für Buybacks nutzen.
   - title: Rückkauf & Burn
     details: 'Creator können einen Teil ihres Gebührenanteils für Rückkauf und Burn bestimmen: Ein Contract kauft den Token im eigenen Pool, abgesichert durch einen 30-Minuten-TWAP, und sendet ihn an die Dead-Adresse.'
   - title: Schnell und kostengünstig

@@ -134,6 +134,7 @@
           :is-token-balance-loading="isTokenBalanceLoading"
           :active-buy-presets="activeBuyPresets"
           :estimated-output-amount="estimatedOutputAmount"
+          :price-impact="priceImpact"
           :slippage="slippage"
           :is-custom-slippage="isCustomSlippage"
           :custom-slippage-input="customSlippageInput"
@@ -217,7 +218,8 @@
             :current-market-data="currentMarketData"
             :currency-symbol="currencySymbol"
             :explorer-url="explorerUrl"
-            :holders-count="holders.length"
+            :holders-count="holdersCount"
+            :holders-count-capped="holdersCountCapped"
             :top10-holding-percent="top10HoldingPercent"
             :dev-holding-percent="devHoldingPercent"
             :onchain-tax-config="onchainTaxConfig"
@@ -327,9 +329,7 @@
                   :holders="holders"
                   :loading="holdersLoading"
                   :deployer="currentToken.deployer"
-                  :locker-address="tokenNetwork.contracts.locker"
-                  :pool-address="currentToken.poolAddress"
-                  :curve-address="currentToken.curveAddress"
+                  :holder-context="holderContext"
                   :decimals="currentToken.decimals ?? 18"
                   :is-graduated="!!currentMarketData.isGraduated"
                   :explorer-url="explorerUrl"
@@ -614,7 +614,10 @@ const {
   fetchHolders,
   fetchTopTraders,
   fetchTrades,
+  holderContext,
   holders,
+  holdersCount,
+  holdersCountCapped,
   holdersLoading,
   isHolderAddress,
   priceFlash,
@@ -677,6 +680,7 @@ const {
   applyQuickBuy,
   customSlippageInput,
   estimatedOutputAmount,
+  priceImpact,
   fetchUserTokenBalance,
   handleCustomSlippageInput,
   handleSwap,

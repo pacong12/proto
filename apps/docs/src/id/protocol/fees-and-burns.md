@@ -4,7 +4,7 @@ Goton menyelaraskan keberlanjutan proyek antara kreator token dan komunitasnya d
 
 ---
 
-## Pembagian Fee 70/30
+## Pembagian Fee
 
 Sumber fee berbeda per jaringan:
 
