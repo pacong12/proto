@@ -358,7 +358,6 @@ const messages: Record<string, string> = {
   top10Supply: 'Suministro Top 10',
   devHolds: 'Posee el Dev',
   burned: 'Quemado',
-  verifiedContract: 'Contrato Verificado',
   tradingTaxesOptional: 'Impuestos de Comercio (Opcional)',
   defaultZeroMaxTen: 'Por defecto: 0% (Máx 10%)',
   buyTax: 'Impuesto de Compra',
@@ -498,8 +497,6 @@ const messages: Record<string, string> = {
   footerCurveToV4: 'Curva de bonding, luego Uniswap v4',
   footerPoolFromLaunch: 'Pool de Uniswap v4 desde el lanzamiento',
   footerLiquidityLocked: 'Liquidez bloqueada para siempre',
-  footerSplitCurve: 'Comisiones LP: 70% creador / 30% protocolo',
-  footerSplitInPool: 'Impuesto: 20% protocolo, el resto según tu reparto',
   inPoolLiveHint:
     'Se negocia en su pool bloqueado de Uniswap v4 desde el primer bloque. No hay curva que llenar.',
   memestockMomentum: 'Momentum',
@@ -554,6 +551,38 @@ const messages: Record<string, string> = {
   feedMedia: 'Multimedia',
   orderTooSmallForKeeper:
     'Demasiado pequeña para los keepers: paga unos {fee} {symbol} por ejecutarla, pero el gas cuesta unos {gas} {symbol}, así que puede que nunca se ejecute. Usa un monto mayor.',
+  viewContract: 'Ver contrato',
+  viewContractHint: 'Abrir este contrato en el explorador de bloques',
+  deployedContractsDesc: 'Contratos inteligentes del protocolo desplegados en {network}',
+  holdersHint:
+    'Billeteras que tienen este token. Excluye la curva de vinculación, los pools, los contratos del protocolo y las direcciones de quema.',
+  top10SupplyHint:
+    'Parte del suministro total en las 10 billeteras más grandes. Excluye la curva de vinculación, los pools, los contratos del protocolo y los tokens quemados.',
+  devHoldsHint: 'Parte del suministro total en la billetera del creador.',
+  holderCurve: 'Curva de vinculación',
+  holderLocker: 'Locker de LP',
+  holderBurned: 'Dirección de quema',
+  holderContract: 'Contrato del protocolo',
+  holderAtCall: 'Holder al publicar',
+  footerSplitCurve: 'Comisiones del pool: 30% protocolo, el resto según el reparto de cada token',
+  footerSplitInPool:
+    'Comisiones del pool e impuesto: 20% protocolo, el resto según el reparto de cada token',
+  launchPrebuyRequired:
+    '{network}: sin comisión de lanzamiento, pero se requiere una precompra de al menos {min} {symbol}.',
+  launchPrebuyTooLow: 'La precompra debe ser de al menos {min} {symbol}',
+  launchTaxRequired: 'Fija un impuesto de compra o venta superior al 0%',
+  tradingTaxesRequired: 'Impuestos de trading (obligatorio)',
+  tradingTaxesRequiredHint:
+    'Esta cadena exige un impuesto de compra o venta superior al 0%. Se aplica desde el lanzamiento y queda fijo para siempre.',
+  taxAboveZeroMaxTen: 'Superior al 0% (máx. 10%)',
+  profileNotFoundTitle: 'Perfil no encontrado',
+  profileNotFoundBody: 'Ningún usuario o billetera coincide con este nombre.',
+  postLoadFailed: 'No se pudo cargar esta publicación',
+  postLoadFailedDesc: 'Revisa tu conexión e inténtalo de nuevo.',
+  tryAgain: 'Reintentar',
+  feedNoCallouts: 'Aún no hay callouts aquí',
+  feedNoCalloutsDesc:
+    'Nada coincide con esta pestaña y cadena. Prueba otro filtro o publica el primer call arriba.',
 };
 
 export default messages;

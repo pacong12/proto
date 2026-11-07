@@ -355,7 +355,6 @@ const messages: Record<string, string> = {
   top10Supply: 'Fornecimento Top 10',
   devHolds: 'Posse do Dev',
   burned: 'Queimado',
-  verifiedContract: 'Contrato Verificado',
   tradingTaxesOptional: 'Taxas de Negociação (Opcional)',
   defaultZeroMaxTen: 'Padrão: 0% (Máx 10%)',
   buyTax: 'Taxa de Compra',
@@ -494,8 +493,6 @@ const messages: Record<string, string> = {
   footerCurveToV4: 'Curva de bonding, depois Uniswap v4',
   footerPoolFromLaunch: 'Pool Uniswap v4 desde o lançamento',
   footerLiquidityLocked: 'Liquidez travada para sempre',
-  footerSplitCurve: 'Taxas de LP: 70% criador / 30% protocolo',
-  footerSplitInPool: 'Imposto: 20% protocolo, o resto conforme sua divisão',
   inPoolLiveHint:
     'Negociado no pool Uniswap v4 travado desde o primeiro bloco. Não há curva para preencher.',
   memestockMomentum: 'Momentum',
@@ -550,6 +547,38 @@ const messages: Record<string, string> = {
   feedMedia: 'Mídia',
   orderTooSmallForKeeper:
     'Pequena demais para os keepers: paga cerca de {fee} {symbol} pela execução, mas o gas custa cerca de {gas} {symbol}, então pode nunca ser executada. Use um valor maior.',
+  viewContract: 'Ver contrato',
+  viewContractHint: 'Abrir este contrato no explorador de blocos',
+  deployedContractsDesc: 'Contratos inteligentes do protocolo implantados em {network}',
+  holdersHint:
+    'Carteiras que possuem este token. Exclui a curva de ligação, pools, contratos do protocolo e endereços de queima.',
+  top10SupplyHint:
+    'Parte do fornecimento total nas 10 maiores carteiras. Exclui a curva de ligação, pools, contratos do protocolo e tokens queimados.',
+  devHoldsHint: 'Parte do fornecimento total na carteira do criador.',
+  holderCurve: 'Curva de ligação',
+  holderLocker: 'Locker de LP',
+  holderBurned: 'Endereço de queima',
+  holderContract: 'Contrato do protocolo',
+  holderAtCall: 'Holder na publicação',
+  footerSplitCurve: 'Taxas do pool: 30% protocolo, o resto conforme a divisão de cada token',
+  footerSplitInPool:
+    'Taxas do pool e imposto: 20% protocolo, o resto conforme a divisão de cada token',
+  launchPrebuyRequired:
+    '{network}: sem taxa de lançamento, mas uma pré-compra de pelo menos {min} {symbol} é obrigatória.',
+  launchPrebuyTooLow: 'A pré-compra deve ser de pelo menos {min} {symbol}',
+  launchTaxRequired: 'Defina um imposto de compra ou venda acima de 0%',
+  tradingTaxesRequired: 'Impostos de negociação (obrigatório)',
+  tradingTaxesRequiredHint:
+    'Esta rede exige um imposto de compra ou venda acima de 0%. Ele vale desde o lançamento e fica fixo para sempre.',
+  taxAboveZeroMaxTen: 'Acima de 0% (máx. 10%)',
+  profileNotFoundTitle: 'Perfil não encontrado',
+  profileNotFoundBody: 'Nenhum usuário ou carteira corresponde a este nome.',
+  postLoadFailed: 'Não foi possível carregar esta publicação',
+  postLoadFailedDesc: 'Verifique sua conexão e tente novamente.',
+  tryAgain: 'Tentar novamente',
+  feedNoCallouts: 'Ainda não há callouts aqui',
+  feedNoCalloutsDesc:
+    'Nada corresponde a esta aba e rede. Tente outro filtro ou publique o primeiro call acima.',
 };
 
 export default messages;

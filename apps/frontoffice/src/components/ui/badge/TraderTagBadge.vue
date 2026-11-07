@@ -57,7 +57,7 @@ const tagMetaMap: Record<TraderTagType, TagMeta> = {
   },
   kol: {
     title: 'KOL / Influencer',
-    description: 'Key Opinion Leader / Verified community caller',
+    description: 'Key Opinion Leader / community caller',
     colorClass: 'text-purple-400 hover:text-purple-300',
   },
   sell_all: {

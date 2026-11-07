@@ -43,7 +43,10 @@
             <TableCell class="py-2.5 px-3 whitespace-nowrap">
               <div class="flex items-center gap-1.5">
                 <Jazzicon :address="holder.address" :size="14" />
-                <span v-if="contractLabel(holder.address)" class="text-foreground font-medium">
+                <span
+                  v-if="contractLabel(holder.address)"
+                  class="text-muted-foreground font-medium"
+                >
                   {{ contractLabel(holder.address) }}
                 </span>
                 <RouterLink
@@ -94,7 +97,7 @@
             </TableCell>
             <TableCell class="py-2.5 px-3 whitespace-nowrap text-right">
               <a
-                v-if="explorerUrl"
+                v-if="explorerUrl && isAddress(holder.address)"
                 :href="`${explorerUrl}/address/${holder.address}`"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -143,15 +146,15 @@ import { Badge, TraderTagBadge } from '@/components/ui/badge';
 import { Jazzicon } from '@/components/ui/avatar';
 import { formatTokenNumber } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
-import type { TokenHolder } from '@goton/shared-types';
+import { classifyHolder, type HolderContext } from '@/lib/holders';
+import { isAddress, type TokenHolder } from '@goton/shared-types';
 
 interface Props {
   holders: TokenHolder[];
   loading?: boolean;
   deployer?: string;
-  lockerAddress?: string;
-  poolAddress?: string;
-  curveAddress?: string;
+  /** Tells the wallets from the contracts in the list. */
+  holderContext?: HolderContext;
   /** Token decimals: holder balances arrive in raw units. */
   decimals?: number;
   isGraduated?: boolean;
@@ -161,9 +164,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
   deployer: '',
-  lockerAddress: '',
-  poolAddress: '',
-  curveAddress: '',
+  holderContext: () => ({}),
   decimals: 18,
   isGraduated: false,
   explorerUrl: '',
@@ -211,15 +212,20 @@ function wholeTokens(raw: string | number | bigint): number {
 
 /** Protocol contracts holding supply are named, not shown as a user profile. */
 function contractLabel(addr: string): string | null {
-  const lower = addr.toLowerCase();
-  if (props.curveAddress && lower === props.curveAddress.toLowerCase()) {
-    return props.isGraduated ? 'Pool' : 'Bonding curve';
+  switch (classifyHolder(addr, props.holderContext)) {
+    case 'curve':
+      return props.isGraduated ? t('pool') : t('holderCurve');
+    case 'pool':
+      return t('pool');
+    case 'locker':
+      return t('holderLocker');
+    case 'burn':
+      return t('holderBurned');
+    case 'contract':
+      return t('holderContract');
+    default:
+      return null;
   }
-  if (props.poolAddress && lower === props.poolAddress.toLowerCase()) {
-    return props.isGraduated ? 'Pool' : 'Bonding curve';
-  }
-  if (props.lockerAddress && lower === props.lockerAddress.toLowerCase()) return 'LP Locker';
-  return null;
 }
 
 function getHolderBadge(addr: string): string | null {

@@ -146,7 +146,7 @@
               <div class="flex items-center gap-1.5 font-bold tracking-wider text-xs text-primary">
                 <span>{{ t('protoAlphaSignal') }}</span>
               </div>
-              <Badge variant="outline" class="text-xs border-primary/30 text-primary">
+              <Badge v-if="isCall" variant="outline" class="text-xs border-primary/30 text-primary">
                 Verified Position
               </Badge>
             </div>
@@ -189,7 +189,7 @@
                   t('callerPosition')
                 }}</span>
                 <span class="text-xs font-bold text-foreground">
-                  {{ call.positionUsd ? `$${call.positionUsd.toFixed(1)}` : 'Verified Holder' }}
+                  {{ positionText }}
                 </span>
               </div>
               <div class="text-right">
@@ -198,9 +198,9 @@
                 }}</span>
                 <span
                   class="text-xs font-bold"
-                  :class="(call.profitUsd ?? 0) >= 0 ? 'text-primary' : 'text-rose-500'"
+                  :class="profit && !profit.positive ? 'text-rose-500' : 'text-primary'"
                 >
-                  {{ (call.profitUsd ?? 0) >= 0 ? '+' : '' }}${{ (call.profitUsd ?? 0).toFixed(1) }}
+                  {{ profit?.text ?? '—' }}
                 </span>
               </div>
             </div>
@@ -266,6 +266,7 @@ import { shortenAddress, formatRelativeTime, formatMarketCap } from '@/lib/utils
 import { useI18n } from '@/lib/i18n';
 import { toast } from '@/components/ui/sonner';
 import { SITE } from '@/lib/site';
+import { callPnl } from '@/lib/call-pnl';
 import type { FeedCalloutItem } from '@goton/shared-types';
 
 const { t } = useI18n();
@@ -278,6 +279,32 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'close'): void;
 }>();
+
+/** The server checks a call's position when it is posted; replies have no check behind them. */
+const isCall = computed(
+  () => Boolean(props.call) && !props.call?.parentId && props.call?.callType !== 'comment',
+);
+
+const positionText = computed(() => {
+  if (!isCall.value) return '—';
+  const usd = props.call?.positionUsd;
+  return usd ? `$${usd.toFixed(1)}` : t('holderAtCall');
+});
+
+/** Since the call, from the server's prices: the same figure the feed cards show. */
+const profit = computed(() => {
+  const pnl = props.call ? callPnl(props.call) : null;
+  if (!pnl) return null;
+  const positive = pnl.pct >= 0;
+  const sign = positive ? '+' : '-';
+  return {
+    positive,
+    text:
+      pnl.usd === null
+        ? `${sign}${Math.abs(pnl.pct).toFixed(1)}%`
+        : `${sign}$${Math.abs(pnl.usd).toFixed(1)}`,
+  };
+});
 
 const copiedLink = ref(false);
 const showPnlCard = ref(false);
@@ -314,7 +341,7 @@ function shareOnX(): void {
   const posStr = call.positionUsd ? `Position: $${call.positionUsd.toFixed(1)} ` : '';
   const url = getPostUrl();
   const text = encodeURIComponent(
-    `Verified Call on ${symbolStr}\n${posStr}\n\n"${call.content.slice(0, 100)}"\n\n${url} via @gotondotfun`,
+    `${isCall.value ? 'Verified Call' : 'Reply'} on ${symbolStr}\n${isCall.value ? posStr : ''}\n\n"${call.content.slice(0, 100)}"\n\n${url} via @gotondotfun`,
   );
   window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank', 'noopener,noreferrer');
 }
@@ -344,7 +371,7 @@ async function exportPnlCardCanvas(): Promise<string | null> {
 
   ctx.fillStyle = '#a1a1aa';
   ctx.font = '12px monospace';
-  ctx.fillText('VERIFIED ON-CHAIN POSITION', 380, 45);
+  if (isCall.value) ctx.fillText('VERIFIED ON-CHAIN POSITION', 380, 45);
 
   // Divider
   ctx.strokeStyle = '#27272a';
@@ -371,18 +398,17 @@ async function exportPnlCardCanvas(): Promise<string | null> {
   ctx.fillText('CALLER POSITION', 45, 180);
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 20px monospace';
-  ctx.fillText(call.positionUsd ? `$${call.positionUsd.toFixed(1)}` : 'Verified Holder', 45, 210);
+  ctx.fillText(positionText.value, 45, 210);
 
   // Profit Box
-  const isProfit = (call.profitUsd ?? 0) >= 0;
   ctx.fillStyle = '#18181b';
   ctx.fillRect(310, 155, 250, 75);
   ctx.fillStyle = '#a1a1aa';
   ctx.font = '11px monospace';
   ctx.fillText('UNREALIZED PROFIT', 325, 180);
-  ctx.fillStyle = isProfit ? '#10b981' : '#f43f5e';
+  ctx.fillStyle = !profit.value || profit.value.positive ? '#10b981' : '#f43f5e';
   ctx.font = 'bold 20px monospace';
-  ctx.fillText(`${isProfit ? '+' : ''}$${(call.profitUsd ?? 0).toFixed(1)}`, 325, 210);
+  ctx.fillText(profit.value?.text ?? '—', 325, 210);
 
   // Footer
   ctx.fillStyle = '#52525b';

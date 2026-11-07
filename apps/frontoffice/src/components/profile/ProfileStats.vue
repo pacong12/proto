@@ -6,8 +6,12 @@
         <Coins class="w-4 h-4 text-foreground" />
         {{ t('claimableFees') }}
       </p>
-      <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">
-        {{ totalClaimableWeth }} {{ nativeCurrencySymbol }}
+      <p
+        v-for="total in claimableTotals"
+        :key="total"
+        class="text-xl sm:text-2xl font-bold text-foreground mt-2"
+      >
+        {{ total }}
       </p>
       <p class="text-sm text-muted-foreground mt-1">{{ t('lockerFees') }}</p>
     </Card>
@@ -60,8 +64,8 @@ import { Card } from '@/components/ui/card';
 const { t } = useI18n();
 
 defineProps<{
-  totalClaimableWeth: string;
-  nativeCurrencySymbol: string;
+  /** One formatted amount per currency. */
+  claimableTotals: string[];
   createdTokensCount: number;
   isOwnProfile: boolean;
   activePositionsCount: number;

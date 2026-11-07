@@ -331,7 +331,7 @@
             {{ t('deployedContracts') }}
           </h2>
           <p class="text-xs text-muted-foreground font-sans">
-            Verified autonomous protocol smart contracts on {{ activeNetwork.name }}
+            {{ t('deployedContractsDesc', { network: activeNetwork.name }) }}
           </p>
         </div>
         <span class="text-xs text-muted-foreground self-start sm:self-auto">

@@ -345,7 +345,6 @@ const messages: Record<string, string> = {
   top10Supply: 'حيازة أكبر 10',
   devHolds: 'حيازة المطور',
   burned: 'تم الحرق',
-  verifiedContract: 'عقد موثق',
   tradingTaxesOptional: 'ضرائب التداول (اختياري)',
   defaultZeroMaxTen: 'الافتراضي: 0% (الحد الأقصى 10%)',
   buyTax: 'ضريبة الشراء',
@@ -480,8 +479,6 @@ const messages: Record<string, string> = {
   footerCurveToV4: 'منحنى الربط ثم Uniswap v4',
   footerPoolFromLaunch: 'مجمع Uniswap v4 منذ الإطلاق',
   footerLiquidityLocked: 'السيولة مقفلة بشكل دائم',
-  footerSplitCurve: 'رسوم LP: ‏70% للمنشئ / 30% للبروتوكول',
-  footerSplitInPool: 'الضريبة: 20% للبروتوكول والباقي حسب توزيعك',
   inPoolLiveHint: 'يُتداول في مجمع Uniswap v4 المقفل منذ الكتلة الأولى. لا يوجد منحنى لملئه.',
   memestockMomentum: 'الزخم',
   creatorHolds: 'يحتفظ المنشئ بـ',
@@ -535,6 +532,37 @@ const messages: Record<string, string> = {
   feedMedia: 'الوسائط',
   orderTooSmallForKeeper:
     'صغير جدًا على المنفّذين: يدفع نحو {fee} {symbol} للتنفيذ بينما يكلّف الغاز نحو {gas} {symbol}، لذا قد لا يُنفَّذ أبدًا. استخدم مبلغًا أكبر.',
+  viewContract: 'عرض العقد',
+  viewContractHint: 'افتح هذا العقد في مستكشف الكتل',
+  deployedContractsDesc: 'العقود الذكية للبروتوكول المنشورة على {network}',
+  holdersHint:
+    'المحافظ التي تحمل هذا الرمز، باستثناء منحنى الترابط والمجمعات وعقود البروتوكول وعناوين الحرق.',
+  top10SupplyHint:
+    'حصة أكبر 10 محافظ من إجمالي المعروض، باستثناء منحنى الترابط والمجمعات وعقود البروتوكول والرموز المحروقة.',
+  devHoldsHint: 'حصة محفظة المنشئ من إجمالي المعروض.',
+  holderCurve: 'منحنى الترابط',
+  holderLocker: 'خزنة LP',
+  holderBurned: 'عنوان الحرق',
+  holderContract: 'عقد البروتوكول',
+  holderAtCall: 'حامل عند النشر',
+  footerSplitCurve: 'رسوم المجمع: ‏30% للبروتوكول، والباقي حسب تقسيم كل رمز',
+  footerSplitInPool: 'رسوم المجمع والضريبة: ‏20% للبروتوكول، والباقي حسب تقسيم كل رمز',
+  launchPrebuyRequired:
+    '{network}: لا توجد رسوم إطلاق، لكن الشراء المسبق بما لا يقل عن {min} {symbol} مطلوب.',
+  launchPrebuyTooLow: 'يجب ألا يقل الشراء المسبق عن {min} {symbol}',
+  launchTaxRequired: 'حدد ضريبة شراء أو بيع أعلى من 0%',
+  tradingTaxesRequired: 'ضرائب التداول (مطلوبة)',
+  tradingTaxesRequiredHint:
+    'تتطلب هذه الشبكة ضريبة شراء أو بيع أعلى من 0%. تبدأ عند الإطلاق وتبقى ثابتة إلى الأبد.',
+  taxAboveZeroMaxTen: 'أعلى من 0% (الحد الأقصى 10%)',
+  profileNotFoundTitle: 'لم يُعثر على الملف الشخصي',
+  profileNotFoundBody: 'لا يوجد مستخدم أو محفظة بهذا الاسم.',
+  postLoadFailed: 'تعذّر تحميل هذا المنشور',
+  postLoadFailedDesc: 'تحقق من اتصالك وحاول مرة أخرى.',
+  tryAgain: 'حاول مرة أخرى',
+  feedNoCallouts: 'لا توجد إعلانات هنا بعد',
+  feedNoCalloutsDesc:
+    'لا شيء يطابق علامة التبويب والشبكة هذه. جرّب مرشحًا آخر أو انشر أول إعلان بالأعلى.',
 };
 
 export default messages;

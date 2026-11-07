@@ -359,7 +359,6 @@ const messages: Record<string, string> = {
   top10Supply: 'Offre Top 10',
   devHolds: 'Détenu par le Dev',
   burned: 'Brûlé',
-  verifiedContract: 'Contrat Vérifié',
   tradingTaxesOptional: 'Taxes de Trading (Optionnel)',
   defaultZeroMaxTen: 'Par défaut: 0% (Max 10%)',
   buyTax: 'Taxe d’Achat',
@@ -499,8 +498,6 @@ const messages: Record<string, string> = {
   footerCurveToV4: 'Courbe de bonding, puis Uniswap v4',
   footerPoolFromLaunch: 'Pool Uniswap v4 dès le lancement',
   footerLiquidityLocked: 'Liquidité verrouillée à vie',
-  footerSplitCurve: 'Frais LP : 70 % créateur / 30 % protocole',
-  footerSplitInPool: 'Taxe : 20 % protocole, le reste selon votre répartition',
   inPoolLiveHint:
     'Se négocie dans son pool Uniswap v4 verrouillé dès le premier bloc. Aucune courbe à remplir.',
   memestockMomentum: 'Momentum',
@@ -555,6 +552,38 @@ const messages: Record<string, string> = {
   feedMedia: 'Médias',
   orderTooSmallForKeeper:
     "Trop petit pour les keepers : l'exécution rapporte environ {fee} {symbol} mais coûte environ {gas} {symbol} de gas, l'ordre risque de ne jamais s'exécuter. Utilisez un montant plus élevé.",
+  viewContract: 'Voir le contrat',
+  viewContractHint: 'Ouvrir ce contrat dans l’explorateur de blocs',
+  deployedContractsDesc: 'Contrats intelligents du protocole déployés sur {network}',
+  holdersHint:
+    'Portefeuilles détenant ce jeton, hors courbe de liquidité, pools, contrats du protocole et adresses de burn.',
+  top10SupplyHint:
+    'Part de l’offre totale détenue par les 10 plus gros portefeuilles, hors courbe de liquidité, pools, contrats du protocole et jetons brûlés.',
+  devHoldsHint: 'Part de l’offre totale dans le portefeuille du créateur.',
+  holderCurve: 'Courbe de liquidité',
+  holderLocker: 'Coffre LP',
+  holderBurned: 'Adresse de burn',
+  holderContract: 'Contrat du protocole',
+  holderAtCall: 'Détenteur au moment du call',
+  footerSplitCurve: 'Frais du pool : 30 % protocole, le reste selon la répartition de chaque jeton',
+  footerSplitInPool:
+    'Frais du pool et taxe : 20 % protocole, le reste selon la répartition de chaque jeton',
+  launchPrebuyRequired:
+    '{network} : pas de frais de lancement, mais un pré-achat d’au moins {min} {symbol} est requis.',
+  launchPrebuyTooLow: 'Le pré-achat doit être d’au moins {min} {symbol}',
+  launchTaxRequired: 'Définissez une taxe d’achat ou de vente supérieure à 0 %',
+  tradingTaxesRequired: 'Taxes de trading (obligatoire)',
+  tradingTaxesRequiredHint:
+    'Cette chaîne exige une taxe d’achat ou de vente supérieure à 0 %. Elle s’applique dès le lancement et reste fixée pour toujours.',
+  taxAboveZeroMaxTen: 'Plus de 0 % (max. 10 %)',
+  profileNotFoundTitle: 'Profil introuvable',
+  profileNotFoundBody: 'Aucun utilisateur ni portefeuille ne correspond à ce nom.',
+  postLoadFailed: 'Impossible de charger cette publication',
+  postLoadFailedDesc: 'Vérifiez votre connexion et réessayez.',
+  tryAgain: 'Réessayer',
+  feedNoCallouts: 'Aucun call ici pour l’instant',
+  feedNoCalloutsDesc:
+    'Rien ne correspond à cet onglet et à cette chaîne. Essayez un autre filtre ou publiez le premier call ci-dessus.',
 };
 
 export default messages;

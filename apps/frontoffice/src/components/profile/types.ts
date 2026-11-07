@@ -12,7 +12,12 @@ export interface MyLaunchItem {
   name: string;
   symbol: string;
   logo?: string;
+  /** Accrued creator fees, formatted, in `currencySymbol`. */
   unclaimedWeth: string;
+  unclaimedRaw: bigint;
+  quoteDecimals: number;
+  /** The currency of the token's chain: tokens of one creator can quote in different ones. */
+  currencySymbol: string;
   redirect: string | null;
   /** Fees accrue to the curve until graduation; a pool token has no curve and accrues from launch. */
   onBondingCurve?: boolean;
@@ -43,6 +48,9 @@ export interface UserActivity {
   isBuy: boolean;
   tokenSymbol: string;
   ethAmount: string;
+  /** The quote currency and explorer of the token's chain. */
+  currencySymbol: string;
+  blockExplorer: string;
   tokenAmount: string;
   timestamp: number;
 }
