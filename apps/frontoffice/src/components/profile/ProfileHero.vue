@@ -3,8 +3,12 @@
   <div class="rounded-3xl border border-border bg-card overflow-hidden shadow-sm font-sans">
     <!-- 1. Ambient Banner -->
     <div
-      class="h-28 sm:h-44 bg-card relative overflow-hidden border-b border-border group"
-      :class="isOwnProfile ? 'cursor-pointer' : ''"
+      class="bg-card relative overflow-hidden border-b border-border group"
+      :class="[
+        isOwnProfile ? 'cursor-pointer' : '',
+        // Without a banner there is nothing to show: a short band, not a tall empty box.
+        resolvedBannerUrl ? 'h-28 sm:h-44' : 'h-16 sm:h-24',
+      ]"
       @click="isOwnProfile && emit('edit')"
     >
       <img
@@ -13,7 +17,7 @@
         alt="Cover Banner"
         class="w-full h-full object-cover"
       />
-      <div v-else class="absolute inset-0 bg-black" />
+      <div v-else class="absolute inset-0 bg-linear-to-br from-muted to-card" />
 
       <div
         v-if="isOwnProfile"

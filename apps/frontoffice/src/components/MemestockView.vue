@@ -59,7 +59,7 @@
         <Input
           v-model="searchQuery"
           type="text"
-          placeholder="Search memestocks / address..."
+          placeholder="Search name or address..."
           class="h-9 pl-8 pr-3 text-sm bg-card border-border rounded-xl text-foreground focus-visible:ring-foreground"
         />
       </div>
@@ -138,7 +138,7 @@
         <Card
           v-for="item in paginatedItems"
           :key="item.token.address"
-          class="group hover:border-primary/50 cursor-pointer transition-all flex flex-col justify-between p-5 sm:p-6 rounded-2xl border border-border bg-card shadow-xs space-y-4"
+          class="group hover:border-foreground/30 cursor-pointer transition-colors flex flex-col justify-between p-4 sm:p-5 rounded-2xl border border-border bg-card space-y-3"
           @click="$emit('selectToken', item.token.address)"
         >
           <div class="space-y-3.5">
@@ -222,54 +222,51 @@
               {{ item.token.description }}
             </p>
 
-            <div class="flex items-center gap-2 flex-wrap text-sm">
-              <TaxTooltip
-                :buy-tax-bps="item.token.taxConfig?.buyTaxBps"
-                :sell-tax-bps="item.token.taxConfig?.sellTaxBps"
-              />
-              <Badge
-                v-if="(item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0"
-                variant="outline"
-                class="bg-sky-500/10 text-sky-400 border-sky-500/20 py-0 px-1.5 h-4.5 font-normal"
-              >
-                {{ item.token.taxConfig?.revenueSplit?.holders }}% Dividends
-              </Badge>
-              <Badge
-                v-if="(item.token.taxConfig?.revenueSplit?.buyback ?? 0) > 0"
-                variant="outline"
-                class="bg-amber-500/10 text-amber-400 border-amber-500/20 py-0 px-1.5 h-4.5 font-normal"
-              >
-                {{ item.token.taxConfig?.revenueSplit?.buyback }}% Buyback
-              </Badge>
-              <span
-                class="ml-auto text-xs text-emerald-500 font-semibold whitespace-nowrap"
-                :title="t('creatorHoldsHint')"
-              >
-                {{ t('creatorHolds') }} {{ formatPct(item.signals.creatorHoldsPct) }}
-              </span>
-            </div>
-            <div class="flex items-center gap-3 text-xs text-muted-foreground">
-              <span>{{ item.signals.traders1h }} {{ t('traders1h') }}</span>
-              <span>{{ item.signals.traders24h }} {{ t('traders24h') }}</span>
-              <span
-                v-if="item.signals.buyPressure1h !== null"
-                :class="item.signals.buyPressure1h >= 0.5 ? 'text-emerald-500' : 'text-rose-500'"
-              >
-                {{ Math.round(item.signals.buyPressure1h * 100) }}% {{ t('buys1h') }}
-              </span>
+            <!-- Tax and its split, then the signals the ranking uses, as two quiet lines -->
+            <div class="space-y-1 text-xs text-muted-foreground">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <TaxTooltip
+                  :buy-tax-bps="item.token.taxConfig?.buyTaxBps"
+                  :sell-tax-bps="item.token.taxConfig?.sellTaxBps"
+                  custom-class="text-xs"
+                />
+                <span
+                  v-if="(item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0"
+                  class="text-sky-500"
+                  >&middot; {{ item.token.taxConfig?.revenueSplit?.holders }}% Dividends</span
+                >
+                <span
+                  v-if="(item.token.taxConfig?.revenueSplit?.buyback ?? 0) > 0"
+                  class="text-amber-500"
+                  >&middot; {{ item.token.taxConfig?.revenueSplit?.buyback }}% Buyback</span
+                >
+              </div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-emerald-500" :title="t('creatorHoldsHint')"
+                  >{{ t('creatorHolds') }} {{ formatPct(item.signals.creatorHoldsPct) }}</span
+                >
+                <span>&middot; {{ item.signals.traders1h }} {{ t('traders1h') }}</span>
+                <span>&middot; {{ item.signals.traders24h }} {{ t('traders24h') }}</span>
+                <span
+                  v-if="item.signals.buyPressure1h !== null"
+                  :class="item.signals.buyPressure1h >= 0.5 ? 'text-emerald-500' : 'text-rose-500'"
+                >
+                  &middot; {{ Math.round(item.signals.buyPressure1h * 100) }}% {{ t('buys1h') }}
+                </span>
+              </div>
             </div>
           </div>
 
-          <div class="mt-5 pt-4 border-t border-border space-y-2">
-            <div class="grid grid-cols-2 gap-2 text-sm">
+          <div class="mt-4 pt-3 border-t border-border space-y-2">
+            <div class="grid grid-cols-2 gap-2 text-sm tabular-nums">
               <div>
-                <span class="text-xs text-muted-foreground block font-semibold">MARKET CAP</span>
+                <span class="text-xs text-muted-foreground block">{{ t('marketCapCol') }}</span>
                 <span class="font-bold text-foreground">
                   {{ formatCompactUsd(item.marketData.marketCapUsd) }}
                 </span>
               </div>
               <div class="text-right">
-                <span class="text-xs text-muted-foreground block font-semibold">VOLUME 24H</span>
+                <span class="text-xs text-muted-foreground block">{{ t('volume24hCol') }}</span>
                 <span class="font-semibold text-muted-foreground">
                   {{
                     (item.marketData.volume24hUsd || 0) > 0

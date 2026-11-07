@@ -96,7 +96,7 @@
       </div>
 
       <!-- 3. Main Profile Tabs: Posts & Calls, Created, Portfolio, Activity, Dividends -->
-      <Card class="p-5 sm:p-7 border border-border bg-card rounded-3xl shadow-sm space-y-6">
+      <div class="space-y-6">
         <Tabs v-model="activeTab" class="w-full">
           <div
             class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-1"
@@ -194,7 +194,7 @@
             />
           </TabsContent>
         </Tabs>
-      </Card>
+      </div>
 
       <!-- Edit Profile Modal -->
       <EditProfileModal
@@ -269,7 +269,6 @@ import { walletAddress } from '@/lib/wallet-store';
 import { getSessionHeaders } from '@/lib/session';
 import { resolveSafeUrl } from '@/lib/safe-url';
 import { resolveUserAddress, getUserIdentity, registerUserIdentity } from '@/lib/username';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';

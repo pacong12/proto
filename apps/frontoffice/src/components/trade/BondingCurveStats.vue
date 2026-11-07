@@ -105,25 +105,19 @@
       class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 pt-4 border-t border-border text-xs"
     >
       <div>
-        <span class="text-muted-foreground text-xs uppercase font-semibold block">{{
-          t('marketCap')
-        }}</span>
+        <span class="text-muted-foreground text-xs block">{{ t('marketCap') }}</span>
         <span class="font-black text-foreground text-sm block mt-0.5">
           {{ formatMarketCap(currentMarketData.marketCapUsd) }}
         </span>
       </div>
       <div>
-        <span class="text-muted-foreground text-xs uppercase font-semibold block">{{
-          t('price')
-        }}</span>
+        <span class="text-muted-foreground text-xs block">{{ t('price') }}</span>
         <span class="font-black text-foreground text-sm block mt-0.5 truncate">
           {{ formatPriceUsd(currentMarketData.priceUsd) }}
         </span>
       </div>
       <div>
-        <span class="text-muted-foreground text-xs uppercase font-semibold block">{{
-          t('volume24h')
-        }}</span>
+        <span class="text-muted-foreground text-xs block">{{ t('volume24h') }}</span>
         <span class="font-black text-foreground text-sm block mt-0.5">
           {{
             (currentMarketData.volume24hUsd ?? 0) > 0
@@ -133,31 +127,25 @@
         </span>
       </div>
       <div>
-        <span
-          class="text-muted-foreground text-xs uppercase font-semibold block"
-          :title="t('holdersHint')"
-          >{{ t('holders') }}</span
-        >
+        <span class="text-muted-foreground text-xs block" :title="t('holdersHint')">{{
+          t('holders')
+        }}</span>
         <span class="font-black text-foreground text-sm block mt-0.5">
           {{ holdersCount.toLocaleString() }}{{ holdersCountCapped ? '+' : '' }}
         </span>
       </div>
       <div>
-        <span
-          class="text-muted-foreground text-xs uppercase font-semibold block"
-          :title="t('top10SupplyHint')"
-          >{{ t('top10Supply') }}</span
-        >
+        <span class="text-muted-foreground text-xs block" :title="t('top10SupplyHint')">{{
+          t('top10Supply')
+        }}</span>
         <span class="font-black text-foreground text-sm block mt-0.5">
           {{ top10HoldingPercent > 0 ? top10HoldingPercent.toFixed(1) + '%' : '—' }}
         </span>
       </div>
       <div>
-        <span
-          class="text-muted-foreground text-xs uppercase font-semibold block"
-          :title="t('devHoldsHint')"
-          >{{ t('devHolds') }}</span
-        >
+        <span class="text-muted-foreground text-xs block" :title="t('devHoldsHint')">{{
+          t('devHolds')
+        }}</span>
         <span
           class="font-black text-sm block mt-0.5"
           :class="devHoldingPercent > 10 ? 'text-amber-500' : 'text-foreground'"
