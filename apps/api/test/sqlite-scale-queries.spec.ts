@@ -6,6 +6,7 @@ import {
   type TokenMarketData,
   type TradeEventEntity,
 } from '@goton/shared-types';
+import { aggregateCandlesticks } from '@goton/math-sdk';
 import { SqliteTokenRepository } from '../src/app/storage/sqlite-token.repository';
 
 const TOKEN = '0xAbCdEf0000000000000000000000000000000001' as `0x${string}`;
@@ -297,6 +298,68 @@ describe('SQLite queries at scale', () => {
       insertComment('c1', TOKEN, WALLET, NOW);
       const [item] = (await repository.getFeedCallouts?.(10, 0)) ?? [];
       expect(item.tokenPairedToken).toBe(lower(token.pairedToken));
+    });
+  });
+
+  describe('candles', () => {
+    const MINUTE = 60_000;
+    /** A trade every 7 minutes for ~2 days: longer than the 1000 one-minute bars a chart keeps. */
+    const history = Array.from({ length: 420 }, (_, i) =>
+      trade(`h${i}`, {
+        timestamp: NOW + i * 7 * MINUTE + (i % 5) * 1000,
+        priceUsd: 0.001 + ((i * 37) % 101) / 100_000,
+        wethAmount: String(0.1 + (i % 3) / 10),
+      }),
+    );
+    const last = history[history.length - 1].timestamp;
+
+    beforeEach(async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(last + 30_000);
+      for (const item of history) await repository.saveTrade(item);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it.each([60, 300, 3600])(
+      'draws the same %is bars from its window as from every trade',
+      async (resolution) => {
+        const expected = aggregateCandlesticks(history, resolution, {
+          startTime: token.createdAt,
+          endTime: last + 30_000,
+          fillGaps: true,
+          maxCandles: 1000,
+          fallbackPrice: marketData.priceUsd,
+        });
+
+        const candles = await repository.getCandlesticks(TOKEN, resolution, true);
+
+        expect(candles).toEqual(expected);
+      },
+    );
+
+    it('opens the oldest bar at the last trade before the window, not the launch price', async () => {
+      const [first] = await repository.getCandlesticks(TOKEN, 60, true);
+      const before = history.filter((item) => item.timestamp < first.timestamp).at(-1);
+
+      expect(before).toBeDefined();
+      expect(first.open).toBe(before?.priceUsd);
+      expect(first.open).not.toBe(history[0].priceUsd);
+    });
+
+    it('still returns every bucket when gaps are not filled', async () => {
+      const candles = await repository.getCandlesticks(TOKEN, 60, false);
+
+      expect(candles).toHaveLength(history.length);
+    });
+
+    it('reads the window from an index that covers it, without touching the table', async () => {
+      const plan = await plansOf(() => repository.getCandlesticks(TOKEN, 60, true));
+
+      expect(plan).toMatch(/SEARCH trades USING COVERING INDEX idx_trades_token_candle/);
+      expect(plan).not.toMatch(/SCAN trades\b/);
     });
   });
 
