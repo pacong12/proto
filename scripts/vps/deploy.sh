@@ -23,7 +23,8 @@ echo "[deploy] at $(git log --oneline -1)"
 
 docker compose up -d --build --no-deps api
 
-for _ in $(seq 1 40); do
+# A first boot after a release can build SQLite indexes before it listens, so wait up to 10 minutes.
+for _ in $(seq 1 200); do
   if curl -fsS "$HEALTH_URL" > /dev/null 2>&1; then
     echo "[deploy] api healthy"
     exit 0

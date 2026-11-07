@@ -184,15 +184,23 @@ export class SqliteDatabase {
     this.db.run(
       `CREATE INDEX IF NOT EXISTS idx_trades_txHash ON trades(transactionHash COLLATE NOCASE);`,
     );
-    this.db.run(`CREATE INDEX IF NOT EXISTS idx_trades_trader ON trades(trader COLLATE NOCASE);`);
+    // A wallet's newest trades: scanned backwards, it gives `timestamp DESC, rowid DESC` unsorted.
+    this.db.run(
+      `CREATE INDEX IF NOT EXISTS idx_trades_trader_ts ON trades(trader COLLATE NOCASE, timestamp);`,
+    );
+    this.db.run(`DROP INDEX IF EXISTS idx_trades_trader;`);
     // Composite index covering the most common query: all trades for a token ordered by time.
     // Query it as `tokenAddress = ? COLLATE NOCASE`: LOWER(tokenAddress) = LOWER(?) cannot use it
     // and scans every trade.
     this.db.run(
       `CREATE INDEX IF NOT EXISTS idx_trades_token_ts ON trades(tokenAddress COLLATE NOCASE, timestamp DESC);`,
     );
-    // blockNumber index for block-range filtering in DEX event queries.
-    this.db.run(`CREATE INDEX IF NOT EXISTS idx_trades_block ON trades(blockNumber);`);
+    // Block-range filtering in DEX event queries. blockNumber is TEXT, so the queries compare it
+    // as a number and only an index on that same expression applies.
+    this.db.run(
+      `CREATE INDEX IF NOT EXISTS idx_trades_block_num ON trades(CAST(blockNumber AS INTEGER));`,
+    );
+    this.db.run(`DROP INDEX IF EXISTS idx_trades_block;`);
     // poolAddress index on tokens for direct pool lookup without full-table JS scan.
     this.db.run(
       `CREATE INDEX IF NOT EXISTS idx_tokens_poolAddress ON tokens(poolAddress COLLATE NOCASE);`,
@@ -285,8 +293,28 @@ export class SqliteDatabase {
     // 1e18 times too large. No real position reaches $1T, so those rows are scaled back once.
     this.db.run(`UPDATE comments SET position_usd = position_usd / 1e18 WHERE position_usd > 1e12`);
 
+    // Root posts, newest first: the feed, a wallet's posts and a token's. Each is partial on the
+    // exact filter those queries write, and ties come out by rowid as the queries order them.
     this.db.run(`
-      CREATE INDEX IF NOT EXISTS idx_comments_token ON comments (token_address, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_comments_feed ON comments (created_at DESC)
+      WHERE parent_id IS NULL OR parent_id = '';
+    `);
+    this.db.run(`
+      CREATE INDEX IF NOT EXISTS idx_comments_author_feed
+      ON comments (author_address COLLATE NOCASE, created_at DESC)
+      WHERE parent_id IS NULL OR parent_id = '';
+    `);
+    this.db.run(`
+      CREATE INDEX IF NOT EXISTS idx_comments_token_feed
+      ON comments (token_address COLLATE NOCASE, created_at DESC)
+      WHERE parent_id IS NULL OR parent_id = '';
+    `);
+    this.db.run(`DROP INDEX IF EXISTS idx_comments_token;`);
+    // A callout's replies, oldest first. Partial: indexing the NULLs too makes the planner answer
+    // the feed's root-post filter from here (then sort every post) instead of idx_comments_feed.
+    this.db.run(`
+      CREATE INDEX IF NOT EXISTS idx_comments_parent ON comments (parent_id, created_at)
+      WHERE parent_id IS NOT NULL;
     `);
 
     this.db.run(`
@@ -309,6 +337,9 @@ export class SqliteDatabase {
         PRIMARY KEY (comment_id, user_address)
       );
     `);
+    this.db.run(
+      `CREATE INDEX IF NOT EXISTS idx_comment_likes_user ON comment_likes (user_address COLLATE NOCASE);`,
+    );
 
     this.db.run(`
       CREATE TABLE IF NOT EXISTS comment_reposts (
@@ -318,6 +349,9 @@ export class SqliteDatabase {
         PRIMARY KEY (comment_id, user_address)
       );
     `);
+    this.db.run(
+      `CREATE INDEX IF NOT EXISTS idx_comment_reposts_user ON comment_reposts (user_address COLLATE NOCASE);`,
+    );
 
     this.db.run(`
       CREATE TABLE IF NOT EXISTS indexer_cursor (

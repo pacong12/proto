@@ -105,8 +105,8 @@ export class SqliteSocialStore implements SocialStorePort {
   async getComments(tokenAddress: string, viewerAddress?: string): Promise<TokenCommentEntity[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM comments
-      WHERE LOWER(token_address) = LOWER(?) AND (parent_id IS NULL OR parent_id = '')
-      ORDER BY created_at DESC
+      WHERE token_address = ? COLLATE NOCASE AND (parent_id IS NULL OR parent_id = '')
+      ORDER BY created_at DESC, rowid ASC
       LIMIT 100
     `);
     interface CommentRow {
@@ -137,14 +137,14 @@ export class SqliteSocialStore implements SocialStorePort {
     if (viewerAddress) {
       const likeStmt = this.db.prepare(`
         SELECT comment_id FROM comment_likes
-        WHERE LOWER(user_address) = LOWER(?)
+        WHERE user_address = ? COLLATE NOCASE
       `);
       const likeRows = likeStmt.all(viewerAddress) as Array<{ comment_id: string }>;
       viewerLikedIds = new Set(likeRows.map((r) => r.comment_id));
 
       const repostStmt = this.db.prepare(`
         SELECT comment_id FROM comment_reposts
-        WHERE LOWER(user_address) = LOWER(?)
+        WHERE user_address = ? COLLATE NOCASE
       `);
       const repostRows = repostStmt.all(viewerAddress) as Array<{ comment_id: string }>;
       viewerRepostedIds = new Set(repostRows.map((r) => r.comment_id));
@@ -189,16 +189,16 @@ export class SqliteSocialStore implements SocialStorePort {
         t.name as token_name, t.symbol as token_symbol, t.logo as token_logo,
         m.marketCapUsd as token_market_cap, m.priceUsd as token_price_usd
       FROM comments c
-      LEFT JOIN tokens t ON LOWER(t.address) = LOWER(c.token_address)
-      LEFT JOIN market_data m ON LOWER(m.address) = LOWER(c.token_address)
+      LEFT JOIN tokens t ON t.address = c.token_address COLLATE NOCASE
+      LEFT JOIN market_data m ON m.address = c.token_address COLLATE NOCASE
       WHERE (c.parent_id IS NULL OR c.parent_id = '')
     `;
     const params: (string | number)[] = [];
     if (authorAddress) {
-      sql += ` AND LOWER(c.author_address) = LOWER(?)`;
+      sql += ` AND c.author_address = ? COLLATE NOCASE`;
       params.push(authorAddress);
     }
-    sql += ` ORDER BY c.created_at DESC LIMIT ? OFFSET ?`;
+    sql += ` ORDER BY c.created_at DESC, c.rowid ASC LIMIT ? OFFSET ?`;
     params.push(limit, offset);
 
     const stmt = this.db.prepare(sql);
@@ -236,14 +236,14 @@ export class SqliteSocialStore implements SocialStorePort {
     if (viewerAddress) {
       const likeStmt = this.db.prepare(`
         SELECT comment_id FROM comment_likes
-        WHERE LOWER(user_address) = LOWER(?)
+        WHERE user_address = ? COLLATE NOCASE
       `);
       const likeRows = likeStmt.all(viewerAddress) as Array<{ comment_id: string }>;
       viewerLikedIds = new Set(likeRows.map((r) => r.comment_id));
 
       const repostStmt = this.db.prepare(`
         SELECT comment_id FROM comment_reposts
-        WHERE LOWER(user_address) = LOWER(?)
+        WHERE user_address = ? COLLATE NOCASE
       `);
       const repostRows = repostStmt.all(viewerAddress) as Array<{ comment_id: string }>;
       viewerRepostedIds = new Set(repostRows.map((r) => r.comment_id));
@@ -300,8 +300,8 @@ export class SqliteSocialStore implements SocialStorePort {
         t.name as token_name, t.symbol as token_symbol, t.logo as token_logo,
         m.marketCapUsd as token_market_cap, m.priceUsd as token_price_usd
       FROM comments c
-      LEFT JOIN tokens t ON LOWER(t.address) = LOWER(c.token_address)
-      LEFT JOIN market_data m ON LOWER(m.address) = LOWER(c.token_address)
+      LEFT JOIN tokens t ON t.address = c.token_address COLLATE NOCASE
+      LEFT JOIN market_data m ON m.address = c.token_address COLLATE NOCASE
       WHERE c.id = ?
       LIMIT 1
     `);
@@ -398,14 +398,14 @@ export class SqliteSocialStore implements SocialStorePort {
     if (viewerAddress) {
       const likeStmt = this.db.prepare(`
         SELECT comment_id FROM comment_likes
-        WHERE LOWER(user_address) = LOWER(?)
+        WHERE user_address = ? COLLATE NOCASE
       `);
       const likeRows = likeStmt.all(viewerAddress) as Array<{ comment_id: string }>;
       viewerLikedIds = new Set(likeRows.map((r) => r.comment_id));
 
       const repostStmt = this.db.prepare(`
         SELECT comment_id FROM comment_reposts
-        WHERE LOWER(user_address) = LOWER(?)
+        WHERE user_address = ? COLLATE NOCASE
       `);
       const repostRows = repostStmt.all(viewerAddress) as Array<{ comment_id: string }>;
       viewerRepostedIds = new Set(repostRows.map((r) => r.comment_id));
@@ -427,10 +427,10 @@ export class SqliteSocialStore implements SocialStorePort {
         t.name as token_name, t.symbol as token_symbol, t.logo as token_logo,
         m.marketCapUsd as token_market_cap, m.priceUsd as token_price_usd
       FROM comments c
-      LEFT JOIN tokens t ON LOWER(t.address) = LOWER(c.token_address)
-      LEFT JOIN market_data m ON LOWER(m.address) = LOWER(c.token_address)
+      LEFT JOIN tokens t ON t.address = c.token_address COLLATE NOCASE
+      LEFT JOIN market_data m ON m.address = c.token_address COLLATE NOCASE
       WHERE c.parent_id = ?
-      ORDER BY c.created_at ASC
+      ORDER BY c.created_at ASC, c.rowid ASC
       LIMIT 100
     `);
 
