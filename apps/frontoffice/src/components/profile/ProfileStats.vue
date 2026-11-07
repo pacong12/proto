@@ -49,7 +49,7 @@
         {{ t('totalTrades') }}
       </p>
       <p class="text-xl sm:text-2xl font-bold text-foreground mt-2">
-        {{ totalTradesCount }}
+        {{ totalTradesCapped ? `${totalTradesCount}+` : totalTradesCount }}
       </p>
       <p class="text-sm text-muted-foreground mt-1">{{ t('buysAndSellsRecorded') }}</p>
     </Card>
@@ -70,5 +70,7 @@ defineProps<{
   isOwnProfile: boolean;
   activePositionsCount: number;
   totalTradesCount: number;
+  /** The profile loads a limited page of trades, so the count is only a lower bound. */
+  totalTradesCapped?: boolean;
 }>();
 </script>

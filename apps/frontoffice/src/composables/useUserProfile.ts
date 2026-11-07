@@ -23,6 +23,9 @@ export interface UseUserProfileOptions {
   getTokenNetwork: (token: string | LaunchedTokenEntity) => NetworkConfig;
 }
 
+/** How many of a wallet's latest trades a profile loads. */
+const PROFILE_TRADES_LIMIT = 100;
+
 export function useUserProfile({
   targetAccount,
   activeNetwork,
@@ -32,6 +35,8 @@ export function useUserProfile({
   const myLaunches = ref<MyLaunchItem[]>([]);
   const portfolioPositions = ref<PortfolioPosition[]>([]);
   const userActivities = ref<UserActivity[]>([]);
+  // The list is a page of the latest trades, so a full page says nothing about the real total.
+  const totalTradesCapped = computed(() => userActivities.value.length >= PROFILE_TRADES_LIMIT);
   const loadingLaunches = ref(false);
   const loadingPortfolio = ref(false);
 
@@ -148,7 +153,7 @@ export function useUserProfile({
     try {
       const [tradesJson, tokensJson, portfolioJson] = await Promise.all([
         apiFetch<{ success: boolean; data: TradeEventEntity[] }>(
-          `/api/trades?trader=${target}&limit=100`,
+          `/api/trades?trader=${target}&limit=${PROFILE_TRADES_LIMIT}`,
         ).catch(() => null),
         apiFetch<{
           success: boolean;
@@ -289,6 +294,7 @@ export function useUserProfile({
     myLaunches,
     portfolioPositions,
     userActivities,
+    totalTradesCapped,
     loadingLaunches,
     loadingPortfolio,
     claimableTotals,

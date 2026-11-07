@@ -137,7 +137,7 @@ export const ARC_NETWORK: NetworkConfig = {
     antiSnipeBlocks: 0, // anti-snipe is time-based in the hook
     maxHoldPercent: 100, // no wallet cap; creator prebuy is capped at 5% of supply
     maxBuyPercent: 5,
-    protocolFeeSharePercent: 30, // protocol cut of every tax payment
-    creatorFeeSharePercent: 70,
+    protocolFeeSharePercent: 20, // protocolFeeBps on the factory, read on chain
+    creatorFeeSharePercent: 80,
   },
 };
