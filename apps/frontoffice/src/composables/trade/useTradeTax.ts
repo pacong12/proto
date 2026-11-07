@@ -87,8 +87,10 @@ export function useTradeTax(page: TradePage) {
         editSellTax.value = String(sellBps / 100);
         editTaxRecipient.value = cfg[2];
       } else if (
-        currentToken.value?.taxConfig?.buyTaxBps ||
-        currentToken.value?.taxConfig?.sellTaxBps
+        // A pool's own zero is the answer: the API's config is the token's, and a pool graduated
+        // by the deployed graduator charges nothing whatever the token's config says.
+        !poolTax &&
+        (currentToken.value?.taxConfig?.buyTaxBps || currentToken.value?.taxConfig?.sellTaxBps)
       ) {
         const fallbackBuy = currentToken.value.taxConfig.buyTaxBps ?? 0;
         const fallbackSell = currentToken.value.taxConfig.sellTaxBps ?? 0;
