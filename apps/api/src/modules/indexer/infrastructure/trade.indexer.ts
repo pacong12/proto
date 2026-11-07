@@ -195,7 +195,7 @@ export class TradeIndexer extends ChainIndexerPart {
       const tokenByPoolId = new Map(allTokens.map((t) => [t.poolAddress.toLowerCase(), t]));
       const quotePriceUsd = await this.priceFeed.getQuoteAssetPriceUsd(this.network.chainId);
       const blockTimestamps = new Map<bigint, number>();
-      const txSenders = new Map<string, Address | null>();
+      const txSenders = new Map<string, Address>();
 
       let count = 0;
       for (const log of logs) {
@@ -342,20 +342,19 @@ export class TradeIndexer extends ChainIndexerPart {
     return count;
   }
 
-  /** The address that signed `hash`, or null if the transaction cannot be read. */
+  /**
+   * The address that signed `hash`. A failed read throws, so the poll retries the range: falling
+   * back to the Swap event's sender stored the router as the trader for good whenever the RPC
+   * rate-limited, which wrongly emptied the wallet's PnL, portfolio and top-trader rows.
+   */
   private async txSender(
     hash: `0x${string}` | null,
-    cache: Map<string, Address | null>,
+    cache: Map<string, Address>,
   ): Promise<Address | null> {
     if (!hash) return null;
     const cached = cache.get(hash);
-    if (cached !== undefined) return cached;
-    let from: Address | null = null;
-    try {
-      from = (await this.client.getTransaction({ hash })).from;
-    } catch {
-      // Unreadable transaction: the caller falls back to the Swap event's sender.
-    }
+    if (cached) return cached;
+    const { from } = await this.client.getTransaction({ hash });
     cache.set(hash, from);
     return from;
   }
