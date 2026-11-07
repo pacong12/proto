@@ -104,6 +104,7 @@
 </template>
 
 <script setup lang="ts">
+import { useEscapeClose } from '@/composables/useEscapeClose';
 import { ref, watch } from 'vue';
 import { Quote, X, AlertCircle, Loader2 } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
@@ -128,6 +129,10 @@ const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'quote-posted', callout: FeedCalloutItem): void;
 }>();
+useEscapeClose(
+  () => props.isOpen,
+  () => emit('close'),
+);
 
 const quoteContent = ref('');
 const isSubmitting = ref(false);
@@ -140,11 +145,12 @@ watch(
     if (props.targetCall && props.account && props.isOpen) {
       checkingBalance.value = true;
       try {
-        const data = await apiFetch<{ success: boolean; data: { balance?: string | number } }>(
+        // `formatted` is the balance in whole tokens; there is no `balance` field.
+        const data = await apiFetch<{ success: boolean; data: { formatted?: number } }>(
           `/api/tokens/${props.targetCall.tokenAddress}/balance?account=${props.account}`,
         );
         if (data.success && data.data) {
-          callerBalance.value = Number(data.data.balance || 0);
+          callerBalance.value = Number(data.data.formatted || 0);
         } else {
           callerBalance.value = 0;
         }
