@@ -134,6 +134,7 @@
           :is-token-balance-loading="isTokenBalanceLoading"
           :active-buy-presets="activeBuyPresets"
           :estimated-output-amount="estimatedOutputAmount"
+          :price-impact="priceImpact"
           :slippage="slippage"
           :is-custom-slippage="isCustomSlippage"
           :custom-slippage-input="customSlippageInput"
@@ -677,6 +678,7 @@ const {
   applyQuickBuy,
   customSlippageInput,
   estimatedOutputAmount,
+  priceImpact,
   fetchUserTokenBalance,
   handleCustomSlippageInput,
   handleSwap,

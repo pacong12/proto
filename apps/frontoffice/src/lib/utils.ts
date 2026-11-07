@@ -42,6 +42,15 @@ export function formatTokenBalance(raw: bigint, decimals = 18): string {
 }
 
 /**
+ * A trade's USD value: a dash when it is worth nothing or has no price, "<$0.01" below a cent.
+ */
+export function formatTradeUsd(usd: number): string {
+  if (!(usd > 0) || !Number.isFinite(usd)) return '—';
+  if (usd < 0.01) return '<$0.01';
+  return `$${usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+/**
  * Format a number as a compact USD currency string (e.g. $1.25K, $50.40M, $1.20B, $2.46T).
  * Guarantees values never overflow table cells with long number strings.
  */
