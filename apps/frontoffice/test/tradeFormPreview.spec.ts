@@ -142,6 +142,17 @@ describe('loadOnchainTax', () => {
     expect(tax.onchainTaxConfig.value).toMatchObject({ buyTaxBps: 300, sellTaxBps: 500 });
   });
 
+  it("takes a pool's zero over the token's config, as the deployed graduator registers it", async () => {
+    mocks.readContract.mockImplementation(async (read: { functionName: string }) =>
+      read.functionName === 'taxConfig' ? [200, 1_000, recipient] : [TOKEN, TOKEN, TOKEN, 0, 0],
+    );
+    const tax = useTradeTax(
+      page({ taxConfig: { buyTaxBps: 200, sellTaxBps: 1_000, taxRecipient: recipient } }),
+    );
+    await tax.loadOnchainTax(TOKEN);
+    expect(tax.onchainTaxConfig.value).toMatchObject({ buyTaxBps: 0, sellTaxBps: 0 });
+  });
+
   it("keeps a curve token's own config and does not ask the hook", async () => {
     mocks.readContract.mockImplementation(async () => [200, 1_000, recipient]);
     const tax = useTradeTax(

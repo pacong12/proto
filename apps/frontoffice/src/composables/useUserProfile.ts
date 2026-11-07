@@ -45,7 +45,7 @@ export function useUserProfile({
     totalsByCurrency(
       myLaunches.value.map((item) => ({
         symbol: item.currencySymbol,
-        raw: item.unclaimedRaw,
+        raw: item.unclaimedRaw ?? 0n,
         decimals: item.quoteDecimals,
       })),
       activeNetwork.value.nativeCurrency.symbol,
@@ -69,7 +69,7 @@ export function useUserProfile({
         const launches = await Promise.all(
           envelope.data.map(async (item) => {
             let redirect: string | null = null;
-            let unclaimedRaw = 0n;
+            let unclaimedRaw: bigint | null = 0n;
 
             const tokenNetwork = getTokenNetwork(item.token);
             let quoteDecimals = tokenNetwork.quoteTokenDecimals;
@@ -110,7 +110,8 @@ export function useUserProfile({
                 }
               }
             } catch {
-              // Non-blocking
+              // A rate-limited RPC says nothing about the balance: it must not read as zero.
+              unclaimedRaw = null;
             }
 
             return {
@@ -118,7 +119,8 @@ export function useUserProfile({
               name: item.token.name,
               symbol: item.token.symbol,
               logo: item.token.logo,
-              unclaimedWeth: formatDividendAmount(unclaimedRaw, quoteDecimals),
+              unclaimedWeth:
+                unclaimedRaw === null ? '—' : formatDividendAmount(unclaimedRaw, quoteDecimals),
               unclaimedRaw,
               quoteDecimals,
               currencySymbol: tokenNetwork.nativeCurrency.symbol,

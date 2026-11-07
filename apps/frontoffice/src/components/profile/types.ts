@@ -14,7 +14,8 @@ export interface MyLaunchItem {
   logo?: string;
   /** Accrued creator fees, formatted, in `currencySymbol`. */
   unclaimedWeth: string;
-  unclaimedRaw: bigint;
+  /** Null when the read failed: unknown, not zero, so the claim stays possible. */
+  unclaimedRaw: bigint | null;
   quoteDecimals: number;
   /** The currency of the token's chain: tokens of one creator can quote in different ones. */
   currencySymbol: string;

@@ -117,7 +117,9 @@
           </Button>
           <template v-if="isOwnProfile">
             <Button
-              :disabled="loadingAction || claimingToken === token.address"
+              :disabled="
+                loadingAction || claimingToken === token.address || token.unclaimedRaw === 0n
+              "
               variant="default"
               size="sm"
               class="cursor-pointer"
