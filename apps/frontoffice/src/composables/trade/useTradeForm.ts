@@ -5,6 +5,7 @@ import { apiFetch } from '@/lib/api-client';
 import { useSwap, parseAmountToWei } from '@/composables/useSwap';
 import { useWallet } from '@/composables/useWallet';
 import { getPublicClient, waitForReceiptWithFallback } from '@/lib/viem-client';
+import { curveSwapImpact, poolOutputAtSpot } from '@/lib/pool-preview';
 import { toast } from '@/components/ui/sonner';
 import { isStableSymbol } from '@goton/shared-types';
 import {
@@ -16,6 +17,7 @@ import type { TradePage } from './types';
 import type { UseTradeMarket } from './useTradeMarket';
 import type { UseTradeTax } from './useTradeTax';
 import type { UseTradeDividends } from './useTradeDividends';
+import { usePoolSwapQuote } from './usePoolSwapQuote';
 
 /** The swap form: side, amount and slippage, the wallet's token balance, the output preview and the swap itself. */
 export function useTradeForm(
@@ -145,29 +147,74 @@ export function useTradeForm(
     return calculateCurveSellOutput(tokensIn, vEth, vToken);
   }
 
+  const isV2OnCurve = computed(
+    () =>
+      (currentToken.value.version === 'v2' || Boolean(currentToken.value.curveAddress)) &&
+      !currentMarketData.value.isGraduated,
+  );
+
+  const poolQuote = usePoolSwapQuote(
+    page,
+    computed(() => {
+      if (isV2OnCurve.value || effectiveNativeInput.value <= 0) return null;
+      const { buyTaxBps, sellTaxBps } = onchainTaxConfig.value;
+      if (isBuy.value) {
+        return {
+          isBuy: true,
+          amountInWei: parseAmountToWei(effectiveNativeInput.value.toString(), 18),
+          taxBps: buyTaxBps,
+        };
+      }
+      return {
+        isBuy: false,
+        amountInWei: isMaxSell.value
+          ? userTokenBalance.value
+          : parseAmountToWei(amountIn.value, currentToken.value.decimals || 18),
+        taxBps: sellTaxBps,
+      };
+    }),
+  );
+
   const estimatedOutputAmount = computed(() => {
     const input = effectiveNativeInput.value;
     if (input <= 0) return '0';
 
-    const isV2OnCurve =
-      (currentToken.value.version === 'v2' || Boolean(currentToken.value.curveAddress)) &&
-      !currentMarketData.value.isGraduated;
-
     // On the curve the token itself takes the creator's tax: the buy tax from the tokens received,
-    // the sell tax from the tokens sold. Show what actually reaches the wallet.
+    // the sell tax from the tokens sold. In a pool the hook takes it on the quote side. Show what
+    // actually reaches the wallet: the router's own quote when there is one.
     const { buyTaxBps, sellTaxBps } = onchainTaxConfig.value;
+    const price = currentMarketData.value.priceInWeth;
+    const quoted = poolQuote.amountOut.value;
     if (isBuy.value) {
-      const tokens = isV2OnCurve
+      const tokens = isV2OnCurve.value
         ? computeCurveBuyOutput(input) * (1 - buyTaxBps / 10_000)
-        : input / (currentMarketData.value.priceInWeth || 0.000001);
+        : quoted !== null
+          ? Number(quoted) / 10 ** (currentToken.value.decimals || 18)
+          : poolOutputAtSpot(input, price, true, buyTaxBps);
       return tokens.toLocaleString(undefined, { maximumFractionDigits: 2 });
     } else {
-      const weth = isV2OnCurve
+      const weth = isV2OnCurve.value
         ? computeCurveSellOutput(input * (1 - sellTaxBps / 10_000))
-        : input * (currentMarketData.value.priceInWeth || 0);
+        : quoted !== null
+          ? Number(quoted) / 10 ** tokenNetwork.value.quoteTokenDecimals
+          : poolOutputAtSpot(input, price, false, sellTaxBps);
       const decimals = currencySymbol.value === 'USDC' ? 2 : 6;
       return weth.toFixed(decimals);
     }
+  });
+
+  /** Share of the output lost to moving the price; null when it could not be measured. */
+  const priceImpact = computed(() => {
+    const input = effectiveNativeInput.value;
+    if (input <= 0) return null;
+    if (!isV2OnCurve.value) return poolQuote.priceImpact.value;
+    // Spot output of the curve's constant-product math: the same fee and tax, no reserve movement.
+    const { vEth, vToken } = getVirtualReserves();
+    if (isBuy.value) {
+      return curveSwapImpact(computeCurveBuyOutput(input), (input * 0.99 * vToken) / vEth);
+    }
+    const netTokens = input * (1 - onchainTaxConfig.value.sellTaxBps / 10_000);
+    return curveSwapImpact(computeCurveSellOutput(netTokens), (netTokens * 0.99 * vEth) / vToken);
   });
 
   const swapButtonText = computed(() => {
@@ -346,20 +393,22 @@ export function useTradeForm(
     swapSuccessTx.value = null;
     let expectedAmountOut: bigint | undefined;
     const input = effectiveNativeInput.value;
-    const isV2OnCurve =
-      (currentToken.value.version === 'v2' || Boolean(currentToken.value.curveAddress)) &&
-      !currentMarketData.value.isGraduated;
 
+    // Only a stand-in: the swap quotes on-chain, and uses this when the RPC cannot answer. It has to
+    // match what the contract checks. The curve's buy floor is on the tokens before the token's buy
+    // tax, its sell floor on the output after the sell tax; a pool's floor is after the hook's tax.
     if (input > 0 && currentMarketData.value.priceInWeth > 0) {
+      const { buyTaxBps, sellTaxBps } = onchainTaxConfig.value;
+      const price = currentMarketData.value.priceInWeth;
       if (isBuy.value) {
-        const estimatedTokens = isV2OnCurve
+        const estimatedTokens = isV2OnCurve.value
           ? computeCurveBuyOutput(input)
-          : input / (currentMarketData.value.priceInWeth || 0.000001);
+          : poolOutputAtSpot(input, price, true, buyTaxBps);
         expectedAmountOut = parseEther(Math.max(0, estimatedTokens).toFixed(6));
       } else {
-        const estimatedEth = isV2OnCurve
-          ? computeCurveSellOutput(input)
-          : input * (currentMarketData.value.priceInWeth || 0);
+        const estimatedEth = isV2OnCurve.value
+          ? computeCurveSellOutput(input * (1 - sellTaxBps / 10_000))
+          : poolOutputAtSpot(input, price, false, sellTaxBps);
         expectedAmountOut = parseEther(Math.max(0, estimatedEth).toFixed(6));
       }
     }
@@ -529,6 +578,7 @@ export function useTradeForm(
     isSwapping,
     isTokenBalanceLoading,
     payInUsd,
+    priceImpact,
     scrollToSwap,
     slippage,
     swapButtonText,

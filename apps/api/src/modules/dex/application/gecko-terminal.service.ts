@@ -6,8 +6,8 @@ import type {
 } from '@goton/shared-types';
 import { NotFoundError } from '../../../core/errors/app-error';
 import type { IChainService } from '../../chains';
-import type { TokenStorePort } from '../../tokens';
-import type { TradeStorePort } from '../../tokens';
+import type { TokenStorePort } from '../../../core/ports/token-store.port';
+import type { TradeStorePort } from '../../../core/ports/trade-store.port';
 import type { GetTokenByAddressUseCase } from '../../tokens';
 import type { GetCandlesticksUseCase } from '../../trades';
 

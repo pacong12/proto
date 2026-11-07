@@ -6,7 +6,7 @@ import {
   type NetworkConfig,
 } from '@goton/shared-types';
 import { server } from '../src/server';
-import { SqliteTokenRepository } from '../src/modules/tokens/infrastructure/adapters/sqlite-token.repository';
+import { SqliteTokenRepository } from '../src/app/storage/sqlite-token.repository';
 
 const hex = (bytes: number) =>
   `0x${Array.from(crypto.getRandomValues(new Uint8Array(bytes)), (b) => b.toString(16).padStart(2, '0')).join('')}` as `0x${string}`;

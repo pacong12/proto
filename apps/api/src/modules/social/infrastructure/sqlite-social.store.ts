@@ -1,10 +1,16 @@
-import type { SocialStorePort } from '../../domain/ports/social-store.port';
+import type { Database } from 'bun:sqlite';
+import type { SqliteDatabase } from '../../../core/sqlite/sqlite-database';
+import type { SocialStorePort } from '../../../core/ports/social-store.port';
 import { TokenCommentEntity, getUserIdentity, type CreatorProfile } from '@goton/shared-types';
 
-import { SqliteTradeStore } from './sqlite-trade.store';
-
 /** Comments, callouts, follows and profiles. */
-export class SqliteSocialStore extends SqliteTradeStore implements SocialStorePort {
+export class SqliteSocialStore implements SocialStorePort {
+  private readonly db: Database;
+
+  constructor(private readonly database: SqliteDatabase) {
+    this.db = database.db;
+  }
+
   async getProfile(address: string): Promise<CreatorProfile | null> {
     const row = this.db
       .prepare('SELECT profile_json FROM profiles WHERE address = ? LIMIT 1')
@@ -486,7 +492,7 @@ export class SqliteSocialStore extends SqliteTradeStore implements SocialStorePo
     commentId: string,
     userAddress: string,
   ): Promise<{ reposted: boolean; repostsCount: number }> {
-    return this.runInTransaction(() => {
+    return this.database.runInTransaction(() => {
       const checkStmt = this.db.prepare(`
         SELECT 1 FROM comment_reposts
         WHERE comment_id = ? AND LOWER(user_address) = LOWER(?)
@@ -530,7 +536,7 @@ export class SqliteSocialStore extends SqliteTradeStore implements SocialStorePo
   ): Promise<{ following: boolean; followers: number }> {
     const a = follower.toLowerCase();
     const b = followee.toLowerCase();
-    return this.runInTransaction(() => {
+    return this.database.runInTransaction(() => {
       const existing = this.db
         .prepare(`SELECT 1 FROM follows WHERE follower = ? AND followee = ? LIMIT 1`)
         .get(a, b);
@@ -591,7 +597,7 @@ export class SqliteSocialStore extends SqliteTradeStore implements SocialStorePo
     // Wrap in an immediate transaction to eliminate the TOCTOU race between the
     // SELECT-check and the DELETE/INSERT+UPDATE pair. Without this, two concurrent
     // requests from the same user can both pass the check and double-insert the like.
-    return this.runInTransaction(() => {
+    return this.database.runInTransaction(() => {
       const checkStmt = this.db.prepare(`
         SELECT 1 FROM comment_likes
         WHERE comment_id = ? AND LOWER(user_address) = LOWER(?)
@@ -641,7 +647,7 @@ export class SqliteSocialStore extends SqliteTradeStore implements SocialStorePo
     sentiment: number;
     profile: number;
   }> {
-    return this.runInTransaction(() => {
+    return this.database.runInTransaction(() => {
       const user = address.toLowerCase();
       const changes = (r: unknown) => Number((r as { changes?: number | bigint }).changes ?? 0);
 

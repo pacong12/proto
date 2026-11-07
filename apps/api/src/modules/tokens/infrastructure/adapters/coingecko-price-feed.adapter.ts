@@ -1,5 +1,5 @@
 import { getNetworkConfig, stableQuoteUsd } from '@goton/shared-types';
-import { PriceFeedPort } from '../../domain/ports/price-feed.port';
+import { PriceFeedPort } from '../../../../core/ports/price-feed.port';
 
 export interface CoinGeckoConfig {
   apiKey?: string;

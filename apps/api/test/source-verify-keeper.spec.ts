@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ROBINHOOD_CHAIN, ARC_CHAIN, type LaunchedTokenEntity } from '@goton/shared-types';
-import { SourceVerifyKeeperService } from '../src/modules/tokens/infrastructure/keeper/source-verify-keeper.service';
+import { SourceVerifyKeeperService } from '../src/modules/keepers/infrastructure/source-verify-keeper.service';
 
 const BASE = 'https://sourcify.test/server';
 

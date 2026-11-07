@@ -9,8 +9,8 @@ import {
   type WalletPnl,
 } from '@goton/shared-types';
 import { assertAddress, NotFoundError } from '../../../core/errors/app-error';
-import type { SocialStorePort } from '../../tokens';
-import type { TradeStorePort } from '../../tokens';
+import type { SocialStorePort } from '../../../core/ports/social-store.port';
+import type { TradeStorePort } from '../../../core/ports/trade-store.port';
 import type { GetTokenByAddressUseCase, TokenDetailResult } from '../../tokens';
 import type { GetCandlesticksUseCase } from '../../trades';
 import { positionPnl } from '../domain/position-pnl';

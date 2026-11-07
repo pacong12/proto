@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { PublicClient } from 'viem';
 import { ARC_CHAIN, ROBINHOOD_CHAIN, type LaunchedTokenEntity } from '@goton/shared-types';
-import { EventPollerService } from '../src/modules/tokens/infrastructure/indexer/event-poller.service';
-import { SqliteTokenRepository } from '../src/modules/tokens/infrastructure/adapters/sqlite-token.repository';
+import { EventPollerService } from '../src/modules/indexer/infrastructure/event-poller.service';
+import { SqliteTokenRepository } from '../src/app/storage/sqlite-token.repository';
 
 const TOKEN = '0x00000000000000000000000000000000000000aa' as const;
 const CURVE = '0x00000000000000000000000000000000000000c0' as const;

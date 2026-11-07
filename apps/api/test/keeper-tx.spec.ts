@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createWalletClient, custom, defineChain, parseAbi, type PublicClient } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import { sendAndWait } from '../src/modules/tokens/infrastructure/keeper/keeper-tx';
+import { sendAndWait } from '../src/modules/keepers/infrastructure/keeper-tx';
 
 const chain = defineChain({
   id: 5042002,

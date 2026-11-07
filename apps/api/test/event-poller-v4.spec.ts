@@ -6,11 +6,11 @@ import {
   type LaunchedTokenEntity,
   type NetworkConfig,
 } from '@goton/shared-types';
-import { EventPollerService } from '../src/modules/tokens/infrastructure/indexer/event-poller.service';
-import { InMemoryTokenRepository } from '../src/modules/tokens/infrastructure/adapters/in-memory-token.repository';
+import { EventPollerService } from '../src/modules/indexer/infrastructure/event-poller.service';
+import { InMemoryTokenRepository } from '../src/app/storage/in-memory-token.repository';
 import type { ViemChainIndexerAdapter } from '../src/modules/tokens/infrastructure/adapters/viem-chain-indexer.adapter';
 import type { CalculatePricingUseCase } from '../src/modules/tokens/application/use-cases/calculate-pricing.use-case';
-import type { PriceFeedPort } from '../src/modules/tokens/domain/ports/price-feed.port';
+import type { PriceFeedPort } from '../src/core/ports/price-feed.port';
 
 const IDEA = '0xd84ee1383e8e0f7a7bc8582e16d4a4942fd05f3a' as const;
 const IDEA_POOL = '0x8c7d1c2f1b4eaa35ec3b0f636e94071a10cea7bbf6eda9fe3fe2adeb3769b412' as const;

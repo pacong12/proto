@@ -4,10 +4,10 @@ import { toEnvelope } from '../src/core/http/api-envelope';
 import { assertAddress, NotFoundError } from '../src/core/errors/app-error';
 import { InMemoryCacheAdapter } from '../src/modules/observability/infrastructure/in-memory-cache.adapter';
 import { GetDevActivityUseCase } from '../src/modules/tokens/application/use-cases/get-dev-activity.use-case';
-import { sendAndWait, sentResult } from '../src/modules/tokens/infrastructure/keeper/keeper-tx';
+import { sendAndWait, sentResult } from '../src/modules/keepers/infrastructure/keeper-tx';
 import type { CachePort } from '../src/core/ports/cache.port';
 import type { LoggerPort } from '../src/core/ports/logger.port';
-import type { TokenRepositoryPort } from '../src/modules/tokens/domain/ports/token.repository.port';
+import type { TokenRepositoryPort } from '../src/core/ports/token.repository.port';
 import type { PublicClient, WalletClient } from 'viem';
 
 const logger = {

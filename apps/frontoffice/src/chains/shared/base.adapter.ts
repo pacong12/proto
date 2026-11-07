@@ -1,9 +1,15 @@
 import type { PublicClient, TransactionReceipt, WalletClient } from 'viem';
 import type { NetworkConfig } from '@goton/shared-types';
-import type { ChainAdapter, ChainLaunchParams, ChainLaunchResult, ChainSwapParams } from '../types';
+import type {
+  ChainAdapter,
+  ChainLaunchParams,
+  ChainLaunchResult,
+  ChainSwapParams,
+  V4SwapInput,
+} from '../types';
 import { waitForReceiptWithFallback } from '../../lib/viem-client';
 import { executeCurveSwap, isCurveTrade } from './curve-swap';
-import { executeV4RouterSwap, type V4QuoteConfig } from './v4-swap';
+import { executeV4RouterSwap, quoteV4RouterSwap, type V4QuoteConfig } from './v4-swap';
 import { isDeployed } from './utils';
 import { readFactoryVestingVault } from '../../lib/vesting';
 
@@ -51,6 +57,14 @@ export abstract class LaunchpadChainAdapter implements ChainAdapter {
       publicClient,
       account,
     );
+  }
+
+  quotePoolSwap(
+    params: V4SwapInput,
+    publicClient: PublicClient,
+    account: `0x${string}`,
+  ): Promise<bigint> {
+    return quoteV4RouterSwap(this.network, this.poolQuote, params, publicClient, account);
   }
 
   /** Runs before a pool swap; a model that must prepare the pool first overrides it. */

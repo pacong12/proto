@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SqliteTokenRepository } from '../src/modules/tokens/infrastructure/adapters/sqlite-token.repository';
+import { SqliteTokenRepository } from '../src/app/storage/sqlite-token.repository';
 import { createSessionToken } from '../src/core/auth/session';
 import { server } from '../src/server';
 

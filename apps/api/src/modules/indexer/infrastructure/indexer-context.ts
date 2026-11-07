@@ -1,9 +1,9 @@
 import { PublicClient } from 'viem';
 import { type NetworkConfig } from '@goton/shared-types';
-import { TokenRepositoryPort } from '../../domain/ports/token.repository.port';
-import type { ChainIndexerPort } from '../../domain/ports/chain.indexer.port';
-import { PriceFeedPort } from '../../domain/ports/price-feed.port';
-import { CalculatePricingUseCase } from '../../application/use-cases/calculate-pricing.use-case';
+import { TokenRepositoryPort } from '../../../core/ports/token.repository.port';
+import type { ChainIndexerPort } from '../../tokens';
+import { PriceFeedPort } from '../../../core/ports/price-feed.port';
+import { CalculatePricingUseCase } from '../../tokens';
 import { BACKFILL_CHUNK, BACKFILL_RETRY_DELAYS_MS } from './indexer-events';
 
 /** What every indexer of one chain shares: its clients and stores, and backfill pacing. */

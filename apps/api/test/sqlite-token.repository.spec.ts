@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { SqliteTokenRepository } from '../src/modules/tokens/infrastructure/adapters/sqlite-token.repository';
+import { SqliteTokenRepository } from '../src/app/storage/sqlite-token.repository';
 import { LaunchedTokenEntity, TradeEventEntity, TokenMarketData } from '@goton/shared-types';
 
 describe('SqliteTokenRepository', () => {
