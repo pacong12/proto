@@ -16,7 +16,7 @@ export class SqliteTokenStore implements TokenStorePort {
     let finalTaxConfig = token.taxConfig;
     try {
       const existingRow = this.db
-        .prepare('SELECT tax_config_json FROM tokens WHERE LOWER(address) = LOWER(?) LIMIT 1')
+        .prepare('SELECT tax_config_json FROM tokens WHERE address = ? COLLATE NOCASE LIMIT 1')
         .get(token.address) as { tax_config_json?: string | null } | undefined;
       if (existingRow?.tax_config_json) {
         const parsed = JSON.parse(existingRow.tax_config_json) as LaunchedTokenEntity['taxConfig'];
@@ -73,7 +73,7 @@ export class SqliteTokenStore implements TokenStorePort {
 
   async findByAddress(address: `0x${string}`): Promise<LaunchedTokenEntity | null> {
     const stmt = this.db.prepare(`
-      SELECT * FROM tokens WHERE LOWER(address) = LOWER(?) LIMIT 1
+      SELECT * FROM tokens WHERE address = ? COLLATE NOCASE LIMIT 1
     `);
     const row = stmt.get(address) as TokenRow | null;
     if (!row) return null;
@@ -136,7 +136,7 @@ export class SqliteTokenStore implements TokenStorePort {
     const rows = this.db
       .prepare(
         `SELECT t.address AS address FROM tokens t
-         LEFT JOIN market_data m ON LOWER(m.address) = LOWER(t.address)
+         LEFT JOIN market_data m ON m.address = t.address COLLATE NOCASE
          WHERE m.address IS NULL OR m.updatedAt < ?
          ORDER BY COALESCE(m.updatedAt, 0) ASC
          LIMIT ?`,
@@ -147,7 +147,7 @@ export class SqliteTokenStore implements TokenStorePort {
 
   async getMarketData(address: `0x${string}`): Promise<TokenMarketData | null> {
     const stmt = this.db.prepare(`
-      SELECT * FROM market_data WHERE LOWER(address) = LOWER(?) LIMIT 1
+      SELECT * FROM market_data WHERE address = ? COLLATE NOCASE LIMIT 1
     `);
     const row = stmt.get(address) as MarketDataRow | null;
     if (!row) return null;
@@ -209,7 +209,7 @@ export class SqliteTokenStore implements TokenStorePort {
 
   async findByPoolAddress(poolAddress: `0x${string}`): Promise<LaunchedTokenEntity | null> {
     const stmt = this.db.prepare(
-      `SELECT * FROM tokens WHERE LOWER(poolAddress) = LOWER(?) LIMIT 1`,
+      `SELECT * FROM tokens WHERE poolAddress = ? COLLATE NOCASE LIMIT 1`,
     );
     const row = stmt.get(poolAddress) as TokenRow | null;
     return row ? mapRowToToken(row) : null;
@@ -259,7 +259,7 @@ export class SqliteTokenStore implements TokenStorePort {
     try {
       const rows = this.db
         .prepare(
-          `SELECT sentiment, COUNT(*) as count FROM token_sentiment WHERE LOWER(token_address) = LOWER(?) GROUP BY sentiment`,
+          `SELECT sentiment, COUNT(*) as count FROM token_sentiment WHERE token_address = ? COLLATE NOCASE GROUP BY sentiment`,
         )
         .all(tokenAddress) as Array<{ sentiment: string; count: number }>;
 
@@ -277,7 +277,7 @@ export class SqliteTokenStore implements TokenStorePort {
       if (userAddress) {
         const u = this.db
           .prepare(
-            `SELECT sentiment FROM token_sentiment WHERE LOWER(token_address) = LOWER(?) AND LOWER(user_address) = LOWER(?) LIMIT 1`,
+            `SELECT sentiment FROM token_sentiment WHERE token_address = ? COLLATE NOCASE AND user_address = ? COLLATE NOCASE LIMIT 1`,
           )
           .get(tokenAddress, userAddress) as { sentiment?: string } | undefined;
         if (u?.sentiment) userVote = u.sentiment as 'bull' | 'bear';

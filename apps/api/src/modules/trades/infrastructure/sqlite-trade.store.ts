@@ -117,12 +117,18 @@ export class SqliteTradeStore implements TradeStorePort {
   ): Promise<CandlestickEntity[]> {
     const token = await this.tokens.findByAddress(tokenAddress);
     const mkt = await this.tokens.getMarketData(tokenAddress);
+    // Only what the candles read: a popular token has many thousands of rows to build here.
     const stmt = this.db.prepare(`
-      SELECT * FROM trades
+      SELECT timestamp, priceUsd, priceQuote, wethAmount FROM trades
       WHERE tokenAddress = ? COLLATE NOCASE
       ORDER BY timestamp ASC, rowid ASC
     `);
-    const rows = (stmt.all(tokenAddress) as TradeRow[]).map((row) => ({
+    const rows = (
+      stmt.all(tokenAddress) as Pick<
+        TradeRow,
+        'timestamp' | 'priceUsd' | 'priceQuote' | 'wethAmount'
+      >[]
+    ).map((row) => ({
       ...row,
       priceUsd: chartPriceUsd(
         { priceUsd: row.priceUsd, priceQuote: row.priceQuote ?? undefined },
@@ -176,7 +182,7 @@ export class SqliteTradeStore implements TradeStorePort {
   ): Promise<TradeEventEntity[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM trades
-      WHERE LOWER(trader) = LOWER(?)
+      WHERE trader = ? COLLATE NOCASE
         AND (? IS NULL OR tokenAddress = ? COLLATE NOCASE)
       ORDER BY timestamp DESC, rowid DESC
       LIMIT ?
@@ -192,23 +198,24 @@ export class SqliteTradeStore implements TradeStorePort {
     limit: number,
     tokenAddress?: `0x${string}`,
   ): Promise<TradeEventEntity[]> {
+    // Optional bounds are left out rather than written as `? = 0 OR ...`, which no index can bound.
+    const params: (string | number)[] = [Number(fromBlock)];
+    let where = 'CAST(blockNumber AS INTEGER) >= ?';
+    if (Number(toBlock) !== 0) {
+      where += ' AND CAST(blockNumber AS INTEGER) <= ?';
+      params.push(Number(toBlock));
+    }
+    if (tokenAddress) {
+      where += ' AND tokenAddress = ? COLLATE NOCASE';
+      params.push(tokenAddress);
+    }
     const stmt = this.db.prepare(`
       SELECT * FROM trades
-      WHERE CAST(blockNumber AS INTEGER) >= ?
-        AND (? = 0 OR CAST(blockNumber AS INTEGER) <= ?)
-        AND (? IS NULL OR tokenAddress = ? COLLATE NOCASE)
+      WHERE ${where}
       ORDER BY CAST(blockNumber AS INTEGER) ASC, rowid ASC
       LIMIT ?
     `);
-    const token = tokenAddress ?? null;
-    const rows = stmt.all(
-      Number(fromBlock),
-      Number(toBlock),
-      Number(toBlock),
-      token,
-      token,
-      limit,
-    ) as TradeRow[];
+    const rows = stmt.all(...params, limit) as TradeRow[];
     return rows.map((row) => mapRowToTrade(row));
   }
 
@@ -225,7 +232,7 @@ export class SqliteTradeStore implements TradeStorePort {
   async findTradeByHash(txHash: string): Promise<TradeEventEntity | null> {
     const stmt = this.db.prepare(`
       SELECT * FROM trades
-      WHERE LOWER(transactionHash) = LOWER(?)
+      WHERE transactionHash = ? COLLATE NOCASE
       LIMIT 1
     `);
     const row = stmt.get(txHash) as TradeRow | null;

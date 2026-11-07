@@ -45,7 +45,9 @@ export class InMemoryCacheAdapter implements CachePort {
       if (firstKey !== undefined) this.store.delete(firstKey);
     }
     const expiresAt = Date.now() + ttlSeconds * 1000;
-    this.store.set(key, { value: JSON.stringify(value), expiresAt });
+    // BigInt-safe like the Redis adapter: token fields such as positionId are bigints.
+    const serialized = JSON.stringify(value, (_k, v) => (typeof v === 'bigint' ? v.toString() : v));
+    this.store.set(key, { value: serialized, expiresAt });
   }
 
   async increment(key: string, ttlMs: number): Promise<number> {
