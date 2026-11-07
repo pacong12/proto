@@ -80,12 +80,19 @@ export class EventPollerService {
   /** True when the last cycle stopped short of the chain head; the caller polls again at once. */
   isBehind = false;
 
+  /**
+   * True when the last cycle failed (the RPC refused or errored). pollEvents does not throw, so
+   * the scheduler reads this to back off instead of retrying at the catch-up pace.
+   */
+  lastPollFailed = false;
+
   private failedRangeStart: bigint | null = null;
 
   private rangeFailures = 0;
 
   async pollEvents(fromBlock?: bigint, toBlock?: bigint): Promise<number> {
     let currentBlock = 0n;
+    this.lastPollFailed = false;
     try {
       // API-10: stay CONFIRMATIONS blocks behind the head so short reorgs never index dropped logs.
       // cacheTime 0: viem otherwise reuses the head it read up to its polling interval (4s) ago,
@@ -136,6 +143,7 @@ export class EventPollerService {
       }
       return count;
     } catch (error) {
+      this.lastPollFailed = true;
       const e = error as { code?: number; message?: string };
       const rateLimited =
         e?.code === 429 ||
