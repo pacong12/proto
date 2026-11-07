@@ -1,5 +1,7 @@
 # Clean Architecture Refactoring Roadmap for Coding Agents
 
+> **Historical.** Written for the earlier Uniswap V3 locker design; its 70/30 fee split is superseded. Creators now keep 70% (Robinhood Chain) or 80% (Arc) of each token's fees and tax: see [Fees & burns](../apps/docs/src/protocol/fees-and-burns.md).
+
 **Document Type:** Technical Roadmap & Agent Execution Specification  
 **Target Audience:** Autonomous & Semi-Autonomous Coding Agents, Software Engineers  
 **Scope:** `apps/api`, `apps/frontoffice`, `packages/shared-types`  

@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   account: { value: null as string | null },
   quotePoolSwap: vi.fn(),
   readContract: vi.fn(),
+  readV4PoolState: vi.fn(),
 }));
 
 vi.mock('@/composables/useWallet', async () => {
@@ -40,10 +41,14 @@ vi.mock('@/chains', () => ({
 }));
 vi.mock('@goton/shared-types', async (original) => ({
   ...(await original<typeof import('@goton/shared-types')>()),
-  readV4PoolState: vi.fn(async () => ({ sqrtPriceX96: SQRT_PRICE, liquidity: 1n })),
+  readV4PoolState: mocks.readV4PoolState,
 }));
 
+// 100M tokens and 100 USDC of virtual reserves at that price: selling 1M tokens moves it ~1%.
+const LIQUIDITY = 10n ** 17n;
+
 const { useTradeForm } = await import('../src/composables/trade/useTradeForm');
+const { poolOutputFromLiquidity } = await import('../src/lib/pool-preview');
 const { useTradeTax } = await import('../src/composables/trade/useTradeTax');
 
 function page(overrides: Partial<LaunchedTokenEntity> = {}) {
@@ -80,6 +85,8 @@ describe('swap form preview on the pool path', () => {
     vi.useFakeTimers();
     mocks.account.value = null;
     mocks.quotePoolSwap.mockReset();
+    mocks.readV4PoolState.mockReset();
+    mocks.readV4PoolState.mockResolvedValue({ sqrtPriceX96: SQRT_PRICE, liquidity: LIQUIDITY });
   });
   afterEach(() => vi.useRealTimers());
 
@@ -115,15 +122,52 @@ describe('swap form preview on the pool path', () => {
     expect(f.priceImpact.value).toBeCloseTo(0.02, 4);
   });
 
-  it('keeps the estimate when the quote fails', async () => {
+  it('keeps the spot estimate when neither the quote nor the pool can be read', async () => {
     mocks.account.value = WALLET;
     mocks.quotePoolSwap.mockRejectedValue(new Error('reverted'));
+    mocks.readV4PoolState.mockRejectedValue(new Error('429'));
     const f = form();
     f.amountIn.value = '1';
     await nextTick();
     await vi.advanceTimersByTimeAsync(400);
     expect(asNumber(f.estimatedOutputAmount.value)).toBeCloseTo(1e6 * 0.99 * 0.97, 1);
     expect(f.priceImpact.value).toBeNull();
+  });
+
+  it('prices a sell not approved yet from the pool’s liquidity, impact included', async () => {
+    mocks.account.value = WALLET;
+    // Without an allowance the router's simulation reverts.
+    mocks.quotePoolSwap.mockRejectedValue(new Error('insufficient allowance'));
+    const f = form();
+    f.tradeTab.value = 'sell';
+    f.amountIn.value = '1000000';
+    await nextTick();
+    await vi.advanceTimersByTimeAsync(400);
+
+    const expected = poolOutputFromLiquidity({
+      isBuy: false,
+      amountInRaw: 10n ** 24n,
+      sqrtPriceX96: SQRT_PRICE,
+      liquidity: LIQUIDITY,
+      quoteIsCurrency0: false,
+      taxBps: 500,
+    }) as bigint;
+    expect(Number(f.estimatedOutputAmount.value)).toBeCloseTo(Number(expected) / 1e6, 2);
+    // Below the spot figure of the test above by the ~1% the sell moves the price.
+    expect(Number(expected) / 1e6).toBeLessThan(0.99 * 0.95 * 0.992);
+    expect(f.priceImpact.value).toBeGreaterThan(0.009);
+    expect(f.priceImpact.value).toBeLessThan(0.011);
+  });
+
+  it('prices a pool swap from its liquidity before a wallet is connected', async () => {
+    const f = form();
+    f.amountIn.value = '1';
+    await nextTick();
+    await vi.advanceTimersByTimeAsync(400);
+
+    expect(mocks.quotePoolSwap).not.toHaveBeenCalled();
+    expect(f.priceImpact.value).toBeGreaterThan(0);
+    expect(asNumber(f.estimatedOutputAmount.value)).toBeLessThan(1e6 * 0.99 * 0.97);
   });
 });
 

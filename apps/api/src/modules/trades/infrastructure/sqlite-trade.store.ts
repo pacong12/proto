@@ -13,6 +13,11 @@ import {
 import { POOL_HOLDERS, TradeRow, mapRowToTrade } from '../../../core/sqlite/sqlite-rows';
 import type { TokenStorePort } from '../../../core/ports/token-store.port';
 
+/** The most bars a gap-filled chart returns; older ones are cut. */
+const CHART_MAX_CANDLES = 1000;
+
+type CandleRow = Pick<TradeRow, 'timestamp' | 'priceUsd' | 'priceQuote' | 'wethAmount'>;
+
 /** Indexed trades and what is derived from them (candles, flow, holders, positions). */
 export class SqliteTradeStore implements TradeStorePort {
   private readonly db: Database;
@@ -117,18 +122,35 @@ export class SqliteTradeStore implements TradeStorePort {
   ): Promise<CandlestickEntity[]> {
     const token = await this.tokens.findByAddress(tokenAddress);
     const mkt = await this.tokens.getMarketData(tokenAddress);
-    // Only what the candles read: a popular token has many thousands of rows to build here.
-    const stmt = this.db.prepare(`
-      SELECT timestamp, priceUsd, priceQuote, wethAmount FROM trades
-      WHERE tokenAddress = ? COLLATE NOCASE
-      ORDER BY timestamp ASC, rowid ASC
-    `);
-    const rows = (
-      stmt.all(tokenAddress) as Pick<
-        TradeRow,
-        'timestamp' | 'priceUsd' | 'priceQuote' | 'wethAmount'
-      >[]
-    ).map((row) => ({
+    const span = this.db
+      .prepare(
+        `SELECT MIN(timestamp) AS first, MAX(timestamp) AS last FROM trades
+         WHERE tokenAddress = ? COLLATE NOCASE`,
+      )
+      .get(tokenAddress) as { first: number | null; last: number | null };
+    const endTime = chartEndTime(span.last ?? undefined);
+    // Gap-filled candles keep only the newest CHART_MAX_CANDLES bars, which open at the last
+    // trade before them: read that window and that one trade, not every trade the token has.
+    const bucketMs = resolutionSeconds * 1000;
+    const windowStart = fillGaps
+      ? Math.floor(endTime / bucketMs) * bucketMs - CHART_MAX_CANDLES * bucketMs
+      : 0;
+    const columns = 'timestamp, priceUsd, priceQuote, wethAmount';
+    const opening = this.db
+      .prepare(
+        `SELECT ${columns} FROM trades
+         WHERE tokenAddress = ? COLLATE NOCASE AND timestamp < ?
+         ORDER BY timestamp DESC, rowid DESC LIMIT 1`,
+      )
+      .get(tokenAddress, windowStart) as CandleRow | null;
+    const inWindow = this.db
+      .prepare(
+        `SELECT ${columns} FROM trades
+         WHERE tokenAddress = ? COLLATE NOCASE AND timestamp >= ?
+         ORDER BY timestamp ASC, rowid ASC`,
+      )
+      .all(tokenAddress, windowStart) as CandleRow[];
+    const rows = (opening ? [opening, ...inWindow] : inWindow).map((row) => ({
       ...row,
       priceUsd: chartPriceUsd(
         { priceUsd: row.priceUsd, priceQuote: row.priceQuote ?? undefined },
@@ -136,10 +158,10 @@ export class SqliteTradeStore implements TradeStorePort {
       ),
     }));
     return aggregateCandlesticks(rows, resolutionSeconds, {
-      startTime: chartStartTime(token?.createdAt, rows[0]?.timestamp),
-      endTime: chartEndTime(rows[rows.length - 1]?.timestamp),
+      startTime: chartStartTime(token?.createdAt, span.first ?? undefined),
+      endTime,
       fillGaps,
-      maxCandles: 1000,
+      maxCandles: CHART_MAX_CANDLES,
       fallbackPrice: mkt?.priceUsd || 0.0000042,
     });
   }
