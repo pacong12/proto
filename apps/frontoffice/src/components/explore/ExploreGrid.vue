@@ -4,7 +4,7 @@
       <Card
         v-for="item in paginatedTokens"
         :key="item.token.address"
-        class="group hover:border-primary/60 transition-all p-5 cursor-pointer rounded-2xl bg-card border border-border flex flex-col justify-between shadow-xs hover:shadow-md space-y-4"
+        class="group hover:border-foreground/30 transition-colors p-4 cursor-pointer rounded-2xl bg-card border border-border flex flex-col justify-between space-y-3"
         @click="$emit('selectToken', item.token.address)"
       >
         <div class="space-y-3">
@@ -82,19 +82,15 @@
           </div>
 
           <!-- Price & MCap -->
-          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-border text-sm">
+          <div class="grid grid-cols-2 gap-2 pt-3 border-t border-border text-sm tabular-nums">
             <div>
-              <span class="text-xs text-muted-foreground block font-semibold">{{
-                t('marketCapCol').toUpperCase()
-              }}</span>
+              <span class="text-xs text-muted-foreground block">{{ t('marketCapCol') }}</span>
               <span class="font-bold text-sm text-foreground">
                 {{ formatMarketCap(item.marketData?.marketCapUsd) }}
               </span>
             </div>
             <div class="text-right">
-              <span class="text-xs text-muted-foreground block font-semibold">{{
-                t('volume24hCol').toUpperCase()
-              }}</span>
+              <span class="text-xs text-muted-foreground block">{{ t('volume24hCol') }}</span>
               <span class="font-semibold text-muted-foreground">
                 {{
                   (item.marketData?.volume24hUsd ?? 0) > 0
@@ -105,45 +101,28 @@
             </div>
           </div>
 
-          <!-- Token Features & Taxes -->
-          <div class="flex items-center gap-2 flex-wrap pt-1 text-sm">
+          <!-- Tax and where it goes, as plain text -->
+          <div class="flex items-center gap-1.5 flex-wrap text-xs text-muted-foreground">
             <TaxTooltip
               :buy-tax-bps="item.token.taxConfig?.buyTaxBps"
               :sell-tax-bps="item.token.taxConfig?.sellTaxBps"
+              custom-class="text-xs"
             />
-            <Badge
-              v-if="item.token.isGraduated"
-              variant="default"
-              class="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 py-0 px-1.5 h-4 font-normal"
+            <span v-if="item.token.isGraduated" class="text-emerald-500"
+              >&middot; {{ t('graduated') }}</span
             >
-              {{ t('graduated') }}
-            </Badge>
-            <Badge
-              v-if="(item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0"
-              variant="outline"
-              class="bg-sky-500/10 text-sky-400 border-sky-500/20 py-0 px-1.5 h-4 font-normal"
+            <span v-if="(item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0" class="text-sky-500"
+              >&middot; {{ item.token.taxConfig?.revenueSplit?.holders }}% Divs</span
             >
-              {{ item.token.taxConfig?.revenueSplit?.holders }}% Divs
-            </Badge>
-            <Badge
+            <span
               v-if="(item.token.taxConfig?.revenueSplit?.buyback ?? 0) > 0"
-              variant="outline"
-              class="bg-amber-500/10 text-amber-400 border-amber-500/20 py-0 px-1.5 h-4 font-normal"
+              class="text-amber-500"
+              >&middot; {{ item.token.taxConfig?.revenueSplit?.buyback }}% Buyback</span
             >
-              {{ item.token.taxConfig?.revenueSplit?.buyback }}% Buyback
-            </Badge>
           </div>
 
-          <!-- Bonding Progress; an in-pool launch has no curve to fill. -->
-          <div
-            v-if="item.token.version === 'v4'"
-            class="flex justify-between text-sm pt-1"
-            :title="t('inPoolLiveHint')"
-          >
-            <span class="text-muted-foreground">{{ t('livePool') }}</span>
-            <span class="font-semibold text-foreground">Uniswap v4</span>
-          </div>
-          <div v-else class="space-y-1 pt-1">
+          <!-- Curve progress: an in-pool launch has no curve, so it shows none. -->
+          <div v-if="item.token.version !== 'v4'" class="space-y-1 pt-1">
             <div class="flex justify-between text-sm">
               <span class="text-muted-foreground">{{ t('bondingCurveProgress') }}</span>
               <span class="font-bold text-emerald-500">
@@ -176,7 +155,6 @@ import { useRouter } from 'vue-router';
 import { Star } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Pagination } from '@/components/ui/pagination';
 import TaxTooltip from '@/components/ui/TaxTooltip.vue';

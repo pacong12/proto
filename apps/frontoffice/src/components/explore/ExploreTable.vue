@@ -1,73 +1,69 @@
 <template>
-  <div class="rounded-2xl border border-border bg-card overflow-hidden shadow-xs">
-    <Table class="text-sm min-w-[920px]">
+  <div>
+    <Table bare class="text-sm min-w-[720px]">
       <TableHeader>
-        <TableRow
-          class="border-b border-border text-muted-foreground uppercase tracking-wider text-xs"
-        >
+        <TableRow class="border-b border-border hover:bg-transparent [&_th]:whitespace-nowrap">
           <TableHead
-            class="py-3 px-3 xl:px-4 font-semibold whitespace-nowrap sticky left-0 z-20 bg-card text-muted-foreground"
+            class="py-2.5 pl-2 pr-3 text-xs font-medium text-muted-foreground sticky left-0 z-20 bg-background tracking-normal h-auto"
           >
-            {{ t('tokenCol').toUpperCase() }}
+            {{ t('tokenCol') }}
           </TableHead>
           <TableHead
             title="Price since launch"
-            class="py-3 px-3 xl:px-4 font-semibold whitespace-nowrap text-center w-24 text-muted-foreground hidden xl:table-cell"
-            >GRAPH</TableHead
+            class="py-2.5 px-3 text-xs font-medium text-muted-foreground text-right hidden lg:table-cell tracking-normal h-auto bg-transparent"
           >
+            Graph
+          </TableHead>
           <TableHead
-            class="py-3 px-3 xl:px-4 font-semibold whitespace-nowrap text-right text-muted-foreground"
-            >{{ t('marketCapCol').toUpperCase() }}</TableHead
+            class="py-2.5 px-3 text-xs font-medium text-muted-foreground text-right tracking-normal h-auto bg-transparent"
           >
+            {{ t('marketCapCol') }}
+          </TableHead>
           <TableHead
-            class="py-3 px-3 xl:px-4 font-semibold whitespace-nowrap text-center w-36 text-muted-foreground"
-            >{{ t('progress').toUpperCase() }}</TableHead
+            v-if="showProgress"
+            class="py-2.5 px-3 text-xs font-medium text-muted-foreground text-center tracking-normal h-auto bg-transparent"
           >
+            {{ t('progress') }}
+          </TableHead>
           <TableHead
-            class="py-3 px-3 xl:px-4 font-semibold whitespace-nowrap text-right text-muted-foreground"
-            >{{ t('timeCol').toUpperCase() }}</TableHead
+            class="py-2.5 px-3 text-xs font-medium text-muted-foreground text-right hidden md:table-cell tracking-normal h-auto bg-transparent"
           >
+            {{ t('volume24hCol') }}
+          </TableHead>
           <TableHead
-            class="py-3 px-3 xl:px-4 font-semibold whitespace-nowrap text-right text-muted-foreground"
-            >{{ t('volume24hCol').toUpperCase() }}</TableHead
+            class="py-2.5 pl-3 pr-2 text-xs font-medium text-muted-foreground text-right tracking-normal h-auto bg-transparent"
           >
-          <TableHead
-            class="py-3 px-3 xl:px-4 font-semibold whitespace-nowrap text-right text-muted-foreground"
-            >{{ t('change24hCol').toUpperCase() }}</TableHead
-          >
-          <TableHead
-            class="py-3 px-3 xl:px-4 font-semibold whitespace-nowrap text-right text-muted-foreground"
-            >{{ t('actionCol').toUpperCase() }}</TableHead
-          >
+            {{ t('change24hCol') }}
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         <TableRow
           v-for="item in paginatedTokens"
           :key="item.token.address"
-          class="hover:bg-muted/50 transition-colors cursor-pointer group"
+          class="border-b border-border/60 hover:bg-muted/40 transition-colors cursor-pointer group"
           @click="$emit('selectToken', item.token.address)"
         >
-          <!-- 1. COIN (Pin + Logo + Name + Symbol + Creator + Copy Contract) -->
+          <!-- Token: pin, logo with chain, name and ticker; creator, age, tax and dividends below -->
           <TableCell
-            class="py-3.5 px-3 xl:px-4 sticky left-0 z-10 bg-card group-hover:bg-muted/50 transition-colors w-[18rem] max-w-[18rem] xl:w-[22rem] xl:max-w-[22rem]"
+            class="py-3 pl-2 pr-3 sticky left-0 z-10 bg-background group-hover:bg-muted/40 transition-colors w-[22rem] max-w-[22rem]"
           >
-            <div class="flex items-center gap-2.5 min-w-0">
-              <!-- Pons-style Pin / Star Button -->
+            <div class="flex items-center gap-3 min-w-0">
               <button
                 type="button"
-                class="min-w-6 min-h-6 inline-flex items-center justify-center p-1 rounded-lg transition-transform hover:scale-110 cursor-pointer select-none shrink-0"
+                class="w-6 h-6 -mr-1 inline-flex items-center justify-center rounded-md cursor-pointer select-none shrink-0 transition-colors"
                 :class="
                   isPinned(item.token.address)
                     ? 'text-amber-400'
-                    : 'text-muted-foreground/35 hover:text-amber-400'
+                    : 'text-muted-foreground/30 hover:text-amber-400'
                 "
                 :title="isPinned(item.token.address) ? 'Unpin coin' : 'Pin to Watchlist'"
+                :aria-label="isPinned(item.token.address) ? 'Unpin coin' : 'Pin to Watchlist'"
                 @click.stop="$emit('togglePin', item.token.address)"
               >
                 <Star
-                  class="w-4 h-4"
-                  :class="isPinned(item.token.address) ? 'fill-amber-400 text-amber-400' : ''"
+                  class="w-3.5 h-3.5"
+                  :class="isPinned(item.token.address) ? 'fill-amber-400' : ''"
                 />
               </button>
 
@@ -76,45 +72,42 @@
                   :src="item.token.logo"
                   :alt="item.token.name"
                   :fallback-text="item.token.symbol"
-                  :width="36"
-                  :height="36"
-                  class="rounded-lg border border-border object-cover shrink-0 ring-1 ring-border group-hover:ring-primary/50 transition"
+                  :width="40"
+                  :height="40"
+                  class="rounded-xl border border-border object-cover shrink-0"
                 />
                 <img
                   :src="getChainIcon(tokenStore.getTokenNetwork(item.token))"
                   :alt="tokenStore.getTokenNetwork(item.token).name"
                   :title="tokenStore.getTokenNetwork(item.token).name"
-                  class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border border-black bg-black object-contain shadow-xs"
+                  class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-background bg-background object-contain"
                 />
               </div>
 
               <div class="min-w-0 flex-1">
-                <!-- Line 1: name and ticker, so the name has the room -->
-                <div class="flex items-center gap-1.5 min-w-0">
+                <div class="flex items-baseline gap-1.5 min-w-0">
                   <span
-                    class="font-bold text-sm text-foreground group-hover:text-primary transition truncate min-w-0"
+                    class="font-semibold text-[15px] text-foreground truncate min-w-0 group-hover:underline underline-offset-2"
                   >
                     {{ item.token.name }}
                   </span>
-                  <span class="font-bold text-xs text-muted-foreground shrink-0"
-                    >${{ item.token.symbol }}</span
-                  >
+                  <span class="text-xs text-muted-foreground shrink-0">{{
+                    item.token.symbol
+                  }}</span>
                 </div>
-                <!-- Line 2: contract address, tax, holder dividends, creator -->
-                <div class="flex items-center gap-2 mt-0.5 min-w-0">
+                <div class="flex items-center gap-1.5 mt-0.5 min-w-0 text-xs text-muted-foreground">
                   <button
+                    v-if="item.token.deployer"
                     type="button"
-                    class="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 bg-muted/40 hover:bg-muted border border-border px-1.5 py-0.5 rounded transition cursor-pointer shrink-0"
-                    title="Copy Contract Address"
-                    @click.stop="copyAddress(item.token.address)"
+                    class="truncate min-w-0 cursor-pointer hover:text-foreground transition-colors"
+                    :title="`View profile: ${getUserIdentity(item.token.deployer).displayName}`"
+                    @click.stop="navigateToDeployer(item.token.deployer)"
                   >
-                    <span>{{ shortenAddress(item.token.address, 4, 3) }}</span>
-                    <Check
-                      v-if="copiedAddress === item.token.address"
-                      class="w-3 h-3 text-emerald-500"
-                    />
-                    <Copy v-else class="w-3 h-3" />
+                    {{ getUserIdentity(item.token.deployer).displayName }}
                   </button>
+                  <span class="shrink-0 whitespace-nowrap">{{
+                    formatRelativeTime(item.token.createdAt)
+                  }}</span>
                   <TaxTooltip
                     :buy-tax-bps="item.token.taxConfig?.buyTaxBps"
                     :sell-tax-bps="item.token.taxConfig?.sellTaxBps"
@@ -122,46 +115,38 @@
                   />
                   <span
                     v-if="(item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0"
-                    class="text-xs text-sky-400 px-1.5 py-0.5 rounded border border-sky-500/20 bg-sky-500/5 shrink-0 whitespace-nowrap"
+                    class="text-sky-500 shrink-0 whitespace-nowrap"
                     title="Holder Fee Sharing Enabled"
                   >
                     {{ item.token.taxConfig?.revenueSplit?.holders }}% Divs
                   </span>
-                  <button
-                    v-if="item.token.deployer"
-                    type="button"
-                    class="text-xs text-muted-foreground hover:text-foreground truncate min-w-0 cursor-pointer transition-colors hover:underline underline-offset-2"
-                    :title="`View profile: ${getUserIdentity(item.token.deployer).displayName}`"
-                    @click.stop="navigateToDeployer(item.token.deployer)"
-                  >
-                    by {{ getUserIdentity(item.token.deployer).displayName }}
-                  </button>
                 </div>
               </div>
             </div>
           </TableCell>
 
-          <!-- 3. GRAPH (Mini SVG Sparkline curve) -->
-          <TableCell class="py-3.5 px-3 xl:px-4 text-center hidden xl:table-cell">
+          <!-- Graph: price since launch -->
+          <TableCell class="py-3 px-3 text-right hidden lg:table-cell">
             <svg
               class="inline-block overflow-visible"
-              width="72"
-              height="24"
+              width="96"
+              height="28"
               viewBox="0 0 72 24"
+              preserveAspectRatio="none"
               fill="none"
             >
               <path
                 :d="spark(item.token.address).d"
                 :stroke="TREND_COLOR[spark(item.token.address).trend]"
-                stroke-width="2"
+                stroke-width="1.5"
                 stroke-linecap="round"
                 stroke-linejoin="round"
+                vector-effect="non-scaling-stroke"
               />
             </svg>
           </TableCell>
 
-          <!-- 4. MARKET CAP -->
-          <TableCell class="py-3.5 px-3 xl:px-4 text-right font-extrabold text-sm text-foreground">
+          <TableCell class="py-3 px-3 text-right font-semibold text-foreground tabular-nums">
             {{
               (item.marketData?.marketCapUsd ?? 0) > 0
                 ? `$${formatNumberCap(item.marketData?.marketCapUsd ?? 0)}`
@@ -169,42 +154,31 @@
             }}
           </TableCell>
 
-          <!-- 5. BONDING / PROGRESS -->
-          <TableCell class="py-3.5 px-3 xl:px-4">
-            <!-- An in-pool launch trades in its Uniswap pool from the start: no curve to fill. -->
+          <!-- Progress: only bonding-curve launches have one; an in-pool launch trades from block one. -->
+          <TableCell v-if="showProgress" class="py-3 px-3">
             <div
-              v-if="item.token.version === 'v4'"
-              class="max-w-[130px] mx-auto text-center text-xs font-semibold text-muted-foreground whitespace-nowrap"
-              :title="t('inPoolLiveHint')"
+              v-if="!hasCurve(item)"
+              class="text-center text-xs text-muted-foreground whitespace-nowrap"
+              :title="item.token.version === 'v4' ? t('inPoolLiveHint') : undefined"
             >
-              {{ t('livePool') }}
+              {{ item.token.version === 'v4' ? t('livePool') : t('graduated') }}
             </div>
-            <div v-else class="space-y-1.5 max-w-[130px] mx-auto text-center">
-              <div class="flex items-center justify-between gap-2 text-xs whitespace-nowrap">
-                <span class="text-muted-foreground">
-                  {{ item.marketData?.isGraduated ? t('graduated') : t('onCurve') }}
-                </span>
-                <span class="font-bold text-emerald-500">
+            <div v-else class="space-y-1 w-28 mx-auto">
+              <div class="flex justify-between text-xs tabular-nums">
+                <span class="text-muted-foreground">{{ t('onCurve') }}</span>
+                <span class="font-semibold text-foreground">
                   {{ ((item.marketData?.graduationProgress ?? 0) * 100).toFixed(0) }}%
                 </span>
               </div>
               <Progress
                 :model-value="(item.marketData?.graduationProgress ?? 0) * 100"
-                class="h-1.5 rounded-full"
+                class="h-1 rounded-full"
               />
             </div>
           </TableCell>
 
-          <!-- 6. AGE -->
           <TableCell
-            class="py-3.5 px-3 xl:px-4 text-right text-muted-foreground font-semibold text-xs whitespace-nowrap"
-          >
-            {{ formatRelativeTime(item.token.createdAt) }}
-          </TableCell>
-
-          <!-- 7. VOLUME 24H -->
-          <TableCell
-            class="py-3.5 px-3 xl:px-4 text-right text-muted-foreground font-semibold text-xs"
+            class="py-3 px-3 text-right text-muted-foreground tabular-nums hidden md:table-cell"
           >
             {{
               (item.marketData?.volume24hUsd ?? 0) > 0
@@ -213,9 +187,8 @@
             }}
           </TableCell>
 
-          <!-- 8. 24H % -->
           <TableCell
-            class="py-3.5 px-3 xl:px-4 text-right font-extrabold text-xs"
+            class="py-3 pl-3 pr-2 text-right font-medium tabular-nums"
             :class="
               (item.marketData?.priceChange24h ?? 0) >= 0 ? 'text-emerald-500' : 'text-rose-500'
             "
@@ -223,28 +196,11 @@
             {{ (item.marketData?.priceChange24h ?? 0) >= 0 ? '+' : ''
             }}{{ (item.marketData?.priceChange24h ?? 0).toFixed(2) }}%
           </TableCell>
-
-          <!-- 9. ACTION (Quick Buy / Trade button) -->
-          <TableCell class="py-3.5 px-3 xl:px-4 text-right">
-            <Button
-              size="sm"
-              variant="outline"
-              class="h-8 px-3 text-xs font-bold rounded-xl border-border hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all cursor-pointer inline-flex items-center gap-1"
-              @click.stop="$emit('selectToken', item.token.address)"
-            >
-              <span>{{ t('trade') }}</span>
-              <ArrowRight class="w-3.5 h-3.5" />
-            </Button>
-          </TableCell>
         </TableRow>
       </TableBody>
     </Table>
 
-    <!-- Pagination in Table Footer -->
-    <div
-      v-if="totalItems > pageSize"
-      class="flex justify-center p-4 border-t border-border bg-card"
-    >
+    <div v-if="totalItems > pageSize" class="flex justify-center pt-5">
       <Pagination
         :current-page="currentPage"
         :total-items="totalItems"
@@ -256,9 +212,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { Star, Copy, Check, ArrowRight } from 'lucide-vue-next';
+import { Star } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import {
   Table,
@@ -268,12 +224,11 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Pagination } from '@/components/ui/pagination';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import TaxTooltip from '@/components/ui/TaxTooltip.vue';
-import { shortenAddress, formatRelativeTime, formatCompactUsd, getChainIcon } from '@/lib/utils';
+import { formatRelativeTime, formatCompactUsd, getChainIcon } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { useTokenStore } from '@/composables/useTokenStore';
 import { useWallet } from '@/composables/useWallet';
@@ -295,7 +250,7 @@ interface Props {
   isPinned: (address: string) => boolean;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   currencySymbol: 'ETH',
 });
 
@@ -333,17 +288,12 @@ function spark(address: string) {
 }
 onMounted(loadSparklines);
 watch(() => activeNetwork.value.chainId, loadSparklines);
-const copiedAddress = ref<string | null>(null);
-
-function copyAddress(address: string) {
-  if (typeof navigator !== 'undefined') {
-    navigator.clipboard.writeText(address);
-    copiedAddress.value = address;
-    setTimeout(() => {
-      if (copiedAddress.value === address) copiedAddress.value = null;
-    }, 2000);
-  }
+/** A bonding-curve launch still filling its curve: the only kind with progress to show. */
+function hasCurve(item: TokenItem): boolean {
+  return item.token.version !== 'v4' && !item.marketData?.isGraduated && !item.token.isGraduated;
 }
+/** The progress column only earns its room when a listed coin is still on its curve. */
+const showProgress = computed(() => props.paginatedTokens.some(hasCurve));
 
 function navigateToDeployer(deployerAddress: string) {
   if (!deployerAddress) return;
