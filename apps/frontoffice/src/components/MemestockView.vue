@@ -153,9 +153,9 @@
                   class="rounded-xl border border-border group-hover:border-foreground/40 transition shrink-0"
                 />
                 <img
-                  :src="getChainIcon(tokenStore.getTokenNetwork(item.token.address))"
-                  :alt="tokenStore.getTokenNetwork(item.token.address).name"
-                  :title="tokenStore.getTokenNetwork(item.token.address).name"
+                  :src="getChainIcon(tokenStore.getTokenNetwork(item.token))"
+                  :alt="tokenStore.getTokenNetwork(item.token).name"
+                  :title="tokenStore.getTokenNetwork(item.token).name"
                   class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-black bg-black object-contain shadow-xs"
                 />
               </div>

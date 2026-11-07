@@ -100,7 +100,7 @@
       <div class="space-y-1.5 pt-1">
         <div class="flex items-center gap-2 flex-wrap">
           <h1
-            class="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground [overflow-wrap:anywhere]"
+            class="text-xl sm:text-3xl font-extrabold tracking-tight text-foreground [overflow-wrap:anywhere]"
           >
             {{
               profileData.displayName ||

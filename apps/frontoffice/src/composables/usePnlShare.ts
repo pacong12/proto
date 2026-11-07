@@ -6,9 +6,11 @@ import { SITE } from '@/lib/site';
 import { formatCompactUsd } from '@/lib/utils';
 import { toast } from '@/components/ui/sonner';
 
-/** +$35.23K / -$12.40. */
+/** +$35.23K / -$12.40; no sign when the amount rounds to zero ($0.0000, never -$0.0000). */
 export function formatSignedUsd(value: number): string {
-  return `${value < 0 ? '-' : '+'}${formatCompactUsd(Math.abs(value))}`;
+  const amount = formatCompactUsd(Math.abs(value));
+  if (!/[1-9]/.test(amount)) return amount;
+  return `${value < 0 ? '-' : '+'}${amount}`;
 }
 
 /** +5,725% / -12.5%, or an empty string without an investment. */

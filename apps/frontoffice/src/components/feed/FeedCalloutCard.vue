@@ -48,16 +48,20 @@
       class="rounded-xl border border-border p-3 bg-muted/40 hover:bg-muted transition text-sm space-y-1.5 cursor-pointer"
       @click.stop="router.push(`/post/${call.quotedCallout.id}`)"
     >
-      <div class="flex items-center gap-1.5">
-        <Jazzicon :address="call.quotedCallout.authorAddress" :size="16" class="rounded-full" />
-        <span class="font-bold text-foreground">
+      <div class="flex items-center gap-1.5 min-w-0">
+        <Jazzicon
+          :address="call.quotedCallout.authorAddress"
+          :size="16"
+          class="rounded-full shrink-0"
+        />
+        <span class="font-bold text-foreground truncate min-w-0">
           {{ getUserIdentity(call.quotedCallout.authorAddress).displayName }}
         </span>
-        <span v-if="call.quotedCallout.tokenSymbol" class="text-primary font-bold">
+        <span v-if="call.quotedCallout.tokenSymbol" class="text-primary font-bold shrink-0">
           ${{ call.quotedCallout.tokenSymbol }}
         </span>
-        <span class="text-muted-foreground text-xs">&middot;</span>
-        <span class="text-xs text-muted-foreground">
+        <span class="text-muted-foreground text-xs shrink-0">&middot;</span>
+        <span class="text-xs text-muted-foreground shrink-0 whitespace-nowrap">
           {{ formatRelativeTime(call.quotedCallout.createdAt) }}
         </span>
       </div>

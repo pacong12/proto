@@ -92,9 +92,9 @@
                 class="rounded-lg border border-border shrink-0"
               />
               <img
-                :src="getChainIcon(getTokenNetwork(call.tokenAddress))"
-                :alt="getTokenNetwork(call.tokenAddress).name"
-                :title="getTokenNetwork(call.tokenAddress).name"
+                :src="getChainIcon(calloutNetwork(call, getTokenNetwork))"
+                :alt="calloutNetwork(call, getTokenNetwork).name"
+                :title="calloutNetwork(call, getTokenNetwork).name"
                 class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-black bg-black object-contain shadow-xs"
               />
             </div>
@@ -235,7 +235,7 @@ import {
 import { Jazzicon } from '@/components/ui/avatar';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { CashtagText } from '@/components/feed';
-import { isWhaleCaller } from '@/composables/useFeed';
+import { calloutNetwork, isWhaleCaller } from '@/composables/useFeed';
 import { useTokenStore, type TokenListItem } from '@/composables/useTokenStore';
 import { formatRelativeTime, getChainIcon, formatMarketCap } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';

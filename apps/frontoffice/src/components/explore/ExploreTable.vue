@@ -81,15 +81,15 @@
                   class="rounded-lg border border-border object-cover shrink-0 ring-1 ring-border group-hover:ring-primary/50 transition"
                 />
                 <img
-                  :src="getChainIcon(tokenStore.getTokenNetwork(item.token.address))"
-                  :alt="tokenStore.getTokenNetwork(item.token.address).name"
-                  :title="tokenStore.getTokenNetwork(item.token.address).name"
+                  :src="getChainIcon(tokenStore.getTokenNetwork(item.token))"
+                  :alt="tokenStore.getTokenNetwork(item.token).name"
+                  :title="tokenStore.getTokenNetwork(item.token).name"
                   class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border border-black bg-black object-contain shadow-xs"
                 />
               </div>
 
               <div class="min-w-0 flex-1">
-                <!-- Line 1: name, ticker, tax, holder dividends -->
+                <!-- Line 1: name and ticker, so the name has the room -->
                 <div class="flex items-center gap-1.5 min-w-0">
                   <span
                     class="font-bold text-sm text-foreground group-hover:text-primary transition truncate min-w-0"
@@ -99,20 +99,8 @@
                   <span class="font-bold text-xs text-muted-foreground shrink-0"
                     >${{ item.token.symbol }}</span
                   >
-                  <TaxTooltip
-                    :buy-tax-bps="item.token.taxConfig?.buyTaxBps"
-                    :sell-tax-bps="item.token.taxConfig?.sellTaxBps"
-                    custom-class="text-xs shrink-0"
-                  />
-                  <span
-                    v-if="(item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0"
-                    class="text-xs text-sky-400 px-1.5 py-0.5 rounded border border-sky-500/20 bg-sky-500/5 shrink-0 whitespace-nowrap"
-                    title="Holder Fee Sharing Enabled"
-                  >
-                    {{ item.token.taxConfig?.revenueSplit?.holders }}% Divs
-                  </span>
                 </div>
-                <!-- Line 2: contract address, creator -->
+                <!-- Line 2: contract address, tax, holder dividends, creator -->
                 <div class="flex items-center gap-2 mt-0.5 min-w-0">
                   <button
                     type="button"
@@ -127,6 +115,18 @@
                     />
                     <Copy v-else class="w-3 h-3" />
                   </button>
+                  <TaxTooltip
+                    :buy-tax-bps="item.token.taxConfig?.buyTaxBps"
+                    :sell-tax-bps="item.token.taxConfig?.sellTaxBps"
+                    custom-class="text-xs shrink-0"
+                  />
+                  <span
+                    v-if="(item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0"
+                    class="text-xs text-sky-400 px-1.5 py-0.5 rounded border border-sky-500/20 bg-sky-500/5 shrink-0 whitespace-nowrap"
+                    title="Holder Fee Sharing Enabled"
+                  >
+                    {{ item.token.taxConfig?.revenueSplit?.holders }}% Divs
+                  </span>
                   <button
                     v-if="item.token.deployer"
                     type="button"
@@ -171,7 +171,15 @@
 
           <!-- 5. BONDING / PROGRESS -->
           <TableCell class="py-3.5 px-3 xl:px-4">
-            <div class="space-y-1.5 max-w-[130px] mx-auto text-center">
+            <!-- An in-pool launch trades in its Uniswap pool from the start: no curve to fill. -->
+            <div
+              v-if="item.token.version === 'v4'"
+              class="max-w-[130px] mx-auto text-center text-xs font-semibold text-muted-foreground whitespace-nowrap"
+              :title="t('inPoolLiveHint')"
+            >
+              {{ t('livePool') }}
+            </div>
+            <div v-else class="space-y-1.5 max-w-[130px] mx-auto text-center">
               <div class="flex items-center justify-between gap-2 text-xs whitespace-nowrap">
                 <span class="text-muted-foreground">
                   {{ item.marketData?.isGraduated ? t('graduated') : t('onCurve') }}

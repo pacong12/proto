@@ -3,7 +3,7 @@
     <div
       v-for="item in latestLaunches"
       :key="item.token.address"
-      class="p-3.5 rounded-2xl bg-card border border-border hover:border-primary/60 transition-all cursor-pointer flex items-center justify-between gap-3 group shadow-xs hover:shadow-md"
+      class="p-3.5 rounded-2xl bg-card border border-border hover:border-primary/60 transition-all cursor-pointer flex items-center gap-3 group shadow-xs hover:shadow-md"
       @click="$emit('selectToken', item.token.address)"
     >
       <div class="flex items-center gap-2.5 min-w-0 flex-1">
@@ -33,9 +33,9 @@
             class="rounded-lg border border-border object-cover shrink-0 ring-1 ring-border group-hover:ring-primary/40 transition"
           />
           <img
-            :src="getChainIcon(tokenStore.getTokenNetwork(item.token.address))"
-            :alt="tokenStore.getTokenNetwork(item.token.address).name"
-            :title="tokenStore.getTokenNetwork(item.token.address).name"
+            :src="getChainIcon(tokenStore.getTokenNetwork(item.token))"
+            :alt="tokenStore.getTokenNetwork(item.token).name"
+            :title="tokenStore.getTokenNetwork(item.token).name"
             class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border border-black bg-black object-contain shadow-xs"
           />
         </div>
@@ -48,7 +48,7 @@
             </h4>
           </div>
           <div class="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
-            <span class="truncate min-w-0">${{ item.token.symbol }}</span>
+            <span class="truncate min-w-[4ch]">${{ item.token.symbol }}</span>
             <TaxTooltip
               :buy-tax-bps="item.token.taxConfig?.buyTaxBps"
               :sell-tax-bps="item.token.taxConfig?.sellTaxBps"
@@ -56,24 +56,14 @@
             />
             <span
               v-if="(item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0"
-              class="text-sky-400 text-xs"
+              class="text-sky-400 text-xs shrink-0 whitespace-nowrap"
             >
               &middot; {{ item.token.taxConfig?.revenueSplit?.holders }}% Divs
             </span>
+            <span class="shrink-0 whitespace-nowrap">
+              &middot; {{ formatRelativeTime(item.token.createdAt) }}
+            </span>
           </div>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-2 shrink-0">
-        <span
-          class="text-xs font-medium text-muted-foreground bg-black border border-border px-2 py-0.5 rounded-md"
-        >
-          {{ formatRelativeTime(item.token.createdAt) }}
-        </span>
-        <div
-          class="w-7 h-7 rounded-full bg-black border border-border group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center transition-colors text-muted-foreground"
-        >
-          <ArrowRight class="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
         </div>
       </div>
     </div>
@@ -81,7 +71,7 @@
 </template>
 
 <script setup lang="ts">
-import { Star, ArrowRight } from 'lucide-vue-next';
+import { Star } from 'lucide-vue-next';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import TaxTooltip from '@/components/ui/TaxTooltip.vue';
 import { useTokenStore } from '@/composables/useTokenStore';
