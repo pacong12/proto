@@ -53,7 +53,7 @@
           <Check v-if="linkCopied" class="w-3 h-3 text-emerald-500" />
           <Copy v-else class="w-3 h-3" />
           <span class="hidden sm:inline">{{
-            linkCopied ? t('addressCopied') : t('copyAddress')
+            linkCopied ? t('pnlLinkCopied') : t('pnlCopyLink')
           }}</span>
         </Button>
       </div>
