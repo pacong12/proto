@@ -134,8 +134,16 @@
             </Badge>
           </div>
 
-          <!-- Bonding Progress -->
-          <div class="space-y-1 pt-1">
+          <!-- Bonding Progress; an in-pool launch has no curve to fill. -->
+          <div
+            v-if="item.token.version === 'v4'"
+            class="flex justify-between text-sm pt-1"
+            :title="t('inPoolLiveHint')"
+          >
+            <span class="text-muted-foreground">{{ t('livePool') }}</span>
+            <span class="font-semibold text-foreground">Uniswap v4</span>
+          </div>
+          <div v-else class="space-y-1 pt-1">
             <div class="flex justify-between text-sm">
               <span class="text-muted-foreground">{{ t('bondingCurveProgress') }}</span>
               <span class="font-bold text-emerald-500">

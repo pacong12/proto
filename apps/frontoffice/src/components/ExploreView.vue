@@ -88,13 +88,13 @@
          3. EXPLORE COINS / MARKETS FILTER HEADER
          ============================================================ -->
     <div class="space-y-4">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="flex items-center justify-between gap-3">
         <div>
           <h2 class="text-lg sm:text-xl font-bold tracking-tight text-foreground">Explore coins</h2>
         </div>
 
         <!-- Right Controls: View Mode Switcher (Pons-Style Pills) -->
-        <div class="flex items-center gap-2 self-end sm:self-auto">
+        <div class="flex items-center gap-2 shrink-0">
           <div
             class="inline-flex items-center p-1 bg-black rounded-full border border-border gap-1"
           >

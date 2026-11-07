@@ -14,7 +14,7 @@
     </Tabs>
 
     <!-- Chain Filter (All Chains default / Robinhood / Arc) -->
-    <div class="flex items-center gap-1 text-sm self-end md:self-auto pb-1 md:pb-0 shrink-0">
+    <div class="flex items-center gap-1 text-sm self-start md:self-auto pb-1.5 md:pb-0 shrink-0">
       <Button
         v-for="chainOpt in chains"
         :key="chainOpt.key"
