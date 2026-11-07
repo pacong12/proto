@@ -348,7 +348,6 @@ const messages: Record<string, string> = {
   top10Supply: '상위 10인 보유율',
   devHolds: '개발자 보유율',
   burned: '소각됨',
-  verifiedContract: '검증된 컨트랙트',
   tradingTaxesOptional: '거래세 (선택사항)',
   defaultZeroMaxTen: '기본: 0% (최대 10%)',
   buyTax: '매수세',
@@ -484,8 +483,6 @@ const messages: Record<string, string> = {
   footerCurveToV4: '본딩 커브 이후 Uniswap v4',
   footerPoolFromLaunch: '출시부터 Uniswap v4 풀',
   footerLiquidityLocked: '유동성 영구 잠금',
-  footerSplitCurve: 'LP 수수료: 생성자 70% / 프로토콜 30%',
-  footerSplitInPool: '세금: 프로토콜 20%, 나머지는 설정한 분배',
   inPoolLiveHint: '첫 블록부터 잠긴 Uniswap v4 풀에서 거래됩니다. 채울 커브가 없습니다.',
   memestockMomentum: '모멘텀',
   creatorHolds: '생성자 보유',
@@ -539,6 +536,37 @@ const messages: Record<string, string> = {
   feedMedia: '미디어',
   orderTooSmallForKeeper:
     '키퍼에게 너무 작습니다: 체결 보상은 약 {fee} {symbol}인데 가스비는 약 {gas} {symbol}라서 체결되지 않을 수 있습니다. 더 큰 금액을 사용하세요.',
+  viewContract: '컨트랙트 보기',
+  viewContractHint: '블록 익스플로러에서 이 컨트랙트 열기',
+  deployedContractsDesc: '{network}에 배포된 프로토콜 스마트 컨트랙트',
+  holdersHint:
+    '이 토큰을 보유한 지갑입니다. 본딩 커브, 풀, 프로토콜 컨트랙트, 소각 주소는 제외됩니다.',
+  top10SupplyHint:
+    '상위 10개 지갑이 보유한 총 공급량 비중입니다. 본딩 커브, 풀, 프로토콜 컨트랙트, 소각된 토큰은 제외됩니다.',
+  devHoldsHint: '생성자 지갑에 있는 총 공급량 비중입니다.',
+  holderCurve: '본딩 커브',
+  holderLocker: 'LP 락커',
+  holderBurned: '소각 주소',
+  holderContract: '프로토콜 컨트랙트',
+  holderAtCall: '콜 시점 보유',
+  footerSplitCurve: '풀 수수료: 프로토콜 30%, 나머지는 토큰별 분배 비율대로',
+  footerSplitInPool: '풀 수수료와 세금: 프로토콜 20%, 나머지는 토큰별 분배 비율대로',
+  launchPrebuyRequired:
+    '{network}: 발행 수수료는 없지만 최소 {min} {symbol}의 프리바이가 필수입니다.',
+  launchPrebuyTooLow: '프리바이는 최소 {min} {symbol}이어야 합니다',
+  launchTaxRequired: '매수 또는 매도 세금을 0%보다 높게 설정하세요',
+  tradingTaxesRequired: '거래 세금 (필수)',
+  tradingTaxesRequiredHint:
+    '이 체인은 0%보다 높은 매수 또는 매도 세금이 필요합니다. 발행 시점부터 적용되며 영구히 고정됩니다.',
+  taxAboveZeroMaxTen: '0% 초과 (최대 10%)',
+  profileNotFoundTitle: '프로필을 찾을 수 없습니다',
+  profileNotFoundBody: '이 이름과 일치하는 사용자나 지갑이 없습니다.',
+  postLoadFailed: '이 게시물을 불러오지 못했습니다',
+  postLoadFailedDesc: '연결을 확인한 후 다시 시도하세요.',
+  tryAgain: '다시 시도',
+  feedNoCallouts: '아직 콜아웃이 없습니다',
+  feedNoCalloutsDesc:
+    '이 탭과 체인에 맞는 항목이 없습니다. 다른 필터를 사용하거나 위에서 첫 콜을 게시하세요.',
 };
 
 export default messages;

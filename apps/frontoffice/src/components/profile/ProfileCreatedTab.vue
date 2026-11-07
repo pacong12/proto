@@ -86,7 +86,7 @@
                   {{
                     token.onBondingCurve
                       ? 'Curve'
-                      : `${token.unclaimedWeth || '0.0000'} ${nativeCurrencySymbol}`
+                      : `${token.unclaimedWeth} ${token.currencySymbol}`
                   }}
                 </strong>
               </span>
@@ -176,7 +176,6 @@ defineProps<{
   isOwnProfile: boolean;
   claimingToken: string | null;
   loadingAction: boolean;
-  nativeCurrencySymbol: string;
 }>();
 
 const emit = defineEmits<{

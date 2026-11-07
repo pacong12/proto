@@ -357,7 +357,6 @@ const messages: Record<string, string> = {
   top10Supply: 'Топ-10 держателей',
   devHolds: 'Доля разработчика',
   burned: 'Сожжено',
-  verifiedContract: 'Проверенный контракт',
   tradingTaxesOptional: 'Торговые налоги (опционально)',
   defaultZeroMaxTen: 'По умолчанию: 0% (макс. 10%)',
   buyTax: 'Налог на покупку',
@@ -497,8 +496,6 @@ const messages: Record<string, string> = {
   footerCurveToV4: 'Бондинг-кривая, затем Uniswap v4',
   footerPoolFromLaunch: 'Пул Uniswap v4 с запуска',
   footerLiquidityLocked: 'Ликвидность заблокирована навсегда',
-  footerSplitCurve: 'Комиссии LP: 70% создателю / 30% протоколу',
-  footerSplitInPool: 'Налог: 20% протоколу, остальное по вашему распределению',
   inPoolLiveHint:
     'Торгуется в заблокированном пуле Uniswap v4 с первого блока. Кривую заполнять не нужно.',
   memestockMomentum: 'Импульс',
@@ -553,6 +550,37 @@ const messages: Record<string, string> = {
   feedMedia: 'Медиа',
   orderTooSmallForKeeper:
     'Слишком мало для кипера: за исполнение платится около {fee} {symbol}, а газ стоит около {gas} {symbol}, поэтому ордер может так и не исполниться. Укажите большую сумму.',
+  viewContract: 'Открыть контракт',
+  viewContractHint: 'Открыть этот контракт в обозревателе блоков',
+  deployedContractsDesc: 'Смарт-контракты протокола, развёрнутые в {network}',
+  holdersHint:
+    'Кошельки, держащие этот токен. Без бондинг-кривой, пулов, контрактов протокола и адресов сжигания.',
+  top10SupplyHint:
+    'Доля общего предложения у 10 крупнейших кошельков. Без бондинг-кривой, пулов, контрактов протокола и сожжённых токенов.',
+  devHoldsHint: 'Доля общего предложения в кошельке создателя.',
+  holderCurve: 'Бондинг-кривая',
+  holderLocker: 'LP-локер',
+  holderBurned: 'Адрес сжигания',
+  holderContract: 'Контракт протокола',
+  holderAtCall: 'Держатель на момент колла',
+  footerSplitCurve: 'Комиссии пула: 30% протоколу, остальное по схеме каждого токена',
+  footerSplitInPool: 'Комиссии пула и налог: 20% протоколу, остальное по схеме каждого токена',
+  launchPrebuyRequired:
+    '{network}: без комиссии за запуск, но нужна предпокупка не менее {min} {symbol}.',
+  launchPrebuyTooLow: 'Предпокупка должна быть не менее {min} {symbol}',
+  launchTaxRequired: 'Задайте налог на покупку или продажу выше 0%',
+  tradingTaxesRequired: 'Торговые налоги (обязательно)',
+  tradingTaxesRequiredHint:
+    'В этой сети нужен налог на покупку или продажу выше 0%. Он действует с запуска и не меняется никогда.',
+  taxAboveZeroMaxTen: 'Выше 0% (макс. 10%)',
+  profileNotFoundTitle: 'Профиль не найден',
+  profileNotFoundBody: 'Нет пользователя или кошелька с таким именем.',
+  postLoadFailed: 'Не удалось загрузить этот пост',
+  postLoadFailedDesc: 'Проверьте подключение и повторите попытку.',
+  tryAgain: 'Повторить',
+  feedNoCallouts: 'Здесь пока нет коллаутов',
+  feedNoCalloutsDesc:
+    'Для этой вкладки и сети ничего нет. Смените фильтр или опубликуйте первый колл выше.',
 };
 
 export default messages;

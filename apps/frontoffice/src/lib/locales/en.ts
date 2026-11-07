@@ -352,7 +352,6 @@ const messages: Record<string, string> = {
   top10Supply: 'Top 10 Supply',
   devHolds: 'Dev Holds',
   burned: 'Burned',
-  verifiedContract: 'Verified Contract',
   tradingTaxesOptional: 'Trading Taxes (Optional)',
   defaultZeroMaxTen: 'Default: 0% (Max 10%)',
   buyTax: 'Buy Tax',
@@ -491,8 +490,6 @@ const messages: Record<string, string> = {
   footerCurveToV4: 'Bonding curve, then Uniswap v4',
   footerPoolFromLaunch: 'Uniswap v4 pool from launch',
   footerLiquidityLocked: 'Liquidity locked permanently',
-  footerSplitCurve: 'LP fees: 70% creator / 30% protocol',
-  footerSplitInPool: 'Tax: 20% protocol, rest to your split',
   inPoolLiveHint:
     'Trades in its locked Uniswap v4 pool from the first block. There is no curve to fill.',
   memestockMomentum: 'Momentum',
@@ -547,6 +544,37 @@ const messages: Record<string, string> = {
   feedMedia: 'Media',
   orderTooSmallForKeeper:
     'Too small for keepers: it pays about {fee} {symbol} to fill but the fill costs about {gas} {symbol} in gas, so it may never fill. Use a larger amount.',
+  viewContract: 'View contract',
+  viewContractHint: 'Open this contract on the block explorer',
+  deployedContractsDesc: 'Protocol smart contracts deployed on {network}',
+  holdersHint:
+    'Wallets holding this token. Excludes the bonding curve, pools, protocol contracts and burn addresses.',
+  top10SupplyHint:
+    'Share of total supply held by the 10 largest wallets. Excludes the bonding curve, pools, protocol contracts and burned tokens.',
+  devHoldsHint: 'Share of total supply in the creator’s wallet.',
+  holderCurve: 'Bonding curve',
+  holderLocker: 'LP locker',
+  holderBurned: 'Burn address',
+  holderContract: 'Protocol contract',
+  holderAtCall: 'Holder at call',
+  footerSplitCurve: 'Pool fees: 30% protocol, rest by each token’s split',
+  footerSplitInPool: 'Pool fees and tax: 20% protocol, rest by each token’s split',
+  launchPrebuyRequired:
+    '{network}: no launch fee, but a pre-buy of at least {min} {symbol} is required.',
+  launchPrebuyTooLow: 'Pre-buy must be at least {min} {symbol}',
+  launchTaxRequired: 'Set a buy or sell tax above 0%',
+  tradingTaxesRequired: 'Trading Taxes (Required)',
+  tradingTaxesRequiredHint:
+    'This chain requires a buy or sell tax above 0%. It starts at launch and is fixed forever.',
+  taxAboveZeroMaxTen: 'Above 0% (Max 10%)',
+  profileNotFoundTitle: 'Profile not found',
+  profileNotFoundBody: 'No user or wallet matches this name.',
+  postLoadFailed: 'Could not load this post',
+  postLoadFailedDesc: 'Check your connection and try again.',
+  tryAgain: 'Try again',
+  feedNoCallouts: 'No callouts here yet',
+  feedNoCalloutsDesc:
+    'Nothing matches this tab and chain. Try another filter or post the first call above.',
 };
 
 export default messages;

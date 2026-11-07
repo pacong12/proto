@@ -230,8 +230,8 @@
               id="developer-buy"
               v-model="form.initialBuyEth"
               type="number"
-              step="0.001"
-              min="0"
+              step="any"
+              :min="minPrebuy"
               placeholder="0.00"
               class="text-sm pr-20"
             />
@@ -251,9 +251,17 @@
               </span>
             </div>
           </div>
-          <p v-if="isInPoolLaunch" class="text-xs text-sky-400 font-medium">
-            Arc Network standard: Launch is free (0 USDC fee). Initial pre-buy of at least 4.50 USDC
-            is recommended to seed initial liquidity.
+          <p v-if="requirements.prebuyTooLow" class="text-xs text-destructive font-medium">
+            {{ t('launchPrebuyTooLow', { min: minPrebuyLabel, symbol: currencySymbol }) }}
+          </p>
+          <p v-else-if="minPrebuy > 0" class="text-xs text-muted-foreground">
+            {{
+              t('launchPrebuyRequired', {
+                network: activeNetwork.name,
+                min: minPrebuyLabel,
+                symbol: currencySymbol,
+              })
+            }}
           </p>
 
           <CreateTokenVesting
@@ -305,6 +313,7 @@
           v-model:revenue-split="revenueSplit"
           :team-available="teamFactoryAddress(activeNetwork) !== null"
           :in-pool-launch="isInPoolLaunch"
+          :tax-missing="requirements.taxMissing"
           :account="account"
         />
 
@@ -342,11 +351,7 @@
                   height="16"
                   class="w-4 h-4 rounded-full object-contain shrink-0"
                 />
-                {{
-                  form.initialBuyEth
-                    ? Number(form.initialBuyEth).toFixed(currencySymbol === 'USDC' ? 2 : 4)
-                    : (0).toFixed(currencySymbol === 'USDC' ? 2 : 4)
-                }}
+                {{ requirements.effectiveBuy.toFixed(currencySymbol === 'USDC' ? 2 : 4) }}
                 {{ currencySymbol }}
               </span>
             </div>
@@ -376,7 +381,10 @@
               isUploadingIpfs ||
               (isConnected &&
                 isCorrectNetwork &&
-                (!form.name.trim() || !form.symbol.trim() || (hasTax && totalSplit !== 100)))
+                (!form.name.trim() ||
+                  !form.symbol.trim() ||
+                  requirements.blocked ||
+                  (hasTax && totalSplit !== 100)))
             "
             class="w-full font-bold py-3.5 text-base h-12 rounded-xl shadow-md cursor-pointer transition active:scale-[0.99]"
             size="lg"
@@ -391,9 +399,13 @@
                     ? t('connectWallet')
                     : !isCorrectNetwork
                       ? `Switch to ${activeNetwork.name}`
-                      : hasTax && totalSplit !== 100
-                        ? `Allocation must total 100% (${totalSplit}%)`
-                        : `${t('launchTokenBtn')} (${totalPairDue})`
+                      : requirements.prebuyTooLow
+                        ? t('launchPrebuyTooLow', { min: minPrebuyLabel, symbol: currencySymbol })
+                        : requirements.taxMissing
+                          ? t('launchTaxRequired')
+                          : hasTax && totalSplit !== 100
+                            ? `Allocation must total 100% (${totalSplit}%)`
+                            : `${t('launchTokenBtn')} (${totalPairDue})`
             }}
           </Button>
 
@@ -432,6 +444,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import { AlertCircle, UploadCloud, Loader2, Check, Trash2 } from 'lucide-vue-next';
+import { launchRequirements } from '@/lib/launch-requirements';
 import { planRecipients, type FeeRecipientRow } from '@/lib/team-fees';
 import { createTeamSplitter, teamFactoryAddress } from '@/composables/useTeamFees';
 import { useLaunchpad } from '../composables/useLaunchpad';
@@ -445,12 +458,7 @@ import { Card } from '@/components/ui/card';
 import { useI18n } from '@/lib/i18n';
 import { compressAndConvertToWebp } from '@/lib/image-optimizer';
 import { toast } from '@/components/ui/sonner';
-import {
-  type RevenueSplit,
-  calculateTotalSplit,
-  calculateLaunchTotalDue,
-  getLaunchModel,
-} from '@goton/math-sdk';
+import { type RevenueSplit, calculateTotalSplit, getLaunchModel } from '@goton/math-sdk';
 import { getChainAdapter } from '@/chains';
 import { getPublicClient } from '@/lib/viem-client';
 import {
@@ -511,18 +519,12 @@ const balanceAmount = computed(() => parseFloat(formattedBalance.value) || 0);
 
 const isInsufficientBalance = computed(() => {
   if (!isConnected.value) return false;
-  const launchFeeNum = Number(activeNetwork.value.launchConfig.launchFeeWei) / 1e18;
-  const buyNum = parseFloat(form.value.initialBuyEth || '0') || 0;
-  const totalNeeded = launchFeeNum + buyNum;
-  const userBal = balanceAmount.value;
-  return totalNeeded > userBal;
+  return requirements.value.totalDue > balanceAmount.value;
 });
 
-const totalDueDisplay = computed(() => {
-  const launchFeeNum = Number(activeNetwork.value.launchConfig.launchFeeWei) / 1e18;
-  const buyNum = parseFloat(form.value.initialBuyEth || '0') || 0;
-  return (launchFeeNum + buyNum).toFixed(currencySymbol.value === 'USDC' ? 2 : 4);
-});
+const totalDueDisplay = computed(() =>
+  requirements.value.totalDue.toFixed(currencySymbol.value === 'USDC' ? 2 : 4),
+);
 
 function setInitialBuyPercentage(pct: number) {
   const userBal = balanceAmount.value;
@@ -622,12 +624,23 @@ const launchFeeFormatted = computed(() => {
   const val = Number(feeWei) / 10 ** 18;
   return val < 0.001 ? val.toFixed(4) : val.toFixed(2);
 });
-const totalPairDue = computed(() => {
-  const buyAmount = parseFloat(form.value.initialBuyEth) || 0;
-  const fee = parseFloat(launchFeeFormatted.value) || 0;
-  const total = calculateLaunchTotalDue(fee, buyAmount);
-  return `${total.toFixed(currencySymbol.value === 'USDC' ? 2 : 4)} ${currencySymbol.value}`;
-});
+const minPrebuyLabel = computed(() =>
+  minPrebuy.value.toFixed(currencySymbol.value === 'USDC' ? 2 : 4),
+);
+const requirements = computed(() =>
+  launchRequirements({
+    launchFee: Number(activeNetwork.value.launchConfig.launchFeeWei) / 1e18,
+    minPrebuy: minPrebuy.value,
+    taxRequired: isInPoolLaunch.value,
+    initialBuy: form.value.initialBuyEth,
+    buyTax: form.value.buyTax,
+    sellTax: form.value.sellTax,
+  }),
+);
+const totalPairDue = computed(
+  () =>
+    `${requirements.value.totalDue.toFixed(currencySymbol.value === 'USDC' ? 2 : 4)} ${currencySymbol.value}`,
+);
 
 const revenueSplit = ref<RevenueSplit>({
   creator: 50,
@@ -691,6 +704,26 @@ const form = ref({
   buyTax: '0',
   sellTax: '0',
 });
+// A chain's required pre-buy is the form's starting amount, until the creator types their own.
+let prefilledBuy = '';
+watch(
+  [minPrebuy, minPrebuyLabel],
+  () => {
+    const current = String(form.value.initialBuyEth ?? '');
+    if (current !== '' && current !== prefilledBuy) return;
+    prefilledBuy = minPrebuy.value > 0 ? minPrebuyLabel.value : '';
+    form.value.initialBuyEth = prefilledBuy;
+  },
+  { immediate: true },
+);
+// The tax a chain requires lives in the advanced section: it starts open there.
+watch(
+  isInPoolLaunch,
+  (inPool) => {
+    if (inPool) advancedOpen.value = true;
+  },
+  { immediate: true },
+);
 // Creator fee and tax recipients: the creator alone by default, or a team with fixed shares.
 const feeRecipients = ref<FeeRecipientRow[]>([{ address: '', percent: 100 }]);
 const pendingImageFile = ref<File | null>(null);
@@ -748,21 +781,15 @@ async function handleLaunch() {
     await switchOrAddNetwork(activeNetwork.value);
     return;
   }
-  if ((parseFloat(String(form.value.initialBuyEth)) || 0) < minPrebuy.value) {
+  if (requirements.value.prebuyTooLow) {
     toast.error(
-      `${activeNetwork.value.name} requires an initial pre-buy of at least ${minPrebuy.value} ${currencySymbol.value}.`,
+      t('launchPrebuyTooLow', { min: minPrebuyLabel.value, symbol: currencySymbol.value }),
     );
     return;
   }
-  if (
-    isInPoolLaunch.value &&
-    !(parseFloat(form.value.buyTax || '0') > 0) &&
-    !(parseFloat(form.value.sellTax || '0') > 0)
-  ) {
+  if (requirements.value.taxMissing) {
     advancedOpen.value = true;
-    toast.error(
-      `${activeNetwork.value.name} tokens need a buy or sell tax above 0% (fixed forever).`,
-    );
+    toast.error(t('launchTaxRequired'));
     return;
   }
   if (vestingActive.value) {

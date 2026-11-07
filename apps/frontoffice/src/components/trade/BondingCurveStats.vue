@@ -133,25 +133,31 @@
         </span>
       </div>
       <div>
-        <span class="text-muted-foreground text-xs uppercase font-semibold block">{{
-          t('holders')
-        }}</span>
+        <span
+          class="text-muted-foreground text-xs uppercase font-semibold block"
+          :title="t('holdersHint')"
+          >{{ t('holders') }}</span
+        >
         <span class="font-black text-foreground text-sm block mt-0.5">
-          {{ holdersCount.toLocaleString() }}
+          {{ holdersCount.toLocaleString() }}{{ holdersCountCapped ? '+' : '' }}
         </span>
       </div>
       <div>
-        <span class="text-muted-foreground text-xs uppercase font-semibold block">{{
-          t('top10Supply')
-        }}</span>
+        <span
+          class="text-muted-foreground text-xs uppercase font-semibold block"
+          :title="t('top10SupplyHint')"
+          >{{ t('top10Supply') }}</span
+        >
         <span class="font-black text-foreground text-sm block mt-0.5">
           {{ top10HoldingPercent > 0 ? top10HoldingPercent.toFixed(1) + '%' : '—' }}
         </span>
       </div>
       <div>
-        <span class="text-muted-foreground text-xs uppercase font-semibold block">{{
-          t('devHolds')
-        }}</span>
+        <span
+          class="text-muted-foreground text-xs uppercase font-semibold block"
+          :title="t('devHoldsHint')"
+          >{{ t('devHolds') }}</span
+        >
         <span
           class="font-black text-sm block mt-0.5"
           :class="devHoldingPercent > 10 ? 'text-amber-500' : 'text-foreground'"
@@ -188,11 +194,11 @@
         :href="`${explorerUrl}/token/${currentToken.address}#code`"
         target="_blank"
         rel="noopener noreferrer"
-        class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shrink-0 font-bold transition"
-        title="View contract source on explorer"
+        class="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-border text-muted-foreground hover:text-foreground shrink-0 font-semibold transition"
+        :title="t('viewContractHint')"
       >
-        <Check class="w-3.5 h-3.5" />
-        <span>{{ t('verifiedContract') }}</span>
+        <span>{{ t('viewContract') }}</span>
+        <ExternalLink class="w-3 h-3" />
       </a>
     </div>
   </div>
@@ -215,6 +221,8 @@ interface Props {
   currencySymbol?: string;
   explorerUrl?: string;
   holdersCount?: number;
+  /** The holder list reached its limit, so the wallet count is a lower bound. */
+  holdersCountCapped?: boolean;
   top10HoldingPercent?: number;
   devHoldingPercent?: number;
   onchainTaxConfig?: { buyTaxBps: number; sellTaxBps: number };
@@ -225,6 +233,7 @@ const props = withDefaults(defineProps<Props>(), {
   currencySymbol: 'ETH',
   explorerUrl: '',
   holdersCount: 0,
+  holdersCountCapped: false,
   top10HoldingPercent: 0,
   devHoldingPercent: 0,
   onchainTaxConfig: () => ({ buyTaxBps: 0, sellTaxBps: 0 }),

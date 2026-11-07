@@ -4,7 +4,7 @@ Goton aligns the long-term success of token creators with their communities by o
 
 ---
 
-## 70/30 Fee Distribution
+## Fee Distribution
 
 Where fees come from depends on the chain:
 

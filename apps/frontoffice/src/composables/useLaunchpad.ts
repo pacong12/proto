@@ -164,9 +164,9 @@ export function useLaunchpad() {
 
   const actionState = { busy: loading, error };
 
-  function claimFees(tokenAddress: `0x${string}`): Promise<string | null> {
+  function claimFees(tokenAddress: `0x${string}`, chainId?: number): Promise<string | null> {
     return runWalletAction(actionState, async () => {
-      const { network, splitter } = await creatorSplitter(tokenAddress);
+      const { network, splitter } = await creatorSplitter(tokenAddress, chainId);
       return sendWalletTransaction(network, ({ walletClient, account }) =>
         walletClient.writeContract({
           address: splitter,

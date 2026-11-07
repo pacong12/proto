@@ -1,5 +1,13 @@
 <template>
-  <div class="max-w-2xl mx-auto space-y-4 pb-16 font-sans">
+  <NotFoundPage
+    v-if="notFound"
+    :title="t('postNotFound')"
+    :body="t('postNotFoundDesc')"
+    home-to="/feed"
+    :home-label="t('backToFeed')"
+  />
+
+  <div v-else class="max-w-2xl mx-auto space-y-4 pb-16 font-sans">
     <!-- 1. Sticky Hybrid Header -->
     <header
       class="sticky top-0 z-30 backdrop-blur-md bg-background/85 border border-border/80 rounded-2xl px-4 py-3 flex items-center justify-between shadow-2xs select-none"
@@ -38,19 +46,19 @@
       <p class="text-xs">{{ t('loadingPostDetails') }}</p>
     </div>
 
-    <!-- Error / Not Found State -->
+    <!-- The API could not answer: the post may well exist -->
     <Empty
       v-else-if="!post"
-      :title="t('postNotFound')"
-      :description="t('postNotFoundDesc')"
+      :title="t('postLoadFailed')"
+      :description="t('postLoadFailedDesc')"
       class="py-16"
     >
       <template #icon>
         <AlertCircle class="w-6 h-6 text-destructive/70" />
       </template>
       <template #action>
-        <Button size="sm" class="rounded-xl px-5 cursor-pointer" @click="router.push('/feed')">
-          {{ t('backToFeed') }}
+        <Button size="sm" class="rounded-xl px-5 cursor-pointer" @click="loadPost()">
+          {{ t('tryAgain') }}
         </Button>
       </template>
     </Empty>
@@ -175,7 +183,7 @@
                 t('position')
               }}</span>
               <span class="text-xs font-bold text-foreground">
-                {{ post.positionUsd ? `$${post.positionUsd.toFixed(1)}` : 'Holding' }}
+                {{ positionLabel }}
               </span>
             </div>
             <Button
@@ -406,10 +414,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from '@/lib/i18n';
-import { apiFetch } from '@/lib/api-client';
+import { apiFetch, ApiError } from '@/lib/api-client';
+import { resolveSafeUrl } from '@/lib/safe-url';
+import { setPageSeo } from '@/lib/seo';
+import NotFoundPage from '@/pages/NotFoundPage.vue';
 import {
   ArrowLeft,
   Heart,
@@ -454,10 +465,18 @@ const { account, openWallet } = useWallet();
 const { tokens: allTokens, fetchTokens } = useTokenStore();
 const { toggleLike, toggleRepost, recordView, postCallout } = useFeed();
 
-const calloutId = computed(() => String(route.params.id || route.params.detail || ''));
+const calloutId = computed(() => String(route.params.id || ''));
 const post = ref<FeedCalloutItem | null>(null);
 const replies = ref<FeedCalloutItem[]>([]);
 const loading = ref(true);
+const notFound = ref(false);
+
+// The server checks a call's position when it is posted; replies have no check behind them.
+const positionLabel = computed(() => {
+  const current = post.value;
+  if (!current || current.parentId || current.callType === 'comment') return '—';
+  return current.positionUsd ? `$${current.positionUsd.toFixed(1)}` : t('holderAtCall');
+});
 
 const replyContent = ref('');
 const isSubmittingReply = ref(false);
@@ -500,27 +519,38 @@ function formatAbsoluteTime(timestamp: number): string {
   }
 }
 
+let lastViewedId = '';
+
 async function loadPost(): Promise<void> {
   const targetId = calloutId.value;
   if (!targetId) return;
   loading.value = true;
+  notFound.value = false;
   try {
     const viewerParam = account.value ? `?viewer=${account.value}` : '';
     const data = await apiFetch<{
       success: boolean;
       data: import('@goton/shared-types').FeedCalloutItem;
     }>(`/api/callouts/${targetId}${viewerParam}`);
+    if (targetId !== calloutId.value) return;
     if (data.success && data.data) {
       post.value = data.data;
       replies.value = data.data.replies || [];
-      recordView(targetId);
+      // Reloading after a quote is not another view.
+      if (lastViewedId !== targetId) recordView(targetId);
+      lastViewedId = targetId;
     } else {
       post.value = null;
     }
-  } catch {
+  } catch (err) {
+    if (targetId !== calloutId.value) return;
     post.value = null;
+    if (err instanceof ApiError && err.status === 404) {
+      notFound.value = true;
+      setPageSeo(route.path, { title: t('postNotFound'), noindex: true });
+    }
   } finally {
-    loading.value = false;
+    if (targetId === calloutId.value) loading.value = false;
   }
 }
 
@@ -594,21 +624,16 @@ async function submitReply(): Promise<void> {
   }
 }
 
-function resolveSafeUrl(url?: string): string {
-  if (!url) return '';
-  const trimmed = url.trim();
-  if (trimmed.startsWith('ipfs://')) {
-    const hash = trimmed.replace('ipfs://', '');
-    return `/api/ipfs/${hash}`;
-  }
-  return trimmed;
-}
-
 function openImage(url?: string): void {
   if (url && typeof window !== 'undefined') {
     window.open(resolveSafeUrl(url), '_blank', 'noopener,noreferrer');
   }
 }
+
+// A quoted post opens in this same page, so a new id has to load here too.
+watch(calloutId, () => {
+  void loadPost();
+});
 
 onMounted(async () => {
   await Promise.allSettled([loadPost(), fetchTokens()]);

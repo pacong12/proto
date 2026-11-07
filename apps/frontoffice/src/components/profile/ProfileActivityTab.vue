@@ -36,7 +36,7 @@
             }}</TableHead>
             <TableHead
               class="py-3 px-4 font-semibold text-right uppercase text-muted-foreground bg-black"
-              >{{ t('amount') }} ({{ nativeCurrencySymbol }})</TableHead
+              >{{ t('amount') }}</TableHead
             >
             <TableHead
               class="py-3 px-4 font-semibold text-right uppercase text-muted-foreground bg-black"
@@ -70,7 +70,7 @@
               ${{ act.tokenSymbol }}
             </TableCell>
             <TableCell class="py-3 px-4 text-right text-foreground font-medium">
-              {{ act.ethAmount }} {{ nativeCurrencySymbol }}
+              {{ act.ethAmount }} {{ act.currencySymbol }}
             </TableCell>
             <TableCell class="py-3 px-4 text-right text-foreground">
               {{ act.tokenAmount }}
@@ -80,7 +80,7 @@
             </TableCell>
             <TableCell class="py-3 px-4 text-right text-xs">
               <a
-                :href="`${blockExplorer}/tx/${act.txHash}`"
+                :href="`${act.blockExplorer}/tx/${act.txHash}`"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="text-primary hover:underline inline-flex items-center gap-1 font-semibold"
@@ -118,7 +118,5 @@ const { t } = useI18n();
 
 defineProps<{
   userActivities: UserActivity[];
-  nativeCurrencySymbol: string;
-  blockExplorer: string;
 }>();
 </script>

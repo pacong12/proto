@@ -6,15 +6,15 @@
     <p class="text-7xl sm:text-8xl font-black tracking-tighter text-primary select-none">404</p>
     <div class="space-y-2 max-w-md">
       <h1 id="not-found-title" class="text-2xl font-bold tracking-tight text-foreground">
-        {{ t('notFoundTitle') }}
+        {{ title ?? t('notFoundTitle') }}
       </h1>
-      <p class="text-sm text-muted-foreground leading-relaxed">{{ t('notFoundBody') }}</p>
+      <p class="text-sm text-muted-foreground leading-relaxed">{{ body ?? t('notFoundBody') }}</p>
       <p class="text-xs font-mono text-muted-foreground/80 break-all">{{ route.fullPath }}</p>
     </div>
     <div class="flex flex-wrap items-center justify-center gap-3">
-      <RouterLink to="/launchpad" :class="buttonVariants()">
+      <RouterLink :to="homeTo ?? '/launchpad'" :class="buttonVariants()">
         <Home />
-        {{ t('notFoundHome') }}
+        {{ homeLabel ?? t('notFoundHome') }}
       </RouterLink>
       <button type="button" :class="buttonVariants({ variant: 'outline' })" @click="goBack">
         <ArrowLeft />
@@ -39,6 +39,14 @@ import { ArrowLeft, BookOpen, Home } from 'lucide-vue-next';
 import { buttonVariants } from '@/components/ui/button';
 import { useI18n } from '@/lib/i18n';
 import { resolveDocsUrl } from '@/lib/site';
+
+/** Unknown routes use the defaults; a known route whose content is missing names what is. */
+defineProps<{
+  title?: string;
+  body?: string;
+  homeTo?: string;
+  homeLabel?: string;
+}>();
 
 const { t } = useI18n();
 const route = useRoute();

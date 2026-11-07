@@ -447,7 +447,10 @@ const paginatedItems = computed(() => {
   return filteredAndSortedItems.value.slice(start, start + pageSize);
 });
 
+let fetchRequestId = 0;
+
 async function fetchTokens() {
+  const requestId = ++fetchRequestId;
   loading.value = true;
   apiError.value = null;
   try {
@@ -460,15 +463,17 @@ async function fetchTokens() {
       }>;
       error?: { message?: string };
     }>(`/api/memestock?chainId=${activeNetwork.value.chainId}`);
+    if (requestId !== fetchRequestId) return;
     if (envelope.success && Array.isArray(envelope.data)) {
       items.value = envelope.data;
     } else {
       apiError.value = envelope.error?.message || 'Unable to fetch memestock feed';
     }
   } catch (err) {
+    if (requestId !== fetchRequestId) return;
     apiError.value = (err as Error).message || 'Network error fetching memestocks';
   } finally {
-    loading.value = false;
+    if (requestId === fetchRequestId) loading.value = false;
   }
 }
 

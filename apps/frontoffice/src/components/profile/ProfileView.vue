@@ -22,27 +22,17 @@
       </template>
     </Empty>
 
+    <!-- The handle in the URL is still being looked up -->
+    <div v-else-if="!targetAccount && resolvingUser" class="py-24 text-center">
+      <Loader2 class="w-7 h-7 animate-spin mx-auto text-muted-foreground" />
+    </div>
+
     <!-- User Profile Not Found State -->
-    <Empty
-      v-else-if="!targetAccount && hasRouteParam"
-      title="Profile Not Found"
-      description="The requested profile handle or wallet address could not be located on this network."
-      class="py-16 bg-card/60"
-    >
-      <template #icon>
-        <UserX class="w-6 h-6 text-muted-foreground" />
-      </template>
-      <template #action>
-        <Button
-          size="sm"
-          variant="outline"
-          class="h-10 px-6 font-bold text-xs shrink-0 cursor-pointer rounded-xl border-border"
-          @click="router.push('/launchpad')"
-        >
-          Back to Markets
-        </Button>
-      </template>
-    </Empty>
+    <NotFoundPage
+      v-else-if="profileNotFound"
+      :title="t('profileNotFoundTitle')"
+      :body="t('profileNotFoundBody')"
+    />
 
     <template v-else>
       <!-- 1. Profile Hero: Twitter Cover Banner x Web3 Connected Trader Identity -->
@@ -60,8 +50,7 @@
 
       <!-- 2. On-Chain Stats Summary Grid for Target Account -->
       <ProfileStats
-        :total-claimable-weth="totalClaimableWeth"
-        :native-currency-symbol="activeNetwork.nativeCurrency.symbol"
+        :claimable-totals="claimableTotals"
         :created-tokens-count="myLaunches.length"
         :is-own-profile="isOwnProfile"
         :active-positions-count="portfolioPositions.length"
@@ -165,7 +154,6 @@
               :is-own-profile="isOwnProfile"
               :claiming-token="claimingToken"
               :loading-action="Boolean(loadingLaunchpad)"
-              :native-currency-symbol="activeNetwork.nativeCurrency.symbol"
               @claim="handleClaim"
               @cto="openCtoModal"
             />
@@ -181,11 +169,7 @@
 
           <!-- TAB 3: TRADING ACTIVITY -->
           <TabsContent value="activity" class="mt-4">
-            <ProfileActivityTab
-              :user-activities="userActivities"
-              :native-currency-symbol="activeNetwork.nativeCurrency.symbol"
-              :block-explorer="activeNetwork.blockExplorer"
-            />
+            <ProfileActivityTab :user-activities="userActivities" />
           </TabsContent>
 
           <!-- TAB 4: DIVIDENDS & VESTING -->
@@ -198,12 +182,11 @@
             <ProfileDividendsTab
               :is-own-profile="isOwnProfile"
               :dividends-loading="dividendsLoading"
-              :dividends-total-formatted="dividendsTotalFormatted"
+              :dividends-totals="dividendsTotals"
               :dividends-has-any="dividendsHasAny"
               :dividends-action-loading="dividendsActionLoading"
               :dividend-entries="dividendEntries"
               :dividends-error="dividendsError"
-              :native-currency-symbol="activeNetwork.nativeCurrency.symbol"
               @refresh="refreshDividends"
               @claim-all="handleClaimAll"
               @claim-single="handleClaimSingle"
@@ -269,7 +252,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { Check, AlertCircle, RefreshCw, X, Wallet, UserX } from 'lucide-vue-next';
+import { Check, AlertCircle, Loader2, RefreshCw, X, Wallet } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { toast } from '@/components/ui/sonner';
 import { useLaunchpad } from '@/composables/useLaunchpad';
@@ -278,6 +261,9 @@ import { useFeed } from '@/composables/useFeed';
 import { useTokenStore } from '@/composables/useTokenStore';
 import { useHolderDividends } from '@/composables/useHolderDividends';
 import { useUserProfile } from '@/composables/useUserProfile';
+import NotFoundPage from '@/pages/NotFoundPage.vue';
+import { totalsByCurrency } from '@/lib/currency-totals';
+import { setPageSeo } from '@/lib/seo';
 import { walletAddress } from '@/lib/wallet-store';
 import { getSessionHeaders } from '@/lib/session';
 import { resolveSafeUrl } from '@/lib/safe-url';
@@ -346,8 +332,12 @@ const routeParam = computed(() => {
 const hasRouteParam = computed(() => !!routeParam.value);
 
 const resolvedAddressFromApi = ref<string | null>(null);
+const resolvingUser = ref(false);
+let resolveRequestId = 0;
 
 async function resolveTargetUser(param: string) {
+  const requestId = ++resolveRequestId;
+  resolvingUser.value = false;
   if (!param) {
     resolvedAddressFromApi.value = null;
     return;
@@ -368,10 +358,12 @@ async function resolveTargetUser(param: string) {
   }
 
   // 2. Query backend API
+  resolvingUser.value = true;
   try {
     const env = await apiFetch<{ success: boolean; data?: { address: string } }>(
       `/api/users/${encodeURIComponent(param)}`,
     );
+    if (requestId !== resolveRequestId) return;
     if (env.success && env.data?.address) {
       const addr = env.data.address.toLowerCase();
       registerUserIdentity(addr);
@@ -380,8 +372,11 @@ async function resolveTargetUser(param: string) {
       resolvedAddressFromApi.value = null;
     }
   } catch (e) {
+    if (requestId !== resolveRequestId) return;
     console.warn('[ProfileView] Failed to resolve user identity from API:', (e as Error).message);
     resolvedAddressFromApi.value = null;
+  } finally {
+    if (requestId === resolveRequestId) resolvingUser.value = false;
   }
 }
 
@@ -413,6 +408,18 @@ const targetAccount = computed<string | null>(() => {
     return null;
   }
   return connectedAccount.value;
+});
+
+// A handle nobody has: a wallet address always has a profile page, even an empty one.
+const profileNotFound = computed(
+  () => hasRouteParam.value && !targetAccount.value && !resolvingUser.value,
+);
+
+watch(profileNotFound, (notFound) => {
+  setPageSeo(
+    route.path,
+    notFound ? { title: t('profileNotFoundTitle'), noindex: true } : route.meta.seo,
+  );
 });
 
 const isOwnProfile = computed(() => {
@@ -626,7 +633,7 @@ const {
   portfolioPositions,
   userActivities,
   loadingLaunches,
-  totalClaimableWeth,
+  claimableTotals,
   fetchMyLaunches,
   fetchUserPositionsAndActivity,
 } = useUserProfile({
@@ -655,7 +662,6 @@ const {
   loading: dividendsLoading,
   actionLoading: dividendsActionLoading,
   error: dividendsError,
-  totalEarnedFormatted: dividendsTotalFormatted,
   hasAnyEarned: dividendsHasAny,
   loadDividends,
   claimDividend,
@@ -672,11 +678,22 @@ async function refreshDividends() {
     symbol: p.symbol,
     name: p.name,
   }));
-  await loadDividends(holder as `0x${string}`, tokens, activeNetwork.value);
+  await loadDividends(holder as `0x${string}`, tokens, (address) => getTokenNetwork(address));
 }
 
+const dividendsTotals = computed(() =>
+  totalsByCurrency(
+    dividendEntries.value.map((e) => ({
+      symbol: e.currencySymbol,
+      raw: e.earnedWei,
+      decimals: e.quoteDecimals,
+    })),
+    activeNetwork.value.nativeCurrency.symbol,
+  ),
+);
+
 async function handleClaimSingle(tokenAddress: string) {
-  const hash = await claimDividend(tokenAddress as `0x${string}`, activeNetwork.value);
+  const hash = await claimDividend(tokenAddress as `0x${string}`, getTokenNetwork(tokenAddress));
   if (hash) {
     successTx.value = hash;
   } else if (dividendsError.value) {
@@ -685,7 +702,7 @@ async function handleClaimSingle(tokenAddress: string) {
 }
 
 async function handleClaimAll() {
-  const hashes = await claimAllDividends(activeNetwork.value);
+  const hashes = await claimAllDividends();
   if (hashes.length > 0) {
     successTx.value = hashes[hashes.length - 1];
   } else if (dividendsError.value) {
@@ -811,7 +828,10 @@ async function handleClaim(tokenAddress: string) {
   actionError.value = null;
   claimingToken.value = tokenAddress;
   try {
-    const hash = await claimFees(tokenAddress as `0x${string}`);
+    const hash = await claimFees(
+      tokenAddress as `0x${string}`,
+      getTokenNetwork(tokenAddress).chainId,
+    );
     if (hash) {
       successTx.value = hash;
       await refreshAllData();

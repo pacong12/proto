@@ -23,8 +23,8 @@ features:
     details: Les positions de liquidité sont verrouillées à tout jamais dans les smart contracts dès le premier bloc.
   - title: Protection Anti-Snipe Intégrée
     details: Des limites automatisées empêchent les bots d’accaparer l’offre au lancement, assurant une équité totale.
-  - title: 70% de Récompenses Créateurs
-    details: Les créateurs perçoivent 70% des frais de trading accumulés en continu.
+  - title: Récompenses Créateurs
+    details: Les créateurs conservent 70% (Robinhood Chain) ou 80% (Arc) des frais et taxes de chaque jeton, et peuvent les partager avec les détenteurs ou les affecter à des rachats.
   - title: Rachat & Burn
     details: "Les créateurs peuvent affecter une partie de leurs frais au rachat et à la destruction : un contrat achète le token dans son propre pool, protégé par un TWAP de 30 minutes, puis l'envoie à l'adresse morte."
   - title: Rapide et Économique
