@@ -258,11 +258,12 @@ export function useFeed() {
    */
   async function fetchCallerBalance(tokenAddress: string, accountAddress: string): Promise<number> {
     try {
-      const res = await apiFetch<{ success: boolean; data: { balance: string | number } }>(
+      // `formatted` is the balance in whole tokens; there is no `balance` field.
+      const res = await apiFetch<{ success: boolean; data: { formatted?: number } }>(
         `/api/tokens/${tokenAddress}/balance?account=${accountAddress}`,
       );
       if (res?.success && res.data) {
-        return Number(res.data.balance || 0);
+        return Number(res.data.formatted || 0);
       }
       return 0;
     } catch (e) {

@@ -269,6 +269,7 @@
 </template>
 
 <script setup lang="ts">
+import { useEscapeClose } from '@/composables/useEscapeClose';
 import { getSessionHeaders } from '@/lib/session';
 import { ref, watch } from 'vue';
 import { MessageCircle, X, Heart, Repeat, Share2, BarChart2, Send, Loader2 } from 'lucide-vue-next';
@@ -301,6 +302,10 @@ const emit = defineEmits<{
   (e: 'share', call: FeedCalloutItem): void;
   (e: 'reply-posted', newReply: FeedCalloutItem): void;
 }>();
+useEscapeClose(
+  () => props.isOpen,
+  () => emit('close'),
+);
 
 const replies = ref<FeedCalloutItem[]>([]);
 const loadingThread = ref(false);

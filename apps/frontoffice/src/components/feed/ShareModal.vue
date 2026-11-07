@@ -246,6 +246,7 @@
 </template>
 
 <script setup lang="ts">
+import { useEscapeClose } from '@/composables/useEscapeClose';
 import { ref, computed } from 'vue';
 import {
   Share2,
@@ -279,6 +280,10 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'close'): void;
 }>();
+useEscapeClose(
+  () => props.isOpen,
+  () => emit('close'),
+);
 
 /** The server checks a call's position when it is posted; replies have no check behind them. */
 const isCall = computed(

@@ -111,14 +111,21 @@ describe('post page', () => {
     expect(robots()).toBeUndefined();
   });
 
-  it('keeps an existing post indexable', async () => {
+  it('keeps an existing post indexable, under a title of its own', async () => {
     apiFetch.mockResolvedValue({
       success: true,
-      data: { id: 'p1', content: 'hi', authorAddress: `0x${'1'.repeat(40)}`, tokenAddress: '0x' },
+      data: {
+        id: 'p1',
+        content: '$KTUSH8 is the one this week',
+        authorAddress: `0x${'1'.repeat(40)}`,
+        tokenAddress: '0x',
+      },
     });
     const wrapper = await mountAt('/post/p1', '/post/:id', PostDetailPage);
     expect(wrapper.findComponent(NotFoundPage).exists()).toBe(false);
-    expect(robots()).toBeUndefined();
+    expect(robots()).not.toContain('noindex');
+    expect(document.title).toContain('$KTUSH8 is the one this week');
+    expect(document.title).not.toBe('default');
   });
 });
 

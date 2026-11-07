@@ -455,6 +455,7 @@ import {
   formatMarketCap,
 } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
+import { clipText } from '@goton/shared-types';
 import { toast } from '@/components/ui/sonner';
 import type { FeedCalloutItem } from '@goton/shared-types';
 
@@ -536,6 +537,11 @@ async function loadPost(): Promise<void> {
     if (data.success && data.data) {
       post.value = data.data;
       replies.value = data.data.replies || [];
+      // Each post its own title and description, not the site's default on every post.
+      setPageSeo(route.path, {
+        title: `${getUserIdentity(data.data.authorAddress).displayName}: ${clipText(data.data.content, 60)}`,
+        description: clipText(data.data.content, 155),
+      });
       // Reloading after a quote is not another view.
       if (lastViewedId !== targetId) recordView(targetId);
       lastViewedId = targetId;
