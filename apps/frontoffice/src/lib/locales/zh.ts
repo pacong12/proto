@@ -171,7 +171,7 @@ const messages: Record<string, string> = {
   explorer: '区块浏览器',
   v2Subtitle: '在联合曲线上发射代币，达成目标后自动毕业并锁定流动性。',
   v2GraduatesHint: '当曲线筹集达到 4.2 ETH 时毕业。',
-  boughtInLaunchNotice: '当前可用 0，在发射交易中一并买入',
+  boughtInLaunchNotice: '创建者预购，在发射交易中一并买入',
   namePlaceholder: '代币名称',
   symbolPlaceholder: '代币符号 (如 BTC)',
   descriptionPlaceholder: '代币简要描述',

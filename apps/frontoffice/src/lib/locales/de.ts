@@ -177,7 +177,7 @@ const messages: Record<string, string> = {
   explorer: 'Block-Explorer',
   v2Subtitle: 'Starte einen Token auf einer Bonding-Kurve, der in gesperrte Liquidität graduiert.',
   v2GraduatesHint: 'Graduiert, sobald die Kurve 4.2 ETH gesammelt hat.',
-  boughtInLaunchNotice: '0 verfügbar, im Rahmen der Launch-Transaktion gekauft',
+  boughtInLaunchNotice: 'Creator-Vorkauf, in der Launch-Transaktion gekauft',
   namePlaceholder: 'Token-Name',
   symbolPlaceholder: 'Kürzel (z.B. BTC)',
   descriptionPlaceholder: 'Eine kurze Beschreibung des Tokens',

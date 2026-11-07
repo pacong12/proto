@@ -182,7 +182,7 @@ const messages: Record<string, string> = {
   loadingTape: 'Loading the tape...',
   v2Subtitle: 'Launch a token on a bonding curve that graduates into locked liquidity.',
   v2GraduatesHint: 'Graduates once the curve raises 4.2 ETH.',
-  boughtInLaunchNotice: '0 available, bought in the launch transaction',
+  boughtInLaunchNotice: 'Creator pre-buy, bought in the launch transaction',
   namePlaceholder: 'Token name',
   symbolPlaceholder: 'Symbol (e.g. BTC)',
   descriptionPlaceholder: 'A short description of the token',

@@ -179,7 +179,7 @@ const messages: Record<string, string> = {
   v2Subtitle:
     'Lancez un token sur une courbe de liaison qui se transforme en liquidité verrouillée.',
   v2GraduatesHint: 'Diplômé une fois que la courbe a levé 4.2 ETH.',
-  boughtInLaunchNotice: '0 disponible, acheté dans la transaction de lancement',
+  boughtInLaunchNotice: 'Pré-achat du créateur, effectué dans la transaction de lancement',
   namePlaceholder: 'Nom du token',
   symbolPlaceholder: 'Symbole (ex: BTC)',
   descriptionPlaceholder: 'Une brève description du token',

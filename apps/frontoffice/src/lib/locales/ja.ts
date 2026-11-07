@@ -176,7 +176,7 @@ const messages: Record<string, string> = {
   explorer: 'ブロックエクスプローラー',
   v2Subtitle: 'ボンディングカーブ上でトークンを発行し、卒業時に流動性を永久ロックします。',
   v2GraduatesHint: 'カーブで 4.2 ETH 集まった時点で卒業します。',
-  boughtInLaunchNotice: '現在0利用可能、ローンチトランザクションで同時購入',
+  boughtInLaunchNotice: 'クリエイターの事前購入（ローンチトランザクション内で購入）',
   namePlaceholder: 'トークン名',
   symbolPlaceholder: 'シンボル (例: BTC)',
   descriptionPlaceholder: 'トークンの簡単な説明',

@@ -179,7 +179,7 @@ const messages: Record<string, string> = {
   v2Subtitle:
     'Запустите токен на кривой связывания, который переходит в заблокированную ликвидность.',
   v2GraduatesHint: 'Завершается, как только на кривой будет собрано 4.2 ETH.',
-  boughtInLaunchNotice: '0 доступно, покупается в транзакции запуска',
+  boughtInLaunchNotice: 'Предпокупка создателя в транзакции запуска',
   namePlaceholder: 'Имя токена',
   symbolPlaceholder: 'Тикер (напр. BTC)',
   descriptionPlaceholder: 'Краткое описание токена',

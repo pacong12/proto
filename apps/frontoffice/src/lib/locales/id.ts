@@ -183,7 +183,7 @@ const messages: Record<string, string> = {
   loadingTape: 'Memuat data tren...',
   v2Subtitle: 'Luncurkan token pada kurva bonding yang lulus ke likuiditas terkunci.',
   v2GraduatesHint: 'Lulus setelah kurva mengumpulkan 4.2 ETH.',
-  boughtInLaunchNotice: '0 tersedia, dibeli dalam transaksi peluncuran',
+  boughtInLaunchNotice: 'Pre-buy kreator, dibeli dalam transaksi peluncuran',
   namePlaceholder: 'Nama token',
   symbolPlaceholder: 'Simbol (cth. BTC)',
   descriptionPlaceholder: 'Deskripsi singkat mengenai token',

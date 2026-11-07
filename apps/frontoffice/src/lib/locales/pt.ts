@@ -178,7 +178,7 @@ const messages: Record<string, string> = {
   explorer: 'Explorador de Blocos',
   v2Subtitle: 'Lance um token em uma curva de vinculação que se gradua em liquidez bloqueada.',
   v2GraduatesHint: 'Gradua-se assim que a curva arrecadar 4.2 ETH.',
-  boughtInLaunchNotice: '0 disponível, comprado na transação de lançamento',
+  boughtInLaunchNotice: 'Pré-compra do criador, feita na transação de lançamento',
   namePlaceholder: 'Nome do token',
   symbolPlaceholder: 'Símbolo (ex: BTC)',
   descriptionPlaceholder: 'Uma breve descrição do token',

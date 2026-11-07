@@ -173,7 +173,7 @@ const messages: Record<string, string> = {
   explorer: 'مستكشف الكتل',
   v2Subtitle: 'أطلق عملة على منحنى ترابط يتخرج إلى سيولة مقفلة.',
   v2GraduatesHint: 'يتخرج بمجرد جمع 4.2 ETH على المنحنى.',
-  boughtInLaunchNotice: '0 متاح، يتم شراؤه في معاملة الإطلاق',
+  boughtInLaunchNotice: 'شراء مسبق من المنشئ ضمن معاملة الإطلاق',
   namePlaceholder: 'اسم العملة',
   symbolPlaceholder: 'الرمز (مثال: BTC)',
   descriptionPlaceholder: 'وصف موجز للعملة',

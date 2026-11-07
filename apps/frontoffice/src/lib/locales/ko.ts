@@ -175,7 +175,7 @@ const messages: Record<string, string> = {
   explorer: '블록 탐색기',
   v2Subtitle: '본딩 커브에서 토큰을 발행하고 졸업 시 잠긴 유동성으로 마이그레이션합니다.',
   v2GraduatesHint: '커브에서 4.2 ETH가 모이면 졸업합니다.',
-  boughtInLaunchNotice: '현재 0개 사용 가능, 런칭 트랜잭션에서 함께 매수',
+  boughtInLaunchNotice: '크리에이터 사전 매수, 런칭 트랜잭션에서 함께 매수',
   namePlaceholder: '토큰 이름',
   symbolPlaceholder: '티커 (예: BTC)',
   descriptionPlaceholder: '토큰에 대한 간단한 설명',
