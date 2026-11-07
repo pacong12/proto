@@ -78,22 +78,30 @@ export type AppRoute =
   | { kind: 'redirect'; to: string }
   | { kind: 'token'; address: string }
   | { kind: 'pnl'; wallet: string; token: string }
+  | { kind: 'post'; id: string }
+  | { kind: 'user'; identifier: string }
   | { kind: 'page' }
   | { kind: 'not-found' };
 
+/** Pages that exist whatever the API holds, including the profile routes with no name in them. */
+const STATIC_APP_PAGE =
+  /^\/(launchpad|explore|launchpad\/create|memestock|feed|analytics|terms-of-service|privacy-policy|cookie-policy|u|profile|user)$/;
+
 const APP_PAGES = [
-  /^\/(launchpad|explore|launchpad\/create|memestock|feed|analytics)$/,
-  /^\/post\/[^/]+$/,
-  /^\/(u|profile|user)(\/[^/]+)?$/,
+  STATIC_APP_PAGE,
+  /^\/(u|profile|user)\/[^/]+$/,
   /^\/@[^/]*$/,
   // /:username profile slug (one path segment)
   /^\/[a-zA-Z0-9_#.-]+$/,
 ];
 
+/** The name in a profile URL, which the API must resolve. A wallet address needs no lookup. */
+const PROFILE_NAME = /^\/(?:(?:u|profile|user)\/|@)?([a-zA-Z0-9_.-]+)$/;
+
 /**
  * Matches a path against the app's routes, so the edge can send real redirects and 404 statuses
- * instead of the SPA answering every URL with 200 (Google reads that as a soft 404). Token pages
- * need the API to tell whether the token exists.
+ * instead of the SPA answering every URL with 200 (Google reads that as a soft 404). Token, post
+ * and profile pages need the API to tell whether what they show exists.
  */
 export function appRoute(pathname: string): AppRoute {
   const path = trimTrailingSlashes(pathname) || '/';
@@ -108,7 +116,14 @@ export function appRoute(pathname: string): AppRoute {
       ? { kind: 'pnl', wallet: pnl[1], token: pnl[2] }
       : { kind: 'not-found' };
   }
-  return APP_PAGES.some((re) => re.test(path)) ? { kind: 'page' } : { kind: 'not-found' };
+  const post = /^\/post\/([a-zA-Z0-9_-]+)$/.exec(path);
+  if (post) return { kind: 'post', id: post[1] };
+  if (!APP_PAGES.some((re) => re.test(path))) return { kind: 'not-found' };
+  if (STATIC_APP_PAGE.test(path)) return { kind: 'page' };
+  const profile = PROFILE_NAME.exec(path);
+  return profile && !isAddress(profile[1])
+    ? { kind: 'user', identifier: profile[1] }
+    : { kind: 'page' };
 }
 
 /** Meta for a path. `token` is the token behind /token/:address, when it could be loaded. */

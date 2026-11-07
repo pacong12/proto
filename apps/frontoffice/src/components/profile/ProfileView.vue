@@ -55,6 +55,7 @@
         :is-own-profile="isOwnProfile"
         :active-positions-count="portfolioPositions.length"
         :total-trades-count="userActivities.length"
+        :total-trades-capped="totalTradesCapped"
       />
 
       <!-- Notifications -->
@@ -636,6 +637,7 @@ const {
   claimableTotals,
   fetchMyLaunches,
   fetchUserPositionsAndActivity,
+  totalTradesCapped,
 } = useUserProfile({
   targetAccount,
   activeNetwork,

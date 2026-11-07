@@ -158,14 +158,21 @@ describe('seo appRoute', () => {
       '/memestock',
       '/feed/',
       '/analytics',
-      '/post/abc123',
+      '/terms-of-service',
       '/u',
-      '/u/0xabc',
-      '/profile/alice',
-      '/@alice',
-      '/alice.eth',
+      `/u/${WALLET}`,
+      `/@${WALLET}`,
     ]) {
       expect(appRoute(page).kind, page).toBe('page');
+    }
+    expect(appRoute('/post/abc123')).toEqual({ kind: 'post', id: 'abc123' });
+    for (const [path, identifier] of [
+      ['/u/0xabc', '0xabc'],
+      ['/profile/alice', 'alice'],
+      ['/@alice', 'alice'],
+      ['/alice.eth', 'alice.eth'],
+    ]) {
+      expect(appRoute(path), path).toEqual({ kind: 'user', identifier });
     }
     expect(appRoute(`/pnl/${WALLET}/${TOKEN}/`)).toEqual({
       kind: 'pnl',
@@ -391,6 +398,33 @@ describe('edge worker SEO', () => {
     expect(html).toContain('<h1>Moon ($MOON)</h1>');
     expect(html).toContain('<dd>Trading in a locked Uniswap v4 pool</dd>');
     expect(jsonLdOf(html)['@graph'][1]['@id']).toBe(`${ORIGIN}/token/${TOKEN.toLowerCase()}#token`);
+  });
+
+  it.each([
+    ['/post/gone', '/api/callouts/gone'],
+    ['/nosuchuser', '/api/users/nosuchuser'],
+    ['/@nosuchuser', '/api/users/nosuchuser'],
+  ])('answers 404 when the API does not know %s', async (path, apiPath) => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL) =>
+      Response.json({ success: false }, { status: 404 }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const res = await worker.fetch(new Request(`${ORIGIN}${path}`), env());
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(`https://api.test${apiPath}`);
+    expect(res.status).toBe(404);
+    expect(await res.text()).toContain('noindex');
+  });
+
+  it('keeps 200 on a profile or post when the API is down, or the page has no lookup', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new Error('down');
+      }),
+    );
+    for (const path of ['/post/abc', '/alice', '/feed', `/u/${TOKEN}`]) {
+      expect((await worker.fetch(new Request(`${ORIGIN}${path}`), env())).status, path).toBe(200);
+    }
   });
 
   it('previews a shared PnL page with its card, out of search', async () => {

@@ -1,5 +1,7 @@
 import { ref, computed, watch, type Ref } from 'vue';
 import { apiFetch } from '@/lib/api-client';
+import { getChainAdapter } from '@/chains';
+import { getPublicClient } from '@/lib/viem-client';
 import { useTokenStream } from '@/composables/useTokenStream';
 import { formatPriceUsd, formatMarketCap } from '@/lib/utils';
 import {
@@ -121,6 +123,21 @@ export function useTradeMarket(page: TradePage) {
     hasRenounced: false,
   });
 
+  // The vault's address lives on the factory, not in the network config. Until it is read, or if
+  // the read fails, vested supply counts as a wallet, as it would with no vault at all.
+  const vestingVault = ref<string | null>(null);
+  watch(
+    () => tokenNetwork.value.chainId,
+    async (chainId) => {
+      vestingVault.value = null;
+      const vault = await getChainAdapter(chainId)
+        .readVestingVault(getPublicClient(chainId))
+        .catch(() => null);
+      if (tokenNetwork.value.chainId === chainId) vestingVault.value = vault;
+    },
+    { immediate: true },
+  );
+
   // The curve, the pool, protocol contracts and burn addresses appear in the holder list, but
   // nobody holds that supply: the holder figures count wallets only.
   const holderContext = computed<HolderContext>(() => ({
@@ -129,7 +146,10 @@ export function useTradeMarket(page: TradePage) {
     poolAddress: currentToken.value.poolAddress,
     poolManagerAddress: tokenNetwork.value.contracts.poolManagerV4,
     lockerAddress: tokenNetwork.value.contracts.locker,
-    protocolAddresses: networkProtocolAddresses(tokenNetwork.value),
+    protocolAddresses: [
+      ...networkProtocolAddresses(tokenNetwork.value),
+      ...(vestingVault.value ? [vestingVault.value] : []),
+    ],
   }));
 
   const holdersCount = computed(() => walletHolders(holders.value, holderContext.value).length);

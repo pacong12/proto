@@ -441,8 +441,8 @@ export async function withPageMeta(response: Response, url: URL, env: Env): Prom
   try {
     const html = await response.clone().text();
     const route = appRoute(url.pathname);
-    // A URL no route matches, a malformed token address, or a token the API does not know is a
-    // real 404 (the app shows its not-found view in the same HTML). An API outage keeps 200.
+    // A URL no route matches, a malformed token address, or a token, post or profile the API does
+    // not know is a real 404 (the app shows its not-found view in the same HTML). An API outage keeps 200.
     let notFound = route.kind === 'not-found';
     let token: SeoToken | null = null;
     let pnl: PnlShare | null = null;
@@ -461,6 +461,12 @@ export async function withPageMeta(response: Response, url: URL, env: Env): Prom
       );
       if (status === 404) notFound = true;
       pnl = data;
+    } else if (route.kind === 'post') {
+      const { status } = await backendGet(env, `/api/callouts/${route.id}`);
+      if (status === 404) notFound = true;
+    } else if (route.kind === 'user') {
+      const { status } = await backendGet(env, `/api/users/${route.identifier}`);
+      if (status === 404) notFound = true;
     } else if (canonicalPath(url.pathname) === '/launchpad') {
       // Links to the latest launches, so crawlers find token pages from the home page too.
       const page = await backendJson<Array<{ token: ApiToken }>>(env, '/api/tokens?limit=30');
