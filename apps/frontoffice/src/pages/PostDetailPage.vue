@@ -451,11 +451,7 @@ import { CashtagText, ShareModal, QuoteModal } from '@/components/feed';
 import { useWallet } from '@/composables/useWallet';
 import { useTokenStore } from '@/composables/useTokenStore';
 import { useFeed, isWhaleCaller, calloutNetwork } from '@/composables/useFeed';
-import {
-  shortenAddress,
-  formatRelativeTime,
-  formatMarketCap,
-} from '@/lib/utils';
+import { shortenAddress, formatRelativeTime, formatMarketCap } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { clipText } from '@goton/shared-types';
 import { toast } from '@/components/ui/sonner';
