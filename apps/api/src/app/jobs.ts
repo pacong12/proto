@@ -59,8 +59,15 @@ export function startBackgroundJobs(): void {
       let next: number;
       try {
         const found = await poller.pollEvents();
-        // Tighten the interval while there is trading or a backlog; relax when idle.
-        next = nextPollDelay({ ...base, failed: false, behind: poller.isBehind, found });
+        // Tighten the interval while there is trading or a backlog; relax when idle. pollEvents
+        // reports a failed cycle (a rate-limited RPC) through lastPollFailed rather than throwing,
+        // and isBehind still holds the last good cycle's answer: back off, never 250ms retries.
+        next = nextPollDelay({
+          ...base,
+          failed: poller.lastPollFailed,
+          behind: poller.isBehind,
+          found,
+        });
       } catch {
         // Non-fatal: lastPolledBlock did not advance, so a later cycle retries the same range,
         // after a growing delay so a rate-limited RPC is not hit again at once.

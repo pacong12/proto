@@ -7,6 +7,7 @@ import {
   type NetworkConfig,
 } from '@goton/shared-types';
 import { EventPollerService } from '../src/modules/indexer/infrastructure/event-poller.service';
+import { nextPollDelay } from '../src/app/poll-delay';
 import { InMemoryTokenRepository } from '../src/app/storage/in-memory-token.repository';
 import type { ViemChainIndexerAdapter } from '../src/modules/tokens/infrastructure/adapters/viem-chain-indexer.adapter';
 import type { CalculatePricingUseCase } from '../src/modules/tokens/application/use-cases/calculate-pricing.use-case';
@@ -249,6 +250,48 @@ describe('EventPollerService — failures do not lose blocks', () => {
     limited = false;
     await p.pollEvents();
     expect(await repo.findByAddress(IDEA)).toBeTruthy();
+  });
+
+  it('reports a rate-limited cycle while catching up, so the scheduler backs off', async () => {
+    let head = 10n;
+    let limited = false;
+    const client = {
+      ...stubClient({}, 6),
+      getBlockNumber: async () => head,
+      getLogs: async () => {
+        if (limited) throw new Error('Request exceeds defined limit.');
+        return [];
+      },
+    } as unknown as PublicClient;
+    const p = poller(ARC_CHAIN, client, new InMemoryTokenRepository());
+    await p.pollEvents();
+    head = 10_000n; // far behind: one cycle covers MAX_BLOCK_RANGE blocks
+    await p.pollEvents();
+    expect(p.isBehind).toBe(true);
+    expect(p.lastPollFailed).toBe(false);
+    const interval = { active: 3_000, idle: 10_000 };
+    const delay = (previousMs: number) =>
+      nextPollDelay({
+        previousMs,
+        interval,
+        catchUpMs: 250,
+        failed: p.lastPollFailed,
+        behind: p.isBehind,
+        found: 0,
+      });
+    expect(delay(250)).toBe(250);
+
+    limited = true;
+    expect(await p.pollEvents()).toBe(0);
+    // isBehind still says behind; without the failure flag this retried every 250ms.
+    expect(p.isBehind).toBe(true);
+    expect(p.lastPollFailed).toBe(true);
+    expect(delay(250)).toBe(3_000);
+    expect(delay(3_000)).toBe(6_000);
+
+    limited = false;
+    await p.pollEvents();
+    expect(p.lastPollFailed).toBe(false);
   });
 
   it('still skips a range that keeps failing for another reason', async () => {
