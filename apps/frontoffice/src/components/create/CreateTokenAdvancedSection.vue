@@ -6,14 +6,14 @@
       class="w-full flex items-center justify-between px-5 py-4 h-auto text-sm font-semibold transition hover:bg-muted/40 cursor-pointer rounded-none"
       @click="isOpen = !isOpen"
     >
-      <div class="flex items-center gap-2">
-        <span class="font-bold">{{ t('advanced') }}</span>
-        <span class="text-xs text-muted-foreground">
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="font-bold shrink-0">{{ t('advanced') }}</span>
+        <span class="text-xs text-muted-foreground truncate min-w-0">
           (Buy: {{ buyTax }}% &middot; Sell: {{ sellTax }}% &middot; Split: {{ totalSplit }}/100%)
         </span>
       </div>
       <ChevronDown
-        class="w-3.5 h-3.5 transition-transform duration-200 opacity-60"
+        class="w-3.5 h-3.5 shrink-0 transition-transform duration-200 opacity-60"
         :class="isOpen ? 'rotate-180' : ''"
       />
     </Button>
@@ -93,7 +93,7 @@
 
       <!-- Trading Taxes (Buy & Sell Tax) with Quick Presets -->
       <div class="space-y-3.5 pt-4 border-t border-border">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
           <div class="flex items-center gap-1.5">
             <Label class="text-sm font-semibold text-foreground">{{
               t(inPoolLaunch ? 'tradingTaxesRequired' : 'tradingTaxesOptional')
@@ -177,7 +177,7 @@
                 :key="p"
                 type="button"
                 size="sm"
-                :variant="parseFloat(sellTax || '0') === p ? 'destructive' : 'outline'"
+                :variant="parseFloat(sellTax || '0') === p ? 'default' : 'outline'"
                 class="flex-1 h-7 text-xs p-0 cursor-pointer"
                 @click="$emit('update:sellTax', String(p))"
               >

@@ -53,7 +53,9 @@
     <div v-else class="overflow-x-auto rounded-2xl border border-border bg-black">
       <Table class="w-full text-left text-xs min-w-[620px] bg-black">
         <TableHeader>
-          <TableRow class="border-b border-border text-muted-foreground bg-black hover:bg-black">
+          <TableRow
+            class="border-b border-border text-muted-foreground bg-black hover:bg-black [&_th]:whitespace-nowrap"
+          >
             <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">{{
               t('timeCol')
             }}</TableHead>

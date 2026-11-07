@@ -214,11 +214,11 @@
 
         <!-- Developer buy -->
         <div class="space-y-2 pt-1">
-          <div class="flex justify-between items-center text-xs">
+          <div class="flex flex-wrap justify-between items-center gap-x-3 gap-y-1 text-xs">
             <span class="text-muted-foreground">
               {{ t('boughtInLaunchNotice') }}
             </span>
-            <div class="flex items-center gap-1.5 text-muted-foreground">
+            <div class="flex items-center gap-1.5 text-muted-foreground whitespace-nowrap">
               <span>Balance:</span>
               <strong class="text-foreground font-semibold">
                 {{ isConnected ? formattedBalance : '—' }}

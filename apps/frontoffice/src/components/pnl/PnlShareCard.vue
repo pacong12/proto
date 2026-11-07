@@ -93,7 +93,11 @@ watch(share, (value) => emit('loaded', value));
 const imageLoaded = ref(false);
 watch(cardUrl, () => (imageLoaded.value = false));
 
-const tone = (value: number) => (value < 0 ? 'text-rose-500' : 'text-emerald-500');
+/** Red or green by the sign shown, so an amount that rounds to zero stays neutral. */
+const tone = (value: number) => {
+  const sign = formatSignedUsd(value)[0];
+  return sign === '-' ? 'text-rose-500' : sign === '+' ? 'text-emerald-500' : 'text-foreground';
+};
 
 const rows = computed(() => {
   const pnl = share.value?.pnl;

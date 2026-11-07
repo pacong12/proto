@@ -4,18 +4,19 @@
     <div class="flex items-center justify-between gap-3 text-xs">
       <RouterLink
         to="/launchpad"
-        class="text-muted-foreground hover:text-foreground transition inline-flex items-center gap-1.5 font-medium group"
+        class="text-muted-foreground hover:text-foreground transition inline-flex items-center gap-1.5 font-medium group min-w-0"
       >
         <ChevronLeft class="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
-        <span>{{ t('allMarkets') }}</span>
-        <span class="text-muted-foreground/40">/</span>
-        <span class="text-foreground font-bold truncate max-w-[200px] sm:max-w-none">{{
+        <span class="whitespace-nowrap">{{ t('allMarkets') }}</span>
+        <!-- The name is the page title right below; on a phone the crumb only needs the way back. -->
+        <span class="hidden sm:inline text-muted-foreground/40">/</span>
+        <span class="hidden sm:inline text-foreground font-bold truncate min-w-0">{{
           currentToken.name
         }}</span>
       </RouterLink>
 
       <!-- Top Action Controls (Callout, Share, Copy Link) -->
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 shrink-0">
         <!-- Callout Button (pump.fun style) -->
         <Button
           variant="outline"

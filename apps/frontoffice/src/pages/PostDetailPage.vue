@@ -106,16 +106,20 @@
           class="rounded-xl border border-border/80 p-3.5 bg-muted/20 hover:bg-muted/40 transition cursor-pointer text-xs space-y-1.5"
           @click="router.push(`/post/${post.quotedCallout.id}`)"
         >
-          <div class="flex items-center gap-1.5">
-            <Jazzicon :address="post.quotedCallout.authorAddress" :size="18" class="rounded-full" />
-            <span class="font-bold text-foreground">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <Jazzicon
+              :address="post.quotedCallout.authorAddress"
+              :size="18"
+              class="rounded-full shrink-0"
+            />
+            <span class="font-bold text-foreground truncate min-w-0">
               {{ getUserIdentity(post.quotedCallout.authorAddress).displayName }}
             </span>
-            <span v-if="post.quotedCallout.tokenSymbol" class="text-primary font-bold">
+            <span v-if="post.quotedCallout.tokenSymbol" class="text-primary font-bold shrink-0">
               ${{ post.quotedCallout.tokenSymbol }}
             </span>
-            <span class="text-muted-foreground text-xs">&middot;</span>
-            <span class="text-xs text-muted-foreground">
+            <span class="text-muted-foreground text-xs shrink-0">&middot;</span>
+            <span class="text-xs text-muted-foreground shrink-0 whitespace-nowrap">
               {{ formatRelativeTime(post.quotedCallout.createdAt) }}
             </span>
           </div>
@@ -153,9 +157,9 @@
                 class="rounded-full border border-border/70 shrink-0"
               />
               <img
-                :src="getChainIcon(post.tokenAddress)"
-                :alt="getChainName(post.tokenAddress)"
-                :title="getChainName(post.tokenAddress)"
+                :src="postChain?.icon"
+                :alt="postChain?.name"
+                :title="postChain?.name"
                 class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border border-black bg-black object-contain shadow-xs"
               />
             </div>
@@ -446,12 +450,10 @@ import { Jazzicon } from '@/components/ui/avatar';
 import { CashtagText, ShareModal, QuoteModal } from '@/components/feed';
 import { useWallet } from '@/composables/useWallet';
 import { useTokenStore } from '@/composables/useTokenStore';
-import { useFeed, isWhaleCaller } from '@/composables/useFeed';
+import { useFeed, isWhaleCaller, calloutNetwork } from '@/composables/useFeed';
 import {
   shortenAddress,
   formatRelativeTime,
-  getTokenChainIcon as getChainIcon,
-  getTokenChainName as getChainName,
   formatMarketCap,
 } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
@@ -463,11 +465,12 @@ const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const { account, openWallet } = useWallet();
-const { tokens: allTokens, fetchTokens } = useTokenStore();
+const { tokens: allTokens, fetchTokens, getTokenNetwork } = useTokenStore();
 const { toggleLike, toggleRepost, recordView, postCallout } = useFeed();
 
 const calloutId = computed(() => String(route.params.id || ''));
 const post = ref<FeedCalloutItem | null>(null);
+const postChain = computed(() => (post.value ? calloutNetwork(post.value, getTokenNetwork) : null));
 const replies = ref<FeedCalloutItem[]>([]);
 const loading = ref(true);
 const notFound = ref(false);

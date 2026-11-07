@@ -52,9 +52,9 @@
                 class="rounded-md shrink-0 border border-border/60"
               />
               <img
-                :src="getChainIcon(tItem.token.address)"
-                :alt="getChainName(tItem.token.address)"
-                :title="getChainName(tItem.token.address)"
+                :src="getChainIcon(tItem.token)"
+                :alt="getChainName(tItem.token)"
+                :title="getChainName(tItem.token)"
                 class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-card bg-card object-contain shadow-xs"
               />
             </div>

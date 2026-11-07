@@ -28,7 +28,8 @@ vi.mock('../src/composables/useTokenStore', () => ({
     getTokenNetwork: vi.fn(),
   }),
 }));
-vi.mock('../src/composables/useFeed', () => ({
+vi.mock('../src/composables/useFeed', async (original) => ({
+  ...(await original<typeof import('../src/composables/useFeed')>()),
   isWhaleCaller: () => false,
   useFeed: () => ({
     toggleLike: vi.fn(),

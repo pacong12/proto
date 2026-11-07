@@ -225,7 +225,7 @@
         <Table class="text-xs bg-black">
           <TableHeader>
             <TableRow
-              class="border-b border-border/70 text-muted-foreground text-xs uppercase bg-black hover:bg-black"
+              class="border-b border-border/70 text-muted-foreground text-xs uppercase bg-black hover:bg-black [&_th]:whitespace-nowrap"
             >
               <TableHead
                 class="py-3 px-2 sm:px-3 font-semibold w-12 text-center text-muted-foreground bg-black"

@@ -14,9 +14,9 @@
           class="rounded-lg border border-border/70"
         />
         <img
-          :src="getChainIcon(call.tokenAddress)"
-          :alt="getChainName(call.tokenAddress)"
-          :title="getChainName(call.tokenAddress)"
+          :src="chain.icon"
+          :alt="chain.name"
+          :title="chain.name"
           class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card bg-card object-contain"
         />
       </div>
@@ -92,12 +92,9 @@ import { useI18n } from '@/lib/i18n';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
-import {
-  formatCompactUsd,
-  formatMarketCap,
-  getTokenChainIcon as getChainIcon,
-  getTokenChainName as getChainName,
-} from '@/lib/utils';
+import { formatCompactUsd, formatMarketCap } from '@/lib/utils';
+import { calloutNetwork } from '@/composables/useFeed';
+import { useTokenStore } from '@/composables/useTokenStore';
 
 /** A callout's token: the caller's position and profit since the call, market cap, trade link. */
 const props = defineProps<{
@@ -111,6 +108,8 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+const { getTokenNetwork } = useTokenStore();
+const chain = computed(() => calloutNetwork(props.call, getTokenNetwork));
 
 const signed = (v: number, text: string) => `${v >= 0 ? '+' : '-'}${text}`;
 
