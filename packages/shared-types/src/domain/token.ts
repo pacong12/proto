@@ -164,6 +164,8 @@ export interface FeedCalloutItem extends TokenCommentEntity {
   tokenName?: string;
   tokenSymbol?: string;
   tokenLogo?: string;
+  /** Tells the token's chain even when the viewer's token list does not include it. */
+  tokenPairedToken?: string;
   tokenMarketCapUsd?: number;
   tokenPriceUsd?: number;
   holdersCount?: number;

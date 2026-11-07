@@ -113,7 +113,7 @@ import { useRouter } from 'vue-router';
 import { useWallet } from '@/composables/useWallet';
 import { useTokenStore } from '@/composables/useTokenStore';
 import { usePinnedTokens } from '@/composables/usePinnedTokens';
-import { useFeed, type FeedFilterType } from '@/composables/useFeed';
+import { calloutNetwork, useFeed, type FeedFilterType } from '@/composables/useFeed';
 import { useFollows } from '@/composables/useFollows';
 import { Loader2, Megaphone } from 'lucide-vue-next';
 import { Empty } from '@/components/ui/empty';
@@ -187,7 +187,7 @@ const networkCallouts = computed(() => {
     return base;
   }
   const targetChainId = Number(selectedChainFilter.value);
-  return base.filter((c) => getTokenNetwork(c.tokenAddress).chainId === targetChainId);
+  return base.filter((c) => calloutNetwork(c, getTokenNetwork).chainId === targetChainId);
 });
 
 const paginatedCallouts = computed(() => {
