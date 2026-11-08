@@ -339,7 +339,11 @@ export function useTradeForm(
       return;
     }
     const now = Date.now();
-    if (balanceFetchPromise) return balanceFetchPromise;
+    // A forced read (after a trade) must start after it: one already in flight may predate it.
+    if (balanceFetchPromise) {
+      if (!force) return balanceFetchPromise;
+      await balanceFetchPromise;
+    }
     if (!force && now - lastBalanceFetchTime < 2500) return;
     lastBalanceFetchTime = now;
 
@@ -362,8 +366,10 @@ export function useTradeForm(
           ).catch(() => null),
         ]);
 
+        // The chain is the truth, zero included (a wallet that sold everything); the indexer's
+        // figure lags a trade, so it is only a fallback when the RPC read fails.
         let resolvedBal: bigint | null = null;
-        if (onChainResult.status === 'fulfilled' && onChainResult.value > 0n) {
+        if (onChainResult.status === 'fulfilled') {
           resolvedBal = onChainResult.value;
         } else if (
           backendResult.status === 'fulfilled' &&
@@ -371,8 +377,6 @@ export function useTradeForm(
           backendResult.value?.data?.balanceWei
         ) {
           resolvedBal = BigInt(backendResult.value.data.balanceWei);
-        } else if (onChainResult.status === 'fulfilled') {
-          resolvedBal = onChainResult.value;
         }
 
         if (resolvedBal !== null) {
