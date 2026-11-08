@@ -5,27 +5,17 @@ import {
   CandlestickSeries,
   HistogramSeries,
   AreaSeries,
-  createTextWatermark,
   PriceScaleMode,
   CrosshairMode,
   ColorType,
   TickMarkType,
   type IChartApi,
   type ISeriesApi,
-  type ITextWatermarkPluginApi,
   type Time,
   type AutoscaleInfo,
 } from 'lightweight-charts';
-import {
-  CandlestickChart,
-  TrendingUp,
-  Maximize,
-  Minimize,
-  ScanLine,
-  ChevronsRight,
-  ZoomOut,
-  Loader2,
-} from 'lucide-vue-next';
+import { Maximize, Minimize, ChevronsRight, Loader2 } from 'lucide-vue-next';
+import { formatCompactUsd, formatPriceUsd } from '@/lib/utils';
 
 // ---------------------------------------------------------------------------
 // Types & props
@@ -58,6 +48,10 @@ interface Props {
   loading?: boolean; // parent sets true while fetching a new timeframe
   totalSupply?: number; // used for the Market Cap mode (price x supply)
   isGraduated?: boolean; // true if already graduated to DEX
+  /** Live figures for the headline above the chart (the stream's, not the last candle's). */
+  livePrice?: number;
+  liveMarketCap?: number;
+  change24h?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -81,7 +75,6 @@ let chart: IChartApi | null = null;
 let mainSeries: ISeriesApi<'Candlestick' | 'Area'> | null = null;
 let volumeSeries: ISeriesApi<'Histogram'> | null = null;
 let themeObserver: MutationObserver | null = null;
-let watermarkPlugin: ITextWatermarkPluginApi<Time> | null = null;
 
 // Bars currently drawn (already scaled for the active mode). Read by autoscale.
 let shownBars: Bar[] = [];
@@ -105,7 +98,8 @@ const prefs = loadPrefs();
 const chartType = ref<'candles' | 'area'>(prefs.type === 'area' ? 'area' : 'candles');
 const valueMode = ref<'price' | 'mcap'>(prefs.mode === 'price' ? 'price' : 'mcap');
 const isLogScale = ref(!!prefs.log);
-const clipWicks = ref(prefs.clip !== false);
+// Outlier wicks never stretch the scale (a single fat-finger trade flattened every other candle).
+const clipWicks = ref(true);
 const isFullscreen = ref(false);
 
 const isAwayFromLatest = ref(false);
@@ -186,53 +180,6 @@ function scaleBars(bars: Bar[]): Bar[] {
 }
 
 // ---------------------------------------------------------------------------
-// Watermark (subtle background token branding)
-// ---------------------------------------------------------------------------
-
-function updateWatermark() {
-  if (!chart || !props.tokenSymbol) return;
-  const dark = isDark();
-  const text = props.tokenSymbol.toUpperCase();
-  const color = dark ? 'rgba(255, 255, 255, 0.035)' : 'rgba(0, 0, 0, 0.035)';
-
-  try {
-    const panes = chart.panes();
-    if (!panes || panes.length === 0) return;
-    const firstPane = panes[0];
-
-    if (!watermarkPlugin) {
-      watermarkPlugin = createTextWatermark(firstPane, {
-        horzAlign: 'center',
-        vertAlign: 'center',
-        lines: [
-          {
-            text,
-            color,
-            fontSize: 54,
-            fontFamily: 'Poppins, ui-sans-serif, system-ui, sans-serif',
-            fontStyle: 'bold',
-          },
-        ],
-      });
-    } else {
-      watermarkPlugin.applyOptions({
-        lines: [
-          {
-            text,
-            color,
-            fontSize: 54,
-            fontFamily: 'Poppins, ui-sans-serif, system-ui, sans-serif',
-            fontStyle: 'bold',
-          },
-        ],
-      });
-    }
-  } catch {
-    // Graceful fallback if pane watermark is unsupported
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Formatters
 // ---------------------------------------------------------------------------
 
@@ -268,13 +215,13 @@ function formatCompact(v: number): string {
   const a = Math.abs(v);
   const unit = a >= 1e9 ? 1e9 : a >= 1e6 ? 1e6 : a >= 1e3 ? 1e3 : 1;
   const suffix = unit === 1e9 ? 'B' : unit === 1e6 ? 'M' : unit === 1e3 ? 'K' : '';
-  // Decimals so that the unit-scaled value shows sigDigits() significant digits.
-  const intDigits = Math.max(1, Math.floor(Math.log10(a / unit || 1)) + 1);
-  const decimals = Math.min(
-    4,
-    Math.max(unit === 1 && a < 100 ? 2 : 1, sigDigits(a, 2, 6) - intDigits),
-  );
-  return `${(v / unit).toFixed(unit === 1 && a >= 100 && decimals <= 1 ? 0 : decimals)}${suffix}`;
+  // Decimals from the tick step, not the value, so every label on the axis has the same number
+  // of digits ($2.48K, $2.52K, $2.56K) instead of a mix like $2.48K and $2.640K.
+  const step = visibleSpan > 0 ? visibleSpan / 10 / unit : 0;
+  const fromStep = step > 0 ? Math.ceil(-Math.log10(step)) : 0;
+  const minDecimals = unit === 1 && a < 100 ? 2 : unit === 1 ? 0 : 1;
+  const decimals = Math.min(4, Math.max(minDecimals, fromStep));
+  return `${(v / unit).toFixed(decimals)}${suffix}`;
 }
 
 function formatY(v: number): string {
@@ -369,11 +316,11 @@ function themeOptions() {
     layout: {
       background: { type: ColorType.Solid, color: 'transparent' }, // follows --card
       textColor: dark ? '#a1a1aa' : '#52525b',
-      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+      fontFamily: 'Poppins, ui-sans-serif, system-ui, sans-serif', // the site's font, not monospace
       fontSize: 12,
       attributionLogo: false, // remove TradingView watermark logo
     },
-    grid: { vertLines: { color: line }, horzLines: { color: line } },
+    grid: { vertLines: { visible: false }, horzLines: { color: line } },
     crosshair: {
       vertLine: { labelBackgroundColor: dark ? '#27272a' : '#e4e4e7' },
       horzLine: { labelBackgroundColor: dark ? '#27272a' : '#e4e4e7' },
@@ -431,7 +378,7 @@ function initChart() {
       secondsVisible: (props.resolution ?? 1) < 60,
       rightOffset: 6,
       barSpacing: 14,
-      minBarSpacing: 3,
+      minBarSpacing: 1, // low enough that a whole history fits a phone screen
       tickMarkFormatter: (t: Time, type: TickMarkType) => {
         const d = new Date(Number(t) * 1000);
         if (type === TickMarkType.Time || type === TickMarkType.TimeWithSeconds) {
@@ -466,7 +413,6 @@ function initChart() {
   volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
 
   createMainSeries();
-  updateWatermark();
 
   chart.subscribeCrosshairMove((param) => {
     if (!param?.time || !mainSeries) {
@@ -494,7 +440,6 @@ function initChart() {
 
   themeObserver = new MutationObserver(() => {
     chart?.applyOptions(themeOptions());
-    updateWatermark();
   });
   themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
@@ -507,14 +452,6 @@ function destroyChart() {
   chartReady = false;
   themeObserver?.disconnect();
   themeObserver = null;
-  if (watermarkPlugin) {
-    try {
-      watermarkPlugin.detach();
-    } catch {
-      // ignore
-    }
-    watermarkPlugin = null;
-  }
   if (chart) {
     chart.remove();
     chart = null;
@@ -601,7 +538,8 @@ function showLatest(total: number) {
     // fitContent() counts rightOffset as bars: a 6-bar day chart with a 6-bar offset left half the
     // pane empty. Keep the gap to the price scale small on short histories.
     chart.timeScale().applyOptions({ rightOffset: total <= 20 ? 1 : 6 });
-    if (total <= 20) {
+    // The interval is picked to fit the coin's history, so show all of it when it fits.
+    if (total <= 200) {
       chart.timeScale().fitContent();
     } else {
       chart.timeScale().setVisibleLogicalRange({ from: Math.max(-1, total - 60), to: total + 4 });
@@ -621,13 +559,6 @@ watch(formatted, (bars) => {
   }
   sync(bars);
 });
-
-watch(
-  () => props.tokenSymbol,
-  () => {
-    updateWatermark();
-  },
-);
 
 watch(
   () => props.totalSupply,
@@ -689,16 +620,6 @@ function toggleLog() {
   savePrefs();
 }
 
-function toggleClip() {
-  clipWicks.value = !clipWicks.value;
-  mainSeries?.applyOptions({ autoscaleInfoProvider: autoscale }); // forces a rescale
-  savePrefs();
-}
-
-function fitContent() {
-  chart?.timeScale().fitContent();
-}
-
 function goLatest() {
   chart?.timeScale().scrollToRealTime();
 }
@@ -727,6 +648,16 @@ const changePct = computed(() => {
 
 const isEmpty = computed(() => formatted.value.length === 0);
 
+/** Live value in the chart's unit, labelled, so the big number always says what it is. */
+const headline = computed(() => {
+  if (valueMode.value === 'mcap') {
+    const v = props.liveMarketCap;
+    return v !== undefined && v > 0 ? { label: 'Market cap', value: formatCompactUsd(v) } : null;
+  }
+  const v = props.livePrice;
+  return v !== undefined && v > 0 ? { label: 'Price', value: formatPriceUsd(v) } : null;
+});
+
 // ---------------------------------------------------------------------------
 // Lifecycle
 // ---------------------------------------------------------------------------
@@ -744,6 +675,25 @@ onUnmounted(() => {
 <template>
   <div ref="root" class="flex w-full flex-col bg-card" :class="isFullscreen ? 'h-screen' : ''">
     <!-- Toolbar: one row on wide screens (wraps on phones), big touch targets -->
+    <!-- Headline: what the chart shows, its live value and the 24h move -->
+    <div v-if="headline" class="px-4 pt-4">
+      <span class="text-xs text-muted-foreground">{{ headline.label }}</span>
+      <div class="flex items-baseline gap-2">
+        <span
+          class="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground tabular-nums"
+        >
+          {{ headline.value }}
+        </span>
+        <span
+          v-if="change24h !== undefined"
+          class="text-sm font-medium tabular-nums"
+          :class="change24h >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+        >
+          {{ change24h >= 0 ? '+' : '' }}{{ change24h.toFixed(2) }}% 24h
+        </span>
+      </div>
+    </div>
+
     <!-- On phones the interval takes the first row; value and tools share the second. -->
     <div class="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-border/80">
       <!-- Host controls, e.g. the candle interval -->
@@ -774,52 +724,29 @@ onUnmounted(() => {
         </button>
       </div>
 
+      <!-- Line / Candles -->
+      <div class="flex items-center rounded-lg bg-muted p-0.5" role="group" aria-label="Chart type">
+        <button
+          v-for="c in [
+            { v: 'area', l: 'Line' },
+            { v: 'candles', l: 'Candles' },
+          ] as const"
+          :key="c.v"
+          type="button"
+          class="h-8 cursor-pointer rounded-md px-3 text-xs font-semibold transition"
+          :class="
+            chartType === c.v
+              ? 'bg-card text-foreground shadow-xs'
+              : 'text-muted-foreground hover:text-foreground'
+          "
+          :aria-pressed="chartType === c.v"
+          @click="setChartType(c.v)"
+        >
+          {{ c.l }}
+        </button>
+      </div>
+
       <div class="ml-auto flex items-center gap-1">
-        <button
-          type="button"
-          class="grid h-8 w-8 cursor-pointer place-items-center rounded-md transition"
-          :class="
-            chartType === 'candles'
-              ? 'bg-muted text-foreground'
-              : 'text-muted-foreground hover:text-foreground'
-          "
-          title="Candles"
-          aria-label="Candles"
-          :aria-pressed="chartType === 'candles'"
-          @click="setChartType('candles')"
-        >
-          <CandlestickChart class="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          class="grid h-8 w-8 cursor-pointer place-items-center rounded-md transition"
-          :class="
-            chartType === 'area'
-              ? 'bg-muted text-foreground'
-              : 'text-muted-foreground hover:text-foreground'
-          "
-          title="Line / Area"
-          aria-label="Line / Area"
-          :aria-pressed="chartType === 'area'"
-          @click="setChartType('area')"
-        >
-          <TrendingUp class="h-4 w-4" />
-        </button>
-
-        <button
-          type="button"
-          class="grid h-8 w-8 cursor-pointer place-items-center rounded-md transition"
-          :class="
-            clipWicks ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
-          "
-          title="Ignore outlier wicks"
-          aria-label="Ignore outlier wicks"
-          :aria-pressed="clipWicks"
-          @click="toggleClip"
-        >
-          <ScanLine class="h-4 w-4" />
-        </button>
-
         <button
           type="button"
           class="hidden sm:grid h-8 w-8 cursor-pointer place-items-center rounded-md text-xs font-bold transition"
@@ -831,17 +758,7 @@ onUnmounted(() => {
           :aria-pressed="isLogScale"
           @click="toggleLog"
         >
-          LOG
-        </button>
-
-        <button
-          type="button"
-          class="hidden sm:grid h-8 w-8 cursor-pointer place-items-center rounded-md text-muted-foreground transition hover:text-foreground"
-          title="Fit content"
-          aria-label="Fit content"
-          @click="fitContent"
-        >
-          <ZoomOut class="h-4 w-4" />
+          Log
         </button>
 
         <button
@@ -864,8 +781,9 @@ onUnmounted(() => {
     >
       <div ref="chartContainer" class="h-full w-full" />
 
-      <!-- In-chart OHLC legend (Top-left inside chart canvas) -->
+      <!-- OHLC of the candle under the cursor; hidden otherwise, the headline carries the live value -->
       <div
+        v-if="hoveredBar"
         class="pointer-events-none absolute left-3 top-3 z-10 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"
       >
         <span v-if="activeBar" class="font-semibold text-foreground">
@@ -890,7 +808,7 @@ onUnmounted(() => {
           {{ changePct >= 0 ? '+' : '' }}{{ changePct.toFixed(2) }}%
         </span>
         <span v-if="activeBar && activeBar.volume" class="hidden sm:inline">
-          Vol: <span class="text-foreground">${{ formatCompact(activeBar.volume) }}</span>
+          Vol: <span class="text-foreground">{{ formatCompactUsd(activeBar.volume) }}</span>
         </span>
       </div>
 

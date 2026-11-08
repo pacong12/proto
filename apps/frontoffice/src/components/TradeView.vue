@@ -35,10 +35,6 @@
         :currency-symbol="currencySymbol"
         :token-network="tokenNetwork"
         :explorer-url="explorerUrl"
-        :primary-figure-mode="primaryFigureMode"
-        :primary-figure-value="primaryFigureValue"
-        :secondary-figure-value="secondaryFigureValue"
-        :price-flash="priceFlash"
         :link-copied="linkCopied"
         :copied="copied"
         :is-pinned="isPinned"
@@ -47,7 +43,6 @@
         @copy-token-link="copyTokenLink"
         @toggle-pin="togglePin"
         @copy-address="copyAddress"
-        @toggle-figure="toggleHeaderFigure"
       />
 
       <!-- Pending tax change warning - visible to all visitors -->
@@ -84,6 +79,9 @@
                     : 1000000000
                 "
                 :is-graduated="currentMarketData.isGraduated"
+                :live-price="currentMarketData.priceUsd"
+                :live-market-cap="currentMarketData.marketCapUsd"
+                :change24h="currentMarketData.priceChange24h"
               >
                 <template #toolbar-start>
                   <div
@@ -426,6 +424,7 @@ import { usePnlShare } from '@/composables/usePnlShare';
 import { usePinnedTokens } from '@/composables/usePinnedTokens';
 import { toast } from '@/components/ui/sonner';
 import { useAutoRefresh } from '@/composables/useAutoRefresh';
+import { resolutionForAge } from '@/lib/chart-interval';
 import PendingTaxBanner from '@/components/tax/PendingTaxBanner.vue';
 import TeamPayouts from '@/components/trade/TeamPayouts.vue';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -599,14 +598,9 @@ const {
   holdersCountCapped,
   holdersLoading,
   isHolderAddress,
-  priceFlash,
-  primaryFigureMode,
-  primaryFigureValue,
   quoteAssetPriceUsd,
   resolutions,
-  secondaryFigureValue,
   selectedResolution,
-  toggleHeaderFigure,
   top10HoldingPercent,
   topTraders,
   topTradersLoading,
@@ -768,6 +762,8 @@ async function loadTokenData(address: `0x${string}`) {
   if (data) {
     currentToken.value = data.token;
     currentMarketData.value = data.marketData;
+    // Open on the interval that shows this coin's whole history.
+    selectedResolution.value = resolutionForAge(data.token.createdAt);
   } else {
     tokenNotFound.value = true;
   }

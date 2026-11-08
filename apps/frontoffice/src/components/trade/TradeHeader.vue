@@ -264,48 +264,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Right: Pons-style Large Clickable Live Figure with Flash Animation -->
-      <button
-        type="button"
-        class="text-left md:text-right flex flex-col items-start md:items-end gap-0.5 cursor-pointer select-none group transition-all self-start md:self-auto shrink-0"
-        :title="`Click to toggle between Market Cap and Price display`"
-        @click="$emit('toggleFigure')"
-      >
-        <span class="text-xs text-muted-foreground font-medium font-sans">
-          {{ primaryFigureMode === 'mcap' ? 'Market cap' : 'Token price' }}
-        </span>
-        <div class="flex items-baseline gap-2">
-          <span
-            class="text-2xl sm:text-3xl font-black tracking-tight transition-all duration-300"
-            :class="
-              priceFlash === 'up'
-                ? 'text-emerald-400 scale-105'
-                : priceFlash === 'down'
-                  ? 'text-rose-400 scale-105'
-                  : 'text-foreground'
-            "
-          >
-            {{ primaryFigureValue }}
-          </span>
-          <span
-            class="text-xs font-bold px-1.5 py-0.5 rounded-full"
-            :class="
-              (currentMarketData.priceChange24h ?? 0) >= 0
-                ? 'text-emerald-500 bg-emerald-500/10 border border-emerald-500/20'
-                : 'text-rose-500 bg-rose-500/10 border border-rose-500/20'
-            "
-          >
-            {{ (currentMarketData.priceChange24h ?? 0) >= 0 ? '+' : ''
-            }}{{ (currentMarketData.priceChange24h ?? 0).toFixed(2) }}%
-          </span>
-        </div>
-        <span
-          class="text-xs text-muted-foreground group-hover:text-foreground transition underline decoration-dotted"
-        >
-          {{ secondaryFigureValue }}
-        </span>
-      </button>
     </div>
   </header>
 </template>
@@ -341,10 +299,6 @@ interface Props {
   currencySymbol?: string;
   tokenNetwork: NetworkConfig;
   explorerUrl?: string;
-  primaryFigureMode: 'mcap' | 'price';
-  primaryFigureValue: string;
-  secondaryFigureValue: string;
-  priceFlash?: 'up' | 'down' | null;
   linkCopied?: boolean;
   copied?: boolean;
   isPinned: (address: string) => boolean;
@@ -353,7 +307,6 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   currencySymbol: 'ETH',
   explorerUrl: '',
-  priceFlash: null,
   linkCopied: false,
   copied: false,
 });
@@ -375,7 +328,6 @@ defineEmits<{
   (e: 'copyTokenLink'): void;
   (e: 'togglePin', address: string): void;
   (e: 'copyAddress', address: string): void;
-  (e: 'toggleFigure'): void;
 }>();
 
 function safeUrl(url?: string): string | undefined {
