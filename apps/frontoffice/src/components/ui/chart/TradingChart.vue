@@ -648,6 +648,27 @@ const changePct = computed(() => {
 
 const isEmpty = computed(() => formatted.value.length === 0);
 
+const INTERVAL_LABELS: Record<number, string> = {
+  1: '1s',
+  60: '1m',
+  300: '5m',
+  900: '15m',
+  3600: '1h',
+  14400: '4h',
+  86400: '1d',
+};
+
+/** "KTU · 15m · Market cap": readable in any screenshot, like a terminal's chart title. */
+const contextLabel = computed(() =>
+  [
+    props.tokenSymbol?.toUpperCase(),
+    INTERVAL_LABELS[props.resolution ?? 1] ?? `${props.resolution}s`,
+    valueMode.value === 'mcap' ? 'Market cap' : 'Price',
+  ]
+    .filter(Boolean)
+    .join(' · '),
+);
+
 /** Live value in the chart's unit, labelled, so the big number always says what it is. */
 const headline = computed(() => {
   if (valueMode.value === 'mcap') {
@@ -781,33 +802,33 @@ onUnmounted(() => {
     >
       <div ref="chartContainer" class="h-full w-full" />
 
-      <!-- OHLC of the candle under the cursor; hidden otherwise, the headline carries the live value -->
+      <!-- What the chart is (symbol, interval, unit) at all times; OHLC of the hovered candle -->
       <div
-        v-if="hoveredBar"
         class="pointer-events-none absolute left-3 top-3 z-10 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"
       >
-        <span v-if="activeBar" class="font-semibold text-foreground">
+        <span class="font-medium">{{ contextLabel }}</span>
+        <span v-if="hoveredBar && activeBar" class="font-semibold text-foreground">
           {{ activeBar.close >= activeBar.open ? '▲' : '▼' }}
         </span>
-        <span v-if="activeBar">
+        <span v-if="hoveredBar && activeBar">
           O: <span class="text-foreground">{{ formatY(activeBar.open) }}</span>
         </span>
-        <span v-if="activeBar">
+        <span v-if="hoveredBar && activeBar">
           H: <span class="text-foreground">{{ formatY(activeBar.high) }}</span>
         </span>
-        <span v-if="activeBar">
+        <span v-if="hoveredBar && activeBar">
           L: <span class="text-foreground">{{ formatY(activeBar.low) }}</span>
         </span>
-        <span v-if="activeBar">
+        <span v-if="hoveredBar && activeBar">
           C: <span class="text-foreground">{{ formatY(activeBar.close) }}</span>
         </span>
         <span
-          v-if="activeBar"
+          v-if="hoveredBar && activeBar"
           :class="activeBar.close >= activeBar.open ? 'text-bullish' : 'text-bearish'"
         >
           {{ changePct >= 0 ? '+' : '' }}{{ changePct.toFixed(2) }}%
         </span>
-        <span v-if="activeBar && activeBar.volume" class="hidden sm:inline">
+        <span v-if="hoveredBar && activeBar && activeBar.volume" class="hidden sm:inline">
           Vol: <span class="text-foreground">{{ formatCompactUsd(activeBar.volume) }}</span>
         </span>
       </div>
