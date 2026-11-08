@@ -382,18 +382,16 @@ export class SqliteSocialStore implements SocialStorePort {
     };
   }
 
-  async incrementCommentViews(commentId: string): Promise<number> {
-    try {
+  async incrementCommentViews(commentId: string, count = true): Promise<number | null> {
+    if (count) {
       this.db
         .prepare(`UPDATE comments SET views_count = views_count + 1 WHERE id = ?`)
         .run(commentId);
-      const row = this.db
-        .prepare(`SELECT views_count FROM comments WHERE id = ?`)
-        .get(commentId) as { views_count: number } | null;
-      return row ? Number(row.views_count) : 1;
-    } catch {
-      return 1;
     }
+    const row = this.db
+      .prepare(`SELECT views_count FROM comments WHERE id = ?`)
+      .get(commentId) as { views_count: number } | null;
+    return row ? Number(row.views_count) : null;
   }
 
   async getCalloutThread(
