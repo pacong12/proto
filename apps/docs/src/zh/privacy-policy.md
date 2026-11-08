@@ -1,6 +1,6 @@
 # 隐私政策
 
-<StatusBadge variant="graduated">最近更新：2026 年 9 月</StatusBadge>
+<StatusBadge variant="graduated">最近更新：2026 年 10 月</StatusBadge>
 
 <Card>
 Goton Labs 与 Goton 协议在所支持的网络上运营非托管代币发行及去中心化交易前端。我们坚定遵循数据最小化原则，保护用户主权与加密隐私。
@@ -36,3 +36,20 @@ Goton Labs 与 Goton 协议在所支持的网络上运营非托管代币发行�
 - **服务器日志**：API 出于安全和限流目的保存请求日志，客户端 IP 地址仅以单向哈希形式记录。
 - **统计分析**：仅在您接受统计分析 Cookie 后，网页应用才会加载 Google Analytics（`gtag.js`），它会设置 Cookie 并向 Google 发送页面访问和设备数据。您可随时通过应用页脚的 **Cookie 设置** 撤回同意（参见 [Cookie 政策](/zh/cookie-policy)）。
 - **删除权**：您可随时在 **Profile → Edit Profile → 删除我的社交数据** 中删除评论、点赞、转发、情绪投票和个人资料（API：`DELETE /api/users/{address}/data`，需使用该钱包登录）。链上记录任何人都无法删除。
+
+## 4. 第三方协议与基础设施
+
+交互可能经过以下去中心化基础设施：
+
+- **Robinhood Chain（L2）与 Arc Network**：区块执行与交易共识。
+- **Uniswap v4**：持有锁定流动性并执行兑换的池管理合约。
+- **Google Analytics**：网页应用的页面访问统计（参见第 3a 节）。
+- **IPFS 网关**：代币图标与自描述元数据的去中心化托管。
+
+## 5. 安全与不变量
+
+所有协议后端服务均执行失败即关闭（fail-closed）的安全策略（`INV-BE-3`），并拒绝直接签名（`INV-BE-1`）。智能合约头寸永久锁定在非托管锁仓合约中（`INV-SC-2`）。
+
+<Card>
+如有法律咨询、协议披露或技术支持需求，请访问 [GitHub 仓库](https://github.com/pacong12/proto) 或关注官方社区渠道。
+</Card>

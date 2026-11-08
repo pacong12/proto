@@ -22,6 +22,14 @@ Goton adalah protokol perangkat lunak terdesentralisasi dan non-kustodial. Goton
 - **Penguncian Likuiditas**: NFT liquidity pool yang dibuat oleh Factory dikunci secara permanen dalam kontrak `LiquidityLocker` non-kustodial. Tidak ada pihak, termasuk Goton Labs, yang memiliki celah pintu belakang (_backdoor_) atau fungsi pembuka kunci.
 - **Pembagian Fee Trading**: Fee perdagangan standar yang dihasilkan dalam pool likuiditas dibagi oleh fee splitter on-chain setiap token antara protokol dan bagian kreator, sebagaimana dijelaskan dalam dokumentasi fee. Kreator dapat mengarahkan porsinya ke dompet pengambilalihan komunitas; hanya kreator yang dapat melakukannya.
 
-## 4. Pembatasan Tanggung Jawab
+## 4. Penggunaan yang Dilarang
+
+Anda setuju untuk tidak menggunakan antarmuka atau smart contract Goton untuk:
+
+- Melanggar hukum lokal, nasional, atau internasional maupun sanksi keuangan yang berlaku.
+- Mencuci uang, membiayai kegiatan ilegal, atau menghindari daftar sanksi.
+- Menerapkan bytecode berbahaya, bot manipulasi _front-running_, atau serangan peracunan _calldata_ terhadap protokol.
+
+## 5. Pembatasan Tanggung Jawab
 
 Sepanjang diizinkan oleh hukum yang berlaku, Goton Labs, kontributor, dan pengembangnya tidak bertanggung jawab atas kerugian langsung, tidak langsung, insidental, atau konsekuensial yang timbul dari penggunaan smart contract, penyedia RPC, antarmuka koneksi dompet, atau protokol terdesentralisasi pihak ketiga.
