@@ -8,7 +8,7 @@
           v-for="w in WINDOWS"
           :key="w"
           type="button"
-          class="min-w-6 min-h-6 px-2 rounded-md font-mono text-[11px] font-semibold transition cursor-pointer"
+          class="min-w-6 min-h-6 px-2 rounded-md font-mono text-xs font-semibold transition cursor-pointer"
           :class="
             w === windowKey
               ? 'bg-background text-foreground shadow-2xs'
@@ -37,16 +37,16 @@
         </template>
       </div>
 
-      <p v-if="!flow || flow.buyPercent === null" class="text-[11px] text-muted-foreground">
+      <p v-if="!flow || flow.buyPercent === null" class="text-xs text-muted-foreground">
         {{ loaded ? t('noTradesInWindow') : '…' }}
       </p>
       <template v-else>
-        <div class="flex items-center justify-between text-[11px] font-mono font-bold">
+        <div class="flex items-center justify-between text-xs font-mono font-bold">
           <span class="text-emerald-500">B {{ formatPercent(flow.buyPercent) }}</span>
           <span class="text-rose-500">{{ formatPercent(flow.sellPercent!) }} S</span>
         </div>
         <div
-          class="flex items-center justify-between text-[11px] font-mono text-muted-foreground tabular-nums"
+          class="flex items-center justify-between text-xs font-mono text-muted-foreground tabular-nums"
         >
           <span>
             {{ formatCompactUsd(flow.buyVolumeUsd) }} · {{ flow.buys }} {{ t('buys') }} ·

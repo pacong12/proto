@@ -415,12 +415,22 @@ const profileNotFound = computed(
   () => hasRouteParam.value && !targetAccount.value && !resolvingUser.value,
 );
 
-watch(profileNotFound, (notFound) => {
-  setPageSeo(
-    route.path,
-    notFound ? { title: t('profileNotFoundTitle'), noindex: true } : route.meta.seo,
-  );
-});
+// Title the page after its owner, so tabs and shared links name the person, not "Profile".
+// Also re-run on path changes: /u redirects to /<name>, and the router hook resets the title.
+watch(
+  [profileNotFound, targetAccount, () => route.path],
+  ([notFound, account]) => {
+    if (notFound) {
+      setPageSeo(route.path, { title: t('profileNotFoundTitle'), noindex: true });
+      return;
+    }
+    setPageSeo(
+      route.path,
+      account ? { ...route.meta.seo, title: getUserIdentity(account).displayName } : route.meta.seo,
+    );
+  },
+  { immediate: true },
+);
 
 const isOwnProfile = computed(() => {
   if (!connectedAccount.value || !targetAccount.value) return false;

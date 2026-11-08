@@ -27,11 +27,11 @@
 
       <!-- Quick Action: Share PnL Card -->
       <div class="pt-1.5 border-t border-border/60 flex items-center justify-between">
-        <span class="text-[11px] text-muted-foreground">{{ t('pnlShareHint') }}</span>
+        <span class="text-xs text-muted-foreground">{{ t('pnlShareHint') }}</span>
         <Button
           variant="outline"
           size="sm"
-          class="h-6 px-2 text-[11px] font-bold gap-1 rounded-lg border-primary/30 text-primary hover:bg-primary/10 cursor-pointer"
+          class="h-6 px-2 text-xs font-bold gap-1 rounded-lg border-primary/30 text-primary hover:bg-primary/10 cursor-pointer"
           @click="$emit('openPnlCard')"
         >
           <Share2 class="w-3 h-3" />
@@ -58,7 +58,7 @@
       <Button
         variant="outline"
         size="sm"
-        class="h-6 px-2 text-[11px] font-bold gap-1 rounded-lg border-primary/30 text-primary hover:bg-primary/10 cursor-pointer shrink-0"
+        class="h-6 px-2 text-xs font-bold gap-1 rounded-lg border-primary/30 text-primary hover:bg-primary/10 cursor-pointer shrink-0"
         @click="$emit('openPnlCard')"
       >
         <Share2 class="w-3 h-3" />
@@ -81,11 +81,7 @@
           </span>
           <span>Live Dividends</span>
         </div>
-        <span
-          class="text-[10px] font-mono uppercase tracking-wider text-muted-foreground font-bold"
-        >
-          Holder Share
-        </span>
+        <span class="text-xs text-muted-foreground"> Holder Share </span>
       </div>
 
       <div class="flex items-center justify-between gap-3 pt-0.5">
@@ -93,7 +89,7 @@
           <span class="text-sm sm:text-base font-bold font-mono text-foreground block">
             {{ unclaimedDividendFormatted || '0.0000' }} {{ currencySymbol }}
           </span>
-          <span class="text-[11px] font-mono text-muted-foreground block">
+          <span class="text-xs font-mono text-muted-foreground block">
             {{
               Number(unclaimedDividendFormatted || 0) > 0
                 ? 'Accumulated from trades'

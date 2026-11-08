@@ -145,7 +145,8 @@ describe('profile page', () => {
     const wrapper = await mountAt(`/${wallet}`, '/:username', ProfileView, true);
     expect(wrapper.findComponent(NotFoundPage).exists()).toBe(false);
     expect(wrapper.findComponent({ name: 'ProfileHero' }).exists()).toBe(true);
-    expect(document.title).toBe('default');
+    // Titled after the owner, not a generic "Profile".
+    expect(document.title).toMatch(/#aaaa · goton$/);
     expect(apiFetch).not.toHaveBeenCalledWith(`/api/users/${wallet}`);
   });
 
@@ -159,6 +160,6 @@ describe('profile page', () => {
     const wrapper = await mountAt('/SomeRealUser', '/:username', ProfileView, true);
     expect(wrapper.findComponent(NotFoundPage).exists()).toBe(false);
     expect(wrapper.findComponent({ name: 'ProfileHero' }).exists()).toBe(true);
-    expect(document.title).toBe('default');
+    expect(document.title).toMatch(/#bbbb · goton$/);
   });
 });

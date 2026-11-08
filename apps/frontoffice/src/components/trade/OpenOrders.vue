@@ -75,7 +75,7 @@
           </div>
           <div class="flex items-center gap-2 shrink-0">
             <span
-              class="px-1.5 py-0.5 rounded-md border text-[11px] font-bold"
+              class="px-1.5 py-0.5 rounded-md border text-xs font-bold"
               :class="
                 o.status === 'filled'
                   ? 'border-emerald-500/30 text-emerald-500'

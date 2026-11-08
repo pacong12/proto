@@ -41,11 +41,11 @@
         </div>
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-1.5 min-w-0">
-            <h4
+            <h3
               class="min-w-0 font-bold text-xs sm:text-sm text-foreground truncate group-hover:text-primary transition"
             >
               {{ item.token.name }}
-            </h4>
+            </h3>
           </div>
           <div class="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
             <span class="truncate min-w-[4ch]">${{ item.token.symbol }}</span>

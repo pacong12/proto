@@ -251,7 +251,7 @@
 
         <!-- GRC-04: right to erasure of off-chain social data -->
         <div class="rounded-xl border border-destructive/30 p-3 space-y-2">
-          <p v-if="confirmErase" class="text-[11px] text-destructive">
+          <p v-if="confirmErase" class="text-xs text-destructive">
             {{ t('eraseDataConfirm') }}
           </p>
           <Button
