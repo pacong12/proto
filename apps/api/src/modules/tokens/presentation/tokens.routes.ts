@@ -178,7 +178,11 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
           };
         } = {};
         try {
-          body = await parseJsonBody<typeof body>(req, 8192);
+          // Any JSON parses: only an object is a body (null, arrays or strings crashed below).
+          const parsed = await parseJsonBody<unknown>(req, 8192);
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            body = parsed as typeof body;
+          }
         } catch (e) {
           if (e instanceof PayloadTooLargeError) {
             return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
@@ -187,7 +191,7 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
         }
 
         const txHash =
-          body.txHash && body.txHash.startsWith('0x') && body.txHash.length === 66
+          typeof body.txHash === 'string' && /^0x[0-9a-fA-F]{64}$/.test(body.txHash)
             ? (body.txHash as `0x${string}`)
             : undefined;
 
@@ -331,7 +335,7 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
         // After the token is saved, so trades in the launch transaction are not dropped.
         if (txHash) await tradeSync.indexFromReceipt(txHash, address);
         Promise.allSettled([...pollers.values()].map((poller) => poller.pollEvents()));
-        return replyEnvelope(ok({ synced: true, address, txHash: body.txHash ?? null }));
+        return replyEnvelope(ok({ synced: true, address, txHash: txHash ?? null }));
       } catch (e) {
         return replyEnvelope(err('SYNC_ERROR', (e as Error).message));
       }
@@ -572,6 +576,10 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
       let lastMarketCapUsd = -1;
       let lastGradProgress = -1;
       const encoder = new TextEncoder();
+      // Bun closes a connection idle for 10s (idleTimeout): a quiet coin's stream dropped and
+      // reconnected every ~10s. A comment line well inside that keeps it open.
+      const HEARTBEAT_MS = 5000;
+      let lastWriteAt = Date.now();
 
       function scheduleSsePoll(): void {
         sseTimer = setTimeout(async () => {
@@ -589,6 +597,10 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
               lastGradProgress = mkt.graduationProgress;
               const frame = `data: ${JSON.stringify({ marketData: mkt })}\n\n`;
               sseController.enqueue(encoder.encode(frame));
+              lastWriteAt = Date.now();
+            } else if (Date.now() - lastWriteAt >= HEARTBEAT_MS) {
+              sseController.enqueue(encoder.encode(': ping\n\n'));
+              lastWriteAt = Date.now();
             }
             scheduleSsePoll();
           } catch {
