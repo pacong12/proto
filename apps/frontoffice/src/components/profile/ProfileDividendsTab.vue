@@ -8,18 +8,6 @@
             <Coins class="w-4 h-4 text-primary" />
             <h3 class="text-sm font-bold text-foreground">{{ t('holderDividendsTitle') }}</h3>
           </div>
-          <Button
-            v-if="isOwnProfile"
-            variant="ghost"
-            size="sm"
-            class="h-7 w-7 p-0 rounded-lg cursor-pointer hover:bg-muted"
-            title="Refresh dividends"
-            :disabled="dividendsLoading"
-            @click="emit('refresh')"
-          >
-            <Loader2 v-if="dividendsLoading" class="w-3.5 h-3.5 animate-spin" />
-            <RefreshCw v-else class="w-3.5 h-3.5" />
-          </Button>
         </div>
 
         <p class="text-xs text-muted-foreground font-sans leading-relaxed">
@@ -85,9 +73,9 @@
           </div>
         </div>
 
-        <!-- Empty state when no pending rewards -->
+        <!-- Empty state when no pending rewards (kept through background refreshes) -->
         <Empty
-          v-else-if="!dividendsLoading"
+          v-else
           title="No pending fee rewards"
           description="Hold tokens with Holder Fee Sharing enabled to accumulate passive trading yield."
           class="py-6 border border-dashed border-border bg-black"
@@ -107,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { Coins, Loader2, RefreshCw, ArrowDownToLine } from 'lucide-vue-next';
+import { Coins, Loader2, ArrowDownToLine } from 'lucide-vue-next';
 import { useI18n } from '@/lib/i18n';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -134,7 +122,6 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'refresh'): void;
   (e: 'claim-all'): void;
   (e: 'claim-single', tokenAddress: string): void;
 }>();

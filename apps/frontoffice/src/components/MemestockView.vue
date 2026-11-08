@@ -12,18 +12,6 @@
       </div>
 
       <div class="flex items-center gap-2 self-end sm:self-auto">
-        <!-- Refresh Button -->
-        <Button
-          variant="outline"
-          size="sm"
-          class="h-8 w-8 p-0 border-border hover:bg-muted text-foreground cursor-pointer shrink-0"
-          title="Refresh memestock feed"
-          aria-label="Refresh memestock feed"
-          @click="fetchTokens"
-        >
-          <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': loading }" />
-        </Button>
-
         <!-- Launch Button -->
         <Button
           variant="default"
@@ -65,15 +53,18 @@
       </div>
     </div>
 
-    <!-- Loading State -->
-    <div v-if="loading" class="flex flex-col items-center justify-center py-20 gap-3">
+    <!-- Loading State: only before the first answer; later refreshes happen in place. -->
+    <div
+      v-if="loading && items.length === 0"
+      class="flex flex-col items-center justify-center py-20 gap-3"
+    >
       <Loader2 class="w-7 h-7 text-foreground animate-spin" />
       <span class="text-sm text-muted-foreground">{{ t('loadingTape') }}</span>
     </div>
 
-    <!-- Error Banner -->
+    <!-- Error Banner: a failed background refresh keeps the list on screen. -->
     <div
-      v-else-if="apiError"
+      v-else-if="apiError && items.length === 0"
       class="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-2xl p-4 flex items-center justify-between gap-3"
     >
       <div class="flex items-start gap-3">
@@ -308,7 +299,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { Plus, Loader2, AlertCircle, RefreshCw, Search, Star } from 'lucide-vue-next';
+import { Plus, Loader2, AlertCircle, Search, Star } from 'lucide-vue-next';
+import { useAutoRefresh } from '@/composables/useAutoRefresh';
 import { apiFetch } from '@/lib/api-client';
 import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
@@ -478,6 +470,7 @@ watch(
   () => activeNetwork.value.chainId,
   () => {
     currentPage.value = 1;
+    items.value = [];
     fetchTokens();
   },
 );
@@ -485,4 +478,7 @@ watch(
 onMounted(() => {
   fetchTokens();
 });
+
+// Live: prices, holders and the ranking move with every trade.
+useAutoRefresh(fetchTokens, 15_000);
 </script>

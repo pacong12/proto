@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-4 text-xs">
     <!-- Loading State -->
-    <div v-if="loading" class="py-16 text-center text-muted-foreground">
+    <div v-if="loading && posts.length === 0" class="py-16 text-center text-muted-foreground">
       <Loader2 class="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
       <span>Loading posts...</span>
     </div>

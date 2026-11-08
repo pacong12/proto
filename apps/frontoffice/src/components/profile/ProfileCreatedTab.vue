@@ -1,6 +1,9 @@
 <template>
   <div class="space-y-4">
-    <div v-if="loading" class="py-12 text-center text-xs text-muted-foreground">
+    <div
+      v-if="loading && myLaunches.length === 0"
+      class="py-12 text-center text-xs text-muted-foreground"
+    >
       <Loader2 class="w-5 h-5 text-foreground animate-spin mx-auto mb-2" />
       Loading created tokens...
     </div>

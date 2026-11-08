@@ -116,6 +116,7 @@
 <script setup lang="ts">
 import { resolveSafeUrl } from '@/lib/safe-url';
 import { ref, computed, onMounted, watch } from 'vue';
+import { useAutoRefresh } from '@/composables/useAutoRefresh';
 import { useRouter } from 'vue-router';
 import { useWallet } from '@/composables/useWallet';
 import { useTokenStore } from '@/composables/useTokenStore';
@@ -328,4 +329,10 @@ function openImage(url?: string): void {
 onMounted(async () => {
   await Promise.allSettled([fetchFeed(account.value || undefined), fetchTokens()]);
 });
+
+// Live: new calls, likes and each caller's profit since the call.
+useAutoRefresh(
+  () => Promise.allSettled([fetchFeed(account.value || undefined), fetchTokens()]),
+  15_000,
+);
 </script>
