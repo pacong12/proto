@@ -189,7 +189,7 @@
               :user-token-balance="userTokenBalance"
               :buy-tax-bps="onchainTaxConfig.buyTaxBps"
               :sell-tax-bps="onchainTaxConfig.sellTaxBps"
-              @created="ordersRefresh++"
+              @created="onOrderPlaced"
               @open-wallet="openWallet"
             />
           </template>
@@ -201,6 +201,7 @@
                 :network="tokenNetwork"
                 :account="account"
                 :refresh-key="ordersRefresh"
+                @changed="refreshWalletBalances"
               />
             </div>
           </template>
@@ -644,6 +645,18 @@ const {
 
 const tradeOrderRoutes = useTradeOrderRoutes(page);
 const { ORDER_TYPES, limitOrdersEnabled, orderType, ordersRefresh } = tradeOrderRoutes;
+
+/** An order escrows tokens or funds, and a fill or cancel returns them: read both balances again. */
+function refreshWalletBalances(): void {
+  void Promise.allSettled([
+    fetchUserTokenBalance(true),
+    updateBalance(undefined, tokenNetwork.value.chainId, true),
+  ]);
+}
+function onOrderPlaced(): void {
+  ordersRefresh.value++;
+  refreshWalletBalances();
+}
 
 const tradeForm = useTradeForm(page, tradeMarket, tradeTax, tradeDividends);
 const {

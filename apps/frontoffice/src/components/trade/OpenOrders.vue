@@ -121,6 +121,8 @@ const props = defineProps<{
   /** Bump to reload, e.g. after placing an order. */
   refreshKey?: number;
 }>();
+/** An order left the open list (filled or cancelled): tokens or funds moved back to the wallet. */
+const emit = defineEmits<{ (e: 'changed'): void }>();
 const { t } = useI18n();
 const { busy, error, cancel, listByOwner } = useLimitOrders();
 const orders = ref<LimitOrderEntity[]>([]);
@@ -166,12 +168,16 @@ async function load() {
     orders.value = [];
     return;
   }
+  const before = new Map(orders.value.map((o) => [o.key, o.status]));
   orders.value = await listByOwner(props.account, props.token);
+  if (orders.value.some((o) => before.has(o.key) && before.get(o.key) !== o.status))
+    emit('changed');
 }
 
 async function cancelOrder(o: LimitOrderEntity) {
   if (await cancel(props.network, o)) {
     toast.success(t('orderCancelled'));
+    emit('changed');
     orders.value = orders.value.map((x) =>
       x.key === o.key ? { ...x, status: 'cancelled', updatedAt: Date.now() } : x,
     );
