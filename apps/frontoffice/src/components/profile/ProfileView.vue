@@ -722,12 +722,19 @@ async function refreshAllData() {
 // Live: positions, activity, posts and dividends follow the wallet's trades.
 useAutoRefresh(() => (targetAccount.value ? refreshAllData() : undefined), 30_000);
 
+// Loads once per profile shown. Mount, this watcher, the rewrite to /:Username below and the
+// route params it changes each reloaded everything: four full loads on every visit.
+let loadedFor = '';
 watch(
   () => [targetAccount.value, route.path],
   ([target, path]) => {
     if (target) {
-      loadLocalProfile();
-      refreshAllData();
+      const key = String(target).toLowerCase();
+      if (key !== loadedFor) {
+        loadedFor = key;
+        loadLocalProfile();
+        refreshAllData();
+      }
 
       // Canonical URL rewrite: replace /profile or /u/0x... with /:Username
       const identity = getUserIdentity(target);
@@ -744,18 +751,9 @@ watch(
   { immediate: true },
 );
 
-watch(
-  () => [route.params.address, route.params.id, route.params.username],
-  () => {
-    loadLocalProfile();
-    refreshAllData();
-  },
-);
-
 onMounted(async () => {
   fetchTokens().catch(() => {});
-  loadLocalProfile();
-  refreshAllData();
+  if (!targetAccount.value) loadLocalProfile();
 });
 
 function openCtoModal(tokenAddress: string) {
