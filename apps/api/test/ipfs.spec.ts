@@ -164,5 +164,27 @@ describe('IPFS Service & Controller', () => {
         expect(response.error?.code).toBe('NO_FILE_PROVIDED');
       }
     });
+
+    it('refuses a chunked upload over the limit without buffering it whole', async () => {
+      let sent = 0;
+      const chunk = new Uint8Array(1024 * 1024);
+      const body = new ReadableStream<Uint8Array>({
+        pull(c) {
+          if (sent >= 50) return c.close();
+          sent++;
+          c.enqueue(chunk);
+        },
+      });
+      const req = new Request('http://localhost/api/ipfs/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'image/png' },
+        body,
+        duplex: 'half',
+      } as RequestInit);
+      const res = await controller.handleUpload(req);
+      expect(res.success).toBe(false);
+      expect(res.error?.code).toBe('FILE_TOO_LARGE');
+      expect(sent).toBeLessThan(10);
+    });
   });
 });

@@ -1,4 +1,5 @@
 import { ApiEnvelope, ok, err } from '@goton/shared-types';
+import { readBounded } from '../../../core/http/parse-body';
 import type { IpfsService, IpfsUploadResult } from '../application/ipfs.service';
 import {
   MAX_UPLOAD_BYTES,
@@ -12,12 +13,21 @@ import {
 export class IpfsController {
   constructor(private readonly ipfsService: IpfsService) {}
 
-  async handleUpload(req: Request): Promise<ApiEnvelope<IpfsUploadResult>> {
+  async handleUpload(incoming: Request): Promise<ApiEnvelope<IpfsUploadResult>> {
     try {
-      const cl = req.headers.get('content-length');
+      const cl = incoming.headers.get('content-length');
       if (cl && parseInt(cl, 10) > MAX_UPLOAD_BYTES) {
         return err(TOO_LARGE.code, TOO_LARGE.message);
       }
+      // A chunked body has no Content-Length: read at most the same limit before parsing, so a
+      // large upload is refused after MAX_UPLOAD_BYTES instead of being buffered whole.
+      const bytes = await readBounded(incoming.body, MAX_UPLOAD_BYTES);
+      if (!bytes) return err(TOO_LARGE.code, TOO_LARGE.message);
+      const req = new Request(incoming.url, {
+        method: incoming.method,
+        headers: incoming.headers,
+        body: bytes as Uint8Array<ArrayBuffer>,
+      });
 
       const contentType = req.headers.get('content-type') || '';
 
