@@ -223,23 +223,9 @@ export function useTradeMarket(page: TradePage) {
     { label: '1d', seconds: 86400 },
   ];
 
-  const TIMEFRAME_STORAGE_KEY = 'proto_chart_resolution';
-
-  function loadSavedResolution(): number {
-    if (typeof window === 'undefined') return 1;
-    try {
-      const val = localStorage.getItem(TIMEFRAME_STORAGE_KEY);
-      if (val) {
-        const num = parseInt(val, 10);
-        if ([1, 60, 300, 900, 3600, 14400, 86400].includes(num)) return num;
-      }
-    } catch {
-      // Ignore storage errors
-    }
-    return 1; // 1s default for real-time sub-second memecoin action
-  }
-
-  const selectedResolution = ref(loadSavedResolution());
+  // Each coin opens on the interval that fits its whole history (see resolutionForAge); a pick
+  // made on one coin does not carry over to a coin of a very different age.
+  const selectedResolution = ref(3600);
 
   const candlesLoading = ref(false);
 
@@ -552,11 +538,6 @@ export function useTradeMarket(page: TradePage) {
   async function changeResolution(seconds: number) {
     if (seconds === selectedResolution.value) return;
     selectedResolution.value = seconds;
-    try {
-      localStorage.setItem(TIMEFRAME_STORAGE_KEY, String(seconds));
-    } catch {
-      // Ignore storage errors
-    }
     // Clear stale data immediately so TradingChart receives empty array → full reset on new data
     candlestickData.value = [];
     candlesLoading.value = true;
