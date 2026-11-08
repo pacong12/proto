@@ -89,28 +89,30 @@ export function patchLivePrice(
 const MAX_BARS = 1000;
 
 /**
- * `existing` with every bar of `incoming` that is new or differs, in time order and capped at
- * MAX_BARS; null when nothing changed.
+ * The chart after a reload: `incoming` is the API's whole answer for its window, so it replaces
+ * every bar from its first one on; older bars already drawn stay (history beyond the window).
+ * Merging by time instead kept the live bars drawn from the stream before their trade was
+ * indexed: on 1s each one sat in its own second, and the same move showed up several times.
+ * Null when nothing changed.
  */
 export function mergeCandles(existing: CandleBar[], incoming: CandleBar[]): CandleBar[] | null {
-  const byTime = new Map(existing.map((bar) => [bar.time, bar]));
-  let changed = false;
-  for (const bar of incoming) {
-    const old = byTime.get(bar.time);
-    if (
-      !old ||
-      old.open !== bar.open ||
-      old.high !== bar.high ||
-      old.low !== bar.low ||
-      old.close !== bar.close ||
-      old.volume !== bar.volume
-    ) {
-      byTime.set(bar.time, bar);
-      changed = true;
-    }
-  }
-  if (!changed) return null;
-  return [...byTime.values()].sort((a, b) => a.time - b.time).slice(-MAX_BARS);
+  if (incoming.length === 0) return null;
+  const from = incoming[0]!.time;
+  const next = [...existing.filter((bar) => bar.time < from), ...incoming].slice(-MAX_BARS);
+  const same =
+    next.length === existing.length &&
+    next.every((bar, i) => {
+      const old = existing[i]!;
+      return (
+        old.time === bar.time &&
+        old.open === bar.open &&
+        old.high === bar.high &&
+        old.low === bar.low &&
+        old.close === bar.close &&
+        old.volume === bar.volume
+      );
+    });
+  return same ? null : next;
 }
 
 /** Market data of the token page: price and chart, trades, holders, top traders, the creator's activity, and their live updates (SSE first, polling as fallback). */

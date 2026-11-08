@@ -19,6 +19,13 @@ describe('mergeCandles', () => {
     expect(mergeCandles(existing, incoming)).toEqual(incoming);
   });
 
+  it('drops live bars the stream drew before their trade was indexed', () => {
+    // Live bars at 9 and 10 for a move whose trade the API files at 8.
+    const existing = [bar(5, 10, 1), bar(9, 13), bar(10, 13)];
+    const incoming = [bar(5, 10, 1), bar(8, 13, 2)];
+    expect(mergeCandles(existing, incoming)).toEqual(incoming);
+  });
+
   it('keeps the bars in time order and reports no change as null', () => {
     const existing = [bar(1, 10), bar(3, 11)];
     expect(mergeCandles(existing, [bar(2, 10.5), bar(3, 11)])?.map((b) => b.time)).toEqual([
