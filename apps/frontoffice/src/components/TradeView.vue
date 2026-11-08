@@ -577,6 +577,7 @@ const page: TradePage = {
   isCreator,
   refreshTokenData,
   tokenLoading,
+  tokenNotFound,
   tokenNetwork,
 };
 
@@ -733,9 +734,12 @@ watch(
       currentToken.value.address,
       currentMarketData.value.volume24hUsd,
       currentMarketData.value.isGraduated,
+      tokenLoading.value,
     ] as const,
-  ([name, symbol, address, volume24hUsd, isGraduated]) => {
-    if (!name || !symbol) return;
+  ([name, symbol, address, volume24hUsd, isGraduated, loading]) => {
+    // While another token loads, name and symbol are still the last one's: its title would land
+    // on this address.
+    if (!name || !symbol || loading || tokenNotFound.value) return;
     setPageSeo(`/token/${address}`, {
       title: `${name} ($${symbol})`,
       description: tokenSeoDescription(
@@ -754,7 +758,9 @@ watch(
   { immediate: true },
 );
 
-const NOT_FOUND_RETRIES = 20;
+// Each try asks the API, then every chain's factory: a few seconds each. Bounded by time, so a
+// mistyped address says so within half a minute (20 tries took over two).
+const NOT_FOUND_WAIT_MS = 30_000;
 const NOT_FOUND_RETRY_MS = 3000;
 let loadSeq = 0;
 
@@ -763,10 +769,11 @@ async function loadTokenData(address: `0x${string}`) {
   tokenLoading.value = true;
   tokenNotFound.value = false;
 
-  // A coin launched seconds ago may not be indexed yet: keep trying for a minute before saying
-  // it does not exist.
+  // A coin launched seconds ago may not be indexed, or even readable, yet: keep trying for a
+  // while before saying it does not exist.
+  const started = Date.now();
   let data = await fetchTradeToken(address);
-  for (let i = 0; !data && i < NOT_FOUND_RETRIES && load === loadSeq; i++) {
+  while (!data && Date.now() - started < NOT_FOUND_WAIT_MS && load === loadSeq) {
     await new Promise((r) => setTimeout(r, NOT_FOUND_RETRY_MS));
     data = await fetchTradeToken(address);
   }
@@ -780,6 +787,9 @@ async function loadTokenData(address: `0x${string}`) {
     tokenNotFound.value = true;
     // Otherwise the page kept the last page's title and canonical, indexable.
     setPageSeo(`/token/${address}`, { title: 'Token not found', noindex: true });
+    // Nothing else to load for an address nobody launched (chart, trades, holders, ...).
+    tokenLoading.value = false;
+    return;
   }
 
   await Promise.allSettled([

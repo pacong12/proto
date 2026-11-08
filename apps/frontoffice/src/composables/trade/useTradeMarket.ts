@@ -282,7 +282,7 @@ export function useTradeMarket(page: TradePage) {
   async function refreshLive() {
     if (livePollActive) return;
     if (typeof document !== 'undefined' && document.hidden) return;
-    if (tokenLoading.value || !currentToken.value.address) return;
+    if (tokenLoading.value || !currentToken.value.address || page.tokenNotFound?.value) return;
     const addr = currentToken.value.address;
 
     livePollActive = true;
