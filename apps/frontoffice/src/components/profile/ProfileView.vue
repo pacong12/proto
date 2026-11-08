@@ -426,9 +426,7 @@ watch(
     }
     setPageSeo(
       route.path,
-      account
-        ? { ...route.meta.seo, title: getUserIdentity(account).displayName }
-        : route.meta.seo,
+      account ? { ...route.meta.seo, title: getUserIdentity(account).displayName } : route.meta.seo,
     );
   },
   { immediate: true },
