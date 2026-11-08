@@ -212,6 +212,12 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
             if (txHash) {
               try {
                 const receipt = await chain.client.getTransactionReceipt({ hash: txHash });
+                // The hash is client input: only the launch transaction (which mints the token,
+                // so carries one of its logs) may date it, not any other transaction.
+                const lower = address.toLowerCase();
+                if (!receipt.logs.some((l) => l.address.toLowerCase() === lower)) {
+                  throw new Error('not the launch transaction');
+                }
                 const block = await chain.client.getBlock({ blockNumber: receipt.blockNumber });
                 launchBlock = receipt.blockNumber;
                 existing = {
