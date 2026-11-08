@@ -622,9 +622,17 @@ export function registerSocialRoutes(router: Router, deps: AppContainer): void {
   router.on(
     'POST',
     /^\/api\/(callouts|comments)\/([a-zA-Z0-9_-]+)\/view$/,
-    async ({ headers }, viewMatch) => {
+    async ({ headers, clientIp, replyError }, viewMatch) => {
       const commentId = viewMatch[2];
-      const viewsCount = (await repository.incrementCommentViews?.(commentId)) ?? 1;
+      // One view per client and callout per hour, so the count cannot be pumped by reloading.
+      const client = crypto.createHash('sha256').update(clientIp).digest('base64url').slice(0, 22);
+      const viewKey = `comment-view:${commentId}:${client}`;
+      const first =
+        (await cache
+          .increment(viewKey, 60 * 60 * 1000)
+          .catch(() => memoryCache.increment(viewKey, 60 * 60 * 1000))) === 1;
+      const viewsCount = (await repository.incrementCommentViews?.(commentId, first)) ?? null;
+      if (viewsCount === null) return replyError('NOT_FOUND', 'Callout not found', 404);
       return new Response(
         safeStringify({ success: true, data: { viewsCount }, timestamp: Date.now() }),
         {
