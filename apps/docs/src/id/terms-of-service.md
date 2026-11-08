@@ -1,6 +1,6 @@
 # Ketentuan Layanan
 
-<Badge variant="graduated">Terakhir Diperbarui: September 2026</Badge>
+<StatusBadge variant="graduated">Terakhir Diperbarui: September 2026</StatusBadge>
 
 <Card>
 Harap baca Ketentuan Layanan ("Ketentuan") ini dengan saksama sebelum menggunakan aplikasi terdesentralisasi ("Aplikasi") dan smart contract Goton pada jaringan yang didukung. Dengan menghubungkan dompet Anda atau berinteraksi dengan protokol, Anda menyetujui Ketentuan ini.

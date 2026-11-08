@@ -1,6 +1,6 @@
 # Privacy Policy
 
-<Badge variant="graduated">Last Updated: October 2026</Badge>
+<StatusBadge variant="graduated">Last Updated: October 2026</StatusBadge>
 
 <Card>
 Goton Labs and the Goton Protocol operate a non-custodial token launch and decentralized exchange interface on Robinhood Chain (Chain ID: 4663) and Arc Network (Chain ID: 5042). We prioritize data minimization, user sovereignty, and cryptographic privacy.

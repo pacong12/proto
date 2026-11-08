@@ -1,6 +1,6 @@
 # Cookie & Local Storage Policy
 
-<Badge variant="graduated">Last Updated: October 2026</Badge>
+<StatusBadge variant="graduated">Last Updated: October 2026</StatusBadge>
 
 <Card>
 Goton uses browser storage for essential app settings. Google Analytics is the only optional technology: it loads only after you accept it in the cookie banner, and you can withdraw that consent at any time. We never use advertising cookies.

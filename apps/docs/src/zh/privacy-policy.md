@@ -1,6 +1,6 @@
 # 隐私政策
 
-<Badge variant="graduated">最近更新：2026 年 9 月</Badge>
+<StatusBadge variant="graduated">最近更新：2026 年 9 月</StatusBadge>
 
 <Card>
 Goton Labs 与 Goton 协议在所支持的网络上运营非托管代币发行及去中心化交易前端。我们坚定遵循数据最小化原则，保护用户主权与加密隐私。

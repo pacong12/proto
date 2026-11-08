@@ -1,6 +1,6 @@
 # 服务条款
 
-<Badge variant="graduated">最近更新：2026 年 9 月</Badge>
+<StatusBadge variant="graduated">最近更新：2026 年 9 月</StatusBadge>
 
 <Card>
 在使用 Goton 去中心化应用及相关智能合约之前，请仔细阅读本《服务条款》。当您连接钱包或与协议进行交互时，即表示您已阅读、理解并完全同意受本条款约束。

@@ -1,6 +1,6 @@
 # Kebijakan Privasi
 
-<Badge variant="graduated">Terakhir Diperbarui: Oktober 2026</Badge>
+<StatusBadge variant="graduated">Terakhir Diperbarui: Oktober 2026</StatusBadge>
 
 <Card>
 Goton Labs dan Protokol Goton mengoperasikan antarmuka peluncuran token non-kustodial dan pertukaran terdesentralisasi pada jaringan yang didukung. Kami memprioritaskan minimalisasi data, kedaulatan pengguna, dan privasi kriptografi.
