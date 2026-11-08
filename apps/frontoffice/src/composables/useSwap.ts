@@ -1,3 +1,4 @@
+import { swapErrorMessage } from '@/lib/swap-error';
 import { ref } from 'vue';
 import { erc20Abi, parseUnits } from 'viem';
 import { getPublicClient } from '../lib/viem-client';
@@ -118,7 +119,7 @@ export function useSwap() {
       if (isUserRejection(err)) {
         swapError.value = null;
       } else {
-        swapError.value = (err as Error).message || 'Swap execution failed';
+        swapError.value = swapErrorMessage(err);
       }
       return null;
     } finally {

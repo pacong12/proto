@@ -485,7 +485,7 @@ export function useTradeForm(
         toast.error(reverted ? 'Swap Reverted' : 'Swap Still Pending', {
           id: loadingToastId,
           description: reverted
-            ? 'The transaction was mined but reverted. No tokens were exchanged.'
+            ? 'The transaction was mined but reverted, most often because the price moved past your slippage tolerance. No tokens were exchanged.'
             : 'No confirmation yet. Check the explorer before retrying.',
           action: {
             label: 'View on Explorer',
