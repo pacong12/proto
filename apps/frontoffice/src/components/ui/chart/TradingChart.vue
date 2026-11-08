@@ -225,6 +225,8 @@ function formatCompact(v: number): string {
 }
 
 function formatY(v: number): string {
+  // The bottom margin can extend the axis below zero; a price or market cap is never negative.
+  if (v < 0) return '';
   return valueMode.value === 'mcap' ? `$${formatCompact(v)}` : `$${formatPrice(v)}`;
 }
 
@@ -513,20 +515,28 @@ function sync(base: Bar[], forceFull = false) {
     volumeSeries.setData(bars.map(toVol));
     showLatest(bars.length);
   } else {
+    // Follow new candles unless the viewer scrolled back to look at history.
+    const follow = !isAwayFromLatest.value;
     const from = firstChangedBar(prev, bars);
-    if (from >= prev.length - 1 && bars.length >= prev.length) {
+    // series.update only appends or rewrites the newest bar: a bar earlier than the one shown last
+    // (a live bar replaced by a trade indexed for an earlier bucket) threw and froze the chart.
+    const lastShown = prev[prev.length - 1]!;
+    const forward = from >= bars.length || Number(bars[from]!.time) >= Number(lastShown.time);
+    if (from >= prev.length - 1 && bars.length >= prev.length && forward) {
       // Only the last bar changed or bars were added: update them in place, scroll untouched.
       for (let i = from; i < bars.length; i++) {
         mainSeries.update(toMain(bars[i]!));
         volumeSeries.update(toVol(bars[i]!));
       }
+      if (follow && bars.length > prev.length) chart.timeScale().scrollToRealTime();
     } else if (from < bars.length || bars.length !== prev.length) {
       // An older bar changed (a trade indexed after its bar had passed): series.update cannot
       // rewrite it, so replace the data and keep the range the viewer is looking at.
       const range = chart.timeScale().getVisibleLogicalRange();
       mainSeries.setData(bars.map(toMain));
       volumeSeries.setData(bars.map(toVol));
-      if (range) chart.timeScale().setVisibleLogicalRange(range);
+      if (follow) chart.timeScale().scrollToRealTime();
+      else if (range) chart.timeScale().setVisibleLogicalRange(range);
     }
   }
 }
