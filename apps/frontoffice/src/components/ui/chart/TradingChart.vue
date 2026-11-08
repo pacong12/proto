@@ -378,7 +378,7 @@ function initChart() {
       secondsVisible: (props.resolution ?? 1) < 60,
       rightOffset: 6,
       barSpacing: 14,
-      minBarSpacing: 1, // low enough that a whole history fits a phone screen
+      minBarSpacing: 1,
       tickMarkFormatter: (t: Time, type: TickMarkType) => {
         const d = new Date(Number(t) * 1000);
         if (type === TickMarkType.Time || type === TickMarkType.TimeWithSeconds) {
@@ -531,19 +531,27 @@ function sync(base: Bar[], forceFull = false) {
   }
 }
 
+/** Pixels per candle when the chart opens: readable bodies, like a trading terminal's default. */
+const OPEN_BAR_PX = 12;
+
+/**
+ * Opens on the latest moves at a readable width. Only traded candles are drawn, so a coin with
+ * three trades shows three clear candles at the left (the rest of the pane stays empty) rather
+ * than three slivers squeezed by a day of empty bars; a long history shows its latest candles
+ * and scrolls back.
+ */
 function showLatest(total: number) {
   if (!chart || total <= 0) return;
   requestAnimationFrame(() => {
     if (!chart) return;
-    // fitContent() counts rightOffset as bars: a 6-bar day chart with a 6-bar offset left half the
-    // pane empty. Keep the gap to the price scale small on short histories.
-    chart.timeScale().applyOptions({ rightOffset: total <= 20 ? 1 : 6 });
-    // The interval is picked to fit the coin's history, so show all of it when it fits.
-    if (total <= 200) {
-      chart.timeScale().fitContent();
-    } else {
-      chart.timeScale().setVisibleLogicalRange({ from: Math.max(-1, total - 60), to: total + 4 });
-    }
+    const width = chartContainer.value?.clientWidth ?? 800;
+    const inView = Math.max(20, Math.floor(width / OPEN_BAR_PX));
+    chart.timeScale().applyOptions({ rightOffset: 4 });
+    chart
+      .timeScale()
+      .setVisibleLogicalRange(
+        total < inView ? { from: -1, to: inView - 1 } : { from: total - inView + 4, to: total + 3 },
+      );
   });
 }
 

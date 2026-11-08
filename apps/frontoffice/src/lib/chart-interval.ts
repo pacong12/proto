@@ -21,3 +21,17 @@ export function resolutionForAge(createdAt: number, now = Date.now()): number {
   if (age <= 30 * DAY) return 4 * HOUR;
   return DAY;
 }
+
+/**
+ * A candle that holds a trade or a price move. The API pads quiet periods with flat, empty bars;
+ * drawing them squeezed the real candles into slivers next to hours of flat line.
+ */
+export function isTradedBar(bar: {
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume?: number;
+}): boolean {
+  return (bar.volume ?? 0) > 0 || bar.open !== bar.close || bar.high !== bar.low;
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolutionForAge } from '../src/lib/chart-interval';
+import { isTradedBar, resolutionForAge } from '../src/lib/chart-interval';
 
 const NOW = Date.UTC(2026, 10, 8, 12, 0, 0);
 const ago = (seconds: number) => NOW - seconds * 1000;
@@ -22,5 +22,15 @@ describe('resolutionForAge', () => {
     expect(resolutionForAge(Math.floor(ago(3 * 86400) / 1000), NOW)).toBe(3600);
     expect(resolutionForAge(0, NOW)).toBe(3600);
     expect(resolutionForAge(Number.NaN, NOW)).toBe(3600);
+  });
+});
+
+describe('isTradedBar', () => {
+  const flat = { open: 1, high: 1, low: 1, close: 1, volume: 0 };
+  it('drops empty filler bars and keeps traded or moving ones', () => {
+    expect(isTradedBar(flat)).toBe(false);
+    expect(isTradedBar({ ...flat, volume: 0.5 })).toBe(true);
+    expect(isTradedBar({ ...flat, close: 1.1, high: 1.1 })).toBe(true);
+    expect(isTradedBar({ open: 1, high: 1, low: 1, close: 1 })).toBe(false);
   });
 });
