@@ -778,6 +778,8 @@ async function loadTokenData(address: `0x${string}`) {
     selectedResolution.value = resolutionForAge(data.token.createdAt);
   } else {
     tokenNotFound.value = true;
+    // Otherwise the page kept the last page's title and canonical, indexable.
+    setPageSeo(`/token/${address}`, { title: 'Token not found', noindex: true });
   }
 
   await Promise.allSettled([
