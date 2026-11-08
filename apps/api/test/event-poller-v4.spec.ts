@@ -347,3 +347,29 @@ describe('EventPollerService — catch-up', () => {
     expect(p.isBehind).toBe(false);
   });
 });
+
+describe('EventPollerService — concurrent polls', () => {
+  it('shares a poll already running instead of indexing the same range twice', async () => {
+    let heads = 0;
+    let release: () => void = () => {};
+    const gate = new Promise<void>((r) => (release = r));
+    const client = {
+      ...stubClient({}, 6),
+      getBlockNumber: async () => {
+        heads++;
+        await gate;
+        return 10n;
+      },
+    } as unknown as PublicClient;
+    const p = poller(ARC_CHAIN, client, new InMemoryTokenRepository());
+    const a = p.pollEvents();
+    const b = p.pollEvents();
+    expect(a).toBe(b);
+    release();
+    await Promise.all([a, b]);
+    expect(heads).toBe(1);
+    // The next poll after it starts a fresh one.
+    await p.pollEvents();
+    expect(heads).toBe(2);
+  });
+});

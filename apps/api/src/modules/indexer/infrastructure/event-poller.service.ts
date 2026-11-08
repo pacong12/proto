@@ -90,7 +90,22 @@ export class EventPollerService {
 
   private rangeFailures = 0;
 
-  async pollEvents(fromBlock?: bigint, toBlock?: bigint): Promise<number> {
+  private inFlight: Promise<number> | null = null;
+
+  /**
+   * Indexes the next range. A poll already running is shared rather than doubled: the loop and
+   * every POST /sync call this, and two at once indexed the same range twice and doubled the RPC
+   * calls (a public endpoint could multiply them at will). An explicit range always runs.
+   */
+  pollEvents(fromBlock?: bigint, toBlock?: bigint): Promise<number> {
+    if (fromBlock !== undefined || toBlock !== undefined) return this.pollOnce(fromBlock, toBlock);
+    this.inFlight ??= this.pollOnce().finally(() => {
+      this.inFlight = null;
+    });
+    return this.inFlight;
+  }
+
+  private async pollOnce(fromBlock?: bigint, toBlock?: bigint): Promise<number> {
     let currentBlock = 0n;
     this.lastPollFailed = false;
     try {
