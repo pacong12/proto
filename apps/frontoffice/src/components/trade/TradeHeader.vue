@@ -111,7 +111,7 @@
             <Badge
               v-if="currentToken.version === 'v4'"
               variant="outline"
-              class="text-xs h-4 px-1.5 border-border uppercase font-semibold"
+              class="text-xs h-5 px-1.5 border-border font-medium"
               :title="t('inPoolLiveHint')"
             >
               {{ t('livePool') }}
@@ -119,7 +119,7 @@
             <Badge
               v-else
               :variant="currentMarketData.isGraduated ? 'default' : 'outline'"
-              class="text-xs h-4 px-1.5 border-border uppercase font-semibold"
+              class="text-xs h-5 px-1.5 border-border font-medium"
             >
               {{ currentMarketData.isGraduated ? 'Graduated' : 'Bonding Curve' }}
             </Badge>
@@ -129,7 +129,7 @@
                 <TooltipTrigger as-child>
                   <Badge
                     variant="outline"
-                    class="text-xs h-4 px-1.5 border-border uppercase font-semibold gap-1 cursor-help"
+                    class="text-xs h-5 px-1.5 border-border font-medium gap-1 cursor-help"
                   >
                     <Users class="w-3 h-3" />
                     {{ t('ctoCommunityBadge') }}

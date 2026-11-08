@@ -9,38 +9,26 @@
       <p class="text-xs">{{ t('noTradersData') }}</p>
     </div>
 
-    <div v-else class="overflow-x-auto rounded-2xl border border-border bg-black">
-      <Table class="w-full text-left text-xs min-w-[640px] bg-black">
+    <div v-else class="overflow-x-auto">
+      <Table bare class="w-full text-left text-xs min-w-[640px]">
         <TableHeader>
-          <TableRow class="border-b border-border text-muted-foreground bg-black hover:bg-black">
-            <TableHead class="py-2.5 px-3 font-semibold w-10 text-muted-foreground bg-black">
-              #
-            </TableHead>
-            <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">{{
-              t('topTraders')
-            }}</TableHead>
-            <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">
-              Bought
-            </TableHead>
-            <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">
-              Sold
-            </TableHead>
-            <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">
-              Holding
-            </TableHead>
-            <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">
-              Realized PnL
-            </TableHead>
-            <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">
-              Total PnL
-            </TableHead>
+          <TableRow
+            class="border-y border-border hover:bg-transparent [&_th]:whitespace-nowrap [&_th]:h-auto [&_th]:tracking-normal [&_th]:text-xs [&_th]:font-medium [&_th]:bg-transparent [&_th]:text-muted-foreground"
+          >
+            <TableHead class="py-2.5 px-3 w-10"> # </TableHead>
+            <TableHead class="py-2.5 px-3">{{ t('topTraders') }}</TableHead>
+            <TableHead class="py-2.5 px-3 text-right"> Bought </TableHead>
+            <TableHead class="py-2.5 px-3 text-right"> Sold </TableHead>
+            <TableHead class="py-2.5 px-3 text-right"> Holding </TableHead>
+            <TableHead class="py-2.5 px-3 text-right"> Realized PnL </TableHead>
+            <TableHead class="py-2.5 px-3 text-right"> Total PnL </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           <TableRow
             v-for="(trader, idx) in paginatedTopTraders"
             :key="trader.address"
-            class="hover:bg-zinc-900/40 transition-colors bg-black"
+            class="border-b border-border/60 hover:bg-muted/40 transition-colors"
           >
             <TableCell class="py-2.5 px-3 text-muted-foreground font-bold">
               #{{ (currentPage - 1) * pageSize + idx + 1 }}
@@ -138,10 +126,7 @@
       </Table>
 
       <!-- Top Traders Pagination -->
-      <div
-        v-if="topTraders.length > pageSize"
-        class="py-3 border-t border-border flex justify-center bg-black"
-      >
+      <div v-if="topTraders.length > pageSize" class="py-3 flex justify-center">
         <Pagination
           :total="topTraders.length"
           :items-per-page="pageSize"

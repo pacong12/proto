@@ -9,33 +9,24 @@
       <p class="text-xs">{{ t('noHoldersData') }}</p>
     </div>
 
-    <div v-else class="overflow-x-auto rounded-2xl border border-border bg-black">
-      <Table class="w-full text-left text-xs min-w-[500px] bg-black">
+    <div v-else class="overflow-x-auto">
+      <Table bare class="w-full text-left text-xs min-w-[500px]">
         <TableHeader>
-          <TableRow class="border-b border-border text-muted-foreground bg-black hover:bg-black">
-            <TableHead class="py-2.5 px-3 font-semibold w-10 text-muted-foreground bg-black">
-              #
-            </TableHead>
-            <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">{{
-              t('holders')
-            }}</TableHead>
-            <TableHead class="py-2.5 px-3 font-semibold w-44 text-muted-foreground bg-black">
-              Share
-            </TableHead>
-            <TableHead
-              class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black"
-              >{{ t('balance') }}</TableHead
-            >
-            <TableHead
-              class="py-2.5 px-3 font-semibold text-right w-8 text-muted-foreground bg-black"
-            ></TableHead>
+          <TableRow
+            class="border-y border-border hover:bg-transparent [&_th]:whitespace-nowrap [&_th]:h-auto [&_th]:tracking-normal [&_th]:text-xs [&_th]:font-medium [&_th]:bg-transparent [&_th]:text-muted-foreground"
+          >
+            <TableHead class="py-2.5 px-3 w-10"> # </TableHead>
+            <TableHead class="py-2.5 px-3">{{ t('holders') }}</TableHead>
+            <TableHead class="py-2.5 px-3 w-44"> Share </TableHead>
+            <TableHead class="py-2.5 px-3 text-right">{{ t('balance') }}</TableHead>
+            <TableHead class="py-2.5 px-3 text-right w-8"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           <TableRow
             v-for="(holder, idx) in paginatedHolders"
             :key="holder.address"
-            class="hover:bg-zinc-900/40 transition-colors bg-black"
+            class="border-b border-border/60 hover:bg-muted/40 transition-colors"
           >
             <TableCell class="py-2.5 px-3 text-muted-foreground font-bold">
               #{{ (currentPage - 1) * pageSize + idx + 1 }}
@@ -112,10 +103,7 @@
       </Table>
 
       <!-- Holders Pagination -->
-      <div
-        v-if="holders.length > pageSize"
-        class="py-3 border-t border-border flex justify-center bg-black"
-      >
+      <div v-if="holders.length > pageSize" class="py-3 flex justify-center">
         <Pagination
           :total="holders.length"
           :items-per-page="pageSize"

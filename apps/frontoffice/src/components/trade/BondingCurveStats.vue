@@ -101,24 +101,30 @@
     </div>
 
     <!-- Protocol & Token Key Figures Grid -->
+    <!-- Rule above only when the curve strip or pool card sits above; a pool launch starts here. -->
     <div
-      class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 pt-4 border-t border-border text-xs"
+      class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 text-xs"
+      :class="
+        currentToken.version !== 'v4' || (currentMarketData.isGraduated && currentToken.poolAddress)
+          ? 'pt-4 border-t border-border'
+          : ''
+      "
     >
       <div>
         <span class="text-muted-foreground text-xs block">{{ t('marketCap') }}</span>
-        <span class="font-black text-foreground text-sm block mt-0.5">
+        <span class="font-semibold text-foreground text-sm block mt-0.5 tabular-nums">
           {{ formatMarketCap(currentMarketData.marketCapUsd) }}
         </span>
       </div>
       <div>
         <span class="text-muted-foreground text-xs block">{{ t('price') }}</span>
-        <span class="font-black text-foreground text-sm block mt-0.5 truncate">
+        <span class="font-semibold text-foreground text-sm block mt-0.5 tabular-nums truncate">
           {{ formatPriceUsd(currentMarketData.priceUsd) }}
         </span>
       </div>
       <div>
         <span class="text-muted-foreground text-xs block">{{ t('volume24h') }}</span>
-        <span class="font-black text-foreground text-sm block mt-0.5">
+        <span class="font-semibold text-foreground text-sm block mt-0.5 tabular-nums">
           {{
             (currentMarketData.volume24hUsd ?? 0) > 0
               ? formatCompactUsd(currentMarketData.volume24hUsd)
@@ -130,7 +136,7 @@
         <span class="text-muted-foreground text-xs block" :title="t('holdersHint')">{{
           t('holders')
         }}</span>
-        <span class="font-black text-foreground text-sm block mt-0.5">
+        <span class="font-semibold text-foreground text-sm block mt-0.5 tabular-nums">
           {{ holdersCount.toLocaleString() }}{{ holdersCountCapped ? '+' : '' }}
         </span>
       </div>
@@ -138,7 +144,7 @@
         <span class="text-muted-foreground text-xs block" :title="t('top10SupplyHint')">{{
           t('top10Supply')
         }}</span>
-        <span class="font-black text-foreground text-sm block mt-0.5">
+        <span class="font-semibold text-foreground text-sm block mt-0.5 tabular-nums">
           {{ top10HoldingPercent > 0 ? top10HoldingPercent.toFixed(1) + '%' : '—' }}
         </span>
       </div>
@@ -147,7 +153,7 @@
           t('devHolds')
         }}</span>
         <span
-          class="font-black text-sm block mt-0.5"
+          class="font-semibold text-sm block mt-0.5 tabular-nums"
           :class="devHoldingPercent > 10 ? 'text-amber-500' : 'text-foreground'"
         >
           {{ devHoldingPercent.toFixed(1) }}%
@@ -155,39 +161,42 @@
       </div>
     </div>
 
-    <!-- Trust & Secondary Badges -->
-    <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pt-1 text-xs">
-      <div
-        class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black border border-border shrink-0"
-        title="Buy / Sell creator trading tax"
-      >
-        <span class="text-muted-foreground font-semibold">Tax:</span>
-        <span class="font-bold text-foreground">
+    <!-- Tax, burn and the contract as one quiet line. -->
+    <p class="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
+      <span title="Buy / Sell creator trading tax">
+        Tax
+        <span class="font-semibold text-foreground tabular-nums">
           {{ (onchainTaxConfig.buyTaxBps / 100).toFixed(0) }}% /
           {{ (onchainTaxConfig.sellTaxBps / 100).toFixed(0) }}%
         </span>
-      </div>
+      </span>
+      <template v-if="burnedInfo.percent > 0">
+        <span aria-hidden="true">&middot;</span>
+        <span title="Total burned supply">
+          {{ t('burned') }}
+          <span class="font-semibold text-foreground tabular-nums">
+            {{ burnedInfo.percent.toFixed(1) }}%
+          </span>
+        </span>
+      </template>
+      <template v-if="explorerUrl">
+        <span aria-hidden="true">&middot;</span>
+        <a
+          :href="`${explorerUrl}/token/${currentToken.address}#code`"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-1 hover:text-foreground transition"
+          :title="t('viewContractHint')"
+        >
+          {{ t('viewContract') }}
+          <ExternalLink class="w-3 h-3" />
+        </a>
+      </template>
+    </p>
 
-      <div
-        v-if="burnedInfo.percent > 0"
-        class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-black border border-border shrink-0"
-        title="Total burned supply"
-      >
-        <span class="text-muted-foreground font-semibold">{{ t('burned') }}:</span>
-        <span class="font-bold text-rose-500">{{ burnedInfo.percent.toFixed(1) }}%</span>
-      </div>
-
-      <a
-        v-if="explorerUrl"
-        :href="`${explorerUrl}/token/${currentToken.address}#code`"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-border text-muted-foreground hover:text-foreground shrink-0 font-semibold transition"
-        :title="t('viewContractHint')"
-      >
-        <span>{{ t('viewContract') }}</span>
-        <ExternalLink class="w-3 h-3" />
-      </a>
+    <!-- Extra sections (buy / sell pressure) share this card instead of a box of their own. -->
+    <div v-if="$slots.default" class="pt-4 border-t border-border">
+      <slot />
     </div>
   </div>
 </template>

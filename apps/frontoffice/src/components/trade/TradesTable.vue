@@ -3,26 +3,26 @@
     <!-- Order flow filters & stats (lunch.fun style) -->
     <div
       v-if="trades.length > 0"
-      class="flex flex-wrap items-center justify-between gap-2 p-2.5 sm:px-4 border-b border-border bg-black text-xs"
+      class="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 py-2.5 text-xs"
     >
       <div class="flex items-center gap-1.5">
         <button
           v-for="flt in filterOptions"
           :key="flt.key"
           type="button"
-          class="px-2 py-0.5 rounded-lg text-xs font-bold transition cursor-pointer"
+          class="h-7 px-2.5 rounded-lg text-xs font-medium transition cursor-pointer"
           :class="
             tradeFilter === flt.key
-              ? 'bg-foreground text-background shadow-2xs'
-              : 'bg-black border border-border hover:bg-zinc-900 text-muted-foreground hover:text-foreground'
+              ? 'bg-muted text-foreground'
+              : 'text-muted-foreground hover:text-foreground'
           "
           @click="setFilter(flt.key)"
         >
           {{ flt.label }}
         </button>
       </div>
-      <div class="text-xs font-bold">
-        <span class="text-muted-foreground">{{ t('netCol') }}: </span>
+      <div class="text-xs font-semibold tabular-nums">
+        <span class="text-muted-foreground font-normal">{{ t('netCol') }}: </span>
         <span :class="orderFlowStats.netVolumeUsd >= 0 ? 'text-emerald-500' : 'text-rose-500'">
           {{ orderFlowStats.netVolumeUsd >= 0 ? '+' : '' }}${{
             Math.abs(orderFlowStats.netVolumeUsd).toLocaleString(undefined, {
@@ -50,43 +50,29 @@
     </div>
 
     <!-- Table of Trades -->
-    <div v-else class="overflow-x-auto rounded-2xl border border-border bg-black">
-      <Table class="w-full text-left text-xs min-w-[620px] bg-black">
+    <div v-else class="overflow-x-auto">
+      <Table bare class="w-full text-left text-xs min-w-[620px]">
         <TableHeader>
           <TableRow
-            class="border-b border-border text-muted-foreground bg-black hover:bg-black [&_th]:whitespace-nowrap"
+            class="border-y border-border hover:bg-transparent [&_th]:whitespace-nowrap [&_th]:h-auto [&_th]:tracking-normal [&_th]:text-xs [&_th]:font-medium [&_th]:bg-transparent [&_th]:text-muted-foreground"
           >
-            <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">{{
-              t('timeCol')
-            }}</TableHead>
-            <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">{{
-              t('typeCol')
-            }}</TableHead>
-            <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">
-              Total (USD)
-            </TableHead>
-            <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">
+            <TableHead class="py-2.5 px-3">{{ t('timeCol') }}</TableHead>
+            <TableHead class="py-2.5 px-3">{{ t('typeCol') }}</TableHead>
+            <TableHead class="py-2.5 px-3 text-right"> Total (USD) </TableHead>
+            <TableHead class="py-2.5 px-3 text-right">
               {{ currencySymbol }}
             </TableHead>
-            <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">
-              Amount
-            </TableHead>
-            <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">
-              Price
-            </TableHead>
-            <TableHead class="py-2.5 px-3 font-semibold text-muted-foreground bg-black">
-              Trader
-            </TableHead>
-            <TableHead class="py-2.5 px-3 font-semibold text-right text-muted-foreground bg-black">
-              Tx
-            </TableHead>
+            <TableHead class="py-2.5 px-3 text-right"> Amount </TableHead>
+            <TableHead class="py-2.5 px-3 text-right"> Price </TableHead>
+            <TableHead class="py-2.5 px-3"> Trader </TableHead>
+            <TableHead class="py-2.5 px-3 text-right"> Tx </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           <TableRow
             v-for="trade in paginatedTrades"
             :key="trade.id || trade.transactionHash"
-            class="hover:bg-zinc-900/40 transition-colors bg-black"
+            class="border-b border-border/60 hover:bg-muted/40 transition-colors"
           >
             <!-- 1. Time / Age -->
             <TableCell class="py-2 px-3 whitespace-nowrap text-muted-foreground text-xs">
@@ -95,21 +81,14 @@
 
             <!-- 2. Type (GMGN Style BUY / SELL pill) -->
             <TableCell class="py-2 px-3 whitespace-nowrap">
-              <span
-                class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold tracking-wider border select-none"
-                :class="
-                  trade.isBuy
-                    ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                    : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
-                "
-              >
-                {{ trade.isBuy ? 'BUY' : 'SELL' }}
+              <span class="font-medium" :class="trade.isBuy ? 'text-emerald-500' : 'text-rose-500'">
+                {{ trade.isBuy ? 'Buy' : 'Sell' }}
               </span>
             </TableCell>
 
             <!-- 3. Total (USD) -->
             <TableCell
-              class="py-2 px-3 whitespace-nowrap text-right font-bold"
+              class="py-2 px-3 whitespace-nowrap text-right font-semibold tabular-nums"
               :class="trade.isBuy ? 'text-emerald-400' : 'text-rose-400'"
             >
               {{ formatTradeUsd(getTradeVolumeUsd(trade)) }}
@@ -183,10 +162,7 @@
       </Table>
 
       <!-- Trades Pagination -->
-      <div
-        v-if="filteredTrades.length > pageSize"
-        class="py-3 border-t border-border flex justify-center bg-black"
-      >
+      <div v-if="filteredTrades.length > pageSize" class="py-3 flex justify-center">
         <Pagination
           :total="filteredTrades.length"
           :items-per-page="pageSize"

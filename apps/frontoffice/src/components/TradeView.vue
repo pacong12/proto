@@ -57,9 +57,6 @@
         :symbol="currentToken.symbol"
       />
 
-      <!-- Buy vs sell pressure from real trades (Binance-style B% / S%) -->
-      <TradeFlowGauge :token-address="currentToken.address" />
-
       <!-- ============================================================
            HYBRID PONS X GOTON TRADING GRID
            - Desktop: 2 Columns (Col 1: Chart, Facts, Tabs | Col 2: Sticky Swap Panel)
@@ -69,30 +66,6 @@
         <!-- 1. Chart Card (Col 1, Row 1 on xl) -->
         <div class="xl:col-start-1 xl:row-start-1 min-w-0 w-full space-y-6">
           <div class="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
-            <!-- Chart Header with Timeframe Pills -->
-            <div
-              class="flex items-center justify-between gap-3 px-3.5 py-2.5 border-b border-border/80 bg-card text-xs"
-            >
-              <!-- Timeframe switcher pills (Shadcn Buttons) -->
-              <div class="flex items-center gap-1 bg-black p-0.5 rounded-xl border border-border">
-                <Button
-                  v-for="res in resolutions"
-                  :key="res.label"
-                  size="sm"
-                  :variant="selectedResolution === res.seconds ? 'default' : 'ghost'"
-                  class="h-7 px-2.5 text-xs font-bold rounded-lg"
-                  @click="changeResolution(res.seconds)"
-                >
-                  {{ res.label }}
-                </Button>
-              </div>
-
-              <!-- Pair Indicator -->
-              <span class="text-xs text-muted-foreground font-sans hidden sm:inline">
-                {{ currentToken.symbol }} / {{ currencySymbol }}
-              </span>
-            </div>
-
             <!-- TradingChart wrapper (Full bleed, no nested padding/border) -->
             <div class="w-full bg-card">
               <TradingChart
@@ -111,7 +84,31 @@
                     : 1000000000
                 "
                 :is-graduated="currentMarketData.isGraduated"
-              />
+              >
+                <template #toolbar-start>
+                  <div
+                    class="flex items-center rounded-lg bg-muted p-0.5"
+                    role="group"
+                    aria-label="Candle interval"
+                  >
+                    <button
+                      v-for="res in resolutions"
+                      :key="res.label"
+                      type="button"
+                      class="h-8 min-w-8 cursor-pointer rounded-md px-2 text-xs font-semibold transition"
+                      :class="
+                        selectedResolution === res.seconds
+                          ? 'bg-card text-foreground shadow-xs'
+                          : 'text-muted-foreground hover:text-foreground'
+                      "
+                      :aria-pressed="selectedResolution === res.seconds"
+                      @click="changeResolution(res.seconds)"
+                    >
+                      {{ res.label }}
+                    </button>
+                  </div>
+                </template>
+              </TradingChart>
             </div>
           </div>
         </div>
@@ -225,7 +222,10 @@
             :onchain-tax-config="onchainTaxConfig"
             :burned-info="burnedInfo"
             @copy-pair="copyAddress"
-          />
+          >
+            <!-- Buy vs sell pressure from real trades (B% / S%) -->
+            <TradeFlowGauge :token-address="currentToken.address" />
+          </BondingCurveStats>
         </div>
 
         <!-- 4. Bottom Tabs Card (Mobile: 4th; Desktop: Col 1, Row 3) -->
