@@ -36,6 +36,8 @@ export interface TradePage {
   buyPresets: ComputedRef<string[]>;
   isCreator: ComputedRef<boolean>;
   tokenLoading: Ref<boolean>;
+  /** No API or chain knows this address: nothing to poll. */
+  tokenNotFound?: Ref<boolean>;
   activeBottomTab: Ref<'callouts' | 'trades' | 'top-traders' | 'holders' | 'about'>;
   /** Refreshes the token and its market data in place, without the page's loading state. */
   refreshTokenData: (address: `0x${string}`) => Promise<void>;
