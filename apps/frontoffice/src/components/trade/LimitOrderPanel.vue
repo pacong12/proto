@@ -28,6 +28,22 @@
         </span>
         <Input id="lo-amount" v-model="amountInput" inputmode="decimal" placeholder="0.0" />
       </label>
+      <div v-if="side === 'sell'" class="flex items-center justify-between gap-2 text-xs">
+        <span :class="overBalance ? 'text-rose-500' : 'text-muted-foreground'">
+          {{ t('balance') }}: {{ fmtTokens(userTokenBalance) }} {{ token.symbol }}
+        </span>
+        <span class="flex gap-1">
+          <button
+            v-for="p in [25, 50, 100]"
+            :key="p"
+            type="button"
+            class="rounded-md border border-border px-1.5 py-0.5 font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
+            @click="setSellShare(p)"
+          >
+            {{ p }}%
+          </button>
+        </span>
+      </div>
 
       <label class="block space-y-1">
         <span class="flex justify-between text-xs text-muted-foreground">
@@ -120,7 +136,7 @@
 
 <script setup lang="ts">
 import { computed, ref, toRef } from 'vue';
-import { parseUnits } from 'viem';
+import { formatUnits, parseUnits } from 'viem';
 import type { LaunchedTokenEntity, NetworkConfig, TokenMarketData } from '@goton/shared-types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -180,6 +196,22 @@ const num = (s: string) => {
   return Number.isFinite(v) && v > 0 ? v : 0;
 };
 const amount = computed(() => num(amountInput.value));
+/** The typed amount as a plain decimal string: String(1e-7) is "1e-7", which parseUnits rejects. */
+const amountText = computed(() => String(amountInput.value).replace(/,/g, '').trim());
+const overBalance = computed(
+  () => side.value === 'sell' && amount.value > 0 && sellRaw.value > props.userTokenBalance,
+);
+function setSellShare(p: number) {
+  const raw = (props.userTokenBalance * BigInt(p)) / 100n;
+  amountInput.value = formatUnits(raw, props.token.decimals ?? 18);
+}
+const sellRaw = computed(() => {
+  try {
+    return amount.value > 0 ? parseUnits(amountText.value, props.token.decimals ?? 18) : 0n;
+  } catch {
+    return 0n;
+  }
+});
 const target = computed(() => num(targetInput.value));
 const tpTarget = computed(() => num(tpInput.value));
 const slTarget = computed(() => num(slInput.value));
@@ -210,7 +242,7 @@ const plan = computed(() => {
         minOut: buyMinOut(amount.value, price, props.buyTaxBps, ctx.value),
       };
     }
-    const raw = amount.value > 0 ? parseUnits(String(amount.value), ctx.value.tokenDecimals) : 0n;
+    const raw = sellRaw.value;
     const leg = sellFloor(
       amount.value,
       price,
@@ -264,7 +296,8 @@ const summary = computed(() => {
   return lines;
 });
 
-const warning = computed(() => {
+/** A target on the wrong side of the market fills or triggers at once: that is a market order. */
+const crossing = computed(() => {
   const mc = marketCapUsd.value;
   if (!(mc > 0)) return '';
   if (props.mode === 'limit' && target.value > 0) {
@@ -275,13 +308,20 @@ const warning = computed(() => {
     if (tpTarget.value > 0 && tpTarget.value <= mc) return t('limitSellBelowMarket');
     if (slTarget.value > 0 && slTarget.value >= mc) return t('stopAboveMarket');
   }
+  return '';
+});
+
+const warning = computed(() => {
+  const mc = marketCapUsd.value;
+  if (!(mc > 0)) return '';
+  if (crossing.value) return crossing.value;
   const p = plan.value;
   if (p.kind === 'sell' && p.impact > 0.1) return t('largeOrderImpact', { pct: pct(p.impact) });
   // Keepers only fill orders whose 0.1% executor fee covers their gas; the smallest leg decides.
   const quoteRaw =
     p.kind === 'buy'
       ? amount.value > 0
-        ? parseUnits(String(amount.value), quoteDecimals.value)
+        ? safeUnits(amountText.value, quoteDecimals.value)
         : 0n
       : [p.tpMinOut, p.slMinOut]
           .filter((v) => v > 0n)
@@ -318,7 +358,16 @@ const stopNote = computed(() => {
   return t('stopNotReady', { minutes, time });
 });
 
+const safeUnits = (text: string, decimals: number) => {
+  try {
+    return parseUnits(text, decimals);
+  } catch {
+    return 0n;
+  }
+};
+
 const canSubmit = computed(() => {
+  if (crossing.value) return false;
   const p = plan.value;
   if (p.kind === 'buy') return amount.value > 0 && p.minOut > 0n;
   return (
@@ -333,8 +382,8 @@ async function submit() {
   // whole number of 6-decimal units on Arc, so round there first.
   const valueWei =
     quoteDecimals.value === 6
-      ? parseUnits(amount.value.toFixed(6), 6) * 10n ** 12n
-      : parseUnits(String(amount.value), 18);
+      ? safeUnits(amount.value.toFixed(6), 6) * 10n ** 12n
+      : safeUnits(amountText.value, 18);
   const hash =
     p.kind === 'buy'
       ? await createBuy(props.network, props.token.address, valueWei, p.minOut, deadline)
@@ -350,6 +399,9 @@ async function submit() {
   if (hash) {
     toast.success(t('orderPlaced'));
     amountInput.value = '';
+    targetInput.value = '';
+    tpInput.value = '';
+    slInput.value = '';
     emit('created');
   }
 }
