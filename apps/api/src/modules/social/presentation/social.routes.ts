@@ -25,7 +25,10 @@ import type { AppContainer } from '../../../app/container';
 
 /** HTTP routes of the social module, registered in the order they are matched. */
 export function registerSocialRoutes(router: Router, deps: AppContainer): void {
-  const { repository, chainRegistry } = deps;
+  const { repository, chainRegistry, cache } = deps;
+  /** Hash of a value for a cache key, so raw signatures and IPs are not kept there. */
+  const keyOf = (value: string) =>
+    crypto.createHash('sha256').update(value).digest('base64url').slice(0, 22);
   // GET /api/users/resolve?query=:query
   router.on('GET', '/api/users/resolve', async ({ url, replyJson, replyError }) => {
     const q = url.searchParams.get('query') || '';
@@ -415,6 +418,21 @@ export function registerSocialRoutes(router: Router, deps: AppContainer): void {
           quotesCount: 0,
           repliesCount: 0,
         };
+
+        // A signature posts once: replaying it (in its 10-minute window) is refused. Checked last,
+        // so a comment rejected above can still be sent with the same signature.
+        if (signature) {
+          const uses = await cache
+            .increment(`comment-sig:${keyOf(String(signature))}`, 11 * 60 * 1000)
+            .catch(() => 1);
+          if (uses > 1) {
+            return replyError(
+              'SIGNATURE_REUSED',
+              'This signature was already used; sign the comment again',
+              409,
+            );
+          }
+        }
 
         await repository.saveComment?.(comment);
         return replyJson(ok(comment), 201);
