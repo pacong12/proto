@@ -346,6 +346,15 @@ export function useLaunchpad() {
 
       const launchData = extractLaunchData(receipt);
       if (launchData) {
+        // Index it now, as the normal path does: without this the coin page opened before the
+        // indexer had seen the launch and said "Token not found".
+        await apiFetch<unknown>(`/api/tokens/${launchData.tokenAddress}/sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ txHash: hash, chain: network.chainId }),
+        }).catch(() => {
+          /* best-effort, as in launch() */
+        });
         launchStep.value = 'success';
         launchTokenAddress.value = launchData.tokenAddress;
         error.value = null;

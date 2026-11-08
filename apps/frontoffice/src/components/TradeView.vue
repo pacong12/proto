@@ -754,11 +754,23 @@ watch(
   { immediate: true },
 );
 
+const NOT_FOUND_RETRIES = 20;
+const NOT_FOUND_RETRY_MS = 3000;
+let loadSeq = 0;
+
 async function loadTokenData(address: `0x${string}`) {
+  const load = ++loadSeq;
   tokenLoading.value = true;
   tokenNotFound.value = false;
 
-  const data = await fetchTradeToken(address);
+  // A coin launched seconds ago may not be indexed yet: keep trying for a minute before saying
+  // it does not exist.
+  let data = await fetchTradeToken(address);
+  for (let i = 0; !data && i < NOT_FOUND_RETRIES && load === loadSeq; i++) {
+    await new Promise((r) => setTimeout(r, NOT_FOUND_RETRY_MS));
+    data = await fetchTradeToken(address);
+  }
+  if (load !== loadSeq) return; // another coin was opened meanwhile
   if (data) {
     currentToken.value = data.token;
     currentMarketData.value = data.marketData;
