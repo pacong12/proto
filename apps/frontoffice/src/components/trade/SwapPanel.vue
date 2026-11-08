@@ -3,113 +3,6 @@
     id="swap-panel-container"
     class="xl:col-start-2 xl:row-start-1 xl:row-span-3 w-full shrink-0 xl:sticky xl:top-20 space-y-4"
   >
-    <!-- User Position Card (Displayed when user holds tokens) -->
-    <div
-      v-if="isConnected && userHoldingTokensCount > 0"
-      class="p-3.5 rounded-2xl bg-card border border-border space-y-2 text-xs font-sans shadow-xs"
-    >
-      <div class="flex items-center justify-between">
-        <div class="space-y-0.5">
-          <span class="text-muted-foreground text-xs block">{{ t('yourHoldings') }}</span>
-          <span class="font-bold text-foreground text-sm">
-            {{ formatTokenBalance(userTokenBalance, currentToken.decimals || 18) }} ${{
-              currentToken.symbol
-            }}
-          </span>
-        </div>
-        <div class="text-right space-y-0.5">
-          <span class="text-muted-foreground text-xs block">{{ t('currentValue') }}</span>
-          <span class="font-bold text-emerald-500 text-sm">
-            {{ formatCompactUsd(userHoldingUsd) }}
-          </span>
-        </div>
-      </div>
-
-      <!-- Quick Action: Share PnL Card -->
-      <div class="pt-1.5 border-t border-border/60 flex items-center justify-between">
-        <span class="text-xs text-muted-foreground">{{ t('pnlShareHint') }}</span>
-        <Button
-          variant="outline"
-          size="sm"
-          class="h-6 px-2 text-xs font-bold gap-1 rounded-lg border-primary/30 text-primary hover:bg-primary/10 cursor-pointer"
-          @click="$emit('openPnlCard')"
-        >
-          <Share2 class="w-3 h-3" />
-          <span>{{ t('pnlShare') }}</span>
-        </Button>
-      </div>
-    </div>
-
-    <!-- Closed position: everything sold, its PnL can still be shared -->
-    <div
-      v-else-if="isConnected && closedPosition"
-      class="p-3.5 rounded-2xl bg-card border border-border text-xs font-sans shadow-xs flex items-center justify-between gap-3"
-    >
-      <div class="space-y-0.5 min-w-0">
-        <span class="text-muted-foreground text-xs block">{{ t('pnlClosedPosition') }}</span>
-        <span
-          class="font-bold text-sm"
-          :class="closedPosition.pnl.totalUsd < 0 ? 'text-rose-500' : 'text-emerald-500'"
-        >
-          {{ formatSignedUsd(closedPosition.pnl.totalUsd) }}
-          <span class="text-xs">{{ formatSignedPercent(closedPosition.pnl.percent) }}</span>
-        </span>
-      </div>
-      <Button
-        variant="outline"
-        size="sm"
-        class="h-6 px-2 text-xs font-bold gap-1 rounded-lg border-primary/30 text-primary hover:bg-primary/10 cursor-pointer shrink-0"
-        @click="$emit('openPnlCard')"
-      >
-        <Share2 class="w-3 h-3" />
-        <span>{{ t('pnlShare') }}</span>
-      </Button>
-    </div>
-
-    <!-- Live Holder Dividends Card (Argus style) -->
-    <div
-      v-if="isConnected && (hasDividends || isDividendsConfigured)"
-      class="p-3.5 rounded-2xl bg-card border border-sky-500/30 text-xs font-sans shadow-xs space-y-2"
-    >
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-1.5 text-sky-400 font-bold">
-          <span class="relative flex h-2 w-2">
-            <span
-              class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"
-            ></span>
-            <span class="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
-          </span>
-          <span>Live Dividends</span>
-        </div>
-        <span class="text-xs text-muted-foreground"> Holder Share </span>
-      </div>
-
-      <div class="flex items-center justify-between gap-3 pt-0.5">
-        <div>
-          <span class="text-sm sm:text-base font-bold font-mono text-foreground block">
-            {{ unclaimedDividendFormatted || '0.0000' }} {{ currencySymbol }}
-          </span>
-          <span class="text-xs font-mono text-muted-foreground block">
-            {{
-              Number(unclaimedDividendFormatted || 0) > 0
-                ? 'Accumulated from trades'
-                : 'Awaiting next trade'
-            }}
-          </span>
-        </div>
-
-        <Button
-          size="sm"
-          class="h-8 px-3 text-xs font-bold rounded-xl bg-sky-500 hover:bg-sky-600 text-white cursor-pointer shadow-xs"
-          :disabled="isClaimingDividends || Number(unclaimedDividendFormatted || 0) <= 0"
-          @click="$emit('claimDividends')"
-        >
-          <Loader2 v-if="isClaimingDividends" class="w-3 h-3 animate-spin mr-1" />
-          <span>Claim</span>
-        </Button>
-      </div>
-    </div>
-
     <div class="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
       <!-- Swap panel form wrapper -->
       <div class="p-5 sm:p-6 space-y-4">
@@ -471,6 +364,89 @@
           </Button>
         </template>
         <slot v-else name="alternate-form" />
+      </div>
+    </div>
+    <!-- Your position and holder dividends: one quiet card under the form. -->
+    <div
+      v-if="
+        isConnected &&
+        (userHoldingTokensCount > 0 || closedPosition || hasDividends || isDividendsConfigured)
+      "
+      class="rounded-2xl border border-border bg-card p-4 text-xs divide-y divide-border/60 [&>*]:py-3 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0"
+    >
+      <!-- Holding -->
+      <div v-if="userHoldingTokensCount > 0" class="flex items-start justify-between gap-3">
+        <div class="min-w-0 space-y-0.5">
+          <span class="text-muted-foreground block">{{ t('yourHoldings') }}</span>
+          <span class="font-semibold text-foreground text-sm tabular-nums block truncate">
+            {{ formatTokenBalance(userTokenBalance, currentToken.decimals || 18) }}
+            {{ currentToken.symbol }}
+          </span>
+          <span class="text-muted-foreground tabular-nums block">
+            {{ formatCompactUsd(userHoldingUsd) }}
+          </span>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          class="h-8 px-2.5 text-xs gap-1.5 rounded-lg cursor-pointer shrink-0"
+          @click="$emit('openPnlCard')"
+        >
+          <Share2 class="w-3.5 h-3.5" />
+          <span>{{ t('pnlShare') }}</span>
+        </Button>
+      </div>
+
+      <!-- Closed position: everything sold, its PnL can still be shared -->
+      <div v-else-if="closedPosition" class="flex items-center justify-between gap-3">
+        <div class="min-w-0 space-y-0.5">
+          <span class="text-muted-foreground block">{{ t('pnlClosedPosition') }}</span>
+          <span
+            class="font-semibold text-sm tabular-nums"
+            :class="closedPosition.pnl.totalUsd < 0 ? 'text-rose-500' : 'text-emerald-500'"
+          >
+            {{ formatSignedUsd(closedPosition.pnl.totalUsd) }}
+            <span class="text-xs">{{ formatSignedPercent(closedPosition.pnl.percent) }}</span>
+          </span>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          class="h-8 px-2.5 text-xs gap-1.5 rounded-lg cursor-pointer shrink-0"
+          @click="$emit('openPnlCard')"
+        >
+          <Share2 class="w-3.5 h-3.5" />
+          <span>{{ t('pnlShare') }}</span>
+        </Button>
+      </div>
+
+      <!-- Holder dividends -->
+      <div
+        v-if="hasDividends || isDividendsConfigured"
+        class="flex items-center justify-between gap-3"
+      >
+        <div class="min-w-0 space-y-0.5">
+          <span class="text-muted-foreground block">Holder dividends</span>
+          <span class="font-semibold text-foreground text-sm tabular-nums block">
+            {{ unclaimedDividendFormatted || '0.0000' }} {{ currencySymbol }}
+          </span>
+          <span class="text-muted-foreground block">
+            {{
+              Number(unclaimedDividendFormatted || 0) > 0
+                ? 'Accumulated from trades'
+                : 'Awaiting next trade'
+            }}
+          </span>
+        </div>
+        <Button
+          size="sm"
+          class="h-8 px-3 text-xs font-semibold rounded-lg cursor-pointer shrink-0"
+          :disabled="isClaimingDividends || Number(unclaimedDividendFormatted || 0) <= 0"
+          @click="$emit('claimDividends')"
+        >
+          <Loader2 v-if="isClaimingDividends" class="w-3 h-3 animate-spin mr-1" />
+          <span>Claim</span>
+        </Button>
       </div>
     </div>
     <slot name="after-card" />

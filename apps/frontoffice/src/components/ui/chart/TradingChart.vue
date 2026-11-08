@@ -743,8 +743,11 @@ onUnmounted(() => {
 
 <template>
   <div ref="root" class="flex w-full flex-col bg-card" :class="isFullscreen ? 'h-screen' : ''">
-    <!-- Toolbar: one row, big touch targets -->
-    <div class="flex items-center justify-between gap-2 px-3 py-2 border-b border-border/80">
+    <!-- Toolbar: one row on wide screens (wraps on phones), big touch targets -->
+    <!-- On phones the interval takes the first row; value and tools share the second. -->
+    <div class="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-border/80">
+      <!-- Host controls, e.g. the candle interval -->
+      <slot name="toolbar-start" />
       <!-- Price / Market cap -->
       <div
         class="flex items-center rounded-lg bg-muted p-0.5"
@@ -771,7 +774,7 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <div class="flex items-center gap-1">
+      <div class="ml-auto flex items-center gap-1">
         <button
           type="button"
           class="grid h-8 w-8 cursor-pointer place-items-center rounded-md transition"

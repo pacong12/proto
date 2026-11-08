@@ -1,8 +1,8 @@
 <template>
-  <div class="p-2.5 sm:p-3 rounded-2xl bg-card border border-border shadow-2xs space-y-2">
+  <div class="space-y-2">
     <!-- Header: title and window selector -->
     <div class="flex items-center justify-between gap-2 text-xs">
-      <span class="font-bold text-foreground">{{ t('buySellPressure') }}</span>
+      <span class="font-semibold text-foreground">{{ t('buySellPressure') }}</span>
       <div class="inline-flex rounded-lg bg-muted p-0.5" role="group" :aria-label="t('timeWindow')">
         <button
           v-for="w in WINDOWS"

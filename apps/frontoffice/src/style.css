@@ -178,8 +178,10 @@ table td {
   font-variant-numeric: tabular-nums;
 }
 
+/* Column labels sit quieter than the figures under them. */
 table th {
-  font-weight: 600;
+  font-size: 0.75rem; /* 12px */
+  font-weight: 500;
 }
 
 /* ==========================================================================
