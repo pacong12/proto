@@ -1,6 +1,6 @@
 # Cookie 与本地存储政策
 
-<Badge variant="graduated">最近更新：2026 年 10 月</Badge>
+<StatusBadge variant="graduated">最近更新：2026 年 10 月</StatusBadge>
 
 <Card>
 Goton 使用浏览器存储保存必要的应用设置。Google Analytics 是唯一的可选技术：仅在您于 Cookie 横幅中点击接受后才会加载，且您可随时撤回同意。我们从不使用广告 Cookie。

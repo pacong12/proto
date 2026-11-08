@@ -1,6 +1,6 @@
 # Kebijakan Privasi
 
-<Badge variant="graduated">Terakhir Diperbarui: Oktober 2026</Badge>
+<StatusBadge variant="graduated">Terakhir Diperbarui: Oktober 2026</StatusBadge>
 
 <Card>
 Goton Labs dan Protokol Goton mengoperasikan antarmuka peluncuran token non-kustodial dan pertukaran terdesentralisasi pada jaringan yang didukung. Kami memprioritaskan minimalisasi data, kedaulatan pengguna, dan privasi kriptografi.
@@ -38,3 +38,20 @@ Anda dapat menghapus penyimpanan peramban kapan saja untuk menghapus pengaturan 
 - **Log server**: API menyimpan log permintaan untuk keamanan dan pembatasan laju. Alamat IP klien hanya dicatat dalam bentuk hash satu arah.
 - **Analitik**: hanya jika Anda menerima cookie analitik, aplikasi web memuat Google Analytics (`gtag.js`), yang memasang cookie dan mengirim data kunjungan halaman serta perangkat ke Google. Persetujuan dapat ditarik kapan saja melalui **Pengaturan cookie** di footer aplikasi (lihat [Kebijakan Cookie](/id/cookie-policy)).
 - **Penghapusan**: Anda dapat menghapus komentar, like, repost, vote sentimen, dan profil kapan saja melalui **Profile → Edit Profile → Hapus data sosial saya** (API: `DELETE /api/users/{address}/data`, masuk dengan dompet tersebut). Catatan on-chain tidak dapat dihapus oleh siapa pun.
+
+## 4. Protokol & Infrastruktur Pihak Ketiga
+
+Interaksi dapat melewati infrastruktur terdesentralisasi:
+
+- **Robinhood Chain (L2) dan Arc Network**: Eksekusi blok dan konsensus transaksi.
+- **Uniswap v4**: Kontrak pool manager yang menyimpan likuiditas terkunci dan mengeksekusi swap.
+- **Google Analytics**: Analitik kunjungan halaman di aplikasi web (lihat bagian 3a).
+- **Gateway IPFS**: Hosting terdesentralisasi untuk ikon token dan metadata yang mendeskripsikan dirinya sendiri.
+
+## 5. Keamanan & Invarian
+
+Semua layanan backend protokol menerapkan kebijakan keamanan _fail-closed_ (`INV-BE-3`) dan menolak penandatanganan langsung (`INV-BE-1`). Posisi smart contract dikunci secara permanen di locker non-kustodial (`INV-SC-2`).
+
+<Card>
+Untuk pertanyaan hukum, pengungkapan protokol, atau dukungan teknis, kunjungi [repositori GitHub](https://github.com/pacong12/proto) atau ikuti kanal komunitas resmi.
+</Card>

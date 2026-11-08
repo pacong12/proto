@@ -1,6 +1,6 @@
 # Terms of Service
 
-<Badge variant="graduated">Last Updated: September 2026</Badge>
+<StatusBadge variant="graduated">Last Updated: September 2026</StatusBadge>
 
 <Card>
 Please read these Terms of Service ("Terms") carefully before using the Goton decentralized application ("App") and smart contracts on Robinhood Chain (Chain ID: 4663). By connecting your wallet or interacting with the protocol, you agree to be bound by these Terms.

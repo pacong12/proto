@@ -1,6 +1,6 @@
 # Kebijakan Cookie & Penyimpanan Lokal
 
-<Badge variant="graduated">Terakhir Diperbarui: Oktober 2026</Badge>
+<StatusBadge variant="graduated">Terakhir Diperbarui: Oktober 2026</StatusBadge>
 
 <Card>
 Goton menggunakan penyimpanan peramban untuk pengaturan aplikasi yang diperlukan. Google Analytics adalah satu-satunya teknologi opsional: hanya dimuat setelah Anda menerimanya di banner cookie, dan persetujuan itu dapat Anda tarik kapan saja. Kami tidak pernah menggunakan cookie iklan.
