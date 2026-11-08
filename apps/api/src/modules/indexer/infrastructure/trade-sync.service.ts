@@ -61,7 +61,13 @@ export class TradeSyncService {
     const receipt = await client.getTransactionReceipt({ hash: txHash });
     if (!receipt || receipt.status !== 'success') return;
 
+    // Only the token's own curve emits its trades. Any contract can emit a `Trade` event, and the
+    // hash comes from a public endpoint, so a log from any other address would be a forged trade.
+    const curve = (token.curveAddress ?? token.poolAddress)?.toLowerCase();
+    if (!curve) return;
+
     for (const log of receipt.logs) {
+      if (log.address.toLowerCase() !== curve) continue;
       try {
         const decoded = decodeEventLog({
           abi: [TRADE_EVENT],
@@ -81,7 +87,7 @@ export class TradeSyncService {
 
         let priceQuote = 0;
         if (token.version === 'v2') {
-          const curveTarget = (token.curveAddress || log.address) as Address;
+          const curveTarget = log.address as Address;
           try {
             const [vEth, vToken] = await Promise.all([
               client.readContract({
