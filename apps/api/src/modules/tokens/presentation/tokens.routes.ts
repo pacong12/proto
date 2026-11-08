@@ -572,6 +572,10 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
       let lastMarketCapUsd = -1;
       let lastGradProgress = -1;
       const encoder = new TextEncoder();
+      // Bun closes a connection idle for 10s (idleTimeout): a quiet coin's stream dropped and
+      // reconnected every ~10s. A comment line well inside that keeps it open.
+      const HEARTBEAT_MS = 5000;
+      let lastWriteAt = Date.now();
 
       function scheduleSsePoll(): void {
         sseTimer = setTimeout(async () => {
@@ -589,6 +593,10 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
               lastGradProgress = mkt.graduationProgress;
               const frame = `data: ${JSON.stringify({ marketData: mkt })}\n\n`;
               sseController.enqueue(encoder.encode(frame));
+              lastWriteAt = Date.now();
+            } else if (Date.now() - lastWriteAt >= HEARTBEAT_MS) {
+              sseController.enqueue(encoder.encode(': ping\n\n'));
+              lastWriteAt = Date.now();
             }
             scheduleSsePoll();
           } catch {
