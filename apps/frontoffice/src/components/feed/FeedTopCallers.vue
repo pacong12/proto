@@ -24,7 +24,7 @@
             <span class="block text-xs font-bold text-foreground truncate">
               {{ getUserIdentity(caller.address).displayName }}
             </span>
-            <span class="block text-[11px] text-muted-foreground truncate">
+            <span class="block text-xs text-muted-foreground truncate">
               {{ t('callsCount', { count: String(caller.calls) }) }}
               <template v-if="caller.bestSymbol">
                 · {{ t('bestCall') }} ${{ caller.bestSymbol }} {{ caller.bestPct >= 0 ? '+' : ''

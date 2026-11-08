@@ -15,7 +15,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
-  useRoute: () => ({ params: {}, query: {} }),
+  useRoute: () => ({ path: '/u', params: {}, query: {}, meta: {} }),
 }));
 vi.mock('@/lib/i18n', () => ({ useI18n: () => ({ t: (key: string) => key }) }));
 vi.mock('@/components/ui/sonner', () => ({

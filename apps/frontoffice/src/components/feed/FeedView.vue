@@ -1,5 +1,12 @@
 <template>
   <div class="max-w-6xl mx-auto space-y-4 font-sans">
+    <header class="space-y-1">
+      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">Feed</h1>
+      <p class="text-sm text-muted-foreground">
+        Calls from holders, each checked on-chain when it was posted.
+      </p>
+    </header>
+
     <!-- Main Two-Column Hybrid Layout -->
     <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-5 items-start">
       <!-- ============================================================

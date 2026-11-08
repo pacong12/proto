@@ -160,11 +160,11 @@
                 />
               </div>
               <div class="min-w-0 truncate">
-                <h3
+                <h2
                   class="font-bold text-base text-foreground group-hover:opacity-85 transition truncate"
                 >
                   {{ item.token.name }}
-                </h3>
+                </h2>
                 <div class="flex items-center gap-1.5 text-sm text-muted-foreground truncate">
                   <span class="font-semibold">${{ item.token.symbol }}</span>
                   <span>&middot;</span>
