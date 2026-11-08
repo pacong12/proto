@@ -90,6 +90,25 @@ export function replyEnvelope(
 }
 
 /**
+ * The message of an unexpected error as a client may see it: one line (viem's short message when
+ * there is one) with every URL removed. viem errors embed the RPC URL, which can carry an API key.
+ */
+export function clientErrorMessage(e: unknown): string {
+  const error = e as { shortMessage?: unknown; message?: unknown } | null;
+  const raw =
+    typeof error?.shortMessage === 'string'
+      ? error.shortMessage
+      : typeof error?.message === 'string'
+        ? error.message
+        : 'Unexpected error';
+  const line = raw
+    .split('\n')[0]
+    .replace(/\b[a-z][a-z0-9+.-]*:\/\/\S+/gi, '[url]')
+    .trim();
+  return (line || 'Unexpected error').slice(0, 200);
+}
+
+/**
  * Runs a use case for a controller: its result becomes a success envelope, an AppError keeps its
  * code, and any other error is reported under `failCode`.
  */
@@ -101,7 +120,7 @@ export async function toEnvelope<T>(
     return ok(await run());
   } catch (e) {
     if (e instanceof AppError) return err(e.code, e.message);
-    return err(failCode, (e as Error).message);
+    return err(failCode, clientErrorMessage(e));
   }
 }
 
