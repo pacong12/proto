@@ -26,7 +26,8 @@ export function deriveEnvelopeStatus(env: {
     code === 'INVALID_AUTHOR' ||
     code === 'INVALID_RESOLUTION' ||
     code === 'INVALID_PARAM' ||
-    code === 'INVALID_TRADER'
+    code === 'INVALID_TRADER' ||
+    code === 'INVALID_ACCOUNT'
   )
     return 400;
   if (code === 'PAYLOAD_TOO_LARGE') return 413;
