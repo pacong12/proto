@@ -19,6 +19,7 @@ import {
   type TokenMarketData,
 } from '@goton/shared-types';
 import type { LiveTrade, TokenHolder, TradePage } from './types';
+import { isTradedBar } from '@/lib/chart-interval';
 
 /** Whether `next` moves anything the page shows from `prev` (price, market cap, volume, progress). */
 function marketChanged(prev: TokenMarketData, next: TokenMarketData): boolean {
@@ -414,7 +415,7 @@ export function useTradeMarket(page: TradePage) {
 
   // -----------------------------------------------------------------------
   // Multi-Timeframe Candlestick Engine (1m, 5m, 15m, 1h, 4h, 1d)
-  // Continuous timeline from token release to now
+  // Traded candles only (no empty filler bars), so the chart shows the last real move
   // -----------------------------------------------------------------------
   async function fetchCandlesticks(address: string, resolutionSeconds = 1, silent = false) {
     // silent=true → live poll: no loading spinner, only merge last 1-2 candles in-place
@@ -456,7 +457,9 @@ export function useTradeMarket(page: TradePage) {
         last.close = priceUsd;
         last.high = Math.max(last.high, priceUsd);
         last.low = Math.min(last.low, priceUsd);
-      } else if (currentBucket > last.time) {
+      } else if (currentBucket > last.time && priceUsd !== last.close) {
+        // Only when the price moved since the last traded bar; otherwise the chart ends on the
+        // last trade (no flat filler up to now).
         rows.push({
           time: currentBucket,
           open: last.close,
@@ -480,11 +483,15 @@ export function useTradeMarket(page: TradePage) {
           close: number;
           volume?: number;
         }>;
-      }>(`/api/tokens/${address}/ohlcv?resolution=${resolutionSeconds}&fillGaps=true`);
+      }>(`/api/tokens/${address}/ohlcv?resolution=${resolutionSeconds}&fillGaps=false`);
       if (resolutionSeconds !== selectedResolution.value) return; // Discard stale timeframe response
 
       if (envelope.success && Array.isArray(envelope.data) && envelope.data.length > 0) {
-        const incoming: CandleRow[] = envelope.data.map(parseCandleRow);
+        // Drop empty filler bars (no volume, no move): the chart ends on the last real trade and
+        // its candles stay readable instead of being squeezed by hours of flat bars.
+        const rows = envelope.data.map(parseCandleRow);
+        const traded = rows.filter(isTradedBar);
+        const incoming: CandleRow[] = traded.length > 0 ? traded : rows.slice(-1);
         const livePrice = currentMarketData.value.priceUsd;
         patchLivePrice(incoming, livePrice, resolutionSeconds);
 
