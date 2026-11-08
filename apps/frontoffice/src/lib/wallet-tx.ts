@@ -1,3 +1,4 @@
+import { txErrorMessage } from './tx-error';
 import { erc20Abi, type PublicClient, type WalletClient } from 'viem';
 import type { Ref } from 'vue';
 import type { NetworkConfig } from '@goton/shared-types';
@@ -112,7 +113,7 @@ export async function runWalletAction<T>(
   try {
     return await action();
   } catch (err) {
-    if (!isUserRejection(err)) state.error.value = (err as Error).message;
+    if (!isUserRejection(err)) state.error.value = txErrorMessage(err);
     return null;
   } finally {
     state.busy.value = false;

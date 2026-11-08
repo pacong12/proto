@@ -1,4 +1,4 @@
-import { swapErrorMessage } from '@/lib/swap-error';
+import { txErrorMessage } from '@/lib/tx-error';
 import { ref } from 'vue';
 import { erc20Abi, parseUnits } from 'viem';
 import { getPublicClient } from '../lib/viem-client';
@@ -119,7 +119,7 @@ export function useSwap() {
       if (isUserRejection(err)) {
         swapError.value = null;
       } else {
-        swapError.value = swapErrorMessage(err);
+        swapError.value = txErrorMessage(err, 'Swap execution failed');
       }
       return null;
     } finally {

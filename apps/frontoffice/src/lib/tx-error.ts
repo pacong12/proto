@@ -6,10 +6,10 @@ const KNOWN: Record<string, string> = {
 };
 
 /**
- * A swap error as a sentence for the trader: a known contract error by name, otherwise viem's
- * short message rather than the full request dump ("Request Arguments: …").
+ * A wallet transaction's error as a sentence for the trader: a known contract error by name,
+ * otherwise viem's short message rather than the full request dump ("Request Arguments: …").
  */
-export function swapErrorMessage(err: unknown): string {
+export function txErrorMessage(err: unknown, fallback = 'Transaction failed'): string {
   const e = err as { shortMessage?: string; message?: string } | null;
   const text = `${e?.shortMessage ?? ''} ${e?.message ?? ''}`;
   for (const [selector, sentence] of Object.entries(KNOWN)) {
@@ -17,5 +17,5 @@ export function swapErrorMessage(err: unknown): string {
   }
   if (/InsufficientOutput/.test(text)) return KNOWN['0xbb2875c3']!;
   const short = (e?.shortMessage || e?.message || '').split('\n')[0]!.trim();
-  return short || 'Swap execution failed';
+  return short || fallback;
 }
