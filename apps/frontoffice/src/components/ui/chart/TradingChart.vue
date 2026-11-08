@@ -225,6 +225,8 @@ function formatCompact(v: number): string {
 }
 
 function formatY(v: number): string {
+  // The bottom margin can extend the axis below zero; a price or market cap is never negative.
+  if (v < 0) return '';
   return valueMode.value === 'mcap' ? `$${formatCompact(v)}` : `$${formatPrice(v)}`;
 }
 

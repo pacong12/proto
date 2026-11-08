@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isTradedBar, resolutionForAge } from '../src/lib/chart-interval';
+import { chainCandles, isTradedBar, resolutionForAge } from '../src/lib/chart-interval';
 
 const NOW = Date.UTC(2026, 10, 8, 12, 0, 0);
 const ago = (seconds: number) => NOW - seconds * 1000;
@@ -32,5 +32,18 @@ describe('isTradedBar', () => {
     expect(isTradedBar({ ...flat, volume: 0.5 })).toBe(true);
     expect(isTradedBar({ ...flat, close: 1.1, high: 1.1 })).toBe(true);
     expect(isTradedBar({ open: 1, high: 1, low: 1, close: 1 })).toBe(false);
+  });
+});
+
+describe('chainCandles', () => {
+  it('opens each candle at the previous close and widens its range to include it', () => {
+    const bars = chainCandles([
+      { open: 1, high: 2, low: 1, close: 2 },
+      { open: 3, high: 3, low: 3, close: 3 },
+      { open: 2.5, high: 2.5, low: 2.5, close: 2.5 },
+    ]);
+    expect(bars[0]).toEqual({ open: 1, high: 2, low: 1, close: 2 });
+    expect(bars[1]).toEqual({ open: 2, high: 3, low: 2, close: 3 });
+    expect(bars[2]).toEqual({ open: 3, high: 3, low: 2.5, close: 2.5 });
   });
 });

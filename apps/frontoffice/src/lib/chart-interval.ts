@@ -35,3 +35,21 @@ export function isTradedBar(bar: {
 }): boolean {
   return (bar.volume ?? 0) > 0 || bar.open !== bar.close || bar.high !== bar.low;
 }
+
+/**
+ * Opens each candle at the previous candle's close, as trading charts do. The API opens a bucket
+ * at its first trade, so a one-trade candle had no body (a dash) and every candle floated apart
+ * from the one before it. Mutates and returns `bars`.
+ */
+export function chainCandles<T extends { open: number; high: number; low: number; close: number }>(
+  bars: T[],
+): T[] {
+  for (let i = 1; i < bars.length; i++) {
+    const bar = bars[i]!;
+    const open = bars[i - 1]!.close;
+    bar.open = open;
+    bar.high = Math.max(bar.high, open);
+    bar.low = Math.min(bar.low, open);
+  }
+  return bars;
+}

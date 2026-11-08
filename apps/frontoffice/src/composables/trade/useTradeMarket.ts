@@ -19,7 +19,7 @@ import {
   type TokenMarketData,
 } from '@goton/shared-types';
 import type { LiveTrade, TokenHolder, TradePage } from './types';
-import { isTradedBar } from '@/lib/chart-interval';
+import { chainCandles, isTradedBar } from '@/lib/chart-interval';
 
 /** Whether `next` moves anything the page shows from `prev` (price, market cap, volume, progress). */
 function marketChanged(prev: TokenMarketData, next: TokenMarketData): boolean {
@@ -491,7 +491,7 @@ export function useTradeMarket(page: TradePage) {
         // its candles stay readable instead of being squeezed by hours of flat bars.
         const rows = envelope.data.map(parseCandleRow);
         const traded = rows.filter(isTradedBar);
-        const incoming: CandleRow[] = traded.length > 0 ? traded : rows.slice(-1);
+        const incoming: CandleRow[] = chainCandles(traded.length > 0 ? traded : rows.slice(-1));
         const livePrice = currentMarketData.value.priceUsd;
         patchLivePrice(incoming, livePrice, resolutionSeconds);
 
