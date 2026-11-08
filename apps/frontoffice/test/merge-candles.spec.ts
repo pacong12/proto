@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ref } from 'vue';
-import { mergeCandles, replaceIfChanged } from '@/composables/trade/useTradeMarket';
+import { mergeCandles, patchLivePrice, replaceIfChanged } from '@/composables/trade/useTradeMarket';
 
 const bar = (time: number, close: number, volume = 0) => ({
   time,
@@ -25,6 +25,22 @@ describe('mergeCandles', () => {
       1, 2, 3,
     ]);
     expect(mergeCandles(existing, [bar(3, 11)])).toBeNull();
+  });
+});
+
+describe('patchLivePrice', () => {
+  it('moves the open candle to the live price', () => {
+    const rows = [bar(60, 10), bar(120, 10)];
+    patchLivePrice(rows, 13, 60, 150);
+    expect(rows[1]).toEqual({ time: 120, open: 10, high: 13, low: 10, close: 13, volume: 0 });
+  });
+
+  it('opens a new candle from the last close when the price moved, and none when it did not', () => {
+    const rows = [bar(60, 10)];
+    patchLivePrice(rows, 10, 60, 200);
+    expect(rows).toHaveLength(1);
+    patchLivePrice(rows, 8, 60, 200);
+    expect(rows[1]).toEqual({ time: 180, open: 10, high: 10, low: 8, close: 8, volume: 0 });
   });
 });
 

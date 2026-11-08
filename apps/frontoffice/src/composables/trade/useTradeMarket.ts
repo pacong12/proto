@@ -54,6 +54,37 @@ interface CandleBar {
   volume: number;
 }
 
+/**
+ * Moves the chart to the live price: the current bucket's candle takes it as its close, or a new
+ * candle opens when the price moved since the last one. Mutates `rows`.
+ */
+export function patchLivePrice(
+  rows: CandleBar[],
+  priceUsd: number,
+  resolution: number,
+  nowSec = Math.floor(Date.now() / 1000),
+): void {
+  if (rows.length === 0 || !(priceUsd > 0)) return;
+  const currentBucket = Math.floor(nowSec / resolution) * resolution;
+  const last = rows[rows.length - 1]!;
+  if (last.time === currentBucket) {
+    last.close = priceUsd;
+    last.high = Math.max(last.high, priceUsd);
+    last.low = Math.min(last.low, priceUsd);
+  } else if (currentBucket > last.time && priceUsd !== last.close) {
+    // Only when the price moved since the last traded bar; otherwise the chart ends on the last
+    // trade (no flat filler up to now).
+    rows.push({
+      time: currentBucket,
+      open: last.close,
+      high: Math.max(last.close, priceUsd),
+      low: Math.min(last.close, priceUsd),
+      close: priceUsd,
+      volume: 0,
+    });
+  }
+}
+
 /** Most bars the chart keeps. */
 const MAX_BARS = 1000;
 
@@ -255,14 +286,40 @@ export function useTradeMarket(page: TradePage) {
   // as refreshLive() to avoid spurious Vue reactivity updates.
   // The stream reports the market as soon as a trade moves it: take it, and reload the chart and
   // the open tab then rather than at the next poll (up to 30s on coarse timeframes).
+  // A busy coin moves several times a second: reload at most every STREAM_REFRESH_MS, once more
+  // after the last move, instead of on every move (that hit the API's per-IP limit).
+  const STREAM_REFRESH_MS = 2_500;
   let streamRefresh: Promise<void> | null = null;
+  let streamRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+  let lastStreamRefreshAt = 0;
+  function runStreamRefresh(): void {
+    streamRefreshTimer = null;
+    const addr = currentToken.value.address;
+    if (!addr) return;
+    if (streamRefresh) {
+      // One is in flight: run again once it lands, so the last move is not missed.
+      streamRefreshTimer = setTimeout(runStreamRefresh, STREAM_REFRESH_MS);
+      return;
+    }
+    lastStreamRefreshAt = Date.now();
+    streamRefresh = refreshAfterTrade(addr).finally(() => (streamRefresh = null));
+  }
   watch(streamMarketData, (incoming) => {
     if (!incoming || !marketChanged(currentMarketData.value, incoming)) return;
     currentMarketData.value = incoming;
-    const addr = currentToken.value.address;
-    if (addr && !streamRefresh) {
-      streamRefresh = refreshAfterTrade(addr).finally(() => (streamRefresh = null));
+    // The chart follows the stream at once; the reload below then brings the indexed candles.
+    if (candlestickData.value.length > 0 && incoming.priceUsd > 0) {
+      const next = candlestickData.value.slice();
+      next[next.length - 1] = { ...next[next.length - 1]! };
+      const before = next.length;
+      const last = next[before - 1]!;
+      const close = last.close;
+      patchLivePrice(next, incoming.priceUsd, selectedResolution.value);
+      if (next.length !== before || next[before - 1]!.close !== close) candlestickData.value = next;
     }
+    if (streamRefreshTimer) return;
+    const wait = Math.max(0, lastStreamRefreshAt + STREAM_REFRESH_MS - Date.now());
+    streamRefreshTimer = setTimeout(runStreamRefresh, wait);
   });
 
   /** Returns the poll interval in ms based on the currently selected chart resolution.
@@ -272,6 +329,8 @@ export function useTradeMarket(page: TradePage) {
    * NOT market price (that comes through the stream).
    */
   function getLivePollIntervalMs(): number {
+    // The stream already reloads the chart on every move; the poll is only a fallback then.
+    if (_sseConnected.value) return 30_000;
     const res = selectedResolution.value;
     if (res <= 1) return 3_000; // 1-second chart — stay near-realtime
     if (res <= 60) return 5_000; // 1-minute chart
@@ -447,30 +506,6 @@ export function useTradeMarket(page: TradePage) {
       };
     }
 
-    function patchLivePrice(rows: CandleRow[], priceUsd: number, resolution: number): void {
-      // Patch the current open bucket with live price without creating a new array reference
-      if (rows.length === 0 || priceUsd <= 0) return;
-      const nowSec = Math.floor(Date.now() / 1000);
-      const currentBucket = Math.floor(nowSec / resolution) * resolution;
-      const last = rows[rows.length - 1];
-      if (last.time === currentBucket) {
-        last.close = priceUsd;
-        last.high = Math.max(last.high, priceUsd);
-        last.low = Math.min(last.low, priceUsd);
-      } else if (currentBucket > last.time && priceUsd !== last.close) {
-        // Only when the price moved since the last traded bar; otherwise the chart ends on the
-        // last trade (no flat filler up to now).
-        rows.push({
-          time: currentBucket,
-          open: last.close,
-          high: Math.max(last.close, priceUsd),
-          low: Math.min(last.close, priceUsd),
-          close: priceUsd,
-          volume: 0,
-        });
-      }
-    }
-
     try {
       if (!silent) candlesLoading.value = true;
       const envelope = await apiFetch<{
@@ -563,6 +598,10 @@ export function useTradeMarket(page: TradePage) {
   /** Stops live updates (SSE before the poll loop, so no stale frame arrives after teardown). */
   function stopLive(): void {
     disconnectStream();
+    if (streamRefreshTimer) {
+      clearTimeout(streamRefreshTimer);
+      streamRefreshTimer = null;
+    }
     if (livePollTimer) {
       clearTimeout(livePollTimer);
       livePollTimer = null;
