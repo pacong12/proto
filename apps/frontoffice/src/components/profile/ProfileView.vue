@@ -119,16 +119,6 @@
                 {{ t('activity') }} ({{ userActivities.length }})
               </TabsTrigger>
             </TabsList>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              class="h-8 text-sm text-muted-foreground hover:text-foreground self-end sm:self-auto border border-border cursor-pointer rounded-xl"
-              @click="refreshAllData"
-            >
-              <RefreshCw class="w-3.5 h-3.5 mr-1" :class="{ 'animate-spin': loadingLaunches }" />
-              Refresh
-            </Button>
           </div>
 
           <!-- TAB 0: CONNECTED USER POSTS & CALLS -->
@@ -188,7 +178,6 @@
               :dividends-action-loading="dividendsActionLoading"
               :dividend-entries="dividendEntries"
               :dividends-error="dividendsError"
-              @refresh="refreshDividends"
               @claim-all="handleClaimAll"
               @claim-single="handleClaimSingle"
             />
@@ -253,7 +242,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { Check, AlertCircle, Loader2, RefreshCw, X, Wallet } from 'lucide-vue-next';
+import { Check, AlertCircle, Loader2, X, Wallet } from 'lucide-vue-next';
+import { useAutoRefresh } from '@/composables/useAutoRefresh';
 import { useI18n } from '@/lib/i18n';
 import { toast } from '@/components/ui/sonner';
 import { useLaunchpad } from '@/composables/useLaunchpad';
@@ -728,6 +718,9 @@ async function refreshAllData() {
   await Promise.all([fetchMyLaunches(), fetchUserPositionsAndActivity(), loadUserPosts()]);
   await refreshDividends();
 }
+
+// Live: positions, activity, posts and dividends follow the wallet's trades.
+useAutoRefresh(() => (targetAccount.value ? refreshAllData() : undefined), 30_000);
 
 watch(
   () => [targetAccount.value, route.path],

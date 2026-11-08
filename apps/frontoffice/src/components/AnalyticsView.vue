@@ -24,17 +24,6 @@
           {{ t('analyticsScopeNote', { network: activeNetwork.name }) }}
         </p>
       </div>
-
-      <!-- Action Refresh -->
-      <Button
-        variant="outline"
-        size="sm"
-        class="h-8 text-xs font-bold gap-1.5 border-border hover:bg-muted text-foreground self-start md:self-auto cursor-pointer rounded-xl"
-        @click="fetchAnalytics"
-      >
-        <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': loading }" />
-        <span>{{ t('analyticsRefresh') }}</span>
-      </Button>
     </div>
 
     <!-- Error Banner -->
@@ -403,10 +392,10 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
+import { useAutoRefresh } from '@/composables/useAutoRefresh';
 import { useRouter } from 'vue-router';
 import { apiFetch } from '@/lib/api-client';
 import {
-  RefreshCw,
   ExternalLink,
   Copy,
   Check,
@@ -613,7 +602,6 @@ async function fetchAnalytics() {
   // A slower answer for the previous network must not replace the current one's.
   const request = ++latestRequest;
   loading.value = true;
-  fetchError.value = null;
   try {
     const envelope = await apiFetch<{
       success: boolean;
@@ -621,14 +609,18 @@ async function fetchAnalytics() {
       error?: { message?: string };
     }>(`/api/analytics?chainId=${activeNetwork.value.chainId}`);
     if (request !== latestRequest) return;
-    response.value = envelope.success ? envelope.data : null;
-    if (!response.value) {
+    if (envelope.success && envelope.data) {
+      response.value = envelope.data;
+      fetchError.value = null;
+    } else if (!response.value) {
       fetchError.value = envelope.error?.message || t('analyticsUnexpectedResponse');
     }
   } catch (err) {
     if (request !== latestRequest) return;
-    response.value = null;
-    fetchError.value = (err as Error).message || t('analyticsUnexpectedResponse');
+    // A failed background refresh keeps the figures already on screen.
+    if (!response.value) {
+      fetchError.value = (err as Error).message || t('analyticsUnexpectedResponse');
+    }
   } finally {
     if (request === latestRequest) loading.value = false;
   }
@@ -637,6 +629,8 @@ async function fetchAnalytics() {
 watch(
   () => activeNetwork.value.chainId,
   () => {
+    response.value = null;
+    fetchError.value = null;
     fetchAnalytics();
   },
 );
@@ -646,4 +640,7 @@ onMounted(() => {
   // Top coins read the shared token list, which is empty when this page is opened directly.
   void fetchTokens();
 });
+
+// Live: volume, launches and top coins move with every trade.
+useAutoRefresh(() => Promise.all([fetchAnalytics(), fetchTokens()]), 30_000);
 </script>

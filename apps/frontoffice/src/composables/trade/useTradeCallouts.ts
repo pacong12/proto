@@ -225,7 +225,7 @@ export function useTradeCallouts(
         callouts.value = envelope.data;
       }
     } catch {
-      callouts.value = [];
+      // Keep the calls on screen; the next refresh tries again.
     } finally {
       calloutsLoading.value = false;
     }

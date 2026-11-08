@@ -257,27 +257,6 @@
                     </span>
                   </TabsTrigger>
                 </TabsList>
-
-                <Button
-                  v-if="activeBottomTab === 'trades'"
-                  variant="ghost"
-                  size="sm"
-                  class="ml-auto h-7 px-2 text-xs text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
-                  @click="fetchTrades(currentToken.address)"
-                >
-                  <RefreshCw class="w-3.5 h-3.5 sm:mr-1" />
-                  <span class="hidden sm:inline">Refresh</span>
-                </Button>
-                <Button
-                  v-if="activeBottomTab === 'callouts'"
-                  variant="ghost"
-                  size="sm"
-                  class="ml-auto h-7 px-2 text-xs text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
-                  @click="fetchCallouts(currentToken.address)"
-                >
-                  <RefreshCw class="w-3.5 h-3.5 sm:mr-1" />
-                  <span class="hidden sm:inline">Refresh</span>
-                </Button>
               </div>
 
               <!-- Tab: Community Callouts (pump.fun style) -->
@@ -440,13 +419,13 @@
 import { resolveSafeUrl } from '@/lib/safe-url';
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useI18n } from '@/lib/i18n';
-import { AlertCircle, Loader2, RefreshCw } from 'lucide-vue-next';
+import { AlertCircle, Loader2 } from 'lucide-vue-next';
 import { SLIPPAGE_WARN_THRESHOLD } from '@/composables/useSwap';
 import { useWallet } from '@/composables/useWallet';
 import { usePnlShare } from '@/composables/usePnlShare';
 import { usePinnedTokens } from '@/composables/usePinnedTokens';
 import { toast } from '@/components/ui/sonner';
-import { Button } from '@/components/ui/button';
+import { useAutoRefresh } from '@/composables/useAutoRefresh';
 import PendingTaxBanner from '@/components/tax/PendingTaxBanner.vue';
 import TeamPayouts from '@/components/trade/TeamPayouts.vue';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -740,6 +719,15 @@ const closedPosition = computed(() =>
   myPosition.value?.pnl.status === 'sold' ? myPosition.value : null,
 );
 watch(userHoldingTokensCount, () => reloadMyPosition());
+
+// Trades, holders and top traders follow the live poll; new calls arrive on this one.
+useAutoRefresh(
+  () =>
+    activeBottomTab.value === 'callouts' && currentToken.value.address
+      ? fetchCallouts(currentToken.value.address)
+      : undefined,
+  20_000,
+);
 
 // SEO: name the page after the token once its metadata has loaded, and keep thin pages out of
 // search the way the edge worker does (isIndexableToken).

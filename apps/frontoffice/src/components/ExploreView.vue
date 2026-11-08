@@ -192,6 +192,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
+import { useAutoRefresh } from '@/composables/useAutoRefresh';
 import { Plus, Loader2, AlertCircle, Search, List, LayoutGrid } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -319,4 +320,7 @@ onMounted(async () => {
     apiError.value = (e as Error).message;
   }
 });
+
+// Live: new launches, market caps and volume move with every trade.
+useAutoRefresh(() => tokenStore.fetchTokens(true), 15_000);
 </script>
