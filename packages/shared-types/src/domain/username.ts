@@ -315,3 +315,32 @@ export function sanitizeCreatorProfile(input: Partial<CreatorProfile>): CreatorP
   }
   return profile as CreatorProfile;
 }
+
+/**
+ * Identity strings -> wallet address, for resolving a typed or linked name. The slug, display
+ * name and handle carry the tag and name one wallet. The bare name (64^3 of them) and the bare tag
+ * (16^4) are shared by many wallets once there are a few hundred: they resolve only while exactly
+ * one known wallet has them, so a link never opens someone else's profile.
+ */
+export function buildIdentityIndex(addresses: Iterable<string>): Map<string, string> {
+  const index = new Map<string, string>();
+  const ambiguous = new Set<string>();
+  for (const raw of addresses) {
+    if (!raw) continue;
+    const addr = raw.toLowerCase();
+    const id = getUserIdentity(addr);
+    for (const key of [id.slug, id.displayName.toLowerCase(), id.handle.toLowerCase()]) {
+      if (!index.has(key)) index.set(key, addr);
+    }
+    for (const key of [id.name.toLowerCase(), id.tag]) {
+      if (ambiguous.has(key)) continue;
+      const seen = index.get(key);
+      if (seen === undefined) index.set(key, addr);
+      else if (seen !== addr) {
+        index.delete(key);
+        ambiguous.add(key);
+      }
+    }
+  }
+  return index;
+}

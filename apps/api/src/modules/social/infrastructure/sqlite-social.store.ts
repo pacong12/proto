@@ -1,7 +1,7 @@
 import type { Database } from 'bun:sqlite';
 import type { SqliteDatabase } from '../../../core/sqlite/sqlite-database';
 import type { SocialStorePort } from '../../../core/ports/social-store.port';
-import { TokenCommentEntity, getUserIdentity, type CreatorProfile } from '@goton/shared-types';
+import { TokenCommentEntity, buildIdentityIndex, type CreatorProfile } from '@goton/shared-types';
 
 /** Comments, callouts, follows and profiles. */
 const IDENTITY_INDEX_TTL_MS = 60_000;
@@ -56,14 +56,8 @@ export class SqliteSocialStore implements SocialStorePort {
     `,
       )
       .all() as Array<{ addr: string }>;
-    const addresses = new Map<string, string>();
-    for (const { addr } of rows) {
-      const id = getUserIdentity(addr);
-      for (const key of [id.name, id.displayName, id.slug, id.tag]) {
-        const lower = key.toLowerCase();
-        if (!addresses.has(lower)) addresses.set(lower, addr.toLowerCase());
-      }
-    }
+    // A bare name or tag shared by several wallets resolves to none of them, not the first seen.
+    const addresses = buildIdentityIndex(rows.map((r) => r.addr));
     this.identityIndex = { builtAt: now, addresses };
     return addresses;
   }

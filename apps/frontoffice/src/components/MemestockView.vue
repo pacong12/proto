@@ -340,7 +340,7 @@ function formatPct(pct: number): string {
 
 function navigateToDeployer(deployerAddress: string) {
   if (!deployerAddress) return;
-  router.push(`/${getUserIdentity(deployerAddress).name}`);
+  router.push(`/${getUserIdentity(deployerAddress).slug}`);
 }
 
 const memestockTabs = computed(() => [

@@ -192,6 +192,6 @@ const tokenStore = useTokenStore();
 
 function navigateToDeployer(deployerAddress: string) {
   if (!deployerAddress) return;
-  router.push(`/${getUserIdentity(deployerAddress).name}`);
+  router.push(`/${getUserIdentity(deployerAddress).slug}`);
 }
 </script>

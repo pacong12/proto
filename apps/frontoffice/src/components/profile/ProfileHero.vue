@@ -196,7 +196,7 @@
         <ul v-else class="max-h-80 overflow-y-auto -mx-2">
           <li v-for="row in listRows" :key="row.address">
             <RouterLink
-              :to="`/${row.identity.name}`"
+              :to="`/${getUserIdentity(row.address).slug}`"
               class="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-muted transition"
               @click="listOpen = false"
             >

@@ -297,7 +297,7 @@ const showProgress = computed(() => props.paginatedTokens.some(hasCurve));
 
 function navigateToDeployer(deployerAddress: string) {
   if (!deployerAddress) return;
-  router.push(`/${getUserIdentity(deployerAddress).name}`);
+  router.push(`/${getUserIdentity(deployerAddress).slug}`);
 }
 
 function formatNumberCap(val: number): string {

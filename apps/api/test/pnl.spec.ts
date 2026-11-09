@@ -253,3 +253,34 @@ describe('IpfsImageLoader', () => {
     expect(await loader.pngDataUrl('ipfs://slow')).toBeNull();
   });
 });
+
+describe('positionPnl prices trades at what they paid', () => {
+  // A 0.3 ETH buy and an immediate sale of all of it on a curve, ETH at $2000: the spot price
+  // after each trade (priceUsd) is far from what each executed at.
+  const trade = (isBuy: boolean, eth: string, spotEth: number, ts: number): TradeEventEntity => ({
+    id: `0x${ts}-0`,
+    tokenAddress: '0x00000000000000000000000000000000000000aa',
+    poolAddress: '0x00000000000000000000000000000000000000c0',
+    trader: '0x00000000000000000000000000000000000000ee',
+    isBuy,
+    tokenAmount: '228104371.9372',
+    wethAmount: eth,
+    priceUsd: spotEth * 2000,
+    priceQuote: spotEth,
+    blockNumber: BigInt(ts),
+    transactionHash: `0x${ts}`,
+    timestamp: ts,
+  });
+
+  it('shows a round trip as its fees, not twice its price impact', () => {
+    const pnl = positionPnl(
+      [trade(true, '0.300000', 1.689e-9, 1), trade(false, '0.294030', 1.004e-9, 2)],
+      1.004e-9 * 2000,
+      1e9,
+    );
+    expect(pnl.investedUsd).toBeCloseTo(600, 6);
+    expect(pnl.proceedsUsd).toBeCloseTo(588.06, 6);
+    expect(pnl.totalUsd).toBeCloseTo(-11.94, 6);
+    expect(pnl.status).toBe('sold');
+  });
+});
