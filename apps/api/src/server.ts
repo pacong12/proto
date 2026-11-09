@@ -89,12 +89,14 @@ async function handleRequest(req: Request, server?: PeerAddressSource): Promise<
     });
     // Include CORS headers on 500 responses so browser clients get the error body instead of a
     // network error.
-    const corsHeaders: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    };
+    // Same CORS policy as every other response (not a wildcard).
+    const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || '')
+      .split(',')
+      .map((o) => o.trim())
+      .filter(Boolean);
+    const corsHeaders = buildSecurityHeaders(
+      resolveCorsOrigin(new URL(req.url).pathname, req.headers.get('origin') || '', allowedOrigins),
+    );
     const errorResponse = new Response(
       JSON.stringify({
         success: false,
@@ -108,11 +110,18 @@ async function handleRequest(req: Request, server?: PeerAddressSource): Promise<
   }
 }
 
+/** Upper bound for any request body (see Bun.serve below). */
+const MAX_REQUEST_BODY_BYTES = 8 * 1024 * 1024;
+
 export const server =
   typeof Bun !== 'undefined'
     ? Bun.serve({
         port: PORT,
         hostname: '0.0.0.0',
+        // Bodies are buffered before handlers check their size, so cap them here: the largest
+        // legitimate body is a 5 MiB image as base64 JSON (~6.7 MiB). Bun's default is 128 MiB,
+        // a few of which exhaust the API container's memory limit.
+        maxRequestBodySize: MAX_REQUEST_BODY_BYTES,
         fetch: handleRequest,
       })
     : {

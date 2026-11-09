@@ -108,6 +108,7 @@ export function useFeed() {
     try {
       let signature: `0x${string}` | undefined;
       const timestamp = Date.now();
+      const callType = params.callType ?? (params.parentId ? 'comment' : 'call');
 
       const walletClient = await getWalletClient();
       if (walletClient) {
@@ -117,6 +118,11 @@ export function useFeed() {
             authorAddress: params.authorAddress,
             content: params.content,
             timestamp,
+            imageUrl: params.imageUrl,
+            targetMcap: params.targetMcap,
+            parentId: params.parentId,
+            quotedCalloutId: params.quotedCalloutId,
+            callType,
           });
           signature = await walletClient.signMessage({
             account: params.authorAddress as `0x${string}`,
@@ -142,7 +148,7 @@ export function useFeed() {
             profitUsd: params.profitUsd,
             parentId: params.parentId,
             quotedCalloutId: params.quotedCalloutId,
-            callType: params.callType ?? (params.parentId ? 'comment' : 'call'),
+            callType,
             signature,
             timestamp,
           }),

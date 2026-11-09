@@ -8,6 +8,9 @@ import {
   isAddress,
   buildCommentSignMessage,
   buildSessionSignMessage,
+  buildLegacySessionSignMessage,
+  buildEraseDataSignMessage,
+  legacySignaturesAccepted,
   sanitizeCreatorProfile,
   type CreatorProfile,
   ok,
@@ -19,13 +22,14 @@ import {
   PayloadTooLargeError,
   createSessionToken,
   requireSocialSession,
+  sessionAddressFromRequest,
 } from '../../../core';
 import type { RouteContext, Router } from '../../../core/http/router';
 import type { AppContainer } from '../../../app/container';
 
 /** HTTP routes of the social module, registered in the order they are matched. */
 export function registerSocialRoutes(router: Router, deps: AppContainer): void {
-  const { repository, chainRegistry } = deps;
+  const { repository, chainRegistry, cache, memoryCache } = deps;
   // GET /api/users/resolve?query=:query
   router.on('GET', '/api/users/resolve', async ({ url, replyJson, replyError }) => {
     const q = url.searchParams.get('query') || '';
@@ -200,10 +204,13 @@ export function registerSocialRoutes(router: Router, deps: AppContainer): void {
         const quotedCalloutId = body.quotedCalloutId
           ? String(body.quotedCalloutId).trim()
           : undefined;
-        let positionUsd =
-          typeof body.positionUsd === 'number' && !isNaN(body.positionUsd)
+        // Client-supplied position sizes are never displayed: only a size verified below (callouts)
+        // is stored. Tests may still pass one to stand in for a holder.
+        const claimedPositionUsd =
+          typeof body.positionUsd === 'number' && Number.isFinite(body.positionUsd)
             ? body.positionUsd
             : undefined;
+        let positionUsd: number | undefined;
         let supplyPercent: number | undefined;
         const callType = body.callType === 'comment' ? 'comment' : 'call';
         if (!content || content.length > 500) {
@@ -244,6 +251,11 @@ export function registerSocialRoutes(router: Router, deps: AppContainer): void {
             authorAddress,
             content,
             timestamp,
+            imageUrl,
+            targetMcap,
+            parentId,
+            quotedCalloutId,
+            callType,
           });
 
           let isValid = false;
@@ -253,6 +265,19 @@ export function registerSocialRoutes(router: Router, deps: AppContainer): void {
               message: signMessage,
               signature,
             });
+            // Transition: clients built before every field was signed sign only the base lines.
+            if (!isValid && legacySignaturesAccepted()) {
+              isValid = await verifyMessage({
+                address: authorAddress as Address,
+                message: buildCommentSignMessage({
+                  tokenAddress: address,
+                  authorAddress,
+                  content,
+                  timestamp,
+                }),
+                signature,
+              });
+            }
           } catch (e) {
             if (e instanceof PayloadTooLargeError) {
               return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
@@ -266,6 +291,14 @@ export function registerSocialRoutes(router: Router, deps: AppContainer): void {
               'Cryptographic signature does not match author wallet address',
               401,
             );
+          }
+          // One post per signature: a captured payload cannot be replayed in its 10-minute window.
+          const replayKey = `sig:comment:${signature.toLowerCase()}`;
+          const uses = await cache
+            .increment(replayKey, 11 * 60 * 1000)
+            .catch(() => memoryCache.increment(replayKey, 11 * 60 * 1000));
+          if (uses > 1) {
+            return replyError('SIGNATURE_REUSED', 'This signature was already used to post', 409);
           }
         } else if (process.env.NODE_ENV !== 'test') {
           return replyError(
@@ -367,9 +400,14 @@ export function registerSocialRoutes(router: Router, deps: AppContainer): void {
               // Non-blocking
             }
           }
-          if (!hasPosition && process.env.NODE_ENV === 'test' && positionUsd && positionUsd > 0) {
+          if (
+            !hasPosition &&
+            process.env.NODE_ENV === 'test' &&
+            claimedPositionUsd &&
+            claimedPositionUsd > 0
+          ) {
             hasPosition = true;
-            verifiedPositionUsd = positionUsd;
+            verifiedPositionUsd = claimedPositionUsd;
           }
 
           if (!hasPosition) {
@@ -464,9 +502,16 @@ export function registerSocialRoutes(router: Router, deps: AppContainer): void {
     /^\/api\/users\/(0x[a-fA-F0-9]{40})\/data$/,
     async ({ req, replyError, replyEnvelope }, eraseMatch) => {
       const address = eraseMatch[1];
-      const sessionError = requireSocialSession(req, address, 'delete this data', true);
-      if (sessionError)
-        return replyError(sessionError.code, sessionError.message, sessionError.status);
+      let body: { issuedAt?: number; signature?: Hex } = {};
+      try {
+        body = await parseJsonBody<typeof body>(req, 2048);
+      } catch (e) {
+        if (e instanceof PayloadTooLargeError) {
+          return replyError('PAYLOAD_TOO_LARGE', 'Payload exceeds maximum allowed size', 413);
+        }
+      }
+      const authError = await authorizeErasure(req, address, body);
+      if (authError) return replyError(authError.code, authError.message, authError.status);
       if (!repository.deleteUserData)
         return replyError('NOT_SUPPORTED', 'Erasure unavailable', 501);
       const deleted = await repository.deleteUserData(address);
@@ -494,11 +539,13 @@ export function registerSocialRoutes(router: Router, deps: AppContainer): void {
       if (Math.abs(Date.now() - issuedAt) > 10 * 60 * 1000) {
         return replyError('EXPIRED_SIGNATURE', 'Sign-in message is older than 10 minutes', 401);
       }
-      const valid = await verifyMessage({
-        address: address as Address,
-        message: buildSessionSignMessage({ address, issuedAt }),
-        signature: body.signature,
-      }).catch(() => false);
+      const signature = body.signature;
+      const signedBy = (message: string) =>
+        verifyMessage({ address: address as Address, message, signature }).catch(() => false);
+      const valid =
+        (await signedBy(buildSessionSignMessage({ address, issuedAt }))) ||
+        (legacySignaturesAccepted() &&
+          (await signedBy(buildLegacySessionSignMessage({ address, issuedAt }))));
       if (!valid) {
         return replyError('INVALID_SIGNATURE', 'Signature does not match the wallet address', 401);
       }
@@ -600,4 +647,47 @@ export function registerSocialRoutes(router: Router, deps: AppContainer): void {
       return replyJson(ok(item));
     },
   );
+}
+
+/**
+ * GRC-04: erasure is irreversible, so a 24h session token is not enough: the wallet signs the
+ * request itself (buildEraseDataSignMessage) within the last 10 minutes. Until
+ * LEGACY_SIGNATURES_ACCEPTED_UNTIL, a request without a signature (tabs opened before the release)
+ * may still use the wallet's session token.
+ */
+async function authorizeErasure(
+  req: Request,
+  address: string,
+  body: { issuedAt?: number; signature?: Hex },
+): Promise<{ code: string; message: string; status: number } | null> {
+  if (!body.signature) {
+    if (legacySignaturesAccepted() && sessionAddressFromRequest(req)) {
+      return requireSocialSession(req, address, 'delete this data', true);
+    }
+    return {
+      code: 'SIGNATURE_REQUIRED',
+      message: 'Sign the delete-my-data message with this wallet (issuedAt and signature)',
+      status: 401,
+    };
+  }
+  const issuedAt = Number(body.issuedAt);
+  if (!Number.isFinite(issuedAt) || Math.abs(Date.now() - issuedAt) > 10 * 60 * 1000) {
+    return {
+      code: 'EXPIRED_SIGNATURE',
+      message: 'Delete request is missing issuedAt or is older than 10 minutes',
+      status: 401,
+    };
+  }
+  const signed = await verifyMessage({
+    address: address as Address,
+    message: buildEraseDataSignMessage({ address, issuedAt }),
+    signature: body.signature,
+  }).catch(() => false);
+  return signed
+    ? null
+    : {
+        code: 'INVALID_SIGNATURE',
+        message: 'Signature does not match the wallet address',
+        status: 403,
+      };
 }

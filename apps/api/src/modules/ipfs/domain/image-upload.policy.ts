@@ -40,14 +40,52 @@ export const TOO_LARGE: UploadRejection = {
  * Uses linear non-backtracking patterns to prevent polynomial ReDoS.
  */
 function isMaliciousSvg(buf: Buffer): boolean {
-  const text = buf.toString('utf8').toLowerCase();
+  const raw = buf.toString('utf8').toLowerCase();
+  // Tags and attribute names cannot be written as character references, so markup checks run on
+  // the raw text (an escaped `&lt;script` in text content stays text). URL schemes inside
+  // attribute values can be encoded (`javascript&#58;`, `java&#x09;script:`), so those checks
+  // run on the decoded value with whitespace and control characters removed.
+  // eslint-disable-next-line no-control-regex
+  const urls = decodeEntities(raw).replace(/[\u0000- ]+/g, '');
   return (
-    text.includes('<script') ||
-    text.includes('javascript:') ||
-    text.includes('data:text/html') ||
-    text.includes('<foreignobject') ||
-    /\bon[a-z]+\s*=/i.test(text)
+    raw.includes('<script') ||
+    raw.includes('<foreignobject') ||
+    raw.includes('<!entity') ||
+    /\bon[a-z]+\s*=/i.test(raw) ||
+    urls.includes('javascript:') ||
+    urls.includes('vbscript:') ||
+    urls.includes('data:text/html')
   );
+}
+
+const NAMED_ENTITIES: Record<string, string> = {
+  colon: ':',
+  tab: '\t',
+  newline: '\n',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
+  amp: '&',
+};
+
+function safeCodePoint(cp: number): string {
+  return Number.isFinite(cp) && cp >= 0 && cp <= 0x10ffff ? String.fromCodePoint(cp) : '';
+}
+
+/** Decodes numeric (`&#58;`, `&#x3a;`) and the few named character references attackers use. */
+function decodeEntities(text: string): string {
+  let out = text;
+  // Repeat so double encodings (`&amp;#58;`) collapse too; bounded to stay linear.
+  for (let i = 0; i < 3; i++) {
+    const next = out
+      .replace(/&#x([0-9a-f]{1,6});?/gi, (_, h: string) => safeCodePoint(parseInt(h, 16)))
+      .replace(/&#(\d{1,7});?/g, (_, d: string) => safeCodePoint(parseInt(d, 10)))
+      .replace(/&([a-z]{2,7});/gi, (m, n: string) => NAMED_ENTITIES[n.toLowerCase()] ?? m);
+    if (next === out) break;
+    out = next;
+  }
+  return out;
 }
 
 /**

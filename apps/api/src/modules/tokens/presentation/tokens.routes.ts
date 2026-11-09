@@ -26,6 +26,7 @@ import {
 } from '../../../core/http/cached-reply';
 import type { Router } from '../../../core/http/router';
 import type { AppContainer } from '../../../app/container';
+import { isLaunchReceiptFor } from '../../../core/receipt-guards';
 
 /** Width of one /api/analytics chart bucket (six per 24h). */
 const ANALYTICS_BUCKET_MS = 4 * 60 * 60 * 1000;
@@ -212,6 +213,11 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
             if (txHash) {
               try {
                 const receipt = await chain.client.getTransactionReceipt({ hash: txHash });
+                // The txHash is caller-supplied: it dates the token only if it is this token's
+                // launch, i.e. a factory log whose first indexed topic (token) is this address.
+                if (!isLaunchReceiptFor(receipt, address, chain.network)) {
+                  throw new Error('txHash is not the launch of this token');
+                }
                 const block = await chain.client.getBlock({ blockNumber: receipt.blockNumber });
                 launchBlock = receipt.blockNumber;
                 existing = {
@@ -838,7 +844,11 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
       if (rawTo && !/^\d+$/.test(rawTo)) {
         return replyError('INVALID_PARAM', 'toBlock must be a non-negative integer', 400);
       }
-      const fromBlock = rawFrom ? BigInt(rawFrom) : currentBlock - 100_000n;
+      const fromBlock = rawFrom
+        ? BigInt(rawFrom)
+        : currentBlock > 100_000n
+          ? currentBlock - 100_000n
+          : 0n;
       const toBlock = rawTo ? BigInt(rawTo) : currentBlock;
 
       if (fromBlock > toBlock) {
