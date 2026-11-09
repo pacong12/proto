@@ -72,11 +72,18 @@ const token = (over: Partial<LaunchedTokenEntity> = {}) =>
     ...over,
   }) as unknown as LaunchedTokenEntity;
 
-function keeperWith(opts: { fillable: string[]; gas?: bigint; gasPrice?: bigint }) {
+function keeperWith(opts: {
+  fillable: string[];
+  gas?: bigint;
+  gasPrice?: bigint;
+  unmined?: number;
+}) {
   const simulated: string[] = [];
   const targets: string[] = [];
   const writes: unknown[] = [];
   const publicClient = {
+    getTransactionCount: async ({ blockTag }: { blockTag: string }) =>
+      blockTag === 'pending' ? (opts.unmined ?? 0) : 0,
     simulateContract: vi.fn(
       async ({
         address,
@@ -159,6 +166,16 @@ describe('LimitOrderKeeperService', () => {
     expect(writes).toEqual([
       { functionName: 'executeBuyOnCurve', args: [1n, CURVE], gas: 375_000n },
     ]);
+  });
+
+  it('fills nothing while an earlier fill is still unmined', async () => {
+    const { results, writes, simulated } = await run(order(), token(), {
+      fillable: ['executeBuyOnCurve:'],
+      unmined: 1,
+    });
+    expect(results).toEqual([]);
+    expect(simulated).toEqual([]);
+    expect(writes).toEqual([]);
   });
 
   it('routes graduated tokens to their v4 pool', async () => {
@@ -296,6 +313,7 @@ describe('limit order indexing', () => {
       },
     ];
     const client = {
+      getTransactionCount: async () => 0,
       getLogs: vi.fn(async ({ events }: { events?: unknown }) => (events ? logs : [])),
       getBlock: vi.fn(async () => ({ timestamp: 1_800_000_000n })),
     } as unknown as PublicClient;
@@ -364,6 +382,7 @@ describe('limit order indexing', () => {
       },
     ];
     const client = {
+      getTransactionCount: async () => 0,
       getLogs: vi.fn(async ({ events }: { events?: unknown }) => (events ? logs : [])),
       getBlock: vi.fn(async () => ({ timestamp: 1_800_000_000n })),
     } as unknown as PublicClient;
@@ -407,6 +426,7 @@ describe('LimitOrderKeeperService under a rate-limited RPC', () => {
     await repo.saveLimitOrder!(order({ key: 'b', orderId: '2' }));
     let calls = 0;
     const publicClient = {
+      getTransactionCount: async () => 0,
       simulateContract: async () => {
         calls++;
         throw Object.assign(new Error('HTTP request failed.\nStatus: 429'), { status: 429 });
@@ -444,6 +464,7 @@ describe('LimitOrderKeeperService with many open orders', () => {
     const target = BigInt(KEEPER_PAGE + 1);
     const seen: bigint[] = [];
     const publicClient = {
+      getTransactionCount: async () => 0,
       simulateContract: async ({ args }: { args: unknown[] }) => {
         seen.push(args[0] as bigint);
         if (args[0] !== target) throw new Error('InsufficientOutput()');

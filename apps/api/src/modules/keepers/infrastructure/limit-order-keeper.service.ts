@@ -74,6 +74,13 @@ export class LimitOrderKeeperService {
     if (contracts.size === 0 || !this.walletClient || !this.repository.listLimitOrders) return [];
     const [account] = await this.walletClient.getAddresses();
     if (!account) return [];
+    // A fill still unmined keeps its order open in the store and passes simulation again: a second
+    // fill would queue behind it and revert once the first deletes the order. Wait for it.
+    const [mined, pendingNonce] = await Promise.all([
+      this.publicClient.getTransactionCount({ address: account, blockTag: 'latest' }),
+      this.publicClient.getTransactionCount({ address: account, blockTag: 'pending' }),
+    ]);
+    if (pendingNonce > mined) return [];
 
     const nowSec = Math.floor(this.now() / 1000);
     const page = (offset: number) =>

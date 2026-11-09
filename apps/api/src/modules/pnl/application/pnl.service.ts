@@ -28,7 +28,8 @@ const CHART_POINTS = 200;
 const CHART_MARKERS = 40;
 
 export interface PnlServiceDeps {
-  trades: Required<Pick<TradeStorePort, 'getTradesByTrader'>>;
+  trades: Required<Pick<TradeStorePort, 'getTradesByTrader'>> &
+    Pick<TradeStorePort, 'getTraderTokens'>;
   profiles: Pick<SocialStorePort, 'getProfile'>;
   getTokenByAddress: Pick<GetTokenByAddressUseCase, 'execute'>;
   getCandlesticks: Pick<GetCandlesticksUseCase, 'execute'>;
@@ -47,25 +48,40 @@ export class PnlService {
   /** The wallet's position in every token it traded (held or sold), newest trade first. */
   async positions(wallet: string): Promise<WalletPnl> {
     assertAddress(wallet, 'Wallet address');
-    const [trader, trades] = await Promise.all([
-      this.trader(wallet),
-      this.deps.trades.getTradesByTrader(wallet, MAX_TRADES),
-    ]);
-    // Trades come newest first, so the map keeps tokens in order of their latest trade.
-    const byToken = new Map<string, TradeEventEntity[]>();
-    for (const t of trades) {
-      const key = t.tokenAddress.toLowerCase();
-      const list = byToken.get(key);
-      if (list) list.push(t);
-      else byToken.set(key, [t]);
-    }
+    const [trader, byToken] = await Promise.all([this.trader(wallet), this.tradesByToken(wallet)]);
     const positions = await Promise.all(
-      [...byToken].slice(0, MAX_POSITIONS).map(async ([address, tokenTrades]) => {
+      [...byToken].map(async ([address, tokenTrades]) => {
         const detail = await this.deps.getTokenByAddress.execute(address as `0x${string}`);
         return detail ? toPosition(detail, tokenTrades).position : null;
       }),
     );
     return { ...trader, positions: positions.filter((p): p is PnlPosition => p !== null) };
+  }
+
+  /**
+   * The wallet's trades per token, tokens traded most recently first. Each token's history is read
+   * on its own: one newest-MAX_TRADES page across every token cut an active wallet's older buys
+   * off, leaving positions of sells only, which counted every sale as profit.
+   */
+  private async tradesByToken(wallet: string): Promise<Map<string, TradeEventEntity[]>> {
+    const { trades } = this.deps;
+    const byToken = new Map<string, TradeEventEntity[]>();
+    if (trades.getTraderTokens) {
+      const tokens = await trades.getTraderTokens(wallet, MAX_POSITIONS);
+      const lists = await Promise.all(
+        tokens.map((token) => trades.getTradesByTrader(wallet, MAX_TRADES, token)),
+      );
+      tokens.forEach((token, i) => byToken.set(token, lists[i]!));
+      return byToken;
+    }
+    // Trades come newest first, so the map keeps tokens in order of their latest trade.
+    for (const t of await trades.getTradesByTrader(wallet, MAX_TRADES)) {
+      const key = t.tokenAddress.toLowerCase();
+      const list = byToken.get(key);
+      if (list) list.push(t);
+      else if (byToken.size < MAX_POSITIONS) byToken.set(key, [t]);
+    }
+    return byToken;
   }
 
   /** The PNG card of the position; `pageUrl` is where the card links to. */

@@ -192,6 +192,59 @@ describe('Trades Module Clean Architecture Tests', () => {
       expect(row?.profitUsd).toBe(0);
       expect(row?.positionStatus).toBe('clean_all');
     });
+
+    it("counts a holder's unsold tokens at today's price, so a winner who holds is tagged", async () => {
+      await repository.save({
+        address: tokenAddress,
+        name: 'A',
+        symbol: 'A',
+        decimals: 18,
+        totalSupply: '1000000000000000000000000000',
+        logo: '',
+        description: '',
+        socials: {},
+        deployer: '0x9999999999999999999999999999999999999999',
+        pairedToken: '0x0000000000000000000000000000000000000000',
+        poolAddress: '0x8888888888888888888888888888888888888888',
+        isToken0: false,
+        poolFee: 10000,
+        positionId: 1n,
+        restrictionsEndBlock: 0n,
+        launchBlock: 0n,
+        createdAt: 0,
+        version: 'v2',
+      } as LaunchedTokenEntity);
+      // Bought 1M tokens for 0.1 ETH ($250); they are worth $0.001 each now ($1,000).
+      await repository.saveTrade({
+        id: 'hold-1',
+        tokenAddress,
+        poolAddress: '0x8888888888888888888888888888888888888888',
+        trader: traderAddress,
+        isBuy: true,
+        tokenAmount: '1000000.0000',
+        wethAmount: '0.100000',
+        priceUsd: 0.00025,
+        blockNumber: 1n,
+        transactionHash: `0x${'1'.repeat(64)}` as `0x${string}`,
+        timestamp: Date.now() - 1000,
+      });
+      await repository.saveMarketData({
+        address: tokenAddress,
+        priceInWeth: 4e-7,
+        priceUsd: 0.001,
+        marketCapUsd: 1_000_000,
+        fdvUsd: 1_000_000,
+        pairedPrincipalWeth: '0',
+        graduationThresholdWeth: '4.2',
+        graduationProgress: 0,
+        isGraduated: false,
+        volume24hUsd: 0,
+      });
+      const res = await controller.getTopTraders(tokenAddress);
+      const row = res.data?.find((r) => r.address === traderAddress.toLowerCase());
+      expect(row?.profitUsd).toBe(750);
+      expect(row?.walletTag).toBe('smart_degen');
+    });
   });
 
   describe('GetCandlesticksUseCase & TradeController.getCandlesticks', () => {

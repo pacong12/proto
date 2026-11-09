@@ -197,6 +197,17 @@ export class SqliteTradeStore implements TradeStorePort {
     return rows.map((row) => mapRowToTrade(row));
   }
 
+  async getTraderTokens(trader: string, limit = 50): Promise<string[]> {
+    const rows = this.db
+      .prepare(
+        `SELECT LOWER(tokenAddress) AS token, MAX(timestamp) AS last FROM trades
+         WHERE trader = ? COLLATE NOCASE
+         GROUP BY LOWER(tokenAddress) ORDER BY last DESC LIMIT ?`,
+      )
+      .all(trader, limit) as Array<{ token: string }>;
+    return rows.map((r) => r.token);
+  }
+
   async getTradesByTrader(
     trader: string,
     limit = 50,

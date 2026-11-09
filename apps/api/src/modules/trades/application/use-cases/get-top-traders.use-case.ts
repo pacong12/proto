@@ -111,9 +111,16 @@ export class GetTopTradersUseCase {
       traderMap.set(trader, cur);
     }
 
+    // What is still held counts at today's price: sell - buy alone put every holder who had not
+    // sold at a loss of everything they bought, and tagged no holder as a smart trader.
+    const priceUsd =
+      (await this.tokenRepository.getMarketData?.(address as Address).catch(() => null))
+        ?.priceUsd ?? 0;
+
     const list = Array.from(traderMap.entries()).map(([traderAddr, stats]) => {
       const isDev = traderAddr === devAddress;
-      const profitUsd = Math.round(stats.sellUsd - stats.buyUsd);
+      const heldTokens = Math.max(0, stats.buyTokens - stats.sellTokens);
+      const profitUsd = Math.round(stats.sellUsd + heldTokens * priceUsd - stats.buyUsd);
       let walletTag = 'trader';
       if (isDev) walletTag = 'dev';
       else if (profitUsd > 500) walletTag = 'smart_degen';

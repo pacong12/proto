@@ -43,9 +43,11 @@ function curveToken(n: number, overrides: Partial<LaunchedTokenEntity> = {}): La
   };
 }
 
-function setup(finishedCurves: string[], simulationReverts = false) {
+function setup(finishedCurves: string[], simulationReverts = false, pendingTxs = 0) {
   const writes: Array<{ args: readonly unknown[] }> = [];
   const publicClient = {
+    getTransactionCount: async ({ blockTag }: { blockTag: string }) =>
+      blockTag === 'pending' ? 7 + pendingTxs : 7,
     readContract: async ({ address }: { address: string }) =>
       finishedCurves.includes(address.toLowerCase()),
     simulateContract: async ({ args }: { args: readonly unknown[] }) => {
@@ -79,6 +81,17 @@ describe('GraduationKeeperService', () => {
     ).runOnce();
     expect(results).toEqual([{ token: done.address, executed: true, txHash: '0xhash' }]);
     expect(writes.map((w) => w.args)).toEqual([[done.address]]);
+  });
+
+  it('sends nothing while a transaction of its wallet is still unmined', async () => {
+    const repo = new InMemoryTokenRepository();
+    const finished = curveToken(1, { isGraduated: true });
+    await repo.save(finished);
+    const { publicClient, walletClient, writes } = setup([finished.curveAddress!], false, 1);
+    expect(
+      await new GraduationKeeperService(publicClient, walletClient, repo, network).runOnce(),
+    ).toEqual([]);
+    expect(writes).toHaveLength(0);
   });
 
   it('graduates a finished curve already flagged graduated by a page view or the indexer', async () => {

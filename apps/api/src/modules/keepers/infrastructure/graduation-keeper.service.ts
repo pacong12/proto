@@ -55,6 +55,14 @@ export class GraduationKeeperService {
     if (!factory || !this.walletClient) return [];
     const [account] = await this.walletClient.getAddresses();
     if (!account) return [];
+    // An unmined transaction from this wallet (its graduate, or another keeper's) is still ahead:
+    // simulating against the current state would pass again and queue a second graduate behind
+    // it, which reverts and pays gas, every 30 seconds. The buyback keeper replaces stuck ones.
+    const [mined, pending] = await Promise.all([
+      this.publicClient.getTransactionCount({ address: account, blockTag: 'latest' }),
+      this.publicClient.getTransactionCount({ address: account, blockTag: 'pending' }),
+    ]);
+    if (pending > mined) return [];
 
     const curves = (await findAllTokens(this.repository)).filter((t) => this.isLiveCurve(t));
     const results: GraduationResult[] = [];
