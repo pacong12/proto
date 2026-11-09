@@ -23,6 +23,7 @@ import {
   createSessionToken,
   requireSocialSession,
   sessionAddressFromRequest,
+  canonicalSignatureKey,
 } from '../../../core';
 import type { RouteContext, Router } from '../../../core/http/router';
 import type { AppContainer } from '../../../app/container';
@@ -293,7 +294,8 @@ export function registerSocialRoutes(router: Router, deps: AppContainer): void {
             );
           }
           // One post per signature: a captured payload cannot be replayed in its 10-minute window.
-          const replayKey = `sig:comment:${signature.toLowerCase()}`;
+          // Keyed by the signature's canonical form: its other encodings verify too (v 0/1, high s).
+          const replayKey = `sig:comment:${canonicalSignatureKey(signature) ?? signature.toLowerCase()}`;
           const uses = await cache
             .increment(replayKey, 11 * 60 * 1000)
             .catch(() => memoryCache.increment(replayKey, 11 * 60 * 1000));
