@@ -1,3 +1,4 @@
+import { burnAdjustedMarketCapSql } from '../../../../core/sqlite/burned-supply';
 import type { Database } from 'bun:sqlite';
 import type { SqliteDatabase } from '../../../../core/sqlite/sqlite-database';
 import type { TokenStorePort } from '../../../../core/ports/token-store.port';
@@ -147,7 +148,8 @@ export class SqliteTokenStore implements TokenStorePort {
 
   async getMarketData(address: `0x${string}`): Promise<TokenMarketData | null> {
     const stmt = this.db.prepare(`
-      SELECT * FROM market_data WHERE address = ? COLLATE NOCASE LIMIT 1
+      SELECT m.*, ${burnAdjustedMarketCapSql('m')} AS circulatingMarketCapUsd
+      FROM market_data m WHERE m.address = ? COLLATE NOCASE LIMIT 1
     `);
     const row = stmt.get(address) as MarketDataRow | null;
     if (!row) return null;
@@ -156,7 +158,10 @@ export class SqliteTokenStore implements TokenStorePort {
       address: row.address as `0x${string}`,
       priceInWeth: Number(row.priceInWeth),
       priceUsd: Number(row.priceUsd),
-      marketCapUsd: Number(row.marketCapUsd),
+      marketCapUsd: Number(
+        (row as MarketDataRow & { circulatingMarketCapUsd?: number }).circulatingMarketCapUsd ??
+          row.marketCapUsd,
+      ),
       fdvUsd: Number(row.fdvUsd),
       pairedPrincipalWeth: row.pairedPrincipalWeth,
       graduationThresholdWeth: row.graduationThresholdWeth,

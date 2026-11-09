@@ -70,14 +70,7 @@
                 :token-address="currentToken.address"
                 :height="420"
                 :resolution="selectedResolution"
-                :total-supply="
-                  currentToken.totalSupply && BigInt(currentToken.totalSupply) > 0n
-                    ? Number(
-                        BigInt(currentToken.totalSupply) /
-                          10n ** BigInt(currentToken.decimals || 18),
-                      )
-                    : 1000000000
-                "
+                :total-supply="circulatingSupply"
                 :is-graduated="currentMarketData.isGraduated"
                 :live-price="currentMarketData.priceUsd"
                 :live-market-cap="currentMarketData.marketCapUsd"
@@ -590,6 +583,7 @@ const page: TradePage = {
 const tradeMarket = useTradeMarket(page);
 const {
   burnedInfo,
+  circulatingSupply,
   candlesLoading,
   candlestickData,
   changeResolution,

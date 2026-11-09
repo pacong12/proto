@@ -1,3 +1,4 @@
+import { burnAdjustedMarketCapSql } from '../../../core/sqlite/burned-supply';
 import type { Database } from 'bun:sqlite';
 import type { SqliteDatabase } from '../../../core/sqlite/sqlite-database';
 import type { SocialStorePort } from '../../../core/ports/social-store.port';
@@ -196,7 +197,7 @@ export class SqliteSocialStore implements SocialStorePort {
         c.likes_count, c.created_at, c.target_mcap, c.position_usd, c.profit_usd, c.call_type,
         c.parent_id, c.quoted_callout_id, c.reposts_count, c.quotes_count, c.replies_count, c.views_count, c.supply_percent, c.price_at_post,
         t.name as token_name, t.symbol as token_symbol, t.logo as token_logo, t.pairedToken as token_paired_token,
-        m.marketCapUsd as token_market_cap, m.priceUsd as token_price_usd
+        ${burnAdjustedMarketCapSql('m')} as token_market_cap, m.priceUsd as token_price_usd
       FROM comments c
       LEFT JOIN tokens t ON t.address = c.token_address COLLATE NOCASE
       LEFT JOIN market_data m ON m.address = c.token_address COLLATE NOCASE
@@ -309,7 +310,7 @@ export class SqliteSocialStore implements SocialStorePort {
         c.likes_count, c.created_at, c.target_mcap, c.position_usd, c.profit_usd, c.call_type,
         c.parent_id, c.quoted_callout_id, c.reposts_count, c.quotes_count, c.replies_count, c.views_count, c.supply_percent, c.price_at_post,
         t.name as token_name, t.symbol as token_symbol, t.logo as token_logo, t.pairedToken as token_paired_token,
-        m.marketCapUsd as token_market_cap, m.priceUsd as token_price_usd
+        ${burnAdjustedMarketCapSql('m')} as token_market_cap, m.priceUsd as token_price_usd
       FROM comments c
       LEFT JOIN tokens t ON t.address = c.token_address COLLATE NOCASE
       LEFT JOIN market_data m ON m.address = c.token_address COLLATE NOCASE
@@ -438,7 +439,7 @@ export class SqliteSocialStore implements SocialStorePort {
         c.likes_count, c.created_at, c.target_mcap, c.position_usd, c.profit_usd, c.call_type,
         c.parent_id, c.quoted_callout_id, c.reposts_count, c.quotes_count, c.replies_count, c.supply_percent,
         t.name as token_name, t.symbol as token_symbol, t.logo as token_logo, t.pairedToken as token_paired_token,
-        m.marketCapUsd as token_market_cap, m.priceUsd as token_price_usd
+        ${burnAdjustedMarketCapSql('m')} as token_market_cap, m.priceUsd as token_price_usd
       FROM comments c
       LEFT JOIN tokens t ON t.address = c.token_address COLLATE NOCASE
       LEFT JOIN market_data m ON m.address = c.token_address COLLATE NOCASE

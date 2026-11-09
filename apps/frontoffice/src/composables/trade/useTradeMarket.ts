@@ -199,6 +199,20 @@ export function useTradeMarket(page: TradePage) {
     top10WalletPercent(holders.value, holderContext.value),
   );
 
+  /** Whole tokens that can still trade: the minted total less what sits at the burn addresses. */
+  const circulatingSupply = computed(() => {
+    let total: bigint;
+    try {
+      total = BigInt(currentToken.value.totalSupply || '0');
+    } catch {
+      total = 0n;
+    }
+    if (total <= 0n) return 1_000_000_000;
+    const burned = burnedRaw(holders.value);
+    const live = total > burned ? total - burned : 0n;
+    return Number(live / 10n ** BigInt(currentToken.value.decimals || 18));
+  });
+
   const burnedInfo = computed(() => ({
     percent: burnedPercent(holders.value),
     raw: burnedRaw(holders.value),
@@ -623,6 +637,7 @@ export function useTradeMarket(page: TradePage) {
     startLive,
     stopLive,
     burnedInfo,
+    circulatingSupply,
     candlesLoading,
     candlestickData,
     changeResolution,
