@@ -16,10 +16,25 @@ export async function readThrough<T>(
 ): Promise<{ value: T; hit: boolean }> {
   const cached = await cache.get<T>(key);
   if (cached) return { value: cached, hit: true };
-  const value = await build();
-  if (cacheable(value)) await cache.set(key, value, ttlSeconds);
-  return { value, hit: false };
+  // One build per key at a time in this process: requests that miss while it runs share it,
+  // instead of each rerunning it (a PnL card render, a token's on-chain reads) on an expiry.
+  const running = inFlight.get(key) as Promise<T> | undefined;
+  if (running) return { value: await running, hit: false };
+  const pending = (async () => {
+    const value = await build();
+    if (cacheable(value)) await cache.set(key, value, ttlSeconds);
+    return value;
+  })();
+  inFlight.set(key, pending);
+  try {
+    return { value: await pending, hit: false };
+  } finally {
+    inFlight.delete(key);
+  }
 }
+
+/** Builds running in readThrough, by cache key. */
+const inFlight = new Map<string, Promise<unknown>>();
 
 /** The x-cache header telling whether a reply came from the cache. */
 export const cacheHeader = (hit: boolean) => ({ 'x-cache': hit ? 'HIT' : 'MISS' });

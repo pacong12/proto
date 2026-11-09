@@ -15,6 +15,8 @@ interface CacheEntry {
 /** Trades read per page, and the most a leaderboard reads in all. */
 const PAGE = 1000;
 export const TOP_TRADERS_MAX_TRADES = 50_000;
+/** Most tokens memoized; any valid address is a key, so the memo must not grow without bound. */
+export const TOP_TRADERS_CACHE_SIZE = 500;
 
 export class GetTopTradersUseCase {
   private readonly cache = new Map<string, CacheEntry>();
@@ -155,6 +157,11 @@ export class GetTopTradersUseCase {
       return a.address.localeCompare(b.address);
     });
 
+    this.cache.delete(cleanAddress);
+    if (this.cache.size >= TOP_TRADERS_CACHE_SIZE) {
+      // Oldest first: a Map iterates in insertion order and an entry is reinserted on refresh.
+      this.cache.delete(this.cache.keys().next().value!);
+    }
     this.cache.set(cleanAddress, {
       data: list,
       timestamp: Date.now(),

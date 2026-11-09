@@ -112,4 +112,15 @@ describe('TradeSyncService.indexFromReceipt', () => {
     expect(trade.priceUsd).toBe(0.000002);
     expect(reads).toHaveLength(0);
   });
+
+  it("drops the trader's cached PnL for the token once their trade is synced", async () => {
+    const { repo, sync } = setup();
+    const cache = (sync as unknown as { cache: InMemoryCacheAdapter }).cache;
+    await repo.save(token);
+    const wallet = TRADER.toLowerCase();
+    const keys = [`pnl:wallet:${wallet}`, `pnl:${wallet}:${TOKEN}`, `pnl:card:${wallet}/${TOKEN}`];
+    for (const key of keys) await cache.set(key, { stale: true });
+    await sync.indexFromReceipt(TX, TOKEN);
+    for (const key of keys) expect(await cache.get(key)).toBeNull();
+  });
 });

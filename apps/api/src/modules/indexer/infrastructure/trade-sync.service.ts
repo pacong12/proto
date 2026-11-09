@@ -149,6 +149,11 @@ export class TradeSyncService {
         await Promise.allSettled([
           this.cache.del(`token:detail:${tokenAddress.toLowerCase()}`),
           this.cache.delPrefix(`token:holders:${tokenAddress.toLowerCase()}`),
+          // The trader's PnL: their portfolio (30s) and position (10s) missed the trade they had
+          // just made, and its card (60s) showed the position before it.
+          this.cache.del(`pnl:wallet:${trader.toLowerCase()}`),
+          this.cache.del(`pnl:${trader.toLowerCase()}:${tokenAddress.toLowerCase()}`),
+          this.cache.del(`pnl:card:${trader.toLowerCase()}/${tokenAddress.toLowerCase()}`),
         ]);
         if (token.version === 'v2' && priceUsd > 0 && isLatest) {
           const mkt = await this.repository.getMarketData(token.address);
