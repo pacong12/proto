@@ -138,7 +138,10 @@ export function registerDexRoutes(router: Router, deps: AppContainer): void {
       const chain = chainRegistry.getChainByParam(match[1]);
       const poolAddress = match[2].toLowerCase() as `0x${string}`;
       const timeframe = match[3] as keyof typeof GECKO_TIMEFRAME_SECONDS;
-      const limit = Math.min(1000, parseInt(url.searchParams.get('limit') ?? '100', 10));
+      // 1..1000: candles.slice(-limit) returned every candle for NaN or 0 and cut the oldest
+      // ones for a negative limit.
+      const rawLimit = parseInt(url.searchParams.get('limit') ?? '100', 10);
+      const limit = Math.min(1000, Math.max(1, isNaN(rawLimit) ? 100 : rawLimit));
       return replyCatching(async () => {
         const { token, candles } = await geckoTerminalService.ohlcv(
           poolAddress,
