@@ -39,7 +39,8 @@ export interface SocialStorePort {
     commentId: string,
     userAddress: string,
   ): Promise<{ reposted: boolean; repostsCount: number }>;
-  incrementCommentViews?(commentId: string): Promise<number>;
+  /** Adds a view when `count` (default true); the view total, or null if there is no comment. */
+  incrementCommentViews?(commentId: string, count?: boolean): Promise<number | null>;
   // Sentiment voting
   getProfile?(address: string): Promise<CreatorProfile | null>;
   saveProfile?(address: string, profile: CreatorProfile): Promise<void>;
