@@ -54,6 +54,26 @@ contract GotonFeeSplitterTest is Test {
         splitter.distributeFees(amount);
     }
 
+    /// A taxed transfer credits the tax recipient too: without its own checkpoint first, it could
+    /// claim dividends streamed before it held any of those tokens.
+    function test_TaxRecipientEarnsNothingFromBeforeItsTax() public {
+        token.setInitialTaxConfig(0, 1_000, community);
+        token.setLiquidityPool(pool);
+        vm.roll(block.number + 10);
+
+        _distribute(10 ether);
+        vm.warp(block.timestamp + 1 days); // the 3.5 ETH holder share has fully streamed
+
+        uint256 sold = token.balanceOf(bob) / 2;
+        vm.prank(bob);
+        token.transfer(pool, sold); // a sell: 10% goes to the community wallet
+        assertEq(token.balanceOf(community), sold / 10);
+        assertEq(splitter.claimable(community), 0, "no dividends from before it held the tax");
+
+        // What alice and bob earned is still all there for them.
+        assertApproxEqAbs(splitter.claimable(alice) + splitter.claimable(bob), 3.5 ether, 1e6);
+    }
+
     function test_SplitsProtocolFirstThenRemainder() public {
         _distribute(10 ether);
         assertEq(splitter.protocolAccrued(), 3 ether, "30% protocol, released later");

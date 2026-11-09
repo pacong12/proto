@@ -67,3 +67,19 @@ describe('Deterministic Username Generator (Collision-Free)', () => {
     expect(resolveUserAddress('')).toBeNull();
   });
 });
+
+describe('resolveUserAddress with wallets that share a name', () => {
+  const A = '0x000000000000000000000000000000000000aaaa';
+  const B = '0x004000400040000000000000000000000000bbbb';
+
+  it('never resolves a shared bare name or a guessed tag to one of them', () => {
+    const name = getUserIdentity(A).name;
+    expect(getUserIdentity(B).name).toBe(name);
+    expect(resolveUserAddress(name, [A, B])).toBeNull();
+    expect(resolveUserAddress(getUserIdentity(A).slug, [A, B])).toBe(A);
+    expect(resolveUserAddress(getUserIdentity(B).slug)).toBe(B);
+    // Any name with another wallet's tag used to open that wallet.
+    expect(resolveUserAddress('somebody-aaaa', [A, B])).toBeNull();
+    expect(resolveUserAddress('%E0%A4%A', [A])).toBeNull();
+  });
+});

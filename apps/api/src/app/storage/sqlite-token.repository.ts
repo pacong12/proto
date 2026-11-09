@@ -71,6 +71,8 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     this.trades.getRecentTrades(...args);
   getTradesByTrader: SqliteTradeStore['getTradesByTrader'] = (...args) =>
     this.trades.getTradesByTrader(...args);
+  getTraderTokens: SqliteTradeStore['getTraderTokens'] = (...args) =>
+    this.trades.getTraderTokens(...args);
   getTradesInBlockRange: SqliteTradeStore['getTradesInBlockRange'] = (...args) =>
     this.trades.getTradesInBlockRange(...args);
   getTradesSince: SqliteTradeStore['getTradesSince'] = (...args) =>
@@ -111,6 +113,8 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     this.orders.adoptLimitOrders(...args);
   updateLimitOrder: SqliteOrderStore['updateLimitOrder'] = (...args) =>
     this.orders.updateLimitOrder(...args);
+  getLimitOrder: SqliteOrderStore['getLimitOrder'] = (...args) =>
+    this.orders.getLimitOrder(...args);
   listLimitOrders: SqliteOrderStore['listLimitOrders'] = (...args) =>
     this.orders.listLimitOrders(...args);
 }

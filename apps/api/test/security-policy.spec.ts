@@ -68,4 +68,25 @@ describe('SecurityPolicy & Security Gate', () => {
     expect(evaluation.suggestedAction).toBe('REJECT');
     expect(evaluation.reason).toContain('outside safe bounds');
   });
+
+  it.each([Number.NaN, undefined, '1' as unknown as number, Infinity])(
+    'rejects a slippage that is not a number in range (%s)',
+    (slippage) => {
+      const evaluation = SecurityPolicy.evaluate({
+        id: 'intent-swap-bad-slippage',
+        sender: validSender,
+        action: 'SWAP_BUY',
+        chainId: 4663,
+        payload: {
+          tokenAddress: validToken,
+          isBuy: true,
+          amountInWei: '1',
+          minAmountOutWei: '1',
+          slippageTolerancePercent: slippage as number,
+        },
+        timestamp: Date.now(),
+      });
+      expect(evaluation.allowed).toBe(false);
+    },
+  );
 });

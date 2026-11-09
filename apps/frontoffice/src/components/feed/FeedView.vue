@@ -316,7 +316,7 @@ function navigateToToken(address: string): void {
 
 function navigateToCaller(address: string): void {
   if (address) {
-    router.push(`/${getUserIdentity(address).name}`);
+    router.push(`/${getUserIdentity(address).slug}`);
   }
 }
 

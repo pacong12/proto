@@ -79,7 +79,7 @@
               <div class="flex items-center gap-1.5 flex-wrap">
                 <span
                   class="font-bold text-foreground text-sm sm:text-base hover:underline cursor-pointer truncate"
-                  @click="router.push(`/${getUserIdentity(post.authorAddress).name}`)"
+                  @click="router.push(`/${getUserIdentity(post.authorAddress).slug}`)"
                 >
                   {{ getUserIdentity(post.authorAddress).displayName }}
                 </span>
@@ -368,7 +368,7 @@
               <div class="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <span
                   class="font-bold text-foreground text-xs hover:underline cursor-pointer"
-                  @click="router.push(`/${getUserIdentity(rep.authorAddress).name}`)"
+                  @click="router.push(`/${getUserIdentity(rep.authorAddress).slug}`)"
                 >
                   {{ getUserIdentity(rep.authorAddress).displayName }}
                 </span>

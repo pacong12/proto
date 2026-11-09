@@ -4,8 +4,7 @@ import { apiFetch } from '@/lib/api-client';
 import { formatDividendAmount, totalsByCurrency } from '@/lib/currency-totals';
 import { getPublicClient } from '@/lib/viem-client';
 import {
-  gotonFeeSplitterAbi,
-  resolveFeeSplitter,
+  readCreatorFees,
   UNDEPLOYED,
   type LaunchedTokenEntity,
   type TokenMarketData,
@@ -77,36 +76,22 @@ export function useUserProfile({
             // FO-06: read the creator's real accrued fees from the token's splitter instead of
             // simulating the legacy locker (whose fallback reported other tokens' balances).
             try {
-              const splitter = await resolveFeeSplitter(
+              // Claimable now plus the creator's share of fees not collected yet: claiming
+              // collects those first, so this is what a claim pays. creatorAccrued alone read 0
+              // until the keeper collected the pool's fees.
+              const fees = await readCreatorFees(
                 tokenClient,
                 tokenNetwork,
                 item.token.address as `0x${string}`,
               );
-              if (splitter) {
-                const [accrued, recipient, creatorAddr] = await Promise.all([
-                  tokenClient.readContract({
-                    address: splitter.address,
-                    abi: gotonFeeSplitterAbi,
-                    functionName: 'creatorAccrued',
-                  }),
-                  tokenClient.readContract({
-                    address: splitter.address,
-                    abi: gotonFeeSplitterAbi,
-                    functionName: 'creatorRecipient',
-                  }),
-                  tokenClient.readContract({
-                    address: splitter.address,
-                    abi: gotonFeeSplitterAbi,
-                    functionName: 'creator',
-                  }),
-                ]);
-                unclaimedRaw = accrued;
-                quoteDecimals = splitter.quoteDecimals;
+              if (fees) {
+                unclaimedRaw = fees.accrued + fees.pending;
+                quoteDecimals = fees.quoteDecimals;
                 if (
-                  recipient.toLowerCase() !== creatorAddr.toLowerCase() &&
-                  recipient !== UNDEPLOYED
+                  fees.recipient.toLowerCase() !== fees.creator.toLowerCase() &&
+                  fees.recipient !== UNDEPLOYED
                 ) {
-                  redirect = recipient;
+                  redirect = fees.recipient;
                 }
               }
             } catch {
@@ -130,15 +115,17 @@ export function useUserProfile({
             };
           }),
         );
+        // Another profile opened while this one loaded: its launches are not this one's.
+        if (targetAccount.value !== target) return;
         myLaunches.value = launches;
-      } else {
+      } else if (targetAccount.value === target) {
         myLaunches.value = [];
       }
     } catch (e) {
       console.warn('[useUserProfile] Failed to load launches:', (e as Error).message);
-      myLaunches.value = [];
+      if (targetAccount.value === target) myLaunches.value = [];
     } finally {
-      loadingLaunches.value = false;
+      if (targetAccount.value === target) loadingLaunches.value = false;
     }
   }
 
@@ -165,6 +152,7 @@ export function useUserProfile({
           `/api/users/${target}/portfolio`,
         ).catch(() => null),
       ]);
+      if (targetAccount.value !== target) return;
       const tokensList: Array<{ token: LaunchedTokenEntity; marketData: TokenMarketData }> =
         tokensJson?.success && Array.isArray(tokensJson.data) ? tokensJson.data : [];
 
@@ -216,6 +204,11 @@ export function useUserProfile({
       for (const launch of myLaunches.value) {
         candidateAddresses.add(launch.address.toLowerCase());
       }
+      // The indexer's positions are checked on-chain too, so a sold-out one is not shown.
+      if (portfolioJson?.success && Array.isArray(portfolioJson.data)) {
+        for (const pos of portfolioJson.data)
+          candidateAddresses.add(pos.tokenAddress.toLowerCase());
+      }
 
       // Default portfolio positions from indexer
       const indexedPositionsMap = new Map<string, PortfolioPosition>();
@@ -227,6 +220,8 @@ export function useUserProfile({
 
       // Try on-chain balances with per-token network resilience
       const candidateList = Array.from(candidateAddresses);
+      // Read on-chain as empty: sold out, even while the indexer still lists the position.
+      const emptyOnChain = new Set<string>();
       const balancePromises = candidateList.map(async (addr) => {
         const meta = tokenMap.get(addr);
         const chainId = meta ? getTokenNetwork(meta.token).chainId : activeNetwork.value.chainId;
@@ -255,6 +250,7 @@ export function useUserProfile({
               valueUsd: num * price,
             };
           }
+          emptyOnChain.add(addr);
         } catch {
           // Fallback to indexed position if on-chain call reverts
           return indexedPositionsMap.get(addr) || null;
@@ -263,6 +259,7 @@ export function useUserProfile({
       });
 
       const settled = await Promise.allSettled(balancePromises);
+      if (targetAccount.value !== target) return;
       const validPositionsMap = new Map<string, PortfolioPosition>();
 
       // Merge on-chain verified positions
@@ -274,7 +271,7 @@ export function useUserProfile({
 
       // Also include any indexed positions that weren't checked or where on-chain reverted
       for (const [addr, pos] of indexedPositionsMap.entries()) {
-        if (!validPositionsMap.has(addr)) {
+        if (!validPositionsMap.has(addr) && !emptyOnChain.has(addr)) {
           validPositionsMap.set(addr, pos);
         }
       }
@@ -288,7 +285,7 @@ export function useUserProfile({
         (e as Error).message,
       );
     } finally {
-      loadingPortfolio.value = false;
+      if (targetAccount.value === target) loadingPortfolio.value = false;
     }
   }
 

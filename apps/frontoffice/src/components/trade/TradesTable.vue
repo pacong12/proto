@@ -210,6 +210,8 @@ export interface TradeItem {
   tokenAmount: string;
   wethAmount: string;
   priceUsd: number;
+  /** Spot price in the quote after the trade; with priceUsd it gives the quote's USD price then. */
+  priceQuote?: number | null;
   blockNumber?: bigint | string;
   transactionHash: string;
   timestamp: number;
@@ -302,10 +304,18 @@ watch(filteredTrades, (list) => {
   if (currentPage.value > max) currentPage.value = 1;
 });
 
+/**
+ * What the trade paid or received in USD: its quote amount at the quote's price then. Tokens times
+ * priceUsd valued it at the spot price it moved the market to, not what it executed at (a large
+ * buy showed well above what was paid).
+ */
 function getTradeVolumeUsd(trade: TradeItem): number {
-  const byTokens = parseFloat(trade.tokenAmount || '0') * (trade.priceUsd || 0);
-  if (byTokens > 0) return byTokens;
-  const ethRate = props.quoteAssetPriceUsd || FALLBACK_ETH_PRICE_USD;
-  return parseFloat(trade.wethAmount || '0') * ethRate;
+  const quote = parseFloat(trade.wethAmount || '0') || 0;
+  const priceQuote = trade.priceQuote ?? 0;
+  if (quote > 0 && priceQuote > 0 && trade.priceUsd > 0) {
+    return quote * (trade.priceUsd / priceQuote);
+  }
+  if (quote > 0) return quote * (props.quoteAssetPriceUsd || FALLBACK_ETH_PRICE_USD);
+  return parseFloat(trade.tokenAmount || '0') * (trade.priceUsd || 0);
 }
 </script>

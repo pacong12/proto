@@ -528,7 +528,7 @@ const copiedShare = ref(false);
 function shareProfile() {
   if (typeof window === 'undefined' || !targetAccount.value) return;
   const identity = getUserIdentity(targetAccount.value);
-  const url = `${window.location.origin}/${identity.name}`;
+  const url = `${window.location.origin}/${identity.slug}`;
   navigator.clipboard.writeText(url);
   copiedShare.value = true;
   setTimeout(() => {
@@ -745,7 +745,8 @@ watch(
         path === '/user' ||
         (typeof path === 'string' && (path.startsWith('/profile/0x') || path.startsWith('/u/0x')))
       ) {
-        router.replace(`/${identity.name}`);
+        // The slug carries the tag: a bare name is shared by many wallets.
+        router.replace(`/${identity.slug}`);
       }
     }
   },

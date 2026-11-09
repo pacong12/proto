@@ -170,10 +170,10 @@ export class GetTokenByAddressUseCase {
 
       await this.tokenRepository.saveMarketData(marketDataWithChange);
 
-      // Refresh stored V2 curve params
+      // Refresh stored V2 curve params. initialBuyAmount stays the creator's launch buy (from
+      // TokenLaunched): it was overwritten with everything the curve had raised on every view.
       await this.tokenRepository.save({
         ...token,
-        initialBuyAmount: curveState.totalEthRaised.toString(),
         isGraduated: curveState.graduated,
         virtualEthReserve: curveState.virtualEthReserve.toString(),
         virtualTokenReserve: curveState.virtualTokenReserve.toString(),

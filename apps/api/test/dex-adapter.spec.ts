@@ -265,5 +265,13 @@ describe('GeckoTerminal OHLCV timeframes', () => {
       expect(list.length, timeframe).toBe(timeframe === 'minute' ? 2 : 1);
       for (const [timestamp] of list) expect(timestamp % ms, timeframe).toBe(0);
     }
+
+    // A limit that is not a positive number is clamped, never "every candle" or "drop the first".
+    const minute = (limit: string) =>
+      get(`/api/v1/networks/robinhood/pools/${pool}/ohlcv/minute?limit=${limit}`).then(
+        (r) => r.body.data.attributes.ohlcv_list as number[][],
+      );
+    expect(await minute('0')).toHaveLength(1);
+    expect(await minute('-1')).toHaveLength(1);
   });
 });

@@ -54,6 +54,9 @@ export class TradeSyncService {
   async indexFromReceipt(txHash: `0x${string}`, tokenAddress: `0x${string}`): Promise<void> {
     const token = await this.repository.findByAddress(tokenAddress);
     if (!token) return;
+    // The txHash comes from a public request: a transaction already indexed (by the poller, which
+    // prices each trade at its own block) is never rewritten, so an old hash cannot reprice history.
+    if (await this.repository.findTradeByHash?.(txHash)) return;
 
     const chain = this.chainRegistry.resolveForToken(token);
     const client = chain.client;
@@ -61,6 +64,9 @@ export class TradeSyncService {
 
     const receipt = await client.getTransactionReceipt({ hash: txHash });
     if (!receipt || receipt.status !== 'success') return;
+    // A trade older than the newest indexed one prices its own row, not the token's market now.
+    const [newest] = await this.repository.getTrades(token.address, 1);
+    const isLatest = !newest || newest.blockNumber <= receipt.blockNumber;
 
     // The txHash comes from a public request: only Trade logs emitted by this token's own curve
     // count, like the live poller's getLogs({ address: curve }). Any contract can emit a Trade event.
@@ -86,16 +92,20 @@ export class TradeSyncService {
         if (token.version === 'v2') {
           const curveTarget = (token.curveAddress || log.address) as Address;
           try {
+            // The reserves at the trade's block (after its last trade), not at the head: later
+            // trades would otherwise give this one their price.
             const [vEth, vToken] = await Promise.all([
               client.readContract({
                 address: curveTarget,
                 abi: bondingCurveAbi,
                 functionName: 'virtualEthReserve',
+                blockNumber: receipt.blockNumber,
               }) as Promise<bigint>,
               client.readContract({
                 address: curveTarget,
                 abi: bondingCurveAbi,
                 functionName: 'virtualTokenReserve',
+                blockNumber: receipt.blockNumber,
               }) as Promise<bigint>,
             ]);
             if (vToken > 0n) {
@@ -139,8 +149,13 @@ export class TradeSyncService {
         await Promise.allSettled([
           this.cache.del(`token:detail:${tokenAddress.toLowerCase()}`),
           this.cache.delPrefix(`token:holders:${tokenAddress.toLowerCase()}`),
+          // The trader's PnL: their portfolio (30s) and position (10s) missed the trade they had
+          // just made, and its card (60s) showed the position before it.
+          this.cache.del(`pnl:wallet:${trader.toLowerCase()}`),
+          this.cache.del(`pnl:${trader.toLowerCase()}:${tokenAddress.toLowerCase()}`),
+          this.cache.del(`pnl:card:${trader.toLowerCase()}/${tokenAddress.toLowerCase()}`),
         ]);
-        if (token.version === 'v2' && priceUsd > 0) {
+        if (token.version === 'v2' && priceUsd > 0 && isLatest) {
           const mkt = await this.repository.getMarketData(token.address);
           if (mkt) {
             const supplyTokens = token.totalSupply

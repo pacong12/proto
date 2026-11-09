@@ -47,6 +47,8 @@ export interface TradeStorePort {
     limit?: number,
     tokenAddress?: string,
   ): Promise<TradeEventEntity[]>;
+  /** The tokens a wallet traded, the most recently traded first. */
+  getTraderTokens?(trader: string, limit?: number): Promise<string[]>;
   getTradesSince?(sinceMs: number): Promise<TradeEventEntity[]>;
   /**
    * Trades with fromBlock <= block <= toBlock (toBlock 0 = no upper bound), oldest first,

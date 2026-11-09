@@ -4,7 +4,7 @@ import {
   TradeEventEntity,
   CandlestickEntity,
   TokenCommentEntity,
-  getUserIdentity,
+  buildIdentityIndex,
   chartPriceUsd,
   type CreatorProfile,
 } from '@goton/shared-types';
@@ -219,18 +219,7 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
       for (const tr of list) addrs.add(tr.trader.toLowerCase());
     }
 
-    for (const addr of addrs) {
-      const id = getUserIdentity(addr);
-      if (
-        id.name.toLowerCase() === q ||
-        id.displayName.toLowerCase() === q ||
-        id.slug.toLowerCase() === q ||
-        id.tag.toLowerCase() === q
-      ) {
-        return addr;
-      }
-    }
-    return null;
+    return buildIdentityIndex(addrs).get(q) ?? null;
   }
 
   async getUserPositions(address: string): Promise<

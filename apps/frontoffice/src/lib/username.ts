@@ -3,21 +3,32 @@
  * @goton/shared-types (the API derives the same ones); this module also remembers every address it
  * has named, so a name, slug or handle typed into the app resolves back to its address.
  */
-import { getUserIdentity as identityFor, type UserIdentity } from '@goton/shared-types';
+import {
+  buildIdentityIndex,
+  getUserIdentity as identityFor,
+  type UserIdentity,
+} from '@goton/shared-types';
 
 export type { UserIdentity };
 
-// In-memory lookup registry for bi-directional address <-> username resolution
-const registry = new Map<string, string>();
+// Wallets this browser has named, persisted across visits so their names resolve back. Only the
+// addresses are kept: the lookup is rebuilt from them (buildIdentityIndex), so a bare name shared
+// by two wallets resolves to neither instead of whichever was named last.
+const known = new Set<string>();
+let index: Map<string, string> | null = null;
+
+const ADDRESS = /^0x[a-f0-9]{40}$/;
 
 function initRegistry(): void {
   if (typeof window === 'undefined') return;
   try {
     const raw = localStorage.getItem('proto_user_registry');
     if (raw) {
+      // Older versions stored name -> address pairs; the addresses are what is kept.
       const parsed = JSON.parse(raw) as Record<string, string>;
-      for (const [k, v] of Object.entries(parsed)) {
-        registry.set(k.toLowerCase(), v.toLowerCase());
+      for (const v of Object.values(parsed)) {
+        const addr = String(v).toLowerCase();
+        if (ADDRESS.test(addr)) known.add(addr);
       }
     }
   } catch {
@@ -29,13 +40,19 @@ function persistRegistry(): void {
   if (typeof window === 'undefined') return;
   try {
     const obj: Record<string, string> = {};
-    for (const [k, v] of registry.entries()) {
-      obj[k] = v;
-    }
+    for (const addr of known) obj[addr] = addr;
     localStorage.setItem('proto_user_registry', JSON.stringify(obj));
   } catch {
     // Ignore quota errors
   }
+}
+
+function remember(address: string): boolean {
+  const addr = address.toLowerCase();
+  if (!ADDRESS.test(addr) || known.has(addr)) return false;
+  known.add(addr);
+  index = null;
+  return true;
 }
 
 initRegistry();
@@ -44,15 +61,8 @@ initRegistry();
  * The wallet's identity (e.g. "SonicBismuthChimera#aced"); the address is remembered for lookups.
  */
 export function getUserIdentity(address?: string | null): UserIdentity {
-  const identity = identityFor(address);
-  if (address && address.length >= 10) {
-    const fullAddr = address.toLowerCase();
-    registry.set(fullAddr, fullAddr);
-    registry.set(identity.name.toLowerCase(), fullAddr);
-    registry.set(identity.displayName.toLowerCase(), fullAddr);
-    registry.set(identity.slug, fullAddr);
-  }
-  return identity;
+  if (address) remember(address);
+  return identityFor(address);
 }
 
 /**
@@ -60,60 +70,35 @@ export function getUserIdentity(address?: string | null): UserIdentity {
  * username, slug or handle.
  */
 export function registerUserIdentity(address: string): UserIdentity {
-  const identity = getUserIdentity(address);
-  registry.set(identity.handle.toLowerCase(), address.toLowerCase());
+  remember(address);
   persistRegistry();
-  return identity;
+  return identityFor(address);
 }
 
 /**
- * Resolves an Ethereum address from a hex string, username, tag, slug, or handle.
+ * Resolves an Ethereum address from a hex string, slug, display name or handle, or from a bare
+ * name or tag while only one known wallet has it.
  */
 export function resolveUserAddress(
   query?: string | null,
   knownAddresses: string[] = [],
 ): string | null {
   if (!query) return null;
-  const q = decodeURIComponent(query.trim().toLowerCase().replace(/^@/, ''));
+  let q: string;
+  try {
+    q = decodeURIComponent(query.trim().toLowerCase().replace(/^@/, ''));
+  } catch {
+    return null; // a malformed escape (a stray %) names nobody
+  }
   if (!q) return null;
+  if (ADDRESS.test(q)) return q;
 
-  // 1. Direct Ethereum Hex Address
-  if (/^0x[a-f0-9]{40}$/i.test(q)) {
-    return q.toLowerCase();
-  }
-
-  // 2. Direct Registry Match
-  const cached = registry.get(q);
-  if (cached) return cached.toLowerCase();
-
-  // 3. Match against known addresses (deployers, traders, authors)
-  for (const addr of knownAddresses) {
-    if (!addr) continue;
-    const id = getUserIdentity(addr);
-    if (
-      id.displayName.toLowerCase() === q ||
-      id.name.toLowerCase() === q ||
-      id.slug.toLowerCase() === q ||
-      id.tag.toLowerCase() === q
-    ) {
-      registerUserIdentity(addr);
-      return addr.toLowerCase();
-    }
-  }
-
-  // 4. Try matching tag suffix (#xxxx or -xxxx)
-  const tagMatch = q.match(/(?:#|-)([a-f0-9]{4})$/);
-  if (tagMatch) {
-    const tag = tagMatch[1];
-    for (const addr of knownAddresses) {
-      if (addr.toLowerCase().endsWith(tag)) {
-        registerUserIdentity(addr);
-        return addr.toLowerCase();
-      }
-    }
-  }
-
-  return null;
+  let added = false;
+  for (const addr of knownAddresses) if (addr && remember(addr)) added = true;
+  index ??= buildIdentityIndex(known);
+  const found = index.get(q) ?? null;
+  if (found && added) persistRegistry();
+  return found;
 }
 
 /**

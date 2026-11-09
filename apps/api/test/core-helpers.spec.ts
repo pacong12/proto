@@ -76,6 +76,23 @@ describe('GetDevActivityUseCase', () => {
       creatorStatus: 'none',
     });
   });
+
+  it("counts a creator sell older than the token's newest 500 trades", async () => {
+    const other = '0x00000000000000000000000000000000000000ee';
+    const devSell = { trader: dev, isBuy: false, wethAmount: '2' };
+    const busy = {
+      findByAddress: async () => ({ deployer: dev, initialBuyAmount: '1' }),
+      getTrades: async () =>
+        Array.from({ length: 500 }, () => ({ trader: other, isBuy: true, wethAmount: '0.1' })),
+      getTradesByTrader: async (trader: string, _limit: number, tokenAddress: string) =>
+        trader === dev && tokenAddress === token ? [devSell] : [],
+      getHolders: async () => [],
+    } as unknown as TokenRepositoryPort;
+    expect(await new GetDevActivityUseCase(busy).execute(token)).toMatchObject({
+      creatorStatus: 'sold',
+      totalDevSoldEth: '2.0000',
+    });
+  });
 });
 
 describe('keeper sendAndWait', () => {

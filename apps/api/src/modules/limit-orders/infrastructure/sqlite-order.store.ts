@@ -82,7 +82,10 @@ export class SqliteOrderStore implements LimitOrderStorePort {
     token?: string;
     status?: LimitOrderEntity['status'];
     chainId?: number;
+    liveAt?: number;
     limit?: number;
+    offset?: number;
+    oldestFirst?: boolean;
   }): Promise<LimitOrderEntity[]> {
     const where: string[] = [];
     const args: Array<string | number> = [];
@@ -94,32 +97,49 @@ export class SqliteOrderStore implements LimitOrderStorePort {
     if (filter.token) add('token = ?', filter.token.toLowerCase());
     if (filter.status) add('status = ?', filter.status);
     if (filter.chainId) add('chain_id = ?', filter.chainId);
+    if (filter.liveAt !== undefined) add('deadline >= ?', filter.liveAt);
+    const order = filter.oldestFirst ? 'created_at ASC, key ASC' : 'created_at DESC';
     const rows = this.db
       .prepare(
         `SELECT * FROM limit_orders ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
-         ORDER BY created_at DESC LIMIT ?`,
+         ORDER BY ${order} LIMIT ? OFFSET ?`,
       )
-      .all(...args, Math.min(filter.limit ?? 100, 500)) as Array<Record<string, unknown>>;
-    return rows.map((r) => ({
-      key: String(r.key),
-      chainId: Number(r.chain_id),
-      contract: (r.contract as `0x${string}` | null) ?? undefined,
-      orderId: String(r.order_id),
-      owner: String(r.owner) as `0x${string}`,
-      token: String(r.token) as `0x${string}`,
-      isBuy: Number(r.is_buy) === 1,
-      amount: String(r.amount),
-      minOut: String(r.min_out),
-      slPriceX36: String(r.sl_price_x36),
-      slMinOut: String(r.sl_min_out),
-      deadline: Number(r.deadline),
-      status: r.status as LimitOrderEntity['status'],
-      filledLeg: (r.filled_leg as LimitOrderEntity['filledLeg']) ?? undefined,
-      amountOut: (r.amount_out as string) ?? undefined,
-      createdTx: String(r.created_tx),
-      closedTx: (r.closed_tx as string) ?? undefined,
-      createdAt: Number(r.created_at),
-      updatedAt: Number(r.updated_at),
-    }));
+      .all(...args, Math.min(filter.limit ?? 100, 500), Math.max(0, filter.offset ?? 0)) as Array<
+      Record<string, unknown>
+    >;
+    return rows.map(toLimitOrder);
   }
+
+  /** One order by its limitOrderKey, or null. */
+  async getLimitOrder(key: string): Promise<LimitOrderEntity | null> {
+    const row = this.db.prepare(`SELECT * FROM limit_orders WHERE key = ?`).get(key) as Record<
+      string,
+      unknown
+    > | null;
+    return row ? toLimitOrder(row) : null;
+  }
+}
+
+function toLimitOrder(r: Record<string, unknown>): LimitOrderEntity {
+  return {
+    key: String(r.key),
+    chainId: Number(r.chain_id),
+    contract: (r.contract as `0x${string}` | null) ?? undefined,
+    orderId: String(r.order_id),
+    owner: String(r.owner) as `0x${string}`,
+    token: String(r.token) as `0x${string}`,
+    isBuy: Number(r.is_buy) === 1,
+    amount: String(r.amount),
+    minOut: String(r.min_out),
+    slPriceX36: String(r.sl_price_x36),
+    slMinOut: String(r.sl_min_out),
+    deadline: Number(r.deadline),
+    status: r.status as LimitOrderEntity['status'],
+    filledLeg: (r.filled_leg as LimitOrderEntity['filledLeg']) ?? undefined,
+    amountOut: (r.amount_out as string) ?? undefined,
+    createdTx: String(r.created_tx),
+    closedTx: (r.closed_tx as string) ?? undefined,
+    createdAt: Number(r.created_at),
+    updatedAt: Number(r.updated_at),
+  };
 }

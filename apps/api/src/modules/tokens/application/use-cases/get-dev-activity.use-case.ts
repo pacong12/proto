@@ -23,8 +23,12 @@ export class GetDevActivityUseCase {
     const token = await this.tokenRepository.findByAddress(address);
     const devAddr = token?.deployer || UNDEPLOYED;
     const dev = devAddr.toLowerCase();
+    // The creator's own trades: the token's newest 500 miss a sell made before a busy token's
+    // last 500 trades, which showed a creator who dumped early as never having sold.
     const [trades, holders] = await Promise.all([
-      this.tokenRepository.getTrades(address, 500, 0),
+      this.tokenRepository.getTradesByTrader
+        ? this.tokenRepository.getTradesByTrader(dev, 5000, address)
+        : this.tokenRepository.getTrades(address, 500, 0),
       this.tokenRepository.getHolders(address, 100),
     ]);
 

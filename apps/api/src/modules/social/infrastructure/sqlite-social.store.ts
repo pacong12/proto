@@ -1,7 +1,8 @@
+import { burnAdjustedMarketCapSql } from '../../../core/sqlite/burned-supply';
 import type { Database } from 'bun:sqlite';
 import type { SqliteDatabase } from '../../../core/sqlite/sqlite-database';
 import type { SocialStorePort } from '../../../core/ports/social-store.port';
-import { TokenCommentEntity, getUserIdentity, type CreatorProfile } from '@goton/shared-types';
+import { TokenCommentEntity, buildIdentityIndex, type CreatorProfile } from '@goton/shared-types';
 
 /** Comments, callouts, follows and profiles. */
 const IDENTITY_INDEX_TTL_MS = 60_000;
@@ -56,14 +57,8 @@ export class SqliteSocialStore implements SocialStorePort {
     `,
       )
       .all() as Array<{ addr: string }>;
-    const addresses = new Map<string, string>();
-    for (const { addr } of rows) {
-      const id = getUserIdentity(addr);
-      for (const key of [id.name, id.displayName, id.slug, id.tag]) {
-        const lower = key.toLowerCase();
-        if (!addresses.has(lower)) addresses.set(lower, addr.toLowerCase());
-      }
-    }
+    // A bare name or tag shared by several wallets resolves to none of them, not the first seen.
+    const addresses = buildIdentityIndex(rows.map((r) => r.addr));
     this.identityIndex = { builtAt: now, addresses };
     return addresses;
   }
@@ -202,7 +197,7 @@ export class SqliteSocialStore implements SocialStorePort {
         c.likes_count, c.created_at, c.target_mcap, c.position_usd, c.profit_usd, c.call_type,
         c.parent_id, c.quoted_callout_id, c.reposts_count, c.quotes_count, c.replies_count, c.views_count, c.supply_percent, c.price_at_post,
         t.name as token_name, t.symbol as token_symbol, t.logo as token_logo, t.pairedToken as token_paired_token,
-        m.marketCapUsd as token_market_cap, m.priceUsd as token_price_usd
+        ${burnAdjustedMarketCapSql('m')} as token_market_cap, m.priceUsd as token_price_usd
       FROM comments c
       LEFT JOIN tokens t ON t.address = c.token_address COLLATE NOCASE
       LEFT JOIN market_data m ON m.address = c.token_address COLLATE NOCASE
@@ -315,7 +310,7 @@ export class SqliteSocialStore implements SocialStorePort {
         c.likes_count, c.created_at, c.target_mcap, c.position_usd, c.profit_usd, c.call_type,
         c.parent_id, c.quoted_callout_id, c.reposts_count, c.quotes_count, c.replies_count, c.views_count, c.supply_percent, c.price_at_post,
         t.name as token_name, t.symbol as token_symbol, t.logo as token_logo, t.pairedToken as token_paired_token,
-        m.marketCapUsd as token_market_cap, m.priceUsd as token_price_usd
+        ${burnAdjustedMarketCapSql('m')} as token_market_cap, m.priceUsd as token_price_usd
       FROM comments c
       LEFT JOIN tokens t ON t.address = c.token_address COLLATE NOCASE
       LEFT JOIN market_data m ON m.address = c.token_address COLLATE NOCASE
@@ -442,7 +437,7 @@ export class SqliteSocialStore implements SocialStorePort {
         c.likes_count, c.created_at, c.target_mcap, c.position_usd, c.profit_usd, c.call_type,
         c.parent_id, c.quoted_callout_id, c.reposts_count, c.quotes_count, c.replies_count, c.supply_percent,
         t.name as token_name, t.symbol as token_symbol, t.logo as token_logo, t.pairedToken as token_paired_token,
-        m.marketCapUsd as token_market_cap, m.priceUsd as token_price_usd
+        ${burnAdjustedMarketCapSql('m')} as token_market_cap, m.priceUsd as token_price_usd
       FROM comments c
       LEFT JOIN tokens t ON t.address = c.token_address COLLATE NOCASE
       LEFT JOIN market_data m ON m.address = c.token_address COLLATE NOCASE
@@ -684,13 +679,22 @@ export class SqliteSocialStore implements SocialStorePort {
            WHERE id IN (SELECT comment_id FROM comment_reposts WHERE LOWER(user_address) = ?)`,
         )
         .run(user);
-      this.db
-        .prepare(
-          `UPDATE comments SET replies_count = MAX(0, replies_count - 1)
-           WHERE id IN (SELECT parent_id FROM comments
-                        WHERE LOWER(author_address) = ? AND parent_id IS NOT NULL)`,
-        )
-        .run(user);
+      // By how many replies and quotes the user wrote under each post, not by one: three replies
+      // to one post took one off its count, and quotes were never taken off.
+      for (const [counter, ref] of [
+        ['replies_count', 'parent_id'],
+        ['quotes_count', 'quoted_callout_id'],
+      ] as const) {
+        this.db
+          .prepare(
+            `UPDATE comments SET ${counter} = MAX(0, ${counter} - (
+               SELECT COUNT(*) FROM comments AS mine
+               WHERE LOWER(mine.author_address) = ? AND mine.${ref} = comments.id))
+             WHERE LOWER(author_address) != ? AND id IN (
+               SELECT ${ref} FROM comments WHERE LOWER(author_address) = ? AND ${ref} IS NOT NULL)`,
+          )
+          .run(user, user, user);
+      }
 
       const likes = changes(
         this.db.prepare(`DELETE FROM comment_likes WHERE LOWER(user_address) = ?`).run(user),

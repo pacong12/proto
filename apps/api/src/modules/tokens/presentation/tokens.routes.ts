@@ -52,6 +52,14 @@ function findNetworkStrict(param?: string | null): NetworkConfig | null {
   );
 }
 
+/**
+ * Open token streams per client IP. Each one reads the database every second for as long as it
+ * stays open, and the rate limiter only counts how often streams are opened, so without a cap one
+ * client could hold thousands of them.
+ */
+export const MAX_STREAMS_PER_IP = 20;
+const openStreams = new Map<string, number>();
+
 /** HTTP routes of the tokens module, registered in the order they are matched. */
 export function registerTokensRoutes(router: Router, deps: AppContainer): void {
   const {
@@ -147,8 +155,11 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
         const rows = [];
         for (const item of res.data) {
           if (resolveTokenNetwork(item.token).chainId !== network.chainId) continue;
-          const trades = await repository.getTrades(item.token.address, 500, 0);
-          const signals = memestockSignals(item.token, trades, now);
+          const [trades, creatorTrades] = await Promise.all([
+            repository.getTrades(item.token.address, 500, 0),
+            repository.getTradesByTrader?.(item.token.deployer, 5000, item.token.address),
+          ]);
+          const signals = memestockSignals(item.token, trades, now, creatorTrades ?? trades);
           if (!isMemestock(item.token.description, signals)) continue;
           rows.push({ ...item, signals });
         }
@@ -579,8 +590,21 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
   router.on(
     'GET',
     /^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/stream$/,
-    async ({ req, corsOrigin }, streamMatch) => {
+    async ({ req, corsOrigin, clientIp, replyError }, streamMatch) => {
       const streamAddress = streamMatch[1].toLowerCase() as `0x${string}`;
+      const opened = openStreams.get(clientIp) ?? 0;
+      if (opened >= MAX_STREAMS_PER_IP) {
+        return replyError('TOO_MANY_STREAMS', 'Too many open streams from this client', 429);
+      }
+      openStreams.set(clientIp, opened + 1);
+      let released = false;
+      const release = () => {
+        if (released) return;
+        released = true;
+        const left = (openStreams.get(clientIp) ?? 1) - 1;
+        if (left > 0) openStreams.set(clientIp, left);
+        else openStreams.delete(clientIp);
+      };
       let sseController: ReadableStreamDefaultController<Uint8Array> | null = null;
       let sseTimer: ReturnType<typeof setTimeout> | null = null;
       let lastPriceUsd = -1;
@@ -595,8 +619,17 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
       function scheduleSsePoll(): void {
         sseTimer = setTimeout(async () => {
           if (!sseController) return;
+          let mkt: Awaited<ReturnType<typeof repository.getMarketData>>;
           try {
-            const mkt = await repository.getMarketData(streamAddress);
+            mkt = await repository.getMarketData(streamAddress);
+          } catch {
+            // A failed read (a busy database) is not the end of the stream: it went silent for
+            // good and the client saw a frozen price until the idle timeout dropped it.
+            scheduleSsePoll();
+            return;
+          }
+          if (!sseController) return; // closed during the read
+          try {
             if (
               mkt &&
               (mkt.priceUsd !== lastPriceUsd ||
@@ -615,7 +648,7 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
             }
             scheduleSsePoll();
           } catch {
-            // Non-fatal — SSE connection will be cleaned up on close
+            // The stream closed under the write: stop, cancel() releases it.
           }
         }, 1000); // a DB read: the stream passes a trade on within a second of indexing it
       }
@@ -633,6 +666,7 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
             sseTimer = null;
           }
           sseController = null;
+          release();
         },
       });
 
@@ -644,6 +678,7 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
             sseTimer = null;
           }
           sseController = null;
+          release();
         });
       }
 

@@ -6,7 +6,10 @@ import {
   type LaunchedTokenEntity,
 } from '@goton/shared-types';
 import { SqliteTokenRepository } from '../src/app/storage/sqlite-token.repository';
-import { LimitOrderKeeperService } from '../src/modules/keepers/infrastructure/limit-order-keeper.service';
+import {
+  KEEPER_PAGE,
+  LimitOrderKeeperService,
+} from '../src/modules/keepers/infrastructure/limit-order-keeper.service';
 import { EventPollerService } from '../src/modules/indexer/infrastructure/event-poller.service';
 
 const CONTRACT = '0x00000000000000000000000000000000000000c0' as const;
@@ -69,11 +72,18 @@ const token = (over: Partial<LaunchedTokenEntity> = {}) =>
     ...over,
   }) as unknown as LaunchedTokenEntity;
 
-function keeperWith(opts: { fillable: string[]; gas?: bigint; gasPrice?: bigint }) {
+function keeperWith(opts: {
+  fillable: string[];
+  gas?: bigint;
+  gasPrice?: bigint;
+  unmined?: number;
+}) {
   const simulated: string[] = [];
   const targets: string[] = [];
   const writes: unknown[] = [];
   const publicClient = {
+    getTransactionCount: async ({ blockTag }: { blockTag: string }) =>
+      blockTag === 'pending' ? (opts.unmined ?? 0) : 0,
     simulateContract: vi.fn(
       async ({
         address,
@@ -156,6 +166,16 @@ describe('LimitOrderKeeperService', () => {
     expect(writes).toEqual([
       { functionName: 'executeBuyOnCurve', args: [1n, CURVE], gas: 375_000n },
     ]);
+  });
+
+  it('fills nothing while an earlier fill is still unmined', async () => {
+    const { results, writes, simulated } = await run(order(), token(), {
+      fillable: ['executeBuyOnCurve:'],
+      unmined: 1,
+    });
+    expect(results).toEqual([]);
+    expect(simulated).toEqual([]);
+    expect(writes).toEqual([]);
   });
 
   it('routes graduated tokens to their v4 pool', async () => {
@@ -293,6 +313,7 @@ describe('limit order indexing', () => {
       },
     ];
     const client = {
+      getTransactionCount: async () => 0,
       getLogs: vi.fn(async ({ events }: { events?: unknown }) => (events ? logs : [])),
       getBlock: vi.fn(async () => ({ timestamp: 1_800_000_000n })),
     } as unknown as PublicClient;
@@ -361,6 +382,7 @@ describe('limit order indexing', () => {
       },
     ];
     const client = {
+      getTransactionCount: async () => 0,
       getLogs: vi.fn(async ({ events }: { events?: unknown }) => (events ? logs : [])),
       getBlock: vi.fn(async () => ({ timestamp: 1_800_000_000n })),
     } as unknown as PublicClient;
@@ -404,6 +426,7 @@ describe('LimitOrderKeeperService under a rate-limited RPC', () => {
     await repo.saveLimitOrder!(order({ key: 'b', orderId: '2' }));
     let calls = 0;
     const publicClient = {
+      getTransactionCount: async () => 0,
       simulateContract: async () => {
         calls++;
         throw Object.assign(new Error('HTTP request failed.\nStatus: 429'), { status: 429 });
@@ -420,5 +443,55 @@ describe('LimitOrderKeeperService under a rate-limited RPC', () => {
     ).runOnce();
     expect(results).toEqual([{ key: expect.any(String), executed: false, reason: 'Rate limited' }]);
     expect(calls).toBe(1);
+  });
+});
+
+describe('LimitOrderKeeperService with many open orders', () => {
+  it('pages through every live order across cycles and skips expired ones in the query', async () => {
+    const repo = new SqliteTokenRepository(':memory:');
+    await repo.save(token());
+    // 300 expired orders and KEEPER_PAGE + 1 live ones; only the newest live one is fillable.
+    for (let i = 0; i < 300; i++) {
+      await repo.saveLimitOrder!(
+        order({ key: `x${i}`, orderId: String(10_000 + i), deadline: NOW / 1000 - 1 }),
+      );
+    }
+    for (let i = 0; i <= KEEPER_PAGE; i++) {
+      await repo.saveLimitOrder!(
+        order({ key: `l${i}`, orderId: String(i + 1), createdAt: NOW + i }),
+      );
+    }
+    const target = BigInt(KEEPER_PAGE + 1);
+    const seen: bigint[] = [];
+    const publicClient = {
+      getTransactionCount: async () => 0,
+      simulateContract: async ({ args }: { args: unknown[] }) => {
+        seen.push(args[0] as bigint);
+        if (args[0] !== target) throw new Error('InsufficientOutput()');
+        return { request: {} };
+      },
+      estimateContractGas: async () => 1n,
+      getGasPrice: async () => 1n,
+      waitForTransactionReceipt: async () => ({ status: 'success' }),
+    } as unknown as PublicClient;
+    const walletClient = {
+      getAddresses: async () => [OWNER],
+      writeContract: async () => '0xhash',
+    } as unknown as WalletClient;
+    const keeper = new LimitOrderKeeperService(
+      publicClient,
+      walletClient,
+      repo,
+      network,
+      1n,
+      () => NOW,
+    );
+
+    expect(await keeper.runOnce()).toEqual([]);
+    expect(seen).toHaveLength(KEEPER_PAGE);
+    expect(seen.every((id) => id < 10_000n)).toBe(true);
+
+    const second = await keeper.runOnce();
+    expect(second).toEqual([{ key: `l${KEEPER_PAGE}`, executed: true, txHash: '0xhash' }]);
   });
 });

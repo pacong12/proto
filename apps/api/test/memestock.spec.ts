@@ -72,4 +72,22 @@ describe('memestock', () => {
     expect(isMemestock(desc, holding)).toBe(true);
     expect(isMemestock('gm', holding)).toBe(false);
   });
+
+  it("reads the creator's position from their own trades, not the token's recent page", () => {
+    // A busy token: the recent page holds only others' trades and a small creator sell.
+    const recent = [
+      ...Array.from({ length: 499 }, (_, i) => trade(OTHER, true, 1, 0.01, 1000 + i)),
+      trade(CREATOR, false, 10, 0.01, 500),
+    ];
+    const creatorTrades = [
+      trade(CREATOR, false, 10, 0.01, 500),
+      trade(CREATOR, true, 1000, 0.1, 30 * 86_400_000),
+    ];
+    const desc = 'A community coin for people who love hats';
+    expect(isMemestock(desc, memestockSignals(token, recent, NOW))).toBe(false);
+    const s = memestockSignals(token, recent, NOW, creatorTrades);
+    expect(s.creatorBought).toBe(1000);
+    expect(s.creatorSold).toBe(10);
+    expect(isMemestock(desc, s)).toBe(true);
+  });
 });

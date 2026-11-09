@@ -182,6 +182,56 @@ describe('PnlService.positions', () => {
   });
 });
 
+describe('PnlService.positions on a busy wallet', () => {
+  it("reads each token's own history, so a buy behind other tokens' trades still counts", async () => {
+    const { SqliteTokenRepository } = await import('../src/app/storage/sqlite-token.repository');
+    const repo = new SqliteTokenRepository(':memory:');
+    const OLD = '0x5000000000000000000000000000000000000005';
+    const BUSY = '0x6000000000000000000000000000000000000006';
+    let n = 0;
+    const save = (token: string, isBuy: boolean, amount: number) =>
+      repo.saveTrade({
+        id: `t-${++n}`,
+        tokenAddress: token as `0x${string}`,
+        poolAddress: token as `0x${string}`,
+        trader: WALLET,
+        isBuy,
+        tokenAmount: String(amount),
+        wethAmount: '0',
+        priceUsd: 1,
+        blockNumber: BigInt(n),
+        transactionHash: `0x${n.toString(16).padStart(64, '0')}` as `0x${string}`,
+        timestamp: n * 1000,
+      });
+    // Bought 100 OLD at $1, then 5,000 trades elsewhere, then sold the 100 OLD at $1.
+    await save(OLD, true, 100);
+    for (let i = 0; i < 5000; i++) await save(BUSY, true, 1);
+    await save(OLD, false, 100);
+
+    const service = new PnlService({
+      trades: repo,
+      profiles: { getProfile: async () => null },
+      getTokenByAddress: {
+        execute: async (address) =>
+          ({
+            token: { address, name: 'T', symbol: 'T', logo: '', chainId: 4663 },
+            marketData: { priceUsd: 1, marketCapUsd: 1000 },
+          }) as never,
+      },
+      getCandlesticks: { execute: async () => [] },
+      renderer: { render: async () => new Uint8Array() },
+      images: { pngDataUrl: async () => null },
+    });
+    const old = (await service.positions(WALLET)).positions.find(
+      (p) => p.token.address.toLowerCase() === OLD,
+    );
+    // Not +$100 from a sale with no cost behind it.
+    expect(old?.pnl.realizedUsd).toBe(0);
+    expect(old?.pnl.buys).toBe(1);
+    repo.close();
+  });
+});
+
 describe('PnL card', () => {
   const card = (name: string): PnlCard => ({
     share: {
@@ -251,5 +301,36 @@ describe('IpfsImageLoader', () => {
   it('draws the card without a logo that loads too slowly', async () => {
     const loader = new IpfsImageLoader({ getFile: () => new Promise(() => {}) }, 20);
     expect(await loader.pngDataUrl('ipfs://slow')).toBeNull();
+  });
+});
+
+describe('positionPnl prices trades at what they paid', () => {
+  // A 0.3 ETH buy and an immediate sale of all of it on a curve, ETH at $2000: the spot price
+  // after each trade (priceUsd) is far from what each executed at.
+  const trade = (isBuy: boolean, eth: string, spotEth: number, ts: number): TradeEventEntity => ({
+    id: `0x${ts}-0`,
+    tokenAddress: '0x00000000000000000000000000000000000000aa',
+    poolAddress: '0x00000000000000000000000000000000000000c0',
+    trader: '0x00000000000000000000000000000000000000ee',
+    isBuy,
+    tokenAmount: '228104371.9372',
+    wethAmount: eth,
+    priceUsd: spotEth * 2000,
+    priceQuote: spotEth,
+    blockNumber: BigInt(ts),
+    transactionHash: `0x${ts}`,
+    timestamp: ts,
+  });
+
+  it('shows a round trip as its fees, not twice its price impact', () => {
+    const pnl = positionPnl(
+      [trade(true, '0.300000', 1.689e-9, 1), trade(false, '0.294030', 1.004e-9, 2)],
+      1.004e-9 * 2000,
+      1e9,
+    );
+    expect(pnl.investedUsd).toBeCloseTo(600, 6);
+    expect(pnl.proceedsUsd).toBeCloseTo(588.06, 6);
+    expect(pnl.totalUsd).toBeCloseTo(-11.94, 6);
+    expect(pnl.status).toBe('sold');
   });
 });

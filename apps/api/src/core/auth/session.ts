@@ -40,10 +40,12 @@ export function verifySessionToken(
   const [encoded, mac] = token.split('.');
   if (!encoded || !mac) return null;
   const payload = Buffer.from(encoded, 'base64url').toString();
-  const expected = sign(payload);
+  // Byte lengths: a non-ASCII mac of the right character count would make timingSafeEqual throw.
+  const macBytes = Buffer.from(mac);
+  const expectedBytes = Buffer.from(sign(payload));
   if (
-    mac.length !== expected.length ||
-    !crypto.timingSafeEqual(Buffer.from(mac), Buffer.from(expected))
+    macBytes.length !== expectedBytes.length ||
+    !crypto.timingSafeEqual(macBytes, expectedBytes)
   ) {
     return null;
   }

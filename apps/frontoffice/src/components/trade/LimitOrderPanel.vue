@@ -186,7 +186,12 @@ const marketCapUsd = computed(() => props.marketData.marketCapUsd);
 const ctx = computed<PriceContext>(() => ({
   priceInQuote: props.marketData.priceInWeth,
   priceUsd: props.marketData.priceUsd,
-  supply: Number(BigInt(props.token.totalSupply || '0') / 10n ** 12n) / 1e6,
+  // The supply behind the market cap shown (net of burned tokens, as the API counts it), so a
+  // target market cap becomes the price it reads as; the minted total before any is known.
+  supply:
+    props.marketData.marketCapUsd > 0 && props.marketData.priceUsd > 0
+      ? props.marketData.marketCapUsd / props.marketData.priceUsd
+      : Number(BigInt(props.token.totalSupply || '0') / 10n ** 12n) / 1e6,
   quoteDecimals: quoteDecimals.value,
   tokenDecimals: props.token.decimals ?? 18,
 }));

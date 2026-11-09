@@ -17,11 +17,18 @@ export interface LimitOrderStorePort {
     contract: string,
     keyOf: (orderId: string) => string,
   ): Promise<number>;
+  /** One order by its limitOrderKey, or null. */
+  getLimitOrder?(key: string): Promise<LimitOrderEntity | null>;
   listLimitOrders?(filter: {
     owner?: string;
     token?: string;
     status?: LimitOrderEntity['status'];
     chainId?: number;
+    /** Only orders that can still fill at this Unix time (deadline at or after it). */
+    liveAt?: number;
     limit?: number;
+    offset?: number;
+    /** Oldest first (a stable order to page through), instead of newest first. */
+    oldestFirst?: boolean;
   }): Promise<LimitOrderEntity[]>;
 }

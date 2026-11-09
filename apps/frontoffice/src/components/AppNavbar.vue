@@ -77,7 +77,7 @@ watch(
 
 const userProfileUrl = computed(() => {
   if (account.value) {
-    return `/${getUserIdentity(account.value).name}`;
+    return `/${getUserIdentity(account.value).slug}`;
   }
   return '/launchpad';
 });
@@ -87,7 +87,7 @@ function isRouteActive(path: string) {
     return route.path === '/launchpad' || route.path === '/' || route.path === '/explore';
   }
   if (path === '/profile') {
-    const userPath = account.value ? `/${getUserIdentity(account.value).name}` : '';
+    const userPath = account.value ? `/${getUserIdentity(account.value).slug}` : '';
     return (
       route.path.startsWith('/profile') ||
       route.path.startsWith('/u') ||

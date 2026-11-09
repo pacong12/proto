@@ -42,6 +42,9 @@ export function useHolderDividends() {
   const loading = ref(false);
   const actionLoading = ref<string | null>(null); // token address being claimed
   const error = ref<string | null>(null);
+  // The newest load: an older one that settles later (another profile's wallet, opened before
+  // this one) must not replace its entries.
+  let loadSeq = 0;
 
   async function readEntry(
     holderAddress: `0x${string}`,
@@ -82,8 +85,10 @@ export function useHolderDividends() {
     tokens: Array<{ address: `0x${string}`; symbol: string; name: string }>,
     networkOf: (address: `0x${string}`) => NetworkConfig,
   ): Promise<void> {
+    const seq = ++loadSeq;
     if (tokens.length === 0) {
       entries.value = [];
+      loading.value = false;
       return;
     }
 
@@ -94,13 +99,14 @@ export function useHolderDividends() {
       const results = await Promise.allSettled(
         tokens.map((tok) => readEntry(holderAddress, tok, networkOf(tok.address))),
       );
+      if (seq !== loadSeq) return;
       entries.value = results
         .map((r) => (r.status === 'fulfilled' ? r.value : null))
         .filter((e): e is HolderDividendEntry => e !== null && e.earnedWei > 0n);
     } catch (err) {
-      error.value = (err as Error).message;
+      if (seq === loadSeq) error.value = (err as Error).message;
     } finally {
-      loading.value = false;
+      if (seq === loadSeq) loading.value = false;
     }
   }
 
@@ -194,7 +200,9 @@ export function useHolderDividends() {
     claimAllDividends,
     /** Reset entries to empty — call before loadDividends when switching wallet/profile. */
     reset() {
+      loadSeq++;
       entries.value = [];
+      loading.value = false;
     },
   };
 }

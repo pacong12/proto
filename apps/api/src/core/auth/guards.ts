@@ -3,8 +3,12 @@ import { sessionAddressFromRequest } from './session';
 
 /** Constant-time bearer token comparison, so the secret cannot be guessed from response timing. */
 export function safeTokenCompare(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  // Byte lengths, not string lengths: timingSafeEqual throws on buffers of different sizes, and
+  // a non-ASCII header has more bytes than characters (a 500 instead of a 401).
+  const left = Buffer.from(a);
+  const right = Buffer.from(b);
+  if (left.length !== right.length) return false;
+  return crypto.timingSafeEqual(left, right);
 }
 
 /**

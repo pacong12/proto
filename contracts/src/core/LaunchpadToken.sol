@@ -403,6 +403,12 @@ contract LaunchpadToken is ILaunchpadToken {
         // too little gas) would skip the dividend checkpoint and let the receiver claim history.
         if (rewardTracker != address(0)) {
             IRewardTracker(rewardTracker).setShare(from, to, value);
+            // The tax recipient's balance grows too: checkpoint it first, or it could claim the
+            // dividends streamed before it held the tax (paid out of every other holder's share).
+            address taxTo = _taxConfig.taxRecipient;
+            if (taxAmount > 0 && taxTo != from && taxTo != to) {
+                IRewardTracker(rewardTracker).setShare(address(0), taxTo, taxAmount);
+            }
         }
         unchecked {
             _balances[from] = fromBalance - value;

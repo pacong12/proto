@@ -1,6 +1,20 @@
 import type { PositionPnl, TradeEventEntity } from '@goton/shared-types';
 
 /**
+ * What a trade paid or received in USD: its quote amount (ETH or USDC in, fee included, for a
+ * buy; out for a sell) at the quote's USD price then (priceUsd / priceQuote). A trade's priceUsd is
+ * the spot price after it, not what it executed at: tokens x priceUsd counted a buy at the price
+ * it pushed up to and a sell at the price it pushed down to, so a 2% round trip showed as -40%.
+ * Trades without a quote price fall back to that.
+ */
+function tradeUsd(t: TradeEventEntity, tokens: number): number {
+  const quote = parseFloat(t.wethAmount || '0') || 0;
+  const priceQuote = t.priceQuote ?? 0;
+  if (quote > 0 && priceQuote > 0 && t.priceUsd > 0) return quote * (t.priceUsd / priceQuote);
+  return tokens * (t.priceUsd || 0);
+}
+
+/**
  * Profit and loss of one wallet's trades in one token, by average cost: a sell realizes its
  * proceeds against the average cost of the tokens held at that moment, and what is still held is
  * valued at `priceUsd`. A sell of more than the trades bought (tokens received by transfer) only
@@ -23,7 +37,7 @@ export function positionPnl(
   let sells = 0;
   for (const t of chronological) {
     const amount = Math.max(0, parseFloat(t.tokenAmount || '0') || 0);
-    const usd = amount * (t.priceUsd || 0);
+    const usd = tradeUsd(t, amount);
     if (t.isBuy) {
       buys++;
       invested += usd;
