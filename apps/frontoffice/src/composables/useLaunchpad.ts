@@ -8,7 +8,13 @@ import {
   launchpadV2FactoryAbi,
   launchpadTokenAbi,
   gotonFeeSplitterAbi,
+  gotonV4GraduatorAbi,
+  gotonV4HookAbi,
+  feeCollector,
+  protoV4PoolKeyFor,
+  readCreatorFees,
   resolveFeeSplitter,
+  v4PoolId,
   type LaunchedTokenEntity,
   type TokenMarketData,
 } from '@goton/shared-types';
@@ -164,9 +170,41 @@ export function useLaunchpad() {
 
   const actionState = { busy: loading, error };
 
+  /**
+   * Claims the creator's fees, collecting the pool's uncollected LP fees and the hook's held tax
+   * into the splitter first (both permissionless): the figure shown includes them, and until the
+   * keeper collects them claimCreatorFees alone would pay none of it.
+   */
   function claimFees(tokenAddress: `0x${string}`, chainId?: number): Promise<string | null> {
     return runWalletAction(actionState, async () => {
-      const { network, splitter } = await creatorSplitter(tokenAddress, chainId);
+      const { network, publicClient, splitter } = await creatorSplitter(tokenAddress, chainId);
+      const fees = await readCreatorFees(publicClient, network, tokenAddress);
+      const collector = feeCollector(network);
+      const key = protoV4PoolKeyFor(network, tokenAddress);
+      if (fees && fees.uncollectedTax > 0n && key) {
+        await sendWalletTransaction(network, ({ walletClient, account }) =>
+          walletClient.writeContract({
+            address: key.hooks,
+            abi: gotonV4HookAbi,
+            functionName: 'flushTaxes',
+            args: [v4PoolId(key)],
+            account,
+            chain: walletClient.chain,
+          }),
+        );
+      }
+      if (fees && fees.uncollectedLpFees > 0n && collector) {
+        await sendWalletTransaction(network, ({ walletClient, account }) =>
+          walletClient.writeContract({
+            address: collector.address,
+            abi: collector.abi as typeof gotonV4GraduatorAbi,
+            functionName: 'collectFees',
+            args: [tokenAddress],
+            account,
+            chain: walletClient.chain,
+          }),
+        );
+      }
       return sendWalletTransaction(network, ({ walletClient, account }) =>
         walletClient.writeContract({
           address: splitter,

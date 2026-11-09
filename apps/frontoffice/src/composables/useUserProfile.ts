@@ -4,8 +4,7 @@ import { apiFetch } from '@/lib/api-client';
 import { formatDividendAmount, totalsByCurrency } from '@/lib/currency-totals';
 import { getPublicClient } from '@/lib/viem-client';
 import {
-  gotonFeeSplitterAbi,
-  resolveFeeSplitter,
+  readCreatorFees,
   UNDEPLOYED,
   type LaunchedTokenEntity,
   type TokenMarketData,
@@ -77,36 +76,22 @@ export function useUserProfile({
             // FO-06: read the creator's real accrued fees from the token's splitter instead of
             // simulating the legacy locker (whose fallback reported other tokens' balances).
             try {
-              const splitter = await resolveFeeSplitter(
+              // Claimable now plus the creator's share of fees not collected yet: claiming
+              // collects those first, so this is what a claim pays. creatorAccrued alone read 0
+              // until the keeper collected the pool's fees.
+              const fees = await readCreatorFees(
                 tokenClient,
                 tokenNetwork,
                 item.token.address as `0x${string}`,
               );
-              if (splitter) {
-                const [accrued, recipient, creatorAddr] = await Promise.all([
-                  tokenClient.readContract({
-                    address: splitter.address,
-                    abi: gotonFeeSplitterAbi,
-                    functionName: 'creatorAccrued',
-                  }),
-                  tokenClient.readContract({
-                    address: splitter.address,
-                    abi: gotonFeeSplitterAbi,
-                    functionName: 'creatorRecipient',
-                  }),
-                  tokenClient.readContract({
-                    address: splitter.address,
-                    abi: gotonFeeSplitterAbi,
-                    functionName: 'creator',
-                  }),
-                ]);
-                unclaimedRaw = accrued;
-                quoteDecimals = splitter.quoteDecimals;
+              if (fees) {
+                unclaimedRaw = fees.accrued + fees.pending;
+                quoteDecimals = fees.quoteDecimals;
                 if (
-                  recipient.toLowerCase() !== creatorAddr.toLowerCase() &&
-                  recipient !== UNDEPLOYED
+                  fees.recipient.toLowerCase() !== fees.creator.toLowerCase() &&
+                  fees.recipient !== UNDEPLOYED
                 ) {
-                  redirect = recipient;
+                  redirect = fees.recipient;
                 }
               }
             } catch {

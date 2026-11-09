@@ -170,6 +170,13 @@
           {{ (onchainTaxConfig.sellTaxBps / 100).toFixed(0) }}%
         </span>
       </span>
+      <template v-if="supply">
+        <span aria-hidden="true">&middot;</span>
+        <span :title="supply.full">
+          {{ t('totalSupply') }}
+          <span class="font-semibold text-foreground tabular-nums">{{ supply.compact }}</span>
+        </span>
+      </template>
       <template v-if="burnedInfo.percent > 0">
         <span aria-hidden="true">&middot;</span>
         <span title="Total burned supply">
@@ -223,7 +230,8 @@ interface Props {
   top10HoldingPercent?: number;
   devHoldingPercent?: number;
   onchainTaxConfig?: { buyTaxBps: number; sellTaxBps: number };
-  burnedInfo?: { percent: number };
+  /** Burned share and amount (raw units): 0xdEaD's balance, still inside totalSupply on-chain. */
+  burnedInfo?: { percent: number; raw?: bigint };
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -234,12 +242,38 @@ const props = withDefaults(defineProps<Props>(), {
   top10HoldingPercent: 0,
   devHoldingPercent: 0,
   onchainTaxConfig: () => ({ buyTaxBps: 0, sellTaxBps: 0 }),
-  burnedInfo: () => ({ percent: 0 }),
+  burnedInfo: () => ({ percent: 0, raw: 0n }),
 });
 
 const emit = defineEmits<{
   (e: 'copyPair', address: string): void;
 }>();
+
+/**
+ * The token's supply in whole tokens, net of burns: burning sends tokens to 0xdEaD, which leaves
+ * totalSupply on-chain unchanged, so the burned amount is taken off here. Compact ("988.2M"), with
+ * the minted total and the burned amount as a hint.
+ */
+const supply = computed(() => {
+  let total: bigint;
+  try {
+    total = BigInt(props.currentToken.totalSupply || '0');
+  } catch {
+    return null;
+  }
+  if (total <= 0n) return null;
+  const burned = props.burnedInfo.raw ?? 0n;
+  const unit = 10n ** BigInt(props.currentToken.decimals ?? 18);
+  const whole = (raw: bigint) => Number(raw / unit);
+  const live = whole(total > burned ? total - burned : 0n);
+  const full = `${whole(total).toLocaleString('en')} minted`;
+  return {
+    compact: new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 2 }).format(
+      live,
+    ),
+    full: burned > 0n ? `${full}, ${whole(burned).toLocaleString('en')} burned` : full,
+  };
+});
 
 const remainingToGraduate = computed(() => {
   const target = parseFloat(props.currentMarketData.graduationThresholdWeth) || 4.2;

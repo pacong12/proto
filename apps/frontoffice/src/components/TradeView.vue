@@ -142,6 +142,9 @@
           :is-claiming-dividends="isClaimingDividends"
           :is-dividends-configured="isDividendsConfigured"
           :has-dividends="hasDividends"
+          :creator-fees-formatted="creatorFeesFormatted"
+          :can-claim-creator-fees="canClaimCreatorFees"
+          :is-claiming-creator-fees="isClaimingCreatorFees"
           @update:trade-tab="tradeTab = $event"
           @update:amount-in="amountIn = $event"
           @update:pay-in-usd="payInUsd = $event"
@@ -157,6 +160,7 @@
           @switch-network="switchOrAddNetwork(tokenNetwork)"
           @execute-swap="handleSwap"
           @claim-dividends="handleClaimDividends"
+          @claim-creator-fees="handleClaimCreatorFees"
           @open-pnl-card="isPnlModalOpen = true"
         >
           <template v-if="limitOrdersEnabled" #order-type>
@@ -467,6 +471,7 @@ import { fetchTradeToken } from '@/composables/trade/token-source';
 import { useTradeTax } from '@/composables/trade/useTradeTax';
 
 import { useTradeDividends } from '@/composables/trade/useTradeDividends';
+import { useTradeCreatorFees } from '@/composables/trade/useTradeCreatorFees';
 
 import { useTradeOrderRoutes } from '@/composables/trade/useTradeOrderRoutes';
 
@@ -633,6 +638,13 @@ const {
 } = tradeTax;
 
 const tradeDividends = useTradeDividends(page);
+const {
+  creatorFeesFormatted,
+  canClaimCreatorFees,
+  isClaimingCreatorFees,
+  refreshCreatorFees,
+  handleClaimCreatorFees,
+} = useTradeCreatorFees(page);
 const {
   handleClaimDividends,
   hasDividends,
@@ -849,6 +861,7 @@ watch(
         fetchUserTokenBalance(true),
         updateBalance(undefined, tokenNetwork.value.chainId, true),
         refreshLiveDividends(),
+        refreshCreatorFees(),
       ]);
     }
   },
@@ -899,6 +912,7 @@ onMounted(async () => {
       fetchUserTokenBalance(true),
       updateBalance(undefined, tokenNetwork.value.chainId, true),
       refreshLiveDividends(),
+      refreshCreatorFees(),
     ]);
   }
 

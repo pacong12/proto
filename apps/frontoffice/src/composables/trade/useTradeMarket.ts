@@ -6,6 +6,7 @@ import { useTokenStream } from '@/composables/useTokenStream';
 import { formatPriceUsd, formatMarketCap } from '@/lib/utils';
 import {
   burnedPercent,
+  burnedRaw,
   networkProtocolAddresses,
   top10WalletPercent,
   walletHolders,
@@ -198,7 +199,10 @@ export function useTradeMarket(page: TradePage) {
     top10WalletPercent(holders.value, holderContext.value),
   );
 
-  const burnedInfo = computed(() => ({ percent: burnedPercent(holders.value) }));
+  const burnedInfo = computed(() => ({
+    percent: burnedPercent(holders.value),
+    raw: burnedRaw(holders.value),
+  }));
 
   const quoteAssetPriceUsd = computed(() => {
     const peg = stableQuoteUsd(tokenNetwork.value);

@@ -18,6 +18,8 @@ export interface HolderContext {
 export interface HolderRow {
   address: string;
   percent: number;
+  /** Raw token units, as the API lists them. */
+  balance?: string;
 }
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -74,6 +76,19 @@ export function walletPercent(
   return (
     walletHolders(holders, context).find((h) => h.address.toLowerCase() === lower)?.percent ?? 0
   );
+}
+
+/** Tokens at the burn addresses (raw units): sent to 0xdEaD, so still in totalSupply on-chain. */
+export function burnedRaw(holders: readonly HolderRow[]): bigint {
+  return holders
+    .filter((h) => classifyHolder(h.address) === 'burn')
+    .reduce((sum, h) => {
+      try {
+        return sum + BigInt(h.balance ?? '0');
+      } catch {
+        return sum;
+      }
+    }, 0n);
 }
 
 /** Share of the total supply at the burn addresses. */

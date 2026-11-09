@@ -366,11 +366,15 @@
         <slot v-else name="alternate-form" />
       </div>
     </div>
-    <!-- Your position and holder dividends: one quiet card under the form. -->
+    <!-- Your position, holder dividends and the token's creator fees: one quiet card. -->
     <div
       v-if="
-        isConnected &&
-        (userHoldingTokensCount > 0 || closedPosition || hasDividends || isDividendsConfigured)
+        (isConnected &&
+          (userHoldingTokensCount > 0 ||
+            closedPosition ||
+            hasDividends ||
+            isDividendsConfigured)) ||
+        creatorFeesFormatted
       "
       class="rounded-2xl border border-border bg-card p-4 text-xs divide-y divide-border/60 [&>*]:py-3 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0"
     >
@@ -422,7 +426,7 @@
 
       <!-- Holder dividends -->
       <div
-        v-if="hasDividends || isDividendsConfigured"
+        v-if="isConnected && (hasDividends || isDividendsConfigured)"
         class="flex items-center justify-between gap-3"
       >
         <div class="min-w-0 space-y-0.5">
@@ -446,6 +450,29 @@
         >
           <Loader2 v-if="isClaimingDividends" class="w-3 h-3 animate-spin mr-1" />
           <span>Claim</span>
+        </Button>
+      </div>
+
+      <!-- Creator fees: everyone sees the amount, only the creator (or their recipient) claims -->
+      <div v-if="creatorFeesFormatted" class="flex items-center justify-between gap-3">
+        <div class="min-w-0 space-y-0.5">
+          <span class="text-muted-foreground block">{{ t('creatorFeesLabel') }}</span>
+          <span class="font-semibold text-foreground text-sm tabular-nums block">
+            {{ creatorFeesFormatted }} {{ currencySymbol }}
+          </span>
+          <span v-if="!canClaimCreatorFees" class="text-muted-foreground block">
+            {{ t('creatorFeesOwnerOnly') }}
+          </span>
+        </div>
+        <Button
+          v-if="canClaimCreatorFees"
+          size="sm"
+          class="h-8 px-3 text-xs font-semibold rounded-lg cursor-pointer shrink-0"
+          :disabled="isClaimingCreatorFees || Number(creatorFeesFormatted) <= 0"
+          @click="$emit('claimCreatorFees')"
+        >
+          <Loader2 v-if="isClaimingCreatorFees" class="w-3 h-3 animate-spin mr-1" />
+          <span>{{ t('claimFees') }}</span>
         </Button>
       </div>
     </div>
@@ -497,6 +524,10 @@ interface Props {
   isClaimingDividends?: boolean;
   isDividendsConfigured?: boolean;
   hasDividends?: boolean;
+  /** The token's creator fees, shown to everyone; null before it has a fee splitter. */
+  creatorFeesFormatted?: string | null;
+  canClaimCreatorFees?: boolean;
+  isClaimingCreatorFees?: boolean;
 }
 
 withDefaults(defineProps<Props>(), {
@@ -517,6 +548,7 @@ const emit = defineEmits<{
   (e: 'switchNetwork'): void;
   (e: 'executeSwap'): void;
   (e: 'claimDividends'): void;
+  (e: 'claimCreatorFees'): void;
   (e: 'openPnlCard'): void;
 }>();
 
