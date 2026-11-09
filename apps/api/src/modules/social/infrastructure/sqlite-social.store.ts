@@ -680,13 +680,22 @@ export class SqliteSocialStore implements SocialStorePort {
            WHERE id IN (SELECT comment_id FROM comment_reposts WHERE LOWER(user_address) = ?)`,
         )
         .run(user);
-      this.db
-        .prepare(
-          `UPDATE comments SET replies_count = MAX(0, replies_count - 1)
-           WHERE id IN (SELECT parent_id FROM comments
-                        WHERE LOWER(author_address) = ? AND parent_id IS NOT NULL)`,
-        )
-        .run(user);
+      // By how many replies and quotes the user wrote under each post, not by one: three replies
+      // to one post took one off its count, and quotes were never taken off.
+      for (const [counter, ref] of [
+        ['replies_count', 'parent_id'],
+        ['quotes_count', 'quoted_callout_id'],
+      ] as const) {
+        this.db
+          .prepare(
+            `UPDATE comments SET ${counter} = MAX(0, ${counter} - (
+               SELECT COUNT(*) FROM comments AS mine
+               WHERE LOWER(mine.author_address) = ? AND mine.${ref} = comments.id))
+             WHERE LOWER(author_address) != ? AND id IN (
+               SELECT ${ref} FROM comments WHERE LOWER(author_address) = ? AND ${ref} IS NOT NULL)`,
+          )
+          .run(user, user, user);
+      }
 
       const likes = changes(
         this.db.prepare(`DELETE FROM comment_likes WHERE LOWER(user_address) = ?`).run(user),

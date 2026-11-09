@@ -127,6 +127,71 @@ describe('Trades Module Clean Architecture Tests', () => {
       expect(res.data?.[0].buyVolumeUsd).toBe(500); // 0.2 ETH * $2500 = $500
       expect(res.data?.[0].positionStatus).toBe('holding');
     });
+
+    it('counts a buy older than the newest 500 trades, valued at its own ETH price', async () => {
+      await repository.save({
+        address: tokenAddress,
+        name: 'A',
+        symbol: 'A',
+        decimals: 18,
+        totalSupply: '1000000000000000000000000000',
+        logo: '',
+        description: '',
+        socials: {},
+        deployer: '0x9999999999999999999999999999999999999999',
+        pairedToken: '0x0000000000000000000000000000000000000000',
+        poolAddress: '0x8888888888888888888888888888888888888888',
+        isToken0: false,
+        poolFee: 10000,
+        positionId: 1n,
+        restrictionsEndBlock: 0n,
+        launchBlock: 0n,
+        createdAt: 0,
+        version: 'v2',
+      } as LaunchedTokenEntity);
+      const base = Date.now() - 10_000_000;
+      const trade = (i: number, over: Partial<TradeEventEntity>): TradeEventEntity => ({
+        id: `t-${i}`,
+        tokenAddress,
+        poolAddress: '0x8888888888888888888888888888888888888888',
+        trader: '0x3333333333333333333333333333333333333333',
+        isBuy: true,
+        tokenAmount: '1.00',
+        wethAmount: '0.000001',
+        priceUsd: 0.000001,
+        blockNumber: BigInt(i + 1),
+        transactionHash: `0x${i.toString(16).padStart(64, '0')}` as `0x${string}`,
+        timestamp: base + i * 1000,
+        ...over,
+      });
+      // The first buy: 1 ETH when ETH was $2000 (priceUsd / priceQuote = 2000).
+      await repository.saveTrade(
+        trade(0, {
+          trader: traderAddress,
+          tokenAmount: '1000.00',
+          wethAmount: '1',
+          priceUsd: 2,
+          priceQuote: 0.001,
+        }),
+      );
+      for (let i = 1; i <= 600; i++) await repository.saveTrade(trade(i, {}));
+      await repository.saveTrade(
+        trade(601, {
+          trader: traderAddress,
+          isBuy: false,
+          tokenAmount: '1000.00',
+          wethAmount: '1',
+          priceUsd: 2,
+          priceQuote: 0.001,
+        }),
+      );
+
+      const res = await controller.getTopTraders(tokenAddress);
+      const row = res.data?.find((r) => r.address === traderAddress.toLowerCase());
+      expect(row?.buyVolumeUsd).toBe(2000);
+      expect(row?.profitUsd).toBe(0);
+      expect(row?.positionStatus).toBe('clean_all');
+    });
   });
 
   describe('GetCandlesticksUseCase & TradeController.getCandlesticks', () => {

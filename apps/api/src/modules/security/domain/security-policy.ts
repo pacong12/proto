@@ -9,6 +9,11 @@ import {
   SwapIntentPayload,
 } from '@goton/shared-types';
 
+/** A percentage in [0, max]: NaN, strings and missing values fail (NaN < 0 and NaN > max are both false). */
+function inPercentRange(v: unknown, max: number): boolean {
+  return typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= max;
+}
+
 export class SecurityPolicy {
   static evaluate(intent: TransactionIntent): SecurityEvaluationResult {
     const checks: SecurityPolicyCheck[] = [];
@@ -76,10 +81,7 @@ export class SecurityPolicy {
           });
         }
         // Validate custom tax constraints (max 10% each)
-        if (
-          payload.buyTaxPercent !== undefined &&
-          (payload.buyTaxPercent < 0 || payload.buyTaxPercent > 10)
-        ) {
+        if (payload.buyTaxPercent !== undefined && !inPercentRange(payload.buyTaxPercent, 10)) {
           checks.push({
             code: 'EXCESSIVE_BUY_TAX',
             description: `Buy tax ${payload.buyTaxPercent}% exceeds maximum allowable threshold of 10%`,
@@ -87,10 +89,7 @@ export class SecurityPolicy {
             severity: 'CRITICAL',
           });
         }
-        if (
-          payload.sellTaxPercent !== undefined &&
-          (payload.sellTaxPercent < 0 || payload.sellTaxPercent > 10)
-        ) {
+        if (payload.sellTaxPercent !== undefined && !inPercentRange(payload.sellTaxPercent, 10)) {
           checks.push({
             code: 'EXCESSIVE_SELL_TAX',
             description: `Sell tax ${payload.sellTaxPercent}% exceeds maximum allowable threshold of 10%`,
@@ -108,7 +107,7 @@ export class SecurityPolicy {
         }
       } else if (intent.action === 'SWAP_BUY' || intent.action === 'SWAP_SELL') {
         const payload = intent.payload as SwapIntentPayload;
-        if (payload.slippageTolerancePercent < 0 || payload.slippageTolerancePercent > 50) {
+        if (!inPercentRange(payload.slippageTolerancePercent, 50)) {
           checks.push({
             code: 'EXCESSIVE_SLIPPAGE',
             description: `Slippage tolerance ${payload.slippageTolerancePercent}% is outside safe bounds (0 - 50%)`,

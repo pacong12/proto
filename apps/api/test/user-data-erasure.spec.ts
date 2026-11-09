@@ -63,6 +63,20 @@ describe('User data erasure (GRC-04)', () => {
     expect(await repo.listFollows(BOB, 'following', 10)).toEqual([]);
   });
 
+  it('takes every reply and quote of the wallet off the counts of the posts they answered', async () => {
+    const repo = new SqliteTokenRepository(':memory:');
+    await repo.saveComment(comment('bob-post', BOB));
+    await repo.saveComment(comment('bob-reply', BOB, 'bob-post'));
+    for (const id of ['r1', 'r2', 'r3']) await repo.saveComment(comment(id, ALICE, 'bob-post'));
+    await repo.saveComment({ ...comment('q1', ALICE), quotedCalloutId: 'bob-post' });
+    await repo.saveComment({ ...comment('q2', ALICE), quotedCalloutId: 'bob-post' });
+
+    await repo.deleteUserData(ALICE);
+
+    const [post] = (await repo.getComments(TOKEN)).filter((c) => c.id === 'bob-post');
+    expect(post).toMatchObject({ repliesCount: 1, quotesCount: 0 });
+  });
+
   it('requires a fresh delete-my-data signature from the wallet, not a session', async () => {
     const alice = privateKeyToAccount(
       '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
