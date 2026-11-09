@@ -17,7 +17,12 @@ import {
   ok,
   err,
 } from '@goton/shared-types';
-import { parseJsonBody, PayloadTooLargeError, safeTokenCompare } from '../../../core';
+import {
+  clientErrorMessage,
+  parseJsonBody,
+  PayloadTooLargeError,
+  safeTokenCompare,
+} from '../../../core';
 import {
   cacheHeader,
   readThrough,
@@ -354,7 +359,7 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
         Promise.allSettled([...pollers.values()].map((poller) => poller.pollEvents()));
         return replyEnvelope(ok({ synced: true, address, txHash: txHash ?? null }));
       } catch (e) {
-        return replyEnvelope(err('SYNC_ERROR', (e as Error).message));
+        return replyEnvelope(err('SYNC_ERROR', clientErrorMessage(e)));
       }
     },
   );
@@ -409,7 +414,7 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
           }),
         );
       } catch (e) {
-        return replyEnvelope(err('RPC_ERROR', (e as Error).message));
+        return replyEnvelope(err('RPC_ERROR', clientErrorMessage(e)));
       }
     },
   );
@@ -484,7 +489,7 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
           }),
         );
       } catch (e) {
-        return replyEnvelope(err('REWARD_QUERY_ERROR', (e as Error).message));
+        return replyEnvelope(err('REWARD_QUERY_ERROR', clientErrorMessage(e)));
       }
     },
   );

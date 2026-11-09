@@ -352,8 +352,11 @@ export class InMemoryTokenRepository implements TokenRepositoryPort {
     return allComments.slice(offset, offset + limit);
   }
 
-  async incrementCommentViews(commentId: string): Promise<number> {
-    const current = (this.commentViews.get(commentId) ?? 0) + 1;
+  async incrementCommentViews(commentId: string, count = true): Promise<number | null> {
+    if (![...this.comments.values()].some((list) => list.some((c) => c.id === commentId))) {
+      return null;
+    }
+    const current = (this.commentViews.get(commentId) ?? 0) + (count ? 1 : 0);
     this.commentViews.set(commentId, current);
     return current;
   }

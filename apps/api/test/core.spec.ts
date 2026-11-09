@@ -13,7 +13,10 @@ import {
   resolveCorsOrigin,
   buildSecurityHeaders,
   resolveRateLimitTier,
+  clientErrorMessage,
+  toEnvelope,
 } from '../src/core';
+import { createPublicClient, http, parseAbi } from 'viem';
 
 describe('API Core Infrastructure', () => {
   describe('Standardized Application Errors', () => {
@@ -152,6 +155,35 @@ describe('API Core Infrastructure', () => {
         tier: 'api',
         maxRequests: 300,
       });
+    });
+  });
+
+  describe('clientErrorMessage', () => {
+    it('never passes an RPC URL (and its API key) to the client', async () => {
+      const client = createPublicClient({
+        transport: http('http://127.0.0.1:9/v2/SECRET_KEY_123', { retryCount: 0 }),
+      });
+      const env = await toEnvelope('RPC_ERROR', () =>
+        client.readContract({
+          address: '0x000000000000000000000000000000000000dEaD',
+          abi: parseAbi(['function balanceOf(address) view returns (uint256)']),
+          functionName: 'balanceOf',
+          args: ['0x000000000000000000000000000000000000dEaD'],
+        }),
+      );
+      expect(env.success).toBe(false);
+      expect(JSON.stringify(env)).not.toContain('SECRET_KEY_123');
+      expect(env.error?.message).toBeTruthy();
+    });
+
+    it('keeps one line and replaces URLs', () => {
+      expect(clientErrorMessage(new Error('boom at https://rpc.x/key?a=1\nstack'))).toBe(
+        'boom at [url]',
+      );
+      expect(clientErrorMessage({ shortMessage: 'HTTP request failed.', message: 'URL: x' })).toBe(
+        'HTTP request failed.',
+      );
+      expect(clientErrorMessage(null)).toBe('Unexpected error');
     });
   });
 });
