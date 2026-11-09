@@ -150,8 +150,11 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
         const rows = [];
         for (const item of res.data) {
           if (resolveTokenNetwork(item.token).chainId !== network.chainId) continue;
-          const trades = await repository.getTrades(item.token.address, 500, 0);
-          const signals = memestockSignals(item.token, trades, now);
+          const [trades, creatorTrades] = await Promise.all([
+            repository.getTrades(item.token.address, 500, 0),
+            repository.getTradesByTrader?.(item.token.deployer, 5000, item.token.address),
+          ]);
+          const signals = memestockSignals(item.token, trades, now, creatorTrades ?? trades);
           if (!isMemestock(item.token.description, signals)) continue;
           rows.push({ ...item, signals });
         }

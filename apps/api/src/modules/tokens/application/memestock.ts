@@ -35,10 +35,16 @@ export function hasThesis(description?: string | null): boolean {
   return words.length >= MIN_THESIS_WORDS;
 }
 
+/**
+ * `trades` are the token's recent trades (momentum); `creatorTrades` all of the creator's trades in
+ * it. They default to `trades`, but a busy token's recent page no longer holds the creator's launch
+ * buy, which delisted it as having a creator who never bought.
+ */
 export function memestockSignals(
   token: Pick<LaunchedTokenEntity, 'deployer' | 'totalSupply' | 'decimals'>,
   trades: TradeEventEntity[],
   now: number,
+  creatorTrades: TradeEventEntity[] = trades,
 ): MemestockSignals {
   const creator = token.deployer.toLowerCase();
   let creatorBought = 0;
@@ -48,14 +54,16 @@ export function memestockSignals(
   const traders1h = new Set<string>();
   const traders24h = new Set<string>();
 
-  for (const trade of trades) {
+  for (const trade of creatorTrades) {
+    if (trade.trader.toLowerCase() !== creator) continue;
     const tokens = Number(trade.tokenAmount) || 0;
+    if (trade.isBuy) creatorBought += tokens;
+    else creatorSold += tokens;
+  }
+
+  for (const trade of trades) {
     const quote = Number(trade.wethAmount) || 0;
     const trader = trade.trader.toLowerCase();
-    if (trader === creator) {
-      if (trade.isBuy) creatorBought += tokens;
-      else creatorSold += tokens;
-    }
     const age = now - trade.timestamp;
     if (age < 0) continue;
     if (age <= DAY_MS) traders24h.add(trader);

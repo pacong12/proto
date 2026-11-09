@@ -73,7 +73,8 @@ describe('graduated token market data', () => {
     );
     const { marketData } = (await useCase.execute(TOKEN))!;
     expect(marketData.priceInWeth).toBeCloseTo(4e-7, 15);
-    expect(marketData.marketCapUsd).toBeCloseTo(4e-7 * 2000 * 1e9, 3);
+    expect(marketData.marketCapUsd).toBeCloseTo(4e-7 * 2000 * 1e9, 3); // Viewing the token keeps the creator's launch buy, not the 4.2 ETH the curve raised.
+    expect((await repo.findByAddress(TOKEN))?.initialBuyAmount).toBe('0');
   });
 
   it('prices an in-pool (v4) launch from its newest trade, not a V3 pool it does not have', async () => {
