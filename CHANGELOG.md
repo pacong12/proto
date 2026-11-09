@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/pacong12/proto/compare/v0.9.0...v0.9.1) (2026-11-09)
+
+
+### Bug Fixes
+
+* **deploy:** pass CORS_ALLOWED_ORIGINS to the api container ([#279](https://github.com/pacong12/proto/issues/279)) ([41db68a](https://github.com/pacong12/proto/commit/41db68acacd860197e8d7ce2731c18884c3fa79a))
+
 ## [0.9.0](https://github.com/pacong12/proto/compare/v0.8.1...v0.9.0) (2026-11-09)
 
 
