@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import worker, { maintenanceMode, type Env } from '../worker';
 
 const ASSET_BODY = '<!doctype html><title>app</title>';
@@ -160,5 +162,22 @@ describe('edge worker caching', () => {
       expect(res.headers.get('strict-transport-security'), path).toContain('max-age=');
       expect(res.headers.get('content-security-policy'), path).toContain("frame-ancestors 'none'");
     }
+  });
+});
+
+describe('CSP parity between the worker and the nginx fallback', () => {
+  it('serves the same enforced CSP from both, so the fallback never relaxes it', async () => {
+    const res = await get('/launchpad', makeEnv());
+    const workerCsp = res.headers.get('content-security-policy');
+    expect(workerCsp).toBeTruthy();
+    expect(workerCsp).not.toContain("'unsafe-eval'");
+
+    const nginx = readFileSync(
+      fileURLToPath(new URL('../apps/frontoffice/nginx.conf', import.meta.url)),
+      'utf8',
+    );
+    const m = nginx.match(/Content-Security-Policy "([^"]*)"/);
+    expect(m, 'nginx.conf has a CSP header').toBeTruthy();
+    expect(m![1]).toBe(workerCsp);
   });
 });
