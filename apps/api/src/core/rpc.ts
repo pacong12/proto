@@ -15,3 +15,25 @@ export function rpcTransport(cfg: NetworkConfig, timeout = 10_000): Transport {
 export function createChainClient(cfg: NetworkConfig): PublicClient {
   return createPublicClient({ chain: toViemChain(cfg), transport: rpcTransport(cfg) });
 }
+
+/**
+ * An RPC refusing for load, not a failed call: HTTP 429 (viem's HttpRequestError carries it as
+ * `status`, with no code and often no "too many requests" in its message), JSON-RPC -32005, or a
+ * provider's "rate limit" / "exceeds defined limit" message, anywhere in the cause chain.
+ */
+export function isRateLimited(e: unknown): boolean {
+  type Err = { cause?: unknown; status?: number; code?: number; message?: string };
+  const seen = new Set<unknown>();
+  for (let c = e as Err | undefined; c && !seen.has(c); c = c.cause as Err | undefined) {
+    seen.add(c);
+    if (
+      c.status === 429 ||
+      c.code === 429 ||
+      c.code === -32005 ||
+      /rate limit|too many requests|\b429\b|exceeds defined limit/i.test(c.message ?? '')
+    ) {
+      return true;
+    }
+  }
+  return false;
+}

@@ -1,6 +1,7 @@
 import { PublicClient } from 'viem';
 import { DEFAULT_NETWORK, type LaunchedTokenEntity, type NetworkConfig } from '@goton/shared-types';
 import { TokenRepositoryPort } from '../../../core/ports/token.repository.port';
+import { isRateLimited } from '../../../core/rpc';
 import type { ChainIndexerPort } from '../../tokens';
 import { PriceFeedPort } from '../../../core/ports/price-feed.port';
 import { CalculatePricingUseCase } from '../../tokens';
@@ -159,11 +160,8 @@ export class EventPollerService {
       return count;
     } catch (error) {
       this.lastPollFailed = true;
-      const e = error as { code?: number; message?: string };
-      const rateLimited =
-        e?.code === 429 ||
-        e?.code === -32005 ||
-        /too many requests|exceeds defined limit/i.test(e?.message ?? '');
+      // viem reports an HTTP 429 as `status`, not `code`: missed, five of them skipped the range.
+      const rateLimited = isRateLimited(error);
       // A range that keeps failing (e.g. one malformed log) must not stall indexing forever:
       // after MAX_RANGE_ATTEMPTS the range is skipped, loudly. A rate-limited RPC says nothing
       // about the range, and skipping it would lose its launches and trades for good.

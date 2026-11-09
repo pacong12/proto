@@ -13,7 +13,10 @@ import {
   type NetworkConfig,
 } from '@goton/shared-types';
 import type { TokenRepositoryPort } from '../../../core/ports/token.repository.port';
+import { isRateLimited } from '../../../core/rpc';
 import { sendAndWait, sentResult } from './keeper-tx';
+
+export { isRateLimited };
 
 const EXECUTOR_FEE_BPS = 10n;
 /** v4 pool LP fee. */
@@ -26,19 +29,6 @@ const POOL_ESTIMATE_MARGIN = 0.9;
 const LEG_TAKE_PROFIT = 0;
 export const RATE_LIMITED = 'Rate limited';
 
-/** An RPC refusing for load (HTTP 429, "rate limit exceeded"), not a contract revert. */
-export function isRateLimited(e: unknown): boolean {
-  type Err = { cause?: unknown; status?: number; message?: string };
-  for (let c = e as Err | undefined; c; c = c.cause as Err | undefined) {
-    if (
-      c.status === 429 ||
-      /rate limit|\b429\b|request exceeds defined limit/i.test(c.message ?? '')
-    ) {
-      return true;
-    }
-  }
-  return false;
-}
 const LEG_STOP_LOSS = 1;
 
 export interface LimitOrderFill {
@@ -49,6 +39,9 @@ export interface LimitOrderFill {
 }
 
 type Call = { functionName: string; args: readonly unknown[] };
+
+/** Live open orders read per cycle. */
+export const KEEPER_PAGE = 500;
 
 /**
  * Fills open GotonLimitOrders orders. The keeper never computes prices: it simulates each order's
@@ -67,6 +60,14 @@ export class LimitOrderKeeperService {
     private readonly now: () => number = Date.now,
   ) {}
 
+  /**
+   * Where the next cycle's page of live orders starts. Each cycle reads KEEPER_PAGE of them, the
+   * next page each time and back to the start after the last: reading only the newest 500 meant
+   * that once more were open (expired ones counted too, as they stay open until cancelled), older
+   * stop-losses were never looked at again, and anyone could push them out with small orders.
+   */
+  private pageStart = 0;
+
   async runOnce(maxFills = 20): Promise<LimitOrderFill[]> {
     // The current deployment and earlier ones that may still hold orders.
     const contracts = new Set(limitOrderContracts(this.network).map((a) => a.toLowerCase()));
@@ -74,12 +75,22 @@ export class LimitOrderKeeperService {
     const [account] = await this.walletClient.getAddresses();
     if (!account) return [];
 
-    const open = await this.repository.listLimitOrders({
-      status: 'open',
-      chainId: this.network.chainId,
-      limit: 500,
-    });
     const nowSec = Math.floor(this.now() / 1000);
+    const page = (offset: number) =>
+      this.repository.listLimitOrders!({
+        status: 'open',
+        chainId: this.network.chainId,
+        liveAt: nowSec,
+        oldestFirst: true,
+        limit: KEEPER_PAGE,
+        offset,
+      });
+    let open = await page(this.pageStart);
+    if (open.length === 0 && this.pageStart > 0) {
+      this.pageStart = 0;
+      open = await page(0);
+    }
+    this.pageStart = open.length < KEEPER_PAGE ? 0 : this.pageStart + KEEPER_PAGE;
     const results: LimitOrderFill[] = [];
     let fills = 0;
     for (const order of open) {

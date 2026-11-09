@@ -82,7 +82,10 @@ export class SqliteOrderStore implements LimitOrderStorePort {
     token?: string;
     status?: LimitOrderEntity['status'];
     chainId?: number;
+    liveAt?: number;
     limit?: number;
+    offset?: number;
+    oldestFirst?: boolean;
   }): Promise<LimitOrderEntity[]> {
     const where: string[] = [];
     const args: Array<string | number> = [];
@@ -94,12 +97,16 @@ export class SqliteOrderStore implements LimitOrderStorePort {
     if (filter.token) add('token = ?', filter.token.toLowerCase());
     if (filter.status) add('status = ?', filter.status);
     if (filter.chainId) add('chain_id = ?', filter.chainId);
+    if (filter.liveAt !== undefined) add('deadline >= ?', filter.liveAt);
+    const order = filter.oldestFirst ? 'created_at ASC, key ASC' : 'created_at DESC';
     const rows = this.db
       .prepare(
         `SELECT * FROM limit_orders ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
-         ORDER BY created_at DESC LIMIT ?`,
+         ORDER BY ${order} LIMIT ? OFFSET ?`,
       )
-      .all(...args, Math.min(filter.limit ?? 100, 500)) as Array<Record<string, unknown>>;
+      .all(...args, Math.min(filter.limit ?? 100, 500), Math.max(0, filter.offset ?? 0)) as Array<
+      Record<string, unknown>
+    >;
     return rows.map((r) => ({
       key: String(r.key),
       chainId: Number(r.chain_id),

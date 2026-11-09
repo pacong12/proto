@@ -22,6 +22,11 @@ export interface LimitOrderStorePort {
     token?: string;
     status?: LimitOrderEntity['status'];
     chainId?: number;
+    /** Only orders that can still fill at this Unix time (deadline at or after it). */
+    liveAt?: number;
     limit?: number;
+    offset?: number;
+    /** Oldest first (a stable order to page through), instead of newest first. */
+    oldestFirst?: boolean;
   }): Promise<LimitOrderEntity[]>;
 }
