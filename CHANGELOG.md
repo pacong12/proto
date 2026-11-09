@@ -1,5 +1,64 @@
 # Changelog
 
+## [0.9.0](https://github.com/pacong12/proto/compare/v0.8.1...v0.9.0) (2026-11-09)
+
+
+### Features
+
+* **api:** keeper collects pool LP fees into each token's splitter ([#235](https://github.com/pacong12/proto/issues/235)) ([71af410](https://github.com/pacong12/proto/commit/71af410a4000b0460aeca5e6a942b050d2949062))
+* **contracts:** hook v2, creator vesting and fee recipient lock; analytics per network ([#240](https://github.com/pacong12/proto/issues/240)) ([7e1a194](https://github.com/pacong12/proto/commit/7e1a1947758bb190aa9ccbba740fe672f05ac379))
+* **frontoffice:** a calmer launchpad page ([#259](https://github.com/pacong12/proto/issues/259)) ([4971e16](https://github.com/pacong12/proto/commit/4971e1630c7eb0a9d0aff21608addab21af3e83c))
+* **frontoffice:** cleaner monochrome feed; fix callout positions ([#236](https://github.com/pacong12/proto/issues/236)) ([217de89](https://github.com/pacong12/proto/commit/217de89a4d7b11dfed3232c0f1ffd50895fe2f05))
+* **frontoffice:** live list pages, no refresh buttons ([#263](https://github.com/pacong12/proto/issues/263)) ([a186a56](https://github.com/pacong12/proto/commit/a186a56d39dc7726e08a65b5e34c9898ec467822))
+* **frontoffice:** lock the launch buy with vesting and claim it from the profile ([#241](https://github.com/pacong12/proto/issues/241)) ([3e2273b](https://github.com/pacong12/proto/commit/3e2273bd51efa7217bde502b56d89e429aec2d18))
+* share a wallet's PnL on a token as a card and a page ([#230](https://github.com/pacong12/proto/issues/230)) ([d3521ac](https://github.com/pacong12/proto/commit/d3521ac53248ba3ec206ce2ec1811a14642933b0))
+
+
+### Bug Fixes
+
+* **api:** answer an IPFS CID no gateway has with a 404 before the idle timeout ([#228](https://github.com/pacong12/proto/issues/228)) ([c326b60](https://github.com/pacong12/proto/commit/c326b60deae008747cd9cd5fa1f5b627c7e20e26))
+* **api:** Arc tokens priced and backfilled correctly; Arc testnet config ([#237](https://github.com/pacong12/proto/issues/237)) ([597be3a](https://github.com/pacong12/proto/commit/597be3ae0867ea961bf18a03a5db515d58c46d5a))
+* **api:** file feed tokens by chain and cache profile name lookups ([#251](https://github.com/pacong12/proto/issues/251)) ([d5127b0](https://github.com/pacong12/proto/commit/d5127b0efe16fefa9d08d46983024863791f7d94))
+* **api:** keep feed, wallet and block queries from stalling at scale ([#250](https://github.com/pacong12/proto/issues/250)) ([3b4cf65](https://github.com/pacong12/proto/commit/3b4cf657831e0d26898e78ad31760b6705d847c1))
+* **api:** keep RPC URLs out of errors, count callout views once ([#277](https://github.com/pacong12/proto/issues/277)) ([822e10c](https://github.com/pacong12/proto/commit/822e10c6458648f29d2e144b3b33b71360bd7aa5))
+* **api:** keepers sign their own transactions ([#239](https://github.com/pacong12/proto/issues/239)) ([02e1e2c](https://github.com/pacong12/proto/commit/02e1e2ccd846c7a05e1a9aec90e8e9f5cb443582))
+* **api:** retry a swap's range when its signer cannot be read ([#253](https://github.com/pacong12/proto/issues/253)) ([d0dd980](https://github.com/pacong12/proto/commit/d0dd980cf9ec0bcdd4145f74662ccbdcd84a7bb7))
+* **api:** token streams stay open; sync and bad input no longer 500; one poll at a time ([#272](https://github.com/pacong12/proto/issues/272)) ([48f73e4](https://github.com/pacong12/proto/commit/48f73e4ceb3e79463f23a55b200a7b9d50880ec2))
+* **api:** verify sync receipts, sign every comment field, sign data erasure ([#275](https://github.com/pacong12/proto/issues/275)) ([ab01007](https://github.com/pacong12/proto/commit/ab010070d7bb1c0a2a43fc12aca38cd24f7324d3))
+* **chart:** continuous candles that follow the live price, drawn once ([#267](https://github.com/pacong12/proto/issues/267)) ([6bca21c](https://github.com/pacong12/proto/commit/6bca21cc171845e412f3b78dcdc9ea4a68bcd257))
+* **ci:** read the indexed block from latest-block's DEX Screener shape ([#219](https://github.com/pacong12/proto/issues/219)) ([8e65d7f](https://github.com/pacong12/proto/commit/8e65d7f6f0ccaafb5b02d9c9572417757d873a87))
+* **contracts:** pool stop-losses need spot and TWAP below the trigger ([#233](https://github.com/pacong12/proto/issues/233)) ([fa8b8cc](https://github.com/pacong12/proto/commit/fa8b8cc9c6c0d0e9796042df3056aa3ae8a71936))
+* **frontoffice:** a calmer token page ([#262](https://github.com/pacong12/proto/issues/262)) ([7940e74](https://github.com/pacong12/proto/commit/7940e74946aa65d79086f270e238d5a177bb62f8))
+* **frontoffice:** a coin chart that says what it shows ([#264](https://github.com/pacong12/proto/issues/264)) ([7ca45d0](https://github.com/pacong12/proto/commit/7ca45d049ad5aff9950aef31e47fce4d28a4ed7b))
+* **frontoffice:** a profile loads once per visit ([#273](https://github.com/pacong12/proto/issues/273)) ([75516c4](https://github.com/pacong12/proto/commit/75516c42a02eb67aef09079f3eefa46b34341d9c))
+* **frontoffice:** calmer memestock, feed, profile and analytics; no negative chart dip ([#260](https://github.com/pacong12/proto/issues/260)) ([dc14179](https://github.com/pacong12/proto/commit/dc14179fc2cad292a7c45641806a7b2488aeecbe))
+* **frontoffice:** chart legend names the symbol, interval and unit ([#265](https://github.com/pacong12/proto/issues/265)) ([272bd29](https://github.com/pacong12/proto/commit/272bd29c693cf9e2a902ae479873160238d3fb6b))
+* **frontoffice:** coin chart shows the last real moves ([#266](https://github.com/pacong12/proto/issues/266)) ([43fe937](https://github.com/pacong12/proto/commit/43fe937ea288a6c993650ec41c6b075c70bd80cc))
+* **frontoffice:** floor pool swaps on the simulated output, net of tax ([#248](https://github.com/pacong12/proto/issues/248)) ([dbe20c0](https://github.com/pacong12/proto/commit/dbe20c0b3b56f18a1ae02754ee965286f8fe4e59))
+* **frontoffice:** holders can post calls again, plus page checks from a full UI run ([#256](https://github.com/pacong12/proto/issues/256)) ([e990657](https://github.com/pacong12/proto/commit/e9906575d9745f964241f9f787b1bfd33e5da88e))
+* **frontoffice:** new and unknown token pages: found, titled and bounded ([#268](https://github.com/pacong12/proto/issues/268)) ([43743bd](https://github.com/pacong12/proto/commit/43743bd704e2ec507dacf0c5878d23e936a1f8ae))
+* **frontoffice:** readable text sizes, a heading on every page, profile titles ([#261](https://github.com/pacong12/proto/issues/261)) ([d8fc5e8](https://github.com/pacong12/proto/commit/d8fc5e804e0315365ad71901e284cbca8ec50f5f))
+* **frontoffice:** real 404s for posts and profiles, truthful holder and trade figures ([#252](https://github.com/pacong12/proto/issues/252)) ([b19458d](https://github.com/pacong12/proto/commit/b19458d243057ce82b879bfd6bf95dbeb8771e67))
+* **frontoffice:** show a pool's real tax and keep unknown fees apart from zero ([#254](https://github.com/pacong12/proto/issues/254)) ([570eb33](https://github.com/pacong12/proto/commit/570eb3380ebfa2ab64617d97245620cd3e48f694))
+* **frontoffice:** sign with the wallet the user chose, also after a reload ([#242](https://github.com/pacong12/proto/issues/242)) ([7bae5a6](https://github.com/pacong12/proto/commit/7bae5a6e24bab0fb173db655d4b445390a6db496))
+* **frontoffice:** tidy layouts, right chain badges, no fake curve progress ([#258](https://github.com/pacong12/proto/issues/258)) ([2665669](https://github.com/pacong12/proto/commit/2665669bd90a316d87fb28a65f5e4c019bb5e05c))
+* **frontoffice:** truthful figures, labels and not-found pages ([#249](https://github.com/pacong12/proto/issues/249)) ([be349ca](https://github.com/pacong12/proto/commit/be349ca19bba9927e15a65fa36d98a1bd0b44684))
+* **frontoffice:** vesting tab, tiny dividends, pool token stats and CTO feedback ([#244](https://github.com/pacong12/proto/issues/244)) ([f920d63](https://github.com/pacong12/proto/commit/f920d632b21ff1b45fab9bf14ee9bdfa14dbcc45))
+* **frontoffice:** WalletConnect row, OKX wallet id and tiny dividends ([#245](https://github.com/pacong12/proto/issues/245)) ([d7d736c](https://github.com/pacong12/proto/commit/d7d736c2dc3d5af273bdcde8b575b183093f9a5c))
+* indexer backs off a rate-limited RPC; clearer pre-buy notice ([#257](https://github.com/pacong12/proto/issues/257)) ([51f7c7b](https://github.com/pacong12/proto/commit/51f7c7b1d6a6914093a30aeec8bfdbcd75247999))
+* keep charts and the token page in sync with trades ([#231](https://github.com/pacong12/proto/issues/231)) ([77b1eb5](https://github.com/pacong12/proto/commit/77b1eb557f98193bab0fb9cc2a2130119e433eea))
+* keeper and indexer under rate limits, PnL card clock, feed translations, small-order warning ([#238](https://github.com/pacong12/proto/issues/238)) ([86c4849](https://github.com/pacong12/proto/commit/86c4849dc6fc3c6db9019213c832fabfb739e04f))
+* limit-order safeguards (keeper fee, TP/SL floors with impact, stop-loss status) ([#232](https://github.com/pacong12/proto/issues/232)) ([825293a](https://github.com/pacong12/proto/commit/825293ae8b4c33e517d2adfed69a6972b67adb2e))
+* list pool tokens with their real tax; correct creator labels ([#243](https://github.com/pacong12/proto/issues/243)) ([7429f63](https://github.com/pacong12/proto/commit/7429f633779c1601bbdc672d8549fe5ff23b2e96))
+* **trade:** balances stay right after trades and orders ([#269](https://github.com/pacong12/proto/issues/269)) ([26a7b7c](https://github.com/pacong12/proto/commit/26a7b7c3dd6c2821eec451cbd45a167ff07045e6))
+* **trade:** limit and TP/SL forms refuse targets that fill at once, and show the balance ([#270](https://github.com/pacong12/proto/issues/270)) ([76c9232](https://github.com/pacong12/proto/commit/76c92322e0fa682f9b346215ff9891a7c48205c2))
+* **trade:** transaction errors read as a sentence ([#271](https://github.com/pacong12/proto/issues/271)) ([ef51981](https://github.com/pacong12/proto/commit/ef51981dc7ef9e76bafc52e78b6484be2488ad06))
+
+
+### Performance Improvements
+
+* faster charts, a realistic sell estimate before approval, historical roadmap notes ([#255](https://github.com/pacong12/proto/issues/255)) ([181a6a8](https://github.com/pacong12/proto/commit/181a6a86b8278cd21c1fe903d5a46051f8db7e0e))
+
 ## [0.8.1](https://github.com/pacong12/proto/compare/v0.8.0...v0.8.1) (2026-10-30)
 
 
