@@ -38,9 +38,16 @@ export class GraduationKeeperService {
     return a;
   }
 
+  /**
+   * A curve not yet moved into its pool. isGraduated cannot say so: it is the curve's own flag
+   * (target reached), stored by the launch indexer and by every token page view, so a finished
+   * curve was skipped as done and waited for a trader to pay for its graduation. A moved token's
+   * poolAddress is its v4 pool id (TokenGraduated), as the buyback keeper also reads it.
+   */
   private isLiveCurve(token: LaunchedTokenEntity): boolean {
     const onChain = token.chainId === undefined || token.chainId === this.network.chainId;
-    return onChain && token.version === 'v2' && !token.isGraduated && !!token.curveAddress;
+    const moved = token.poolAddress?.length === 66;
+    return onChain && token.version === 'v2' && !moved && !!token.curveAddress;
   }
 
   async runOnce(): Promise<GraduationResult[]> {

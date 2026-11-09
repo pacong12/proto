@@ -107,26 +107,39 @@ export class SqliteOrderStore implements LimitOrderStorePort {
       .all(...args, Math.min(filter.limit ?? 100, 500), Math.max(0, filter.offset ?? 0)) as Array<
       Record<string, unknown>
     >;
-    return rows.map((r) => ({
-      key: String(r.key),
-      chainId: Number(r.chain_id),
-      contract: (r.contract as `0x${string}` | null) ?? undefined,
-      orderId: String(r.order_id),
-      owner: String(r.owner) as `0x${string}`,
-      token: String(r.token) as `0x${string}`,
-      isBuy: Number(r.is_buy) === 1,
-      amount: String(r.amount),
-      minOut: String(r.min_out),
-      slPriceX36: String(r.sl_price_x36),
-      slMinOut: String(r.sl_min_out),
-      deadline: Number(r.deadline),
-      status: r.status as LimitOrderEntity['status'],
-      filledLeg: (r.filled_leg as LimitOrderEntity['filledLeg']) ?? undefined,
-      amountOut: (r.amount_out as string) ?? undefined,
-      createdTx: String(r.created_tx),
-      closedTx: (r.closed_tx as string) ?? undefined,
-      createdAt: Number(r.created_at),
-      updatedAt: Number(r.updated_at),
-    }));
+    return rows.map(toLimitOrder);
   }
+
+  /** One order by its limitOrderKey, or null. */
+  async getLimitOrder(key: string): Promise<LimitOrderEntity | null> {
+    const row = this.db.prepare(`SELECT * FROM limit_orders WHERE key = ?`).get(key) as Record<
+      string,
+      unknown
+    > | null;
+    return row ? toLimitOrder(row) : null;
+  }
+}
+
+function toLimitOrder(r: Record<string, unknown>): LimitOrderEntity {
+  return {
+    key: String(r.key),
+    chainId: Number(r.chain_id),
+    contract: (r.contract as `0x${string}` | null) ?? undefined,
+    orderId: String(r.order_id),
+    owner: String(r.owner) as `0x${string}`,
+    token: String(r.token) as `0x${string}`,
+    isBuy: Number(r.is_buy) === 1,
+    amount: String(r.amount),
+    minOut: String(r.min_out),
+    slPriceX36: String(r.sl_price_x36),
+    slMinOut: String(r.sl_min_out),
+    deadline: Number(r.deadline),
+    status: r.status as LimitOrderEntity['status'],
+    filledLeg: (r.filled_leg as LimitOrderEntity['filledLeg']) ?? undefined,
+    amountOut: (r.amount_out as string) ?? undefined,
+    createdTx: String(r.created_tx),
+    closedTx: (r.closed_tx as string) ?? undefined,
+    createdAt: Number(r.created_at),
+    updatedAt: Number(r.updated_at),
+  };
 }

@@ -111,6 +111,8 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     this.orders.adoptLimitOrders(...args);
   updateLimitOrder: SqliteOrderStore['updateLimitOrder'] = (...args) =>
     this.orders.updateLimitOrder(...args);
+  getLimitOrder: SqliteOrderStore['getLimitOrder'] = (...args) =>
+    this.orders.getLimitOrder(...args);
   listLimitOrders: SqliteOrderStore['listLimitOrders'] = (...args) =>
     this.orders.listLimitOrders(...args);
 }

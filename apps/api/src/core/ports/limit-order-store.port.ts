@@ -17,6 +17,8 @@ export interface LimitOrderStorePort {
     contract: string,
     keyOf: (orderId: string) => string,
   ): Promise<number>;
+  /** One order by its limitOrderKey, or null. */
+  getLimitOrder?(key: string): Promise<LimitOrderEntity | null>;
   listLimitOrders?(filter: {
     owner?: string;
     token?: string;

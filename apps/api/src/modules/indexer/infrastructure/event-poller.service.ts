@@ -211,10 +211,11 @@ export class EventPollerService {
     count += await this.launches.pollV2Launches(from, to);
     count += await this.launches.pollV4Launches(from, to);
     count += await this.launches.pollGraduations(from, to);
+    // Orders before trades: a fill's trade belongs to its order's owner, read from the order.
+    count += await this.limitOrders.pollLimitOrders(from, to);
     count += await this.trades.pollV2Trades(from, to);
     count += await this.trades.pollV1Swaps(from, to);
     count += await this.trades.pollV4Swaps(from, to);
-    count += await this.limitOrders.pollLimitOrders(from, to);
     count += await this.buybacks.pollBuybacks(from, to);
     count += await this.holders.pollTransfers(from, to);
     return count;

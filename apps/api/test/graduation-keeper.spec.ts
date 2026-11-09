@@ -81,9 +81,19 @@ describe('GraduationKeeperService', () => {
     expect(writes.map((w) => w.args)).toEqual([[done.address]]);
   });
 
-  it('skips graduated, pool and other-chain tokens without reading them', async () => {
+  it('graduates a finished curve already flagged graduated by a page view or the indexer', async () => {
     const repo = new InMemoryTokenRepository();
-    await repo.save(curveToken(1, { isGraduated: true }));
+    // The curve's own flag is stored as isGraduated; its pool is still the curve.
+    const finished = curveToken(1, { isGraduated: true });
+    await repo.save(finished);
+    const { publicClient, walletClient, writes } = setup([finished.curveAddress!]);
+    await new GraduationKeeperService(publicClient, walletClient, repo, network).runOnce();
+    expect(writes.map((w) => w.args)).toEqual([[finished.address]]);
+  });
+
+  it('skips moved, pool and other-chain tokens without reading them', async () => {
+    const repo = new InMemoryTokenRepository();
+    await repo.save(curveToken(1, { isGraduated: true, poolAddress: `0x${'ab'.repeat(32)}` }));
     await repo.save(curveToken(2, { version: 'v4' }));
     await repo.save(curveToken(3, { chainId: 5042 }));
     const all = [1, 2, 3].map((n) => curveToken(n).curveAddress!);

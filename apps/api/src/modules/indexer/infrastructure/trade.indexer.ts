@@ -1,8 +1,10 @@
 import { replayCurveReserves, sqrtPriceX96ToQuotePrice } from '@goton/math-sdk';
-import { isAddress, type Address } from 'viem';
+import { isAddress, parseEventLogs, type Address } from 'viem';
 import {
   bondingCurveAbi,
   launchpadTokenAbi,
+  limitOrderContracts,
+  limitOrderKey,
   type LaunchedTokenEntity,
   type TradeEventEntity,
 } from '@goton/shared-types';
@@ -13,6 +15,7 @@ import {
   V4_SWAP_EVENT,
   CONFIRMATIONS,
   LOG_ADDRESS_BATCH,
+  LIMIT_ORDER_EVENTS,
 } from './indexer-events';
 import { ChainIndexerPart } from './indexer-context';
 
@@ -195,7 +198,7 @@ export class TradeIndexer extends ChainIndexerPart {
       const tokenByPoolId = new Map(allTokens.map((t) => [t.poolAddress.toLowerCase(), t]));
       const quotePriceUsd = await this.priceFeed.getQuoteAssetPriceUsd(this.network.chainId);
       const blockTimestamps = new Map<bigint, number>();
-      const txSenders = new Map<string, Address>();
+      const txSenders = new Map<string, { from: Address; to: Address | null }>();
 
       let count = 0;
       for (const log of logs) {
@@ -245,7 +248,13 @@ export class TradeIndexer extends ChainIndexerPart {
 
         // The Swap event's sender is whatever called PoolManager.swap: the router, the limit-order
         // contract or the buyback, never the trader. The transaction's signer is the trader.
-        const signer = await this.txSender(log.transactionHash, txSenders);
+        // A limit-order fill swaps through the router like anyone: the transaction is sent to the
+        // order contract, which the transaction's own `to` tells.
+        const tx = await this.txSender(log.transactionHash, txSenders);
+        const signer =
+          (await this.protocolTrader(sender, log.transactionHash, log.logIndex)) ??
+          (await this.protocolTrader(tx?.to ?? undefined, log.transactionHash, log.logIndex)) ??
+          tx?.from;
         const trade: TradeEventEntity = {
           id: `${log.transactionHash}-${log.logIndex}`,
           tokenAddress: token.address,
@@ -324,7 +333,8 @@ export class TradeIndexer extends ChainIndexerPart {
         id: `${log.transactionHash}-${log.logIndex}`,
         tokenAddress: token.address,
         poolAddress: token.poolAddress,
-        trader,
+        // A limit-order sell on the curve is emitted for the order contract, not its owner.
+        trader: (await this.protocolTrader(trader, log.transactionHash, log.logIndex)) ?? trader,
         isBuy,
         tokenAmount: tokenAmountNum.toFixed(4),
         wethAmount: ethAmountNum.toFixed(6),
@@ -343,20 +353,53 @@ export class TradeIndexer extends ChainIndexerPart {
   }
 
   /**
-   * The address that signed `hash`. A failed read throws, so the poll retries the range: falling
+   * Whose trade a protocol contract made, or null when `actor` is none. A limit-order fill is
+   * signed by the keeper and swapped (or sold on the curve) by the order contract: it is the
+   * order owner's, found through the OrderFilled the fill emits after the trade. Stored under the
+   * keeper, the owner's PnL, portfolio and top-trader row missed every fill. A buyback swap is the
+   * buyback contract's: its tokens go to 0xdEaD, and the keeper wallet that signed it never held
+   * them.
+   */
+  private async protocolTrader(
+    actor: Address | undefined,
+    hash: `0x${string}` | null,
+    logIndex: number | null,
+  ): Promise<Address | null> {
+    const a = actor?.toLowerCase();
+    if (!a || !hash) return null;
+    const buyback = this.network.contracts.buyback;
+    if (buyback && a === buyback.toLowerCase()) return buyback;
+    if (!limitOrderContracts(this.network).some((c) => c.toLowerCase() === a)) return null;
+    // A failed read throws, so the range is retried rather than credited to the keeper for good.
+    const receipt = await this.client.getTransactionReceipt({ hash });
+    const fill = parseEventLogs({
+      abi: LIMIT_ORDER_EVENTS,
+      logs: receipt.logs,
+      eventName: 'OrderFilled',
+    }).find((l) => l.address.toLowerCase() === a && (l.logIndex ?? 0) > (logIndex ?? -1));
+    if (!fill) return null;
+    const order = await this.tokenRepository.getLimitOrder?.(
+      limitOrderKey(this.network.chainId, a, fill.args.id!),
+    );
+    return order?.owner ?? null;
+  }
+
+  /**
+   * The signer of `hash` and where it was sent. A failed read throws, so the poll retries the range: falling
    * back to the Swap event's sender stored the router as the trader for good whenever the RPC
    * rate-limited, which wrongly emptied the wallet's PnL, portfolio and top-trader rows.
    */
   private async txSender(
     hash: `0x${string}` | null,
-    cache: Map<string, Address>,
-  ): Promise<Address | null> {
+    cache: Map<string, { from: Address; to: Address | null }>,
+  ): Promise<{ from: Address; to: Address | null } | null> {
     if (!hash) return null;
     const cached = cache.get(hash);
     if (cached) return cached;
-    const { from } = await this.client.getTransaction({ hash });
-    cache.set(hash, from);
-    return from;
+    const { from, to } = await this.client.getTransaction({ hash });
+    const tx = { from, to: to ?? null };
+    cache.set(hash, tx);
+    return tx;
   }
 
   /** Curve spot price (quote per token) at the end of `blockNumber`, or null if unreadable. */
