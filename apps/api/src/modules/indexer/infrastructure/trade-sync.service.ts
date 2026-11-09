@@ -9,6 +9,7 @@ import type { CachePort } from '../../../core/ports/cache.port';
 import type { LoggerPort } from '../../../core/ports/logger.port';
 import type { TokenRepositoryPort } from '../../../core/ports/token.repository.port';
 import type { EventPollerService } from './event-poller.service';
+import { logsFrom } from '../../../core/receipt-guards';
 
 const TRADE_EVENT = parseAbiItem(
   'event Trade(address indexed trader, bool indexed isBuy, uint256 ethAmount, uint256 tokenAmount, uint256 feeEth)',
@@ -61,7 +62,9 @@ export class TradeSyncService {
     const receipt = await client.getTransactionReceipt({ hash: txHash });
     if (!receipt || receipt.status !== 'success') return;
 
-    for (const log of receipt.logs) {
+    // The txHash comes from a public request: only Trade logs emitted by this token's own curve
+    // count, like the live poller's getLogs({ address: curve }). Any contract can emit a Trade event.
+    for (const log of logsFrom(receipt.logs, [token.curveAddress, token.poolAddress])) {
       try {
         const decoded = decodeEventLog({
           abi: [TRADE_EVENT],

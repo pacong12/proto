@@ -1,4 +1,4 @@
-import { buildSessionSignMessage } from '@goton/shared-types';
+import { buildEraseDataSignMessage, buildSessionSignMessage } from '@goton/shared-types';
 import { apiFetch } from './api-client';
 import { getWalletClient } from './viem-client';
 
@@ -55,4 +55,25 @@ export async function getSessionHeaders(address: string): Promise<Record<string,
     store(address, session);
   }
   return { Authorization: `Bearer ${session.token}` };
+}
+
+/**
+ * Body for DELETE /api/users/:address/data. Erasure is irreversible, so the API wants a fresh
+ * signature of the delete-my-data message rather than the 24h session token.
+ */
+export async function signEraseDataRequest(
+  address: string,
+): Promise<{ issuedAt: number; signature: `0x${string}` }> {
+  const walletClient = await getWalletClient();
+  if (!walletClient) throw new Error('Connect your wallet to continue');
+  const [account] = await walletClient.getAddresses();
+  if (!account || account.toLowerCase() !== address.toLowerCase()) {
+    throw new Error('Connected wallet does not match this account');
+  }
+  const issuedAt = Date.now();
+  const signature = await walletClient.signMessage({
+    account,
+    message: buildEraseDataSignMessage({ address: account, issuedAt }),
+  });
+  return { issuedAt, signature };
 }

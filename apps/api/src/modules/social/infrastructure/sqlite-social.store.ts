@@ -667,6 +667,7 @@ export class SqliteSocialStore implements SocialStorePort {
     reposts: number;
     sentiment: number;
     profile: number;
+    follows: number;
   }> {
     return this.database.runInTransaction(() => {
       const user = address.toLowerCase();
@@ -715,7 +716,11 @@ export class SqliteSocialStore implements SocialStorePort {
         this.db.prepare(`DELETE FROM token_sentiment WHERE user_address = ?`).run(user),
       );
       const profile = changes(this.db.prepare(`DELETE FROM profiles WHERE address = ?`).run(user));
-      return { comments, likes, reposts, sentiment, profile };
+      // Both directions: whom the wallet follows and who follows it.
+      const follows = changes(
+        this.db.prepare(`DELETE FROM follows WHERE follower = ? OR followee = ?`).run(user, user),
+      );
+      return { comments, likes, reposts, sentiment, profile, follows };
     });
   }
 }

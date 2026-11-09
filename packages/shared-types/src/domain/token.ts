@@ -177,35 +177,92 @@ export interface CommentSignaturePayload {
   authorAddress: string;
   content: string;
   timestamp: number;
+  /** Optional fields of the post; each one present is part of the signed message. */
+  imageUrl?: string;
+  targetMcap?: string;
+  parentId?: string;
+  quotedCalloutId?: string;
+  callType?: 'call' | 'comment';
 }
 
 /**
  * Builds the canonical message string to be signed by the author's wallet
  * for on-chain identity authentication of comments and callouts.
+ * Optional fields are signed when set, so nobody relaying the signature can attach an image,
+ * reply target or quote the author did not sign. A plain callout signs the original five lines.
  */
 export function buildCommentSignMessage(params: CommentSignaturePayload): string {
-  return [
+  const lines = [
     'Goton Community Signal',
     `Token: ${params.tokenAddress.toLowerCase()}`,
     `Author: ${params.authorAddress.toLowerCase()}`,
     `Timestamp: ${params.timestamp}`,
     `Content: ${params.content.trim()}`,
-  ].join('\n');
+  ];
+  if (params.callType === 'comment') lines.push('Type: comment');
+  if (params.imageUrl?.trim()) lines.push(`Image: ${params.imageUrl.trim()}`);
+  if (params.targetMcap?.trim()) lines.push(`Target: ${params.targetMcap.trim()}`);
+  if (params.parentId?.trim()) lines.push(`Reply to: ${params.parentId.trim()}`);
+  if (params.quotedCalloutId?.trim()) lines.push(`Quote of: ${params.quotedCalloutId.trim()}`);
+  return lines.join('\n');
 }
 
 /** Lifetime of a social session token issued by POST /api/auth/session. */
 export const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 
 /**
- * Message a wallet signs once to open a social session (likes, reposts, sentiment votes).
- * `issuedAt` must be recent when exchanged for a session token.
+ * Message a wallet signs once to open a social session (likes, reposts, sentiment votes,
+ * follows and profile edits). `issuedAt` must be recent when exchanged for a session token.
+ * Deleting the wallet's data is not covered: it needs its own signature (buildEraseDataSignMessage).
  */
 export function buildSessionSignMessage(params: { address: string; issuedAt: number }): string {
   return [
     'Goton Sign-In',
     `Wallet: ${params.address.toLowerCase()}`,
     `Issued: ${params.issuedAt}`,
+    'Purpose: like, repost, vote, follow and edit your profile as this wallet for 24 hours',
+  ].join('\n');
+}
+
+/**
+ * End of the transition for clients built before v0.7.2 signed every field: until then the API
+ * still accepts their message formats (the five-line comment message, the old sign-in text and
+ * a session token for data erasure), so open tabs keep working across the release. After this
+ * instant those formats are rejected without another deploy; then delete the legacy branches.
+ */
+export const LEGACY_SIGNATURES_ACCEPTED_UNTIL = Date.UTC(2026, 11, 31);
+
+/** True while the legacy message formats above are still accepted. */
+export function legacySignaturesAccepted(now = Date.now()): boolean {
+  return now < LEGACY_SIGNATURES_ACCEPTED_UNTIL;
+}
+
+/**
+ * Sign-in text before the purpose line listed follows and profile edits. Still accepted by the
+ * API until LEGACY_SIGNATURES_ACCEPTED_UNTIL so clients built before the change keep working.
+ */
+export function buildLegacySessionSignMessage(params: {
+  address: string;
+  issuedAt: number;
+}): string {
+  return [
+    'Goton Sign-In',
+    `Wallet: ${params.address.toLowerCase()}`,
+    `Issued: ${params.issuedAt}`,
     'Purpose: like, repost and vote as this wallet for 24 hours',
+  ].join('\n');
+}
+
+/**
+ * Message a wallet signs to delete its off-chain social data (DELETE /api/users/:address/data).
+ * A session token is not enough for this: erasure is irreversible, so it needs a fresh signature.
+ */
+export function buildEraseDataSignMessage(params: { address: string; issuedAt: number }): string {
+  return [
+    'Goton Delete My Data',
+    `Wallet: ${params.address.toLowerCase()}`,
+    `Issued: ${params.issuedAt}`,
+    'Purpose: permanently delete the comments, likes, reposts, votes, follows and profile of this wallet',
   ].join('\n');
 }
 

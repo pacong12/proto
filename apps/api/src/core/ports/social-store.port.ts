@@ -50,5 +50,6 @@ export interface SocialStorePort {
     reposts: number;
     sentiment: number;
     profile: number;
+    follows: number;
   }>;
 }

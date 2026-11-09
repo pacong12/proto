@@ -1,9 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { privateKeyToAccount } from 'viem/accounts';
-import { buildCommentSignMessage } from '@goton/shared-types';
+import { buildCommentSignMessage, LEGACY_SIGNATURES_ACCEPTED_UNTIL } from '@goton/shared-types';
 import { server } from '../src/server';
 
 describe('Tokens HTTP Endpoints Integration', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   const testAddress = '0x1111111111111111111111111111111111111111';
 
   it('GET /api/tokens/:address/holders returns 200 with holders distribution', async () => {
@@ -176,6 +180,87 @@ describe('Tokens HTTP Endpoints Integration', () => {
     expect(json.error.code).toBe('NO_TOKEN_POSITION');
   });
 
+  it('POST /api/tokens/:address/comments signs every field and accepts each signature once', async () => {
+    // After the transition, so the legacy five-line format no longer covers unsigned fields.
+    const now = LEGACY_SIGNATURES_ACCEPTED_UNTIL + 60_000;
+    vi.spyOn(Date, 'now').mockReturnValue(now);
+    const signer = privateKeyToAccount(
+      '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d',
+    );
+    const timestamp = now;
+    const content = 'Signed reply with no image';
+    const signature = await signer.signMessage({
+      message: buildCommentSignMessage({
+        tokenAddress: testAddress,
+        authorAddress: signer.address,
+        content,
+        timestamp,
+        callType: 'comment',
+        parentId: 'parent-1',
+      }),
+    });
+    const post = (extra: Record<string, unknown>) =>
+      server.fetch(
+        new Request(`http://localhost:3001/api/tokens/${testAddress}/comments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            authorAddress: signer.address,
+            content,
+            callType: 'comment',
+            parentId: 'parent-1',
+            signature,
+            timestamp,
+            ...extra,
+          }),
+        }),
+      );
+
+    // A relayer cannot attach an image or move the reply the author did not sign.
+    expect((await post({ imageUrl: 'https://evil.example/x.png' })).status).toBe(401);
+    expect((await post({ parentId: 'other-parent' })).status).toBe(401);
+
+    const first = await post({ positionUsd: 999_999 });
+    expect(first.status).toBe(201);
+    // Client-claimed position sizes are not stored for comments.
+    expect((await first.json()).data.positionUsd).toBeUndefined();
+
+    const replay = await post({});
+    expect(replay.status).toBe(409);
+    expect((await replay.json()).error.code).toBe('SIGNATURE_REUSED');
+  });
+
+  it('POST /api/tokens/:address/comments still accepts the five-line format during the transition', async () => {
+    const signer = privateKeyToAccount(
+      '0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a',
+    );
+    const timestamp = Date.now();
+    const content = 'Reply from a tab opened before the release';
+    const legacy = await signer.signMessage({
+      message: buildCommentSignMessage({
+        tokenAddress: testAddress,
+        authorAddress: signer.address,
+        content,
+        timestamp,
+      }),
+    });
+    const res = await server.fetch(
+      new Request(`http://localhost:3001/api/tokens/${testAddress}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          authorAddress: signer.address,
+          content,
+          callType: 'comment',
+          parentId: 'parent-legacy',
+          signature: legacy,
+          timestamp,
+        }),
+      }),
+    );
+    expect(res.status).toBe(201);
+  });
+
   it('POST /api/tokens/:address/comments verifies cryptographic signature and prevents whale impersonation', async () => {
     const realSigner = privateKeyToAccount(
       '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
@@ -189,6 +274,7 @@ describe('Tokens HTTP Endpoints Integration', () => {
       authorAddress: realSigner.address,
       content,
       timestamp,
+      targetMcap: '$200K MC',
     });
     const validSignature = await realSigner.signMessage({ message });
 
@@ -236,6 +322,7 @@ describe('Tokens HTTP Endpoints Integration', () => {
       authorAddress: realSigner.address,
       content,
       timestamp: expiredTimestamp,
+      targetMcap: '$200K MC',
     });
     const expiredSignature = await realSigner.signMessage({ message: expiredMessage });
     const expiredReq = new Request(`http://localhost:3001/api/tokens/${testAddress}/comments`, {

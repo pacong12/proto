@@ -256,7 +256,7 @@ import NotFoundPage from '@/pages/NotFoundPage.vue';
 import { totalsByCurrency } from '@/lib/currency-totals';
 import { setPageSeo } from '@/lib/seo';
 import { walletAddress } from '@/lib/wallet-store';
-import { getSessionHeaders } from '@/lib/session';
+import { getSessionHeaders, signEraseDataRequest } from '@/lib/session';
 import { resolveSafeUrl } from '@/lib/safe-url';
 import { resolveUserAddress, getUserIdentity, registerUserIdentity } from '@/lib/username';
 import { Button } from '@/components/ui/button';
@@ -508,7 +508,8 @@ async function eraseSocialData() {
   try {
     await apiFetch(`/api/users/${address}/data`, {
       method: 'DELETE',
-      headers: await getSessionHeaders(address),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(await signEraseDataRequest(address)),
     });
     profileData.value = { ...EMPTY_PROFILE };
     try {

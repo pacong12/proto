@@ -165,4 +165,32 @@ describe('IPFS Service & Controller', () => {
       }
     });
   });
+
+  describe('SVG script filter', () => {
+    const upload = (svg: string) =>
+      new IpfsController(ipfsService).handleUpload(
+        new Request('http://localhost/api/ipfs/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'image/svg+xml' },
+          body: svg,
+        }),
+      );
+
+    it.each([
+      '<svg><a href="javascript&#58;alert(1)"><text>x</text></a></svg>',
+      '<svg><a href="java&#x09;script:alert(1)"><text>x</text></a></svg>',
+      '<svg><a href="&#106;avascript:alert(1)"><text>x</text></a></svg>',
+      '<svg><a href="javascript&colon;alert(1)"><text>x</text></a></svg>',
+      '<!DOCTYPE svg [<!ENTITY x "y">]><svg>&x;</svg>',
+    ])('rejects encoded script payloads: %s', async (svg) => {
+      const res = await upload(svg);
+      expect(res.success).toBe(false);
+      expect(res.error?.code).toBe('MALICIOUS_PAYLOAD');
+    });
+
+    it('accepts escaped markup in text content, which never becomes a tag', async () => {
+      const res = await upload('<svg><text>&lt;script&gt; is just text</text></svg>');
+      expect(res.error?.code).not.toBe('MALICIOUS_PAYLOAD');
+    });
+  });
 });
