@@ -4,6 +4,7 @@ export * from './application/use-cases/get-tokens.use-case';
 export * from './application/use-cases/get-token-by-address.use-case';
 export * from './application/use-cases/get-holders.use-case';
 export * from './application/use-cases/get-dev-activity.use-case';
+export * from './application/use-cases/get-creator-reputation.use-case';
 export * from './application/use-cases/calculate-pricing.use-case';
 export * from './application/all-tokens';
 export * from './infrastructure/adapters/sqlite-token.store';
