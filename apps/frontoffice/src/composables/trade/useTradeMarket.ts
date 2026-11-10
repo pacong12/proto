@@ -89,6 +89,9 @@ export function patchLivePrice(
 /** Most bars the chart keeps. */
 const MAX_BARS = 1000;
 
+/** Most flat bars a no-trade baseline draws, so the line is continuous but bounded. */
+const BASELINE_MAX_BARS = 400;
+
 /**
  * The chart after a reload: `incoming` is the API's whole answer for its window, so it replaces
  * every bar from its first one on; older bars already drawn stay (history beyond the window).
@@ -572,18 +575,14 @@ export function useTradeMarket(page: TradePage) {
         const end = Math.floor(nowSec / resolutionSeconds) * resolutionSeconds;
         const price = currentMarketData.value.priceUsd;
 
-        const baseline: CandleRow[] = [
-          { time: start, open: price, high: price, low: price, close: price, volume: 0 },
-        ];
-        if (end > start) {
-          baseline.push({
-            time: end,
-            open: price,
-            high: price,
-            low: price,
-            close: price,
-            volume: 0,
-          });
+        // A continuous flat line from creation to now, one bar per bucket (capped), so a token
+        // with no trades since launch fills the pane and its time axis spans the whole range,
+        // instead of two lone points stranded at the left with an empty chart and a single month
+        // label. Capped at BASELINE_MAX_BARS so a fine resolution over a long life stays bounded.
+        const baseline: CandleRow[] = [];
+        const firstBucket = Math.max(start, end - (BASELINE_MAX_BARS - 1) * resolutionSeconds);
+        for (let t = firstBucket; t <= end; t += resolutionSeconds) {
+          baseline.push({ time: t, open: price, high: price, low: price, close: price, volume: 0 });
         }
         candlestickData.value = baseline;
         return;

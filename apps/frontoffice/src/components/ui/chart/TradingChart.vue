@@ -544,6 +544,9 @@ function sync(base: Bar[], forceFull = false) {
 /** Pixels per candle when the chart opens: readable bodies, like a trading terminal's default. */
 const OPEN_BAR_PX = 12;
 
+/** From this many bars up, fill the pane instead of leaving the data stranded at the left. */
+const FILL_PANE_BARS = 12;
+
 /**
  * Opens on the latest moves at a readable width. Only traded candles are drawn, so a coin with
  * three trades shows three clear candles at the left (the rest of the pane stays empty) rather
@@ -557,11 +560,16 @@ function showLatest(total: number) {
     const width = chartContainer.value?.clientWidth ?? 800;
     const inView = Math.max(20, Math.floor(width / OPEN_BAR_PX));
     chart.timeScale().applyOptions({ rightOffset: 4 });
-    chart
-      .timeScale()
-      .setVisibleLogicalRange(
-        total < inView ? { from: -1, to: inView - 1 } : { from: total - inView + 4, to: total + 3 },
-      );
+    // Enough bars to read as a line (a continuous history or a flat baseline): spread them across
+    // the whole pane so the time axis spans the real range, instead of cramming them to the left
+    // behind a wide empty gap. A handful of real candles still sits left, clear and unsqueezed.
+    const range =
+      total >= inView
+        ? { from: total - inView + 4, to: total + 3 }
+        : total >= FILL_PANE_BARS
+          ? { from: -1, to: total + 3 }
+          : { from: -1, to: inView - 1 };
+    chart.timeScale().setVisibleLogicalRange(range);
   });
 }
 
