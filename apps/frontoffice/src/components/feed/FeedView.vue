@@ -310,7 +310,7 @@ async function handleLike(commentId: string): Promise<void> {
 function navigateToToken(address: string): void {
   if (address) {
     emit('select-token', address);
-    router.push(`/launchpad/${address}`);
+    router.push(`/token/${address}`);
   }
 }
 

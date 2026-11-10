@@ -92,7 +92,7 @@ function handleCashtagClick(part: Part): void {
   emit('click-cashtag', { symbol: part.symbol, address: part.tokenAddress });
 
   if (part.tokenAddress) {
-    router.push(`/launchpad/${part.tokenAddress}`);
+    router.push(`/token/${part.tokenAddress}`);
   } else {
     router.push(`/feed?q=${part.symbol}`);
   }
