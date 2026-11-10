@@ -26,7 +26,7 @@
         >
           <Megaphone class="w-3.5 h-3.5" />
           <span class="hidden sm:inline">Call ${{ currentToken.symbol }}</span>
-          <span class="sm:hidden">Call</span>
+          <span class="sm:hidden">{{ t('call') }}</span>
         </Button>
 
         <!-- Share to X Button -->
@@ -99,7 +99,7 @@
                   ? 'text-amber-400'
                   : 'text-muted-foreground/35 hover:text-amber-400'
               "
-              :title="isPinned(currentToken.address) ? 'Unpin coin' : 'Pin to Watchlist'"
+              :title="isPinned(currentToken.address) ? t('unpinCoin') : t('pinToWatchlist')"
               @click.stop="$emit('togglePin', currentToken.address)"
             >
               <Star
@@ -182,7 +182,7 @@
             <button
               type="button"
               class="inline-flex items-center gap-1 hover:text-foreground transition cursor-pointer text-xs"
-              title="Copy Contract Address"
+              :title="t('copyContractAddress')"
               @click="$emit('copyAddress', currentToken.address)"
             >
               <span>{{ shortenAddress(currentToken.address, 6, 4) }}</span>
@@ -195,7 +195,7 @@
               target="_blank"
               rel="noopener noreferrer"
               class="min-w-6 min-h-6 inline-flex items-center justify-center hover:text-foreground transition p-0.5"
-              title="View on Explorer"
+              :title="t('viewOnExplorer')"
             >
               <ExternalLink class="w-3.5 h-3.5" />
             </a>
@@ -207,7 +207,7 @@
               target="_blank"
               rel="noopener noreferrer"
               class="min-w-6 min-h-6 inline-flex items-center justify-center text-muted-foreground hover:text-foreground p-0.5 transition"
-              title="View Image on IPFS"
+              :title="t('viewImageIpfs')"
             >
               <svg
                 class="w-3.5 h-3.5"
@@ -233,7 +233,7 @@
               target="_blank"
               rel="noopener noreferrer"
               class="hover:text-foreground transition p-0.5"
-              title="Twitter / X"
+              :title="t('twitterX')"
             >
               <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
                 <path
@@ -247,7 +247,7 @@
               target="_blank"
               rel="noopener noreferrer"
               class="hover:text-foreground transition p-0.5"
-              title="Telegram"
+              :title="t('telegram')"
             >
               <Send class="w-3.5 h-3.5" />
             </a>
@@ -257,7 +257,7 @@
               target="_blank"
               rel="noopener noreferrer"
               class="hover:text-foreground transition p-0.5"
-              title="Website"
+              :title="t('website')"
             >
               <Globe class="w-3.5 h-3.5" />
             </a>

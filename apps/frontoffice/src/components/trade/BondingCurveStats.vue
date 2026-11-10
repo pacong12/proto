@@ -75,7 +75,7 @@
             <button
               type="button"
               class="text-muted-foreground hover:text-foreground cursor-pointer"
-              title="Copy pair address"
+              :title="t('copyPairAddress')"
               @click="copyPairAddress(currentToken.poolAddress)"
             >
               <Copy class="w-3 h-3" />
@@ -163,8 +163,8 @@
 
     <!-- Tax, burn and the contract as one quiet line. -->
     <p class="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
-      <span title="Buy / Sell creator trading tax">
-        Tax
+      <span :title="t('taxTooltip')">
+        {{ t('taxLabel') }}
         <span class="font-semibold text-foreground tabular-nums">
           {{ (onchainTaxConfig.buyTaxBps / 100).toFixed(0) }}% /
           {{ (onchainTaxConfig.sellTaxBps / 100).toFixed(0) }}%
@@ -179,7 +179,7 @@
       </template>
       <template v-if="burnedInfo.percent > 0">
         <span aria-hidden="true">&middot;</span>
-        <span title="Total burned supply">
+        <span :title="t('totalBurnedSupply')">
           {{ t('burned') }}
           <span class="font-semibold text-foreground tabular-nums">
             {{ burnedInfo.percent.toFixed(1) }}%
