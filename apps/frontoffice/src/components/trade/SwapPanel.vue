@@ -56,7 +56,7 @@
                   :class="
                     slippage > slippageWarnThreshold ? 'text-amber-500 border-amber-500/40' : ''
                   "
-                  title="Slippage settings"
+                  :title="t('slippageSettings')"
                 >
                   <Settings class="w-3.5 h-3.5" />
                 </button>
@@ -430,15 +430,15 @@
         class="flex items-center justify-between gap-3"
       >
         <div class="min-w-0 space-y-0.5">
-          <span class="text-muted-foreground block">Holder dividends</span>
+          <span class="text-muted-foreground block">{{ t('holderDividends') }}</span>
           <span class="font-semibold text-foreground text-sm tabular-nums block">
             {{ unclaimedDividendFormatted || '0.0000' }} {{ currencySymbol }}
           </span>
           <span class="text-muted-foreground block">
             {{
               Number(unclaimedDividendFormatted || 0) > 0
-                ? 'Accumulated from trades'
-                : 'Awaiting next trade'
+                ? t('dividendsAccumulated')
+                : t('dividendsAwaiting')
             }}
           </span>
         </div>
@@ -449,7 +449,7 @@
           @click="$emit('claimDividends')"
         >
           <Loader2 v-if="isClaimingDividends" class="w-3 h-3 animate-spin mr-1" />
-          <span>Claim</span>
+          <span>{{ t('claim') }}</span>
         </Button>
       </div>
 

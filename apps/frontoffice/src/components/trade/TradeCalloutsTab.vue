@@ -7,7 +7,9 @@
       <div class="flex items-center gap-2 min-w-0">
         <Megaphone class="w-4 h-4 text-primary shrink-0" />
         <div class="min-w-0">
-          <p class="font-bold text-foreground text-xs leading-tight">Post a Community Callout</p>
+          <p class="font-bold text-foreground text-xs leading-tight">
+            {{ t('postCommunityCallout') }}
+          </p>
           <p class="text-xs text-muted-foreground truncate">
             Attach your thesis, exit price target, and verified position.
           </p>
@@ -33,7 +35,7 @@
     </div>
     <Empty
       v-else-if="callouts.length === 0"
-      :title="'No callouts yet'"
+      :title="t('noCalloutsYet')"
       :description="`Be the first to call $${currentToken.symbol} to the community!`"
       class="py-12 border border-dashed border-border bg-black"
     >
@@ -122,7 +124,9 @@
           </div>
 
           <div class="text-right shrink-0">
-            <span class="text-xs text-muted-foreground block uppercase font-bold">Position</span>
+            <span class="text-xs text-muted-foreground block uppercase font-bold">{{
+              t('position')
+            }}</span>
             <span class="text-xs font-bold text-foreground">
               {{ cmt.positionUsd ? `$${cmt.positionUsd.toFixed(2)}` : 'Holder' }}
             </span>
@@ -136,7 +140,7 @@
           <button
             type="button"
             class="group flex items-center gap-1 hover:text-sky-500 transition-colors cursor-pointer text-xs"
-            title="View replies"
+            :title="t('viewReplies')"
             @click="$emit('openThreadModal', cmt)"
           >
             <div class="p-1 rounded-full group-hover:bg-sky-500/10 transition-colors">
@@ -164,7 +168,7 @@
           <!-- Total Views (Display only, strictly NOT clickable, Twitter / X style) -->
           <div
             class="flex items-center gap-1 text-muted-foreground select-none cursor-default text-xs"
-            title="Views"
+            :title="t('views')"
           >
             <div class="p-1">
               <BarChart2 class="w-3.5 h-3.5 text-muted-foreground/70" />
@@ -175,7 +179,7 @@
           <button
             type="button"
             class="group flex items-center text-muted-foreground hover:text-sky-500 transition-colors cursor-pointer text-xs"
-            title="Share callout"
+            :title="t('shareCallout')"
             @click="$emit('openShareModal', cmt)"
           >
             <div class="p-1 rounded-full group-hover:bg-sky-500/10 transition-colors">
@@ -210,6 +214,7 @@ import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { CashtagText } from '@/components/feed';
 import { formatRelativeTime, formatMarketCap } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
+import { useI18n } from '@/lib/i18n';
 import type { LaunchedTokenEntity, TokenMarketData, TokenCommentEntity } from '@goton/shared-types';
 
 interface Props {
@@ -234,4 +239,6 @@ defineEmits<{
   (e: 'toggleLike', id: string): void;
   (e: 'update:calloutsPage', page: number): void;
 }>();
+
+const { t } = useI18n();
 </script>
