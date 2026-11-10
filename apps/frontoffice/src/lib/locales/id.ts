@@ -27,6 +27,7 @@ const messages: Record<string, string> = {
   developerBuy: 'Beli Awal Dev',
   creatorTax: 'Pajak Kreator',
   claimFees: 'Klaim Biaya',
+  chartNoTransactions: 'Transaksi tidak ditemukan',
   slippageSettings: 'Pengaturan slippage',
   dividendsAccumulated: 'Terkumpul dari transaksi',
   dividendsAwaiting: 'Menunggu transaksi berikutnya',

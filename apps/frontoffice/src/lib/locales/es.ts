@@ -27,6 +27,7 @@ const messages: Record<string, string> = {
   developerBuy: 'Compra del Desarrollador',
   creatorTax: 'Impuesto del Creador',
   claimFees: 'Reclamar Tarifas',
+  chartNoTransactions: 'No se encontraron transacciones',
   slippageSettings: 'Ajustes de slippage',
   dividendsAccumulated: 'Acumulado de las operaciones',
   dividendsAwaiting: 'Esperando la próxima operación',

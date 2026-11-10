@@ -27,6 +27,7 @@ const messages: Record<string, string> = {
   developerBuy: '開発者買い',
   creatorTax: 'クリエイター税',
   claimFees: '手数料請求',
+  chartNoTransactions: '取引が見つかりません',
   slippageSettings: 'スリッページ設定',
   dividendsAccumulated: '取引から蓄積',
   dividendsAwaiting: '次の取引を待機中',
