@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.10.0](https://github.com/pacong12/proto/compare/v0.9.1...v0.10.0) (2026-11-12)
+
+
+### Features
+
+* creator reputation — launch track record on the profile ([#285](https://github.com/pacong12/proto/issues/285)) ([dd4136f](https://github.com/pacong12/proto/commit/dd4136f0f11c58ade7a2fff50244f75d8661e9a5))
+* **frontoffice:** portfolio dashboard summary on the profile ([#287](https://github.com/pacong12/proto/issues/287)) ([2d2b2dd](https://github.com/pacong12/proto/commit/2d2b2ddd729964162d5118a533f3e6f65950f030))
+* price and market-cap alerts ([#288](https://github.com/pacong12/proto/issues/288)) ([6111c77](https://github.com/pacong12/proto/commit/6111c77755cea607d21020dd11575026b8bb6831))
+* referral attribution and invite links ([#289](https://github.com/pacong12/proto/issues/289)) ([ae5c55d](https://github.com/pacong12/proto/commit/ae5c55de2161c377267e54c98b7d519bbae20c13))
+
+
+### Bug Fixes
+
+* bug-hunt round — PnL, market cap, keeper attribution, dividend checkpoint ([#281](https://github.com/pacong12/proto/issues/281)) ([c11125f](https://github.com/pacong12/proto/commit/c11125f6c49820016c5b298c45068f9773bfd810))
+* **frontoffice:** align the nginx CSP fallback with the enforced worker CSP ([#282](https://github.com/pacong12/proto/issues/282)) ([f6e35d2](https://github.com/pacong12/proto/commit/f6e35d2853b2e9fc2d9a35a62f2ba3993ecdb881))
+* **frontoffice:** dormant tokens show a 'no transactions' chart state with the goton mark ([#284](https://github.com/pacong12/proto/issues/284)) ([69bcc18](https://github.com/pacong12/proto/commit/69bcc18c85a51c937c068c251c9de9b2f2a31fc3))
+* **frontoffice:** internal token links use the canonical /token path ([#286](https://github.com/pacong12/proto/issues/286)) ([4393565](https://github.com/pacong12/proto/commit/43935652612615273025a13451777bc416d23eb6))
+
 ## [0.9.1](https://github.com/pacong12/proto/compare/v0.9.0...v0.9.1) (2026-11-09)
 
 
