@@ -377,6 +377,22 @@ export class SqliteDatabase {
       );
     `);
     this.db.run(`
+      CREATE TABLE IF NOT EXISTS price_alerts (
+        id TEXT PRIMARY KEY,
+        wallet TEXT NOT NULL COLLATE NOCASE,
+        token_address TEXT NOT NULL COLLATE NOCASE,
+        chain_id INTEGER NOT NULL,
+        kind TEXT NOT NULL,
+        direction TEXT NOT NULL,
+        threshold REAL NOT NULL,
+        status TEXT NOT NULL DEFAULT 'open',
+        created_at INTEGER NOT NULL,
+        triggered_at INTEGER
+      );
+      CREATE INDEX IF NOT EXISTS idx_price_alerts_wallet ON price_alerts(wallet);
+      CREATE INDEX IF NOT EXISTS idx_price_alerts_status ON price_alerts(status);
+    `);
+    this.db.run(`
       CREATE TABLE IF NOT EXISTS holder_index (
         token_address TEXT PRIMARY KEY COLLATE NOCASE,
         indexed_at INTEGER NOT NULL

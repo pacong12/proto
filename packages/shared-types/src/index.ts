@@ -4,6 +4,7 @@ export * from './domain/address';
 export * from './domain/intents';
 export * from './domain/envelope';
 export * from './domain/pnl';
+export * from './domain/alert';
 export * from './constants/network';
 export * from './constants/site';
 export * from './constants/seo';
