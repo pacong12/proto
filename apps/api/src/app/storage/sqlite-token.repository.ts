@@ -1,6 +1,7 @@
 import type { TokenRepositoryPort } from '../../core/ports/token.repository.port';
 import { SqliteDatabase } from '../../core/sqlite/sqlite-database';
 import { SqliteOrderStore } from '../../modules/limit-orders';
+import { SqliteReferralStore } from '../../modules/referrals';
 import { SqliteAlertStore } from '../../modules/alerts';
 import { SqliteSocialStore } from '../../modules/social';
 import { SqliteTokenStore } from '../../modules/tokens';
@@ -16,6 +17,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
   private readonly trades: SqliteTradeStore;
   private readonly social: SqliteSocialStore;
   private readonly orders: SqliteOrderStore;
+  private readonly referrals: SqliteReferralStore;
   private readonly alerts: SqliteAlertStore;
 
   constructor(dbPath?: string) {
@@ -24,6 +26,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     this.trades = new SqliteTradeStore(this.database, this.tokens);
     this.social = new SqliteSocialStore(this.database);
     this.orders = new SqliteOrderStore(this.database);
+    this.referrals = new SqliteReferralStore(this.database);
     this.alerts = new SqliteAlertStore(this.database);
   }
 
@@ -121,6 +124,12 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
   listLimitOrders: SqliteOrderStore['listLimitOrders'] = (...args) =>
     this.orders.listLimitOrders(...args);
 
+  recordReferral: SqliteReferralStore['recordReferral'] = (...args) =>
+    this.referrals.recordReferral(...args);
+  getReferrerOf: SqliteReferralStore['getReferrerOf'] = (...args) =>
+    this.referrals.getReferrerOf(...args);
+  getReferralStats: SqliteReferralStore['getReferralStats'] = (...args) =>
+    this.referrals.getReferralStats(...args);
   savePriceAlert: SqliteAlertStore['savePriceAlert'] = (...args) =>
     this.alerts.savePriceAlert(...args);
   listPriceAlerts: SqliteAlertStore['listPriceAlerts'] = (...args) =>

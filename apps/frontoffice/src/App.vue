@@ -216,6 +216,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { walletAddress, walletModalOpen } from './lib/wallet-store';
 import { useWallet } from './composables/useWallet';
 import { useOrderNotifications } from './composables/useOrderNotifications';
+import { captureReferral, attributeReferral } from './lib/referral';
 import { useAlertNotifications } from './composables/useAlertNotifications';
 import { getUserIdentity } from './lib/username';
 import { acceptTerms, cookieSettingsOpen, termsAccepted, termsPromptOpen } from './lib/consent';
@@ -278,7 +279,18 @@ function handleKeydown(e: KeyboardEvent) {
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown);
   promptTermsIfConnected();
+  // Record a ?ref=<wallet> landing so the wallet that connects next is attributed to it.
+  captureReferral();
 });
+
+// Attribute the connected wallet to its referrer (first-touch), once per connect.
+watch(
+  account,
+  (addr) => {
+    if (addr) void attributeReferral(addr);
+  },
+  { immediate: true },
+);
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown);

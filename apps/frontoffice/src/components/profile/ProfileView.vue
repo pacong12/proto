@@ -58,6 +58,9 @@
         :total-trades-capped="totalTradesCapped"
       />
 
+      <!-- Referral: the owner's invite link and how many they referred. -->
+      <ProfileReferralCard v-if="isOwnProfile && targetAccount" :wallet="targetAccount" />
+
       <!-- Notifications -->
       <div
         v-if="successTx"
@@ -270,6 +273,7 @@ import ProfilePostsTab from './ProfilePostsTab.vue';
 import ProfileCreatedTab from './ProfileCreatedTab.vue';
 import ProfileVestingCard from './ProfileVestingCard.vue';
 import ProfilePortfolioTab from './ProfilePortfolioTab.vue';
+import ProfileReferralCard from './ProfileReferralCard.vue';
 import ProfileDividendsTab from './ProfileDividendsTab.vue';
 import ProfileActivityTab from './ProfileActivityTab.vue';
 import EditProfileModal from './EditProfileModal.vue';
