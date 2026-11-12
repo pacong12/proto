@@ -27,6 +27,7 @@ const messages: Record<string, string> = {
   developerBuy: 'شراء المطور',
   creatorTax: 'ضريبة المنشئ',
   claimFees: 'المطالبة بالرسوم',
+  chartNoTransactions: 'لم يتم العثور على معاملات',
   slippageSettings: 'إعدادات الانزلاق',
   dividendsAccumulated: 'متراكمة من التداولات',
   dividendsAwaiting: 'بانتظار التداول التالي',

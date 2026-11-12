@@ -27,6 +27,7 @@ const messages: Record<string, string> = {
   developerBuy: 'Покупка разработчика',
   creatorTax: 'Комиссия создателя',
   claimFees: 'Забрать комиссии',
+  chartNoTransactions: 'Транзакции не найдены',
   slippageSettings: 'Настройки проскальзывания',
   dividendsAccumulated: 'Накоплено с торгов',
   dividendsAwaiting: 'Ожидание следующей сделки',

@@ -27,6 +27,7 @@ const messages: Record<string, string> = {
   developerBuy: '开发者买入',
   creatorTax: '创作者税',
   claimFees: '提取费用',
+  chartNoTransactions: '未找到交易',
   slippageSettings: '滑点设置',
   dividendsAccumulated: '来自交易的累积',
   dividendsAwaiting: '等待下一笔交易',
