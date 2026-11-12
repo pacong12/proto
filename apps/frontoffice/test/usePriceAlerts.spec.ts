@@ -11,7 +11,9 @@ vi.mock('@/lib/api-client', () => ({
     return { success: true, data: calls.list };
   }),
 }));
-vi.mock('@/lib/session', () => ({ getSessionHeaders: async () => ({ Authorization: 'Bearer x' }) }));
+vi.mock('@/lib/session', () => ({
+  getSessionHeaders: async () => ({ Authorization: 'Bearer x' }),
+}));
 
 const { usePriceAlerts } = await import('../src/composables/usePriceAlerts');
 const WALLET = '0x00000000000000000000000000000000000000a1';

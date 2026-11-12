@@ -562,33 +562,8 @@ export function useTradeMarket(page: TradePage) {
         return;
       }
 
-      // No trade data: synthesize a baseline from creation price
-      if (!silent && currentMarketData.value.priceUsd > 0) {
-        const tokenCreatedSec = currentToken.value.createdAt
-          ? Math.floor(currentToken.value.createdAt / 1000)
-          : Math.floor(Date.now() / 1000) - 3600;
-        const nowSec = Math.floor(Date.now() / 1000);
-        const start = Math.floor(tokenCreatedSec / resolutionSeconds) * resolutionSeconds;
-        const end = Math.floor(nowSec / resolutionSeconds) * resolutionSeconds;
-        const price = currentMarketData.value.priceUsd;
-
-        const baseline: CandleRow[] = [
-          { time: start, open: price, high: price, low: price, close: price, volume: 0 },
-        ];
-        if (end > start) {
-          baseline.push({
-            time: end,
-            open: price,
-            high: price,
-            low: price,
-            close: price,
-            volume: 0,
-          });
-        }
-        candlestickData.value = baseline;
-        return;
-      }
-
+      // No trades since launch: leave the chart empty so it shows the "no transactions" state
+      // (like GMGN), instead of a synthetic flat baseline that pretends there was activity.
       if (!silent) candlestickData.value = [];
     } catch {
       if (!silent) candlestickData.value = [];

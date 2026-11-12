@@ -9,6 +9,6 @@ import CreateTokenView from '@/components/CreateTokenView.vue';
 const router = useRouter();
 
 function handleTokenCreated(tokenAddress: string) {
-  router.push(`/launchpad/${tokenAddress}`);
+  router.push(`/token/${tokenAddress}`);
 }
 </script>

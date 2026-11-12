@@ -252,7 +252,7 @@ const isTradeRoute = computed(
 const searchOpen = ref(false);
 
 function handleSelectToken(address: string) {
-  router.push(`/launchpad/${address}`);
+  router.push(`/token/${address}`);
 }
 
 // Ask for the terms as soon as a wallet connects; signing and sending also require them.
