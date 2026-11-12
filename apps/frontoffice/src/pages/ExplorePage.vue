@@ -9,7 +9,7 @@ import ExploreView from '@/components/ExploreView.vue';
 const router = useRouter();
 
 function handleSelectToken(address: string) {
-  router.push(`/launchpad/${address}`);
+  router.push(`/token/${address}`);
 }
 
 function handleSelectTab(tab: string) {

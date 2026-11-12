@@ -16,6 +16,7 @@ import {
 } from 'lightweight-charts';
 import { Maximize, Minimize, ChevronsRight, Loader2 } from 'lucide-vue-next';
 import { formatCompactUsd, formatPriceUsd } from '@/lib/utils';
+import { useI18n } from '@/lib/i18n';
 
 // ---------------------------------------------------------------------------
 // Types & props
@@ -63,6 +64,8 @@ const props = withDefaults(defineProps<Props>(), {
   totalSupply: 1_000_000_000,
   isGraduated: false,
 });
+
+const { t } = useI18n();
 
 // ---------------------------------------------------------------------------
 // State
@@ -859,12 +862,18 @@ onUnmounted(() => {
         <Loader2 class="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
 
-      <!-- Empty state -->
+      <!-- Empty state: a faded goton mark over the message, like GMGN's no-data watermark. -->
       <div
         v-if="isEmpty && !loading"
-        class="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-1 text-muted-foreground"
+        class="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 text-muted-foreground"
       >
-        <span class="text-xs">No trades in this resolution yet</span>
+        <img
+          src="/logo-pink.svg"
+          alt=""
+          draggable="false"
+          class="h-12 w-12 object-contain opacity-15 select-none"
+        />
+        <span class="text-xs">{{ t('chartNoTransactions') }}</span>
       </div>
 
       <!-- Return to Latest Button -->

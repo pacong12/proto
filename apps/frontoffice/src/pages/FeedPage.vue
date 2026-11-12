@@ -9,6 +9,6 @@ import FeedView from '@/components/feed/FeedView.vue';
 const router = useRouter();
 
 function handleSelectToken(address: string) {
-  router.push(`/launchpad/${address}`);
+  router.push(`/token/${address}`);
 }
 </script>

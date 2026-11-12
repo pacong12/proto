@@ -6,6 +6,7 @@ import {
   GetTokenByAddressUseCase,
   GetHoldersUseCase,
   GetDevActivityUseCase,
+  GetCreatorReputationUseCase,
   TokenController,
   CoinGeckoPriceFeedAdapter,
 } from '../modules/tokens';
@@ -66,6 +67,7 @@ export const tokenController = new TokenController(
   getTokenByAddressUseCase,
   new GetHoldersUseCase(repository),
   new GetDevActivityUseCase(repository),
+  new GetCreatorReputationUseCase(repository),
 );
 
 export const getTradesUseCase = new GetTradesUseCase(repository);
