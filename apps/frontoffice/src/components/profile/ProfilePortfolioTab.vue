@@ -1,5 +1,44 @@
 <template>
   <div class="space-y-4">
+    <!-- Portfolio dashboard: totals across every position. -->
+    <div v-if="summary" class="rounded-2xl border border-border bg-card p-4">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div>
+          <span class="text-xs text-muted-foreground block">{{ t('portfolioTotalPnl') }}</span>
+          <span
+            class="text-lg font-bold tabular-nums block"
+            :class="summary.total >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+          >
+            {{ formatSignedUsd(summary.total) }}
+            <span class="text-xs">{{ formatSignedPercent(summary.percent) }}</span>
+          </span>
+        </div>
+        <div>
+          <span class="text-xs text-muted-foreground block">{{ t('portfolioRealized') }}</span>
+          <span
+            class="text-sm font-semibold tabular-nums block mt-0.5"
+            :class="summary.realized >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+          >
+            {{ formatSignedUsd(summary.realized) }}
+          </span>
+        </div>
+        <div>
+          <span class="text-xs text-muted-foreground block">{{ t('portfolioUnrealized') }}</span>
+          <span
+            class="text-sm font-semibold tabular-nums block mt-0.5"
+            :class="summary.unrealized >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+          >
+            {{ formatSignedUsd(summary.unrealized) }}
+          </span>
+        </div>
+        <div>
+          <span class="text-xs text-muted-foreground block">{{ t('portfolioWinRate') }}</span>
+          <span class="text-sm font-semibold tabular-nums text-foreground block mt-0.5">
+            {{ summary.winRate.toFixed(0) }}% · {{ summary.count }}
+          </span>
+        </div>
+      </div>
+    </div>
     <Empty
       v-if="portfolioPositions.length === 0 && closed.length === 0"
       :title="t('noHoldings')"
@@ -202,7 +241,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, toRef } from 'vue';
+import { ref, toRef, computed } from 'vue';
 import { ExternalLink, PieChart, Share2 } from 'lucide-vue-next';
 import PnlCardModal from '@/components/trade/PnlCardModal.vue';
 import { useI18n } from '@/lib/i18n';
@@ -212,6 +251,7 @@ import { formatCompactUsd, formatMarketCap, getChainIcon } from '@/lib/utils';
 import {
   formatSignedPercent,
   formatSignedUsd,
+  portfolioSummary,
   useWalletPositions,
 } from '@/composables/usePnlShare';
 import { useTokenStore } from '@/composables/useTokenStore';
@@ -235,8 +275,10 @@ const props = defineProps<{
   wallet?: string;
 }>();
 
-/** Positions the wallet sold out of, which the holdings above no longer list. */
-const { closed } = useWalletPositions(toRef(props, 'wallet'));
+/** Every PnL position of the wallet (held and sold); `closed` are the sold-out ones. */
+const { positions, closed } = useWalletPositions(toRef(props, 'wallet'));
+
+const summary = computed(() => portfolioSummary(positions.value));
 
 /** The token whose PnL card is open. */
 const sharedToken = ref<string | null>(null);
