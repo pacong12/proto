@@ -144,7 +144,7 @@
         <!-- Embedded Coin Widget Card -->
         <div
           class="p-3.5 rounded-xl border border-border/80 bg-muted/30 hover:bg-muted/60 transition cursor-pointer flex items-center justify-between gap-3 text-xs shadow-2xs"
-          @click="router.push(`/launchpad/${post.tokenAddress}`)"
+          @click="router.push(`/token/${post.tokenAddress}`)"
         >
           <div class="flex items-center gap-2.5 min-w-0">
             <div class="relative shrink-0">
@@ -193,7 +193,7 @@
             <Button
               size="sm"
               class="h-7 px-3.5 text-xs font-bold rounded-lg cursor-pointer bg-primary text-primary-foreground"
-              @click.stop="router.push(`/launchpad/${post.tokenAddress}`)"
+              @click.stop="router.push(`/token/${post.tokenAddress}`)"
             >
               {{ t('trade') }}
             </Button>

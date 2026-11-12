@@ -143,6 +143,7 @@
           <!-- TAB 1: CREATED TOKENS -->
           <TabsContent value="created" class="mt-4 space-y-4">
             <ProfileCreatedTab
+              :reputation="creatorReputation"
               :my-launches="myLaunches"
               :loading="loadingLaunches"
               :is-own-profile="isOwnProfile"
@@ -628,13 +629,14 @@ async function handleRepostPost(commentId: string): Promise<void> {
 
 function navigateToToken(address: string): void {
   if (address) {
-    router.push(`/launchpad/${address}`);
+    router.push(`/token/${address}`);
   }
 }
 
 // Connected Account Launches & Portfolio
 const {
   myLaunches,
+  creatorReputation,
   portfolioPositions,
   userActivities,
   loadingLaunches,

@@ -21,6 +21,7 @@ import { registerIpfsRoutes } from './modules/ipfs';
 import { registerDexRoutes } from './modules/dex';
 import { registerPnlRoutes } from './modules/pnl';
 import { registerReferralsRoutes } from './modules/referrals';
+import { registerAlertsRoutes } from './modules/alerts';
 
 const { rateLimiter, requestTracker } = container;
 
@@ -42,6 +43,7 @@ registerIpfsRoutes(router, container);
 registerDexRoutes(router, container);
 registerPnlRoutes(router, container);
 registerReferralsRoutes(router, container);
+registerAlertsRoutes(router, container);
 
 async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   const url = new URL(req.url);

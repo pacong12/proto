@@ -121,6 +121,46 @@ export function usePnlShare(wallet: Ref<string | undefined>, token: Ref<string |
 }
 
 /** Every position of a wallet (held or sold), newest trade first; empty until loaded. */
+export interface PortfolioSummary {
+  invested: number;
+  realized: number;
+  unrealized: number;
+  total: number;
+  percent: number | null;
+  count: number;
+  holding: number;
+  winRate: number;
+}
+
+/** Portfolio-wide totals across every position a wallet traded (held and sold). */
+export function portfolioSummary(positions: PnlPosition[]): PortfolioSummary | null {
+  if (positions.length === 0) return null;
+  let invested = 0;
+  let realized = 0;
+  let unrealized = 0;
+  let total = 0;
+  let wins = 0;
+  let holding = 0;
+  for (const p of positions) {
+    invested += p.pnl.investedUsd;
+    realized += p.pnl.realizedUsd;
+    unrealized += p.pnl.unrealizedUsd;
+    total += p.pnl.totalUsd;
+    if (p.pnl.totalUsd > 0) wins += 1;
+    if (p.pnl.status === 'holding') holding += 1;
+  }
+  return {
+    invested,
+    realized,
+    unrealized,
+    total,
+    percent: invested > 0 ? (total / invested) * 100 : null,
+    count: positions.length,
+    holding,
+    winRate: (wins / positions.length) * 100,
+  };
+}
+
 export function useWalletPositions(wallet: Ref<string | undefined>) {
   const positions = ref<PnlPosition[]>([]);
   async function load(): Promise<void> {

@@ -217,6 +217,7 @@ import { walletAddress, walletModalOpen } from './lib/wallet-store';
 import { useWallet } from './composables/useWallet';
 import { useOrderNotifications } from './composables/useOrderNotifications';
 import { captureReferral, attributeReferral } from './lib/referral';
+import { useAlertNotifications } from './composables/useAlertNotifications';
 import { getUserIdentity } from './lib/username';
 import { acceptTerms, cookieSettingsOpen, termsAccepted, termsPromptOpen } from './lib/consent';
 
@@ -233,6 +234,7 @@ const isInPoolLaunch = computed(() => getLaunchModel(activeNetwork.value.chainId
 const router = useRouter();
 // Toast when one of the connected wallet's limit / TP / SL orders fills, on any page.
 useOrderNotifications(account, router, t);
+useAlertNotifications(account, router, t);
 const route = useRoute();
 const docsUrl = computed(() => resolveDocsUrl());
 
@@ -251,7 +253,7 @@ const isTradeRoute = computed(
 const searchOpen = ref(false);
 
 function handleSelectToken(address: string) {
-  router.push(`/launchpad/${address}`);
+  router.push(`/token/${address}`);
 }
 
 // Ask for the terms as soon as a wallet connects; signing and sending also require them.

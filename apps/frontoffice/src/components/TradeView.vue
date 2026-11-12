@@ -38,6 +38,7 @@
         :link-copied="linkCopied"
         :copied="copied"
         :is-pinned="isPinned"
+        :account="account"
         @open-call-modal="openCallModal"
         @share-to-x="shareToX"
         @copy-token-link="copyTokenLink"

@@ -8,6 +8,7 @@ import {
   V4BuybackKeeperService,
 } from '../modules/keepers';
 import { logger } from '../modules/observability';
+import { CheckAlertsService } from '../modules/alerts';
 import { createWalletClient, type Hex } from 'viem';
 import { nativeWeiPerQuoteUnit } from '@goton/shared-types';
 import { rpcTransport } from '../core';
@@ -202,6 +203,23 @@ export function startBackgroundJobs(): void {
     }
   }
   startBuybackKeepers();
+
+  // Price / market-cap alerts: check open alerts against the latest indexed market data and mark
+  // the reached ones triggered, which the clients poll. DB reads only, so a plain interval is fine.
+  {
+    const intervalMs = Number(process.env.ALERT_CHECK_INTERVAL_MS?.trim() || 30_000);
+    const checker = new CheckAlertsService(repository);
+    setInterval(async () => {
+      try {
+        const fired = await checker.runOnce();
+        if (fired > 0) logger.info(`[AlertChecker] ${fired} alert(s) triggered`);
+      } catch (e) {
+        logger.warn('[AlertChecker] cycle failed', {
+          error: { name: (e as Error).name, message: (e as Error).message },
+        });
+      }
+    }, intervalMs);
+  }
 
   // Source verification: publishes each launched token and curve on Sourcify, which the Blockscout
   // explorers import. Needs no key; SOURCE_VERIFY_INTERVAL_MS=0 disables it.

@@ -15,9 +15,8 @@ vi.mock('@/lib/api-client', () => ({
 const REFERRER = '0x00000000000000000000000000000000000000a1';
 const WALLET = '0x00000000000000000000000000000000000000b2';
 
-const { captureReferral, storedReferrer, attributeReferral, fetchReferralStats } = await import(
-  '../src/lib/referral'
-);
+const { captureReferral, storedReferrer, attributeReferral, fetchReferralStats } =
+  await import('../src/lib/referral');
 
 describe('referral', () => {
   beforeEach(() => {

@@ -522,6 +522,23 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
     },
   );
 
+  // GET /api/creators/:address/reputation — a creator's launch track record (graduation rate,
+  // total market cap, biggest token). Cached: it reads every token the creator launched.
+  router.on(
+    'GET',
+    /^\/api\/creators\/(0x[a-fA-F0-9]{40})\/reputation$/,
+    ({ replyEnvelope, replyCatching }, [, creator]) =>
+      replyCatching(() =>
+        replyCachedEnvelope(
+          cache,
+          replyEnvelope,
+          `creator:reputation:${creator.toLowerCase()}`,
+          30,
+          () => tokenController.getCreatorReputation(creator),
+        ),
+      ),
+  );
+
   router.on(
     'GET',
     /^\/api\/tokens\/(0x[a-fA-F0-9]{40})\/flow$/,
