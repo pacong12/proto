@@ -32,6 +32,14 @@ export function useUserProfile({
   getTokenNetwork,
 }: UseUserProfileOptions) {
   const myLaunches = ref<MyLaunchItem[]>([]);
+  const creatorReputation = ref<{
+    launches: number;
+    graduated: number;
+    active: number;
+    graduationRate: number;
+    totalMarketCapUsd: number;
+    topToken: { address: string; name: string; symbol: string; marketCapUsd: number } | null;
+  } | null>(null);
   const portfolioPositions = ref<PortfolioPosition[]>([]);
   const userActivities = ref<UserActivity[]>([]);
   // The list is a page of the latest trades, so a full page says nothing about the real total.
@@ -59,6 +67,16 @@ export function useUserProfile({
       return;
     }
     loadingLaunches.value = true;
+    // The creator's launch track record, shown as a trust badge above their tokens.
+    apiFetch<{ success: boolean; data: typeof creatorReputation.value }>(
+      `/api/creators/${target}/reputation`,
+    )
+      .then((env) => {
+        if (targetAccount.value === target && env.success) creatorReputation.value = env.data;
+      })
+      .catch(() => {
+        if (targetAccount.value === target) creatorReputation.value = null;
+      });
     try {
       const envelope = await apiFetch<{
         success: boolean;
@@ -297,6 +315,7 @@ export function useUserProfile({
     loadingLaunches,
     loadingPortfolio,
     claimableTotals,
+    creatorReputation,
     fetchMyLaunches,
     fetchUserPositionsAndActivity,
   };

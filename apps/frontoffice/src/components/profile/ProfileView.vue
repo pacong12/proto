@@ -140,6 +140,7 @@
           <!-- TAB 1: CREATED TOKENS -->
           <TabsContent value="created" class="mt-4 space-y-4">
             <ProfileCreatedTab
+              :reputation="creatorReputation"
               :my-launches="myLaunches"
               :loading="loadingLaunches"
               :is-own-profile="isOwnProfile"
@@ -631,6 +632,7 @@ function navigateToToken(address: string): void {
 // Connected Account Launches & Portfolio
 const {
   myLaunches,
+  creatorReputation,
   portfolioPositions,
   userActivities,
   loadingLaunches,

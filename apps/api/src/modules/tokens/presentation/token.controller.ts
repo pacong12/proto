@@ -12,6 +12,10 @@ import {
   GetDevActivityUseCase,
   type DevActivity,
 } from '../application/use-cases/get-dev-activity.use-case';
+import {
+  GetCreatorReputationUseCase,
+  type CreatorReputation,
+} from '../application/use-cases/get-creator-reputation.use-case';
 import { assertAddress, NotFoundError } from '../../../core/errors/app-error';
 import { toEnvelope } from '../../../core/http/api-envelope';
 
@@ -21,7 +25,14 @@ export class TokenController {
     private readonly getTokenByAddressUseCase: GetTokenByAddressUseCase,
     private readonly getHoldersUseCase: GetHoldersUseCase,
     private readonly getDevActivityUseCase: GetDevActivityUseCase,
+    private readonly getCreatorReputationUseCase: GetCreatorReputationUseCase,
   ) {}
+
+  getCreatorReputation(address: string): Promise<ApiEnvelope<CreatorReputation>> {
+    return toEnvelope('FETCH_CREATOR_REPUTATION_FAILED', () =>
+      this.getCreatorReputationUseCase.execute(address),
+    );
+  }
 
   listTokens(
     limit = 50,

@@ -1,5 +1,41 @@
 <template>
   <div class="space-y-4">
+    <!-- Creator reputation: launch track record as a trust badge. -->
+    <div
+      v-if="reputation && reputation.launches > 0"
+      class="rounded-2xl border border-border bg-card p-4"
+    >
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+        <div>
+          <div class="text-lg font-bold text-foreground tabular-nums">
+            {{ reputation.launches }}
+          </div>
+          <div class="text-xs text-muted-foreground">{{ t('repLaunches') }}</div>
+        </div>
+        <div>
+          <div class="text-lg font-bold text-foreground tabular-nums">
+            {{ reputation.graduated }}
+          </div>
+          <div class="text-xs text-muted-foreground">{{ t('repGraduated') }}</div>
+        </div>
+        <div>
+          <div
+            class="text-lg font-bold tabular-nums"
+            :class="reputation.graduationRate >= 0.3 ? 'text-emerald-500' : 'text-foreground'"
+          >
+            {{ Math.round(reputation.graduationRate * 100) }}%
+          </div>
+          <div class="text-xs text-muted-foreground">{{ t('repGraduationRate') }}</div>
+        </div>
+        <div>
+          <div class="text-lg font-bold text-foreground tabular-nums">
+            {{ formatCompactUsd(reputation.totalMarketCapUsd) }}
+          </div>
+          <div class="text-xs text-muted-foreground">{{ t('repTotalMcap') }}</div>
+        </div>
+      </div>
+    </div>
+
     <div
       v-if="loading && myLaunches.length === 0"
       class="py-12 text-center text-xs text-muted-foreground"
@@ -167,7 +203,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
-import { getChainIcon } from '@/lib/utils';
+import { getChainIcon, formatCompactUsd } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';
 import { useTokenStore } from '@/composables/useTokenStore';
 import type { MyLaunchItem } from './types';
@@ -181,6 +217,14 @@ defineProps<{
   isOwnProfile: boolean;
   claimingToken: string | null;
   loadingAction: boolean;
+  reputation?: {
+    launches: number;
+    graduated: number;
+    active: number;
+    graduationRate: number;
+    totalMarketCapUsd: number;
+    topToken: { address: string; name: string; symbol: string; marketCapUsd: number } | null;
+  } | null;
 }>();
 
 const emit = defineEmits<{

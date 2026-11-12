@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GetHoldersUseCase } from '../src/modules/tokens/application/use-cases/get-holders.use-case';
 import { GetDevActivityUseCase } from '../src/modules/tokens/application/use-cases/get-dev-activity.use-case';
+import { GetCreatorReputationUseCase } from '../src/modules/tokens/application/use-cases/get-creator-reputation.use-case';
 import { TokenController } from '../src/modules/tokens/presentation/token.controller';
 import { InMemoryTokenRepository } from '../src/app/storage/in-memory-token.repository';
 import { GetTokensUseCase } from '../src/modules/tokens/application/use-cases/get-tokens.use-case';
@@ -75,6 +76,7 @@ describe('TokenController Unit Tests', () => {
       getTokenByAddressUseCase,
       new GetHoldersUseCase(repository),
       new GetDevActivityUseCase(repository),
+      new GetCreatorReputationUseCase(repository),
     );
   });
 
@@ -109,6 +111,7 @@ describe('TokenController Unit Tests', () => {
       nullUseCase,
       new GetHoldersUseCase(repository),
       new GetDevActivityUseCase(repository),
+      new GetCreatorReputationUseCase(repository),
     );
 
     const res = await nullController.getToken(testAddress);
