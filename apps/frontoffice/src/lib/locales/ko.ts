@@ -31,6 +31,7 @@ const messages: Record<string, string> = {
   repGraduated: '졸업',
   repGraduationRate: '졸업률',
   repTotalMcap: '총 시총',
+  chartNoTransactions: '거래를 찾을 수 없습니다',
   slippageSettings: '슬리피지 설정',
   dividendsAccumulated: '거래에서 누적됨',
   dividendsAwaiting: '다음 거래 대기 중',

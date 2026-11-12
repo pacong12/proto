@@ -625,7 +625,7 @@ async function handleRepostPost(commentId: string): Promise<void> {
 
 function navigateToToken(address: string): void {
   if (address) {
-    router.push(`/launchpad/${address}`);
+    router.push(`/token/${address}`);
   }
 }
 

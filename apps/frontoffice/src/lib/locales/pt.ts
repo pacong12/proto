@@ -31,6 +31,7 @@ const messages: Record<string, string> = {
   repGraduated: 'Graduados',
   repGraduationRate: 'Taxa de grad.',
   repTotalMcap: 'Mcap total',
+  chartNoTransactions: 'Nenhuma transação encontrada',
   slippageSettings: 'Configurações de slippage',
   dividendsAccumulated: 'Acumulado das negociações',
   dividendsAwaiting: 'Aguardando a próxima negociação',

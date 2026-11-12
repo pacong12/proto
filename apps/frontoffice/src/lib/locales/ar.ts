@@ -31,6 +31,7 @@ const messages: Record<string, string> = {
   repGraduated: 'المتخرجة',
   repGraduationRate: 'معدل التخرج',
   repTotalMcap: 'إجمالي القيمة',
+  chartNoTransactions: 'لم يتم العثور على معاملات',
   slippageSettings: 'إعدادات الانزلاق',
   dividendsAccumulated: 'متراكمة من التداولات',
   dividendsAwaiting: 'بانتظار التداول التالي',

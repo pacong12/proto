@@ -31,6 +31,7 @@ const messages: Record<string, string> = {
   repGraduated: 'Выпущено',
   repGraduationRate: 'Доля выпуска',
   repTotalMcap: 'Общий mcap',
+  chartNoTransactions: 'Транзакции не найдены',
   slippageSettings: 'Настройки проскальзывания',
   dividendsAccumulated: 'Накоплено с торгов',
   dividendsAwaiting: 'Ожидание следующей сделки',

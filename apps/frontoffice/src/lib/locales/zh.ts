@@ -31,6 +31,7 @@ const messages: Record<string, string> = {
   repGraduated: '已毕业',
   repGraduationRate: '毕业率',
   repTotalMcap: '总市值',
+  chartNoTransactions: '未找到交易',
   slippageSettings: '滑点设置',
   dividendsAccumulated: '来自交易的累积',
   dividendsAwaiting: '等待下一笔交易',

@@ -31,6 +31,7 @@ const messages: Record<string, string> = {
   repGraduated: '卒業',
   repGraduationRate: '卒業率',
   repTotalMcap: '総時価総額',
+  chartNoTransactions: '取引が見つかりません',
   slippageSettings: 'スリッページ設定',
   dividendsAccumulated: '取引から蓄積',
   dividendsAwaiting: '次の取引を待機中',

@@ -31,6 +31,7 @@ const messages: Record<string, string> = {
   repGraduated: 'Graduasi',
   repGraduationRate: 'Rasio graduasi',
   repTotalMcap: 'Total mcap',
+  chartNoTransactions: 'Transaksi tidak ditemukan',
   slippageSettings: 'Pengaturan slippage',
   dividendsAccumulated: 'Terkumpul dari transaksi',
   dividendsAwaiting: 'Menunggu transaksi berikutnya',
