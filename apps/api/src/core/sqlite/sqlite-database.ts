@@ -377,6 +377,14 @@ export class SqliteDatabase {
       );
     `);
     this.db.run(`
+      CREATE TABLE IF NOT EXISTS referrals (
+        referee TEXT PRIMARY KEY COLLATE NOCASE,
+        referrer TEXT NOT NULL COLLATE NOCASE,
+        created_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer);
+    `);
+    this.db.run(`
       CREATE TABLE IF NOT EXISTS holder_index (
         token_address TEXT PRIMARY KEY COLLATE NOCASE,
         indexed_at INTEGER NOT NULL
