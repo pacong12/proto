@@ -29,6 +29,15 @@
           <span class="sm:hidden">{{ t('call') }}</span>
         </Button>
 
+        <!-- Price / market-cap alert -->
+        <PriceAlertPopover
+          :token="currentToken.address"
+          :chain-id="tokenNetwork.chainId"
+          :price-usd="currentMarketData.priceUsd"
+          :market-cap-usd="currentMarketData.marketCapUsd"
+          :account="account"
+        />
+
         <!-- Share to X Button -->
         <Button
           variant="outline"
@@ -289,6 +298,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCommunityRedirect } from '@/composables/useCommunityRedirect';
 import OptimizedImage from '@/components/ui/OptimizedImage.vue';
+import PriceAlertPopover from './PriceAlertPopover.vue';
 import { shortenAddress, formatRelativeTime, getChainIcon } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import type { LaunchedTokenEntity, TokenMarketData, NetworkConfig } from '@goton/shared-types';
@@ -302,6 +312,7 @@ interface Props {
   linkCopied?: boolean;
   copied?: boolean;
   isPinned: (address: string) => boolean;
+  account?: string | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
