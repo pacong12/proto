@@ -4,6 +4,7 @@ import type { SocialStorePort } from './social-store.port';
 import type { LimitOrderStorePort } from './limit-order-store.port';
 import type { ReferralStorePort } from './referral-store.port';
 import type { AlertStorePort } from './alert-store.port';
+import type { PushStorePort } from './push-store.port';
 
 export type { TradeFlow } from './trade-store.port';
 export type {
@@ -13,6 +14,7 @@ export type {
   LimitOrderStorePort,
   ReferralStorePort,
   AlertStorePort,
+  PushStorePort,
 };
 
 /**
@@ -25,4 +27,5 @@ export interface TokenRepositoryPort
     SocialStorePort,
     LimitOrderStorePort,
     ReferralStorePort,
-    AlertStorePort {}
+    AlertStorePort,
+    PushStorePort {}
