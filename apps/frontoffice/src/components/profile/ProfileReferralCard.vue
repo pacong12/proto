@@ -33,7 +33,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useI18n } from '@/lib/i18n';
 import { SITE } from '@/lib/site';
-import { fetchReferralStats, type ReferralStats } from '@/lib/referral';
+import { fetchReferralStats, withReferral, type ReferralStats } from '@/lib/referral';
 
 const props = defineProps<{ wallet: string }>();
 const { t } = useI18n();
@@ -41,7 +41,7 @@ const { t } = useI18n();
 const stats = ref<ReferralStats>({ count: 0, referees: [] });
 const copied = ref(false);
 
-const link = computed(() => `${SITE.appUrl}/?ref=${props.wallet}`);
+const link = computed(() => withReferral(`${SITE.appUrl}/`, props.wallet));
 
 async function load() {
   if (props.wallet) stats.value = await fetchReferralStats(props.wallet);

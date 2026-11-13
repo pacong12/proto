@@ -274,6 +274,7 @@ import ProfileCreatedTab from './ProfileCreatedTab.vue';
 import ProfileVestingCard from './ProfileVestingCard.vue';
 import ProfilePortfolioTab from './ProfilePortfolioTab.vue';
 import ProfileReferralCard from './ProfileReferralCard.vue';
+import { withReferral } from '@/lib/referral';
 import ProfileDividendsTab from './ProfileDividendsTab.vue';
 import ProfileActivityTab from './ProfileActivityTab.vue';
 import EditProfileModal from './EditProfileModal.vue';
@@ -533,7 +534,8 @@ const copiedShare = ref(false);
 function shareProfile() {
   if (typeof window === 'undefined' || !targetAccount.value) return;
   const identity = getUserIdentity(targetAccount.value);
-  const url = `${window.location.origin}/${identity.slug}`;
+  // Credit the connected viewer who is sharing, not the profile owner (self-ref is a no-op later).
+  const url = withReferral(`${window.location.origin}/${identity.slug}`, connectedAccount.value);
   navigator.clipboard.writeText(url);
   copiedShare.value = true;
   setTimeout(() => {

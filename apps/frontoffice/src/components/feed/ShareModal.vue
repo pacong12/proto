@@ -247,6 +247,8 @@
 
 <script setup lang="ts">
 import { useEscapeClose } from '@/composables/useEscapeClose';
+import { withReferral } from '@/lib/referral';
+import { walletAddress } from '@/lib/wallet-store';
 import { ref, computed } from 'vue';
 import {
   Share2,
@@ -316,7 +318,8 @@ const showPnlCard = ref(false);
 
 function getPostUrl(): string {
   if (typeof window === 'undefined' || !props.call) return '';
-  return `${window.location.origin}/post/${props.call.id}`;
+  // Carry the sharer's ?ref so a shared call grows their referral network.
+  return withReferral(`${window.location.origin}/post/${props.call.id}`, walletAddress.value);
 }
 
 const currentHostDisplay = computed(() => {
