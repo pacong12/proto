@@ -880,18 +880,69 @@ export default defineConfig({
     ar: {
       label: 'العربية',
       lang: 'ar',
+      dir: 'rtl',
       link: '/ar/',
       themeConfig: {
         nav: [
           { text: 'البداية', link: '/ar/protocol/overview' },
-          { text: 'إنشاء عملة', link: '/ar/protocol/overview' },
+          { text: 'كيف تُطلق', link: '/ar/protocol/launches' },
+          { text: 'دليل التداول', link: '/ar/protocol/trading-guide' },
+          { text: 'الأسئلة الشائعة', link: '/ar/protocol/faq' },
+          { text: 'الأمان', link: '/ar/protocol/anti-snipe' },
           { text: 'تطبيق المنصة', link: `${SITE.appUrl}` },
         ],
         sidebar: [
           {
             text: 'دليل المستخدم',
             collapsed: false,
-            items: [{ text: 'ما هو Goton؟', link: '/ar/protocol/overview' }],
+            items: [
+              { text: 'ما هو Goton؟', link: '/ar/protocol/overview' },
+              { text: 'الأسئلة الشائعة (FAQ)', link: '/ar/protocol/faq' },
+            ],
+          },
+          {
+            text: 'الإطلاق والتداول',
+            collapsed: false,
+            items: [
+              { text: 'إطلاق رمز', link: '/ar/protocol/launches' },
+              { text: 'دليل التداول والمبادلات', link: '/ar/protocol/trading-guide' },
+              { text: 'الحد والجني ووقف الخسارة', link: '/ar/protocol/advanced-orders' },
+              { text: 'الحماية من القنص والإطلاق العادل', link: '/ar/protocol/anti-snipe' },
+              { text: 'تحليلات البروتوكول', link: '/ar/protocol/analytics' },
+            ],
+          },
+          {
+            text: 'الاقتصاد والمجتمع',
+            collapsed: false,
+            items: [
+              { text: 'رسوم المنشئ والمكافآت', link: '/ar/protocol/fees-and-burns' },
+              { text: 'عمليات الاستلام المجتمعي (CTO)', link: '/ar/protocol/community-takeovers' },
+              { text: 'الموجز والنداءات وMemestock والمتابعة', link: '/ar/protocol/social' },
+            ],
+          },
+          {
+            text: 'الملف الشخصي والأدوات',
+            collapsed: false,
+            items: [
+              { text: 'الملفات الشخصية والهوية', link: '/ar/protocol/profiles' },
+              { text: 'لوحة المحفظة', link: '/ar/protocol/portfolio' },
+              { text: 'سمعة المنشئ', link: '/ar/protocol/reputation' },
+              { text: 'توزيعات الحائزين والاستحقاق', link: '/ar/protocol/dividends-and-vesting' },
+              { text: 'بطاقات PnL والمشاركة', link: '/ar/protocol/pnl-cards' },
+              { text: 'تنبيهات السعر والقيمة السوقية', link: '/ar/protocol/price-alerts' },
+              { text: 'ادعُ الأصدقاء والإحالة', link: '/ar/protocol/referrals' },
+            ],
+          },
+          {
+            text: 'الشبكة والعقود',
+            collapsed: true,
+            items: [
+              { text: 'إعداد الشبكة', link: '/integration/network' },
+              { text: 'العقود الذكية المُتحقَّق منها', link: '/integration/contracts' },
+              { text: 'واجهة برمجة التطبيقات العامة', link: '/integration/api' },
+              { text: 'لوكلاء الذكاء الاصطناعي', link: '/integration/agents' },
+              { text: 'الإدراج على منصات DEX', link: '/integration/listing-submission' },
+            ],
           },
         ],
       },
