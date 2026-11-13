@@ -814,14 +814,64 @@ export default defineConfig({
       themeConfig: {
         nav: [
           { text: 'Введение', link: '/ru/protocol/overview' },
-          { text: 'Создание токена', link: '/ru/protocol/overview' },
+          { text: 'Как запустить', link: '/ru/protocol/launches' },
+          { text: 'Руководство по торговле', link: '/ru/protocol/trading-guide' },
+          { text: 'FAQ', link: '/ru/protocol/faq' },
+          { text: 'Безопасность', link: '/ru/protocol/anti-snipe' },
           { text: 'Приложение Launchpad', link: `${SITE.appUrl}` },
         ],
         sidebar: [
           {
             text: 'Руководство пользователя',
             collapsed: false,
-            items: [{ text: 'Что такое Goton?', link: '/ru/protocol/overview' }],
+            items: [
+              { text: 'Что такое Goton?', link: '/ru/protocol/overview' },
+              { text: 'Часто задаваемые вопросы (FAQ)', link: '/ru/protocol/faq' },
+            ],
+          },
+          {
+            text: 'Запуски и торговля',
+            collapsed: false,
+            items: [
+              { text: 'Запуск токена', link: '/ru/protocol/launches' },
+              { text: 'Руководство по торговле и свопам', link: '/ru/protocol/trading-guide' },
+              { text: 'Лимит, тейк-профит и стоп-лосс', link: '/ru/protocol/advanced-orders' },
+              { text: 'Защита от снайпинга и честный запуск', link: '/ru/protocol/anti-snipe' },
+              { text: 'Аналитика протокола', link: '/ru/protocol/analytics' },
+            ],
+          },
+          {
+            text: 'Экономика и сообщество',
+            collapsed: false,
+            items: [
+              { text: 'Комиссии и вознаграждения создателя', link: '/ru/protocol/fees-and-burns' },
+              { text: 'Community Takeovers (CTO)', link: '/ru/protocol/community-takeovers' },
+              { text: 'Лента, коллы, Memestock и подписки', link: '/ru/protocol/social' },
+            ],
+          },
+          {
+            text: 'Профиль и инструменты',
+            collapsed: false,
+            items: [
+              { text: 'Профили и идентичность', link: '/ru/protocol/profiles' },
+              { text: 'Панель портфеля', link: '/ru/protocol/portfolio' },
+              { text: 'Репутация создателя', link: '/ru/protocol/reputation' },
+              { text: 'Дивиденды холдеров и вестинг', link: '/ru/protocol/dividends-and-vesting' },
+              { text: 'PnL-карточки и шеринг', link: '/ru/protocol/pnl-cards' },
+              { text: 'Оповещения о цене и капитализации', link: '/ru/protocol/price-alerts' },
+              { text: 'Приглашайте друзей и рефералы', link: '/ru/protocol/referrals' },
+            ],
+          },
+          {
+            text: 'Сеть и контракты',
+            collapsed: true,
+            items: [
+              { text: 'Настройка сети', link: '/integration/network' },
+              { text: 'Проверенные контракты', link: '/integration/contracts' },
+              { text: 'Публичный API', link: '/integration/api' },
+              { text: 'Для ИИ-агентов', link: '/integration/agents' },
+              { text: 'Листинг на DEX', link: '/integration/listing-submission' },
+            ],
           },
         ],
       },
