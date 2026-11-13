@@ -3,9 +3,9 @@
 self.addEventListener('push', (event) => {
   let data = {};
   try {
-    data = event.data ? event.data.json() : {};
-  } catch (_e) {
-    data = {};
+    if (event.data) data = event.data.json();
+  } catch {
+    // malformed payload: keep the empty default
   }
   const title = data.title || 'Goton';
   const options = {
