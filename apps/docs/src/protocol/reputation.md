@@ -8,21 +8,22 @@ Every profile shows the creator's **launch track record** — a quick, on-chain-
 
 The reputation card on a creator's profile summarises every token that wallet has launched:
 
-| Metric | Meaning |
-| :----- | :------ |
-| **Launches** | How many tokens the wallet has created |
-| **Graduated** | How many of those completed their bonding curve and moved to a Uniswap v4 pool |
-| **Active** | How many are still live and trading |
-| **Graduation rate** | Graduated ÷ launches, as a percentage |
-| **Total market cap** | The combined USD market cap of the creator's tokens |
-| **Top token** | The creator's largest token by market cap, with its name, symbol and market cap |
+| Metric               | Meaning                                                                         |
+| :------------------- | :------------------------------------------------------------------------------ |
+| **Launches**         | How many tokens the wallet has created                                          |
+| **Graduated**        | How many of those completed their bonding curve and moved to a Uniswap v4 pool  |
+| **Active**           | How many are still live and trading                                             |
+| **Graduation rate**  | Graduated ÷ launches, as a percentage                                           |
+| **Total market cap** | The combined USD market cap of the creator's tokens                             |
+| **Top token**        | The creator's largest token by market cap, with its name, symbol and market cap |
 
 ---
 
 ## How It's Computed
 
-- The figures come from the public endpoint `GET /api/creators/<address>/reputation`, built from indexed on-chain data — the tokens the wallet deployed and their current market state. See the [Public API](/integration/api).
-- Nothing here is self-reported: a creator cannot edit these numbers. They reflect the launches tied to the address.
+- The figures are built from **on-chain data** — the tokens the wallet deployed and their current market state — not anything the creator types in.
+- **Nothing here is self-reported.** A creator cannot edit these numbers; they reflect the launches tied to the address.
+- Building something? The same figures are available through the [Public API](/integration/api).
 - **Graduation** means the token finished its bonding curve and its liquidity moved to a locked Uniswap v4 pool — see [How to Launch](/protocol/launches) and [Anti-Snipe & Fair Launch](/protocol/anti-snipe).
 
 ---

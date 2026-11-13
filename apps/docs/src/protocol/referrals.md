@@ -31,12 +31,12 @@ Because attribution is first-touch and off-chain, the worst a spoofer can do is 
 
 Your referral code is added to the links you share from inside the app, so sharing your activity also grows your network:
 
-| Action | What gets shared |
-| :----- | :--------------- |
-| **Share profile** | A link to the profile, carrying *your* connected wallet's `?ref` |
-| **Share PnL card** | Your `/pnl/…` card link with `?ref` |
-| **Share to X** from a token / trade | The token page link with `?ref` |
-| **Share a call** or post | The `/post/…` link with `?ref` |
+| Action                              | What gets shared                                                 |
+| :---------------------------------- | :--------------------------------------------------------------- |
+| **Share profile**                   | A link to the profile, carrying _your_ connected wallet's `?ref` |
+| **Share PnL card**                  | Your `/pnl/…` card link with `?ref`                              |
+| **Share to X** from a token / trade | The token page link with `?ref`                                  |
+| **Share a call** or post            | The `/post/…` link with `?ref`                                   |
 
 In every case the code is the **connected** wallet's — the person sharing — so sharing someone else's profile still credits you.
 

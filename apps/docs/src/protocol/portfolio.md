@@ -8,12 +8,12 @@ Your profile has a **Portfolio** tab that summarises how your trading is going â
 
 At the top of the Portfolio tab:
 
-| Metric | Meaning |
-| :----- | :------ |
-| **Total PnL** | Realised + unrealised profit and loss across your positions, in USD |
-| **Realised** | Profit and loss you have already locked in by selling |
+| Metric         | Meaning                                                              |
+| :------------- | :------------------------------------------------------------------- |
+| **Total PnL**  | Realised + unrealised profit and loss across your positions, in USD  |
+| **Realised**   | Profit and loss you have already locked in by selling                |
 | **Unrealised** | Paper profit and loss on tokens you still hold, at the current price |
-| **Win rate** | The share of your closed positions that ended in profit |
+| **Win rate**   | The share of your closed positions that ended in profit              |
 
 Gains show green, losses red, so the state of your book is readable at a glance.
 

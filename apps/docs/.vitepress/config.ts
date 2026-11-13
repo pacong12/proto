@@ -384,6 +384,7 @@ export default defineConfig({
               { text: 'Trading & Swaps Guide', link: '/protocol/trading-guide' },
               { text: 'Limit, Take-Profit & Stop-Loss', link: '/protocol/advanced-orders' },
               { text: 'Anti-Snipe & Fair Launch', link: '/protocol/anti-snipe' },
+              { text: 'Protocol Analytics', link: '/protocol/analytics' },
             ],
           },
           {
@@ -399,8 +400,11 @@ export default defineConfig({
             text: 'Your Profile & Tools',
             collapsed: false,
             items: [
+              { text: 'Profiles & Identity', link: '/protocol/profiles' },
               { text: 'Portfolio Dashboard', link: '/protocol/portfolio' },
               { text: 'Creator Reputation', link: '/protocol/reputation' },
+              { text: 'Holder Dividends & Vesting', link: '/protocol/dividends-and-vesting' },
+              { text: 'PnL Cards & Sharing', link: '/protocol/pnl-cards' },
               { text: 'Price & Market-Cap Alerts', link: '/protocol/price-alerts' },
               { text: 'Invite Friends & Referrals', link: '/protocol/referrals' },
             ],

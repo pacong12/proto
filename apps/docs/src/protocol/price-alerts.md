@@ -20,9 +20,9 @@ You can keep several alerts on the same token — for example "price above $0.01
 
 ## How Alerts Fire
 
-- Goton's indexer already reads each token's latest price and market cap every polling cycle. On each cycle it checks every **open** alert against that value — **one market read per token, not per alert** — and marks any that have crossed their threshold as **triggered**.
+- Goton checks your open alerts **on the server**, continuously, against each token's latest price and market cap — so an alert keeps watching even while your tab is closed.
 - An alert fires when the value crosses in its direction: an **above** alert at or over the threshold, a **below** alert at or under it.
-- The app polls your alerts and shows a toast for each one that has newly triggered, and the popover marks triggered alerts with a dot. A triggered alert stops watching; create a new one to watch again.
+- When you open the app, it shows a notification for any alert that has newly fired, and the popover marks triggered alerts with a dot. A triggered alert stops watching — create a new one to watch again.
 
 ---
 
