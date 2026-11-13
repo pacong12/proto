@@ -463,6 +463,7 @@ export default defineConfig({
               { text: 'Panduan Trading & Swap', link: '/id/protocol/trading-guide' },
               { text: 'Limit, Take-Profit & Stop-Loss', link: '/id/protocol/advanced-orders' },
               { text: 'Anti-Snipe & Fair Launch', link: '/id/protocol/anti-snipe' },
+              { text: 'Analitik Protokol', link: '/id/protocol/analytics' },
             ],
           },
           {
@@ -472,6 +473,19 @@ export default defineConfig({
               { text: 'Fee Kreator & Reward', link: '/id/protocol/fees-and-burns' },
               { text: 'Pengambilalihan Komunitas (CTO)', link: '/id/protocol/community-takeovers' },
               { text: 'Feed, Call, Memestock & Follow', link: '/id/protocol/social' },
+            ],
+          },
+          {
+            text: 'Profil & Perkakas',
+            collapsed: false,
+            items: [
+              { text: 'Profil & Identitas', link: '/id/protocol/profiles' },
+              { text: 'Dashboard Portofolio', link: '/id/protocol/portfolio' },
+              { text: 'Reputasi Kreator', link: '/id/protocol/reputation' },
+              { text: 'Dividen Holder & Vesting', link: '/id/protocol/dividends-and-vesting' },
+              { text: 'Kartu PnL & Berbagi', link: '/id/protocol/pnl-cards' },
+              { text: 'Alert Harga & Market Cap', link: '/id/protocol/price-alerts' },
+              { text: 'Ajak Teman & Referral', link: '/id/protocol/referrals' },
             ],
           },
           {
@@ -528,6 +542,7 @@ export default defineConfig({
               { text: '交易与兑换指南', link: '/zh/protocol/trading-guide' },
               { text: '限价、止盈与止损', link: '/zh/protocol/advanced-orders' },
               { text: '防抢跑与公平发射', link: '/zh/protocol/anti-snipe' },
+              { text: '协议分析', link: '/zh/protocol/analytics' },
             ],
           },
           {
@@ -537,6 +552,19 @@ export default defineConfig({
               { text: '创作者分成与回购销毁', link: '/zh/protocol/fees-and-burns' },
               { text: '社区接管 (CTO)', link: '/zh/protocol/community-takeovers' },
               { text: '动态、喊单、Memestock 与关注', link: '/zh/protocol/social' },
+            ],
+          },
+          {
+            text: '个人主页与工具',
+            collapsed: false,
+            items: [
+              { text: '个人主页与身份', link: '/zh/protocol/profiles' },
+              { text: '投资组合面板', link: '/zh/protocol/portfolio' },
+              { text: '创作者声誉', link: '/zh/protocol/reputation' },
+              { text: '持有者分红与线性解锁', link: '/zh/protocol/dividends-and-vesting' },
+              { text: 'PnL 卡片与分享', link: '/zh/protocol/pnl-cards' },
+              { text: '价格与市值提醒', link: '/zh/protocol/price-alerts' },
+              { text: '邀请好友与推荐', link: '/zh/protocol/referrals' },
             ],
           },
           {
