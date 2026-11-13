@@ -26,6 +26,12 @@ You can keep several alerts on the same token — for example "price above $0.01
 
 ---
 
+## Browser Notifications
+
+In the alerts popover you can **Enable** browser notifications. Once you grant permission, Goton can push a notification to your device the moment an alert fires — even when the Goton tab is closed — and clicking it opens the token. This is opt-in and per browser; turn it off anytime from the same popover. If your browser doesn't support web push, the toggle simply doesn't appear and in-app notifications still work.
+
+---
+
 ## Managing Alerts
 
 - The popover lists your open and triggered alerts for the token.

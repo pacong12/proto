@@ -3,6 +3,7 @@ import { SqliteDatabase } from '../../core/sqlite/sqlite-database';
 import { SqliteOrderStore } from '../../modules/limit-orders';
 import { SqliteReferralStore } from '../../modules/referrals';
 import { SqliteAlertStore } from '../../modules/alerts';
+import { SqlitePushStore } from '../../modules/push';
 import { SqliteSocialStore } from '../../modules/social';
 import { SqliteTokenStore } from '../../modules/tokens';
 import { SqliteTradeStore } from '../../modules/trades';
@@ -19,6 +20,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
   private readonly orders: SqliteOrderStore;
   private readonly referrals: SqliteReferralStore;
   private readonly alerts: SqliteAlertStore;
+  private readonly push: SqlitePushStore;
 
   constructor(dbPath?: string) {
     this.database = new SqliteDatabase(dbPath);
@@ -28,6 +30,7 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     this.orders = new SqliteOrderStore(this.database);
     this.referrals = new SqliteReferralStore(this.database);
     this.alerts = new SqliteAlertStore(this.database);
+    this.push = new SqlitePushStore(this.database);
   }
 
   backup: SqliteDatabase['backup'] = (...args) => this.database.backup(...args);
@@ -140,4 +143,10 @@ export class SqliteTokenRepository implements TokenRepositoryPort {
     this.alerts.deletePriceAlert(...args);
   markAlertTriggered: SqliteAlertStore['markAlertTriggered'] = (...args) =>
     this.alerts.markAlertTriggered(...args);
+  savePushSubscription: SqlitePushStore['savePushSubscription'] = (...args) =>
+    this.push.savePushSubscription(...args);
+  listPushSubscriptionsByWallet: SqlitePushStore['listPushSubscriptionsByWallet'] = (...args) =>
+    this.push.listPushSubscriptionsByWallet(...args);
+  deletePushSubscription: SqlitePushStore['deletePushSubscription'] = (...args) =>
+    this.push.deletePushSubscription(...args);
 }

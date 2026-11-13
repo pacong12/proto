@@ -22,8 +22,15 @@ import { registerDexRoutes } from './modules/dex';
 import { registerPnlRoutes } from './modules/pnl';
 import { registerReferralsRoutes } from './modules/referrals';
 import { registerAlertsRoutes } from './modules/alerts';
+import { PushSender, registerPushRoutes } from './modules/push';
 
 const { rateLimiter, requestTracker } = container;
+
+const pushSender = new PushSender(container.repository, {
+  publicKey: process.env.VAPID_PUBLIC_KEY,
+  privateKey: process.env.VAPID_PRIVATE_KEY,
+  subject: process.env.VAPID_SUBJECT,
+});
 
 const PORT =
   process.env.NODE_ENV === 'test'
@@ -44,6 +51,7 @@ registerDexRoutes(router, container);
 registerPnlRoutes(router, container);
 registerReferralsRoutes(router, container);
 registerAlertsRoutes(router, container);
+registerPushRoutes(router, container, pushSender);
 
 async function routeRequest(req: Request, clientIp: string): Promise<Response> {
   const url = new URL(req.url);

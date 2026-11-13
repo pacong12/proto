@@ -18,6 +18,8 @@ export function alertCrossed(alert: PriceAlert, value: number): boolean {
 export class CheckAlertsService {
   constructor(
     private readonly repository: AlertRepo,
+    /** Called for each alert the moment it is marked triggered (e.g. to send a push). */
+    private readonly notify?: (alert: PriceAlert) => void | Promise<void>,
     private readonly now: () => number = Date.now,
   ) {}
 
@@ -42,6 +44,14 @@ export class CheckAlertsService {
         if (value > 0 && alertCrossed(a, value)) {
           await this.repository.markAlertTriggered(a.id, this.now());
           fired += 1;
+          if (this.notify) {
+            // Notification is best-effort: a push failure must not abort the alert sweep.
+            try {
+              await this.notify(a);
+            } catch {
+              // ignore — the alert is still marked triggered and shown on next poll
+            }
+          }
         }
       }
     }
