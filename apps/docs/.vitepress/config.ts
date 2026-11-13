@@ -744,14 +744,64 @@ export default defineConfig({
       themeConfig: {
         nav: [
           { text: '시작하기', link: '/ko/protocol/overview' },
-          { text: '토큰 런칭', link: '/ko/protocol/overview' },
+          { text: '토큰 런칭', link: '/ko/protocol/launches' },
+          { text: '거래 가이드', link: '/ko/protocol/trading-guide' },
+          { text: 'FAQ', link: '/ko/protocol/faq' },
+          { text: '보안', link: '/ko/protocol/anti-snipe' },
           { text: '런치패드 앱', link: `${SITE.appUrl}` },
         ],
         sidebar: [
           {
             text: '사용자 가이드',
             collapsed: false,
-            items: [{ text: 'Goton란 무엇인가요?', link: '/ko/protocol/overview' }],
+            items: [
+              { text: 'Goton란 무엇인가요?', link: '/ko/protocol/overview' },
+              { text: '자주 묻는 질문 (FAQ)', link: '/ko/protocol/faq' },
+            ],
+          },
+          {
+            text: '론칭과 거래',
+            collapsed: false,
+            items: [
+              { text: '토큰 론칭하기', link: '/ko/protocol/launches' },
+              { text: '거래 및 스왑 가이드', link: '/ko/protocol/trading-guide' },
+              { text: '지정가·테이크프로핏·스톱로스', link: '/ko/protocol/advanced-orders' },
+              { text: '안티 스나이프와 공정한 론칭', link: '/ko/protocol/anti-snipe' },
+              { text: '프로토콜 분석', link: '/ko/protocol/analytics' },
+            ],
+          },
+          {
+            text: '이코노미와 커뮤니티',
+            collapsed: false,
+            items: [
+              { text: '크리에이터 수수료 및 보상', link: '/ko/protocol/fees-and-burns' },
+              { text: 'Community Takeovers (CTO)', link: '/ko/protocol/community-takeovers' },
+              { text: '피드, 콜, Memestock 및 팔로우', link: '/ko/protocol/social' },
+            ],
+          },
+          {
+            text: '프로필과 도구',
+            collapsed: false,
+            items: [
+              { text: '프로필 및 신원', link: '/ko/protocol/profiles' },
+              { text: '포트폴리오 대시보드', link: '/ko/protocol/portfolio' },
+              { text: '크리에이터 평판', link: '/ko/protocol/reputation' },
+              { text: '홀더 배당 및 베스팅', link: '/ko/protocol/dividends-and-vesting' },
+              { text: 'PnL 카드 및 공유', link: '/ko/protocol/pnl-cards' },
+              { text: '가격 및 시가총액 알림', link: '/ko/protocol/price-alerts' },
+              { text: '친구 초대 및 추천', link: '/ko/protocol/referrals' },
+            ],
+          },
+          {
+            text: '네트워크와 컨트랙트',
+            collapsed: true,
+            items: [
+              { text: '네트워크 설정', link: '/integration/network' },
+              { text: '검증된 스마트 컨트랙트', link: '/integration/contracts' },
+              { text: '공개 API', link: '/integration/api' },
+              { text: 'AI 에이전트용', link: '/integration/agents' },
+              { text: 'DEX 상장', link: '/integration/listing-submission' },
+            ],
           },
         ],
       },
