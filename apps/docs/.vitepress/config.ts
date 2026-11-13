@@ -671,14 +671,67 @@ export default defineConfig({
       themeConfig: {
         nav: [
           { text: '概要', link: '/ja/protocol/overview' },
-          { text: 'トークン作成', link: '/ja/protocol/overview' },
+          { text: 'ローンチ方法', link: '/ja/protocol/launches' },
+          { text: '取引ガイド', link: '/ja/protocol/trading-guide' },
+          { text: 'FAQ', link: '/ja/protocol/faq' },
+          { text: 'セキュリティ', link: '/ja/protocol/anti-snipe' },
           { text: 'Launchpadアプリ', link: `${SITE.appUrl}` },
         ],
         sidebar: [
           {
             text: 'ユーザーハンドブック',
             collapsed: false,
-            items: [{ text: 'Goton とは？', link: '/ja/protocol/overview' }],
+            items: [
+              { text: 'Goton とは？', link: '/ja/protocol/overview' },
+              { text: 'よくある質問（FAQ）', link: '/ja/protocol/faq' },
+            ],
+          },
+          {
+            text: 'ローンチと取引',
+            collapsed: false,
+            items: [
+              { text: 'トークンのローンチ', link: '/ja/protocol/launches' },
+              { text: '取引・スワップガイド', link: '/ja/protocol/trading-guide' },
+              {
+                text: '指値・テイクプロフィット・ストップロス',
+                link: '/ja/protocol/advanced-orders',
+              },
+              { text: 'アンチスナイプと公平なローンチ', link: '/ja/protocol/anti-snipe' },
+              { text: 'プロトコルアナリティクス', link: '/ja/protocol/analytics' },
+            ],
+          },
+          {
+            text: 'エコノミーとコミュニティ',
+            collapsed: false,
+            items: [
+              { text: 'クリエイター手数料と報酬', link: '/ja/protocol/fees-and-burns' },
+              { text: 'Community Takeovers (CTO)', link: '/ja/protocol/community-takeovers' },
+              { text: 'フィード、コール、Memestock、フォロー', link: '/ja/protocol/social' },
+            ],
+          },
+          {
+            text: 'プロフィールとツール',
+            collapsed: false,
+            items: [
+              { text: 'プロフィールとアイデンティティ', link: '/ja/protocol/profiles' },
+              { text: 'ポートフォリオ・ダッシュボード', link: '/ja/protocol/portfolio' },
+              { text: 'クリエイターの評判', link: '/ja/protocol/reputation' },
+              { text: 'ホルダー配当とベスティング', link: '/ja/protocol/dividends-and-vesting' },
+              { text: 'PnL カードと共有', link: '/ja/protocol/pnl-cards' },
+              { text: '価格・時価総額アラート', link: '/ja/protocol/price-alerts' },
+              { text: '友達を招待・リファラル', link: '/ja/protocol/referrals' },
+            ],
+          },
+          {
+            text: 'ネットワークとコントラクト',
+            collapsed: true,
+            items: [
+              { text: 'ネットワーク設定', link: '/integration/network' },
+              { text: '検証済みスマートコントラクト', link: '/integration/contracts' },
+              { text: '公開 API', link: '/integration/api' },
+              { text: 'AI エージェント向け', link: '/integration/agents' },
+              { text: 'DEX 掲載', link: '/integration/listing-submission' },
+            ],
           },
         ],
       },
