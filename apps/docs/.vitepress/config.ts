@@ -791,14 +791,67 @@ export default defineConfig({
       themeConfig: {
         nav: [
           { text: 'Primeiros Passos', link: '/pt/protocol/overview' },
-          { text: 'Criar Token', link: '/pt/protocol/overview' },
+          { text: 'Como Lançar', link: '/pt/protocol/launches' },
+          { text: 'Guia de Trading', link: '/pt/protocol/trading-guide' },
+          { text: 'FAQ', link: '/pt/protocol/faq' },
+          { text: 'Segurança', link: '/pt/protocol/anti-snipe' },
           { text: 'App Launchpad', link: `${SITE.appUrl}` },
         ],
         sidebar: [
           {
             text: 'Manual do Usuário',
             collapsed: false,
-            items: [{ text: 'O que é o Goton?', link: '/pt/protocol/overview' }],
+            items: [
+              { text: 'O que é o Goton?', link: '/pt/protocol/overview' },
+              { text: 'Perguntas Frequentes (FAQ)', link: '/pt/protocol/faq' },
+            ],
+          },
+          {
+            text: 'Lançamentos e Trading',
+            collapsed: false,
+            items: [
+              { text: 'Como Lançar um Token', link: '/pt/protocol/launches' },
+              { text: 'Guia de Trading e Swaps', link: '/pt/protocol/trading-guide' },
+              { text: 'Limit, Take-Profit e Stop-Loss', link: '/pt/protocol/advanced-orders' },
+              { text: 'Anti-Snipe e Lançamento Justo', link: '/pt/protocol/anti-snipe' },
+              { text: 'Análises do Protocolo', link: '/pt/protocol/analytics' },
+            ],
+          },
+          {
+            text: 'Economia e Comunidade',
+            collapsed: false,
+            items: [
+              { text: 'Taxas e Recompensas do Criador', link: '/pt/protocol/fees-and-burns' },
+              { text: 'Community Takeovers (CTO)', link: '/pt/protocol/community-takeovers' },
+              { text: 'Feed, Calls, Memestock e Seguir', link: '/pt/protocol/social' },
+            ],
+          },
+          {
+            text: 'Perfil e Ferramentas',
+            collapsed: false,
+            items: [
+              { text: 'Perfis e Identidade', link: '/pt/protocol/profiles' },
+              { text: 'Painel de Portfólio', link: '/pt/protocol/portfolio' },
+              { text: 'Reputação do Criador', link: '/pt/protocol/reputation' },
+              {
+                text: 'Dividendos de Holders e Vesting',
+                link: '/pt/protocol/dividends-and-vesting',
+              },
+              { text: 'Cartões PnL e Compartilhamento', link: '/pt/protocol/pnl-cards' },
+              { text: 'Alertas de Preço e Market Cap', link: '/pt/protocol/price-alerts' },
+              { text: 'Convide Amigos e Indicações', link: '/pt/protocol/referrals' },
+            ],
+          },
+          {
+            text: 'Rede e Contratos',
+            collapsed: true,
+            items: [
+              { text: 'Configuração de Rede', link: '/integration/network' },
+              { text: 'Contratos Verificados', link: '/integration/contracts' },
+              { text: 'API Pública', link: '/integration/api' },
+              { text: 'Para Agentes de IA', link: '/integration/agents' },
+              { text: 'Listagem em DEX', link: '/integration/listing-submission' },
+            ],
           },
         ],
       },
