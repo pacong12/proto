@@ -2,7 +2,9 @@ import { computed, ref, watch, type Ref } from 'vue';
 import type { ApiEnvelope, PnlPosition, PnlShare, WalletPnl } from '@goton/shared-types';
 import { API_BASE_URL, ApiError, apiFetch } from '@/lib/api-client';
 import { t } from '@/lib/i18n';
+import { withReferral } from '@/lib/referral';
 import { SITE } from '@/lib/site';
+import { walletAddress } from '@/lib/wallet-store';
 import { formatCompactUsd } from '@/lib/utils';
 import { toast } from '@/components/ui/sonner';
 
@@ -38,7 +40,10 @@ export function usePnlShare(wallet: Ref<string | undefined>, token: Ref<string |
   const cardUrl = computed(() =>
     position.value ? `${API_BASE_URL}/api/pnl/${position.value}/card.png` : '',
   );
-  const pageUrl = computed(() => (position.value ? `${SITE.appUrl}/pnl/${position.value}` : ''));
+  // The shared PnL link carries the connected wallet's ?ref, so sharing it grows the referral loop.
+  const pageUrl = computed(() =>
+    position.value ? withReferral(`${SITE.appUrl}/pnl/${position.value}`, walletAddress.value) : '',
+  );
 
   async function load(): Promise<void> {
     if (!position.value) return;

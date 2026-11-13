@@ -1,6 +1,7 @@
 import { getSessionHeaders } from '@/lib/session';
 import { ref, computed, watch } from 'vue';
 import { apiFetch } from '@/lib/api-client';
+import { withReferral } from '@/lib/referral';
 import { useWallet } from '@/composables/useWallet';
 import { useFeed } from '@/composables/useFeed';
 import { toast } from '@/components/ui/sonner';
@@ -117,8 +118,9 @@ export function useTradeCallouts(
         toast.success(`Called $${currentToken.value.symbol}!`);
 
         if (callShareToX.value && typeof window !== 'undefined') {
+          const shareUrl = withReferral(window.location.href, account.value);
           const tweetText = encodeURIComponent(
-            `I just called $${currentToken.value.symbol} at ${formatMarketCap(currentMarketData.value.marketCapUsd)} MC (Target: ${callTargetMcap.value}) on @gotondotfun!\n\n"${content.slice(0, 100)}"\n\n${window.location.href}`,
+            `I just called $${currentToken.value.symbol} at ${formatMarketCap(currentMarketData.value.marketCapUsd)} MC (Target: ${callTargetMcap.value}) on @gotondotfun!\n\n"${content.slice(0, 100)}"\n\n${shareUrl}`,
           );
           window.open(
             `https://twitter.com/intent/tweet?text=${tweetText}`,

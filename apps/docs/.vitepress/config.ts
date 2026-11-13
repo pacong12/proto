@@ -396,6 +396,16 @@ export default defineConfig({
             ],
           },
           {
+            text: 'Your Profile & Tools',
+            collapsed: false,
+            items: [
+              { text: 'Portfolio Dashboard', link: '/protocol/portfolio' },
+              { text: 'Creator Reputation', link: '/protocol/reputation' },
+              { text: 'Price & Market-Cap Alerts', link: '/protocol/price-alerts' },
+              { text: 'Invite Friends & Referrals', link: '/protocol/referrals' },
+            ],
+          },
+          {
             text: 'Network & Contracts',
             collapsed: false,
             items: [

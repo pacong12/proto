@@ -421,6 +421,7 @@ import { SLIPPAGE_WARN_THRESHOLD } from '@/composables/useSwap';
 import { useWallet } from '@/composables/useWallet';
 import { usePnlShare } from '@/composables/usePnlShare';
 import { usePinnedTokens } from '@/composables/usePinnedTokens';
+import { withReferral } from '@/lib/referral';
 import { toast } from '@/components/ui/sonner';
 import { useAutoRefresh } from '@/composables/useAutoRefresh';
 import { resolutionForAge } from '@/lib/chart-interval';
@@ -550,7 +551,7 @@ function copyAddress(addr?: string | Event) {
 const linkCopied = ref(false);
 function copyTokenLink() {
   if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
-    navigator.clipboard.writeText(window.location.href);
+    navigator.clipboard.writeText(withReferral(window.location.href, account.value));
     linkCopied.value = true;
     toast.success('Link copied to clipboard');
     setTimeout(() => {
@@ -560,8 +561,9 @@ function copyTokenLink() {
 }
 function shareToX() {
   if (typeof window !== 'undefined') {
+    const shareUrl = withReferral(window.location.href, account.value);
     const text = encodeURIComponent(
-      `Trading $${currentToken.value.symbol} on @gotondotfun on ${tokenNetwork.value.name}!\n${window.location.href}`,
+      `Trading $${currentToken.value.symbol} on @gotondotfun on ${tokenNetwork.value.name}!\n${shareUrl}`,
     );
     window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank', 'noopener,noreferrer');
   }
