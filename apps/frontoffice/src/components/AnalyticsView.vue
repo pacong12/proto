@@ -6,7 +6,7 @@
     >
       <div>
         <div class="flex items-center gap-2.5">
-          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+          <h1 class="text-display font-extrabold tracking-tight text-foreground">
             {{ t('protocolAnalytics') }}
           </h1>
           <span
@@ -53,31 +53,52 @@
         <!-- Main Figure Callout -->
         <div class="space-y-1">
           <div class="flex items-baseline gap-2">
-            <span class="text-2xl sm:text-4xl font-black tracking-tight text-foreground">
+            <span
+              class="text-2xl sm:text-4xl font-bold tracking-tight text-foreground tabular-nums"
+            >
               {{ currentFigureDisplay }}
             </span>
             <span class="text-xs font-semibold text-muted-foreground">
-              {{ activeNetwork.name }} · {{ t('analyticsLast24h') }}
+              {{ activeNetwork.name }} · {{ rangeLabel }}
             </span>
           </div>
-          <p class="text-xs text-muted-foreground">
+          <p v-if="range === '24h'" class="text-xs text-muted-foreground">
             {{ currentFigureSubtitle }}
           </p>
         </div>
 
         <!-- Metric Switcher Pills & Mode Toggle (Pons / Shadcn Segmented Controls) -->
         <div class="flex flex-wrap items-center gap-2 text-sm">
+          <!-- Report window: last 24h, daily (30 days), monthly (12 months) -->
+          <div class="inline-flex p-1 rounded-xl bg-muted border border-border gap-0.5">
+            <button
+              v-for="r in rangeOptions"
+              :key="r.value"
+              type="button"
+              class="px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer select-none"
+              :class="
+                range === r.value
+                  ? 'bg-card text-foreground shadow-2xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              "
+              :aria-pressed="range === r.value"
+              @click="range = r.value"
+            >
+              {{ r.label }}
+            </button>
+          </div>
+
           <!-- Metric Selectors -->
-          <div class="inline-flex p-1 rounded-xl bg-black border border-border gap-1">
+          <div class="inline-flex p-1 rounded-xl bg-muted border border-border gap-0.5">
             <button
               v-for="m in metricOptions"
               :key="m.value"
               type="button"
-              class="px-3 py-1.5 rounded-lg text-sm font-bold transition cursor-pointer select-none"
+              class="px-3 py-1 rounded-lg text-xs font-medium transition cursor-pointer select-none"
               :class="
                 activeMetric === m.value
-                  ? 'bg-foreground text-background shadow-2xs'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-zinc-900'
+                  ? 'bg-card text-foreground shadow-2xs'
+                  : 'text-muted-foreground hover:text-foreground'
               "
               @click="activeMetric = m.value"
             >
@@ -95,7 +116,8 @@
                   ? 'bg-card text-foreground shadow-2xs'
                   : 'text-muted-foreground hover:text-foreground'
               "
-              title="Smooth Area Chart"
+              title="Area chart"
+              aria-label="Area chart"
               @click="chartMode = 'area'"
             >
               <Activity class="w-3.5 h-3.5" />
@@ -108,7 +130,8 @@
                   ? 'bg-card text-foreground shadow-2xs'
                   : 'text-muted-foreground hover:text-foreground'
               "
-              title="Bar Chart"
+              title="Bar chart"
+              aria-label="Bar chart"
               @click="chartMode = 'bar'"
             >
               <BarChart2 class="w-3.5 h-3.5" />
@@ -437,8 +460,13 @@ interface AnalyticsBucket {
   value: number;
 }
 
+type AnalyticsRange = '24h' | '30d' | '12m';
+
 interface AnalyticsData {
   chainId: number;
+  /** Absent from servers older than the range parameter: they only report 24h. */
+  range?: AnalyticsRange;
+  tokensLaunched?: number;
   quoteSymbol: string;
   totalTokens: number;
   tokensLaunched24h: number;
@@ -461,10 +489,32 @@ const NO_FIGURE = '\u2014';
 const EMPTY_CHART_LABELS = ['-20h', '-16h', '-12h', '-8h', '-4h', 'now'];
 
 const response = ref<AnalyticsData | null>(null);
-/** The figures, only while they are the active network's: another network's never show. */
+/** The 24h figures (KPI cards), only while they are the active network's. */
 const analytics = computed(() =>
   response.value?.chainId === activeNetwork.value.chainId ? response.value : null,
 );
+
+// The chart's window. 24h reuses the KPI response; daily and monthly fetch their own.
+const range = ref<AnalyticsRange>('24h');
+const rangeResponse = ref<AnalyticsData | null>(null);
+const rangeOptions = computed(() => [
+  { label: t('analyticsRange24h'), value: '24h' as const },
+  { label: t('analyticsRangeDaily'), value: '30d' as const },
+  { label: t('analyticsRangeMonthly'), value: '12m' as const },
+]);
+const rangeLabel = computed(() =>
+  range.value === '30d'
+    ? t('analyticsLast30d')
+    : range.value === '12m'
+      ? t('analyticsLast12m')
+      : t('analyticsLast24h'),
+);
+/** The figures behind the chart and its headline: the selected window's, for this network. */
+const chartAnalytics = computed(() => {
+  if (range.value === '24h') return analytics.value;
+  const r = rangeResponse.value;
+  return r?.chainId === activeNetwork.value.chainId && r.range === range.value ? r : null;
+});
 const loading = ref(false);
 const fetchError = ref<string | null>(null);
 const copiedAddress = ref<string | null>(null);
@@ -519,29 +569,49 @@ const formattedTaxQuote = computed(() => {
   return `\u2248 ${quote} ${analytics.value.quoteSymbol}`;
 });
 
+const dayLabel = new Intl.DateTimeFormat(undefined, {
+  day: 'numeric',
+  month: 'short',
+  timeZone: 'UTC',
+});
+const monthLabel = new Intl.DateTimeFormat(undefined, {
+  month: 'short',
+  year: '2-digit',
+  timeZone: 'UTC',
+});
+
+/** 24h buckets read "-4h"/"now"; days and months come as UTC dates and read "14 Nov" / "Nov 26". */
+function bucketLabel(bucket: { label: string; start?: number }): string {
+  if (bucket.label === 'now') return t('analyticsNow');
+  if (bucket.start === undefined) return bucket.label;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(bucket.label)) return dayLabel.format(bucket.start);
+  if (/^\d{4}-\d{2}$/.test(bucket.label)) return monthLabel.format(bucket.start);
+  return bucket.label;
+}
+
 function toChartData(buckets?: AnalyticsBucket[]): ChartDataPoint[] {
   const points = buckets ?? EMPTY_CHART_LABELS.map((label) => ({ label, value: 0 }));
-  return points.map(({ label, value }) => ({
-    label: label === 'now' ? t('analyticsNow') : label,
-    value,
-  }));
+  return points.map((b) => ({ label: bucketLabel(b), value: b.value }));
 }
 
 const currentChartData = computed(() => {
-  if (activeMetric.value === 'launches') return toChartData(analytics.value?.tokenHistory);
-  if (activeMetric.value === 'fees') return toChartData(analytics.value?.feeHistory);
-  return toChartData(analytics.value?.volumeHistory);
+  const data = chartAnalytics.value;
+  if (activeMetric.value === 'launches') return toChartData(data?.tokenHistory);
+  if (activeMetric.value === 'fees') return toChartData(data?.feeHistory);
+  return toChartData(data?.volumeHistory);
 });
 
 const currentFigureDisplay = computed(() => {
-  if (!analytics.value) return NO_FIGURE;
+  const data = chartAnalytics.value;
+  if (!data) return NO_FIGURE;
   if (activeMetric.value === 'launches') {
-    return t('analyticsTokensCount', { count: analytics.value.tokensLaunched24h.toLocaleString() });
+    const launched = range.value === '24h' ? data.tokensLaunched24h : (data.tokensLaunched ?? 0);
+    return t('analyticsTokensCount', { count: launched.toLocaleString() });
   }
   if (activeMetric.value === 'fees') {
-    return `\u2248 ${formatUsd(analytics.value.taxFees.totalUsd)}`;
+    return `\u2248 ${formatUsd(data.taxFees.totalUsd)}`;
   }
-  return formattedVolume.value;
+  return formatUsd(data.totalVolumeUsd);
 });
 
 const currentFigureSubtitle = computed(() => {
@@ -598,23 +668,41 @@ function copyContractAddress(address: string) {
 
 let latestRequest = 0;
 
+type AnalyticsEnvelope = {
+  success: boolean;
+  data: AnalyticsData | null;
+  error?: { message?: string };
+};
+
+/** One request for a window; a dropped connection or timeout is retried once before it fails. */
+async function requestAnalytics(window: AnalyticsRange): Promise<AnalyticsEnvelope> {
+  const url = `/api/analytics?chainId=${activeNetwork.value.chainId}&range=${window}`;
+  try {
+    return await apiFetch<AnalyticsEnvelope>(url);
+  } catch {
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    return apiFetch<AnalyticsEnvelope>(url);
+  }
+}
+
 async function fetchAnalytics() {
-  // A slower answer for the previous network must not replace the current one's.
+  // A slower answer for the previous network or window must not replace the current one's.
   const request = ++latestRequest;
+  const selected = range.value;
   loading.value = true;
   try {
-    const envelope = await apiFetch<{
-      success: boolean;
-      data: AnalyticsData | null;
-      error?: { message?: string };
-    }>(`/api/analytics?chainId=${activeNetwork.value.chainId}`);
+    const [day, ranged] = await Promise.all([
+      requestAnalytics('24h'),
+      selected === '24h' ? null : requestAnalytics(selected).catch(() => null),
+    ]);
     if (request !== latestRequest) return;
-    if (envelope.success && envelope.data) {
-      response.value = envelope.data;
+    if (day.success && day.data) {
+      response.value = day.data;
       fetchError.value = null;
     } else if (!response.value) {
-      fetchError.value = envelope.error?.message || t('analyticsUnexpectedResponse');
+      fetchError.value = day.error?.message || t('analyticsUnexpectedResponse');
     }
+    if (ranged?.success && ranged.data) rangeResponse.value = ranged.data;
   } catch (err) {
     if (request !== latestRequest) return;
     // A failed background refresh keeps the figures already on screen.
@@ -625,6 +713,8 @@ async function fetchAnalytics() {
     if (request === latestRequest) loading.value = false;
   }
 }
+
+watch(range, () => fetchAnalytics());
 
 watch(
   () => activeNetwork.value.chainId,

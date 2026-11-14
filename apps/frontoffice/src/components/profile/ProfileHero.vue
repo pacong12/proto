@@ -66,7 +66,7 @@
         </div>
 
         <!-- Action Buttons (Top Right of Profile) -->
-        <div class="flex items-center gap-2 self-start sm:self-end">
+        <div class="flex flex-wrap items-center gap-2 self-start sm:self-end">
           <Button
             v-if="!isOwnProfile && profileAddress"
             :variant="stats.isFollowing ? 'outline' : 'default'"
@@ -87,6 +87,7 @@
             <Edit3 class="w-3.5 h-3.5" />
             Edit Profile
           </Button>
+          <ProfileReferralCard v-if="isOwnProfile && profileAddress" :wallet="profileAddress" />
 
           <Button
             variant="default"
@@ -227,6 +228,7 @@ import { Jazzicon } from '@/components/ui/avatar';
 import { shortenAddress } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import type { ProfileStorageData } from './types';
+import ProfileReferralCard from './ProfileReferralCard.vue';
 import type { NetworkConfig } from '@goton/shared-types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useFollows, type FollowRow } from '@/composables/useFollows';

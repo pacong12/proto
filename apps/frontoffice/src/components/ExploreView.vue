@@ -3,7 +3,7 @@
     <!-- 1. What this page is, and the one action it leads to. -->
     <section class="flex flex-col sm:flex-row sm:items-start justify-between gap-5">
       <div class="space-y-2 max-w-3xl">
-        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+        <h1 class="text-display font-extrabold tracking-tight text-foreground">
           The launch floor for {{ activeNetwork.name }}.
         </h1>
         <p class="text-sm sm:text-base text-muted-foreground leading-relaxed">
@@ -41,11 +41,7 @@
         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
         aria-hidden="true"
       >
-        <div
-          v-for="n in 4"
-          :key="n"
-          class="h-[70px] rounded-2xl bg-card border border-border animate-pulse"
-        />
+        <Skeleton v-for="n in 4" :key="n" class="h-[70px] rounded-2xl" />
       </div>
       <ExploreFeaturedMovers
         v-else
@@ -88,7 +84,7 @@
               v-model="searchQuery"
               type="text"
               placeholder="Search coins / address..."
-              class="h-9 pl-8 pr-3 text-sm bg-card border-border rounded-xl text-foreground focus-visible:ring-foreground"
+              class="h-9 pl-8 pr-3 text-sm bg-card border-border rounded-xl text-foreground focus-visible:ring-ring"
             />
           </div>
           <div
@@ -100,7 +96,7 @@
               v-for="opt in viewOptions"
               :key="opt.mode"
               type="button"
-              class="h-8 w-8 inline-flex items-center justify-center rounded-[10px] transition cursor-pointer"
+              class="h-8 w-8 inline-flex items-center justify-center rounded-lg transition cursor-pointer"
               :class="
                 viewMode === opt.mode
                   ? 'bg-muted text-foreground'
@@ -126,15 +122,10 @@
         <span>{{ apiError }}</span>
       </div>
 
-      <!-- Loading State -->
-      <div
-        v-if="loading && allTokens.length === 0"
-        class="flex flex-col items-center justify-center py-24 space-y-3"
-      >
-        <Loader2 class="w-7 h-7 text-emerald-500 animate-spin" />
-        <span class="text-xs font-medium text-muted-foreground">
-          Loading coins on {{ activeNetwork.name }}...
-        </span>
+      <!-- Loading: rows the size of the list, so nothing jumps when the coins arrive. -->
+      <div v-if="loading && allTokens.length === 0" class="space-y-2" role="status">
+        <span class="sr-only">Loading coins on {{ activeNetwork.name }}</span>
+        <Skeleton v-for="n in 8" :key="n" class="h-16 rounded-xl" aria-hidden="true" />
       </div>
 
       <!-- ============================================================
@@ -171,12 +162,22 @@
       <!-- Empty State -->
       <Empty
         v-else-if="filteredTokens.length === 0"
-        title="No coins found"
-        description="Be the first to launch a coin on this market!"
+        :title="emptyState.title"
+        :description="emptyState.description"
         class="border border-border rounded-2xl p-12 bg-card text-center"
       >
-        <template #action>
+        <template v-if="emptyState.action" #action>
           <Button
+            v-if="emptyState.action === 'clear'"
+            size="default"
+            variant="outline"
+            class="h-9 px-4 text-sm font-semibold rounded-xl cursor-pointer"
+            @click="searchQuery = ''"
+          >
+            Clear search
+          </Button>
+          <Button
+            v-else
             size="default"
             class="h-9 px-4 text-sm font-semibold gap-1.5 rounded-xl cursor-pointer"
             @click="$emit('selectTab', 'create')"
@@ -193,16 +194,18 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useAutoRefresh } from '@/composables/useAutoRefresh';
-import { Plus, Loader2, AlertCircle, Search, List, LayoutGrid } from 'lucide-vue-next';
+import { Plus, AlertCircle, Search, List, LayoutGrid } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Empty } from '@/components/ui/empty';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { useI18n } from '@/lib/i18n';
 import { useWallet } from '@/composables/useWallet';
 import { useTokenStore } from '@/composables/useTokenStore';
 import { usePinnedTokens } from '@/composables/usePinnedTokens';
 import { ExploreFeaturedMovers, ExploreTable, ExploreGrid } from './explore';
+import { hasCurve } from './explore/curve';
 
 const { t } = useI18n();
 const { activeNetwork } = useWallet();
@@ -275,7 +278,13 @@ const filteredTokens = computed(() => {
   } else if (activeMarketTab.value === 'newest') {
     list.sort((a, b) => b.token.createdAt - a.token.createdAt);
   } else if (activeMarketTab.value === 'curve') {
-    list = list.filter((item) => !item.marketData?.isGraduated);
+    // Still on the curve, closest to graduating first.
+    list = list.filter(hasCurve);
+    list.sort(
+      (a, b) => (b.marketData?.graduationProgress ?? 0) - (a.marketData?.graduationProgress ?? 0),
+    );
+  } else if (activeMarketTab.value === 'top') {
+    list.sort((a, b) => (b.marketData?.marketCapUsd ?? 0) - (a.marketData?.marketCapUsd ?? 0));
   } else if (activeMarketTab.value === 'dividends') {
     list = list.filter((item) => (item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0);
     list.sort((a, b) => (b.marketData?.marketCapUsd ?? 0) - (a.marketData?.marketCapUsd ?? 0));
@@ -296,6 +305,41 @@ const filteredTokens = computed(() => {
   }
 
   return list;
+});
+
+// Why the list is empty decides what the empty state says and offers.
+const emptyState = computed<{
+  title: string;
+  description: string;
+  action: 'clear' | 'create' | null;
+}>(() => {
+  const q = searchQuery.value.trim();
+  if (q) {
+    return {
+      title: `No coins match "${q}"`,
+      description: 'Check the name, ticker or contract address.',
+      action: 'clear',
+    };
+  }
+  if (activeMarketTab.value === 'pinned') {
+    return {
+      title: 'No pinned coins yet',
+      description: 'Star a coin to keep it here.',
+      action: null,
+    };
+  }
+  if (networkTokens.value.length === 0) {
+    return {
+      title: `No coins on ${activeNetwork.value.name} yet`,
+      description: 'Be the first to launch a coin on this market!',
+      action: 'create',
+    };
+  }
+  return {
+    title: 'No coins in this tab',
+    description: 'Nothing fits this filter right now.',
+    action: null,
+  };
 });
 
 watch([searchQuery, activeMarketTab], () => {

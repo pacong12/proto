@@ -246,7 +246,7 @@
               rows="2"
               maxlength="500"
               :placeholder="t('postReplyPlaceholder')"
-              class="w-full text-xs font-sans p-2.5 rounded-xl border border-border bg-muted/30 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground resize-none"
+              class="w-full text-xs font-sans p-2.5 rounded-xl border border-border bg-muted/30 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
             />
             <div class="flex items-center justify-between">
               <span class="text-xs text-muted-foreground"> {{ replyText.length }}/500 </span>

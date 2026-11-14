@@ -10,7 +10,7 @@
         {{ t('pnlNoPosition') }}
       </p>
       <template v-else-if="share">
-        <div v-if="!imageLoaded" class="absolute inset-0 animate-pulse bg-muted" />
+        <Skeleton v-if="!imageLoaded" class="absolute inset-0 rounded-none" />
         <img
           :src="cardUrl"
           :alt="t('pnlCardAlt', { name: share.traderName })"
@@ -20,7 +20,7 @@
           @load="imageLoaded = true"
         />
       </template>
-      <div v-else class="absolute inset-0 animate-pulse bg-muted" />
+      <Skeleton v-else class="absolute inset-0 rounded-none" />
     </div>
 
     <dl
@@ -74,6 +74,7 @@ import { Button } from '@/components/ui/button';
 import { useI18n } from '@/lib/i18n';
 import { formatCompactUsd, formatMarketCap } from '@/lib/utils';
 import { formatSignedPercent, formatSignedUsd, usePnlShare } from '@/composables/usePnlShare';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const props = defineProps<{
   wallet?: string;

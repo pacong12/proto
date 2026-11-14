@@ -16,6 +16,7 @@
               : 'text-muted-foreground/35 hover:text-amber-400'
           "
           :title="isPinned(item.token.address) ? 'Unpin coin' : 'Pin to Watchlist'"
+          :aria-label="isPinned(item.token.address) ? 'Unpin coin' : 'Pin to Watchlist'"
           @click.stop="$emit('togglePin', item.token.address)"
         >
           <Star
@@ -36,19 +37,19 @@
             :src="getChainIcon(tokenStore.getTokenNetwork(item.token))"
             :alt="tokenStore.getTokenNetwork(item.token).name"
             :title="tokenStore.getTokenNetwork(item.token).name"
-            class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border border-black bg-black object-contain shadow-xs"
+            class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-card bg-card object-contain"
           />
         </div>
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-1.5 min-w-0">
             <h3
-              class="min-w-0 font-bold text-xs sm:text-sm text-foreground truncate group-hover:text-primary transition"
+              class="min-w-0 font-semibold text-base text-foreground truncate group-hover:underline underline-offset-2"
             >
               {{ item.token.name }}
             </h3>
           </div>
           <div class="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
-            <span class="truncate min-w-[4ch]">${{ item.token.symbol }}</span>
+            <span class="truncate min-w-[4ch]">{{ item.token.symbol }}</span>
             <TaxTooltip
               :buy-tax-bps="item.token.taxConfig?.buyTaxBps"
               :sell-tax-bps="item.token.taxConfig?.sellTaxBps"
@@ -56,7 +57,7 @@
             />
             <span
               v-if="(item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0"
-              class="text-sky-400 text-xs shrink-0 whitespace-nowrap"
+              class="text-sky-500 text-xs shrink-0 whitespace-nowrap"
             >
               &middot; {{ item.token.taxConfig?.revenueSplit?.holders }}% Divs
             </span>

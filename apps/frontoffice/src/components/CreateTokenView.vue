@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-4xl mx-auto space-y-8 py-2 sm:py-4">
     <div>
-      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+      <h1 class="text-display font-extrabold tracking-tight text-foreground">
         {{ t('launchToken') }}
       </h1>
       <p class="text-sm text-muted-foreground mt-1 leading-relaxed">

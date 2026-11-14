@@ -2,15 +2,17 @@
   <Card class="p-4 sm:p-5 space-y-3.5">
     <div class="flex items-start gap-3">
       <div class="relative shrink-0">
+        <img
+          v-if="avatarUrl"
+          :src="avatarUrl"
+          alt=""
+          class="w-10 h-10 rounded-full object-cover ring-2 ring-border/80"
+        />
         <Jazzicon
+          v-else
           :address="account || '0x0000000000000000000000000000000000000000'"
           :size="40"
           class="rounded-full ring-2 ring-border/80"
-        />
-        <span
-          v-if="account"
-          class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-foreground border-2 border-background"
-          title="Wallet Connected"
         />
       </div>
 
@@ -22,8 +24,9 @@
             v-model="composerContent"
             rows="3"
             maxlength="500"
-            placeholder="Call a token or share alpha... (type $ to select a token, e.g. $SPIDER!)"
-            class="w-full text-sm sm:text-base p-3.5 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground focus:border-border resize-none leading-relaxed"
+            placeholder="Call a token with $TICKER..."
+            aria-label="Write a call"
+            class="w-full text-sm sm:text-base p-3.5 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring focus:border-border resize-none leading-relaxed"
             @input="handleComposerInput"
             @keydown="handleComposerKeydown"
           />
@@ -33,15 +36,6 @@
             v-if="showCashtagSuggestions && cashtagSuggestions.length > 0"
             class="absolute left-0 right-0 top-full mt-1 bg-card border border-border/90 rounded-2xl shadow-2xl p-2 z-50 space-y-1 text-xs max-h-56 overflow-y-auto"
           >
-            <div
-              class="px-2 py-1 text-xs text-muted-foreground uppercase font-bold flex items-center justify-between border-b border-border/50"
-            >
-              <span class="flex items-center gap-1">
-                Select Token for Callout ${{ cashtagQuery || '' }}
-              </span>
-              <span class="text-xs">Tab / Enter to pick</span>
-            </div>
-
             <button
               v-for="(tItem, sIdx) in cashtagSuggestions"
               :key="tItem.token.address"
@@ -49,7 +43,7 @@
               class="w-full flex items-center justify-between p-2 rounded-xl transition cursor-pointer text-left"
               :class="
                 sIdx === selectedSuggestionIndex
-                  ? 'bg-muted text-foreground font-bold'
+                  ? 'bg-muted text-foreground'
                   : 'hover:bg-muted/60 text-foreground'
               "
               @click="selectCashtagToken(tItem.token)"
@@ -64,7 +58,7 @@
                   class="rounded-md shrink-0 border border-border/50"
                 />
                 <div class="min-w-0">
-                  <span class="font-black text-foreground block text-xs truncate">
+                  <span class="font-semibold text-foreground block text-xs truncate">
                     ${{ tItem.token.symbol }}
                   </span>
                   <span class="text-xs text-muted-foreground truncate block font-sans">
@@ -107,8 +101,9 @@
           <!-- Top-Right Remove (X) Button like Twitter -->
           <button
             type="button"
-            class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center transition cursor-pointer shadow-md backdrop-blur-xs"
+            class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full border border-border bg-background/80 hover:bg-background text-foreground flex items-center justify-center transition cursor-pointer backdrop-blur-xs"
             title="Remove image"
+            aria-label="Remove image"
             @click="removeAttachedImage"
           >
             <X class="w-4 h-4" />
@@ -117,7 +112,7 @@
           <!-- Uploading / Pinning Status Banner -->
           <div
             v-if="isUploadingMedia"
-            class="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center gap-2 text-xs text-white"
+            class="absolute inset-0 bg-background/70 backdrop-blur-xs flex items-center justify-center gap-2 text-xs text-muted-foreground"
           >
             <Loader2 class="w-4 h-4 animate-spin text-muted-foreground" />
             <span>Uploading to IPFS...</span>
@@ -129,7 +124,7 @@
           <Input
             v-model="composerImageUrl"
             type="text"
-            placeholder="Image / Chart URL (https://... or ipfs://...)"
+            placeholder="https://... or ipfs://..."
             class="h-8 text-xs rounded-xl"
           />
         </div>
@@ -139,25 +134,17 @@
           v-if="account && selectedToken && callerPositionUsd >= 1.0"
           class="p-2.5 rounded-xl bg-muted/40 border border-border text-foreground flex items-center justify-between gap-2 text-xs"
         >
-          <div class="flex items-center gap-1.5 min-w-0">
-            <ShieldCheck class="w-4 h-4 shrink-0 text-foreground" />
-            <span class="truncate">
-              Verified Holder (${{ callerPositionUsd.toFixed(2) }}):
-              <strong>{{ callerTokenBalance.toLocaleString() }} ${{ selectedToken.symbol }}</strong>
-            </span>
-          </div>
+          <span class="truncate">
+            Verified holder &middot;
+            <strong>{{ callerTokenBalance.toLocaleString() }} ${{ selectedToken.symbol }}</strong>
+          </span>
         </div>
 
         <div
-          v-else-if="account && selectedToken && callerPositionUsd < 1.0 && !checkingBalance"
-          class="p-2 rounded-xl bg-muted/40 border border-border text-muted-foreground flex items-center justify-between gap-2 text-xs font-sans"
+          v-else-if="account && selectedToken && callerTokenBalance <= 0 && !checkingBalance"
+          class="p-2 rounded-xl bg-muted/40 border border-border text-muted-foreground flex items-center justify-between gap-2 text-xs"
         >
-          <div class="flex items-center gap-1.5 min-w-0">
-            <span class="text-xs">
-              Mentioning ${{ selectedToken.symbol }} &middot; Hold $1+ to earn a Verified Holder
-              badge.
-            </span>
-          </div>
+          <span>Hold ${{ selectedToken.symbol }} to post a call on it.</span>
           <Button
             size="sm"
             variant="outline"
@@ -171,7 +158,6 @@
         <!-- Composer Footer Toolbar -->
         <div class="flex items-center justify-between pt-1 border-t border-border/50">
           <div class="flex items-center gap-2">
-            <!-- Hidden File Input for Device Photo Upload like Twitter -->
             <input
               ref="mediaFileInputRef"
               type="file"
@@ -185,7 +171,8 @@
               size="sm"
               class="h-8 px-2 gap-1.5 text-muted-foreground"
               :class="composerImagePreview ? 'border-foreground/40 bg-muted text-foreground' : ''"
-              title="Upload photo from device (like Twitter)"
+              title="Upload photo from device"
+              aria-label="Upload photo"
               @click="triggerMediaUpload"
             >
               <ImageIcon class="w-4 h-4" />
@@ -198,6 +185,7 @@
               class="h-8 px-2 gap-1.5 text-muted-foreground"
               :class="showMediaInput ? 'border-foreground/40 bg-muted text-foreground' : ''"
               title="Paste Image or Chart URL"
+              aria-label="Paste image URL"
               @click="showMediaInput = !showMediaInput"
             >
               <Link2 class="w-4 h-4" />
@@ -208,16 +196,16 @@
 
           <Button
             size="sm"
-            class="rounded-xl px-5 h-9 font-bold text-sm gap-1.5"
+            class="rounded-xl px-5 h-9 font-semibold text-sm gap-1.5"
             :disabled="
               isPostingCall ||
               !composerContent.trim() ||
-              (selectedToken !== null && callerTokenBalance <= 0)
+              selectedToken === null ||
+              callerTokenBalance <= 0
             "
             @click="submitCallout"
           >
             <Loader2 v-if="isPostingCall" class="w-3.5 h-3.5 animate-spin" />
-            <Megaphone v-else class="w-3.5 h-3.5" />
             <span>Post Call</span>
           </Button>
         </div>
@@ -235,7 +223,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { Loader2, Image as ImageIcon, Megaphone, ShieldCheck, X, Link2 } from 'lucide-vue-next';
+import { Loader2, Image as ImageIcon, X, Link2 } from 'lucide-vue-next';
 import { useWallet } from '@/composables/useWallet';
 import { useTokenStore } from '@/composables/useTokenStore';
 import { useFeed } from '@/composables/useFeed';
@@ -248,6 +236,8 @@ import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { Jazzicon } from '@/components/ui/avatar';
 import { toast } from '@/components/ui/sonner';
 import { formatMarketCap } from '@/lib/utils';
+import { resolveSafeUrl } from '@/lib/safe-url';
+import { getProfile, loadProfile } from '@/composables/useProfiles';
 import type { FeedCalloutItem, LaunchedTokenEntity } from '@goton/shared-types';
 
 /** Writes a callout: $cashtag autocomplete, holder check, optional image, then posts it. */
@@ -257,6 +247,15 @@ const emit = defineEmits<{
 }>();
 
 const { account, openWallet, activeNetwork } = useWallet();
+// The photo saved on /profile, like the navbar; the Jazzicon otherwise.
+watch(
+  account,
+  (address) => {
+    if (address) loadProfile(address).catch(() => {});
+  },
+  { immediate: true },
+);
+const avatarUrl = computed(() => resolveSafeUrl(getProfile(account.value)?.avatarUrl));
 const { networkTokens } = useTokenStore();
 const { postCallout, fetchCallerBalance } = useFeed();
 
@@ -462,12 +461,9 @@ async function submitCallout(): Promise<void> {
   const content = composerContent.value.trim();
   if (!content) return;
 
-  const targetToken =
-    selectedToken.value ||
-    detectTokenFromContent(content) ||
-    (networkTokens.value?.[0]?.token ?? null);
+  const targetToken = selectedToken.value || detectTokenFromContent(content);
   if (!targetToken) {
-    composerError.value = 'Please mention a token (e.g. $TOKEN) or launch one first.';
+    composerError.value = 'Mention a token with $, e.g. $SPIDER.';
     return;
   }
 
@@ -492,10 +488,9 @@ async function submitCallout(): Promise<void> {
           finalImageUrl = ipfsUri;
         }
       } catch (uploadErr) {
-        console.warn('[Feed] IPFS upload on submit fallback:', uploadErr);
-        if (!finalImageUrl && composerImagePreview.value) {
-          finalImageUrl = composerImagePreview.value;
-        }
+        // The preview is a data:/blob: URL only this browser can show: never post it.
+        composerError.value = `Image upload failed: ${(uploadErr as Error).message || 'try again'}`;
+        return;
       } finally {
         isUploadingMedia.value = false;
       }
@@ -523,15 +518,13 @@ async function submitCallout(): Promise<void> {
   }
 }
 
-// The chain changed, or its tokens arrived: preselect its first token for the holder check.
-watch(
-  [activeNetwork, () => networkTokens.value.length],
-  ([, count], previous) => {
-    const chainChanged = previous && previous[0] !== activeNetwork.value;
-    if (!chainChanged && selectedToken.value) return;
-    selectedToken.value = count > 0 ? networkTokens.value[0].token : null;
-    if (selectedToken.value) checkCallerPosition(selectedToken.value.address);
-  },
-  { immediate: true },
-);
+// The chain changed, or its tokens arrived: the token is whichever $TOKEN the text names on this
+// chain. Nothing is preselected, so a post never lands on a coin its author did not mention.
+watch([activeNetwork, () => networkTokens.value.length], () => {
+  const detected = detectTokenFromContent(composerContent.value);
+  if (detected?.address === selectedToken.value?.address) return;
+  selectedToken.value = detected;
+  callerTokenBalance.value = 0;
+  if (detected) checkCallerPosition(detected.address);
+});
 </script>

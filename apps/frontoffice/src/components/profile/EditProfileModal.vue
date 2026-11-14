@@ -1,7 +1,7 @@
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
     <DialogContent
-      class="w-[calc(100vw-2rem)] sm:max-w-lg bg-card border-border text-foreground transition-all duration-200 max-h-[90vh] overflow-y-auto"
+      class="w-[calc(100vw-2rem)] sm:max-w-2xl bg-card border-border text-foreground transition-all duration-200 max-h-[90vh] overflow-y-auto"
     >
       <DialogHeader>
         <div class="flex items-center gap-2 text-foreground mb-1">

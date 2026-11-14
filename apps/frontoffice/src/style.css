@@ -1,11 +1,13 @@
 @import 'tailwindcss';
-/* Poppins is loaded from index.html (preconnect + stylesheet), not from here: an @import here
+/* The fonts are loaded from index.html (preconnect + stylesheet), not from here: an @import here
    would only start after this file downloads and block rendering. */
 
 :root {
   --vp-font-family-base:
     'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
     'Segoe UI Symbol', 'Noto Color Emoji';
+  /* Page titles (h1, .font-heading). Same face for now; swap here to give titles their own. */
+  --vp-font-family-heading: var(--vp-font-family-base);
   --vp-font-family-mono: var(--vp-font-family-base);
   font-optical-sizing: auto;
 }
@@ -42,14 +44,14 @@
 
   --font-serif: var(--vp-font-family-base);
   --font-sans: var(--vp-font-family-base);
-  --font-heading: var(--vp-font-family-base);
+  --font-heading: var(--vp-font-family-heading);
   --font-mono: var(--vp-font-family-base);
   --text-xs: 0.75rem;
   --text-xs--line-height: 1rem;
   --text-sm: 0.875rem;
   --text-sm--line-height: 1.25rem;
   --text-base: 1rem;
-  --text-base--line-height: 1.75rem;
+  --text-base--line-height: 1.5rem;
   --text-lg: 1.125rem;
   --text-lg--line-height: 1.5rem;
   --text-xl: 1.25rem;
@@ -58,15 +60,37 @@
   --text-2xl--line-height: 2rem;
   --text-3xl: 2rem;
   --text-3xl--line-height: 2.5rem;
+
+  /* Fluid page-title size. Replaces `text-2xl sm:text-3xl` on every h1: 24px on
+     phones, 32px from the 640px breakpoint up, ramping smoothly in between. */
+  --text-display: clamp(1.5rem, 5vw, 2rem);
+  --text-display--line-height: 1.2;
+
+  /* Radius ladder. Semantics: md = small control, lg = button/input,
+     xl = field and list row, 2xl = card and panel, 3xl = large surface.
+     Tuned to a soft app-like scale (6/8/10/13/18/24) instead of Tailwind's
+     (4/6/8/12/16/24), so the 340+ existing rounded-* call sites stay coherent. */
+  --radius: 0.375rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.8125rem;
+  --radius-2xl: 1.125rem;
+  --radius-3xl: 1.5rem;
+
+  /* One easing curve for every transition (reference design's glide). */
+  --ease-glide: cubic-bezier(0.22, 1, 0.36, 1);
+  --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ==========================================================================
    MODERN WEB3 TYPOGRAPHY STACK:
-   - Primary Stack   : "Poppins", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont
+   - Primary Stack   : "Poppins", ui-sans-serif, system-ui (same face as the docs portal)
+   - Page titles     : --vp-font-family-heading (h1 and .font-heading)
    - Numbers & Code  : Tabular numbers (tabular-nums) for ticker accuracy
-   - Retina Density  : Antialiasing & geometricPrecision
+   - Rendering       : Antialiasing, optimizeLegibility (no geometricPrecision: it reads harsh)
    ========================================================================== */
 
 html {
@@ -81,13 +105,7 @@ html {
     'calt' 1;
 }
 
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-  html {
-    text-rendering: geometricPrecision;
-  }
-}
-
-/* Universal Typography: Enforces Poppins across all elements, portals, modals, and dropdowns */
+/* Universal Typography: Enforces the text face across all elements, portals, modals, and dropdowns */
 *,
 ::before,
 ::after,
@@ -103,13 +121,18 @@ optgroup {
 }
 
 body {
-  font-weight: 500;
+  font-weight: 400;
 }
 /* Headings: Space & weight hierarchy matched to apps/docs. In the base layer, so Tailwind
    utilities on a heading (text-base, text-2xl, ...) still apply. */
 @layer base {
+  /* !important in a layer outranks the unlayered universal rule above. */
+  h1,
+  .font-heading {
+    font-family: var(--vp-font-family-heading) !important;
+  }
+
   h1 {
-    font-family: var(--vp-font-family-base) !important;
     font-optical-sizing: auto;
     font-size: 2rem; /* 32px */
     line-height: 2.5rem;
@@ -134,28 +157,29 @@ body {
     font-weight: 600;
     letter-spacing: -0.01em;
   }
-}
 
-h4 {
-  font-family: var(--vp-font-family-base) !important;
-  font-optical-sizing: auto;
-  font-size: 1.125rem; /* 18px */
-  line-height: 1.5rem;
-  font-weight: 600;
-}
+  /* In the layer too: unlayered h4-h6 would outrank text-sm/font-bold utilities. */
+  h4 {
+    font-family: var(--vp-font-family-base) !important;
+    font-optical-sizing: auto;
+    font-size: 1.125rem; /* 18px */
+    line-height: 1.5rem;
+    font-weight: 600;
+  }
 
-h5,
-h6 {
-  font-family: var(--vp-font-family-base) !important;
-  font-optical-sizing: auto;
-  font-size: 1rem;
-  line-height: 1.5rem;
-  font-weight: 600;
-}
+  h5,
+  h6 {
+    font-family: var(--vp-font-family-base) !important;
+    font-optical-sizing: auto;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+  }
 
-/* Paragraph: 16px with comfortable line-height matched to apps/docs */
-p {
-  line-height: 1.65;
+  /* In the layer too: an unlayered p rule outranks leading-* utilities. */
+  p {
+    line-height: 1.5;
+  }
 }
 
 /* Code and Monospace classes use default style.css font with tabular numbers */
@@ -275,15 +299,6 @@ table th {
   color: var(--muted-foreground);
 }
 
-/* Shadcn Typeset Container Rhythm */
-.typeset {
-  --typeset-size: 15px;
-  --typeset-leading: 1.75;
-  --typeset-flow: 1.25em;
-  font-size: var(--typeset-size);
-  line-height: var(--typeset-leading);
-}
-
 /* ==========================================================================
    TRUE HIGH-CONTRAST MONOCHROME SYSTEM:
    - Deep Black Background  : #000000 (Pure Obsidian)
@@ -307,7 +322,8 @@ table th {
 
   --border: #e4e4e7;
   --input: #e4e4e7;
-  --ring: #09090b;
+  /* Focus indicator = brand accent (3.3:1 on white, 6.3:1 on black). */
+  --ring: #fc4198;
 
   --primary: #09090b;
   --primary-foreground: #ffffff;
@@ -347,7 +363,7 @@ table th {
 
   --border: #18181b;
   --input: #18181b;
-  --ring: #ffffff;
+  --ring: #fc4198;
 
   --primary: #ffffff;
   --primary-foreground: #000000;
@@ -380,9 +396,9 @@ body {
 
   font-family: var(--vp-font-family-base) !important;
   font-optical-sizing: auto;
-  font-weight: 500;
-  line-height: 1.6;
-  letter-spacing: -0.005em;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0.005em;
 
   transition:
     background-color 0.15s ease,
