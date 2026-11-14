@@ -37,7 +37,7 @@
               rows="3"
               maxlength="500"
               placeholder="Add your thoughts or commentary on this call..."
-              class="w-full text-xs font-sans p-3 rounded-xl border border-border bg-muted/30 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground resize-none"
+              class="w-full text-xs font-sans p-3 rounded-xl border border-border bg-muted/30 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
             />
             <div class="flex justify-end">
               <span class="text-xs text-muted-foreground"> {{ quoteContent.length }}/500 </span>

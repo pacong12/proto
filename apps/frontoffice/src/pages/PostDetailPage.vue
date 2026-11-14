@@ -315,7 +315,7 @@
             rows="2"
             maxlength="500"
             :placeholder="t('postReplyPlaceholder')"
-            class="w-full text-xs sm:text-sm p-3 rounded-xl border border-border/80 bg-muted/20 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none leading-relaxed"
+            class="w-full text-xs sm:text-sm p-3 rounded-xl border border-border/80 bg-muted/20 text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none leading-relaxed"
           />
 
           <div class="flex items-center justify-between pt-1">

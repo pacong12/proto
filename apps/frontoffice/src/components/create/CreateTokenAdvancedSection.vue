@@ -131,7 +131,7 @@
               :min="0"
               :step="0.5"
               range-class="bg-foreground"
-              thumb-class="border-foreground focus-visible:ring-foreground"
+              thumb-class="border-foreground focus-visible:ring-ring"
               class="py-1"
               @update:model-value="$emit('update:buyTax', String($event ? $event[0] : 0))"
             />
@@ -167,7 +167,7 @@
               :min="0"
               :step="0.5"
               range-class="bg-foreground"
-              thumb-class="border-foreground focus-visible:ring-foreground"
+              thumb-class="border-foreground focus-visible:ring-ring"
               class="py-1"
               @update:model-value="$emit('update:sellTax', String($event ? $event[0] : 0))"
             />
@@ -349,7 +349,7 @@
                 :min="0"
                 :step="1"
                 range-class="bg-foreground"
-                thumb-class="border-foreground focus-visible:ring-foreground"
+                thumb-class="border-foreground focus-visible:ring-ring"
                 @update:model-value="updatePillar('creator', $event ? $event[0] : 0)"
               />
               <div class="flex items-center justify-between text-xs text-muted-foreground">
@@ -375,7 +375,7 @@
                 :min="0"
                 :step="1"
                 range-class="bg-foreground"
-                thumb-class="border-foreground focus-visible:ring-foreground"
+                thumb-class="border-foreground focus-visible:ring-ring"
                 @update:model-value="updatePillar('buyback', $event ? $event[0] : 0)"
               />
               <div class="flex items-center justify-between text-xs text-muted-foreground">
@@ -401,7 +401,7 @@
                 :min="0"
                 :step="1"
                 range-class="bg-foreground"
-                thumb-class="border-foreground focus-visible:ring-foreground"
+                thumb-class="border-foreground focus-visible:ring-ring"
                 @update:model-value="updatePillar('holders', $event ? $event[0] : 0)"
               />
               <div class="flex items-center justify-between text-xs text-muted-foreground">

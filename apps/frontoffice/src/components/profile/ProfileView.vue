@@ -58,9 +58,6 @@
         :total-trades-capped="totalTradesCapped"
       />
 
-      <!-- Referral: the owner's invite link and how many they referred. -->
-      <ProfileReferralCard v-if="isOwnProfile && targetAccount" :wallet="targetAccount" />
-
       <!-- Notifications -->
       <div
         v-if="successTx"
@@ -263,6 +260,7 @@ import { walletAddress } from '@/lib/wallet-store';
 import { getSessionHeaders, signEraseDataRequest } from '@/lib/session';
 import { resolveSafeUrl } from '@/lib/safe-url';
 import { resolveUserAddress, getUserIdentity, registerUserIdentity } from '@/lib/username';
+import { loadProfile, setProfile } from '@/composables/useProfiles';
 import { Button } from '@/components/ui/button';
 import { Empty } from '@/components/ui/empty';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -273,7 +271,6 @@ import ProfilePostsTab from './ProfilePostsTab.vue';
 import ProfileCreatedTab from './ProfileCreatedTab.vue';
 import ProfileVestingCard from './ProfileVestingCard.vue';
 import ProfilePortfolioTab from './ProfilePortfolioTab.vue';
-import ProfileReferralCard from './ProfileReferralCard.vue';
 import { withReferral } from '@/lib/referral';
 import ProfileDividendsTab from './ProfileDividendsTab.vue';
 import ProfileActivityTab from './ProfileActivityTab.vue';
@@ -469,12 +466,10 @@ async function loadLocalProfile() {
   const address = targetAccount.value;
   if (!address) return;
   try {
-    const res = await apiFetch<{ success: boolean; data: { profile: ProfileStorageData | null } }>(
-      `/api/profiles/${address}`,
-    );
+    const saved = await loadProfile(address, true);
     if (targetAccount.value !== address) return;
     const legacy = isOwnProfile.value ? readLegacyProfile(address) : null;
-    profileData.value = res.data?.profile ?? legacy ?? { ...EMPTY_PROFILE };
+    profileData.value = saved ?? legacy ?? { ...EMPTY_PROFILE };
   } catch {
     profileData.value = (isOwnProfile.value ? readLegacyProfile(address) : null) ?? {
       ...EMPTY_PROFILE,
@@ -496,6 +491,7 @@ async function saveProfile(data: ProfileStorageData) {
       },
     );
     profileData.value = res.data.profile;
+    setProfile(address, res.data.profile);
     try {
       localStorage.removeItem(`proto_profile_${address}`);
     } catch {
@@ -518,6 +514,7 @@ async function eraseSocialData() {
       body: JSON.stringify(await signEraseDataRequest(address)),
     });
     profileData.value = { ...EMPTY_PROFILE };
+    setProfile(address, null);
     try {
       localStorage.removeItem(`proto_profile_${address}`);
     } catch {

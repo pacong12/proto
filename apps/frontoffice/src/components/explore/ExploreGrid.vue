@@ -23,17 +23,17 @@
                   :src="getChainIcon(tokenStore.getTokenNetwork(item.token))"
                   :alt="tokenStore.getTokenNetwork(item.token).name"
                   :title="tokenStore.getTokenNetwork(item.token).name"
-                  class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-black bg-black object-contain shadow-xs"
+                  class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card bg-card object-contain"
                 />
               </div>
               <div class="truncate">
                 <h3
-                  class="font-bold text-base text-foreground group-hover:text-primary transition truncate"
+                  class="font-semibold text-base text-foreground truncate group-hover:underline underline-offset-2"
                 >
                   {{ item.token.name }}
                 </h3>
                 <div class="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <span class="font-semibold">${{ item.token.symbol }}</span>
+                  <span>{{ item.token.symbol }}</span>
                   <span>&middot;</span>
                   <span>{{ formatRelativeTime(item.token.createdAt) }}</span>
                   <template v-if="item.token.deployer">
@@ -62,6 +62,7 @@
                     : 'text-muted-foreground/35 hover:text-amber-400'
                 "
                 :title="isPinned(item.token.address) ? 'Unpin coin' : 'Pin to Watchlist'"
+                :aria-label="isPinned(item.token.address) ? 'Unpin coin' : 'Pin to Watchlist'"
                 @click.stop="$emit('togglePin', item.token.address)"
               >
                 <Star
@@ -108,7 +109,7 @@
               :sell-tax-bps="item.token.taxConfig?.sellTaxBps"
               custom-class="text-xs"
             />
-            <span v-if="item.token.isGraduated" class="text-emerald-500"
+            <span v-if="item.token.version !== 'v4' && !hasCurve(item)" class="text-emerald-500"
               >&middot; {{ t('graduated') }}</span
             >
             <span v-if="(item.token.taxConfig?.revenueSplit?.holders ?? 0) > 0" class="text-sky-500"
@@ -121,11 +122,11 @@
             >
           </div>
 
-          <!-- Curve progress: an in-pool launch has no curve, so it shows none. -->
-          <div v-if="item.token.version !== 'v4'" class="space-y-1 pt-1">
+          <!-- Curve progress: only a launch still on its curve has any to show. -->
+          <div v-if="hasCurve(item)" class="space-y-1 pt-1">
             <div class="flex justify-between text-sm">
               <span class="text-muted-foreground">{{ t('bondingCurveProgress') }}</span>
-              <span class="font-bold text-emerald-500">
+              <span class="font-semibold text-foreground tabular-nums">
                 {{ ((item.marketData?.graduationProgress ?? 0) * 100).toFixed(1) }}%
               </span>
             </div>
@@ -162,6 +163,7 @@ import OptimizedImage from '@/components/ui/OptimizedImage.vue';
 import { formatRelativeTime, formatCompactUsd, getChainIcon, formatMarketCap } from '@/lib/utils';
 import { getUserIdentity } from '@/lib/username';
 import { useTokenStore } from '@/composables/useTokenStore';
+import { hasCurve } from './curve';
 import type { LaunchedTokenEntity, TokenMarketData } from '@goton/shared-types';
 
 interface TokenItem {

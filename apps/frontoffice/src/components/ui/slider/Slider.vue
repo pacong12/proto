@@ -38,7 +38,7 @@ const forwarded = useForwardPropsEmits(props, emits);
       :key="key"
       :class="
         cn(
-          'block h-4 w-4 rounded-full border-2 border-foreground bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 shadow-sm',
+          'block h-4 w-4 rounded-full border-2 border-foreground bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 shadow-sm',
           props.thumbClass,
         )
       "

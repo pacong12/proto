@@ -32,6 +32,7 @@ import {
 } from '../modules/trades';
 import { DexScreenerService, GeckoTerminalService } from '../modules/dex';
 import { createPnlService } from '../modules/pnl';
+import { createInviteCardService } from '../modules/referrals';
 import { resolveSiteUrls } from '@goton/shared-types';
 
 /** Composition root: every service the routes and the background jobs share. */
@@ -107,6 +108,13 @@ export const pnlService = createPnlService(
     getTokenByAddress: getTokenByAddressUseCase,
     getCandlesticks: getCandlesticksUseCase,
   },
+  ipfsService,
+  siteUrls,
+);
+
+/** Shareable invite cards: a wallet's name and photo with a QR of its referral link. */
+export const inviteCardService = createInviteCardService(
+  { profiles: repository, referrals: repository },
   ipfsService,
   siteUrls,
 );

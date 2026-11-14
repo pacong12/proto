@@ -3,7 +3,7 @@
     <!-- Top Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+        <h1 class="text-display font-extrabold tracking-tight text-foreground">
           {{ t('memestock') }}
         </h1>
         <p class="text-sm text-muted-foreground mt-1 leading-relaxed">
@@ -48,7 +48,7 @@
           v-model="searchQuery"
           type="text"
           placeholder="Search name or address..."
-          class="h-9 pl-8 pr-3 text-sm bg-card border-border rounded-xl text-foreground focus-visible:ring-foreground"
+          class="h-9 pl-8 pr-3 text-sm bg-card border-border rounded-xl text-foreground focus-visible:ring-ring"
         />
       </div>
     </div>

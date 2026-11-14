@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onBeforeUnmount } from 'vue';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Props {
   src?: string;
@@ -31,14 +32,31 @@ const hasRadius = computed(() => /(^|\s)rounded(-|\s|$)/.test(props.class));
 
 const isLoaded = ref(false);
 const hasError = ref(false);
+/** Still loading after SLOW_MS: stop the skeleton and show the fallback under the image. */
+const isSlow = ref(false);
 const gatewayIndex = ref(0);
+
+// A missing IPFS logo can hang for a long time on every gateway without ever firing
+// load or error, which would leave the skeleton sweeping forever. The image keeps
+// trying underneath and covers the fallback if it does arrive.
+const SLOW_MS = 4000;
+let slowTimer: ReturnType<typeof setTimeout> | undefined;
+function startSlowTimer() {
+  clearTimeout(slowTimer);
+  isSlow.value = false;
+  if (!props.src) return;
+  slowTimer = setTimeout(() => {
+    if (!isLoaded.value) isSlow.value = true;
+  }, SLOW_MS);
+}
+startSlowTimer();
+onBeforeUnmount(() => clearTimeout(slowTimer));
 
 const CANDIDATE_GATEWAYS = [
   (hash: string) => `/api/ipfs/${hash}`,
   (hash: string) => `https://ipfs.filebase.io/ipfs/${hash}`,
   (hash: string) => `https://4everland.io/ipfs/${hash}`,
   (hash: string) => `https://gateway.pinata.cloud/ipfs/${hash}`,
-  (hash: string) => `https://cloudflare-ipfs.com/ipfs/${hash}`,
 ];
 
 const resolvedSrc = computed(() => {
@@ -58,12 +76,15 @@ watch(
     isLoaded.value = false;
     hasError.value = false;
     gatewayIndex.value = 0;
+    startSlowTimer();
   },
 );
 
 function handleLoad() {
   isLoaded.value = true;
   hasError.value = false;
+  isSlow.value = false;
+  clearTimeout(slowTimer);
 }
 
 function handleError() {
@@ -73,6 +94,7 @@ function handleError() {
   }
   hasError.value = true;
   isLoaded.value = false;
+  clearTimeout(slowTimer);
 }
 </script>
 
@@ -88,9 +110,9 @@ function handleError() {
       }"
     >
       <!-- Placeholder / Blur skeleton while loading -->
-      <div
-        v-if="!isLoaded && !hasError && resolvedSrc"
-        class="absolute inset-0 bg-muted animate-pulse rounded-[inherit]"
+      <Skeleton
+        v-if="!isLoaded && !hasError && !isSlow && resolvedSrc"
+        class="absolute inset-0 rounded-[inherit]"
         aria-hidden="true"
       />
 
@@ -102,15 +124,15 @@ function handleError() {
         :loading="priority ? 'eager' : 'lazy'"
         :decoding="priority ? 'sync' : 'async'"
         :fetchpriority="priority ? 'high' : 'auto'"
-        class="w-full h-full object-cover transition-opacity duration-200"
+        class="absolute inset-0 w-full h-full object-cover transition-opacity duration-200"
         :class="{ 'opacity-0': !isLoaded, 'opacity-100': isLoaded }"
         @load="handleLoad"
         @error="handleError"
       />
 
-      <!-- Fallback avatar when image fails or is empty -->
+      <!-- Fallback avatar when the image is empty, failed, or is too slow (it sits under the img) -->
       <span
-        v-if="!resolvedSrc || hasError"
+        v-if="!resolvedSrc || hasError || (isSlow && !isLoaded)"
         class="font-bold uppercase leading-none text-foreground text-[min(0.75rem,28cqw)]"
       >
         {{ fallbackText ? fallbackText.slice(0, 3) : 'TOK' }}

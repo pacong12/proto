@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-6xl mx-auto space-y-4 font-sans">
     <header class="space-y-1">
-      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">Feed</h1>
+      <h1 class="text-display font-extrabold tracking-tight text-foreground">Feed</h1>
       <p class="text-sm text-muted-foreground">
         Calls from holders, each checked on-chain when it was posted.
       </p>
@@ -28,7 +28,7 @@
           class="py-20 text-center text-muted-foreground"
         >
           <Loader2 class="w-7 h-7 animate-spin mx-auto mb-3 text-muted-foreground" />
-          <p class="text-xs">Loading community alpha...</p>
+          <p class="text-sm">Loading community alpha...</p>
         </div>
 
         <Empty

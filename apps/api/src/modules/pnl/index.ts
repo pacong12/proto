@@ -7,6 +7,10 @@ import { ResvgPnlCardRenderer } from './infrastructure/resvg-pnl-card.renderer';
 export * from './application/pnl.service';
 export * from './application/pnl-card';
 export { positionPnl } from './domain/position-pnl';
+// Shared with other share cards (the referral invite card).
+export { BRAND_LOGO, renderCardPng } from './infrastructure/resvg-pnl-card.renderer';
+export { CARD_HEIGHT, CARD_WIDTH, clip, escapeXml, qr } from './infrastructure/pnl-card.svg';
+export { IpfsImageLoader } from './infrastructure/ipfs-image.loader';
 
 /** The PnL service with the resvg card renderer and logos read through the ipfs module. */
 export function createPnlService(

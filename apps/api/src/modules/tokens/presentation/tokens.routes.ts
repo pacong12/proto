@@ -35,6 +35,62 @@ import { isLaunchReceiptFor } from '../../../core/receipt-guards';
 
 /** Width of one /api/analytics chart bucket (six per 24h). */
 const ANALYTICS_BUCKET_MS = 4 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** The windows /api/analytics reports: the last 24h, the last 30 days, the last 12 months. */
+export type AnalyticsRange = '24h' | '30d' | '12m';
+
+export interface AnalyticsBucketSpan {
+  /** 24h: the bucket's end relative to now (-20h .. now); 30d: its UTC day; 12m: its UTC month. */
+  label: string;
+  start: number;
+  end: number;
+}
+
+/**
+ * The chart buckets of a window, oldest first, the last one ending now: six 4-hour buckets for
+ * 24h, thirty UTC days for 30d and twelve UTC calendar months for 12m (the current one partial).
+ */
+export function analyticsBuckets(range: AnalyticsRange, now: number): AnalyticsBucketSpan[] {
+  if (range === '24h') {
+    const count = Math.round(DAY_MS / ANALYTICS_BUCKET_MS);
+    return Array.from({ length: count }, (_, i) => {
+      const end = now - (count - 1 - i) * ANALYTICS_BUCKET_MS;
+      const hoursAgo = Math.round((now - end) / 3_600_000);
+      return {
+        label: hoursAgo === 0 ? 'now' : `-${hoursAgo}h`,
+        start: end - ANALYTICS_BUCKET_MS,
+        end,
+      };
+    });
+  }
+  if (range === '30d') {
+    const today = Math.floor(now / DAY_MS) * DAY_MS;
+    return Array.from({ length: 30 }, (_, i) => {
+      const start = today - (29 - i) * DAY_MS;
+      return {
+        label: new Date(start).toISOString().slice(0, 10),
+        start,
+        end: Math.min(start + DAY_MS, now),
+      };
+    });
+  }
+  const d = new Date(now);
+  return Array.from({ length: 12 }, (_, i) => {
+    const start = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - (11 - i), 1);
+    const next = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - (10 - i), 1);
+    return {
+      label: new Date(start).toISOString().slice(0, 7),
+      start,
+      end: Math.min(next, now),
+    };
+  });
+}
+
+function parseAnalyticsRange(value: string | null): AnalyticsRange | null {
+  if (!value || value === '24h') return '24h';
+  return value === '30d' || value === '12m' ? value : null;
+}
 
 /**
  * The configured network a chain param names exactly (chain ID, slug, name or alias), or null.
@@ -746,59 +802,57 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
         400,
       );
     }
-    const cacheKey = `protocol:analytics:v2:${network.chainId}`;
-    return replyCached(cache, replyJson, cacheKey, 30, async () => {
+    const range = parseAnalyticsRange(url.searchParams.get('range'));
+    if (!range) {
+      return replyError('INVALID_PARAM', 'range must be one of: 24h, 30d, 12m', 400);
+    }
+    const cacheKey = `protocol:analytics:v3:${network.chainId}:${range}`;
+    // Longer windows change slowly and read more trades: cache them longer.
+    const ttl = range === '24h' ? 30 : 300;
+    return replyCached(cache, replyJson, cacheKey, ttl, async () => {
       const now = Date.now();
-      const dayMs = 24 * 60 * 60 * 1000;
-      const dayAgoMs = now - dayMs;
+      const dayAgoMs = now - DAY_MS;
 
       const tokens = (await findAllTokens(repository)).filter(
         (t) => resolveTokenNetwork(t).chainId === network.chainId,
       );
       const tokenByAddress = new Map(tokens.map((t) => [t.address.toLowerCase(), t]));
 
-      // Six 4-hour buckets, oldest first, ending now. `start`/`end` are epoch ms so the client
-      // can label them in local time; `label` is the bucket's end relative to now.
-      const bucketMs = ANALYTICS_BUCKET_MS;
-      const bucketCount = Math.round(dayMs / bucketMs);
+      // Buckets oldest first, ending now. `start`/`end` are epoch ms so the client can label them
+      // in local time. Totals below cover the whole window (windowStart..windowEnd).
+      const spans = analyticsBuckets(range, now);
+      const windowStart = spans[0].start;
       const bucketOf = (ts: number): number => {
-        const age = now - ts;
-        if (age < 0 || age >= dayMs) return -1;
-        return bucketCount - 1 - Math.floor(age / bucketMs);
+        if (ts < windowStart || ts > now) return -1;
+        for (let i = spans.length - 1; i >= 0; i--) if (ts >= spans[i].start) return i;
+        return -1;
       };
-      const makeBuckets = () =>
-        Array.from({ length: bucketCount }, (_, i) => {
-          const end = now - (bucketCount - 1 - i) * bucketMs;
-          const hoursAgo = Math.round((now - end) / 3_600_000);
-          return {
-            label: hoursAgo === 0 ? 'now' : `-${hoursAgo}h`,
-            start: end - bucketMs,
-            end,
-            value: 0,
-          };
-        });
+      const makeBuckets = () => spans.map((b) => ({ ...b, value: 0 }));
       const volumeHistory = makeBuckets();
       const tokenHistory = makeBuckets();
       const feeHistory = makeBuckets();
 
+      let tokensLaunched = 0;
       let tokensLaunched24h = 0;
       for (const t of tokens) {
-        const i = t.createdAt ? bucketOf(t.createdAt) : -1;
+        if (!t.createdAt) continue;
+        if (t.createdAt >= dayAgoMs && t.createdAt <= now) tokensLaunched24h += 1;
+        const i = bucketOf(t.createdAt);
         if (i >= 0) {
           tokenHistory[i].value += 1;
-          tokensLaunched24h += 1;
+          tokensLaunched += 1;
         }
       }
 
       const quotePriceUsd = await chain.getQuotePriceUsd();
       const ethPriceUsd = await priceFeed.getEthPriceUsd();
 
-      // Volume and tax: every indexed trade of this network's tokens in the last 24h, in quote.
+      // Volume and tax: every indexed trade of this network's tokens in the window, in quote.
       let totalVolumeQuote = 0;
       let taxFeesQuote = 0;
       let tradesWithoutTaxData = 0;
-      const trades24h = repository.getTradesSince ? await repository.getTradesSince(dayAgoMs) : [];
-      for (const tr of trades24h) {
+      const trades = repository.getTradesSince ? await repository.getTradesSince(windowStart) : [];
+      for (const tr of trades) {
         const token = tokenByAddress.get(tr.tokenAddress.toLowerCase());
         if (!token) continue; // another network's token
         const i = bucketOf(tr.timestamp);
@@ -837,10 +891,13 @@ export function registerTokensRoutes(router: Router, deps: AppContainer): void {
           quoteDecimals: network.quoteTokenDecimals,
           quotePriceUsd,
           ethPriceUsd,
-          windowStart: dayAgoMs,
+          range,
+          windowStart,
           windowEnd: now,
-          bucketMs,
+          /** Bucket width for 24h; days and months vary, so read each bucket's start/end. */
+          bucketMs: range === '24h' ? ANALYTICS_BUCKET_MS : null,
           totalTokens: tokens.length,
+          tokensLaunched,
           tokensLaunched24h,
           totalVolume: Math.round(totalVolumeUsd),
           totalVolumeUsd: totalVolumeUsd.toFixed(2),

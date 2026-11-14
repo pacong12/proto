@@ -23,7 +23,7 @@
 
       <div class="min-w-0 flex-1 leading-tight">
         <div class="flex items-center gap-1">
-          <span class="font-black text-sm text-foreground truncate">
+          <span class="font-semibold text-sm text-foreground truncate">
             ${{ call.tokenSymbol || 'TOKEN' }}
           </span>
           <Button

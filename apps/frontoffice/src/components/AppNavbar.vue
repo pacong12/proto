@@ -43,6 +43,8 @@ import {
   SelectSeparator,
 } from '@/components/ui/select';
 import { getUserIdentity } from '@/lib/username';
+import { getProfile, loadProfile } from '@/composables/useProfiles';
+import { resolveSafeUrl } from '@/lib/safe-url';
 
 defineEmits<{
   (e: 'openSearch'): void;
@@ -109,6 +111,23 @@ const {
   switchOrAddNetwork,
   openWallet,
 } = useWallet();
+
+// The name and photo saved on /profile, falling back to the wallet's pseudonym and Jazzicon.
+watch(
+  account,
+  (address) => {
+    if (address) loadProfile(address).catch(() => {});
+  },
+  { immediate: true },
+);
+const myProfile = computed(() => getProfile(account.value));
+const navAvatarUrl = computed(() => resolveSafeUrl(myProfile.value?.avatarUrl));
+const navName = computed(
+  () => myProfile.value?.displayName?.trim() || getUserIdentity(account.value).name,
+);
+const navDisplayName = computed(
+  () => myProfile.value?.displayName?.trim() || getUserIdentity(account.value).displayName,
+);
 
 /**
  * AppKit's account view only offers Disconnect, so switching means ending this session and
@@ -351,10 +370,16 @@ function copyAddress() {
                 size="sm"
                 class="h-9 px-3 gap-2 text-sm font-semibold border-border bg-card hover:bg-muted cursor-pointer rounded-xl shrink-0"
               >
-                <Jazzicon :address="account" :size="18" class="rounded-full shrink-0" />
+                <img
+                  v-if="navAvatarUrl"
+                  :src="navAvatarUrl"
+                  alt=""
+                  class="w-[18px] h-[18px] rounded-full object-cover shrink-0"
+                />
+                <Jazzicon v-else :address="account" :size="18" class="rounded-full shrink-0" />
                 <span
                   class="font-bold text-foreground text-sm hidden min-[480px]:inline truncate max-w-[150px]"
-                  >{{ getUserIdentity(account).name }}</span
+                  >{{ navName }}</span
                 >
               </Button>
             </DropdownMenuTrigger>
@@ -365,14 +390,21 @@ function copyAddress() {
               <DropdownMenuLabel
                 class="flex items-center gap-3.5 p-3.5 rounded-xl bg-muted/60 mb-1"
               >
+                <img
+                  v-if="navAvatarUrl"
+                  :src="navAvatarUrl"
+                  alt=""
+                  class="w-10 h-10 rounded-full border border-border object-cover shrink-0"
+                />
                 <Jazzicon
+                  v-else
                   :address="account"
                   :size="40"
                   class="rounded-full border border-border shrink-0"
                 />
                 <div class="min-w-0 flex-1">
                   <span class="block text-sm font-bold text-foreground truncate">
-                    {{ getUserIdentity(account).displayName }}
+                    {{ navDisplayName }}
                   </span>
                   <div class="flex items-center justify-between gap-2 mt-0.5 text-xs">
                     <span class="font-medium text-muted-foreground" :title="account || ''">
@@ -587,10 +619,16 @@ function copyAddress() {
         <div v-if="isConnected" class="p-3 rounded-2xl border border-border bg-card space-y-2">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2.5 min-w-0">
-              <Jazzicon :address="account" :size="28" class="rounded-full shrink-0" />
+              <img
+                v-if="navAvatarUrl"
+                :src="navAvatarUrl"
+                alt=""
+                class="w-7 h-7 rounded-full object-cover shrink-0"
+              />
+              <Jazzicon v-else :address="account" :size="28" class="rounded-full shrink-0" />
               <div class="truncate">
                 <span class="text-xs font-bold text-foreground block truncate">{{
-                  getUserIdentity(account).displayName
+                  navDisplayName
                 }}</span>
                 <span class="text-xs text-primary font-semibold">{{ formattedBalance }}</span>
               </div>

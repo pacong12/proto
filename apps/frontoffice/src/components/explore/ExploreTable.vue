@@ -87,7 +87,7 @@
               <div class="min-w-0 flex-1">
                 <div class="flex items-baseline gap-1.5 min-w-0">
                   <span
-                    class="font-semibold text-[15px] text-foreground truncate min-w-0 group-hover:underline underline-offset-2"
+                    class="font-semibold text-base text-foreground truncate min-w-0 group-hover:underline underline-offset-2"
                   >
                     {{ item.token.name }}
                   </span>
@@ -234,6 +234,7 @@ import { useTokenStore } from '@/composables/useTokenStore';
 import { useWallet } from '@/composables/useWallet';
 import { apiFetch } from '@/lib/api-client';
 import { sparklinePath, type SparkTrend } from '@/lib/sparkline';
+import { hasCurve } from './curve';
 import type { LaunchedTokenEntity, TokenMarketData } from '@goton/shared-types';
 
 interface TokenItem {
@@ -288,10 +289,6 @@ function spark(address: string) {
 }
 onMounted(loadSparklines);
 watch(() => activeNetwork.value.chainId, loadSparklines);
-/** A bonding-curve launch still filling its curve: the only kind with progress to show. */
-function hasCurve(item: TokenItem): boolean {
-  return item.token.version !== 'v4' && !item.marketData?.isGraduated && !item.token.isGraduated;
-}
 /** The progress column only earns its room when a listed coin is still on its curve. */
 const showProgress = computed(() => props.paginatedTokens.some(hasCurve));
 

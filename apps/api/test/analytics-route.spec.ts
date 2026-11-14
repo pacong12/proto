@@ -186,4 +186,39 @@ describe('GET /api/analytics', () => {
     expect(feeHistory.map((b: { value: number }) => b.value)).toEqual([0, 0, 0, 0, 10, 3]);
     expect(tokenHistory.map((b: { value: number }) => b.value)).toEqual([0, 0, 0, 0, 0, 1]);
   });
+
+  it('rejects an unknown range', async () => {
+    const { status, body } = await analytics(`?chainId=${ARC_NETWORK.chainId}&range=7y`);
+    expect(status).toBe(400);
+    expect(body.error.code).toBe('INVALID_PARAM');
+  });
+
+  it('reports the last 30 days in UTC-day buckets, totals over the whole window', async () => {
+    const { status, body } = await analytics(`?chainId=${ARC_NETWORK.chainId}&range=30d`);
+    expect(status).toBe(200);
+    const { volumeHistory, tokenHistory, windowEnd } = body.data;
+    expect(body.data).toMatchObject({
+      range: '30d',
+      bucketMs: null,
+      tokensLaunched: 2, // the 48h-old launch counts here
+      tokensLaunched24h: 1,
+      totalVolumeQuote: '1349.000000', // the 25h-old trade counts here
+    });
+    expect(volumeHistory).toHaveLength(30);
+    expect(volumeHistory.at(-1).label).toBe(new Date(windowEnd).toISOString().slice(0, 10));
+    expect(volumeHistory.at(-1).end).toBe(windowEnd);
+    const sum = (b: Array<{ value: number }>) => b.reduce((a, x) => a + x.value, 0);
+    expect(sum(volumeHistory)).toBe(1349);
+    expect(sum(tokenHistory)).toBe(2);
+  });
+
+  it('reports the last 12 months in UTC calendar-month buckets', async () => {
+    const { body } = await analytics(`?chainId=${ARC_NETWORK.chainId}&range=12m`);
+    const { volumeHistory, windowEnd } = body.data;
+    expect(body.data.range).toBe('12m');
+    expect(volumeHistory).toHaveLength(12);
+    expect(volumeHistory.at(-1).label).toBe(new Date(windowEnd).toISOString().slice(0, 7));
+    for (const b of volumeHistory) expect(b.label).toMatch(/^\d{4}-\d{2}$/);
+    expect(body.data.totalVolumeQuote).toBe('1349.000000');
+  });
 });

@@ -721,9 +721,7 @@ onUnmounted(() => {
     <div v-if="headline" class="px-4 pt-4">
       <span class="text-xs text-muted-foreground">{{ headline.label }}</span>
       <div class="flex items-baseline gap-2">
-        <span
-          class="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground tabular-nums"
-        >
+        <span class="text-display font-extrabold tracking-tight text-foreground tabular-nums">
           {{ headline.value }}
         </span>
         <span
