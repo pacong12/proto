@@ -9,6 +9,7 @@ import {
 } from '../modules/keepers';
 import { logger } from '../modules/observability';
 import { CheckAlertsService } from '../modules/alerts';
+import { PushSender } from '../modules/push';
 import { createWalletClient, type Hex } from 'viem';
 import { nativeWeiPerQuoteUnit } from '@goton/shared-types';
 import { rpcTransport } from '../core';
@@ -208,7 +209,13 @@ export function startBackgroundJobs(): void {
   // the reached ones triggered, which the clients poll. DB reads only, so a plain interval is fine.
   {
     const intervalMs = Number(process.env.ALERT_CHECK_INTERVAL_MS?.trim() || 30_000);
-    const checker = new CheckAlertsService(repository);
+    const pushSender = new PushSender(repository, {
+      publicKey: process.env.VAPID_PUBLIC_KEY,
+      privateKey: process.env.VAPID_PRIVATE_KEY,
+      subject: process.env.VAPID_SUBJECT,
+    });
+    if (pushSender.enabled) logger.info('[AlertChecker] web push enabled');
+    const checker = new CheckAlertsService(repository, (alert) => pushSender.notifyAlert(alert));
     setInterval(async () => {
       try {
         const fired = await checker.runOnce();

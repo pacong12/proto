@@ -397,6 +397,14 @@ export class SqliteDatabase {
       );
       CREATE INDEX IF NOT EXISTS idx_price_alerts_wallet ON price_alerts(wallet);
       CREATE INDEX IF NOT EXISTS idx_price_alerts_status ON price_alerts(status);
+      CREATE TABLE IF NOT EXISTS push_subscriptions (
+        endpoint TEXT PRIMARY KEY,
+        wallet TEXT NOT NULL COLLATE NOCASE,
+        p256dh TEXT NOT NULL,
+        auth TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_push_subscriptions_wallet ON push_subscriptions(wallet);
     `);
     this.db.run(`
       CREATE TABLE IF NOT EXISTS holder_index (

@@ -91,6 +91,24 @@
           </div>
         </div>
         <div v-else class="text-xs text-muted-foreground">{{ t('alertNone') }}</div>
+
+        <!-- Browser push notifications -->
+        <div
+          v-if="pushSupported"
+          class="flex items-center justify-between gap-2 pt-2 border-t border-border/60"
+        >
+          <span class="text-xs text-muted-foreground">{{ t('alertPush') }}</span>
+          <Button
+            size="sm"
+            variant="outline"
+            class="h-7 px-2.5 text-xs font-semibold rounded-lg cursor-pointer"
+            :disabled="pushBusy"
+            @click="togglePush"
+          >
+            <Loader2 v-if="pushBusy" class="w-3 h-3 animate-spin mr-1" />
+            {{ pushOn ? t('alertPushOn') : t('alertPushEnable') }}
+          </Button>
+        </div>
       </template>
     </PopoverContent>
   </Popover>
@@ -106,6 +124,7 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { useI18n } from '@/lib/i18n';
 import { formatCompactUsd } from '@/lib/utils';
 import { usePriceAlerts } from '@/composables/usePriceAlerts';
+import { isPushSupported, isPushEnabled, enablePush, disablePush } from '@/lib/push';
 import { toast } from '@/components/ui/sonner';
 
 const props = defineProps<{
@@ -137,15 +156,39 @@ function setKind(k: PriceAlert['kind']) {
   if (current > 0) thresholdInput.value = String(current);
 }
 
+const pushSupported = isPushSupported();
+const pushOn = ref(false);
+const pushBusy = ref(false);
+
 watch(
   () => [open.value, props.account] as const,
   ([isOpen, account]) => {
     if (isOpen && account) {
       void load(account);
       if (!thresholdInput.value) setKind(kind.value);
+      if (pushSupported) void isPushEnabled().then((on) => (pushOn.value = on));
     }
   },
 );
+
+async function togglePush() {
+  if (!props.account) return;
+  pushBusy.value = true;
+  try {
+    if (pushOn.value) {
+      await disablePush(props.account);
+      pushOn.value = false;
+      toast.success(t('alertPushDisabled'));
+    } else {
+      const ok = await enablePush(props.account);
+      pushOn.value = ok;
+      if (ok) toast.success(t('alertPushEnabled'));
+      else toast.error(t('alertPushFailed'));
+    }
+  } finally {
+    pushBusy.value = false;
+  }
+}
 
 async function submit() {
   if (!props.account || parsedThreshold.value <= 0) return;
