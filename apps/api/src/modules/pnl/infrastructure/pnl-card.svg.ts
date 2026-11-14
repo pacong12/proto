@@ -21,14 +21,14 @@ const C = {
 const CHART = { left: 560, right: 1150, top: 180, bottom: 586 };
 
 /** Text safe inside an XML element, without the control characters XML does not allow. */
-const escapeXml = (text: string) =>
+export const escapeXml = (text: string) =>
   Array.from(text)
     .filter((c) => c >= ' ')
     .join('')
     .replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
 /** At most `max` characters, with an ellipsis when cut. */
-const clip = (text: string, max: number) =>
+export const clip = (text: string, max: number) =>
   text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
 
 /** A USD amount: whole dollars from $10K, compact from $1M, two significant digits below $1. */
@@ -127,7 +127,7 @@ function summary(card: PnlCard): string {
 }
 
 /** A QR code of the page as one path of dark modules, in a white rounded box at (x, y). */
-function qr(url: string, x: number, y: number, size: number): string {
+export function qr(url: string, x: number, y: number, size: number): string {
   const code = qrcode(0, 'M');
   code.addData(url);
   code.make();

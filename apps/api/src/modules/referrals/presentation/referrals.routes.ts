@@ -1,11 +1,36 @@
 import { isAddress, ok } from '@goton/shared-types';
 import { parseJsonBody, PayloadTooLargeError } from '../../../core';
+import { cacheHeader, readThrough } from '../../../core/http/cached-reply';
 import type { Router } from '../../../core/http/router';
 import type { AppContainer } from '../../../app/container';
 
 /** HTTP routes of the referrals module: off-chain, first-touch referral attribution. */
 export function registerReferralsRoutes(router: Router, deps: AppContainer): void {
-  const { repository } = deps;
+  const { repository, cache, inviteCardService } = deps;
+
+  // GET /api/referrals/:wallet/card.png — the wallet's shareable invite card.
+  router.on(
+    ['GET', 'HEAD'],
+    /^\/api\/referrals\/(0x[a-fA-F0-9]{40})\/card\.png$/,
+    ({ req, headers, replyCatching }, [, wallet]) =>
+      replyCatching(async () => {
+        const address = wallet.toLowerCase();
+        const { value, hit } = await readThrough(cache, `referral:card:${address}`, 300, async () =>
+          Buffer.from(await inviteCardService.png(address)).toString('base64'),
+        );
+        const png = Buffer.from(value, 'base64');
+        return new Response(req.method === 'HEAD' ? null : new Uint8Array(png), {
+          headers: {
+            ...headers,
+            ...cacheHeader(hit),
+            'Content-Type': 'image/png',
+            'Content-Length': String(png.byteLength),
+            'Cache-Control': 'public, max-age=300',
+            'Cross-Origin-Resource-Policy': 'cross-origin',
+          },
+        });
+      }),
+  );
 
   // GET /api/referrals?referrer=0x.. — how many wallets this referrer has referred.
   router.on('GET', '/api/referrals', async ({ url, replyError, replyEnvelope }) => {
